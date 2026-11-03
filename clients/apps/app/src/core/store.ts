@@ -16,6 +16,8 @@
 // (`SavedChats`); the web shows the server's copy instead (the decision is in
 // PROGRESS.md).
 
+import type { HandsPermission, HandsStreamEnd } from '../desktop/contract'
+import { type Desktop, desktop } from '../desktop/desktop'
 import {
   type PlanFacts,
   type SandAccess,
@@ -28,6 +30,7 @@ import {
 } from './access'
 import type { AgentDraft } from './agentDraft'
 import { type ExchangeLine, exchangeLines } from './agentNetwork'
+import type { RosterNews } from './agentNotifications'
 import {
   type VoiceChoice,
   keptVoice,
@@ -111,6 +114,7 @@ import {
 import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
 import {
   type ConnectStart,
+  type SignInAnswer,
   alreadySignedIn,
   authorizationURL,
   didntConnect,
@@ -134,7 +138,8 @@ import {
   bookingAnswer,
   travellerJSON,
 } from './flightCards'
-import { GatewayError } from './gatewayConnection'
+import { Gateway } from './gateway'
+import { GatewayConnection, GatewayError } from './gatewayConnection'
 import {
   type AutoReviewInstructions,
   detectedTimeZone,
@@ -154,6 +159,19 @@ import {
 } from './json'
 import { t } from './l10n'
 import { currentLanguage } from './language'
+import {
+  type LocalAsk,
+  type LocalAskResolution,
+  answerLocalAsk,
+  waitingAsk,
+} from './localAsk'
+import {
+  type LocalToolPermission,
+  defaultLocalToolPermission,
+  isAboveCeiling,
+  reconcilePermission,
+  teamCeiling,
+} from './localToolPermission'
 import {
   MigrationRelay,
   type RebuildServer,
@@ -200,6 +218,7 @@ import {
   routinesFrom,
   sameRoutines,
 } from './routines'
+import { type SavedChats, ownerOf, sameOwner } from './savedChats'
 import {
   type FileHit,
   type MessageHit,
@@ -492,8 +511,24 @@ function sameList(a: readonly Agent[], b: readonly Agent[]): boolean {
 }
 
 export class AppStore {
-  agents: Agent[] = []
-  account?: Account
+  // The list and the account: a change to either is a change to what the Windows app keeps (the Mac's `didSet`s, Step 7b's section).
+  private agentsNow: Agent[] = []
+  private accountNow?: Account
+  get agents(): Agent[] {
+    return this.agentsNow
+  }
+  set agents(next: Agent[]) {
+    this.agentsNow = next
+    this.rosterChanged()
+  }
+  get account(): Account | undefined {
+    return this.accountNow
+  }
+  set account(next: Account | undefined) {
+    const before = this.accountNow
+    this.accountNow = next
+    if (next !== before) this.savedOwnerKnown()
+  }
   /** The list shown is a copy (the server's), not yet the computer's. */
   showingSaved = false
   /** The copy shown is the server's. */
@@ -619,11 +654,19 @@ export class AppStore {
    * soon as a list is on screen, the server's copy or the computer's.
    */
   async attach(backend: AgentBackend, shown?: () => void): Promise<void> {
+    // What changed since the last save is kept before it goes (Reload), and shown again at once below (Step 7b).
+    this.saveNow()
+    // The same computer again (Reload) keeps a call that is on and what was typed, as the Mac's (Store.swift's `detach(endingCall:)`); another one ends them.
+    const same = this.backend === backend
     const account = this.account
-    this.detach()
+    const drafts = this.drafts
+    this.detachFrom(!same)
     this.account = account
+    if (same) this.drafts = drafts
     this.backend = backend
     this.onListShown = shown
+    // The list, its pins and folders and the catalogue kept on this device, until the computer answers (the Windows app's SavedChats).
+    this.showKept(shown)
     if (this.readsServerCopy) void this.showServerList(backend)
     this.isLoading = true
     this.changed()
@@ -647,8 +690,12 @@ export class AppStore {
     if (this.backend === backend) await this.loadSidebar()
   }
 
-  /** Signed out, or the sign-in ended. */
+  /** Signed out, or the sign-in ended: a call that is on ends with it. */
   detach(): void {
+    this.detachFrom(true)
+  }
+
+  private detachFrom(endingCall: boolean): void {
     this.listening?.abort()
     this.listening = undefined
     this.backend = undefined
@@ -666,12 +713,17 @@ export class AppStore {
     this.resetOrgChartAndPacks()
     this.resetComputer()
     this.resetRebuild()
-    this.resetCalls()
+    if (endingCall) this.resetCalls()
     this.resetConnecting()
     this.resetConnectors()
     this.resetConnectorPages()
     this.resetGeneralSettings()
     this.resetUsageAndBilling()
+    this.resetDesktopSession()
+    this.resetDesktopSurfaces()
+    this.resetDesktopOutside()
+    this.resetDesktopUpdates()
+    this.resetDesktopHands()
     this.firstRunAgentId = undefined
     this.firstRunNamed = false
     // A hand-off waiting on the name step ends (it finds the account gone and makes nothing).
@@ -757,6 +809,7 @@ export class AppStore {
     try {
       const list = await backend.listAgents()
       if (backend !== this.backend) return
+      this.rosterNews?.({ kind: 'seed', agents: list })
       this.showingSaved = false
       this.listFromServer = false
       this.agents = this.readingOpenChat(sortRoster(list))
@@ -799,6 +852,8 @@ export class AppStore {
   apply(event: BackendEvent): void {
     switch (event.kind) {
       case 'agents': {
+        // Heard as the computer says it, held or not (Store.swift's `rosterNews`, 7c).
+        this.rosterNews?.({ kind: 'roster', agents: event.agents })
         // Held while the computer is rebuilt, read again once it ends (Store.swift's `rosterHeld`, 5c).
         if (this.holdsRoster()) return
         this.showingSaved = false
@@ -810,6 +865,7 @@ export class AppStore {
         return
       }
       case 'agentUpserted': {
+        this.rosterNews?.({ kind: 'update', agent: event.agent })
         if (this.holdsRoster()) return
         // The host sends the same agent again often (each step of a turn); only a change redraws the list.
         if (this.agents.some((agent) => sameAgent(agent, event.agent))) return
@@ -849,6 +905,7 @@ export class AppStore {
         const next = appliedChange(change, current)
         if (this.streamingOnly.has(change.agentId)) {
           this.transcripts[change.agentId] = next
+          this.chatChanged(change.agentId)
           this.scheduleLayout(change.agentId)
         } else {
           this.setTranscript(change.agentId, next, streaming)
@@ -997,6 +1054,7 @@ export class AppStore {
     const ids = (arr(field(settings, 'pinnedAgentIds')) ?? [])
       .map(text)
       .filter((id): id is string => id != null)
+    this.pinsFromComputer()
     if (ids.join('\u0000') === this.pinnedIds.join('\u0000')) return
     this.pinnedIds = ids
     this.changed()
@@ -1004,6 +1062,7 @@ export class AppStore {
 
   /** Pin or unpin: the whole ordered list is written, as the Mac writes it (`setHostSettings({pinnedAgentIds})`); a new pin goes last. */
   async setPinned(agentId: string, pinned: boolean): Promise<void> {
+    if (this.pinsKept) await this.freshPinsIfKept()
     const next = this.pinnedIds.filter((id) => id !== agentId)
     if (pinned) next.push(agentId)
     await this.writePins(
@@ -1014,6 +1073,7 @@ export class AppStore {
 
   /** Moves a pin to another pin's place (the Mac's drag in the pin grid). */
   async movePin(agentId: string, index: number): Promise<void> {
+    if (this.pinsKept) await this.freshPinsIfKept()
     const from = this.pinnedIds.indexOf(agentId)
     if (from < 0) return
     const next = this.pinnedIds.filter((id) => id !== agentId)
@@ -1026,6 +1086,7 @@ export class AppStore {
     if (next.join('\u0000') === this.pinnedIds.join('\u0000')) return
     this.pinWrites += 1
     this.pinnedIds = next
+    this.layoutChanged()
     this.changed()
     this.pinWritesInFlight += 1
     const written = await this.command(
@@ -1048,6 +1109,7 @@ export class AppStore {
   private takeSections(settings: JSONValue, started: number): void {
     if (started !== this.sectionWrites) return
     const next = parseSections(field(settings, 'sidebarSections') ?? [])
+    this.sectionsFromComputer()
     if (JSON.stringify(next) === JSON.stringify(this.sidebarSections)) return
     this.sidebarSections = next
     this.changed()
@@ -1068,11 +1130,18 @@ export class AppStore {
     if (JSON.stringify(next) === JSON.stringify(current)) return true
     this.sectionWrites += 1
     this.sidebarSections = next
+    this.layoutChanged()
     this.changed()
+    const kept = this.sectionsKept
     void (async () => {
+      // The sections shown are this device's copy: the change is made on the computer's own (Step 7b).
+      const toWrite = kept
+        ? await this.keptSectionsChange(change, current, next)
+        : next
+      if (!toWrite) return
       const written = await this.command(
         'setHostSettings',
-        { sidebarSections: sectionsJSON(next) },
+        { sidebarSections: sectionsJSON(toWrite) },
         t("Couldn't change it"),
       )
       if (written === undefined) await this.loadSections()
@@ -1136,6 +1205,7 @@ export class AppStore {
     const gone = new Set(agentIds)
     this.agents = this.agents.filter((agent) => !gone.has(agent.id))
     this.pinnedIds = this.pinnedIds.filter((id) => !gone.has(id))
+    this.layoutChanged()
     for (const id of agentIds) {
       delete this.transcripts[id]
       delete this.chatRows[id]
@@ -1390,13 +1460,16 @@ export class AppStore {
    * `billingPortal`): the confirmation of the next plan up (`update_confirm`
    * with its `tier`), the card form for a payment that failed
    * (`payment_method`), Start Plan Now for a card trial (`start_now`),
-   * extra credits (`credits`), or its front page. No `back`: the web opens it
-   * in a tab, and the page ends on the web's billing page (decision of 1
-   * November 2026). Its address, or the words to show.
+   * extra credits (`credits`), or its front page. No `back` on the web: it
+   * opens it in a tab, and the page ends on the web's billing page (decision
+   * of 1 November 2026); the Windows app names itself (`back: "simeon"`,
+   * as the Mac), so the page ends on the app's own link. Its address, or the
+   * words to show.
    */
   async billingPortal(
     flow?: string,
     tier?: string,
+    back?: string,
   ): Promise<{ url?: string; message?: string }> {
     const fallback = t('Couldn’t open billing. Try again.')
     const backend = this.backend
@@ -1410,6 +1483,7 @@ export class AppStore {
       [paymentMethodFlow, startNowFlow, creditsFlow].includes(flow)
     )
       fields.flow = flow
+    if (back) fields.back = back
     try {
       const answer = await backend.server('billing/portal', 'POST', fields)
       const url = str(field(answer, 'portalUrl'))
@@ -1746,6 +1820,7 @@ export class AppStore {
     }
     if (this.backend !== backend) return undefined
     this.catalogFresh = true
+    this.keepCatalog(answer)
     const next = catalogFrom(answer)
     const entries = pluginEntriesFrom(answer)
     let moved = false
@@ -2103,6 +2178,7 @@ export class AppStore {
 
   private setTranscript(agentId: string, entries: Entry[], soon = false): void {
     this.transcripts[agentId] = entries
+    this.chatChanged(agentId)
     // A card's answer shown here is the computer's once its copy has it.
     for (const entry of entries)
       if (
@@ -2226,6 +2302,11 @@ export class AppStore {
         ? Math.max(agent.unreadCount, 1)
         : 0
       : 0
+    // Its lines kept on this device first, while the computer's are on their way (the Windows app's SavedChats).
+    if (this.saved) {
+      await this.showSavedLines(agentId)
+      if (backend !== this.backend) return
+    }
     if (this.readsServerCopy) void this.showServerLines(agentId)
     const cached = this.transcripts[agentId]
     if (cached) {
@@ -2254,6 +2335,8 @@ export class AppStore {
   async peek(agentId: string): Promise<void> {
     const backend = this.backend
     if (!backend) return
+    // The lines kept on this device show at once, else the server's copy.
+    if (this.saved) await this.showSavedLines(agentId)
     if (this.transcripts[agentId] == null) await this.showServerLines(agentId)
     if (
       !(
@@ -5974,6 +6057,7 @@ export class AppStore {
       return
     }
     this.mark(id, agentId, 'sent')
+    this.handsPromptSent()
     void this.sendNextQueued(agentId)
     // The host's copy may already be here: the waiting one goes, and only then is the chat laid out again.
     const waiting = this.outbox.get(agentId)?.length ?? 0
@@ -6119,6 +6203,1019 @@ export class AppStore {
     if (root != null) return threadEntries(root, entries)
     return threadSplit(entries, this.olderBefore[agentId] != null).visible
   }
+
+  // MARK: Step 7b's session in the Windows app: the chats kept on disk (the Mac's
+  // `SavedChats`), the logs. Only in the Windows app (src/desktop/).
+  //
+  // The agents and their chats kept on this device (StoreSaved.swift, 26
+  // October 2026): shown at once while the computer is asleep, updated or
+  // out of reach, and replaced by the computer's own copy when it answers.
+  // Kept a moment after each change the computer sends, when the window goes
+  // behind and as the app quits. Only what the computer sent in this sign-in
+  // is kept, never the list kept before nor a chat's kept lines (nor the
+  // server's copy), and only once the account is known. The web sets no
+  // `saved`, and none of this runs there.
+
+  /** The agents and chats kept on this device (core/savedChats.ts): set by the Windows app as it signs in; none on the web and in most tests. */
+  saved?: SavedChats
+  /** The pins and sections shown are this device's copy (`pinsKept`, `sectionsKept`), not yet the computer's: a change is made on the computer's own. */
+  private pinsKept = false
+  private sectionsKept = false
+  /** What changed since the last save: the list, the layout, and which chats. */
+  private rosterToSave = false
+  private layoutToSave = false
+  private chatsToSave = new Set<string>()
+  /** The save a moment after a change (`saveSoon`), and this sign-in's number, so a save begun before a sign-out never writes after it. */
+  private saving?: ReturnType<typeof setTimeout>
+  private saveEpoch = 0
+  /** How long after a change it is kept: a streamed answer is written every two seconds, not per word (`saveDelayNs`). */
+  static readonly saveDelayMs = 2_000
+
+  /** Signed out, or the computer let go of: nothing more is kept for this sign-in (`stopSaving`). */
+  private resetDesktopSession(): void {
+    clearTimeout(this.saving)
+    this.saving = undefined
+    this.saveEpoch += 1
+    this.rosterToSave = false
+    this.layoutToSave = false
+    this.chatsToSave = new Set()
+    this.pinsKept = false
+    this.sectionsKept = false
+  }
+
+  /** Signing out, or the sign-in ended: everything kept on this device goes (`forgetSaved`). */
+  forgetSaved(): void {
+    this.resetDesktopSession()
+    this.saved?.forget()
+  }
+
+  /** What `attach` shows before the computer answers: the list kept, its pins and folders, the catalogue; then `shown` is told, as the core tells it (the session looks whether a list shows). */
+  private showKept(shown?: () => void): void {
+    if (!this.saved) return
+    this.showSaved()
+    this.showSavedLayout()
+    this.showSavedCatalog()
+    shown?.()
+  }
+
+  /** The list kept, shown while the computer has not answered; another account's is forgotten instead (`showSaved`). */
+  private showSaved(): void {
+    const saved = this.saved
+    if (!saved || this.agents.length > 0) return
+    const roster = saved.readRoster()
+    if (!roster || roster.agents.length === 0) return
+    const owner = ownerOf(this.account)
+    if (owner && !sameOwner(owner, roster.owner)) {
+      this.forgetSaved()
+      return
+    }
+    this.showingSaved = true
+    this.listFromServer = false
+    this.agents = sortRoster(roster.agents)
+  }
+
+  /**
+   * The pins and folders kept with the list, shown with it until the
+   * computer's come (`showSavedLayout`; the founder, 27 October 2026:
+   * without them every chat showed in one list for seconds at each launch).
+   * Another account's are never shown.
+   */
+  private showSavedLayout(): void {
+    const layout = this.saved?.readLayout()
+    if (!layout) return
+    const owner = ownerOf(this.account)
+    if (owner && !sameOwner(owner, layout.owner)) return
+    if (this.pinnedIds.length === 0 && layout.pinnedIds.length > 0) {
+      this.pinnedIds = [...layout.pinnedIds]
+      this.pinsKept = true
+    }
+    if (this.sidebarSections === undefined && layout.sections) {
+      this.sidebarSections = layout.sections
+      this.sectionsKept = true
+    }
+  }
+
+  /** The connectors' catalogue kept on this device, until the computer's comes: Connectors opens on it, not on "Loading connectors…" (`showSavedCatalog`). */
+  private showSavedCatalog(): void {
+    if (this.catalog.length > 0 || this.catalogEntries.length > 0) return
+    const answer = this.saved?.readCatalog(currentLanguage())
+    if (answer === undefined) return
+    this.catalog = catalogFrom(answer)
+    this.catalogEntries = pluginEntriesFrom(answer)
+  }
+
+  /** A `getCatalog` answer the computer gave: kept on this device when it has rows (`takeCatalog`'s `keep`). */
+  private keepCatalog(answer: JSONValue): void {
+    const rows = arr(answer) ?? arr(field(answer, 'plugins')) ?? []
+    if (rows.length > 0) this.saved?.writeCatalog(answer, currentLanguage())
+  }
+
+  /** A chat's kept lines, when it has none here yet (`showSavedLines`): read from this device's copy, a moment, then shown unless something newer came meanwhile. */
+  private async showSavedLines(agentId: string): Promise<void> {
+    const saved = this.saved
+    const backend = this.backend
+    const listed = () => this.agents.some((agent) => agent.id === agentId)
+    if (!saved || !backend || this.transcripts[agentId] != null || !listed())
+      return
+    const lines = await saved.readChat(agentId)
+    if (
+      !lines ||
+      backend !== this.backend ||
+      this.transcripts[agentId] != null ||
+      !listed()
+    )
+      return
+    const owner = ownerOf(this.account)
+    const roster = saved.readRoster()
+    if (owner && roster && !sameOwner(owner, roster.owner)) return
+    this.savedLines.set(
+      agentId,
+      new Set(lines.entries.map((entry) => entry.id)),
+    )
+    if (lines.hasOlder) this.savedOlder.add(agentId)
+    else this.savedOlder.delete(agentId)
+    this.setTranscript(agentId, lines.entries)
+    this.changed()
+  }
+
+  /** The computer's pins, in place of this device's copy (`takePins`). */
+  private pinsFromComputer(): void {
+    this.pinsKept = false
+    this.layoutChanged()
+  }
+
+  /** The computer's sections, in place of this device's copy (`takeSections`). */
+  private sectionsFromComputer(): void {
+    this.sectionsKept = false
+    this.layoutChanged()
+  }
+
+  /**
+   * The pins shown are this device's copy: the computer's own are read first
+   * (waking it if it sleeps), so a pin made now does not undo one made on
+   * another device meanwhile (`freshPinsIfKept`).
+   */
+  private async freshPinsIfKept(): Promise<void> {
+    if (!this.pinsKept) return
+    let settings: JSONValue | undefined
+    try {
+      settings = await this.backend?.command('getHostSettings', {})
+    } catch {
+      return
+    }
+    if (settings !== undefined) this.takePins(settings, this.pinWrites)
+  }
+
+  /**
+   * A change made while the sections are this device's copy, made on the
+   * computer's own, read first (waking it if it sleeps): another device may
+   * have changed them since (`editSections`). Undefined when the computer
+   * can't be reached: what it holds is unknown, so the change is not shown
+   * as made.
+   */
+  private async keptSectionsChange(
+    change: (sections: SidebarSection[]) => SidebarSection[],
+    current: SidebarSection[],
+    next: SidebarSection[],
+  ): Promise<SidebarSection[] | undefined> {
+    let settings: JSONValue | undefined
+    try {
+      settings = await this.backend?.command('getHostSettings', {})
+    } catch {
+      settings = undefined
+    }
+    if (settings === undefined) {
+      if (this.sidebarSections === next) {
+        this.sidebarSections = current
+        this.changed()
+      }
+      return undefined
+    }
+    const toWrite = normalize(
+      change(parseSections(field(settings, 'sidebarSections') ?? [])),
+    )
+    this.sectionsKept = false
+    if (JSON.stringify(toWrite) !== JSON.stringify(this.sidebarSections)) {
+      this.sidebarSections = toWrite
+      this.changed()
+    }
+    this.layoutChanged()
+    return toWrite
+  }
+
+  private rosterChanged(): void {
+    if (!this.saved || !this.backend) return
+    this.rosterToSave = true
+    this.saveSoon()
+  }
+
+  private layoutChanged(): void {
+    if (!this.saved || !this.backend) return
+    this.layoutToSave = true
+    this.saveSoon()
+  }
+
+  private chatChanged(agentId: string): void {
+    if (!this.saved || !this.backend) return
+    this.chatsToSave.add(agentId)
+    this.saveSoon()
+  }
+
+  private saveSoon(): void {
+    if (!this.saved || this.saving !== undefined) return
+    const epoch = this.saveEpoch
+    this.saving = setTimeout(() => {
+      this.saving = undefined
+      if (this.saveEpoch === epoch) this.saveNow()
+    }, AppStore.saveDelayMs)
+  }
+
+  /**
+   * What changed is kept now (`saveNow`): the list once the computer has
+   * sent it, and each chat it sent lines for. Waits, keeping what changed,
+   * while the account is not known yet (it is read beside the agents).
+   */
+  saveNow(): void {
+    clearTimeout(this.saving)
+    this.saving = undefined
+    const saved = this.saved
+    const owner = ownerOf(this.account)
+    // Another account's copy went when this one became known (`savedOwnerKnown`).
+    if (!saved || !this.hasReachedBox || !this.backend || !owner) return
+    if (this.rosterToSave && !this.showingSaved) {
+      saved.writeRoster(this.agents, owner)
+      saved.removeChats(new Set(this.agents.map((agent) => agent.id)))
+      this.rosterToSave = false
+    }
+    // Only once the computer has said: a copy shown from this device is not kept again as if it were its.
+    if (this.layoutToSave && !this.pinsKept && !this.sectionsKept) {
+      saved.writeLayout(this.pinnedIds, this.sidebarSections, owner)
+      this.layoutToSave = false
+    }
+    const listed = new Set(this.agents.map((agent) => agent.id))
+    for (const agentId of this.chatsToSave) {
+      if (
+        this.savedLines.has(agentId) ||
+        this.loadFailed.has(agentId) ||
+        !listed.has(agentId)
+      )
+        continue
+      const entries = this.transcripts[agentId]
+      if (entries)
+        saved.writeChat(agentId, entries, this.olderBefore[agentId] != null)
+    }
+    this.chatsToSave = new Set()
+  }
+
+  /**
+   * The account is known (the profile answered): what was kept for another
+   * account goes, from the screen too (its list, and any chat still showing
+   * its lines); then what waited for the account is kept (`savedOwnerKnown`).
+   */
+  private savedOwnerKnown(): void {
+    const saved = this.saved
+    const owner = ownerOf(this.account)
+    if (!saved || !owner) return
+    const roster = saved.readRoster()
+    const layout = saved.readLayout()
+    const otherList = roster ? !sameOwner(owner, roster.owner) : false
+    const otherLayout = layout ? !sameOwner(owner, layout.owner) : false
+    if (otherList || otherLayout) {
+      saved.forget()
+      for (const agentId of this.savedLines.keys()) {
+        delete this.transcripts[agentId]
+        delete this.chatRows[agentId]
+      }
+      this.savedLines = new Map()
+      this.savedOlder = new Set()
+      // The server's copy is this account's own: it stays.
+      if (this.showingSaved && !this.listFromServer) {
+        this.showingSaved = false
+        this.agents = []
+      }
+      if (this.pinsKept) {
+        this.pinnedIds = []
+        this.pinsKept = false
+      }
+      if (this.sectionsKept) {
+        this.sidebarSections = undefined
+        this.sectionsKept = false
+      }
+      this.changed()
+    }
+    if (this.rosterToSave || this.layoutToSave || this.chatsToSave.size > 0)
+      this.saveSoon()
+  }
+
+  // MARK: Step 7c's notifications, the taskbar's number, the tray and the menu: the
+  // roster's news (the Mac's `rosterNews`), each agent's waiting and unread.
+
+  /**
+   * What the computer says of the agents, as it says it, before the list's
+   * own handling (Store.swift's `rosterNews`): the Windows app's
+   * notifications and taskbar number (src/desktop/surfaces.ts). Set once for
+   * the app's life; nothing else hears it.
+   */
+  rosterNews?: (news: RosterNews) => void
+  /** One `setWindowFocused` at a time, each reading the window when it goes (MacServices.swift's `focusChain`). */
+  private focusChain: Promise<void> = Promise.resolve()
+
+  /**
+   * The Windows app's window came in front or went behind
+   * (MacServices.swift's `focusChanged`, decision 3): the computer is told,
+   * and the open chat counts as read only while it is in front, so the
+   * taskbar's number, the sidebar's dots and the notifications agree.
+   */
+  windowFocusChanged(focused: () => boolean): void {
+    const now = focused()
+    this.isForeground = now
+    const open = this.openChat
+    const agent = open != null ? this.agent(open) : undefined
+    if (
+      now &&
+      open != null &&
+      (agent?.hasUnread || (agent?.unreadCount ?? 0) > 0)
+    )
+      this.markRead(open)
+    this.tellWindowFocus(focused)
+  }
+
+  /**
+   * `setWindowFocused` (MacServices.swift's `sendFocus`): whether the window
+   * is the one in front, as it is when the command goes; never to a
+   * computer that rests (`commandIfAwake`), which is told again when it is
+   * back (`desktopConnected`).
+   */
+  tellWindowFocus(focused: () => boolean): void {
+    this.focusChain = this.focusChain.then(async () => {
+      const backend = this.backend
+      if (!backend) return
+      await quietly(
+        backend.command(
+          'setWindowFocused',
+          { isFocused: focused() },
+          { wakes: false },
+        ),
+      )
+    })
+  }
+
+  /**
+   * The computer reached, at start and after each drop (MacServices.swift's
+   * `connected`): its own notifications off, the Windows app says them;
+   * then whether the window is in front. The zone this computer is in is
+   * told by `tellTimeZone` (6e), "Execution on Local Computer" by 7f.
+   */
+  async desktopConnected(focused: () => boolean): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    await quietly(
+      backend.command('setHostSettings', {
+        notifications: { isEnabled: false },
+      }),
+    )
+    if (backend !== this.backend) return
+    this.tellWindowFocus(focused)
+  }
+
+  /** View › Reload (Control-R in the Windows app; MacSession.swift's `reload`): everything read again from the computer, the account kept. */
+  async reloadFromComputer(): Promise<void> {
+    const backend = this.backend
+    if (!backend) return
+    const account = this.account
+    // The chat on screen stays on screen through a Reload (the list kept on the PC shows at once, so nothing on screen opens it again): it is opened again as soon as a list shows it, its lines with it.
+    const open = this.openChat
+    let reopened = false
+    const reopen = () => {
+      if (reopened || open == null || backend !== this.backend) return
+      if (this.openChat != null) return
+      if (!this.agents.some((agent) => agent.id === open)) return
+      reopened = true
+      void this.open(open)
+    }
+    await this.attach(backend, reopen)
+    if (this.account == null && backend === this.backend) this.account = account
+    reopen()
+  }
+
+  /** Nothing of the account's is kept here: the Windows app follows the account itself (src/desktop/surfaces.ts, as MacServices.swift's `track`). */
+  private resetDesktopSurfaces(): void {}
+
+  // MARK: Step 7d's links and pages outside: `simeon://` links handed in, a connector's
+  // sign-in coming back (`completeMcpOAuth`), Stripe's pages in the app's window.
+
+  /**
+   * The sign-ins this app named to Simeon Labs' server to come back to it
+   * (`sendSignInBack`), by their state: the app's own name and when. Only
+   * these are finished when a `simeon://mcp-oauth` link comes back, within
+   * `AppStore.returnedSignInMs`; forgotten on sign-out (review of 2 November 2026:
+   * any page can write such a link).
+   */
+  private returnedSignIns = new Map<string, { name: string; at: number }>()
+
+  /** A sign-in named to the server to come back to the app is finished within this (its own wait is 5 minutes). */
+  static readonly returnedSignInMs = 10 * 60_000
+
+  private resetDesktopOutside(): void {
+    this.returnedSignIns.clear()
+  }
+
+  /**
+   * A sign-in's answer the server sent back to the app
+   * (`simeon://mcp-oauth`), finished on this account's computer
+   * (`completeMcpOAuth`) only when this app named that sign-in in this
+   * sign-in session, within its lifetime, and once: any other link is
+   * dropped without a word. A refusal says the catalogue's sentence, never
+   * the link's own words. Whether it was one of this app's.
+   */
+  async finishReturnedSignIn(
+    answer: SignInAnswer,
+    now: number = Date.now(),
+  ): Promise<boolean> {
+    const started = this.returnedSignIns.get(answer.state)
+    if (!started || now - started.at > AppStore.returnedSignInMs) return false
+    if (!this.backend) return false
+    this.returnedSignIns.delete(answer.state)
+    if (answer.error != null) {
+      this.problem = didntConnect(started.name)
+      this.changed()
+      return true
+    }
+    await this.finishLoopbackSignIn(
+      { state: answer.state, code: answer.code },
+      started.name,
+    )
+    return true
+  }
+
+  /**
+   * A connector's sign-in answer, caught on this PC's loopback or sent back
+   * to the app by Simeon Labs' server (LoopbackSignIn.swift's and
+   * AppReturnSignIn.swift's `finishLoopbackSignIn`), handed to this
+   * account's computer, which started it: the code for the app's access
+   * (`completeMcpOAuth`), then the apps read again, so the sign-in's own
+   * wait sees it connected. The maker's refusal is said (`problem`).
+   */
+  async finishLoopbackSignIn(
+    answer: SignInAnswer,
+    name: string,
+  ): Promise<void> {
+    if (answer.error != null) {
+      this.problem =
+        answer.errorDescription ??
+        t`${name} refused the sign-in (${answer.error}).`
+      this.changed()
+      return
+    }
+    const backend = this.backend
+    if (answer.code == null || !backend) return
+    try {
+      await backend.command('completeMcpOAuth', {
+        stateId: answer.state,
+        code: answer.code,
+      })
+      await this.loadApps()
+    } catch (error) {
+      const why = error instanceof Error ? error.message : String(error)
+      this.problem = t`Couldn't finish connecting ${name}: ${why}`
+      this.changed()
+    }
+  }
+
+  /**
+   * Asks Simeon Labs' server to send this sign-in back to the app, by its
+   * own scheme (`sendSignInBack`, `POST mcp-oauth/return`), remembering it
+   * under the app's `name` (`finishReturnedSignIn`); false when it could not
+   * (the server's own page then finishes it, as before).
+   */
+  async sendSignInBack(
+    state: string,
+    scheme: string,
+    name: string,
+    now: number = Date.now(),
+  ): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    // Remembered before it goes: the answer may come back before the server's reply does.
+    for (const [old, started] of this.returnedSignIns)
+      if (now - started.at > AppStore.returnedSignInMs)
+        this.returnedSignIns.delete(old)
+    this.returnedSignIns.set(state, { name, at: now })
+    try {
+      await backend.server('mcp-oauth/return', 'POST', { state, back: scheme })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Stripe's page closed (`settleAfterCardPage`): after a failed payment,
+   * once it came back on the app's own link, the plan charged now on the
+   * card just saved (`billing/settle`); then the access, the usage and the
+   * plan the access notice words itself from read again, so the line over
+   * the composer goes and Send comes back at once when it went through.
+   */
+  async settleAfterCardPage(paymentFailed: boolean): Promise<void> {
+    const backend = this.backend
+    if (paymentFailed && backend) {
+      try {
+        await backend.server('billing/settle', 'POST', {})
+      } catch {
+        // The plan is read again either way: it says whether it went through.
+      }
+    }
+    await this.refreshAccess()
+    await Promise.all([this.refreshUsage(), this.refreshPlan()])
+  }
+
+  /** Whether a payment had failed when Stripe's page was asked for (`usage.summary?.paymentFailed`; the access cover's plan says it too). */
+  get paymentFailed(): boolean {
+    return (
+      shownSummary(this.usage)?.paymentFailed === true ||
+      this.plan?.paymentFailed === true
+    )
+  }
+
+  /**
+   * The 1Password connect card's key, made by the person's 1Password app on
+   * this PC, to the computer (`connectOnePassword`), which checks it with
+   * 1Password and keeps it; with the card that asked, the card says
+   * Connected. Nothing is kept here. None once kept, else why not.
+   */
+  async connectOnePassword(made: {
+    token: string
+    vaultId: string
+    vaultName: string
+    accountEmail?: string
+    entryId?: string
+    agentId?: string
+  }): Promise<string | undefined> {
+    const failed = t("1Password wasn't connected")
+    const args: Record<string, JSONValue> = {
+      token: made.token,
+      vaultId: made.vaultId,
+      vaultName: made.vaultName,
+    }
+    if (made.accountEmail != null) args.accountEmail = made.accountEmail
+    if (made.entryId != null && made.agentId != null) {
+      args.entryId = made.entryId
+      args.agentId = made.agentId
+    }
+    const reply = await this.command('connectOnePassword', args, failed)
+    if (reply === undefined) return failed
+    return bool(field(reply, 'ok')) === false
+      ? (text(field(reply, 'message')) ?? failed)
+      : undefined
+  }
+
+  // MARK: Step 7e's updates (the updater's state lives in the main process; nothing of the
+  // account's).
+
+  private resetDesktopUpdates(): void {}
+
+  // MARK: Step 7f's agent's hands on this PC: the local permission, the team's ceiling,
+  // the Allow card's ask, commands allowed once.
+  //
+  // In the Windows app only (`desktop()`), as MacServices.swift's `track`
+  // and MacLocalPermission.swift: signed in, this account's setting and its
+  // team's ceiling are read, and the computer told when they change what it
+  // should do; each time the computer is reached the setting is squared
+  // with its own. The hands' loop (`LocalHandsProvider.run`) hands the main
+  // process the computer's address and dials again when the stream drops,
+  // never a computer that rests; the main process reads the stream and runs
+  // what it asks (windows/src/main/hands/). The Allow card's ask is read
+  // from the chat (`localAsks`), and its answers go as the Mac's.
+
+  /** The team's ceiling, once read this sign-in (a failed read keeps the one this PC last had). */
+  localCeiling?: LocalToolPermission
+  /** The ceiling has been read this sign-in (the card's Always allow waits for it). */
+  localCeilingKnown = false
+  /** "Execution on Local Computer" as this PC keeps it, the ceiling applied (Settings' menu). */
+  localPermission: LocalToolPermission = defaultLocalToolPermission
+  /** A change of it on its way to the computer (the menu greyed). */
+  localPermissionPending = false
+  /** The account the hands serve, by its lower-case e-mail. */
+  private handsAccount?: string
+  private handsBackend?: AgentBackend
+  private handsLive = false
+  private handsGateway?: Gateway
+  private handsLoop?: AbortController
+  /** Bumped by each read of the ceiling, so an older answer is dropped (`localToolCeilingSyncSeq`). */
+  private ceilingReads = 0
+  private handsScheduled = false
+  private readonly waitingAsks = new WeakMap<
+    readonly Entry[],
+    LocalAsk | null
+  >()
+  /** The loop's wait between dials (the tests' is at once). */
+  handsPause: (seconds: number, signal?: AbortSignal) => Promise<void> = pausing
+  /** Every change the store announces is looked at (the Mac's observation of the account, the computer and the stream). */
+  private readonly followsHands = this.subscribe(() => this.scheduleHands())
+
+  private resetDesktopHands(): void {
+    this.localPermissionPending = false
+  }
+
+  /** Whether an answer to the Allow card can go now: a computer is attached (the card's buttons greyed otherwise, as the Mac's). */
+  get localAskAnswerable(): boolean {
+    return this.backend != null
+  }
+
+  /** The agent's first ask still waiting to use this PC (`localAsks`): the Allow card over its composer. Windows only. */
+  localAsk(agentId: string): LocalAsk | undefined {
+    if (desktop() == null) return undefined
+    const entries = this.transcripts[agentId]
+    if (!entries) return undefined
+    let ask = this.waitingAsks.get(entries)
+    if (ask === undefined) {
+      ask = waitingAsk(entries) ?? null
+      this.waitingAsks.set(entries, ask)
+    }
+    return ask ?? undefined
+  }
+
+  /** Looked at once the change that called it is done, as the Mac's observation runs after the change. */
+  private scheduleHands(): void {
+    // The main window's store only (not the call's window, 7c): only it drives the hands.
+    if (this.handsScheduled || desktop()?.facts.window !== 'main') return
+    this.handsScheduled = true
+    queueMicrotask(() => {
+      this.handsScheduled = false
+      this.followHands()
+    })
+  }
+
+  /**
+   * `MacServices.track`'s hands: a new computer or account gets the
+   * account's setting and ceiling, and the hands on its gateway (not a demo's
+   * computer); none at all is signed out (the setting forgotten, the hands
+   * stopped); the stream coming up squares the setting with the computer's.
+   */
+  private followHands(): void {
+    const host = desktop()
+    if (host?.facts.window !== 'main') return
+    const backend = this.backend
+    // The account is known after its computer (the profile answers later): an account gone while a computer is attached is the same one still.
+    const account = this.account?.email.trim().toLowerCase() || undefined
+    const next = account ?? (backend ? this.handsAccount : undefined)
+    if (next !== this.handsAccount || backend !== this.handsBackend) {
+      this.handsAccount = next
+      this.handsBackend = backend
+      if (backend) {
+        void this.localPermissionSignedIn(host, next)
+        if (backend instanceof LiveBackend)
+          this.startHands(host, backend.gateway)
+      } else if (next == null) {
+        this.stopHands()
+        this.localPermissionSignedOut()
+        void host.call('handsSignedOut').catch(() => {})
+      }
+    }
+    if (this.isLive && !this.handsLive && backend)
+      void this.localPermissionConnected(host, backend)
+    this.handsLive = this.isLive
+  }
+
+  /** The hands for this computer (`MacLocalHands.start`): a second start for the same gateway does nothing; another stops the first's commands. */
+  private startHands(host: Desktop, gateway: Gateway): void {
+    if (this.handsGateway === gateway && this.handsLoop) return
+    const running = this.handsLoop != null
+    this.stopHands()
+    if (running) void host.call('handsStop').catch(() => {})
+    this.handsGateway = gateway
+    const loop = new AbortController()
+    this.handsLoop = loop
+    void this.runHands(host, gateway, loop.signal)
+  }
+
+  private stopHands(): void {
+    this.handsLoop?.abort()
+    this.handsLoop = undefined
+    this.handsGateway = undefined
+  }
+
+  /**
+   * Dial, read, and dial again (`LocalHandsProvider.run`): 1, 2, 4, 8, then
+   * every 10 s; after three failures in a row the computer's address is
+   * asked for again. A computer that rests where the server lets it is not
+   * dialled, which would wake it, until it runs.
+   */
+  private async runHands(
+    host: Desktop,
+    gateway: Gateway,
+    signal: AbortSignal,
+  ): Promise<void> {
+    let attempt = 1
+    let failures = 0
+    while (!signal.aborted) {
+      await gateway
+        .waitWhileAsleep(() => {}, { ask: false, signal })
+        .catch(() => false)
+      if (signal.aborted) break
+      let broke = false
+      try {
+        const connection = await gateway.currentConnection()
+        if (signal.aborted) break
+        const end = await this.streamHands(host, gateway, connection, signal)
+        if (end.connected) {
+          attempt = 1
+          failures = 0
+        }
+        if (end.ended === 'stopped') break
+        broke = end.ended !== 'closed'
+      } catch {
+        broke = true
+      }
+      if (signal.aborted) break
+      if (broke) {
+        // Asleep where the server lets it sleep while the app is open: waited for without waking it, then dialled again.
+        if (
+          await gateway.waitWhileAsleep(() => {}, { signal }).catch(() => false)
+        ) {
+          attempt = 1
+          failures = 0
+          continue
+        }
+        failures += 1
+        if (failures >= 3) {
+          gateway.invalidate()
+          failures = 0
+        }
+      }
+      await this.handsPause(Gateway.reconnectDelay(attempt), signal)
+      attempt += 1
+    }
+  }
+
+  /**
+   * One stream, read by the main process (`stream(connected:)`); the
+   * computer's address looked at every 10 s meanwhile, a moved one ending
+   * it, as a failure.
+   */
+  private async streamHands(
+    host: Desktop,
+    gateway: Gateway,
+    connection: GatewayConnection,
+    signal: AbortSignal,
+  ): Promise<HandsStreamEnd> {
+    const done = new AbortController()
+    const both = AbortSignal.any([signal, done.signal])
+    let moved = false
+    void (async () => {
+      while (!both.aborted) {
+        await pausing(10, both)
+        if (both.aborted) return
+        const fresh = await gateway.currentConnection().catch(() => undefined)
+        if (both.aborted) return
+        if (
+          fresh &&
+          (fresh.baseURL !== connection.baseURL ||
+            fresh.token !== connection.token ||
+            fresh.networkToken !== connection.networkToken)
+        ) {
+          moved = true
+          void host.call('handsEnd').catch(() => {})
+          return
+        }
+      }
+    })()
+    try {
+      const end = await host.call('handsStream', {
+        baseURL: connection.baseURL,
+        headers: connection.headers(),
+      })
+      return moved && end.ended === 'ended' ? { ...end, ended: 'failed' } : end
+    } finally {
+      done.abort()
+    }
+  }
+
+  /**
+   * Signed in, and at each launch (`MacLocalPermission.signedIn`): this
+   * account's setting, and its team's ceiling read from Simeon Labs. The
+   * computer is told when that changes what it should do. When Simeon Labs
+   * does not answer, the ceiling this PC last had for the account holds
+   * (the Mac's counts as none, which lifts a team's "Never" at every
+   * offline launch: proposed for the Mac too).
+   */
+  private async localPermissionSignedIn(
+    host: Desktop,
+    account: string | undefined,
+  ): Promise<void> {
+    let kept: HandsPermission
+    try {
+      kept = await host.call('handsPermission', account ?? null)
+    } catch {
+      return
+    }
+    const previous = kept.effective
+    this.ceilingReads += 1
+    const read = this.ceilingReads
+    const answer = await this.teamAdminSettings()
+    if (read !== this.ceilingReads) return
+    const now =
+      answer === undefined
+        ? kept
+        : await host
+            .call('handsCeiling', teamCeiling(answer) ?? null)
+            .catch(() => undefined)
+    if (!now || read !== this.ceilingReads) return
+    this.tookLocalPermission(now)
+    if (now.effective !== previous)
+      await this.pushHostSetting('localToolPermission', now.effective)
+  }
+
+  private tookLocalPermission(now: HandsPermission): void {
+    this.localCeiling = now.ceiling ?? undefined
+    this.localCeilingKnown = true
+    this.localPermission = now.effective
+    this.changed()
+  }
+
+  /** Signed out: forgotten, so the next account starts from "Ask every time" (the main process forgets its copy). */
+  private localPermissionSignedOut(): void {
+    this.ceilingReads += 1
+    this.localCeiling = undefined
+    this.localCeilingKnown = false
+    this.localPermission = defaultLocalToolPermission
+    this.changed()
+  }
+
+  /** Connected (`MacLocalPermission.connected`): a computer set to always or never while this PC is at the default is taken; otherwise it is told this PC's. */
+  private async localPermissionConnected(
+    host: Desktop,
+    backend: AgentBackend,
+  ): Promise<void> {
+    let box: unknown
+    try {
+      box = field(
+        await backend.command('getHostSettings', {}),
+        'localToolPermission',
+      )
+    } catch {
+      box = undefined
+    }
+    const here = await host.call('handsPermission', null).catch(() => undefined)
+    if (!here || backend !== this.backend) return
+    const step = reconcilePermission(box, here.effective)
+    if (step.kind === 'adopt') {
+      const now = await host
+        .call('handsChoose', step.value)
+        .catch(() => undefined)
+      if (now) {
+        this.localPermission = now.effective
+        this.changed()
+        // The team's ceiling lowered what was taken: the computer is told what holds, or it would send no asks this PC could answer (the Mac doesn't: proposed for it too).
+        if (now.effective !== step.value)
+          await this.pushHostSetting('localToolPermission', now.effective)
+      }
+      return
+    }
+    await quietly(
+      backend.command('setHostSettings', { localToolPermission: step.value }),
+    )
+  }
+
+  /** The team admin's settings (`GetTeamAdminSettingsOrEmptyIfNotInTeam`); undefined when they can't be read. */
+  async teamAdminSettings(): Promise<JSONValue | undefined> {
+    try {
+      return await this.backend?.dashboard?.(
+        'GetTeamAdminSettingsOrEmptyIfNotInTeam',
+        {},
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** A host setting the computer must take (`pushHostSetting`): written, then read back, up to three times (250 and 500 ms apart) until it says it. */
+  async pushHostSetting(key: string, value: JSONValue): Promise<boolean> {
+    for (const wait of [0, 250, 500]) {
+      if (wait > 0) await pausing(wait / 1000)
+      if (!(await this.writeHostSettings({ [key]: value }))) continue
+      if (field(await this.readHostSettings(), key) === value) return true
+    }
+    return false
+  }
+
+  /**
+   * Settings › Computer opened (`GeneralSettingsModel.load`): this
+   * account's setting, then its team's ceiling read again, the card
+   * following it.
+   */
+  async loadLocalPermission(): Promise<void> {
+    const host = desktop()
+    if (!host) return
+    const account = this.account?.email.trim().toLowerCase() || null
+    const kept = await host
+      .call('handsPermission', account)
+      .catch(() => undefined)
+    if (!kept) return
+    this.localPermission = kept.effective
+    this.changed()
+    const team = await this.teamAdminSettings()
+    if (team === undefined) return
+    const now = await host
+      .call('handsCeiling', teamCeiling(team) ?? null)
+      .catch(() => undefined)
+    if (now) this.tookLocalPermission(now)
+  }
+
+  /** Execution on Local Computer (`GeneralSettingsModel.setPermission`): kept on this PC, then given to the computer until it says it back. */
+  async setLocalPermission(next: LocalToolPermission): Promise<void> {
+    const host = desktop()
+    if (
+      !host ||
+      this.localPermissionPending ||
+      isAboveCeiling(next, this.localCeiling)
+    )
+      return
+    this.localPermissionPending = true
+    this.changed()
+    try {
+      const now = await host.call('handsChoose', next)
+      await this.pushHostSetting('localToolPermission', now.effective)
+      this.localPermission = now.effective
+    } catch {
+      // Not kept: the menu shows what still holds.
+    } finally {
+      this.localPermissionPending = false
+      this.changed()
+    }
+  }
+
+  /** Commands Allowed Once's Forget; false when the app did not take it. */
+  async forgetCommandsAllowedOnce(): Promise<boolean> {
+    const host = desktop()
+    if (!host) return false
+    try {
+      await host.call('handsForgetOnce')
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** Each message the computer takes lets go of the "Allow once" answers (`clearLocalToolApprovals` after `sendPrompt`). */
+  private handsPromptSent(): void {
+    void desktop()
+      ?.call('handsForgetOnce')
+      .catch(() => {})
+  }
+
+  /**
+   * The Allow card's answer (`LocalAskDock.answer`): Always allow and Never
+   * change the setting first (`MacLocalPermission.choose`: kept here, then
+   * the computer told), falling back to once when it did not take; Allow
+   * once written down before the computer is told. False when the answer
+   * didn't go through.
+   */
+  async answerLocalAsk(
+    ask: LocalAsk,
+    agentId: string,
+    resolution: LocalAskResolution,
+  ): Promise<boolean> {
+    const host = desktop()
+    const backend = this.backend
+    try {
+      await answerLocalAsk(ask, agentId, resolution, {
+        choose: async (value) => {
+          if (!host) return undefined
+          const now = await host.call('handsChoose', value)
+          this.localPermission = now.effective
+          this.changed()
+          await this.pushHostSetting('localToolPermission', now.effective)
+          return now.effective
+        },
+        allowOnce: async (approval) => {
+          if (!host) throw new Error()
+          await host.call('handsAllowOnce', approval)
+        },
+        resolve: async (fields) => {
+          if (!backend) throw new Error()
+          await backend.command('resolveLocalToolPermission', { ...fields })
+        },
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+}
+
+/** Seconds, ended early when `signal` aborts. */
+function pausing(seconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((done) => {
+    if (signal?.aborted) return done()
+    const finish = () => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', finish)
+      done()
+    }
+    const timer = setTimeout(finish, seconds * 1000)
+    signal?.addEventListener('abort', finish, { once: true })
+  })
 }
 
 /** What the preview has of a file (`PreviewRead`): its bytes, too large to show (over 25 MB), or nothing. */

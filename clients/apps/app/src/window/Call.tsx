@@ -9,8 +9,9 @@
 // page can't float a window, so the banner sits inside the window, over
 // everything in it, at the Mac's 12 from the top and 16 from the right of
 // the chat's column, so it covers none of the window's own controls (the
-// agent's pane, find's bar). The Windows app can give it its own
-// always-on-top window (docs/web-app/PROGRESS.md, "For Windows").
+// agent's pane, find's bar). The Windows app gives it its own
+// always-on-top window, as the Mac's (src/desktop/callWindow.ts, step 7c):
+// the card is drawn there, and not in the window.
 
 import {
   type ReactNode,
@@ -36,10 +37,13 @@ import { type ExchangeRow, exchangeRows, menuOrder } from '../core/exchanges'
 import { pictureURL } from '../core/faces'
 import type { Agent, Party } from '../core/models'
 import type { AppStore } from '../core/store'
+import { followCallWindow } from '../desktop/callWindow'
+import { desktop } from '../desktop/desktop'
 import { t } from '../l10n'
 import { AgentMark, AgentPicture } from './AgentMark'
 import './Call.css'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
 import { Glyph as BarGlyph, useDismiss } from './MessageActions'
@@ -60,11 +64,28 @@ import { useWindowModel } from './windowModel'
  */
 export function callAgent(store: AppStore, agent: Agent): void {
   if (store.call) {
-    document.querySelector<HTMLElement>('.call-banner')?.focus()
+    // The Windows app's call has its own window: forward, without the keys (`CallBannerWindow.focus`).
+    const host = desktop()
+    if (host) void host.call('focusCall').catch(() => {})
+    else document.querySelector<HTMLElement>('.call-banner')?.focus()
     return
   }
   store.startCall(agent)
 }
+
+/** What the banner reads: the store, or the call's own window's copy of it in the Windows app (`CallMirror`). */
+export type BannerSource = Pick<
+  AppStore,
+  | 'call'
+  | 'callLevels'
+  | 'agents'
+  | 'agent'
+  | 'mute'
+  | 'hangUp'
+  | 'dismissCall'
+  | 'subscribe'
+  | 'getVersion'
+>
 
 /** An agent's picture by its id (`AgentIdMark`): its own, or the quiet disc for one the app doesn't know. */
 function MarkOf({
@@ -72,7 +93,7 @@ function MarkOf({
   id,
   size,
 }: {
-  store: AppStore
+  store: Pick<BannerSource, 'agent' | 'agents'>
   id: string
   size: number
 }) {
@@ -90,7 +111,8 @@ function MarkOf({
  * The call's banner (`CallBannerWindow`, `CallBannerCard`): it shows with a
  * call and goes when the call is put away. Leaving the page with a call on
  * ends it (its voice let go, its record on its way), as quitting the Mac
- * does, rather than leaving its line "now".
+ * does, rather than leaving its line "now". In the Windows app the card is
+ * the call's own window's (src/desktop/callWindow.ts): none here.
  */
 export function CallBanner({ store }: { store: AppStore }): ReactNode {
   useWatched(store)
@@ -102,10 +124,27 @@ export function CallBanner({ store }: { store: AppStore }): ReactNode {
     window.addEventListener('pagehide', leave)
     return () => window.removeEventListener('pagehide', leave)
   }, [store])
+  const host = desktop()
+  useEffect(
+    () => (host ? followCallWindow(host, store) : undefined),
+    [host, store],
+  )
   const call = store.call
-  if (!call) return null
+  if (!call || host) return null
   // Its Transcript closed at each call's start.
-  return <BannerCard key={call.agentId} store={store} call={call} />
+  return <PlacedBannerCard key={call.agentId} store={store} call={call} />
+}
+
+/** The card in the window, over the chat's column. */
+function PlacedBannerCard({
+  store,
+  call,
+}: {
+  store: BannerSource
+  call: CallState
+}) {
+  const place = useBannerPlace()
+  return <BannerCard store={store} call={call} style={place} />
 }
 
 /**
@@ -185,10 +224,20 @@ function useNow(every: number, on: boolean): number {
  * ended. 360 wide, round 24, solid white (#2A2A2D on dark). A failed call
  * stays 20 s, and while the pointer is on it; leaving starts the 20 s again
  * (`FAILED_DISMISS_MS`). An ended one leaves by itself after 1.2 s (the
- * call).
+ * call). Placed by `style` in the window; the Windows app's call window
+ * places it itself and hears the pointer come and go (`onPointer`).
  */
-function BannerCard({ store, call }: { store: AppStore; call: CallState }) {
-  const place = useBannerPlace()
+export function BannerCard({
+  store,
+  call,
+  style,
+  onPointer,
+}: {
+  store: BannerSource
+  call: CallState
+  style?: { top: number; right: number }
+  onPointer?: (inside: boolean) => void
+}) {
   const look = Banner.look(call)
   const [transcript, setTranscript] = useState(false)
   const [hovering, setHovering] = useState(false)
@@ -209,9 +258,15 @@ function BannerCard({ store, call }: { store: AppStore; call: CallState }) {
       role="region"
       aria-label={t('Call')}
       tabIndex={-1}
-      style={place}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+      style={style}
+      onMouseEnter={() => {
+        setHovering(true)
+        onPointer?.(true)
+      }}
+      onMouseLeave={() => {
+        setHovering(false)
+        onPointer?.(false)
+      }}
     >
       <div className="call-top">
         <span className="call-avatar" aria-hidden="true">
@@ -257,7 +312,7 @@ function BannerBar({
   transcript,
   toggleTranscript,
 }: {
-  store: AppStore
+  store: BannerSource
   call: CallState
   look: BannerLook
   transcript: boolean
@@ -369,7 +424,7 @@ function BannerWave({
   store,
   speaking,
 }: {
-  store: AppStore
+  store: Pick<BannerSource, 'callLevels'>
   speaking: boolean
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -851,7 +906,7 @@ function CopyMenuView({ menu, close }: { menu: CopyMenu; close: () => void }) {
         {
           label: t('Copy'),
           glyph: 'copy',
-          action: () => void navigator.clipboard?.writeText(menu.words),
+          action: () => void copyText(menu.words).catch(() => {}),
         },
       ]}
     />

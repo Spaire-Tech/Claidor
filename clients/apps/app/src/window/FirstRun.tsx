@@ -87,6 +87,8 @@ export function FirstRunScreen({
 
   return (
     <main className="first-run">
+      {/* Moves the Windows app's window, as the Mac's first run's top does (window/desktop.css). */}
+      <div className="window-drag" aria-hidden="true" />
       {leaving ? (
         <HandOffLine ready={ready} error={error} retry={handOff} />
       ) : (

@@ -125,6 +125,8 @@ const dayOf = (iso: string, locale: AcceptedLocale): string =>
 /** This browser is on a Mac (an iPad asking for the desktop site says Macintosh too, with touch). */
 const onAMac = () =>
   /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints < 2
+/** This browser is on a Windows PC. */
+const onWindows = () => /Windows NT/.test(navigator.userAgent)
 const unchanging = () => () => {}
 
 const BillingPage = ({
@@ -163,9 +165,14 @@ const BillingPage = ({
   // Someone who uses the Mac app, on a Mac, goes back to it, as if the app
   // had opened this page, whatever link did (the founder, 29 October 2026:
   // "it said you're all set, download the app … the app is clearly
-  // downloaded here"). The server's render knows no browser: not yet.
+  // downloaded here"); the Windows app's the same on Windows (simeon:// on
+  // both). The server's render knows no browser: not yet.
   const mac = useSyncExternalStore(unchanging, onAMac, () => false)
-  const toApp = fromApp || (mac && sub?.has_mac_app === true)
+  const windows = useSyncExternalStore(unchanging, onWindows, () => false)
+  const toApp =
+    fromApp ||
+    (mac && sub?.has_mac_app === true) ||
+    (windows && sub?.has_windows_app === true)
   // Bought in the iPhone app: Apple changes and cancels it, so this page
   // only says so (the checkout and the portal would refuse).
   const billedByApple = subscribed && sub?.provider === 'app_store'

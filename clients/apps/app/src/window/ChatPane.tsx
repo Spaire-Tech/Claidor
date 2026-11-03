@@ -111,6 +111,8 @@ import { useSearchReveal } from './SearchPanel'
 import { shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
+import { copyText } from './clipboard'
+import { apple } from './keys'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
@@ -165,10 +167,6 @@ interface FindState {
 }
 
 const noMatches: FindMatch[] = []
-
-/** An Apple computer: its shortcuts take ⌘. */
-const apple =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
 
 /** A click on the button whose menu or capsule it just closed closes it, and opens nothing (the Mac's `closedByClick`, half a second). */
 const reopenGap = 500
@@ -349,7 +347,7 @@ export function ChatPane({
       out.push({
         label: t('Copy'),
         glyph: 'copy',
-        action: () => void navigator.clipboard?.writeText(bubble.text),
+        action: () => void copyText(bubble.text).catch(() => {}),
       })
       return out
     }
@@ -830,11 +828,14 @@ function Transcript({
     }
   }, [jump, jumpRef])
 
-  // The agent at work: the words beside its picture under the messages.
+  // The agent at work: the words beside its picture under the messages; none while it waits on an ask to use this PC (`Le`: the Allow card says it).
+  const asking = agent ? store.localAsk(agent.id) != null : false
   const activity = useMemo(
     () =>
-      agent ? activityLine(agent, (id) => store.agent(id)?.name) : undefined,
-    [agent, store],
+      agent && !asking
+        ? activityLine(agent, (id) => store.agent(id)?.name)
+        : undefined,
+    [agent, asking, store],
   )
 
   const unseen = useMemo(() => {

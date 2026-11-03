@@ -65,9 +65,17 @@ function preferenceNow(): ThemePreference {
   return memory ?? themePreference()
 }
 
+/** Hears a theme chosen and the system's turning light or dark (the Windows app's caption buttons, src/desktop/windowLook.ts). */
+export function onThemeChange(changed: () => void): () => void {
+  return subscribe(changed)
+}
+
 function subscribe(changed: () => void): () => void {
   listeners.add(changed)
-  const query = window.matchMedia?.('(prefers-color-scheme: dark)')
+  const query =
+    typeof window === 'undefined'
+      ? undefined
+      : window.matchMedia?.('(prefers-color-scheme: dark)')
   query?.addEventListener('change', changed)
   return () => {
     listeners.delete(changed)
@@ -78,6 +86,11 @@ function subscribe(changed: () => void): () => void {
 /** The theme chosen, kept up to date (Settings › General's picker, ⌘K's and "/"'s tick). */
 export function useThemePreference(): ThemePreference {
   return useSyncExternalStore(subscribe, preferenceNow, () => 'system')
+}
+
+/** The theme chosen now, this visit's when storage couldn't keep it. */
+export function themeNow(): ThemePreference {
+  return preferenceNow()
 }
 
 /** Whether the window is dark now: the theme chosen, else the system's. */

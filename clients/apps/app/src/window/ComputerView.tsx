@@ -13,7 +13,11 @@
 // screen coming up; the computer's copied words are written to the
 // clipboard only while the page has the focus (one copied while it is
 // behind is dropped, never written later over a newer copy); Tab goes round
-// the view's own buttons, where the Mac's swallows it.
+// the view's own buttons, where the Mac's swallows it. The Windows app reads
+// and writes the clipboard without asking, so the clipboard is the Mac's
+// there (step 7d, clipboard.ts): this PC's words go on a click in the
+// screen, as the window comes forward and as the screen comes up, and the
+// computer's copy is written at once, even while the window is behind.
 
 import {
   type CSSProperties,
@@ -45,6 +49,7 @@ import type { Agent } from '../core/models'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { classes } from './classes'
+import { appClipboard } from './clipboard'
 import './ComputerView.css'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
@@ -262,6 +267,8 @@ function ComputerFullView({
   })
   const screen = useRef<LiveScreen>(undefined)
   const [clipboard] = useState(() => new ScreenClipboard())
+  // The Windows app's clipboard, the Mac's way; none on the web.
+  const [pcClipboard] = useState(() => appClipboard(clipboard))
   const view = useRef<HTMLDivElement>(null)
   const [stage, fitted] = useFitted()
   const helpersRef = useRef(helpers)
@@ -281,6 +288,25 @@ function ComputerFullView({
   useEffect(() => {
     if (phase === 'connected') screen.current?.focus()
   }, [phase])
+
+  // The Windows app: this PC's words to the computer on a click in the screen, the window coming forward, or the screen coming up (`sendClipboard`).
+  const sendClipboard = useRef(() => {})
+  useLayoutEffect(() => {
+    sendClipboard.current = () => {
+      if (phaseRef.current === 'connected')
+        void pcClipboard?.send(screen.current)
+    }
+  })
+  // As the screen comes up only while the window is in front: a screen that reconnects behind it sends nothing (a password copied in another app meanwhile; review of 2 November 2026).
+  useEffect(() => {
+    if (phase === 'connected' && document.hasFocus()) sendClipboard.current()
+  }, [phase])
+  useEffect(() => {
+    if (!pcClipboard) return
+    const forward = () => sendClipboard.current()
+    window.addEventListener('focus', forward)
+    return () => window.removeEventListener('focus', forward)
+  }, [pcClipboard])
 
   // Every key is the screen's while it shows; while the screen has none, Tab goes round the view's buttons and the arrows switch helpers' screens.
   useEffect(() => {
@@ -361,6 +387,7 @@ function ComputerFullView({
             <div
               className="computer-screen"
               style={{ width: fitted.width, height: fitted.height }}
+              onPointerDownCapture={() => sendClipboard.current()}
             >
               <ScreenView
                 key={`${stageKey}:${url}`}
@@ -378,8 +405,12 @@ function ComputerFullView({
                     helpersRef.current,
                   )
                 }
-                // The computer's copied text onto this computer's clipboard, unless it was just sent either way; only while the page has the focus.
+                // The computer's copied text onto this computer's clipboard, unless it was just sent either way; on the web only while the page has the focus, in the Windows app at once.
                 onClipboard={(words) => {
+                  if (pcClipboard) {
+                    void pcClipboard.fromBox(words)
+                    return
+                  }
                   const fresh = clipboard.fromBox(words, document.hasFocus())
                   if (fresh != null)
                     void navigator.clipboard?.writeText(fresh).catch(() => {})
@@ -387,6 +418,7 @@ function ComputerFullView({
                 // ⌘V: the words the computer doesn't hold go with the keys, read from the paste itself.
                 onPaste={(words, shift) => {
                   if (phaseRef.current !== 'connected') return
+                  pcClipboard?.pasted(words)
                   screen.current?.pasteAndPress(clipboard.toBox(words), shift)
                 }}
               />

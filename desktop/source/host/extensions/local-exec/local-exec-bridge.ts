@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Clock, IdleWatchdogPolicy } from "../../../internal/scheduling.js";
 import { DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS, SAND_NO_LOCAL_MACHINE_MESSAGE, sandComputerUnavailableMessage } from "../../../shared/local-exec-gateway.js";
 import { SandLocalExecError } from "./local-exec-error.js";
+import { localExecPlatformOf, type LocalExecPlatform } from "./local-exec-platform.js";
 
 export const SUPERVISED_RANK = 4;
 export const VARIANT_RANKS: Readonly<Record<string, number>> = { sand: 2, "sand-lab": 1 };
@@ -10,8 +11,9 @@ export const TELEMETRY_VARIANTS = new Set(["sand", "sand-lab", "sand-dev"]);
 export const DEFAULT_SAND_COMPUTER_ID = "this-computer";
 
 export interface LocalExecBridgeContext { readonly signal: AbortSignal; readonly agentId?: string; }
-export interface LocalExecComputer { readonly id: string; readonly label: string; readonly connected: boolean; }
-export interface LocalExecProviderInfo { readonly localRoot: string; readonly terminalsFolder: string; }
+export interface LocalExecComputer { readonly id: string; readonly label: string; readonly connected: boolean; /** What its hello said of its system (`win32` on Windows); none from a Mac's. */ readonly platform?: string; }
+/** The provider's hello: its root and terminals folder, and (the Windows app's) its system and shell (local-exec-platform.ts). */
+export interface LocalExecProviderInfo extends LocalExecPlatform { readonly localRoot: string; readonly terminalsFolder: string; }
 export interface LocalExecBridgeFrame { readonly kind: string; readonly requestId?: string; readonly [key: string]: unknown; }
 export interface LocalExecProviderReport { readonly phase: "registered" | "detached" | "hello"; readonly providerId: string; readonly providerCount: number; readonly [key: string]: unknown; }
 export interface LocalExecRefusedReport { readonly cause: "no_providers" | "computer_unknown" | "stale_heartbeat"; readonly site: string; readonly providerCount: number; readonly liveProviderCount: number; readonly everRegistered: boolean; readonly [key: string]: unknown; }
@@ -38,6 +40,8 @@ export function boundedLocalExecVariant(variant: string | undefined): string | u
 
 export class SandLocalExecBridge {
   private readonly providers = new Set<Provider>(); private readonly byId = new Map<string, Provider>(); private readonly pending = new Map<string, FrameQueue>(); private everRegistered = false; private emptySince: number;
+  /** What the last hello said of the computer's system, kept while it rests between streams (the agent's instructions don't come and go with it). */
+  private lastPlatform: LocalExecPlatform = {};
   constructor(private readonly deps: LocalExecBridgeDeps) { this.emptySince = deps.clock.now(); }
   registerProvider(send: (frame: LocalExecBridgeFrame) => void): () => void {
     const provider: Provider = { id: this.deps.randomId?.() ?? randomUUID(), send, registeredAt: this.deps.clock.now(), lastSeenAt: this.deps.clock.now(), hasHeartbeat: false };
@@ -55,16 +59,18 @@ export class SandLocalExecBridge {
   private isLive(provider: Provider, now = this.deps.clock.now()): boolean { return !provider.hasHeartbeat || now - provider.lastSeenAt <= SAND_LOCAL_EXEC_LIVENESS_WINDOW_MS; }
   private liveProviders(): Provider[] { const now = this.deps.clock.now(); return [...this.providers].filter((provider) => this.isLive(provider, now)); }
   private best(candidates: readonly Provider[]): Provider | undefined { let best: Provider | undefined; for (const provider of candidates) { if (best === undefined || localExecProviderRank(provider) > localExecProviderRank(best) || (localExecProviderRank(provider) === localExecProviderRank(best) && provider.lastSeenAt >= best.lastSeenAt)) best = provider; } return best; }
-  listComputers(): LocalExecComputer[] { const now = this.deps.clock.now(); const byComputerId = new Map<string, Provider>(); for (const provider of this.providers) { const id = this.providerComputerId(provider); const existing = byComputerId.get(id); if (existing === undefined || provider.lastSeenAt >= existing.lastSeenAt) byComputerId.set(id, provider); } return [...byComputerId].map(([id, provider]) => ({ id, label: provider.label ?? "this computer", connected: this.isLive(provider, now) })); }
-  activeComputer(): LocalExecComputer | undefined { const provider = this.resolveProvider(undefined); return provider === undefined ? undefined : { id: this.providerComputerId(provider), label: provider.label ?? "this computer", connected: true }; }
+  listComputers(): LocalExecComputer[] { const now = this.deps.clock.now(); const byComputerId = new Map<string, Provider>(); for (const provider of this.providers) { const id = this.providerComputerId(provider); const existing = byComputerId.get(id); if (existing === undefined || provider.lastSeenAt >= existing.lastSeenAt) byComputerId.set(id, provider); } return [...byComputerId].map(([id, provider]) => ({ id, label: provider.label ?? "this computer", connected: this.isLive(provider, now), ...(provider.info?.platform === undefined ? {} : { platform: provider.info.platform }) })); }
+  activeComputer(): LocalExecComputer | undefined { const provider = this.resolveProvider(undefined); return provider === undefined ? undefined : { id: this.providerComputerId(provider), label: provider.label ?? "this computer", connected: true, ...(provider.info?.platform === undefined ? {} : { platform: provider.info.platform }) }; }
   private hasComputerId(id: string): boolean { return [...this.providers].some((provider) => this.providerComputerId(provider) === id); }
   private routeLabel(computerId?: string): string | undefined { if (computerId !== undefined) return [...this.providers].find((provider) => this.providerComputerId(provider) === computerId)?.label ?? computerId; return this.best([...this.providers])?.label; }
   private resolveProvider(computerId?: string): Provider | undefined { const live = this.liveProviders(); return computerId === undefined ? this.best(live) : this.best(live.filter((provider) => this.providerComputerId(provider) === computerId)); }
   getProviderInfo(): LocalExecProviderInfo | undefined { return (this.resolveProvider(undefined) ?? [...this.providers].at(-1))?.info; }
+  /** The computer's system as its last hello said it (none from a Mac's, or before any hello). */
+  userComputerPlatform(): LocalExecPlatform { const info = this.getProviderInfo(); if (info === undefined) return this.lastPlatform; const { localRoot: _root, terminalsFolder: _terminals, ...platform } = info; return platform; }
   submitResponses(batch: { readonly providerId?: string; readonly frames?: readonly LocalExecBridgeFrame[] }): void {
     const provider = this.providerForBatch(batch.providerId);
     for (const frame of batch.frames ?? []) {
-      if (frame.kind === "hello") { if (provider !== undefined && typeof frame.localRoot === "string" && typeof frame.terminalsFolder === "string") { const rehello = provider.info !== undefined; provider.info = { localRoot: frame.localRoot, terminalsFolder: frame.terminalsFolder }; if (typeof frame.computerId === "string" && frame.computerId.length > 0) provider.computerId = frame.computerId; if (typeof frame.label === "string" && frame.label.length > 0) provider.label = frame.label; if (typeof frame.supervised === "boolean") provider.supervised = frame.supervised; if (typeof frame.variant === "string" && frame.variant.length > 0) provider.variant = frame.variant; provider.lastSeenAt = this.deps.clock.now(); const variant = boundedLocalExecVariant(provider.variant); this.deps.report?.provider?.({ phase: "hello", providerId: provider.id, providerCount: this.providers.size, helloDelayMs: provider.lastSeenAt - provider.registeredAt, computerIdPresent: provider.computerId !== undefined, rehello, ...(provider.supervised === undefined ? {} : { supervised: provider.supervised }), ...(variant === undefined ? {} : { variant }) }); } continue; }
+      if (frame.kind === "hello") { if (provider !== undefined && typeof frame.localRoot === "string" && typeof frame.terminalsFolder === "string") { const rehello = provider.info !== undefined; const platform = localExecPlatformOf(frame); this.lastPlatform = platform; provider.info = { localRoot: frame.localRoot, terminalsFolder: frame.terminalsFolder, ...platform }; if (typeof frame.computerId === "string" && frame.computerId.length > 0) provider.computerId = frame.computerId; if (typeof frame.label === "string" && frame.label.length > 0) provider.label = frame.label; if (typeof frame.supervised === "boolean") provider.supervised = frame.supervised; if (typeof frame.variant === "string" && frame.variant.length > 0) provider.variant = frame.variant; provider.lastSeenAt = this.deps.clock.now(); const variant = boundedLocalExecVariant(provider.variant); this.deps.report?.provider?.({ phase: "hello", providerId: provider.id, providerCount: this.providers.size, helloDelayMs: provider.lastSeenAt - provider.registeredAt, computerIdPresent: provider.computerId !== undefined, rehello, ...(provider.supervised === undefined ? {} : { supervised: provider.supervised }), ...(variant === undefined ? {} : { variant }) }); } continue; }
       if (frame.kind === "ping") { if (provider !== undefined) { provider.hasHeartbeat = true; provider.lastSeenAt = this.deps.clock.now(); if (typeof frame.supervised === "boolean") provider.supervised = frame.supervised; } continue; }
       if (typeof frame.requestId === "string") this.pending.get(frame.requestId)?.push(frame);
     }

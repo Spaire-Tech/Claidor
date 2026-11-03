@@ -66,6 +66,8 @@ export interface CurrentSubscription {
    * brings it forward and offers no download, whatever link opened it.
    */
   has_mac_app?: boolean
+  /** The same for the Windows app, on a Windows PC. */
+  has_windows_app?: boolean
   entitlements: {
     tier: TierKey
     weekly_credits: number

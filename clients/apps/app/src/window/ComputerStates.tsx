@@ -24,9 +24,9 @@ import {
 import type { RebuildDriver } from '../core/rebuildDriver'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
-import { openBlankTab } from './blankTab'
 import { classes } from './classes'
 import './ComputerStates.css'
+import { inApp, openBillingWindow, openPending } from './outside'
 import { listOrder } from './Sidebar'
 import { useWatched } from './useStore'
 import {
@@ -985,7 +985,8 @@ export function DiskBanner({
  * on the soft grey, no edge, 14 round; the button in the app's ink, a
  * capsule, its words the ground's. Sending waits under it. Its button opens
  * the page as the access cover's does (the plans page, Apple's or Simeon
- * Labs' page in a new tab; Stripe's card page asked for first). The
+ * Labs' page in a new tab; Stripe's card page asked for first; in the
+ * Windows app the Mac's sheet, a window of the app's own: outside.ts). The
  * credits' line (Usage & Billing) comes with Settings in step 6.
  */
 export function AccessNotice({ store }: { store: AppStore }): ReactNode {
@@ -999,14 +1000,18 @@ export function AccessNotice({ store }: { store: AppStore }): ReactNode {
       window.open(route.url, '_blank', 'noopener')
       return
     }
+    // The Windows app: Stripe's page in a window of its own over this one (`MacBillingPage`); a failure kept as the Mac's (`store.problem`).
+    if (inApp()) {
+      const failed = await openBillingWindow(store, route.flow)
+      if (failed) store.keepProblem(failed)
+      return
+    }
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = openBlankTab()
+    const page = openPending()
     const answer = await store.billingPortal(route.flow)
-    if (answer.url) {
-      if (page) page.location.href = answer.url
-      else window.open(answer.url, '_blank', 'noopener')
-    } else {
-      page?.close()
+    if (answer.url) page.go(answer.url)
+    else {
+      page.drop()
       // As on the Mac: the store keeps the failure (`store.problem`).
       store.keepProblem(answer.message)
     }

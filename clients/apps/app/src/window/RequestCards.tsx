@@ -4,10 +4,12 @@
 // in-chat form, 1Password's fill and connect cards. Read by
 // `src/core/requestCards.ts`.
 //
-// Left out until its step, so no button does nothing: 1Password's Connect,
-// which needs the 1Password app's command-line tool on this computer (the
-// Windows app, step 7). 1Password's Fill asks for the person's OK in the
-// window's own alert where the Mac asks for Touch ID. The hand-off's Take
+// 1Password's Connect needs the 1Password app's command-line tool on this
+// computer: in the Windows app it runs there (step 7d,
+// src/desktop/onePassword.ts); on the web the card has only its X, so no
+// button does nothing. 1Password's Fill asks for the person's OK where the
+// Mac asks for Touch ID: Windows Hello in the Windows app, else the
+// window's own alert (presence.ts). The hand-off's Take
 // over, Open computer and the screen's picture open the computer over the
 // window (step 5b, ComputerView.tsx).
 
@@ -40,12 +42,23 @@ import {
   userFormCard,
 } from '../core/requestCards'
 import type { AppStore } from '../core/store'
+import { desktop } from '../desktop/desktop'
+import {
+  type OnePasswordAccount,
+  type OnePasswordFailure,
+  accountLabel,
+  connectStep,
+  failureMessage,
+  needsSetup,
+  setupURL,
+} from '../desktop/onePassword'
 import { t } from '../l10n'
 import { CardButton, type CardProps, CardShell, GrowingField } from './Cards'
+import { classes } from './classes'
 import { openComputerView } from './ComputerView'
 import { Alert } from './Dialogs'
+import { confirmPresence } from './presence'
 import './RequestCards.css'
-import { classes } from './classes'
 import { useWindowModel } from './windowModel'
 
 type RequestKind = Extract<
@@ -746,9 +759,10 @@ function autoComplete(one: FormField): string {
 /**
  * The 1Password fill card, as the secret card draws its request: the
  * login's name and the site, the agent's reason, Fill with 1Password and Not
- * now, and a lock with where it comes from. Fill asks for the person's OK in
- * the window's alert first, with the words the Mac's Touch ID shows. Once
- * answered, a pill and what went in.
+ * now, and a lock with where it comes from. Fill asks for the person's OK
+ * first, with the words the Mac's Touch ID shows: Windows Hello in the
+ * Windows app, the window's alert where Hello can't ask and on the web.
+ * Once answered, a pill and what went in.
  */
 function CredentialCardView({
   entryId,
@@ -772,6 +786,14 @@ function CredentialCardView({
     run(async () =>
       setRefusal(await store.answerCredentialRequest(entryId, allow, agentId)),
     )
+  // Windows Hello first (Touch ID on the Mac): no fill without it; where it can't ask, the window's alert.
+  const fill = () =>
+    run(async () => {
+      const said = await confirmPresence(credentialConfirmReason(card))
+      if (said === 'confirmed')
+        setRefusal(await store.answerCredentialRequest(entryId, true, agentId))
+      else if (said === 'alert') setAsking(true)
+    })
   const outcome = credentialOutcomeLine(card)
   return (
     <CardShell>
@@ -791,7 +813,7 @@ function CredentialCardView({
               title={t('Fill with 1Password')}
               prominent
               disabled={busy || asking}
-              onClick={() => setAsking(true)}
+              onClick={fill}
             />
             <CardButton
               title={t('Not now')}
@@ -843,10 +865,12 @@ function CredentialCardView({
 
 /**
  * The 1Password connect card: "Connect 1Password", the agent's reason, what
- * connecting makes (the Mac's paragraph), and the X, a decline. Connect is
- * the Mac's alone for now: it asks the person's 1Password app on that
- * computer for the shared vault and its key. Once answered, "Connected"
- * with the account, or "Dismissed".
+ * connecting makes (the Mac's paragraph), and the X, a decline. In the
+ * Windows app, Connect asks the person's 1Password app on this PC for the
+ * shared vault and its key (with a picker first when they have several
+ * accounts), and How to set it up when its command-line tool isn't ready;
+ * on the web the card has only its X. Once answered, "Connected" with the
+ * account, or "Dismissed".
  */
 function OnePasswordConnectCardView({
   entryId,
@@ -854,7 +878,7 @@ function OnePasswordConnectCardView({
   card,
   store,
 }: ViewProps<OnePasswordConnectCard>) {
-  const [, run] = useBusy()
+  const [busy, run] = useBusy()
   const status = connectStatusLine(card)
   return (
     <CardShell>
@@ -890,9 +914,115 @@ function OnePasswordConnectCardView({
           )}
         </div>
       )}
+      {card.state === 'open' && desktop() && (
+        <OnePasswordConnecting
+          busy={busy}
+          run={run}
+          connect={(made) =>
+            store.connectOnePassword({ ...made, entryId, agentId })
+          }
+        />
+      )}
       {card.state === 'connected' && card.account && (
         <div className="ask-said">{card.account}</div>
       )}
     </CardShell>
+  )
+}
+
+/**
+ * Connect in the Windows app (`OnePasswordConnectCardView.connect`): the
+ * accounts first (the picker when there are several: pick, press Connect
+ * again), then the vault and its key, then the key to the computer.
+ * "Connecting…" while it goes; 1Password's own sentence, or the Mac's, in
+ * red under the buttons; How to set it up when the tool isn't ready.
+ */
+function OnePasswordConnecting({
+  busy,
+  run,
+  connect,
+}: {
+  busy: boolean
+  run: (work: () => Promise<void>) => void
+  connect: (made: {
+    token: string
+    vaultId: string
+    vaultName: string
+    accountEmail: string
+  }) => Promise<string | undefined>
+}) {
+  const [accounts, setAccounts] = useState<OnePasswordAccount[]>([])
+  const [chosen, setChosen] = useState<string>()
+  const [failure, setFailure] = useState<OnePasswordFailure>()
+  const [refusal, setRefusal] = useState<string>()
+  const press = () =>
+    run(async () => {
+      const host = desktop()
+      if (!host) return
+      setFailure(undefined)
+      setRefusal(undefined)
+      const step = await connectStep(host, accounts, chosen)
+      setAccounts(step.accounts)
+      if (
+        chosen === undefined ||
+        !step.accounts.some((one) => one.id === chosen)
+      )
+        setChosen(step.accounts[0]?.id)
+      if (step.kind === 'failed') setFailure(step.failure)
+      else if (step.kind === 'made') setRefusal(await connect(step.made))
+    })
+  const message = failure ? failureMessage(failure) : refusal
+  return (
+    <>
+      {accounts.length > 1 && (
+        <span className="form-select one-password-accounts">
+          <select
+            aria-label={t('Connect 1Password')}
+            value={chosen ?? accounts[0]?.id}
+            disabled={busy}
+            onChange={(event) => setChosen(event.target.value)}
+          >
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {accountLabel(account)}
+              </option>
+            ))}
+          </select>
+          <svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true">
+            <path
+              d="M1.5 4.25 4 1.75l2.5 2.5M1.5 7.75 4 10.25l2.5-2.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      )}
+      <div className="card-buttons">
+        <CardButton
+          title={busy ? t('Connecting…') : t('Connect')}
+          prominent
+          disabled={busy}
+          onClick={press}
+        />
+        {failure && needsSetup(failure) && (
+          <CardButton
+            title={t('How to set it up')}
+            onClick={() =>
+              void desktop()
+                ?.call('openExternal', setupURL)
+                .catch(() => {})
+            }
+          />
+        )}
+      </div>
+      {message && (
+        <div className="ask-refusal" role="alert">
+          {message}
+        </div>
+      )}
+    </>
   )
 }

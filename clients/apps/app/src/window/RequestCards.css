@@ -103,6 +103,12 @@
   fill: currentColor;
 }
 
+/* 1Password's accounts in the Windows app (the Mac's menu picker): as wide as its longest, 360 at most. */
+.form-select.one-password-accounts {
+  align-self: flex-start;
+  max-width: 360px;
+}
+
 /* Why the computer didn't take it: 13, in red. */
 .ask-refusal {
   font-size: 13px;

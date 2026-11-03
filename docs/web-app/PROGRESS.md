@@ -20,7 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
-| 7. Windows | Not started |
+| 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
 
@@ -34,8 +34,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app` | The session, as above |
 | 1 November 2026 | Its built files are committed into `clients/apps/web/public/app-next`, as the old app's are, so the website's deploy does not change (Vercel builds only `web`). `pnpm test` fails when they are not the build of the source | The session, as above |
 | 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
-| 1 November 2026 | The web app keeps no copy of the agents and chats on the device, as the Mac does on disk (`SavedChats`): it shows the server's copy (`chats/agents`, `chats/lines`) while the computer is away, which the server keeps for exactly that. A browser's storage would hold the person's messages on a shared or public computer | The session, as above |
-| 1 November 2026 | Signed out, the web app goes straight to the website's own sign-in page and comes back (`/login?return_to=…`), as the old web app does: the website's page is the gate. The Mac's sign-in screen comes with Windows (step 7) | The session, as above |
+| 1 November 2026 | The web app keeps no copy of the agents and chats on the device, as the Mac does on disk (`SavedChats`): it shows the server's copy (`chats/agents`, `chats/lines`) while the computer is away, which the server keeps for exactly that. A browser's storage would hold the person's messages on a shared or public computer (Step 7: the Windows app keeps them on the PC, as the Mac; see below.) | The session, as above |
+| 1 November 2026 | Signed out, the web app goes straight to the website's own sign-in page and comes back (`/login?return_to=…`), as the old web app does: the website's page is the gate. The Mac's sign-in screen comes with Windows (step 7) (Step 7: done; see below.) | The session, as above |
 | 1 November 2026 | What the person has typed and not sent (the Mac's drafts, kept on disk) is kept in the tab's memory only, and goes with the tab: for the same reason as the chats | The session, as above |
 | 1 November 2026 | The web app has no catalogue of its own: it reads the Mac's two String Catalogs, made into tables by a script, so a translation is written once, for the Mac, and the web app has it. The screens read the Mac app's catalogue and the code translated from the core reads the core's, because the two say some English differently ("Done": "OK" on a Mac screen, "Terminé" in the core) | The session, as above |
 | 1 November 2026 | A message that is one link is drawn as the Mac's card with the site's icon, its name and the address, but not the page's title, which the Mac reads from the page. A web page may not read another site, and a route on Simeon's server that read it would hand the server every link the person opens | The session, as above |
@@ -49,18 +49,18 @@ file and the code disagree, the code is right and this file is fixed.
 | 1 November 2026 | "/" offers the agent's skills now; each of the app's actions ("Org Chart", "Chat Settings", "Settings: General", the themes…) joins it with the screen it opens (steps 4 to 6), so the list never offers what does nothing (Step 6: done; see below.) | The session |
 | 1 November 2026 | Excel workbooks (.xlsx) are read by a small reader of our own (`src/core/xlsx.ts`): the browser unzips them itself and the reader takes the first sheet, each value written as its number format says. No library: SheetJS's npm copy has known holes, and the other readers are either days old with unfamiliar dependencies or built for servers. The old binary .xls is not read; it says "Preview not available" with Download. The founder: "keep going on excel" | The session |
 | 1 November 2026 | The sidebar's pins and sections live on the computer, in its settings (`pinnedAgentIds`, `sidebarSections`), as the Mac keeps them, so the Mac and the web app show the same; which sections are folded is kept in the browser (`simeon.sidebar.foldedSections`, the Mac's own name for it): which sections, never names | The session |
-| 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back | The session |
+| 1 November 2026 | Several rows are picked with ⌘-click on a Mac and Control-click on Windows and Linux (each system's own way), and ⇧-click. Control-Tab, which walks the Mac's rows, is left out in a browser, which switches tabs with it; the Windows app (step 7) can take it back (Step 7: done; see below.) | The session |
 | 1 November 2026 | The row's menu leaves out Edit Profile until the agent's pane (step 4), so it never offers what does nothing (as "/" does) (Step 4: done; see below.) | The session |
 | 1 November 2026 | The confirmations and alerts are the window's own, drawn as the Mac's (the mark, the title and words, Cancel and Delete in red), not the browser's `confirm()`, which can't make Delete red, says the site's address over it, and stops the page | The session |
 | 1 November 2026 | The sidebar's width and whether it is folded are kept in the browser under the Mac's names (`simeon.sidebar.width.320`, `simeon.sidebar.collapsed`), as the Mac keeps them on each Mac: each computer its own. ⌘B on a Mac, Control-B on Windows and Linux. The window is never narrower than 512 (the rail and the chat's 424), as the Mac's | The session |
 | 1 November 2026 | Rows, pins and sections are dragged with the browser's own dragging, in a kind of their own, so the message field never takes a dragged row as words or files | The session |
 | 1 November 2026 | Sign Out on the web drops this tab's pair (on the server and here), then goes to the website's own sign-out (`/v1/auth/logout`), which ends its cookie; otherwise the next visit would sign straight back in from it | The session |
-| 1 November 2026 | The access cover's button opens its page (the plans page, Apple's, Simeon Labs', or Stripe's card page asked for first) in a new tab, and the cover reads the access, the plan and the agents again when the tab comes back to the front. The Mac's charge after Stripe's card page (`billing/settle`) is not made: the web can't tell when that page was finished (the Mac's sheet comes back on the app's own link) | The session |
+| 1 November 2026 | The access cover's button opens its page (the plans page, Apple's, Simeon Labs', or Stripe's card page asked for first) in a new tab, and the cover reads the access, the plan and the agents again when the tab comes back to the front. The Mac's charge after Stripe's card page (`billing/settle`) is not made: the web can't tell when that page was finished (the Mac's sheet comes back on the app's own link) (Step 7: the Windows app makes it, after Stripe's window; see below.) | The session |
 | 1 November 2026 | The wordmark's face (Suravaram, SIL Open Font License) ships with the web app, its licence served beside it (`/app-next/fonts/Suravaram-OFL.txt`) | The session |
 | 2 November 2026 | **Windows is the goal.** The web app is the means: every choice in it is weighed for the Windows app (Electron around these same files), and what a choice becomes there is listed under "For Windows" below, so step 7 starts from a list, not from memory | The founder: "remember that we building for window. Window is the final goal" |
 | 2 November 2026 | The secret card says Saved only once the computer's copy says it kept the secret (`secretProvided`), as the iPhone does (the Mac says it as soon as the command returns). What is pasted, or typed in a form's masked field, is left to the browser, read only when sent and emptied then, never copied into the page's HTML; the browser and the password managers are asked not to offer the person's own logins there, which would go to the agent's computer | The session |
-| 2 November 2026 | Where the Mac asks for Touch ID (1Password's Fill, a checkout's Allow), the web asks in the window's own alert, with the words the Mac's Touch ID shows: a web page has no Touch ID of its own (WebAuthn would need the server to keep a key for each person), and the alert keeps the Mac's second, deliberate step. A checkout's Allow then carries no device approval, so Link asks the person in its own app, as the Mac does when there is none. In the Windows app: Windows Hello, decided at step 7 | The session |
-| 2 November 2026 | 1Password's Connect is left out on the web: it runs 1Password's command-line tool on the person's computer to make the shared vault and its read-only key, which a page can't. The card shows the agent's reason, the Mac's paragraph on what connecting makes, and the X. It comes back in the Windows app (step 7) | The session |
+| 2 November 2026 | Where the Mac asks for Touch ID (1Password's Fill, a checkout's Allow), the web asks in the window's own alert, with the words the Mac's Touch ID shows: a web page has no Touch ID of its own (WebAuthn would need the server to keep a key for each person), and the alert keeps the Mac's second, deliberate step. A checkout's Allow then carries no device approval, so Link asks the person in its own app, as the Mac does when there is none. In the Windows app: Windows Hello, decided at step 7 (Step 7: done; see below.) | The session |
+| 2 November 2026 | 1Password's Connect is left out on the web: it runs 1Password's command-line tool on the person's computer to make the shared vault and its read-only key, which a page can't. The card shows the agent's reason, the Mac's paragraph on what connecting makes, and the X. It comes back in the Windows app (step 7) (Step 7: done; see below.) | The session |
 | 2 November 2026 | What needs the computer's screen comes with it in step 5: the hand-off's Take over and Open computer, a Link checkout's Review order and its picture opening the checkout, the bank check's Open the computer. Until then they are left out, never a button that does nothing; a Shop checkout's Review order is the store's page, in a new tab, as on the Mac (Step 5: done; see below.) | The session |
 | 2 November 2026 | An app card's Connect waits for step 6, with the founder's consent sheet (`ConnectConsent`) and the app's sign-in, built once there for the cards, the rows and the pages. Until then the card says Connected or Coming soon, and otherwise has no button (Step 6: done; see below.) | The session |
 | 2 November 2026 | Pages a card opens (a pull request, Link's and Shop's pages, a shop's page) open in a new tab, without `opener` or the referrer. Slack's and GitHub's linking page opens in a tab opened blank at once, so the browser lets it open while the computer is asked, then sent to the page, without `opener` (that page may be told the app's address, its origin only); the card asks again whether it is linked when the tab comes back to the front | The session |
@@ -96,7 +96,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | A channel's token is pasted in a masked field left to the browser, read once when sent and emptied, never in the page's HTML; the password managers are asked not to offer the person's logins there (the secret card's way, 3b) | The session |
 | 2 November 2026 | Removing a group's member asks in the window's alert, its buttons waiting while the change goes, as the Mac's alert disables them | The session |
 | 2 November 2026 | Search reads its three gates (the computer's search, the agent network, the chat's channels) together as it opens; the Mac reads them one after another. The same answers, sooner | The session |
-| 2 November 2026 | A starter pack reaches the web app on its own address with the pack's id (`app.simeonlabs.com/app-next/?pack=<id>`, `/app/` after the move), read once the window is up (signed in, past the first run) and taken out of the address; the sign-in's `return_to` and the first run keep it. The website is not changed (Open questions). In the Windows app it is the `simeon://` link | The session |
+| 2 November 2026 | A starter pack reaches the web app on its own address with the pack's id (`app.simeonlabs.com/app-next/?pack=<id>`, `/app/` after the move), read once the window is up (signed in, past the first run) and taken out of the address; the sign-in's `return_to` and the first run keep it. The website is not changed (Open questions). In the Windows app it is the `simeon://` link (Step 7: done; see below.) | The session |
 | 2 November 2026 | The org chart zooms with the wheel about the pointer, and with a pinch (the browser's Control-wheel) five times as fast; the page never zooms over it. A drag from a node pans and opens no card, as the window's. A new agent's node appears in its place (the Mac's fades in) | The session |
 | 2 November 2026 | The starter pack's sheet is 720 wide, or the window less 16 a side; Return adds from the sheet itself, a button with the keys does its own (3d's way). A pack that can't be read says the server's sentence, or "Simeon can't be reached…" for a machine's error; a team not made says this Add's last refusal (the Mac shows any problem the store holds) | The session |
 | 2 November 2026 | The website's policy for the app's window lets it connect to the API's `wss` address (the screen's stream goes through the API's own proxy, as production has it) and to `https://*.elevenlabs.io` and `wss://*.elevenlabs.io` (the call): connections only, no script of theirs | The session |
@@ -112,8 +112,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | The ring and the hang-up are the core's samples played with the browser's audio at the Mac's loudness; the waveform follows the Mac (random bars scaled by the voice's activity). No environment on the web: calls are on, the Mac's default. Leaving the page with a call on ends it. No Agent › Call menu (a page has none). A stand-in voice exists only for the tests and a development build | The session |
 | 2 November 2026 | Under a call's lines or an exchange, the chat, its head and its field are inert and files dropped refused, as the Mac's covers are modal; the cover takes its Escape, so find stays open | The session |
 | 2 November 2026 | The theme chosen (System, Light, Dark, in Settings › General, ⌘K or "/") is kept in the browser under the Mac's name (`simeon.theme`) and set on the page's root (`data-theme`). The stylesheets keep their dark colours under `prefers-color-scheme: dark`; a build step (`scripts/theme-css.mjs`) makes each such rule follow the theme chosen, its weight unchanged. What the page draws by the scheme itself (a dark logo) asks `useDarkScheme()`, never the system. A change fades over 0.3 s (the browser's view transition), none with Reduce Motion | The session |
-| 2 November 2026 | Settings has no Updates page: it is the Mac's alone (Sparkle), and a web page is always the latest | The session |
-| 2 November 2026 | Computer's second group, "Your Computer" (Execution on Local Computer and the team's ceiling, hardware security keys, Commands Allowed Once), is left out: it is the Mac's own hands on the person's computer, which a browser doesn't have; so are the team's ceiling read and the `localToolPermission` and `webauthnProxyEnabled` pushes. It comes back with the agent's hands on the PC | The session |
+| 2 November 2026 | Settings has no Updates page: it is the Mac's alone (Sparkle), and a web page is always the latest (Step 7: the Windows app has it; see below.) | The session |
+| 2 November 2026 | Computer's second group, "Your Computer" (Execution on Local Computer and the team's ceiling, hardware security keys, Commands Allowed Once), is left out: it is the Mac's own hands on the person's computer, which a browser doesn't have; so are the team's ceiling read and the `localToolPermission` and `webauthnProxyEnabled` pushes. It comes back with the agent's hands on the PC (Step 7: see below.) | The session |
 | 2 November 2026 | Help & support has no "Simeon Help Center" row: on the Mac it does nothing (`HelpSupport.openHelpCenter() {}`, kept by the founder on 22 October 2026 though it points nowhere yet), and the web never shows a button that does nothing. It comes back when it points somewhere | The session |
 | 2 November 2026 | An app's sign-in opens in a tab of the browser's own, not a sheet: a tab opened blank on the click (a browser lets a page open one only then: the consent's Connect, Reopen, the setup page's Add, Add Another Account), handed to its own sign-in (`holdingTab`, `signIn(…, { tab })`), then sent to the page once the computer gives it, http or https only. Asked every 2 s up to 150 times, as the Mac. A Connect that leads to a form first opens no tab (`{ signIn: false }`) | The session |
 | 2 November 2026 | The app closes a sign-in's tab only while it may (blank, or on the web app's own pages); on another site the tab is left to its page. Keeping its `opener` would let the window close it, but would also let a maker's page send the Simeon tab itself to a page of its own (measured: reverse tabnabbing). The web app's return page closes its own tab; the server's "Connected, you can close this tab" page stays open (Open questions) | The session |
@@ -159,6 +159,89 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | `?api=` in the page's address is followed on a page served from this computer (a developer's, the checks' stand-ins) and elsewhere only to Simeon Labs' own servers over https, so a link can't send a person's window to another server; the return page follows it only on this computer | The session |
 | 2 November 2026 | Delete Account is left out of the account's page, as on the Mac (the iPhone's alone, by Apple's rule for apps that make accounts) | The session |
 | 2 November 2026 | The app's tests stay without a page library (no new dependency): the pages' clicks and typing are checked in Chromium by the step's scripts, their state by the tests | The session |
+| 2 November 2026 | The Windows app lives in `windows/`, beside `mac/` and `ios/`, with its own npm lockfile (as `runner/`), so Electron stays out of the web's installs (Vercel, CI). Named in CLAUDE.md's table | The session |
+| 2 November 2026 | Its code is written fresh by Simeon Labs in TypeScript, from the Mac's Swift and the core, as the web app is. Nothing is taken from the retired Electron app's `desktop/source` (`desktop/NOTICE.md`); its contracts (routes, link forms, port 8787) are read as facts only | The session |
+| 2 November 2026 | It loads the committed web build itself (`clients/apps/web/public/app-next`), copied into the app when it is packaged and served at `app://simeon/app-next/` (a standard, secure scheme: a real origin); anything else answers 404. No second build: the one `pnpm test` checks is the one Windows ships | The session |
+| 2 November 2026 | The server is `https://api.simeonlabs.com`, told to the page by the app; `--api=` or `SIMEON_API`, the Mac's two ways, are followed only to this computer or to Simeon Labs' own servers over https (`windows/src/main/facts.ts`) | The session |
+| 2 November 2026 | The server lets `app://simeon` call the API with the window's headers, never a cookie: a rule of its own (`DESKTOP_APP_ORIGINS`, `server/simeon/app.py`), not a Render setting | The session |
+| 2 November 2026 | Electron 44.10.1 (Chromium 152), electron-builder 26.18.0 and electron-updater 6.8.11, exact versions in the lockfile | The session |
+| 2 November 2026 | The installer is electron-builder's NSIS, for the person only (no administrator), in `%LOCALAPPDATA%\Programs\Simeon`, with Start menu and desktop shortcuts; the AppUserModelID is the Mac's bundle id, `com.simeonlabs.simeon`. x64 first, arm64 later | The session |
+| 2 November 2026 | Updates are electron-updater's, from a feed through the server, as the Mac's appcast: its `latest.yml`, beside the versions' folders, names `<version>/Simeon-Setup-<version>.exe`, and the server 302s it (`/desktop/download/windows/latest.yml`), the installers and the blockmaps to the bucket's `releases/win32-x64/`; one range a request | The session |
+| 2 November 2026 | `simeon://` is the Windows app's scheme too, so the server changes nothing (`back: "simeon"` everywhere) | The session |
+| 2 November 2026 | The app names itself `windows-<version>+<build>`. The server knows a Windows app user (`has_windows_app`) beside a Mac app user and apart, so each platform's browser is sent back to its own app after a checkout, and a Mac app user on a PC still gets the download | The session |
+| 2 November 2026 | Chrome's cookies and the security-key signer: nothing to port, as neither is built on the Mac | The session |
+| 2 November 2026 | The website's Download for Windows waits for the first published release: a button with no file behind it would do nothing | The session |
+| 2 November 2026 | The sign-in runs in the page, as the web's other calls: `fetch` from `app://simeon`, the browser opened by the app, the pair in the app's sealed values (`safeStorage`). Nothing of it in the main process | The session |
+| 2 November 2026 | The Windows app keeps the agents and chats on the PC, as the Mac (`SavedChats`), so a launch shows them at once: plain JSON in `%LOCALAPPDATA%\Simeon\saved-chats`, not the roaming `%APPDATA%`, which a company's roaming profile copies at every sign-in. The web's decision of 1 November stays for the web | The session |
+| 2 November 2026 | A page can't read a file at once: the list, the layout and the catalogue are read as a sign-in starts, a chat as it opens or is previewed, each kept in memory after. The window going behind is the page's `blur` or its hiding: what changed is kept then; quitting keeps it and waits for the files | The session |
+| 2 November 2026 | A report says "Windows", the version as "0.1.0 (7)", the PC's maker and model from Windows' registry, and Windows by its build ("Windows 11 (10.0.26100)"); About's Copy version info says "OS: win32", as the Mac's "darwin" | The session |
+| 2 November 2026 | With no language chosen, the page starts in Windows' own (`app.getPreferredSystemLanguages()`), not Chromium's | The session |
+| 2 November 2026 | On the sign-in screen Return is Continue to sign in (the Mac's default button) and Escape is Cancel only while it waits; the spinner is the Mac's eight spokes; a long line under the buttons goes past the block, the buttons keeping their 40 | The session |
+| 2 November 2026 | Enter on the button the keys are on presses that one (Windows' way: Tab to Sign up, Enter signs up); Return with no button focused is still Continue to sign in | The session, after the review (N2) |
+| 2 November 2026 | Relaunch starts the app without the `simeon:` links of this one's command line (the Mac's relaunch carries no link), so a pack or a sign-in's code Windows started the app with is not handed over again | The session, after the review (S1) |
+| 2 November 2026 | A delete or a rename of the kept chats is tried again while Windows holds a file a moment (Defender, the indexer, a backup), five times; and with no sign-in kept at launch, any copy left is forgotten, so none outlives its sign-in (the Mac relies on sign-out alone) | The session, after the review (S2) |
+| 2 November 2026 | The page's reads of the kept copy wait for its own writes and forgets before them (the Mac's one queue) | The session, after the review (N1) |
+| 2 November 2026 | In Windows' contrast themes the logo and the button's mark keep the theme's own text colours, and the logo shows at once | The session, after the review (N8) |
+| 2 November 2026 | The logs are one line a line; `voice-call.log` past 5 MB at a launch keeps its newest 1 MB (the Mac never trims it; on Windows the data folder roams), its echo to stderr cut to 16 KB | The session, after the review (N6) |
+| 2 November 2026 | The call's own window never signs in nor keeps the chats. A Reload keeps the chats on the PC: only a sign-out, an ended sign-in or another account's copy forgets them. The sign-in screen is its own layer, under the Deep Links dialog | The session |
+| 2 November 2026 | The page decides what is told and in which words (the core's code, as the web app holds the store and the catalogues); the main process shows it with Windows' parts and keeps no account state | The session |
+| 2 November 2026 | The Mac's menu keys are the page's own, not an Electron `Menu`: the computer's screen takes every key while it holds them, as on the Mac, and the window has no menu bar to draw a menu in. The cost: a page that hangs takes none (Alt-F4 still hides the window, the tray still quits) | The session |
+| 2 November 2026 | The Mac's app menu items without keys are in the tray's menu (Windows has no app menu bar): Call <name>, About Simeon, Check for Updates…, each only signed in. New Agent, not New chat (`Features.groupChats` is off) | The session |
+| 2 November 2026 | Control-Q quits, as the Mac's ⌘Q (Ctrl+Q in the tray's menu); Alt-F4, Windows' own, hides the window as its × does | The session |
+| 2 November 2026 | The window's focus is the main process's (the BrowserWindow's focus and blur), as the Mac reads the window's key state, not `document.hasFocus()` | The session |
+| 2 November 2026 | The taskbar's number is the overlay's, in full (never "99+"); a hidden window has no taskbar button, so the tray's mark takes the Dock's red dot while anything is unread. No taskbar flash: the Mac doesn't bounce its Dock icon. The overlay's description is the number alone: no catalogue sentence fits | The session |
+| 2 November 2026 | The call's window isn't animated as it grows (Electron animates `setBounds` on macOS only); it is clear, so only its card shows the change | The session |
+| 2 November 2026 | Reload (Control-R) keeps a call that is on and what was typed, as the Mac's ⌘R (Store.swift's `detach(endingCall:)`) | The session, after the review (S1, S2) |
+| 2 November 2026 | The Mac's zoom keys: Control-= or Control-+, Control--, Control-0, by 0.1 from 50 % to 300 %, not kept, taken before anything in the window. Chromium zooms every window of the app alike, so the call's page draws itself back at 100 % | The session, after the review (S3) |
+| 2 November 2026 | Windows' own close on the call's window (Alt-F4) asks the call, as the Mac's `performClose`: a call that is on ends, an ended one is dismissed | The session, after the review (S4) |
+| 2 November 2026 | The call's window's page is held to its own five calls (`bridge.ts`'s `limit`): the kept values read empty there, and any other call is refused | The session, after the review (S5) |
+| 2 November 2026 | Where a screen says it has touch, the call's window takes the card's shape, so taps reach the card and all else goes through; with a mouse alone it follows the pointer and keeps the Mac's shadow | The session, after the review (S7) |
+| 2 November 2026 | The main process holds the `simeon://` links until the main window's page asks for them (`takeLinks`), then sends each as it comes; a page that reloads gets what came meanwhile | The session |
+| 2 November 2026 | The Deep Links dialog is drawn in a root of its own, over everything the window draws but the call's banner, so it shows signed out too, as the Mac's | The session |
+| 2 November 2026 | A plugin's and a pack's link wait until the signed-in window is drawn: signed in, past the first run and past the access cover | The session |
+| 2 November 2026 | A connector's sign-in opens in the default browser and is asked every 2 s, 150 times, whatever comes back to the loopback (the browser's tab can't be watched); `simeon://connected` and `simeon://mcp-oauth` are the Mac's sheet closing on them. Nothing it added is taken back unless the server's page says it failed or the maker refused | The session |
+| 2 November 2026 | A `simeon://mcp-oauth` answer is finished only for a sign-in this app named to the server, signed in, within 10 minutes, once; any other is dropped without a word, and a refusal says "<app> didn't connect. Try again.", never the link's own words | The session, after the review (S2) |
+| 2 November 2026 | The loopback listens on 127.0.0.1 and ::1 (Edge and Chrome try ::1 first for `localhost`), port 8787: either taken is "busy", ::1 skipped only on a PC with no IPv6. It is let go when the sign-in ends or is replaced, when its page reloads or goes, on sign-out, at quit, or after 10 minutes at most | The session, after the review (S1, S3) |
+| 2 November 2026 | Stripe's pages open in a window of the app's own, modal over the main one as the Mac's sheet: no preload and no permission, its own storage kept between openings (`persist:simeon-billing`), https and the API only, its title the page's site. It closes on any `simeon:` link, which never reaches Windows; the default browser when it can't be made (no charge then) | The session |
+| 2 November 2026 | A new window's page from Stripe's window goes to the default browser only when it is https and the person pressed something there within the last second, one per press | The session, after the review (S4) |
+| 2 November 2026 | Windows Hello through Windows PowerShell 5.1's `UserConsentVerifier`, the reason in the environment, never in the script or its command line; one ask at a time, three minutes at most. Verified alone confirms; the window's alert asks only when Hello said before asking that it isn't there, or PowerShell couldn't start; anything else is cancelled | The session, after the review (B2) |
+| 2 November 2026 | A checkout's Allow hands Link the approval (`confirmed`, no method, as the Mac's passcode) only after Windows Hello; after the window's alert it hands none, as on the web, and Link asks in its app. The Mac's "no lock at all: the tap counts" is not taken: a PC without Hello may still have a password (Open questions) | The session |
+| 2 November 2026 | The clipboard is Electron's, through the app: written whether or not the window is in front, read for the main window's page only. With no change count, the same words copied again count as no change | The session |
+| 2 November 2026 | 1Password's tool is `op.exe` from folders no other account can write to: both Program Files' `1Password CLI`, then the person's winget and Scoop folders, then PATH's absolute folders; never ProgramData or the current folder. One run at a time, only an account it just listed connected; How to set it up shows for "no accounts" in every language | The session, after the review (B1) |
+| 2 November 2026 | Downloads keep Electron's own save dialog (Windows' Save As), untouched. The pages' `window.open` with a known address (the shops' pages, search's links, Legal) stay as they are: the frame sends them to the default browser | The session |
+| 2 November 2026 | The page's menus stay its own in the Windows app (a routine's, Connectors' categories, the account menu): Electron's `Menu.popup` has none of their logos, submenus, badges or figure rows | The session |
+| 2 November 2026 | Settings › Updates is the Mac's page, its group "Simeon": the Mac's says "Simeon for Mac", and neither catalogue has "Simeon for Windows". No sentence of it names the Mac | The session |
+| 2 November 2026 | Only a signed release updates itself (packaged, on Windows, with a release's build number and its signers, both written by `release.mjs`); an unsigned build, released or not, never asks, as the Mac's build without Sparkle's key. A stand-in feed on this computer (`SIMEON_UPDATES_FEED`) for the checks | The session, after the review (S1) |
+| 2 November 2026 | Both switches on at first: the daily check downloads a release, and it is installed as Simeon quits, or at the next launch, before the window, when Windows ended Simeon with no quit (shutdown, sign-out). The Mac starts with Sparkle's (downloads off) because Sparkle shows a window of its own | The session, after the review (S6) |
+| 2 November 2026 | A look (the page opening, Check Now) downloads nothing; only the daily check downloads by itself, a day after the last answer (the first 10 s after launch, a failed one an hour later); Update Now always does. A failed check says nothing, and a release found shows no window or notification: the dot beside Updates and the page say it | The session |
+| 2 November 2026 | "Last checked 0 seconds ago." for a moment past (Foundation's formatter says "in 0 seconds" there) | The session |
+| 2 November 2026 | An installer runs only when Windows' own check (`scripts/lib/signature.mjs`: Windows' PowerShell, no shell) says it is validly signed by one of the signers, each a certificate's whole subject, every part compared; refused on any error. Asked as the download ends and again just before it runs | The session, after the review (S2, S3) |
+| 2 November 2026 | A release is published signed only, from Windows only, its installer checked as the installed app checks it. The signers are written in `windows/scripts/lib/release.mjs`, empty until the certificate exists, with the rename's rule beside them; the signer is the legal company (CLAUDE.md; `lib/release.mjs`'s `company`) | The session, after the review (S3, S4) |
+| 2 November 2026 | The workflow (`.github/workflows/windows.yml`, by hand) builds a release and never publishes; a signed one only from main, through the `windows-release` environment, which alone holds the certificate | The session, after the review (S10) |
+| 2 November 2026 | The icon is the Mac's tile, its own pictures at the sizes it has, 24 and 48 averaged from its 256; made by a script with nothing but Node, its output committed | The session |
+| 2 November 2026 | Check for Updates… is 7c's tray item and its event (`checkForUpdates`), named once; offered only in a build that updates itself (`updatesItself`: a signed release) and signed in; Settings › Updates opens and looks. Signed out the tray has Open Simeon and Quit Simeon only; the daily check is the main process's anyway | The session |
+| 2 November 2026 | Relaunch and Update Now are one path: each asks the app to quit and open again, and the installer starts only after the page's and every part's work. A release waiting is installed as Simeon quits; then the installer opens Simeon (`--force-run`) and the app doesn't, so the two never race; else the app opens a new instance itself, with no link | The session |
+| 2 November 2026 | A report reads `updates.log` too (its last 256 KB, after the page's two logs); the page can't write it | The session |
+| 2 November 2026 | Windows' caption buttons follow the theme: the page tells the app its look at start, at each theme chosen and when the system turns light or dark (`src/desktop/windowLook.ts`) | The session |
+| 2 November 2026 | The agent's hands: the loop is the page's, the stream the main process's. The page has the gateway, so it dials, waits while the computer rests and asks again, as the Mac's `run`; the main process reads the stream it is handed and runs every request. The address and headers are handed over per stream and kept in memory only; no second credential (the Mac's way: no daemon) | The session |
+| 2 November 2026 | Commands run in PowerShell 7 (`pwsh.exe` in PATH's absolute folders or `%ProgramFiles%\PowerShell\7`), else Windows PowerShell 5.1 by its full path; not cmd, not Git Bash | The session |
+| 2 November 2026 | The state carried from one command to the next is the folder, the environment, functions and aliases (not plain variables, as zsh carries only exports). The command and the state go in on the shell's input, never its command line, which other programs can read on Windows; nothing of it is written to disk | The session |
+| 2 November 2026 | The state comes back after a marker made for each run, which no variable a command lists holds; the app takes the state after its last occurrence, at most 16 MiB, else it is output | The session, after the review (S3) |
+| 2 November 2026 | Windows' places that hold keys are the Mac's list translated (`windows/src/main/hands/sensitivePaths.ts`), with `Vault` and `Crypto` beside `Credentials` and `Protect`, `_netrc`, `%APPDATA%\gcloud`, the registry's hives (`System32\config`) and `.docker` whole; refused whatever the setting, before anything runs, in the Mac's sentence saying "this PC" | The session |
+| 2 November 2026 | Also refused: Arc's folder, Windows' cookie stores and, installed, the app's own folder (per user, so writable by any of the person's programs) | The session, after the review (S5, N6) |
+| 2 November 2026 | Two checks the Mac doesn't make: a command whose folder (the one asked for, or where the shell is) is such a place is refused, as written and at its real path (links, junctions, short names); a file's real place is checked again | The session, after the review (S1) |
+| 2 November 2026 | A command's words are read as Windows reads a path before they are matched (`\\?\`, this PC's own shares, short names, the old junctions, streams, `..`, Windows' variables, names relative to the folder it runs in). What no guard on a command's words can catch is said in the file's header: names built or code fetched while it runs, wildcards, links it makes, secrets reached through Windows' interfaces, not paths. The Mac's guard has the same limits | The session, after the review (S2) |
+| 2 November 2026 | The setting, the commands allowed once and the log (`local-exec-daemon.log`, the Mac's name) are in the app's data folder, not `~\.simeon`: there is no Electron app to share with, and the folder is itself refused | The session |
+| 2 November 2026 | The setting and the commands allowed once are signed (HMAC-SHA256, a key sealed by `safeStorage`, `local-tool-key.sealed`), read once when the app starts and then held; a file that doesn't verify reads as "Ask every time", no ceiling, no answers. It stops a plain edit of the files, not a program of the same person (Open questions) | The session, after the review |
+| 2 November 2026 | The root is the Mac's: its four variables, else the home folder (so `%USERPROFILE%\terminals`, as the Mac's `~/terminals`) | The session |
+| 2 November 2026 | Only the main window may drive the hands; the address only Simeon Labs' servers over https, the app's own server, or this computer (only when the app's server is on it); only the gateway's three headers. The stream and the answers go through Electron's `net.fetch`, with Windows' proxy settings and certificates | The session (this computer: after the review, N2) |
+| 2 November 2026 | A reload ends the stream and leaves commands running, as the Mac's Reload keeps its hands; signing out and quitting stop everything, and signing out forgets the setting and the commands allowed once | The session (the commands allowed once: after the review, N7) |
+| 2 November 2026 | A stop is `taskkill /T /F` at once (a console program with no window can't be asked to close), then `child.kill()` a second later if the shell is still there, and its end told five seconds after whatever happens; what a command left holding its output is found by its parent's number, only among processes made before the shell ended | The session (the fallback and the sweep's limit: after the review, S4, N3) |
+| 2 November 2026 | Files are read and written without holding the main process (`fs/promises`), at the real path that was checked; output reaches the agent with `\n` line ends, as zsh's | The session, after the review (S6, N5, N9) |
+| 2 November 2026 | Pictures read for the agent are made smaller by `nativeImage` (PNG, JPEG; a WebP or GIF made smaller comes back PNG; one it can't read is given as it is) | The session |
+| 2 November 2026 | An Allow once the app didn't write down: the card says the answer didn't go through, rather than telling the computer (the Mac tells it anyway). "Use hardware security keys" is left out: nothing answers it on a PC, or on the Mac. No word the catalogues lack | The session |
+| 2 November 2026 | Two of the Mac's flaws are not followed: a failed read of the team's settings keeps the ceiling this PC last had (the Mac's lifts a team's "Never allow" at every offline launch); after taking the computer's Always or Never, the computer is told what holds when the team's ceiling lowers it | The session, after the review |
+| 2 November 2026 | The engine hears the PC's system and shell in the hello (`platform`, `shell`, `shellVersion`, `osVersion`) and tells the agent in a section of its brief of its own ("The user's computer"), frozen as the channels and routines are; CopyToBox and CopyFromBox take a Windows path's own name and `Downloads\`. A Mac's hello says none, and nothing changes for it | The session, after the review (the engine, `ebc47f773`) |
 
 ## For Windows
 
@@ -167,44 +250,68 @@ these files, step 7). Electron draws with Chromium, so the checks run in
 Chromium in each step stand for Windows' engine too; what they can't stand
 for is listed here. Added to with every step.
 
+This list was step 7's plan. Step 7 built most of it (the log of 2
+November 2026, step 7, the Windows app): each item now says what was
+built and where (files under `windows/` are the app's main process, the
+rest the web app's), what was decided instead, or that it is not built
+yet. Nothing of it has run on a Windows PC (Open questions).
+
 - **Loading the app.** The web app is built for `/app-next/` and finds the
   server from its own address (`resolveApiBase`). Loaded from disk, it needs
   the server's address given (`https://api.simeonlabs.com`) and a base that
   works from disk (Electron's own `app://` protocol, or relative paths), and
-  the security policy the website gives it now set by Electron.
+  the security policy the website gives it now set by Electron. Step 7
+  (7a): the committed build served at `app://simeon/app-next/`
+  (`windows/src/main/appProtocol.ts`), the server from the app
+  (`facts.ts`), the website's policy set by the app (`policy.ts`).
 - **Signing in and out.** The web trades the website's cookie
   (`/auth/web-session`) and sends the person to the website's `/login`; Sign
   Out ends the website's cookie (`/v1/auth/logout`). Windows has no website
   cookie: the Mac's sign-in screen and its way (the browser, then
   `/auth/poll`), and Sign Out drops the pair and shows that screen. The pair
-  kept in Windows' credential store (`safeStorage`), not the tab's.
+  kept in Windows' credential store (`safeStorage`), not the tab's. Step 7:
+  done (7b: `core/signIn.ts`, `window/SignInScreen.tsx`, `session.ts`; the
+  pair sealed by 7a's `windows/src/main/kept.ts` in `%APPDATA%\Simeon\kept`).
 - **Pages opened elsewhere.** Links in messages and file cards
   (`target="_blank"`), and the access cover's pages (`window.open`): in
   Electron, `setWindowOpenHandler` sends them to the default browser with
   the Mac's allowlist (http, https, mailto, obsidian, tel), and denies the
   rest. Stripe's card page from the cover can open in a child window that
   comes back on the app's own link, as the Mac's sheet does; then the
-  Mac's charge after it (`billing/settle`) can be made.
+  Mac's charge after it (`billing/settle`) can be made. Step 7: done; the
+  default browser through `setWindowOpenHandler` and `will-navigate` (7a,
+  `windows/src/main/main.ts`, `policy.ts`), Stripe's pages in a window of
+  the app's own, then `billing/settle` after a failed payment (7d,
+  `window/outside.ts`, `windows/src/main/outside/billing.ts`).
 - **Saving files.** The web hands a file to the browser as a download
   (`Files.tsx`). In Electron, `will-download` with Windows' save dialog,
-  as the Mac's save panel.
+  as the Mac's save panel. Step 7: decided otherwise: Electron's own Save
+  As, untouched (7d), with no `will-download` of our own.
 - **The microphone.** The browser asks the person; Electron asks Windows
   and lets the page have it through `setPermissionRequestHandler` (audio
   only, the app's own page only). The refused line's "system settings" is
-  right on Windows (Settings, Privacy, Microphone).
+  right on Windows (Settings, Privacy, Microphone). Step 7: done (7a,
+  `policy.ts`'s `allowsPermission`).
 - **Keys.** The web uses Control where the Mac uses ⌘ (picking rows,
   Control-B, Control-F) whenever it isn't on an Apple computer, so Windows
   has these already. Control-Tab, left out in a browser (it changes tabs),
-  can come back in Electron, which has no tabs.
+  can come back in Electron, which has no tabs. Step 7: done (7c,
+  `window/controlTab.ts`), with the Mac's menu keys and zoom keys
+  (`desktop/surfaces.ts`).
 - **Kept on the device.** The folds, the sidebar's width, the emoji and
   "@" picked lately are in the page's storage, which Electron keeps per
   app. Drafts and the chats are kept in memory only on the web (a shared
   computer); the Windows app can keep them on disk as the Mac does
-  (`SavedChats`), decided at step 7.
+  (`SavedChats`), decided at step 7. Step 7 (7b): the chats are kept on
+  the PC (`core/savedChats.ts`, `windows/src/main/session/savedChats.ts`,
+  `%LOCALAPPDATA%\Simeon\saved-chats`); drafts stay in the window's memory
+  (kept across a Reload, 7c), not on disk as the Mac's.
 - **The window.** The Mac's window is moved by its sidebar's head and the
   chat's top (`WindowDragArea`): in Electron, `-webkit-app-region: drag` on
   the same places, Windows' own buttons through `titleBarOverlay`. The
-  narrowest window is 512 wide, the Mac's.
+  narrowest window is 512 wide, the Mac's. Step 7: done (7a,
+  `window/desktop.css`, `windows/src/main/window.ts`: 512 × 520 at the
+  least); the buttons follow the theme (the merge, `desktop/windowLook.ts`).
 - **The cards (step 3).** Drawn with the page's own parts only (no
   browser dialogs, no pop-ups), so they are the same in Electron. A card's
   answer field: Return sends, Shift-Return starts a new line, as the
@@ -220,43 +327,56 @@ for is listed here. Added to with every step.
   and Link asks no more. 1Password's Connect runs 1Password's
   command-line tool from the main process, as the Mac runs it (1Password's
   Windows app has the same integration, with Windows Hello). Electron keeps
-  no passwords, so no "save password" offer on the masked fields.
+  no passwords, so no "save password" offer on the masked fields. Step 7:
+  done (7d: `window/presence.ts`, `windows/src/main/outside/hello.ts`,
+  `outside/onePassword.ts`); the window's alert only where Hello isn't
+  there, and then a checkout carries no approval (Open questions).
 - **A flight's details (3d).** Their top bar moves the window on the Mac:
   `-webkit-app-region: drag` there, × not. Electron can grow the window
   for them, as the Mac does. The menus' lists are Chromium's on Windows.
   The airline logos can be fetched by the main process (no CORS) and kept
   on disk, as the Mac keeps them. Chromium's autofill offers the person's
-  saved name, email and phone.
+  saved name, email and phone. Step 7: the pane's top bar moves the window
+  (7a, `window/desktop.css`). Not built yet: the window growing for them,
+  the logos fetched and kept by the main process.
 - **Pictures from other sites.** The shops' pictures and the airline logos
-  need `img-src https:` in the policy Electron sets.
+  need `img-src https:` in the policy Electron sets. Step 7: done (7a,
+  `policy.ts`).
 - **Step 4's keys.** Off a Mac: Control-K and Control-Shift-F (search),
   Control-1 to 9 (search's rows), Control-N (New Agent), Control-Shift-I
   and Control-Alt-B (the pane). A browser keeps some for itself:
   Control-N (a new window), Control-1 to 9 (its tabs; not checked in a
   browser with tabs) and, on Windows, Control-Shift-I (its developer
   tools). The Windows app has no tabs and can have them all; the compose
-  button and the chat's picture open the same meanwhile.
+  button and the chat's picture open the same meanwhile. Step 7: the app
+  has no tabs and draws no menu bar (`Menu.setApplicationMenu(null)`, 7a),
+  so nothing takes them before the page; not checked key by key.
 - **The agent's pane (4a).** It takes in a flight's details, so the 3d
   note holds for it: Electron can grow the window for it, as the Mac does.
   The routine editor's top bar and the org chart's head move the window
   on the Mac (`WindowDragArea`): `-webkit-app-region: drag` there, their
-  buttons not.
+  buttons not. Step 7: the drag places done (7a, `window/desktop.css`);
+  the window growing for the pane not built yet.
 - **A picture of one's own (4b).** Electron can open Windows' own file
   dialog, with the Mac's title ("Choose an avatar image", on the web only
   the hidden chooser's name for a screen reader). No beep on a refused
-  Create on the web; Electron's `shell.beep()` could, as the Mac's.
+  Create on the web; Electron's `shell.beep()` could, as the Mac's. Step 7:
+  not built yet (the page's own chooser, which Chromium opens as Windows'
+  dialog without the Mac's title; no beep).
 - **Sound from other sites (4b).** The voices' samples are ElevenLabs' own
   links, whose host varies: the policy Electron sets needs
   `media-src … https:`, as the website's now has, beside `img-src https:`.
+  Step 7: done (7a, `policy.ts`).
 - **The routines' menus (4c).** Drawn by the page, so the same in
   Electron; the 96 times scroll in a menu as tall as the window. Electron's
-  own menus (`Menu.popup`) could take them, decided at step 7.
+  own menus (`Menu.popup`) could take them, decided at step 7. Step 7:
+  decided: they stay the page's own (Decisions).
 - **Search and Channels (4d).** A link found opens in the default browser
   through `setWindowOpenHandler`, as the chat's links. Channels is read
   again when the window comes forward (`focus`: in Electron, the
   BrowserWindow taking the keys). The token's field: Electron keeps no
   passwords, so nothing is offered. Control-F waits under search, as ⌘F on
-  the Mac.
+  the Mac. Step 7: the links done (7a, `windows/src/main/main.ts`).
 - **The org chart (4e).** A precision touchpad's pinch reaches Chromium as
   Control-wheel, so it zooms the chart as on a Mac; Control with a mouse
   wheel zooms five times as fast as a scroll. Electron's own page zoom
@@ -267,7 +387,10 @@ for is listed here. Added to with every step.
   `packLinked(url, 'simeon')`, the same code the web reads, hold it until
   signed in and past the first run, then `store.askPack(id)`; the same
   link within 2 s dropped, as on the Mac. The website's Add to Simeon
-  could then offer `simeon://` on Windows too (Open questions).
+  could then offer `simeon://` on Windows too (Open questions). Step 7:
+  done (7d, `desktop/links.ts`, `windows/src/main/outside/links.ts`), held
+  until the signed-in window is drawn; the website waits for the first
+  release (Open questions).
 - **The computer's screen (5b).** The policy Electron sets needs the API's
   `wss:` in `connect-src`, as the website's now has. Electron's
   `clipboard` reads and writes without asking, so the Mac's way can come
@@ -276,12 +399,19 @@ for is listed here. Added to with every step.
   count; the computer's copy written at once, even while the window is
   behind. The full view's bar takes `-webkit-app-region: drag`, Exit not;
   with `titleBarOverlay`, Exit moves left of Windows' own buttons. The
-  Windows key reaches the computer as Super.
+  Windows key reaches the computer as Super. Step 7: the policy and the
+  bar done (7a); the clipboard the Mac's way (7d, `window/clipboard.ts`),
+  by the words themselves (Electron has no change count), sent as the
+  screen comes up only while the window has the focus. The Windows key:
+  not checked.
 - **The computer's states (5c).** The dialogs take every key but Control
   combinations and the F-keys; Alt-F4 stays Windows'. The Windows app
   sets Disk Saver to work by itself on low disk, as the Mac. The move's
   stream is a fetch with a body, which Electron's Chromium sends as the
   browser does. The access notice's page opens in the default browser.
+  Step 7: the access notice's pages through 7d's `window/outside.ts`
+  (Stripe's in the app's own window). Not built yet: Disk Saver set to
+  work by the app itself.
 - **Calls (5d).** The call's banner can have its own always-on-top window,
   as the Mac's and as the Electron banner had: frameless, at the top right
   of the work area under the pointer, shown without taking the keys, on
@@ -292,7 +422,15 @@ for is listed here. Added to with every step.
   `SIMEON_VOICE_CALLS` through the preload, `voice-call.log` in the app's
   data folder, `before-quit` ending a call and waiting for its record, and
   "Call <name>" in the app's menu. The exchange's head and a call's head
-  move the window on the Mac: `-webkit-app-region: drag` there.
+  move the window on the Mac: `-webkit-app-region: drag` there. Step 7:
+  the banner's own window (7c, `desktop/CallWindow.tsx`,
+  `windows/src/main/parts/surfaces.ts`), on the virtual desktop it opened
+  on (Electron can't pin a window to every desktop on Windows), the
+  in-window banner not drawn; Call <name> in the tray's menu (Windows has
+  no app menu) and a call hung up before quitting (7c); the policy, the
+  microphone and `SIMEON_VOICE_CALLS` (7a); `voice-call.log` in the app's
+  data folder (7b); the exchange's head moves the window (7a,
+  `window/desktop.css`), the call's lines' head not yet.
 - **The frame and the theme (6a).** Settings, Connectors, About and the
   sheets are drawn in the page, so the same in Electron. The theme chosen
   and the language are in the page's storage (`simeon.theme`,
@@ -301,7 +439,8 @@ for is listed here. Added to with every step.
   Control-Shift-W (Connectors), Control-F in Connectors, Control-Return (a
   report). A browser keeps some of them for itself (Control-Shift-W closes
   its window, Control-Shift-M is Chrome's profile menu, ⌘, its settings on
-  a Mac; not checked in a browser); the Windows app has them all.
+  a Mac; not checked in a browser); the Windows app has them all. Step 7:
+  as step 4's keys above.
 - **Connecting an app (6b).** The sign-in page goes to the default browser
   (`shell.openExternal`), not a child window: Google and others refuse
   their sign-in inside an embedded web view ("disallowed_useragent"). The
@@ -324,7 +463,11 @@ for is listed here. Added to with every step.
   answered once with a 302 to `simeon://connected`, 404 otherwise), so
   Canva, Dropbox and the others connect on Windows; Windows' firewall
   doesn't ask for a loopback-only listener. The return page
-  (`connected.html`) is then the web's alone.
+  (`connected.html`) is then the web's alone. Step 7: done, with no server
+  change (7d): the default browser (`window/outside.ts`), `back: simeon`
+  on `mcp-oauth/return` and the start link, `simeon://mcp-oauth` finished
+  only for a sign-in the app named (`desktop/links.ts`), the loopback on
+  127.0.0.1 and ::1 (`windows/src/main/outside/loopback.ts`).
 - **Connectors (6c, 6d).** The window coming forward is the BrowserWindow's
   `focus`, and a minimised window is the hidden page (no reads every 15 s,
   one when it shows again), as in a browser. The categories' menu could
@@ -337,7 +480,10 @@ for is listed here. Added to with every step.
   field gets no save-password offer (Electron keeps none); `field-sizing:
   content` is in Electron's Chromium. The examples' picture and the logos
   are bundled: loaded from disk with `SIMEON_APP_BASE=./`, they resolve
-  beside the page.
+  beside the page. Step 7: the categories' menu stays the page's own
+  (Decisions); the policy has `img-src data:` (7a); the build is served at
+  the website's own base, `app://simeon/app-next/`, so the bundled files
+  resolve as on the website, with no `SIMEON_APP_BASE` (7a).
 - **Settings (6e).** Relaunch can be `app.relaunch()` and quit, as the
   Mac's, or the window loaded again; with no language chosen, the Windows
   app may start from Windows' own (`app.getPreferredSystemLanguages()`).
@@ -353,29 +499,61 @@ for is listed here. Added to with every step.
   add") or a drop from Explorer; `nativeImage` could shrink them as ImageIO
   does. Legal's pages in the default browser; Electron's `clipboard` copies
   the e-mail without asking. A rule's Edit and Delete are always shown on a
-  Windows touch screen or a 2-in-1 in tablet mode (`hover: none`).
+  Windows touch screen or a 2-in-1 in tablet mode (`hover: none`). Step 7:
+  Relaunch is the app's own quit and a new instance without the launch's
+  link, one path with Update Now's (7b and the merge,
+  `windows/src/main/main.ts`); Windows' own languages, a report's facts
+  and its logs, `updates.log` too (7b, `desktop/facts.ts`,
+  `windows/src/main/session/`); Legal's pages in the default browser (7a);
+  the clipboard through the app's (7d). "Your Computer" is back (7f,
+  `window/SettingsYourComputer.tsx`): Execution on Local Computer under
+  the team's ceiling, Commands Allowed Once with Forget; the security keys
+  left out: nothing to port (Decisions). Not built yet: the screenshots'
+  dialog with the Mac's title, `nativeImage`'s shrinking.
 - **Usage and billing (6f).** Stripe's pages in a child window that comes
   back on the app's own link, as the Mac's sheet (`back: "simeon"` once the
   scheme is registered on Windows, `/desktop/billing/back`); then the
   charge after Stripe's card page (`billing/settle`) after a failed
   payment, and the access and the usage read again as it closes. The plans
   page in the default browser. If the child window can't open, a sentence
-  in Windows' own words is needed (Open questions).
+  in Windows' own words is needed (Open questions). Step 7: done (7d,
+  `window/outside.ts`, `windows/src/main/outside/billing.ts`, the store's
+  `settleAfterCardPage`); a window that can't be made opens the page in
+  the default browser (no charge then), so no new sentence is needed.
 - **The Credentials Store (6f).** Showing a saved password asks Windows
   Hello (`UserConsentVerifier`) in place of the alert; cancelled, nothing
   is read. Electron keeps no passwords, so no manager offers or saves one;
   the masked text field is the same there (Chromium masks it). A login's
   icon: the main process can read the site's page for its touch icon (no
-  CORS) and keep it on disk a week, as the Mac's `SiteIcons`.
+  CORS) and keep it on disk a week, as the Mac's `SiteIcons`. Step 7: Hello
+  done (7d, `window/presence.ts`). Not built yet: the touch icon read by
+  the main process.
 - **The account menu and About (6f).** Electron's `Menu.popup` could draw
   Windows' own menu, but it has no badge or figure rows, so the page's menu
   may stay; decided at step 7. About's facts from Electron
   (`app.getVersion()`, `process.platform`, "win32"), the same three lines;
   the clipboard through Electron's. When the call's banner has its own
-  window (5d), its place over About and the consent goes with it.
+  window (5d), its place over About and the consent goes with it. Step 7:
+  the menu stays the page's (Decisions); About's facts (7b), the clipboard
+  (7d) and the banner's own window (7c) done. About shows only in the
+  signed-in window (the Mac's shows over the sign-in too).
 - **Already listed in README.md's table:** notifications and the taskbar
   badge, the tray, updates, `simeon://` links, the agent's hands on the PC,
-  1Password and Chrome on Windows.
+  1Password and Chrome on Windows. Step 7: notifications, the taskbar's
+  number and the tray (7c), updates (7e), `simeon://` links and 1Password
+  (7d) done; Chrome's cookies: nothing to port (Decisions); the agent's
+  hands on the PC done (7f, below).
+- **The agent's hands on the PC (7f).** Built: `windows/src/main/hands/`
+  and `parts/hands.ts` (the stream, PowerShell, Windows' places that hold
+  keys), the store's 7f section, `window/LocalAskDock.tsx` (the Allow card
+  in the composer) and `window/SettingsYourComputer.tsx`. PowerShell 7 and
+  5.1 differ for the agent: 5.1 has no `&&` or `||` and no `$PSStyle`, and
+  reads UTF-8 only once told (the scripts tell it); the engine tells the
+  agent which one runs, once a host bundle is published (Open questions). A
+  native program's own output is read as UTF-8: one that writes the OEM
+  code page shows replacement characters. Windows Defender may slow each
+  PowerShell's start (each command starts one, as each zsh on the Mac).
+  The terminal files and the answers use LF.
 
 ## Open questions
 
@@ -394,12 +572,29 @@ For the founder, each to be answered before the step that needs it:
   waiting to be promoted.
 
 - **A Windows code-signing certificate.** An unsigned installer makes
-  Windows warn people before it runs (SmartScreen). Simeon Labs needs a
-  code-signing certificate in its name before the first public Windows
-  release. Needed at step 7.
+  Windows warn people before it runs (SmartScreen), and an unsigned build
+  never updates itself (step 7's decision), so today no Windows build can
+  be released. Needed before the first release: a code-signing certificate
+  in the legal company's name (CLAUDE.md; `lib/release.mjs`'s `company`);
+  its subject in full, every part as Windows shows it
+  (`CN=…, O=…, L=…, S=…, C=…`), written into
+  `windows/scripts/lib/release.mjs`'s `signers` before the first signed
+  release; the GitHub Environment
+  `windows-release` (the repository's Settings › Environments, deployment
+  branches main only, a required reviewer if wanted) holding the
+  certificate as `WIN_CSC_LINK` (the .pfx in base64) and its password as
+  `WIN_CSC_KEY_PASSWORD`; then a signed release tried on a Windows PC
+  before the first `node scripts/release.mjs --publish` (from Windows, the
+  `aws` command line signed in). At the company's rename, one release
+  signed with the old certificate lists both subjects, then the new
+  certificate (the rule beside `signers`).
 - **Who checks on a Windows PC.** Nothing is done until it has run on the
   machine people use; for Windows, someone installs each build on a
-  Windows PC. Needed at step 7.
+  Windows PC. Needed before the first release: nothing of step 7 has run on
+  a Windows PC (the log of 2 November 2026, step 7, "Not checked"). First:
+  Windows Hello and where its prompt opens, the toasts, the tray and the
+  taskbar's number, the call's window, the installer and an update
+  installed, SmartScreen, `simeon://` from a browser, the sealed pair.
 - **The Mac's and the core's own fixes found in step 3** (the log of 2
   November 2026, "Found in the Mac's and the core's code"): the secret
   card's Saved, the cloud agent's Open landing on a page that doesn't
@@ -477,13 +672,15 @@ For the founder, each to be answered before the step that needs it:
   says nothing: no sentence in either catalogue fits (the Mac's
   `busyMessage`, "another app is using it. Quit the other Simeon app",
   would be wrong). A sentence in the Mac's catalogue would let the web say
-  why Connect did nothing. Windows won't need it once it listens on 8787.
+  why Connect did nothing. Windows doesn't need it: it listens on 8787
+  (step 7).
 - **A sentence for a page the browser blocks.** When the browser refuses
   the tab a click opens, the web says "<name> didn't connect. Try again."
   (an app's sign-in) or "Couldn’t open billing. Try again." (Usage &
   Billing), the catalogues' only words for it. Neither says the browser
-  blocked the page or how to allow it. A sentence in the Mac's catalogue,
-  with Windows' own words if its child window can't open?
+  blocked the page or how to allow it. A sentence in the Mac's catalogue?
+  (Windows needs none: when its own window can't open, the page opens in
+  the default browser; step 7.)
 - **The server's "Connected" page closing itself.** A sign-in started
   through the server (`/desktop/apps/start`) ends on its own page,
   "Connected, you can close this tab" (`/desktop/apps/connected`), which
@@ -514,10 +711,759 @@ For the founder, each to be answered before the step that needs it:
 - **Simeon Help Center.** The Mac's row does nothing (kept on 22 October
   2026: "leave it there even tho it doesn't point to anything yet"); the
   web leaves it out until it points somewhere. Where should it point?
+- **A checkout's approval on Windows.** A checkout's Allow hands Link the
+  approval only after Windows Hello says yes; where Hello isn't there, the
+  window's alert asks and hands none, so Link asks in its own app, as on
+  the web. The Mac lets the tap count when the Mac has no lock at all
+  (`PurchaseApproval.swift`); the Windows app doesn't, as a PC without
+  Hello may still have a password. Stricter than the Mac: keep it?
+- **The website's Download for Windows.** It waits for the first published
+  Windows release (step 7's decision); until then
+  `/desktop/download/windows` says "Simeon for Windows is not published
+  yet.", and the website's billing page still offers Download for Mac to a
+  Windows visitor without the app. Needed after the first release: the
+  website's button, the billing page's, and Add to Simeon's `simeon://` on
+  Windows (above).
+- **The Mac's and the core's own fixes found in step 7** (the log of 2
+  November 2026, step 7, "Found in the Mac's, the core's and the server's
+  code"): any `simeon://mcp-oauth` link, which any page or program can
+  open, finished on the person's computer and its `error_description`
+  shown as the app's own words, signed out too (`MacServices.handle`; the
+  Windows app finishes only a sign-in it named); the device policy's 403
+  (`sign_in_policy_violation`) never sent by the server, so its line can't
+  show; `computer-stream.log`'s first line naming the home folder, which a
+  report's scrub leaves (proposed: the scrub hides it); the browser
+  fallback ending `.unconfirmed` at once (MacConnector.swift), its spinner
+  stopping before the sign-in is done; How to set it up not offered in
+  French for 1Password's "no accounts" (`needsSetup` reads English words);
+  `op vault create`'s own refusal lost (`try?`); "the app refused the
+  sign-in…" in lower case; the Mac's clipboard sent to the computer as the
+  screen reconnects with the window behind (ComputerView.swift); "Last
+  checked in 0 seconds." right after Check Now, and the line not moving as
+  time passes; the server's Mac release reader matching a version only at
+  its start (`releases.py`); on the web, `isForeground` never set, so a
+  chat open in a tab behind another counts as read. From the agent's
+  hands (7f): `SensitivePaths` matching letter case while the Mac's disk
+  ignores it (`cat ~/.SSH/id_rsa` reads the key; its own test records it),
+  and missing `cd ~/.ssh; cat id_rsa` (";" ends no name), `echo
+  x>/etc/shadow` (">") and `${HOME}/.aws/x` as a path; a command's
+  `workingDirectory`, the shell's carried folder and a file's real place
+  (a link inside the root) not checked; plain-text tokens not on the list
+  (`.git-credentials`, `.config/gh/hosts.yml`, `.config/op`); a wildcard
+  (`~/.ss*/id_rsa`) caught on neither; `LocalRead`'s line-end rule
+  counting bytes, so a UTF-16 file keeps its CRLF (the engine's too); a
+  failed read of the team's settings lifting the ceiling
+  (`ceiling(teamAdminSettings: nil)`), so a team's "Never allow" goes at
+  every offline launch; after taking the computer's Always or Never, the
+  computer not told when the team's ceiling lowers it, so no card can
+  approve; and, not checked, whether the agent's Shell can write its
+  computer's `settings.json` and so raise the PC from Ask to Always at the
+  next connect (on the Mac too: worth a look in the engine). For the
+  founder: make them in the Mac and the core (then the web and Windows
+  follow), or leave them.
+- **The engine on the cloud computers.** Step 7 changed the engine
+  (`desktop/source`, `ebc47f773`): the hello says the PC's `platform`,
+  `shell`, `shellVersion` and `osVersion`; the agent is told the PC runs
+  Windows and to write PowerShell and Windows paths; CopyToBox and
+  CopyFromBox take Windows' paths. It reaches the cloud computers only once
+  a host bundle is published from a Mac (`cd desktop && npm run package &&
+  npm run publish:host-bundle`, macOS arm64, CLAUDE.md). Until then the
+  agent writes for a Mac: much of it fails in PowerShell, and in Windows
+  PowerShell 5.1 `&&` doesn't parse, so nothing runs. Needed before the
+  first Windows release: a host bundle published.
+- **The call's words on a PC.** The Windows app's call labels are the
+  page's (`clients/apps/app/src/core/voiceCall.ts`) and still say
+  "Running a command on your Mac…" and "Reading a file on your Mac…".
+  "…on your PC…" needs entries in the Mac's String Catalog, with their
+  translations, before the page can say them (the engine's own banner
+  words already do). Add them?
+- **What another program of the same Windows person can still do.** The
+  agent's hands refuse the places that hold keys and sign the setting and
+  the commands allowed once, but a program already running as the person
+  on the PC can still: name those places in ways no guard on a command's
+  words sees (a name built while it runs, a wildcard, a link it makes),
+  reach secrets through Windows' own interfaces (the Credential Manager,
+  which doesn't ask the person, DPAPI, the registry); open the sealed key
+  (Windows opens it for any program of that person) and sign a setting of
+  its own, or put back an earlier signed file, which counts at the next
+  start; or change the app itself, or anything else the person can. What
+  the signing stops is a plain edit of the files. The Mac's setting and
+  `~/.simeon` have no check at all. Leave it at that?
 
 ## Log
 
 Newest first.
+
+### 2 November 2026: step 7, the Windows app
+
+The founder: "lets finish everything , then we handle the open questions.
+step 7". The session first read the Mac, the server and the web app for
+what Windows needs, and planned the step (decisions above). Part a, the
+frame, was written first by the session on the branch (`2d9a98545`,
+`1c8fdd0cb`, `1cb5905f8`, `595e48eb0`), with a place for each other part: a
+file each in the main process (`windows/src/main/parts/`), a section each
+in the bridge's contract and the store, Settings' Updates page. Parts b to
+f were then written at once, each in its own slim checkout (`web-7b` to
+`web-7f`). Each was read by a second, independent reviewer against the
+Mac's Swift and the core, fixed by its own builder after its review, and
+merged into one branch (below).
+
+**7a: the frame** (`2d9a98545`, `1c8fdd0cb`, `1cb5905f8`, `595e48eb0`)
+
+- `windows/`, a package of its own (Electron 44.10.1, electron-builder
+  26.18.0, its own lockfile): `src/main/main.ts` (one instance, the page's
+  own scheme, links and permissions kept to the app's page, the window
+  hidden by its ×, the quit that waits for the page, then each part, a
+  second each); `appProtocol.ts` (the committed build at
+  `app://simeon/app-next/`, 404 elsewhere); `policy.ts` (the website's
+  policy, the Mac's list of addresses for the default browser, the
+  microphone for sound only); `window.ts` (WindowChrome.swift: 1040 × 760,
+  512 × 520 at the least, kept between launches, Windows' buttons through
+  `titleBarOverlay`); `kept.ts` (the pair and the computer's address sealed
+  by `safeStorage`); `facts.ts` (the version and build, Windows' version and
+  languages, the server); `bridge.ts` and the preload (calls and events
+  only); a stub for each part in `parts/`.
+- The web app: `src/desktop/contract.ts` (the one contract both sides
+  read, a section per part), `desktop()` and its stand-in for the tests,
+  the session's desktop options (no website cookie, the app's own name,
+  its kept pair), the quit's tasks (`quitting.ts`); `window/desktop.css`
+  (the Mac's drag places, Windows' buttons' corner); `window/keys.ts` (one
+  command-key rule in place of eight copies); a store section per part,
+  reset on sign-out; Settings' Updates page, listed only in the Windows app.
+- The server: `app://simeon` may call the API with the window's headers,
+  never with a cookie (`DESKTOP_APP_ORIGINS`, `server/simeon/app.py`;
+  `tests/desktop/test_windows_app_cors.py`).
+- `scripts/smoke.mjs`: the app run for real against a stand-in server
+  (`test/standIn.mjs`), on Linux under a virtual display;
+  `electron-builder.yml`: the installer (NSIS, for the person only,
+  `simeon://` registered), built here with Wine. `595e48eb0`: the root's
+  `parts/` rule (a Python build folder) hid `windows/src/main/parts/`;
+  `windows/.gitignore` takes it back.
+
+**7b: signing in and the session** (`76af65fc5`, `24cdc26ec`, `b060ef607`,
+`154795c3d`; after the review `73eb690f2`)
+
+- `src/core/signIn.ts` (the core's SignIn.swift): the verifier and its
+  challenge, `loginURL` with `redirectTarget=simeon`, `/auth/poll` with the
+  Mac's waits (1 s growing by 1.2 to 10 s, 150 tries, three errors in a
+  row), Cancel at once; `logoLightUp.ts` (LogoLightUp.swift).
+- `src/window/SignInScreen.tsx` (SignInScreen.swift): the logo lighting
+  up, Continue to sign in and Sign up, "Continue in your browser" with
+  Reopen link and Cancel, "Setting up Simeon's computer", a 52 strip that
+  moves the window; shown for every phase but the window and the first
+  run. `src/session.ts` (MacSession.swift): the wait and its lines; Sign
+  Out and an ended sign-in forget the pair, the computer's address and the
+  chats kept, and show the screen.
+- `src/core/savedChats.ts` and the store's 7b section (SavedChats.swift,
+  StoreSaved.swift): the list, the pins and folders, the catalogue and
+  each chat's newest 300 lines kept on the PC, shown at once at launch,
+  replaced by the computer's copy, never another account's, forgotten on
+  signing out. `windows/src/main/session/savedChats.ts`: the files in
+  `%LOCALAPPDATA%\Simeon\saved-chats`, written whole, one after the other,
+  every argument checked.
+- `src/desktop/session.ts`, `facts.ts`, `savedChats.ts` and
+  `windows/src/main/parts/session.ts`, `session/`: About's three facts and
+  a report's (the PC's model from Windows' registry, by `reg.exe`'s full
+  path), `computer-stream.log` and `voice-call.log` in the app's data
+  folder, their last 256 KB for a report; Relaunch; the page in Windows'
+  own languages when none is chosen.
+
+**7c: notifications, the taskbar, the tray, the keys and the call's
+window** (`fbfa2f240`, `57cf81a3c`, `7cf365742`, `f83fd017f`; after the
+review `c8c1fd24f`, `a381fa3ff`, `37dba058d`)
+
+- `src/core/agentNotifications.ts`, `dockBadge.ts` (SimeonMacCore's
+  AgentNotifications.swift, DockBadge.swift): who is told what and when,
+  the unread number. The store: `rosterNews` at the core's three places,
+  the window's focus told to the computer (`setWindowFocused`), the
+  computer's own notifications off once connected, `reloadFromComputer`
+  (View › Reload).
+- `src/desktop/surfaces.ts`, `badge.ts`, `useDesktopWindow.ts`
+  (MacServices.swift, MainWindow): the news to Windows' toasts and the
+  taskbar's overlay, the account followed, the focus as Windows has it, the
+  tray's words and agents, the menu keys (Control-W, Control-R,
+  Control-Q, F11) and the zoom keys, a call hung up before quitting.
+  `src/window/controlTab.ts`: Control-Tab walking the sidebar, with the
+  Mac's ring.
+- `windows/src/main/parts/surfaces.ts` and `surfaces/`: Electron's
+  `Notification` under the AppUserModelID; `setOverlayIcon` with the
+  page's picture; the tray (MenuBar.swift: the Mac's mark drawn for each
+  density in the taskbar's ink, the red dot while anything is unread; Open
+  Simeon, New Agent, eight agents, Call <name>, About Simeon, Check for
+  Updates…, Quit Simeon); every argument checked (`checks.ts`).
+- The call's own window (CallBannerWindow.swift; `src/desktop/CallWindow.tsx`,
+  `callWindow.ts`): frameless and clear, floating, out of the taskbar and
+  Alt-Tab, at the top right of the work area under the pointer, shown
+  without the keys, as tall as its card, taking clicks only over the card;
+  the in-window banner not drawn. `bridge.ts`'s `limit` (`a381fa3ff`, a
+  frame file) holds its page to its own five calls.
+
+**7d: links and pages outside** (`c6ef88bc4`, `697165c31`, `e3c8b985b`,
+`9cc3b9309`; after the review `a089a89f1`)
+
+- `src/core/deepLink.ts` (DeepLink.swift) and `src/desktop/links.ts`
+  (MacServices.swift's `handle`): `simeon://` read by the Mac's rules, the
+  2 s rule, a pack's and a plugin's link held until the signed-in window;
+  `src/window/DeepLinks.tsx`, the Deep Links dialog, signed out too. The
+  main process holds the links until the page asks
+  (`windows/src/main/outside/links.ts`).
+- Connecting (MacConnector.swift, LoopbackSignIn.swift,
+  AppReturnSignIn.swift): the default browser (`src/window/outside.ts`),
+  each sign-in named to the server with `back: simeon` (`sendSignInBack`),
+  `simeon://mcp-oauth` finished only for one the app named; the loopback
+  on 127.0.0.1 and ::1, port 8787 (`outside/loopback.ts`,
+  `loopbackSlot.ts`), let go when its sign-in or its page goes.
+- Stripe's pages in a window of the app's own (`outside/billing.ts`;
+  MacConnector.swift's `MacBillingPage`), back on the app's link, then
+  `billing/settle` after a failed payment (`settleAfterCardPage`).
+- `src/window/presence.ts` and `outside/hello.ts`: Windows Hello for
+  1Password's Fill, a checkout's Allow and the Credentials Store's eye.
+  `src/window/clipboard.ts`: the app's clipboard for the window's copy
+  buttons and the computer's screen, the Mac's way. `src/desktop/onePassword.ts`
+  and `outside/onePassword.ts` (MacOnePassword.swift): 1Password's Connect
+  through `op.exe`, with the picker for several accounts and How to set it
+  up.
+
+**7e: updates and releases** (`da3968d53`, `236cc9b16`, `9f2ee238f`,
+`3f43e0fa5`, `dd0738526`, `bcaaab475`, `c63848b31`; after the review
+`c42c14cff`, `f77e9936a`)
+
+- `windows/src/main/updates/` and `parts/updates.ts` (Updates.swift's
+  `MacUpdates`, with electron-updater 6.8.11): a look as the page opens,
+  the daily check, Update Now, the install as Simeon quits or at the next
+  launch after Windows shut it down, only in a signed release; every
+  installer checked by Windows' own signature check against the signers
+  in full (`scripts/lib/signature.mjs`); `updates.json` and `updates.log`
+  in the app's data folder.
+- `src/desktop/updates.ts`, `window/SettingsUpdates.tsx` (SettingsPages.swift
+  236-289): Settings › Updates, the dot beside it while a release waits,
+  Check for Updates… from the tray.
+- `windows/scripts/release.mjs`, `lib/release.mjs` (the Mac's
+  `release.sh`): the version, the build number from the commit count, the
+  installer, its record and the feed's two pointers in `out/release/`;
+  `--publish` signed only, from Windows only. `make-icon.mjs`: the Mac's
+  icon as `resources/icon.ico`. `.github/workflows/windows.yml`: by hand, on
+  `windows-latest`, never publishing; signing only from main, through the
+  `windows-release` environment.
+- The server (`server/simeon/desktop/releases.py`;
+  `tests/desktop/test_releases_windows.py`): `/desktop/download/windows`,
+  `/latest`, `/latest.yml` and `/{version}/{file}`, 302s to the bucket's
+  `releases/win32-x64/`; `has_windows_app`, so the website's billing page
+  sends a Windows app user back to it after a checkout; the local-exec
+  refusal no longer names the Mac ("…Open the Simeon app on your
+  computer.").
+
+**7f: the agent's hands on the PC** (`e24316d77`, `162cd8f39`, `ec0e935b6`,
+`14c49323c`, `0b82bd46d`; after the review `17f81799f`, `ac08b47c7`,
+`ebc47f773`)
+
+- `windows/src/main/hands/` and `parts/hands.ts` (MacLocalHands.swift;
+  SimeonMacCore's `LocalExecWire`, `LocalExecRules`, `LocalExecFiles`,
+  `SensitivePaths`, `LocalToolApprovals`, `LocalToolPermission`): the
+  stream from the computer's gateway (`wire.ts`, `provider.ts`: hello, a
+  ping every 10 s, the Mac's retries), each command in a PowerShell of its
+  own with the state carried (`powershell.ts`, `shell.ts`: the 1 MiB cap,
+  the 30 s hold then the background with its terminal file, the whole tree
+  stopped), reads, listings, uploads and downloads inside the root
+  (`files.ts`), Windows' places that hold keys (`sensitivePaths.ts`), the
+  gate in the Mac's order (`rules.ts`), the setting and the commands
+  allowed once, signed (`permission.ts`, `approvals.ts`, `signed.ts`). The
+  contract's nine calls, each argument checked, from the main window only.
+- The page: `core/localToolPermission.ts`, `core/localAsk.ts`
+  (LocalToolPermission.swift, Approvals.swift's `LocalToolAsk`); the
+  store's 7f section (the account's setting and its team's ceiling, the
+  computer told only when it changes what it should do, `runHands`, the
+  card's answer, a message sent letting go of the commands allowed once);
+  `window/LocalAskDock.tsx` (MacLocalPermission.swift's `LocalAskDock`:
+  Always allow, Allow once, Never, × and Escape denying once);
+  `window/SettingsYourComputer.tsx` (SettingsPages.swift's
+  `YourComputerGroup`) in Settings › Computer. Outside 7f's files
+  (`14c49323c`): the pane's Escape waits while the card shows, no working
+  line while an ask waits.
+- The engine (`ebc47f773`, Simeon's own files in `desktop/source/host` and
+  `shared`): `local-exec-platform.ts` reads the hello's four fields (each a
+  short plain line) and writes the agent's section for a Windows PC;
+  `local-exec-bridge.ts` keeps them; `system-prompt-assembly.ts` takes the
+  section; CopyToBox and CopyFromBox take Windows' paths
+  (`sand-file-transfer-tools.ts`); the call's banner words say "on your
+  PC" for a Windows PC (`voice-call-prompt.ts`). A Mac's hello and listing
+  are as before. `tests/local-exec-windows.test.mjs`.
+
+**Putting the parts together**
+
+- On the branch, in this order: 7b (`4c677c148`), 7c (`ff90af46e`), 7e
+  (`ba6c0f84b`), four of the merge's own commits, 7d (`d23387591`), one
+  more of its own, then 7f (`7e76f30df`). Conflicts: the frame's stubs in
+  `windows/src/main/parts/` met each part's own file (add/add: each part's kept); 7c's in `App.tsx`, the store
+  (7b's `agents` and `account` accessors beside 7c's `rosterNews`),
+  `main.tsx` and the stand-in (both sides kept) and `windows/.gitignore`;
+  `checkForUpdates`, in 7c's and 7e's sections of the contract, kept once,
+  in 7c's; 7d's in `main.tsx` (both kept: the caption buttons' look, the
+  session, the surfaces, then 7d's links), `App.tsx`'s imports,
+  `windows/.gitignore` (the branch's), the parts' files (each part's own)
+  and the stand-in (7e's `{ body, headers }` answers and 7d's `{ text,
+  type, headers }`, both taken); 7f's only in `windows/.gitignore` (the
+  branch's), the parts' files (each part's own) and the stand-in (7f's
+  `{ stream }` answer added beside the others).
+- The merge's own commits: `024d4abe9`, the tray's Check for Updates…
+  only in a build that updates itself (7c's review, S6); `6be3744d0`, a
+  report reads `updates.log` too (7e's review, S8); `7d34b3d05`, Windows'
+  caption buttons follow the theme (nothing called `setWindowLook`:
+  `src/desktop/windowLook.ts`, `theme.ts`'s `onThemeChange`); `68e72f913`,
+  one relaunch: Relaunch and Update Now ask the app to quit and open
+  again, the installer opens Simeon when it runs as Simeon quits, else the
+  app does once, with no link (decisions above); after 7d, `3c810e2aa`,
+  Reload opens the chat on screen again. That one was found by running
+  7c's check on the merged build and comparing its screenshots with 7c's
+  own (the check passed; the picture didn't): after Control-R the chat on
+  screen showed no lines, because Reload attaches again, which empties
+  every chat, and the list kept on the PC (7b) shows at once, so the
+  window keeps the chat and nothing opened it again.
+  `reloadFromComputer` now opens it again as soon as a list shows it
+  (tested in `savedChats.test.ts`).
+- 7e's review, S7 (the tray signed out), checked at the merge: Open Simeon
+  and Quit Simeon only (`surfaces.test.ts`); the daily check is the main
+  process's, so a signed-out PC still installs as it quits.
+- Then the committed build and the inventory ("Checked", below).
+- Left for later, each named here so it isn't lost: the uninstaller
+  leaves `%LOCALAPPDATA%\Simeon\saved-chats` unless the person signed out
+  first (the Mac's caches also stay); each launch opens the sidebar's first
+  chat (the Mac reopens the last, `simeon.window.selectedAgent`); About
+  only in the signed-in window; a toast clicked after Simeon quit opens
+  Simeon, not the agent (that needs a COM activator or a protocol launch);
+  the tray's first words in English until the page says its own; the
+  call's window covering a maximised app's caption buttons while a call is
+  up (on the Mac that corner is free); `reg.exe`'s answer read as UTF-8; a
+  late failure to start an installer can't bring Simeon back; a slow
+  Update Now quits as its download ends, a call included (hung up first);
+  electron-updater's own `.updaterId` in the data folder, sent nowhere;
+  `resources/icon.png` read by nothing yet; from "For Windows", the window
+  growing for the pane, the logos and the sites' icons fetched by the main
+  process, Disk Saver started by the app, Windows' dialogs with the Mac's
+  titles, the beep; an ask for a command longer than 256 KiB can't be
+  allowed once (the card says it didn't go through: kept as a guard); a
+  file is read at the real path that was checked, which narrows the moment
+  between the check and the read without closing it; the call's labels
+  saying "on your Mac" in the Windows app (Open questions).
+
+**What the reviews found, and what was done**
+
+- 7b (`73eb690f2`): nothing blocking.
+  - Should fix: Relaunch handed the new instance the `simeon://` link
+    Windows started the app with (a pack offered again, a spent code
+    replayed): it starts with this command line less its links now;
+  - should fix: a sign-out's delete of the kept chats could fail while
+    Windows held a file a moment, leaving one account's chats for the next
+    to see: tried again five times, and a copy left with no sign-in kept is
+    forgotten at launch;
+  - nits taken: the page's reads wait for its own writes and forgets;
+    Enter on a focused button presses it; the pins wait only when the PC's
+    copy shows (the web unchanged); a sign-in that can't start says so and
+    frees the buttons; the call's log trimmed, its echo cut; the logo in
+    Windows' contrast themes; the call's window never signing in; the
+    ported tests as the Swift's. Left: `case 'stopped'`, unreachable as on
+    the Mac; `reg.exe`'s code page (makers' names are ASCII in practice).
+  - Clean, per the reviewer: the sign-in and its tests against the core's,
+    the screen's measures, the session in the Mac's order, the kept chats
+    field for field, every argument in the main process, no token in a log,
+    a file name or a command line.
+- 7c (`c8c1fd24f`, `a381fa3ff`, `37dba058d`): nothing blocking.
+  - Should fix: Control-R hung up a call that was on and dropped every
+    draft, where the Mac's ⌘R keeps both: kept now;
+  - should fix: the Mac's zoom keys were gone: Control-= or +, -, 0 now,
+    the call's page drawn back at 100 %;
+  - should fix: Alt-F4 on the call's window took the banner away while the
+    call went on: it asks the call now, as the Mac's close;
+  - should fix: the call's window's page could make every call the main
+    window's can, the sealed pair included: held to its own five;
+  - should fix: the tray's Check for Updates… showed in any packaged build:
+    left to the merge, done there (`024d4abe9`);
+  - should fix: taps on the call's window may go through it on a touch
+    screen: the card's shape takes them where a screen has touch (not
+    checked: no touch screen here);
+  - nits taken: Control-W, R and Q by their place on a non-Latin layout;
+    Control-Q from the call's window; the focus read at start; a long name
+    cut, never a toast refused; an earlier account's toasts lose their
+    click; the call's window closes when the main page goes. Left: the
+    tray's first words; the overlay sent as a PNG (a raw bitmap's layout,
+    written blind, could draw the wrong colours on Windows); Control-W
+    under an in-page dialog; the overlay's bare number.
+  - Clean, per the reviewer: the core's ports line for line, MacServices'
+    behaviour, the tray against MenuBar.swift, the call's window's sums
+    against CallBannerWindow.swift, every call checked, the web unchanged.
+- 7d (`a089a89f1`):
+  - Blocking: `op.exe` was looked for first in
+    `C:\ProgramData\chocolatey\bin`, a folder any account on the PC can
+    make, so another account's program could run as the person and hand
+    their agent a vault key of its own: only folders no other account can
+    write to now, then PATH;
+  - blocking: a timeout, a PowerShell ended or any error after Hello's
+    prompt showed fell back to the window's one-click alert: only Hello
+    saying, before asking, that it isn't there gives the alert now;
+    anything else is cancelled;
+  - should fix: a program holding `[::1]:8787` got the maker's answer
+    (Edge and Chrome try ::1 first): both addresses must be had now;
+  - should fix: any `simeon://mcp-oauth` link was finished on the computer
+    and its words shown as Simeon's, signed out too: only a sign-in this
+    app named, once, within 10 minutes, a refusal in the catalogue's words;
+  - should fix: a sign-in's listener and wait outlived a sign-out or a
+    reload, so a code could reach the next account's computer: let go now;
+  - should fix: the billing window handed any page's `window.open` to
+    Windows (`obsidian:`, `tel:`, with no click): https only, within a
+    second of a press;
+  - nits taken: the billing window titled with its page's site; an older
+    loopback sign-in replaced, never "busy"; each page watched once; the
+    computer's screen sending this PC's clipboard as it comes up only while
+    the window has the focus; a vault id checked; the billing window's
+    dialogs and device pickers. Left: the billing window's storage after a
+    sign-out (as Safari's on the Mac, per account of the computer); a
+    refused link bringing the window forward (the frame's); two refusals
+    stricter than the Mac's; Hello's prompt behind the window (to check
+    first on a PC).
+  - Found while checking the fixes for real: a link to another site in the
+    page's own frame counted as the page leaving (Electron says a
+    navigation started before `will-navigate` can refuse it), so links
+    stopped reaching the page: only a main-frame navigation to the app's
+    own address counts now (`outside/leaving.ts`).
+  - Clean, per the reviewer: the links against DeepLink.swift and its
+    tests, the 2 s rule and the holding, the loopback's answer, the Stripe
+    window's isolation, the billing flow, Hello's script, 1Password's
+    commands, the clipboard, the web unchanged.
+- 7e (`c42c14cff`, `f77e9936a`): nothing blocking; no release is
+  published, and `--publish` refused an unsigned build.
+  - Should fix: an unsigned build updated itself and ran what the feed
+    named: only a signed release updates itself now;
+  - should fix: electron-updater's signature check passed when PowerShell
+    couldn't run: our own check, refused on any error;
+  - should fix: the signer matched on its common name only: whole
+    subjects now, every part compared;
+  - should fix: the release checked the signature more loosely than the
+    app: the same rule, `WIN_CSC_LINK` only, `--publish` only on Windows;
+  - should fix: Update Now started the installer before the app had quit
+    (its hard kill could cut a call or a save): after every part's work now;
+  - should fix: Windows' shutdown sends no quit, so a release seldom
+    installed: one waiting installs at the next launch, before the window;
+  - should fix: Check for Updates… did nothing signed out: the tray offers
+    only Open and Quit then (checked at the merge);
+  - should fix: nothing recorded what the updater did: `updates.log`, read
+    by a report (the merge);
+  - should fix: a path with a space broke `--publish`: no shell now;
+  - should fix: any branch's code could use the certificate: a `signed`
+    job, from main only, through the `windows-release` environment;
+  - nits taken: a version in a path matched whole, in ASCII; a look no
+    longer postpones the daily check; a pulled release forgotten;
+    `localhost` refused for the stand-in feed; one staging id for everyone;
+    a shallow clone refused; the record's notes on partial downloads and
+    the quit's length corrected. Left: two queries for the billing page; a
+    late failure to start the installer; a slow Update Now quitting; the
+    unused `icon.png`; the billing page's Download for Mac on Windows.
+  - Clean, per the reviewer: the feed rule, no downgrade, garbage from the
+    feed, web installers refused, the server's routes (no traversal, no
+    open redirect), the release's upload order, the page against
+    SettingsPages.swift, the icon, the web unchanged.
+- 7f (`17f81799f`, `ac08b47c7`, `ebc47f773`): nothing blocking in 7f's own
+  code, and nothing that makes the PC less safe than the Mac. What blocked
+  shipping the hands was outside it: the agent wasn't told the PC runs
+  PowerShell, so it would write zsh. The engine now tells it (`ebc47f773`;
+  Open questions, for when it reaches the computers).
+  - Should fix: a command's folder was checked as written only, so a
+    junction or a short name (`Documents and Settings`, `SSH~1`) ran a
+    command inside `.ssh`: checked at its real path now;
+  - should fix: Windows' own spellings of a path passed in a command's
+    words (`\\?\`, `\\localhost\c$`, short names, the old junctions,
+    `::$DATA`, `HOMEDRIVE`, cmd's `%NAME:~…%`, a name relative to the
+    folder it `cd`s into, so `cd $env:APPDATA; sc Simeon\…` could write the
+    setting): read as Windows reads them now, and what no such guard can
+    catch said in the file's header; the setting and the commands allowed
+    once signed besides;
+  - should fix: a command could see its run's marker, so an ordinary
+    `Get-Variable | Format-List` cut its output and lost its state, and
+    what followed the marker was held without a cap: the marker is in no
+    variable now, the last one is taken, 16 MiB at most;
+  - should fix: a cancel had no fallback when `taskkill` didn't stop the
+    shell: `child.kill()` a second later, its end told whatever happens;
+  - should fix: Arc and Windows' cookie stores were not on the list: added,
+    with the app's own folder (nit 6);
+  - should fix: large files were read and written while holding the main
+    process: `fs/promises` now;
+  - nits taken: the card's buttons greyed with no computer attached; this
+    computer's address only when the app's server is on it; the sweep only
+    among processes made before the shell ended; timeouts past 24.8 days
+    held there; files read at the real path checked; the commands allowed
+    once forgotten on sign-out; the answers not kept for the old address;
+    `\n` line ends to the agent; the record's two overstated sentences.
+    Left: the 256 KiB cap on what can be allowed once (a guard).
+  - Clean, per the reviewer: the gate's order, Ask's exact match, the
+    ceiling, the reconcile and the per-account scope, as the core's; the
+    wire, its timings, retries, caps and parser, byte for byte with the
+    Mac's; the root and `escapesRoot`; a file's real place checked; the
+    shell found by its full path, the command and state on its input; the
+    log with no command, content, address or key; the page's words and its
+    gating to the Windows app.
+
+**Found in the Mac's, the core's and the server's code** (proposed, for
+the founder):
+
+- Signing in: the device policy's 403 (`sign_in_policy_violation`) is
+  never sent by the server (searched `server/simeon`), so its line can't
+  show; `computer-stream.log`'s first line names the log's full path, the
+  home folder with it, which a report's scrub leaves; `MacSession.signIn`'s
+  `.stopped` never reaches the screen (harmless).
+- Links and connecting: `MacServices.handle` finishes any
+  `simeon://mcp-oauth` link on the computer and shows its
+  `error_description` in the app's own sentence, signed out too;
+  MacConnector.swift's browser fallback returns `.unconfirmed` at once, so
+  the card's spinner stops before the sign-in is done; a sign-in answered
+  outside a sheet is "the app", its refusal "the app refused the sign-in…"
+  in lower case.
+- 1Password: `needsSetup` reads English words in its own localised
+  sentence, so How to set it up isn't offered in French; `op vault create`
+  in `try?`, 1Password's own refusal lost.
+- The computer's screen: ComputerView.swift sends the Mac's clipboard as
+  the screen reconnects even with the window behind.
+- Updates: "Last checked in 0 seconds." likely right after Check Now (not
+  run on a Mac); the line doesn't move as time passes. The server's Mac
+  reader matches a version only at its start (`0.1.0/../x` would pass);
+  a non-object index crashed it, now nothing published for both (changed,
+  two lines).
+- The web: the store's `isForeground` is never set there, so a chat open
+  in a tab behind another counts as read (the Windows app sets it).
+- The agent's hands: `SensitivePaths` matches letter case while APFS
+  ignores it (`cat ~/.SSH/id_rsa` reads the key on a Mac; its own test
+  records it), and misses `cd ~/.ssh; cat id_rsa`, `echo x>/etc/shadow` and
+  `${HOME}/.aws/x` as a path (the Windows app closes all four); a command's
+  `workingDirectory` (`{command: "cat id_rsa", workingDirectory:
+  "~/.ssh"}` reads the key under Always), the shell's carried folder and a
+  file's real place are not checked; `.git-credentials`,
+  `.config/gh/hosts.yml` and `.config/op` are not on the list; a wildcard
+  (`~/.ss*/id_rsa`) is caught on neither (kept as a gap); `LocalRead`'s
+  CRLF rule counts bytes, so a UTF-16 file keeps its CRLF (the engine's
+  too). The team's settings: a failed read clears the ceiling
+  (`LocalToolPermission.ceiling(teamAdminSettings: nil)`), so a team's
+  "Never allow" is lifted at every offline launch; after taking the
+  computer's always or never, a ceiling that lowers it isn't told to the
+  computer, which then sends no asks this PC can answer (both done
+  otherwise in the Windows app). Not checked: the reconcile trusts the
+  computer's own copy, so if the agent's Shell can write its computer's
+  `settings.json` (`host/extensions/settings/settings-service.ts`) it could
+  raise this PC from Ask to Always at the next connect, on the Mac too.
+
+**Tests:** on the merged tree the web app's 1,175 in 121 files (from step
+6's 973) and the Windows app's 212 in 12 files, all passing (with
+PowerShell 7 for Linux on PATH, so the tests that run a real PowerShell
+run). 7a's 11 and 14 (the contract and the quit's tasks; the
+frame's main process); 7b's 45 and 13 (`signIn.test.ts` with the core's
+`SignInTests`, `logoLightUp.test.ts`, `savedChats.test.ts` with
+`SavedChatsTests`, `desktop/session.test.ts`; `test/session.test.ts`); 7c's
+37 and 16 (the core's `NotificationTests` on `notify.json` read in place,
+`rosterNews`, the surfaces, the call's window, Control-Tab;
+`surfaces.test.ts`, `bridge.test.ts`); 7d's 67 and 36 (the core's
+`DeepLinkTests`, `AppReturnSignInTests`, `LoopbackSignInTests`,
+`LoopbackSignInStoreTests` and the rest; `outside.test.ts`,
+`outsideGuards.test.ts` with a real loopback listener); 7e's 10 and 59
+(`updates.test.ts` with the Mac's French read in place; the updates'
+rules, the signature, the icon, the release); the merge's 3 and 1
+(`windowLook.test.ts`; the one relaunch), and one more after 7d (Reload
+opening the chat again, `savedChats.test.ts`); 7f's 28 and 73
+(`localTools.test.ts` with the core's `LocalToolPermissionTests` and
+`ApprovalTests`' local card on its fixture, `handsStore.test.ts`,
+`LocalAskDock.test.tsx`; `hands.test.ts` with `LocalExecTests` and
+`LocalToolTests`, each Mac case beside its Windows path, and the review's
+whole list of Windows spellings, `handsRun.test.ts` with the hands run in
+a real PowerShell against a stand-in gateway). On the server: the CORS
+test for `app://simeon` (7a), the Windows releases and `has_windows_app`
+(7e). The engine: `tests/local-exec-windows.test.mjs`, 7, each failing
+before the change (7f).
+
+**Checked:**
+
+On the merged tree, with every part in:
+
+- The Windows app: `npx vitest run`, 212 tests in 12 files, with
+  PowerShell 7 on PATH so the script's own test runs; `tsc` clean; `npm run
+  build`.
+- The web app: 1,175 tests in 121 files; `tsc`, Prettier, ESLint, the
+  words', brands' and connector pages' checks clean. `check_names.py` and
+  `check_translations.py` clean.
+- The engine (`desktop`, the whole checkout, `node --test
+  --test-timeout=120000 tests/*.test.mjs`): 990 tests, 966 pass, 22
+  skipped, 2 fail, the two that fail before step 7 (the packaging audit's
+  catalogue, which needs a Mac's bootstrap; the feedback route's test,
+  which reads fields moved in #502). None new.
+- The app run for real, Electron under `xvfb-run` against the stand-in, on
+  the final merged build: the smoke check; 7b's 59 checks; 7c's 79; 7d's
+  77 light, 75 dark and 75 French; 7e's 141; 7f's 59. All passing.
+  Screenshots, looked at (7f's Allow card and Your Computer among them).
+- The committed build, made again from the merged sources: `check-built.mjs`
+  says it matches them (600 files); `web_app_inventory.py` run again
+  (`strings.json`).
+- The installer: `npm run package` in `windows/`, from the checkout's own
+  `node_modules`, not linked: `Simeon-Setup-0.1.0.exe`, NSIS, x64, per
+  user, unsigned (no certificate). electron-updater and its dependencies
+  are inside `app.asar`; the web build inside it is the committed one, file
+  for file; its feed is `https://api.simeonlabs.com/desktop/download/windows`.
+  Not installed anywhere (no Windows PC); `out/` deleted after.
+- The server, on this computer's Postgres and Redis with a local S3
+  stand-in: step 7's three test files (the CORS rule, the Windows releases,
+  the plans' `has_windows_app`), 23 passing. `tests/desktop`, `tests/sand`
+  and `tests/plans`: 1,037 pass and 10 fail, the same 10 that fail on
+  `main` (the model list's and the GPT proxy's tests), compared by name;
+  `main` passes 1,024 of them. Ruff's check and format clean on every
+  server file step 7 changed.
+
+As the parts were merged, on the branch: after 7b and 7c, the web app's
+1,066 tests and the Windows app's 43, both typechecks; after 7d, the last,
+1,146 and 139, both typechecks, lint, and the words', translations' and
+names' checks.
+
+On the merged build before 7f, every part's real-app check ran again,
+all passing: the smoke check, 7b's 59 checks, 7c's 79, 7d's 77 light, 75
+dark and 75 French, 7e's 141. Two checks were brought up to date for the
+merge, the app not changed for them: 7b's now shows the page a dark
+Windows too (the page tells the app its theme, "System", which sets
+Electron's theme back to the system's) and expects the starter pack's
+sheet its launch link now opens (7d); 7c's reads the call's hang-up line
+from `voice-call.log` (7b sends the call's lines there, as the Mac).
+
+Before the merge, each part on its own branch: its tests, typechecks and
+lint; the app run for real, Electron 44 under `xvfb-run` against the
+stand-in server on 127.0.0.1, by the step's check scripts (Electron's own
+parts recorded, `shell.openExternal` replaced before the page could call
+it, no real service reached), light and dark, then French, no page errors;
+the frame's smoke check on each part's build; screenshots, looked at:
+
+- 7a, before the parts were begun: the smoke check (the page from
+  `app://simeon`, the server called from that origin, the pair sealed,
+  read back after a relaunch, signed in, the agents shown); the web app's
+  984 tests, the Windows app's 14, the server's CORS tests; the installer
+  built with Wine (127 MB, with its `latest.yml`).
+- 7b, 58 checks after its review: the screen's words and measures, the
+  drag strip; Return opening `/loginDeepControl?…&redirectTarget=simeon`;
+  `/auth/poll` named `windows-0.1.0+0`; Reopen link, Escape, Enter on Sign
+  up; three 500s' line and a 403's; then the pair: the window and the
+  agents, the pair sealed on disk and in no page storage, a chat kept on
+  disk; About, Copy version info, a report with its facts and the log, no
+  token. Launched again with every call to the computer held 5 s: the
+  agents and a chat's lines from the PC in 140 ms; Sign out: `kept/` empty,
+  the chats gone, the server told once. A contrast theme (Chromium's
+  emulation). French with no language chosen and another account's copy
+  forgotten at launch; Relancer starting the app without the launch's
+  link.
+- 7c, 79 checks, three runs after its review: the tray and its menu;
+  Control-W, the tray's click, Control-R, F11; Control-Tab's ring; with
+  the window behind, a finished turn told silently and a question with the
+  sound, the click opening that agent; in front, nothing told; the
+  overlay's 4 and the tray's dot; the call's window at the top right of
+  the work area, shown without the keys, as tall as its card, ringing,
+  failed, on, hung up; Control-R during a ringing call keeping it and a
+  draft; the zoom at 120 % with the call's page at 100 %; Windows' close on
+  the call's window hanging up; Control-Q; French.
+- 7d, 77, 75 and 75 checks after its review: a launch's link and a real
+  second launch's; the 2 s rule; a pack's link held until signed in; a
+  loopback sign-in end to end (Canva) and one through the server (Stripe),
+  our start link (Linear) failing and its app taken back; Stripe's window
+  over the app, back on the server's link with `billing/settle` after a
+  failed payment; Hello's fallback alert (no Hello here); 1Password with a
+  stand-in `op` (the picker, the key to the computer and nowhere in the
+  data folder; no tool; locked); the clipboard and the computer's screen's;
+  a download reaching Electron's own save dialog; a made-up `mcp-oauth`
+  link finishing nothing; a reload and a sign-out freeing 8787.
+- 7e, 141 checks after its review, with a stand-in feed and bucket in the
+  server's shape: the look as the page opens through the server's 302s,
+  nothing downloaded; Update Now downloading once (its sha512 checked),
+  the installer started only after the quit's work; the quit installing; a
+  launch with a release waiting installing it at once, not tried twice; a
+  changed installer refused; the switches kept; `checkForUpdates`; a
+  developer's build asking nothing; the daily check 10 s after launch; no
+  one's folder and no token in `updates.log`. The installer with Wine, and
+  `release.mjs` end to end in a throwaway copy of the repository with a real
+  `node_modules` (the version and build inside, the feed and the signer,
+  the icon, each refusal before any build or upload); the server's tests,
+  ruff and mypy on its files.
+- 7f, 59 checks after its review, against the stand-in server and a
+  stand-in gateway, with a home, root and data folder of their own and
+  PowerShell 7.5.4 for Linux: signed in from the kept pair, the hands'
+  stream opening with the gateway's key and saying hello with the root,
+  the system and the shell; the card's words and buttons, Ask refusing
+  before Allow once, Allow once written before the computer hears it, the
+  card going when the computer settles it, what was allowed running and
+  nothing else; Settings › Computer › Your Computer, Always allow kept and
+  told; a command run in PowerShell in the root, its stream and its
+  environment carried; `~/.ssh` and the app's data folder refused under
+  Always, the stand-in key never read, nor through a folder reached by a
+  link, `..` or a stream; Never running nothing; a 30 s command cancelled
+  1.5 s in, ended at 1.55 s; Forget; the team's ceiling (its line, Always
+  allow greyed with its reason); Escape denying once; a plain edit of the
+  setting and a forged answer changing nothing mid-run;
+  `Get-Variable | Format-List` ending whole with its state carried;
+  quitting and signing out each stopping a command in the background,
+  signing out forgetting the setting and the answers; the log with no key,
+  command or address.
+- Found by 7e: packaged from a checkout whose `node_modules` is a link,
+  electron-builder packs electron-updater without its dependencies (the
+  app would not start); with a real `npm ci` they are all packed. The
+  shipped installer is built only so (the workflow).
+- One read-only CORS preflight from an `app://simeon` origin was sent to
+  the real API while the server was read, before the server's rule: it
+  was refused then, as expected.
+
+**Not checked:**
+
+- **Nothing ran on a Windows PC** (Open questions):
+  - signing in and the session: DPAPI, `reg.exe`'s answer,
+    `%LOCALAPPDATA%` and `%APPDATA%`, Windows' languages, the caption
+    buttons over the sign-in screen, Segoe UI, a high-DPI screen, a
+    contrast theme, `app.relaunch()` really starting the app (stubbed), a
+    delete refused by Windows' file locking (unit-tested only);
+  - the desktop's own: the toasts (the shortcut's AppUserModelID, the
+    sound, the Action Center, a click after quitting), the overlay on a
+    real taskbar, the tray at real densities in a light and a dark
+    taskbar, its menu as Windows draws it, the call's window (its clear
+    room, clicks passing through, on top of other apps, out of Alt-Tab, a
+    second screen, scaling, touch), full screen with the caption buttons,
+    other keyboard layouts, Alt-F4 itself;
+  - outside: Windows Hello and Windows PowerShell 5.1 running its script,
+    where Hello's prompt opens; `op.exe` in its Windows places and
+    1Password's Windows app; the scheme's registration and a second launch
+    from a browser; the billing window's look; Windows' Save As; Edge's
+    and Chrome's `localhost` on ::1;
+  - updates: the installer run, an update found, downloaded and installed
+    (on quit, with Update Now, at a launch), the installer closing the
+    running app, SmartScreen, the icon at each size, a PC sleeping around
+    the daily check.
+- Signing: no certificate here; Windows' own signature check on a real
+  certificate; the `windows-release` environment; the workflow on
+  `windows-latest`; `--publish` and the upload.
+- Against the real server and services: `/loginDeepControl` in a real
+  browser and its "Continue as" page, `simeon://app/v1/open` bringing the
+  app forward, `/auth/poll`'s pair, the server's rule for `app://simeon` in
+  production, a report really sent; real Stripe, makers, 1Password and a
+  Composio sign-in through `/desktop/apps/start`; the release bucket, its
+  302s and range answers, a partial download; a real call (`voice-call.log`,
+  the call's window with a real voice).
+- In the app, not driven: the access cover's and the access notice's
+  Stripe page (the same `openBillingWindow` as Usage & Billing's); the
+  Credentials Store's eye (the same ask as Fill's); a first run holding a
+  link (unit-tested); signing out and in as another account taking the
+  notifications back (the tests only); the window really going behind;
+  the kept chats with many agents and pictures; Reduce Motion; a screen
+  reader; the website's billing page in a browser (typecheck and lint
+  only); side by side with the Mac.
+- The agent's hands: on a Windows PC, Windows PowerShell 5.1 running the
+  scripts (the input line, its JSON, the UTF-8 console, `GetNewClosure`),
+  `pwsh.exe`, `taskkill /T /F`, `child.kill()` and the left-behind sweep,
+  no window flashing, real junctions and short names through `realpath`,
+  `safeStorage`'s key with DPAPI, a redirected `%APPDATA%`, `net.fetch`
+  through a proxy; against a real computer, the gateway through
+  `api.simeonlabs.com`, a real agent's commands and asks, the computer's
+  own settling of an ask and its `retire-approval`, the team's ceiling from
+  the real server, a computer that rests (in the store's tests only); the
+  engine's change on a real cloud computer (no host bundle published); in
+  Electron, a picture read and made smaller, an upload, a download and the
+  terminal file (in the unit run only).
+
+**Next:** the founder's open questions (above), then the first signed
+release tried on a Windows PC.
 
 ### 2 November 2026: step 6, Connectors and Settings
 

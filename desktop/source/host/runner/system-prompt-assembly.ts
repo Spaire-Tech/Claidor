@@ -107,6 +107,8 @@ export interface SystemPromptAssemblyDependencies {
   readonly mcpDiscoveryStatusSection: () => string | null;
   readonly remoteBoxSection: () => string;
   readonly computerSection: () => string | null;
+  /** The person's computer when it is a Windows PC (its shell and paths, local-exec-platform.ts); null for a Mac. */
+  readonly userComputerSection?: () => string | null;
 }
 
 function profileSection(profile: AgentProfileForPrompt | null, sharedRoom: boolean): string | null {
@@ -335,6 +337,8 @@ export function createSystemPromptAssembly(deps: SystemPromptAssemblyDependencie
     const named: [string, string | null][] = [
       ["Channels", getChannelsSection()], ["Teammates", getAgentDirectorySection()], ["Routines", getAutomationListSection()],
       ["Connector instructions", deps.mcpCustomInstructionsSection()],
+      // Frozen as the others: a Windows PC that connects mid-conversation arrives as a note, not a new brief.
+      ["The user's computer", deps.userComputerSection?.() ?? null],
     ];
     return named.flatMap(([name, text]) => text != null && text.length > 0 ? [{ name, text }] : []);
   }

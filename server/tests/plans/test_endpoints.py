@@ -119,6 +119,22 @@ class TestPlans:
         ] is True
 
     @pytest.mark.auth
+    async def test_someone_who_uses_the_windows_app_is_known_to(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The same for the Windows app (`windows-<version>+<build>`), kept
+        apart from the Mac's: the page sends each back to its own app."""
+        await desktop._issue_session(session, user, client_version="ios-0.1.0+26")
+        await desktop._issue_session(session, user, client_version="mac-0.2.6+3020")
+        await session.flush()
+        body = (await client.get("/v1/plans/subscription")).json()
+        assert (body["has_mac_app"], body["has_windows_app"]) == (True, False)
+        await desktop._issue_session(session, user, client_version="windows-0.1.0+4210")
+        await session.flush()
+        body = (await client.get("/v1/plans/subscription")).json()
+        assert (body["has_mac_app"], body["has_windows_app"]) == (True, True)
+
+    @pytest.mark.auth
     async def test_checkout_answers_with_the_url(
         self, client: httpx.AsyncClient, mocker: MockerFixture
     ) -> None:

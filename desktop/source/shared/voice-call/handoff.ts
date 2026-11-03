@@ -65,6 +65,8 @@ export interface CallChannelOptions {
   readonly log?: (line: string) => void;
   readonly schedule?: (run: () => void, ms: number) => () => void;
   readonly pollMs?: number;
+  /** The person's computer's system as its local-exec hello says it (`win32`: the banner says "on your PC"); none says "on your Mac". */
+  readonly userComputerPlatform?: () => string | undefined;
 }
 
 export const CALL_CHANNEL_POLL_MS = 1_200;
@@ -166,7 +168,7 @@ export function createCallChannel(options: CallChannelOptions): CallChannel {
       if (!isOpen || isDisposed) return;
       const fresh = said;
       const row = rosterRow(agents, options.agentId);
-      setStatus(row?.isRunning === true ? describeAgentActivity(row.currentActivity) ?? (lastTask == null ? null : workingLabel(lastTask)) : null);
+      setStatus(row?.isRunning === true ? describeAgentActivity(row.currentActivity, options.userComputerPlatform?.()) ?? (lastTask == null ? null : workingLabel(lastTask)) : null);
       if (fresh.length > 0) { log(`call channel: the agent said ${fresh.length} thing(s) on the call`); options.onSaid(fresh); }
     } catch (error) {
       failures += 1;

@@ -89,6 +89,7 @@ export type SettingsPage =
   | 'credentials'
   | 'permissions'
   | 'computer'
+  | 'updates'
   | 'help'
   | 'legal'
   | 'account'

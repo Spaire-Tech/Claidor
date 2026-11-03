@@ -12,9 +12,11 @@ import {
   didntConnect,
   isLoopback,
   loopbackAddress,
+  loopbackBusy,
   loopbackState,
   notConnectedNotice,
   queryItems,
+  returning,
   serverReturnState,
   signInAnswer,
   signInEndsChannel,
@@ -188,5 +190,32 @@ describe('a sign-in returning through the server (AppReturnSignInTests)', () => 
       { name: 'bad', value: '%E0%A4%A' },
     ])
     expect(queryItems('')).toEqual([])
+  })
+})
+
+describe('where the sign-in comes back to the Windows app (Connecting.returning, PluginCallsTests)', () => {
+  /** 13 October 2026: the sign-in's last page sends the person back to the app that opened it. */
+  it('names the app on our own start link, once, and leaves a maker’s page as it is', () => {
+    const start =
+      'https://api.simeonlabs.com/desktop/apps/start?to=https%3A%2F%2Faccounts.google.com%2Fo&e=1&s=ab'
+    const back = returning(start, 'simeon-ios')
+    const items = queryItems(new URL(back).search)
+    expect(items.map((item) => item.name)).toEqual(['to', 'e', 's', 'back'])
+    expect(items.at(-1)?.value).toBe('simeon-ios')
+    // The signed link is left as it was.
+    expect(items[0]?.value).toBe('https://accounts.google.com/o')
+    expect(back.startsWith(`${start}&`)).toBe(true)
+    // Named once.
+    expect(returning(back, 'simeon').split('back=')).toHaveLength(2)
+    expect(returning(back, 'simeon').endsWith('&back=simeon')).toBe(true)
+    const vendor = 'https://mcp.notion.com/authorize?state=x'
+    expect(returning(vendor, 'simeon-ios')).toBe(vendor)
+    expect(returning('not a link', 'simeon')).toBe('not a link')
+  })
+
+  it('says why the loopback could not listen (LoopbackSignIn.busyMessage)', () => {
+    expect(loopbackBusy('Canva')).toBe(
+      "Canva's sign-in comes back to localhost:8787, and another app is using it. Quit the other Simeon app and try again.",
+    )
   })
 })

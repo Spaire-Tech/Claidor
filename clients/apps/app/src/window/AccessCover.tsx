@@ -7,16 +7,19 @@
 // 2026 the server lets an account with no plan reach its computer, so this
 // shows only when that is switched off (`DESKTOP_COMPUTER_WITHOUT_PLAN`).
 // The access, the plan and the agents are read again when the window comes
-// back to the front (the plan bought in another tab shows here).
+// back to the front (the plan bought in another tab shows here). In the
+// Windows app, Stripe's page is the Mac's sheet, a window of the app's own
+// (outside.ts), read again as it closes; the plans page goes to the default
+// browser.
 
 import { useEffect, useState } from 'react'
 import { macCover, macRoute, tagline } from '../core/access'
 import { t as coreT } from '../core/l10n'
 import { t } from '../l10n'
 import type { WebSession } from '../session'
-import { openBlankTab } from './blankTab'
 import { Alert } from './Dialogs'
 import { markStyle } from './FirstRun'
+import { inApp, openBillingWindow, openPending } from './outside'
 import { useWatched } from './useStore'
 
 export function AccessCover({ session }: { session: WebSession }) {
@@ -54,14 +57,21 @@ export function AccessCover({ session }: { session: WebSession }) {
       window.open(route.url, '_blank', 'noopener')
       return
     }
+    // The Windows app: Stripe's page in a window of its own over this one (`MacBillingPage`), then everything read again.
+    if (inApp()) {
+      const failed = await openBillingWindow(store, route.flow)
+      if (failed) setFailure(failed)
+      await store.refreshAccess()
+      await store.refreshPlan()
+      await store.reloadRoster()
+      return
+    }
     // Opened at once, before the answer, so the browser lets it open; sent to the page once it is known. It keeps no handle on the app.
-    const page = openBlankTab()
+    const page = openPending()
     const answer = await store.billingPortal(route.flow)
-    if (answer.url) {
-      if (page) page.location.href = answer.url
-      else window.open(answer.url, '_blank', 'noopener')
-    } else {
-      page?.close()
+    if (answer.url) page.go(answer.url)
+    else {
+      page.drop()
       setFailure(answer.message)
     }
   }
