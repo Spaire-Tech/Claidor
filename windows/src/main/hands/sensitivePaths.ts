@@ -396,18 +396,24 @@ function decodeURIComponentSafely(value: string): string {
   }
 }
 
-/** What may come just before a path in a command's words, and just after a name. */
+/** What may come just before a path in a command's words, and just after a name (a `(` too, as after the Mac's: `~/.netrc(.)`). */
 const edge = `^|[\\s"'=(,;|&<>:{]`
 const before = `(?:${edge})`
 const between = `[. ]*(?::[^/\\s"']*)?/+`
-const after = `[. ]*(?:[:/\\s"'),;|&<>*?}]|$)`
+const after = `[. ]*(?:[:/\\s"'),;|&<>*?}(]|$)`
 const gap = `[^/\\s"',;|&<>]*`
 
-/** `x/..` worked out in a command's words, as often as it comes; `/./` as `/`. */
+/** `x/..` worked out in a command's words, as often as it comes, also at a word's start (`x/../y` is `y`, the Mac's `workedOut`); `/./` as `/`. */
 function workedOut(text: string): string {
   let out = text.replace(/\/\.(?=\/)/g, '')
   const step = /\/(?!\.\.(?:\/|$))[^/\s"'(),;|&<>]+\/\.\.(?=[/\s"'(),;|&<>]|$)/
-  for (let i = 0; i < 64 && step.test(out); i += 1) out = out.replace(step, '')
+  // At a word's start, `.` is no folder to come back out of (`./../x` is `../x`).
+  const first = /(^|[\s"'=(,;|&<>:{])(?!\.{1,2}(?:\/|$))[^/\s"'(),;|&<>:]+\/\.\.\//
+  for (let i = 0; i < 64; i += 1) {
+    if (step.test(out)) out = out.replace(step, '')
+    else if (first.test(out)) out = out.replace(first, '$1')
+    else break
+  }
   return out
 }
 
@@ -444,6 +450,114 @@ function foldersMovedTo(text: string, from: string): string[] {
   return out
 }
 
+/** Which of the command's characters are inside quotes (`'…'` or `"…"`; PowerShell's `` ` `` and cmd's `^` already taken out). */
+function quotedMask(command: string): boolean[] {
+  const mask: boolean[] = []
+  let quote: string | undefined
+  for (const char of command) {
+    mask.push(quote != null)
+    if (quote != null) {
+      if (char === quote) quote = undefined
+    } else if (char === '"' || char === "'") {
+      quote = char
+      mask[mask.length - 1] = true
+    }
+  }
+  return mask
+}
+
+/**
+ * The command's `cd`s (`Set-Location`, `pushd`…, a quote before one too)
+ * with where each moves to, read from `from` on, and, for `cd X &&` outside
+ * quotes, where what follows the `&&` starts (the Mac's `moves`).
+ */
+function movesIn(plain: string, of: SensitivePlaces, from: string): { folder: string; and?: number }[] {
+  const out: { folder: string; and?: number }[] = []
+  const quoted = quotedMask(plain)
+  const moves =
+    /(?:^|[;&|\n{("'])\s*(cd|chdir|sl|set-location|pushd|push-location)\s+(?:-(?:literalpath|path|lp)\s+)?(?:"([^"]*)"|'([^']*)'|((?:\$\{[^}]*\}|[^\s;|&)}"'])+))/gi
+  let at = from
+  for (const match of plain.matchAll(moves)) {
+    const target = (match[2] ?? match[3] ?? match[4] ?? '').trim()
+    if (target === '' || target === '-' || target === '+') continue
+    let written = expandForms(target, of).replace(/\\/g, '/').toLowerCase()
+    written = junctionForms(deviceForms(written, of, '^').replace(/\/{2,}/g, '/'), of)
+    at = canonicalNames(isAbsolute(written) ? written : at ? `${at}/${written}` : written)
+    const verb = (match.index ?? 0) + match[0].length - match[0].replace(/^[^a-z]*/i, '').length
+    let index = (match.index ?? 0) + match[0].length
+    while (plain[index] === ' ' || plain[index] === '\t') index += 1
+    const and = plain.startsWith('&&', index) && !quoted[verb] && !quoted[index]
+    out.push(and ? { folder: at, and: index + 2 } : { folder: at })
+  }
+  return out
+}
+
+/**
+ * The command in pieces, each with the folders its names are read from:
+ * everywhere the folders it runs in and every one it moves to, as a `cd`
+ * that fails leaves the shell where it was; but after `cd X &&`, until its
+ * list ends (`;`, `||`, `&`, a new line, `)` or `}`), only `X`, where `&&`
+ * makes sure the shell is (the Mac's `pieces`).
+ */
+function piecesOf(plain: string, of: SensitivePlaces, everywhere: string[], from: string): { text: string; folders: string[] }[] {
+  const regions: { start: number; end: number; folder: string }[] = []
+  for (const move of movesIn(plain, of, from)) {
+    if (move.and == null) continue
+    const rest = plain.slice(move.and).search(/;|\n|\)|\}|\|\||(?<!&)&(?!&)/)
+    regions.push({ start: move.and, end: rest < 0 ? plain.length : move.and + rest, folder: move.folder })
+  }
+  const cuts = [...new Set([0, plain.length, ...regions.flatMap((one) => [one.start, one.end])])].sort((a, b) => a - b)
+  const out: { text: string; folders: string[] }[] = []
+  for (let i = 0; i + 1 < cuts.length; i += 1) {
+    const start = cuts[i] ?? 0
+    const end = cuts[i + 1] ?? start
+    if (end <= start) continue
+    const region = regions.filter((one) => one.start <= start && start < one.end).pop()
+    out.push({ text: plain.slice(start, end), folders: region ? [region.folder] : everywhere })
+  }
+  return out
+}
+
+/** Commands whose words are names, messages or packages, not this folder's files (the Mac's `namingCommands`, with Windows' own). */
+const namingCommands = new Set([
+  'echo',
+  'write-output',
+  'write-host',
+  'write',
+  'git',
+  'npm',
+  'npx',
+  'pnpm',
+  'yarn',
+  'pip',
+  'pip3',
+  'gh',
+  'op',
+  'winget',
+  'choco',
+  'scoop',
+])
+
+/**
+ * Whether a name written bare (no `/`) at the end of `prefix` is a path
+ * (the Mac's `bareNameIsPath`): after a redirection always; else only as a
+ * word of a command, not the command itself, and not of one whose words
+ * are names.
+ */
+function bareNameIsPath(prefix: string): boolean {
+  const trimmed = prefix.trimEnd()
+  if (trimmed.endsWith('<') || trimmed.endsWith('>')) return true
+  const cut = Math.max(...[';', '&', '|', '\n', '(', '{'].map((one) => prefix.lastIndexOf(one)))
+  const words = prefix
+    .slice(cut + 1)
+    .split(/\s+/)
+    .filter((one) => one !== '')
+  while (words.length > 0 && /^[a-z_]\w*=/i.test(words[0] ?? '')) words.shift()
+  const command = words[0]?.replace(/["']/g, '')
+  if (command == null) return false
+  return !namingCommands.has((command.split('/').pop() ?? command).replace(/\.exe$/, ''))
+}
+
 /** A folder (canonical) and each one above it, with how many levels up: `c:/a/b`, `c:/a`, `c:/`. */
 function foldersUp(folder: string): { folder: string; up: number }[] {
   const out = [{ folder, up: 0 }]
@@ -460,37 +574,59 @@ function foldersUp(folder: string): { folder: string; up: number }[] {
  * The place a shell command names as a path (`sensitiveLocalPathInCommand`):
  * written whole (its drive left out too, when it is the home folder's), from
  * the home folder, or from a folder the command runs in (`folders`: where
- * the shell is, or the one asked for) or moves to, or from a folder above
- * one of those, `../` (or `..\`) as many times as it is above (the Mac's
- * `SensitivePaths.entry(inCommand:)`).
+ * the shell is, or the one asked for) or moves to (`piecesOf`), or from a
+ * folder above one of those, `../` (or `..\`) as many times as it is above,
+ * any number once at the drive's root (the Mac's
+ * `SensitivePaths.entry(inCommand:)`). A name written bare from one of
+ * those folders counts as `bareNameIsPath` says.
  */
 export function placeInCommand(
   command: string,
   of: SensitivePlaces,
   folders: readonly string[] = [],
 ): Place | undefined {
-  const texts = commandTexts(command, of)
   const homeDrive = driveOf(canonical(of.home, of))
   const starts = folders.filter((one) => one.trim() !== '').map((one) => canonical(one, of))
-  const contexts = new Set(starts)
-  for (const text of texts) for (const one of foldersMovedTo(text, starts[0] ?? canonical(of.home, of))) contexts.add(one)
+  const from = starts[0] ?? canonical(of.home, of)
+  const plain = command.replace(/[`^]/g, '')
+  const everywhere = new Set(starts)
+  for (const text of commandTexts(command, of)) for (const one of foldersMovedTo(text, from)) everywhere.add(one)
+  for (const move of movesIn(plain, of, from)) everywhere.add(move.folder)
+  const pieces = piecesOf(plain, of, [...everywhere], from).map((piece) => ({
+    texts: commandTexts(piece.text, of),
+    folders: piece.folders,
+  }))
   for (const place of places(of)) {
-    const patterns: RegExp[] = []
     const drive = driveOf(place.absolute)
     const whole =
       drive && drive === homeDrive
         ? `(?:${escapeRegExp(drive)})?${spelled(withoutDrive(place.absolute), between, gap)}`
         : spelled(place.absolute, between, gap)
-    patterns.push(new RegExp(`${before}${whole}${after}`))
-    if (place.fromHome) patterns.push(new RegExp(`${before}/?${spelled(place.fromHome, between, gap)}${after}`))
-    for (const start of contexts)
-      for (const { folder: context, up } of foldersUp(start)) {
-        if (!under(place.absolute, context) || place.absolute === context) continue
-        const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
-        const climb = `(?:\\./+)*${'\\.\\./+(?:\\./+)*'.repeat(up)}`
-        patterns.push(new RegExp(`${before}${climb}${spelled(relative, between, gap)}${after}`))
-      }
-    if (texts.some((one) => patterns.some((pattern) => pattern.test(one)))) return place
+    for (const piece of pieces) {
+      const patterns: RegExp[] = [new RegExp(`${before}${whole}${after}`)]
+      if (place.fromHome) patterns.push(new RegExp(`${before}/?${spelled(place.fromHome, between, gap)}${after}`))
+      const bare: RegExp[] = []
+      for (const start of piece.folders)
+        for (const { folder: context, up } of foldersUp(start)) {
+          if (!under(place.absolute, context) || place.absolute === context) continue
+          const relative = place.absolute.slice(context.length + (context.endsWith('/') ? 0 : 1))
+          const name = spelled(relative, between, gap)
+          if (up === 0 && !relative.includes('/')) {
+            patterns.push(new RegExp(`${before}(?:\\./+)+${name}${after}`))
+            bare.push(new RegExp(`(?:${edge})(${name})(?=${after})`, 'g'))
+            continue
+          }
+          const step = '\\.\\./+(?:\\./+)*'
+          const climb = context === '/' || /^[a-z]:\/$/.test(context) ? `(?:${step}){${up},}` : step.repeat(up)
+          patterns.push(new RegExp(`${before}(?:\\./+)*${climb}${name}${after}`))
+        }
+      if (piece.texts.some((one) => patterns.some((pattern) => pattern.test(one)))) return place
+      for (const text of piece.texts)
+        for (const pattern of bare)
+          for (const match of text.matchAll(pattern))
+            if (bareNameIsPath(text.slice(0, (match.index ?? 0) + match[0].length - (match[1] ?? '').length)))
+              return place
+    }
   }
   return undefined
 }

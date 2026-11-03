@@ -329,6 +329,57 @@ describe('Windows’ own spellings in a command (the review’s probe, S2, S5)',
     expect(gate(['C:\\Users\\Jonathan\\Documents'])).toBeUndefined()
   })
 
+  it('reads names after `cd X &&` from X only, until the list ends, as the Mac does (the final review)', () => {
+    const gh = '~\\.config\\gh\\hosts.yml'
+    const inGh = (command: string) => inCommand(command, ['C:\\Users\\Jonathan\\.config\\gh'])
+    // Ordinary commands, no longer read from where the shell was.
+    expect(inGh('cd ~\\project && gc hosts.yml')).toBeUndefined()
+    expect(inGh('cd C:\\Temp && gc hosts.yml')).toBeUndefined()
+    expect(inCommand('cd ~\\project && op run -- npm start', ['C:\\Users\\Jonathan\\.config'])).toBeUndefined()
+    expect(inCommand('cd ~\\project && findstr config src\\theme.css', ['C:\\Windows\\System32'])).toBeUndefined()
+    expect(inCommand('cd frontend && gc ..\\.npmrc', ['C:\\Users\\Jonathan\\project'])).toBeUndefined()
+    // Where a cd may have failed, or a group or a list has ended, every folder still holds.
+    for (const command of [
+      'cd C:\\nowhere; gc hosts.yml',
+      'cd C:\\Temp && dir; gc hosts.yml',
+      '(cd C:\\Temp && dir); gc hosts.yml',
+      'cd C:\\Temp && dir || gc hosts.yml',
+      'echo "x; cd C:\\Temp && " | gc hosts.yml',
+      "echo 'cd C:\\Temp && ' | gc h'o'sts.yml",
+    ])
+      expect(inGh(command), command).toBe(gh)
+    expect(inCommand('cd ~\\.config\\gh && gc hosts.yml')).toBe(gh)
+    expect(inCommand('cd C:\\Temp && cd ~\\.config\\gh && gc hosts.yml')).toBe(gh)
+  })
+
+  it('reads a bare name from a folder only as a command’s word, not its own name nor a word of one whose words are names', () => {
+    const gh = '~\\.config\\gh\\hosts.yml'
+    const inGh = (command: string) => inCommand(command, ['C:\\Users\\Jonathan\\.config\\gh'])
+    expect(inCommand('winget install Firefox', ['C:\\Users\\Jonathan\\AppData\\Roaming\\Mozilla'])).toBeUndefined()
+    expect(inCommand('echo Protect', ['C:\\Users\\Jonathan\\AppData\\Roaming\\Microsoft'])).toBeUndefined()
+    expect(inCommand('git commit -m "no op"', ['C:\\Users\\Jonathan\\.config'])).toBeUndefined()
+    expect(inCommand('op item get x', ['C:\\Users\\Jonathan\\.config'])).toBeUndefined()
+    expect(inGh('hosts.yml')).toBeUndefined()
+    for (const command of ['gc hosts.yml', 'Get-Content hosts.yml', 'type hosts.yml', 'gc .\\hosts.yml', 'echo x > hosts.yml', '$x = gc hosts.yml'])
+      expect(inGh(command), command).toBe(gh)
+    expect(inCommand('gci Protect', ['C:\\Users\\Jonathan\\AppData\\Roaming\\Microsoft'])).toBe('%APPDATA%\\Microsoft\\Protect')
+  })
+
+  it('closes the review’s smaller ways round, as the Mac does', () => {
+    const inProject = (command: string) => inCommand(command, ['C:\\Users\\Jonathan\\project'])
+    // `${env:…}` and a quote before a cd.
+    expect(inProject('cd ${env:USERPROFILE}\\.config\\gh && gc hosts.yml')).toBe('~\\.config\\gh\\hosts.yml')
+    expect(inProject('powershell -c "cd ~\\.config\\gh; gc hosts.yml"')).toBe('~\\.config\\gh\\hosts.yml')
+    // `x\..\` at a word's start; any number of `..\` once at the drive's root; `(` after a name.
+    expect(inCommand('gc Documents\\..\\.ssh\\id_rsa', ['C:\\Users\\Jonathan'])).toBe(ssh)
+    expect(inProject('cd ~\\.config && gc x\\..\\gh\\hosts.yml')).toBe('~\\.config\\gh\\hosts.yml')
+    expect(inProject('gc ..\\..\\..\\..\\..\\..\\Windows\\System32\\config\\SAM')).toBe('%SystemRoot%\\System32\\config')
+    expect(inProject('gc ~\\.netrc(')).toBe('~\\.netrc')
+    // Still not one of them.
+    expect(inProject('gc Documents\\..\\notes.txt')).toBeUndefined()
+    expect(inProject('gc ..\\..\\..\\..\\Windows\\System32\\configs')).toBeUndefined()
+  })
+
   it('refuses a name reached by going up from a folder it runs in or moves to, as the Mac does', () => {
     const up: [string, string | undefined][] = [
       ['cd ~/Documents; cat ../.ssh/id_rsa', ssh],

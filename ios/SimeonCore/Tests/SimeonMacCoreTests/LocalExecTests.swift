@@ -229,6 +229,110 @@ final class LocalExecTests: XCTestCase {
     XCTAssertNil(gate(LocalToolRequest(action: "read-file", target: terminals + "/42.txt", attachToResourcePath: terminals), "q1", .ask, approved))
   }
 
+  /**
+   * After `cd X &&` only `X` holds until the list ends, so an ordinary command is not read from where the shell was
+   * (the final review of 3 November 2026); across `;`, `||`, `&`, `)` or a quoted `&&`, every folder holds.
+   */
+  func testOnlyTheFolderACdAndMakesSureOf() {
+    func entry(_ folder: String, _ command: String) -> String? { SensitivePaths.entry(inCommand: command, home: home, folders: [folder]) }
+    // The review's ordinary commands.
+    XCTAssertNil(entry("/Users/bass/.docker", "cd ~/project && cat config.json"))
+    XCTAssertNil(entry("/etc", "cd ~/project && grep shadow src/theme.css"))
+    XCTAssertNil(entry("/Users/bass/.config", "cd ~/project && op run -- npm start"))
+    XCTAssertNil(entry("/Users/bass/project", "cd frontend && cat ../.npmrc"))
+    XCTAssertNil(entry("/Users/bass/.config/gh", "cd /tmp && cat hosts.yml"))
+    XCTAssertNil(entry("/Users/bass/.config/gh", "cd /tmp && echo | cat hosts.yml"))
+    XCTAssertNil(entry("/Users/bass/project", "cd ~/.docker && cd ~/project && cat config.json"))
+    // Where a cd may have failed, or a subshell or a list has ended, every folder still holds.
+    let gh = ".config/gh/hosts.yml"
+    for command in [
+      "cd /nonexistent; cat hosts.yml",
+      "cd /tmp && true; cat hosts.yml",
+      "cd /nonexistent && ls; cat hosts.yml",
+      "(cd /tmp && ls); cat hosts.yml",
+      "cd /tmp && ls & cat hosts.yml",
+      "cd /tmp && ls || cat hosts.yml",
+      "{ cd /tmp && ls; }; cat hosts.yml",
+      "echo `cd /tmp && ls`; cat hosts.yml",
+      #"echo "x; cd /tmp && " | cat hosts.yml"#,
+      #"echo 'cd /tmp && ' | cat h'o'sts.yml"#,
+    ] {
+      XCTAssertEqual(entry("/Users/bass/.config/gh", command), gh, command)
+    }
+    XCTAssertEqual(entry("/Users/bass/project", "cd ~/.config/gh && cat hosts.yml"), gh)
+    XCTAssertEqual(entry("/Users/bass/project", "cd /tmp && cd ~/.config/gh && cat hosts.yml"), gh)
+    XCTAssertEqual(entry("/Users/bass/project", "cd ~/.config && cd gh && cat hosts.yml"), gh)
+    XCTAssertEqual(entry("/Users/bass/project", "cd sub; ls ../.aws"), ".aws")
+  }
+
+  /** A name written bare from a folder is a path only as one of a command's words, unless its words are names (`bareNameIsPath`). */
+  func testABareNameIsAPathOnlyAsACommandsWord() {
+    func entry(_ folder: String, _ command: String) -> String? { SensitivePaths.entry(inCommand: command, home: home, folders: [folder]) }
+    XCTAssertNil(entry("/Users/bass/Library/Application Support", "brew install --cask arc"))
+    XCTAssertNil(entry("/Users/bass/Library/Application Support", "echo Arc"))
+    XCTAssertNil(entry("/Users/bass/.config", #"git commit -m "no op""#))
+    XCTAssertNil(entry("/Users/bass/.config", "op item get x"))
+    XCTAssertNil(entry("/Users/bass/.config", "gcloud auth list"))
+    XCTAssertNil(entry("/Users/bass/Library", "npm install keychains"))
+    XCTAssertNil(entry("/Users/bass/.config/gh", "hosts.yml"))
+    let gh = ".config/gh/hosts.yml"
+    for command in [
+      "cat hosts.yml", "cat ./hosts.yml", #"cat "hosts.yml""#, "/bin/cat hosts.yml", #"\cat hosts.yml"#, #""cat" hosts.yml"#,
+      "sudo cat hosts.yml", "env cat hosts.yml", "FOO=1 cat hosts.yml", "cp hosts.yml /tmp/x", "echo hi | tee hosts.yml",
+      "echo $(cat hosts.yml)", #"printf "%s" "$(<hosts.yml)""#, "echo x > hosts.yml", "base64 < hosts.yml",
+      "brew list; cat hosts.yml", "if true; then cat hosts.yml; fi",
+    ] {
+      XCTAssertEqual(entry("/Users/bass/.config/gh", command), gh, command)
+    }
+    XCTAssertEqual(entry("/Users/bass/Library/Application Support", "ls Arc"), "Library/Application Support/Arc")
+    XCTAssertEqual(entry("/Users/bass/Library", "ls Keychains"), "Library/Keychains")
+    XCTAssertEqual(entry("/etc", "cat shadow"), "/etc/shadow")
+  }
+
+  /** The review's smaller ways round the guard, closed on the Mac and in the Windows app. */
+  func testTheReviewsOtherSpellings() {
+    let commands: [(String, String, String?)] = [
+      // `${HOME}` in a cd.
+      ("/Users/bass/project", "cd ${HOME}/.config/gh && cat hosts.yml", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "cd ${HOME}/.config && cat gh/hosts.yml", ".config/gh/hosts.yml"),
+      // `x/../` at a word's start, and after `~`.
+      ("/Users/bass", "cat Documents/../.ssh/id_rsa", ".ssh"),
+      ("/Users/bass/project", "cd ~/.config && cat x/../gh/hosts.yml", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "cat ~/../bass/.ssh/id_rsa", ".ssh"),
+      ("/Users/bass/project", "cat $HOME/../bass/.aws/credentials", ".aws"),
+      ("/Users/bass/project", "cat ./../../bass/.ssh/id_rsa", ".ssh"),
+      // Up past `/`, any number of times.
+      ("/Users/bass/project", "cat ../../../../etc/shadow", "/etc/shadow"),
+      ("/Users/bass/project", "cat ../../../../../Users/bass/.ssh/id_rsa", ".ssh"),
+      // The other ways of writing a cd.
+      ("/Users/bass/project", "if cd ~/.config/gh; then cat hosts.yml; fi", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "builtin cd ~/.config/gh && cat hosts.yml", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "command cd ~/.config/gh && cat hosts.yml", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "cd -- ~/.config/gh && cat hosts.yml", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "zsh -c 'cd ~/.config/gh && cat hosts.yml'", ".config/gh/hosts.yml"),
+      ("/Users/bass/project", #"bash -c "cd ~/.config/gh; cat hosts.yml""#, ".config/gh/hosts.yml"),
+      ("/Users/bass/project", "echo `cd ~/.config/gh; cat hosts.yml`", ".config/gh/hosts.yml"),
+      // zsh's glob qualifiers, and a backtick, end a name.
+      ("/Users/bass/project", "cat ~/.netrc(.)", ".netrc"),
+      ("/Users/bass/project", "ls ~/.ssh(N)", ".ssh"),
+      ("/Users/bass/project", "echo `cat ~/.netrc`", ".netrc"),
+      // Still not one of them.
+      ("/Users/bass/project", "cd ~/Documents && cat ../notes.txt", nil),
+      ("/Users/bass/project", "cat ../.sshx", nil),
+      ("/Users/bass/project", "cat ../../../../etc/shadows", nil),
+      ("/Users/bass/project", "cat Documents/../notes.txt", nil),
+      ("/Users/bass/project", "echo `date`", nil),
+      ("/Users/bass/project", "git log HEAD~1", nil),
+      // Known to pass (the guard's comment): another spelling of the home folder, and a wildcard.
+      ("/Users/bass/project", "cat ~bass/.ssh/id_rsa", nil),
+      ("/Users/bass/project", "cat /System/Volumes/Data/Users/bass/.ssh/id_rsa", nil),
+      ("/Users/bass", "cat $PWD/.ssh/id_rsa", nil),
+    ]
+    for (folder, command, entry) in commands {
+      XCTAssertEqual(SensitivePaths.entry(inCommand: command, home: home, folders: [folder]), entry, "\(command) in \(folder)")
+    }
+  }
+
   /** A command run in a place that holds keys is refused whatever its words, as the Windows app refuses it. */
   func testTheFolderACommandRunsIn() {
     let terminals = "/Users/bass/terminals"
