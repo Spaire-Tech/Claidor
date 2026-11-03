@@ -839,13 +839,20 @@ export function travellerJSON(traveller: Traveller): JSONObject {
 
 const nameMarks = new Set('!"#$%&()*+,./:;<=>?@[\\]^_`{|}~')
 
-/** A name as on the ID: 1 to 40 characters, no digits and none of the marks the host refuses. */
+/**
+ * A name as on the ID: 1 to 40 characters, none of them a digit 0 to 9 or
+ * one of the marks the host refuses. The digits are the computer's (`NAME`,
+ * a JavaScript `\d`), as the core's `[0-9]`: a Han numeral (李一) or another
+ * script's digit is a name's, and so is a digit with something added to it.
+ */
 function isName(value: string): boolean {
   const each = characters(value)
   return (
     each.length >= 1 &&
     each.length <= 40 &&
-    each.every((character) => !isDigit(character) && !nameMarks.has(character))
+    each.every(
+      (character) => !/^[0-9]$/.test(character) && !nameMarks.has(character),
+    )
   )
 }
 

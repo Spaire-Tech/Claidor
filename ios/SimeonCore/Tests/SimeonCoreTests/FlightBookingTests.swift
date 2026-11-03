@@ -96,6 +96,33 @@ final class FlightBookingTests: XCTestCase {
     XCTAssertEqual(Traveller.age("2008-11-13", on: "2026-11-12"), 17)
   }
 
+  /** A name's digits are 0 to 9 only, as the computer's check (`NAME`, a JavaScript `\d`): a Han numeral or another script's digit is a name's. */
+  func testANameRefusesOnlyTheDigitsZeroToNine() {
+    let today = Traveller.date("2026-10-13")!
+    var ada = Traveller(id: "pas_0000Ada")
+    ada.givenName = "Ada"; ada.familyName = "Lovelace"; ada.title = .ms; ada.gender = .f
+    ada.bornOn = "1987-07-24"; ada.email = "ada@example.com"; ada.phone = "+1 (206) 555-0100"
+    func given(_ name: String) -> String? {
+      var traveller = ada
+      traveller.givenName = name
+      return traveller.problem(passportNeeded: false, today: today)?.field
+    }
+    func family(_ name: String) -> String? {
+      var traveller = ada
+      traveller.familyName = name
+      return traveller.problem(passportNeeded: false, today: today)?.field
+    }
+    // A digit with something added to it is no longer the digit, as a mark (`[0-9]` takes a whole character; the web's `isName`).
+    for name in ["李一", "健一", "一郎", "〇", "Ada٣", "A１", "A①", "Ⅻ", "1\u{FE0F}\u{20E3}", "A1\u{301}"] {
+      XCTAssertNil(given(name), name)
+      XCTAssertNil(family(name), name)
+    }
+    for name in ["Ada1", "0", "9", "A9a"] {
+      XCTAssertEqual(given(name), "given_name", name)
+      XCTAssertEqual(family(name), "family_name", name)
+    }
+  }
+
   func testAnAdultSeatAndWhatChangedComeWithTheFlight() throws {
     let card = try form()
     XCTAssertNil(card.adultOn(0), "a form from before the flight's day checks no age")

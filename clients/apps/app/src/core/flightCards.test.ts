@@ -3,9 +3,9 @@
 // form (fixtures/flights.json, the JSON in Demo.swift's
 // `DemoData.seed(gallery: true)`), its `PaneMembersFlightTests` (the
 // flight's details) and `FlightBookingTests` (the offer to book, the form,
-// its checks, the computer's answer). The checks' Swift ways (Unicode
-// digits, characters counted as a person reads them) were measured from the
-// core's own code.
+// its checks, the computer's answer). The checks' Swift ways (a phone's
+// Unicode digits, a name's 0 to 9, characters counted as a person reads
+// them) were measured from the core's own code.
 
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -656,12 +656,17 @@ describe('booking a flight (FlightBookingTests)', () => {
     expect(given('é'.repeat(41))).toBe('given_name')
     expect(given('Zoë')).toBeUndefined()
     expect(given('李')).toBeUndefined()
-    // A digit is any character with a value as a number: other scripts' digits, ①, Han numerals (Swift's `\d`).
-    expect(given('Ada٣')).toBe('given_name')
-    expect(given('A１')).toBe('given_name')
-    expect(given('A①')).toBe('given_name')
-    expect(given('李一')).toBe('given_name')
-    expect(given('1️⃣')).toBe('given_name')
+    // A digit is 0 to 9 only, as the computer's (`NAME`) and the core's `[0-9]`: other scripts' digits, ①, Han numerals are a name's.
+    expect(given('Ada1')).toBe('given_name')
+    expect(given('9')).toBe('given_name')
+    expect(given('Ada٣')).toBeUndefined()
+    expect(given('A１')).toBeUndefined()
+    expect(given('A①')).toBeUndefined()
+    expect(given('李一')).toBeUndefined()
+    expect(given('健一')).toBeUndefined()
+    // A digit with something added to it is no longer the digit, as a mark (Swift's `[0-9]` takes a whole character).
+    expect(given('1️⃣')).toBeUndefined()
+    expect(given('A1́')).toBeUndefined()
     // A mark with something added to it is no longer the mark.
     expect(given('#️⃣')).toBeUndefined()
     expect(given('A#́')).toBeUndefined()
