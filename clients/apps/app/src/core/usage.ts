@@ -183,8 +183,10 @@ export function usageSummary(
 
 /**
  * The Plan group's line (`ManagePlan.line`): when the trial ends or the
- * usage resets ("Oct 12", the month and day in the app's language), and
- * "Upgrade for more usage." when there is a plan above.
+ * usage resets ("October 12", the month in full and the day in the app's
+ * language: a short month ends in a full stop in French, German, Portuguese
+ * and Swedish, and the sentence's own made two, "7 nov.."), and "Upgrade
+ * for more usage." when there is a plan above.
  */
 export function planLine(
   plan: ManagePlan,
@@ -193,7 +195,7 @@ export function planLine(
   let when: string | undefined
   if (plan.periodEndMs !== undefined)
     when = new Intl.DateTimeFormat(options.locale ?? displayLocale(), {
-      month: 'short',
+      month: 'long',
       day: 'numeric',
       timeZone: options.timeZone,
     }).format(new Date(plan.periodEndMs))

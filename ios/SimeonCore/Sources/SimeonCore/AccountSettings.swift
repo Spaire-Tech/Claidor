@@ -193,14 +193,18 @@ public struct UsageSummary: Equatable, Sendable {
     public let periodEndMs: Double?
     public let nextTier: NextTier?
 
-    /** The card's line (the patch's `line`): when the trial ends or the usage resets, and "Upgrade for more usage." when there is a plan above. */
+    /**
+     * The card's line (the patch's `line`): when the trial ends or the usage resets, and "Upgrade for more usage." when there is
+     * a plan above. The month is written in full ("October 7", "7 octobre"): a short one ends in a full stop in French, German,
+     * Portuguese and Swedish ("7 nov."), and the sentence's own made two ("7 nov..").
+     */
     public func line(locale: Locale = L10n.locale(english: .current), timeZone: TimeZone = .current) -> String {
       var when: String?
       if let periodEndMs {
         let formatter = DateFormatter()
         formatter.locale = locale
         formatter.timeZone = timeZone
-        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        formatter.setLocalizedDateFormatFromTemplate("MMMMd")
         when = formatter.string(from: Date(timeIntervalSince1970: periodEndMs / 1000))
       }
       let head = status == "trialing" ? (when.map { L10n.text("Your trial ends on \($0).") } ?? L10n.text("Your trial is running.")) : (when.map { L10n.text("Usage resets on \($0).") } ?? "")

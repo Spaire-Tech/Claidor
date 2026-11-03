@@ -83,10 +83,11 @@ describe('the usage (SettingsTests)', () => {
       )
       if (typeof row.planLine === 'string') {
         expect(summary.managePlan, label).toBeDefined()
+        // The patch's line with its month in full ("Oct 16" is "October 16"; below).
         expect(
           planLine(summary.managePlan!, { locale: 'en-US', timeZone: 'UTC' }),
           label,
-        ).toBe(row.planLine)
+        ).toBe(row.planLine.replaceAll(' on Oct ', ' on October '))
       } else {
         expect(summary.managePlan, label).toBeUndefined()
       }
@@ -116,6 +117,42 @@ describe('the usage (SettingsTests)', () => {
       expect(meters.upgradeSupportingText, label).toBe(some(row.supporting))
       expect(showsSection({ kind: 'ready', summary }), label).toBe(row.visible)
     })
+  })
+
+  it('writes the plan’s date with its month in full, one full stop in every language', () => {
+    // "Ton essai se termine le 7 nov..": a short month ends in a full stop in French, German, Portuguese and Swedish.
+    const end = Date.UTC(2026, 9, 7)
+    const trial = {
+      planName: 'Pro',
+      tier: 'pro',
+      status: 'trialing',
+      periodEndMs: end,
+    }
+    const active = { ...trial, status: 'active' }
+    expect(planLine(trial, { locale: 'en-US', timeZone: 'UTC' })).toBe(
+      'Your trial ends on October 7.',
+    )
+    expect(planLine(active, { locale: 'en-US', timeZone: 'UTC' })).toBe(
+      'Usage resets on October 7.',
+    )
+    const dates: Record<string, string> = {
+      fr: '7 octobre',
+      de: '7. Oktober',
+      'pt-BR': '7 de outubro',
+      sv: '7 oktober',
+      es: '7 de octubre',
+      nl: '7 oktober',
+      it: '7 ottobre',
+      pl: '7 października',
+      tr: '7 Ekim',
+    }
+    for (const [locale, date] of Object.entries(dates)) {
+      for (const plan of [trial, active]) {
+        const line = planLine(plan, { locale, timeZone: 'UTC' })
+        expect(line, locale).toContain(date)
+        expect(line, locale).not.toContain('..')
+      }
+    }
   })
 
   it('writes money, shares and resets as the window did', () => {
