@@ -235,7 +235,7 @@ final class SearchState {
   /**
    * A row chosen (`qe`), then search closes: an agent opens; an action does
    * what it says; a message or a file opens its chat at that line, lit; a
-   * link opens in the browser; a routine opens its agent.
+   * link opens in the browser; a routine opens in its agent's Routines.
    */
   func activate(_ row: Jump.Row, store: AppStore, window: WindowState, sidebar: SidebarState) {
     switch row {
@@ -259,15 +259,13 @@ final class SearchState {
     case .link(let url):
       if let address = URL(string: url) { NSWorkspace.shared.open(address) }
     case .routine(let hit):
-      // As the window does (`handleCommandPaletteOpenRoutine`): the open agent's routine opens its pane on Computer, another's
-      // opens that agent with its pane on Profile; the routine itself is not opened.
+      // As the chat's routine chip (`openAutomationDetail`, `PaneState.openRoutine`): its agent's pane on Routines, with that
+      // routine's editor once the list has it. The window's search (`handleCommandPaletteOpenRoutine`) dropped the routine.
       if let pane, let layout {
-        if window.selected == hit.agentId {
-          pane.open(.computer, layout: layout)
-          window.opened += 1
-        } else {
-          pane.open(.profile, for: hit.agentId, window: window, store: store, layout: layout)
-        }
+        let openAgent = window.selected == hit.agentId
+        pane.openRoutine(hit.routine.id, for: hit.agentId, window: window, store: store, layout: layout)
+        // The open agent's: the new chat makes way, as choosing another agent does (`choose`).
+        if openAgent { window.opened += 1 }
       } else {
         window.choose(hit.agentId, store: store)
       }
