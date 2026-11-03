@@ -193,13 +193,16 @@ describe('a chat card’s Connect (MacConnector.connect)', () => {
     expect(sent('uninstallPlugin')).toHaveLength(1)
   })
 
-  it('tells the person when the browser refuses the click’s tab, and adds nothing', async () => {
+  it('tells the person when the browser refuses the click’s tab, marks it for Retry, and adds nothing', async () => {
     const { browser, connector, store, sent } = await world()
     browser.blocked = true
-    connector.connect('Linear')
+    const heard: boolean[] = []
+    connector.connect('Linear', (refused) => heard.push(refused))
     connector.confirm()
     await eventually(() => connector.told !== undefined)
     expect(connector.told).toBe("Linear didn't connect. Try again.")
+    // A refusal like the computer's: the card's button reads Retry.
+    expect(heard).toEqual([true])
     // Nothing asked of the computer, nothing added, nothing to take back; never a page opened later, off the click.
     expect(sent('installEntry')).toHaveLength(0)
     expect(sent('authenticateServer')).toHaveLength(0)
