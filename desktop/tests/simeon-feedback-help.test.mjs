@@ -78,7 +78,12 @@ test("the server route the app posts to exists, takes the same body and logs the
   assert.match(endpoints, /desktop_session: DesktopSession = Depends\(get_desktop_session\)/);
   assert.match(endpoints, /"desktop\.feedback\.received"/);
   assert.match(endpoints, /_ok\(\{"received": True\}\)/);
-  for (const field of ["category", "message", "appVersion", "platform"]) assert.match(endpoints, new RegExp(`^    ${field}: `, "m"));
+  // The body the route takes moved into feedback.py with the iPhone's and the Mac's sheets (#502): the fields this app sends are still in it.
+  assert.match(endpoints, /^    body: FeedbackBody,$/m);
+  const feedback = await readFile(path.join(repoRoot, "../server/simeon/desktop/feedback.py"), "utf8");
+  const bodyClass = feedback.slice(feedback.indexOf("class FeedbackBody(BaseModel):"));
+  assert.ok(bodyClass.length > 0, "FeedbackBody is in feedback.py");
+  for (const field of ["category", "message", "appVersion", "platform"]) assert.match(bodyClass, new RegExp(`^    ${field}: `, "m"));
 });
 
 test("the menu bar has no Help menu for now, the help URL stays simeonlabs.com, and the cloud-agent link still builds on the website URL", async () => {

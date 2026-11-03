@@ -786,7 +786,11 @@ For the founder, each to be answered before the step that needs it:
   npm run publish:host-bundle`, macOS arm64, CLAUDE.md). Until then the
   agent writes for a Mac: much of it fails in PowerShell, and in Windows
   PowerShell 5.1 `&&` doesn't parse, so nothing runs. Needed before the
-  first Windows release: a host bundle published.
+  first Windows release: a host bundle published. `npm run package` runs the
+  engine's whole suite first (`npm run check`); its feedback route test,
+  failing since #502 moved the body into `feedback.py`, would have stopped
+  it, and is fixed (3 November 2026). The packaging audit's test needs the
+  Mac's `npm run bootstrap` and was not run here.
 - **The call's words on a PC.** The Windows app's call labels are the
   page's (`clients/apps/app/src/core/voiceCall.ts`) and still say
   "Running a command on your Mac…" and "Reading a file on your Mac…".
