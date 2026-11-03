@@ -3,7 +3,7 @@ export const HostExtensions = {
   Automations: "automations", BoxLifecycle: "box-lifecycle", BoxStoreSync: "box-store-sync",
   BrowserUa: "browser-ua", Channels: "channels", ChatCopy: "chat-copy", CloudAgents: "cloud-agents", CodebaseTelemetry: "codebase-telemetry",
   ContentSearch: "content-search", CrossUserSharing: "cross-user-sharing", Experiments: "experiments",
-  ForeverBox: "forever-box", HostUpgrade: "host-upgrade", Inference: "inference", LocalExec: "local-exec",
+  ForeverBox: "forever-box", HostUpgrade: "host-upgrade", Inference: "inference", LocalBrowser: "local-browser", LocalExec: "local-exec",
   LocalToolPermission: "local-tool-permission", ManagedSetup: "managed-setup", Mcp: "mcp", Memory: "memory",
   MemorySync: "memory-sync",
   Notifications: "notifications", NotifyBus: "notify-bus", Secrets: "secrets", Session: "session",

@@ -291,7 +291,9 @@ async def _replacement(
 # --- a box asleep under a run's answer --------------------------------------------
 #
 # A run on the box can wait on an answer from an app: a command's output from
-# the person's Mac (`local-exec/responses`) or a passkey (`webauthn/responses`).
+# the person's Mac (`local-exec/responses`), a passkey (`webauthn/responses`),
+# or a browser step in the app's own browser (`local-browser/responses`,
+# docs/app-browser/protocol.md).
 # When the box slept or E2B froze it in between, E2B said "The sandbox was not
 # found" and the answer went nowhere (Nora's Stripe check, 27 October 2026:
 # the Mac's three tries at 18:38:01 refused, the box put to sleep a second
@@ -301,7 +303,7 @@ async def _replacement(
 # (EnsureSandBox), and reading never does.
 
 #: The paths that answer the box's own requests.
-ANSWERS = ("local-exec/responses", "webauthn/responses")
+ANSWERS = ("local-exec/responses", "webauthn/responses", "local-browser/responses")
 
 #: Wakes the person's box under their ensure lock (`broker.wake_locked`).
 BoxWake = Callable[[AsyncSession, UUID], Awaitable[str]]

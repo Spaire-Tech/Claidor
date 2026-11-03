@@ -1,6 +1,11 @@
 # The browser in the app
 
-A plan, not built yet (4 November 2026). Nothing in it has run.
+A plan (4 November 2026). The founder's decisions are made (below).
+
+**Where it is.** Step 1, the engine's route, is built and tested with a
+stand-in app, off by default ([protocol.md](protocol.md)). No app has a
+browser yet, so nothing has changed for anyone, and nothing has run on a
+Mac or a PC. Next: step 2, the browser on Windows.
 
 ## The decision
 
@@ -146,6 +151,7 @@ use them.
      shaped like local exec: `GET /local-browser/requests` and
      `POST /local-browser/responses`.
    - Otherwise it goes to the computer's Chrome, exactly as today.
+   - The frames, the ops and the answers: [protocol.md](protocol.md).
    - The agent's instructions don't change. `OpenPage` opens in the same
      browser the helper will use.
 3. **The switch.** A setting on the server, off by default, decides
@@ -157,6 +163,10 @@ use them.
    - When the app's browser goes away mid-task (app quit, Mac asleep), the
      step fails with a plain sentence ("The browser on this Mac closed"). The
      agent then starts again on the computer, from the address.
+   - How the engine tells one task from the next, per agent: a task on the
+     computer ends when it has been idle ten minutes and a step opens an
+     address; a task in the app lasts while that browser is open
+     ([protocol.md](protocol.md), "Which browser a step goes to").
 5. **Sign-ins.** One saved session for all of a person's agents, as on the
    computer today (decision 2). The person signs in inside the tab; the pane
    is the browser.
@@ -263,10 +273,36 @@ not decided).
 
 ## Decisions for the founder
 
-| # | Question | Recommendation |
+All five decided as recommended: the founder, 4 November 2026, "go with
+your recommendations".
+
+| # | Question | Decided |
 |---|---|---|
 | 1 | **The Mac's browser.** (a) The same Chrome browser as Windows, run as a helper inside the Mac app, shown in the pane as a live picture. (b) Chrome built into the Mac app itself (CEF): more native, much more work. (c) Apple's WKWebView: ruled out, it can't be driven reliably. | (a): one browser for both, about 100 MB more in the Mac app |
 | 2 | **Sign-ins.** Shared by all of a person's agents, or each agent its own | Shared, as on the computer today |
 | 3 | **Quitting mid-task.** Ask, or always move to the computer | Ask |
 | 4 | **Sign-ins for routines.** Hand the app's sign-ins to the computer: ask once per site, always, or never | Ask once per site |
-| 5 | **OpenBot.** Build our own following its design, or buy a commercial licence | Build our own |
+| 5 | **OpenBot.** Build our own following its design, or buy a commercial licence | Build our own; none of its code |
+
+## Progress
+
+| Step | State |
+|---|---|
+| 0. Decisions | Done, 4 November 2026 |
+| 1. The route in the engine | Built, tested with a stand-in app (`desktop/tests/app-browser-route.test.mjs`), off by default. Not yet on the computers: that needs a host bundle published from a Mac. Not run with a real app. |
+| 2-7 | Not started |
+
+Step 1, what was decided while building it (4 November 2026):
+
+- **The switch** is `SIMEON_APP_BROWSER_USERS` on the server (e-mail
+  addresses or user ids, `*` for everyone; empty is nobody). A listed
+  person's computer gets `SIMEON_APP_BROWSER=1` each time it is made or
+  replaced: a new account, an update of the computer (`RecreateSandBox`,
+  its files kept) or a move between servers. A computer already running
+  keeps what it had until then.
+- **Uploads**: the engine reads the files on the computer, with the
+  helper's checks, and sends them to the app, 25 MB at most together.
+- **Auto-review** reads the app's list of tabs for a step there and refuses
+  the step when it can't, as on the computer.
+- **An answer from the app** wakes a sleeping computer, as local exec's
+  does.
