@@ -360,7 +360,8 @@ final class PluginsBox: AgentBackend, @unchecked Sendable {
         agent.purpose = args["purpose"]?.text
         made.append(agent)
       }
-      return failing.contains(key) ? nil : answers[key] ?? .null
+      // `JSON?.none`, not `nil`: JSON takes a bare `nil` as its own null, and a failing command then answered null instead of failing.
+      return failing.contains(key) ? JSON?.none : answers[key] ?? .null
     }
     guard let answer else { throw GatewayError(message: "\(key) failed", refused: true) }
     return answer
