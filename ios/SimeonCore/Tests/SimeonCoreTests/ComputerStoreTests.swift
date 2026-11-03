@@ -426,6 +426,49 @@ final class FollowingTheRebuildTests: XCTestCase {
   }
 }
 
+/**
+ * View › Reload keeps who is watching (the window's watch lasts as long as
+ * its view, and an account change keeps watched entries, `ComputerBook.reset`):
+ * the open agent's computer is read again rather than left on "Booting up";
+ * a sign-out still leaves nothing watched for the next account.
+ */
+@MainActor
+final class ComputerReloadTests: XCTestCase {
+  func testReloadKeepsWhoIsWatchingAndASignOutDoesNot() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let store = AppStore()
+    await store.attach(backend)
+    guard let agent = store.agents.first(where: { !$0.isGroup }) else { return XCTFail("the demo has agents") }
+    store.watchComputer(agent.id)
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertNotNil(store.computer.status(agent.id), "read as it is watched")
+    await store.attach(backend)
+    XCTAssertTrue(store.computer.isWatched(agent.id), "still followed after Reload, the window's selection unchanged")
+    try await Task.sleep(nanoseconds: 150_000_000)
+    XCTAssertNotNil(store.computer.status(agent.id), "and read again once the stream is back")
+    store.detach()
+    XCTAssertTrue(store.computer.watched.isEmpty, "signed out: nothing watched")
+    await store.attach(DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil))
+    XCTAssertTrue(store.computer.watched.isEmpty, "nor for the next sign-in")
+    store.detach()
+  }
+
+  func testReloadForgetsWhatWasReadAndStarted() async throws {
+    let backend = DemoBackend(seed: DemoData.seed(), pace: 0.01, call: nil)
+    let store = AppStore()
+    await store.attach(backend)
+    store.watchComputer("kept")
+    store.computer.ingest(BoxStatus(json: ["agentId": "kept", "state": "running", "vncUrl": "http://127.0.0.1:6080/vnc.html"])!)
+    store.computer.ingest(BoxStatus(json: ["agentId": "other", "state": "running", "vncUrl": "http://127.0.0.1:6080/vnc.html"])!)
+    _ = store.computer.beginEnsure("kept")
+    await store.attach(backend)
+    XCTAssertTrue(store.computer.isWatched("kept"))
+    XCTAssertTrue(store.computer.demanded.isEmpty, "what was started is not started again by itself, as `reset` has it")
+    XCTAssertNil(store.computer.entries["other"], "an entry nobody watches goes")
+    store.detach()
+  }
+}
+
 /** A host with one agent, Theo, that writes down each gateway command it is sent; `createAgent` answers with the id "saver". */
 final class CommandLogBackend: AgentBackend, @unchecked Sendable {
   private let lock = NSLock()
