@@ -27,11 +27,11 @@ file and the code disagree, the code is right and this file is fixed.
 | Date | Decision | By |
 |---|---|---|
 | 1 November 2026 | A Windows app is the next project | The founder |
-| 1 November 2026 | The Windows app is Electron around a web app. The web app is a translation of the Mac app into Simeon Labs' own code, and replaces the old web app at `app.simeonlabs.com/app`. It is not built on the old web app, whose window is another company's compiled renderer (`desktop/NOTICE.md`) | Proposed in the session; the founder said "Go" |
+| 1 November 2026 | The Windows app is Electron around a web app. The web app is a translation of the Mac app into Simeon Labs' own code, and replaces the old web app at `app.simeonlabs.com/app`. It is not built on the old web app, whose window is another company's compiled renderer (`desktop/NOTICE.md`). (3 November 2026: the web app replaces nothing and is offered to no one; see below.) | Proposed in the session; the founder said "Go" |
 | 1 November 2026 | The Mac app stays Swift. A new Mac feature is also needed in the web app, and the checks in `README.md` fail until it is there | Proposed in the session; the founder said "Go" |
 | 1 November 2026 | Nothing is remembered: the checklist is generated from the code (`scripts/web_app_inventory.py`) and this file records the work as it happens | The founder |
 | 1 November 2026 | The code lives in `clients/apps/app`: its own app in the web workspace, React, TypeScript and Vite, in the browser only. Not inside the Next website (`clients/apps/web`), because the Windows app loads the same files from disk, which needs plain built files and no server | The session; the founder left the open questions to the session ("Ok well all you") |
-| 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app` | The session, as above |
+| 1 November 2026 | It is served at `app.simeonlabs.com/app-next` while it is built. The old web app stays at `/app` until the new one has everything the Mac app has; then the new one moves to `/app`. (3 November 2026: no move; see below.) | The session, as above |
 | 1 November 2026 | Its built files are committed into `clients/apps/web/public/app-next`, as the old app's are, so the website's deploy does not change (Vercel builds only `web`). `pnpm test` fails when they are not the build of the source | The session, as above |
 | 1 November 2026 | Skills publishing is left out, as on the Mac. If the Mac app gets it, the checks ask for it here too | The session, as above |
 | 1 November 2026 | The web app keeps no copy of the agents and chats on the device, as the Mac does on disk (`SavedChats`): it shows the server's copy (`chats/agents`, `chats/lines`) while the computer is away, which the server keeps for exactly that. A browser's storage would hold the person's messages on a shared or public computer (Step 7: the Windows app keeps them on the PC, as the Mac; see below.) | The session, as above |
@@ -242,6 +242,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | An Allow once the app didn't write down: the card says the answer didn't go through, rather than telling the computer (the Mac tells it anyway). "Use hardware security keys" is left out: nothing answers it on a PC, or on the Mac. No word the catalogues lack | The session |
 | 2 November 2026 | Two of the Mac's flaws are not followed: a failed read of the team's settings keeps the ceiling this PC last had (the Mac's lifts a team's "Never allow" at every offline launch); after taking the computer's Always or Never, the computer is told what holds when the team's ceiling lowers it | The session, after the review |
 | 2 November 2026 | The engine hears the PC's system and shell in the hello (`platform`, `shell`, `shellVersion`, `osVersion`) and tells the agent in a section of its brief of its own ("The user's computer"), frozen as the channels and routines are; CopyToBox and CopyFromBox take a Windows path's own name and `Downloads\`. A Mac's hello says none, and nothing changes for it | The session, after the review (the engine, `ebc47f773`) |
+| 3 November 2026 | The web app is offered to no one. It is only the means of building the Windows app, whose page it is, so it never moves to `/app` and replaces nothing there. The Windows app is the product | The founder: "know that the web app will be available to no one btw. the whole point of the web app is to build the window app" |
+| 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
 
 ## For Windows
 
@@ -559,7 +561,11 @@ yet. Nothing of it has run on a Windows PC (Open questions).
 
 For the founder, each to be answered before the step that needs it:
 
-- **The website's deploy.** `app.simeonlabs.com/app-next` has answered 404
+- **The website's deploy.** Answered 3 November 2026: the founder
+  deployed, and `app.simeonlabs.com/app-next` serves the build on `main`
+  (its scripts' names are the committed build's; signed out, it goes to the
+  website's sign-in, no page errors; not looked at signed in). What follows
+  is how it stood before. `app.simeonlabs.com/app-next` had answered 404
   since pull request #516 merged: the Vercel project `simeon` (the one
   that serves `clients/apps/web`) has not published it. Its previews say
   "Canceled by Ignored Build Step", a setting kept in Vercel, not in the
@@ -610,10 +616,10 @@ For the founder, each to be answered before the step that needs it:
   (`sites/simeonlabs.com/source/teams.py`, `ADD_JS`) opens the Mac's or
   the iPhone's link; on any other computer, Windows and Linux included
   (and on a Mac without the app, 1.5 s later), it gives way to Download
-  for macOS. Should it offer the team in the web app there, as a link to
-  `app.simeonlabs.com/app/?pack=<id>` (`/app-next/` until the move) in a
-  new tab? A change to `ADD_JS` only. Once the Windows app exists:
-  `simeon://` on Windows first, the web 1.5 s after, as on a Mac.
+  for macOS. (3 November 2026: the web app is offered to no one, so the
+  team is never offered there.) Once the Windows app is released:
+  `simeon://` on Windows first, then Download for Windows, as on a Mac. A
+  change to `ADD_JS` only.
 - **The org chart's foot on a touch screen.** The web says the Mac's
   "Scroll to zoom, drag to pan, double-click to reset." there too; the
   iPhone has its own ("Pinch to zoom, …"). Leave it, or say the iPhone's
@@ -708,6 +714,12 @@ For the founder, each to be answered before the step that needs it:
   incomplete. Go back to Simeon and try again." and others under its
   titles; they are in neither catalogue, so the new page leaves them out.
   Add them to the Mac's catalogue, or leave them?
+- **`/app-next` on the website.** The web app is offered to no one (3
+  November 2026), but anyone who finds `app.simeonlabs.com/app-next` can
+  sign in and use it, as the website serves the committed build. Keep it
+  there, unlinked, as the founder's way to look at the Windows app's page
+  on a Mac, or take it off the website (the build then lives beside the
+  Windows app only, and the website stops serving it)?
 - **Simeon Help Center.** The Mac's row does nothing (kept on 22 October
   2026: "leave it there even tho it doesn't point to anything yet"); the
   web leaves it out until it points somewhere. Where should it point?
@@ -793,6 +805,21 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 3 November 2026: the web app is offered to no one
+
+The founder deployed the website, and asked whether the new web app should
+show at `/app`. It doesn't: it is at `/app-next`, which now serves the
+build on `main` (checked: its scripts are the committed build's, signed out
+it goes to the website's sign-in, no page errors). Then the founder: "know
+that the web app will be available to no one btw. the whole point of the
+web app is to build the window app". So the move to `/app` is dropped
+(Decisions), the website's deploy question is answered, Add to Simeon
+offers no web app, and whether `/app-next` stays on the website is asked
+(Open questions). `README.md`'s plan says the same.
+
+**Next:** the founder's open questions; the plan's checks, for the Windows
+app's page.
 
 ### 2 November 2026: step 7, the Windows app
 

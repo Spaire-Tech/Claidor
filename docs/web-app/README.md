@@ -10,9 +10,11 @@ open questions are in `PROGRESS.md`, updated with every change.
 
 ## The plan it rests on
 
-- **The Windows app is Electron around a web app.** That web app is also
-  the one at `app.simeonlabs.com/app`, so one codebase serves the web,
-  Windows (and Linux).
+- **The Windows app is Electron around a web app.** The web app is only
+  the means: it is offered to no one, and the Windows app is the product
+  (the founder, 3 November 2026: "the whole point of the web app is to
+  build the window app"). It never replaces the web app at
+  `app.simeonlabs.com/app`.
 - **That web app is a translation of the Mac app**, screen by screen, into
   code Simeon Labs owns (`clients/apps/app`). It is not the web app people
   use today.
