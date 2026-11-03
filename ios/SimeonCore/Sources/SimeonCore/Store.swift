@@ -167,6 +167,8 @@ public final class AppStore {
   /** Settings' Usage & Billing (`usageSummary`): read when Settings opens, at most every 30 s. */
   public internal(set) var usage: UsageLoad = .empty
   @ObservationIgnored public internal(set) var usageReadAt: Date?
+  /** Each read of the usage numbered as it starts (`refreshUsage`), and again at sign-out: only the newest read's answer lands. */
+  @ObservationIgnored var usageReads = 0
   /** Something went wrong that the person should hear about, once. */
   public var problem: String?
   /** The problem as the person reads it (PlainWords): what failed, never the words behind it. */
@@ -489,7 +491,7 @@ public final class AppStore {
     listening?.cancel()
     listening = nil
     backend = nil
-    agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
+    agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; usageReads += 1; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; appAccounts = [:]; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
     streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]

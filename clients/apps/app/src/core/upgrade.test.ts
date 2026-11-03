@@ -18,7 +18,7 @@ import {
   isOutOfCredits,
   phoneCover,
 } from './upgrade'
-import { usageMeters, usageSummary } from './usage'
+import { percentNumber, usageMeters, usageSummary } from './usage'
 import { loadWords } from './words'
 
 beforeAll(() => loadWords('en'))
@@ -273,6 +273,33 @@ describe('the credits’ line (UpgradeTests)', () => {
     expect(approachingClosedHas(at80.key, kept)).toBe(true)
     expect(approachingClosedHas(at95.key, kept)).toBe(false)
     expect(['today', 'tomorrow']).toContain(day(now + 3_600_000, now, 'UTC'))
+  })
+
+  it('says the meter’s number (testTheLineSaysTheMetersNumber)', () => {
+    const at = { now, timeZone: 'UTC' }
+    const week = usage({
+      subscriptionStatus: 'active',
+      tier: 'standard',
+      creditsLimit: 1_000,
+      creditsUsed: 926,
+      creditsRemaining: 74,
+    })
+    expect(usageMeters(week, now).weekly?.valueLabel).toBe('93%')
+    expect(approaching(granted, week, at)?.words.body).toBe(
+      'You’ve used 93% of this week’s credits.',
+    )
+    const trial = usage({
+      subscriptionStatus: 'trialing',
+      creditsLimit: 1_000,
+      creditsUsed: 816,
+      creditsRemaining: 184,
+    })
+    expect(approaching(granted, trial, at)?.words.body).toBe(
+      'You’ve used 82% of your free credits.',
+    )
+    expect(percentNumber(0.4)).toBe(1)
+    expect(percentNumber(Number.NaN)).toBe(0)
+    expect(percentNumber(140)).toBe(100)
   })
 
   it('keeps the last twelve lines closed, each once', () => {

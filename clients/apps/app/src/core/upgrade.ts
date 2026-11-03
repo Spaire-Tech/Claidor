@@ -18,7 +18,7 @@ import {
 import { t, tk } from './l10n'
 import { dayNumber, displayLocale } from './listTime'
 import type { Tray } from './trays'
-import type { UsageSummary } from './usage'
+import { type UsageSummary, percentNumber } from './usage'
 
 export const seePlans = () => t('See plans')
 export const upgradeWord = () => t('Upgrade')
@@ -147,7 +147,8 @@ export function approaching(
   const step = [...approachingSteps].reverse().find((one) => percent >= one)
   if (step === undefined) return undefined
   const now = options.now ?? Date.now()
-  const used = Math.floor(percent)
+  // The meter's own number (Settings' Usage, the account menu), not rounded down: 92.6 is 93% in both.
+  const used = percentNumber(percent)
   let body: string
   if (usage.isTrial) body = t`You’ve used ${used}% of your free credits.`
   else if (usage.resetMs !== undefined && usage.resetMs > now)

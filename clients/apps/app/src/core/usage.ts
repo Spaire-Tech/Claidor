@@ -317,11 +317,21 @@ export function countdown(
 
 /** "42%" ("42 %" in French), "1%" for anything above nothing and under one (`percent`, `qct`). */
 export function percentLabel(value: number): string {
-  if (!Number.isFinite(value)) return t`${0}%`
+  return t`${percentNumber(value)}%`
+}
+
+/**
+ * The number `percentLabel` shows (`percentNumber`): 0 to 100, to the
+ * nearest (a half up), 1 for anything above nothing and under one. The
+ * credits' line over the composer says it too (upgrade.ts's `approaching`),
+ * so the two never read 92% and 93% (3 November 2026; the line rounded down).
+ */
+export function percentNumber(value: number): number {
+  if (!Number.isFinite(value)) return 0
   const clamped = clamp(value)
-  if (clamped > 0 && clamped < 1) return t`${1}%`
+  if (clamped > 0 && clamped < 1) return 1
   // Swift's `.toNearestOrAwayFromZero`: never below zero here, so a half goes up.
-  return t`${Math.floor(clamped + 0.5)}%`
+  return Math.floor(clamped + 0.5)
 }
 
 /** The account menu's spend (`compactMoney`, `wze`): "$12.5", "$100", "$1.2k" from a thousand dollars up; a half goes up, as JavaScript's `toFixed`. */

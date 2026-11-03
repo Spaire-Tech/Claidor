@@ -114,7 +114,8 @@ public enum PhoneUpgrade {
     guard banner(access: access, usage: usage) == nil, let usage, usage.hasNonZeroIncludedLimit, usage.hasAvailableUsage,
           let percent = usage.usagePercent, percent < 100,
           let step = approachingSteps.last(where: { percent >= Double($0) }) else { return nil }
-    let used = Int(percent.rounded(.down))
+    // The meter's own number (Settings' Usage, the account menu), not rounded down: 92.6 is 93% in both.
+    let used = UsageMeters.percentNumber(percent)
     let body: String
     if usage.isTrial {
       body = L10n.text("You’ve used \(used)% of your free credits.")
