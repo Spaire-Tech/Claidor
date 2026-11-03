@@ -765,6 +765,8 @@ public final class LiveCall: CallEngine, @unchecked Sendable {
     // Its tasks end with it, as at the end (`finish`): its `connect` still waiting on the server among them.
     let running: [Task<Void, Never>] = lock.withLock { let all = tasks; tasks = []; return all }
     for task in running { task.cancel() }
+    // And its voice, as a hang-up lets it go: one still connecting, or connected but never live, speaks to no one.
+    Task { [transport] in await transport.end() }
     if wasOpen.0, let agentId = wasOpen.2, let backend {
       Task { _ = try? await backend.command("voiceCall", ["agentId": .string(agentId), "callId": .string(wasOpen.1), "kind": "ended", "record": ["seconds": 0, "recap": nil, "transcript": []]]) }
     }

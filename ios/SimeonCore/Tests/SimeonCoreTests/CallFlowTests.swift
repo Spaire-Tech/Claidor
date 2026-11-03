@@ -197,12 +197,15 @@ final class CallOneRecordTests: XCTestCase {
     XCTAssertEqual(voice.tokens, ["ticket-2"], "the first call's late ticket starts nothing")
     XCTAssertEqual(states.last?.failed, false, "nor fails the second")
     XCTAssertEqual(backend.opened, 1, "nor opens a channel")
+    // Its loops end with it, not with the run.
+    call.hangUp()
     withExtendedLifetime(backend) {}
   }
 
   func testAFailedCallLetsGoOfItsConnect() async throws {
     let backend = TicketBackend([.sleeping])
-    let call = LiveCall(backend: backend, transport: CallsVoice(), personName: { nil }, tones: FakeTones(), failedStays: nil, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
+    let voice = CallsVoice()
+    let call = LiveCall(backend: backend, transport: voice, personName: { nil }, tones: FakeTones(), failedStays: nil, pause: { _ in try? await Task.sleep(nanoseconds: 2_000_000) })
     let states = CallStates()
     call.observe { states.add($0) }
     call.start(agentId: "theo", agentName: "Theo", colour: "green")
@@ -210,6 +213,7 @@ final class CallOneRecordTests: XCTestCase {
     XCTAssertEqual(states.last?.failed, true)
     try await Task.sleep(nanoseconds: 100_000_000)
     XCTAssertEqual(backend.cancelled, 1, "its connect, still waiting on the server, ends with it, as at a hang-up")
+    XCTAssertEqual(voice.ends, 1, "and its voice is let go")
     withExtendedLifetime(backend) {}
   }
 
@@ -229,12 +233,14 @@ final class CallOneRecordTests: XCTestCase {
     call.start(agentId: "theo", agentName: "Theo", colour: "green")
     try await Task.sleep(nanoseconds: 200_000_000)
     XCTAssertEqual(voice.tokens.count, 2)
+    XCTAssertEqual(voice.ends, 1, "the failed call's voice was let go, as at a hang-up")
     // The first call's voice speaks up late.
     voice.emit(0, .connected(conversationId: "late"))
     voice.emit(0, .ended)
+    try await Task.sleep(nanoseconds: 50_000_000)
     XCTAssertEqual(states.last?.phase, .ringing, "the second call is not made live by the first's voice")
     XCTAssertEqual(states.last?.failed, false, "nor ended by it")
-    XCTAssertEqual(voice.ends, 0, "and its voice is not ended for it")
+    XCTAssertEqual(voice.ends, 1, "and its voice is not ended for it")
     voice.emit(1, .connected(conversationId: "c2"))
     XCTAssertEqual(states.last?.phase, .live, "its own voice makes it live")
     call.hangUp()
