@@ -1923,7 +1923,11 @@ coming soon (N01–N08, O01). Pushed:
   token's field under the row ("Paste your bot token", "Stored securely,
   never shown to your agent.", Cancel, Store securely; Return stores). The
   page reads the computer again every 4 seconds while the pane is open and
-  when the window comes forward, 15 seconds at most a read.
+  when the window comes forward, 15 seconds at most a read. (3 November
+  2026: every 4 seconds only while Simeon is the active app, as the
+  upstream window reads only while it can be seen; those reads and the one
+  as the window comes forward let a resting computer rest, while the read
+  as the page opens, and the one after a change, wake it.)
 - **A message from or to a platform** keeps its tag in the bubble, now
   with the window's straight arrows (↓ Slack, ↑ Slack).
 
