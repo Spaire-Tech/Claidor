@@ -486,7 +486,7 @@ public struct CloudAgentInfo: Hashable, Sendable {
     return filesChanged == 1 ? L10n.text("1 file changed") : L10n.text("\(filesChanged) files changed")
   }
 
-  /** Where Open goes (`cloudAgentWebUrl`): Simeon's page for the run. */
+  /** Where Open would go (`cloudAgentWebUrl`): Simeon's page for the run. Not made yet, so the cards leave Open out (3 November 2026, as the web's card). */
   public static func webURL(_ bcId: String) -> URL? {
     URL(string: "https://app.simeonlabs.com/agents/" + (bcId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? bcId))
   }

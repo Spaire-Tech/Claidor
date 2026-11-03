@@ -2139,8 +2139,11 @@ private struct MacCardChooser: View {
  * on 22, 500, opening the pull request) with its state in a pill (Done in
  * green, Error in red, the rest grey); what it was asked; its branch and
  * "PR #412"; how many files changed with the lines added in green and taken
- * out in red; View PR in the blue and Open plain. Asked again every five
- * seconds while it works (SimeonCore's `CloudAgentInfo.nextPoll`).
+ * out in red; View PR in the blue. Asked again every five seconds while it
+ * works (SimeonCore's `CloudAgentInfo.nextPoll`). Open is left out until
+ * its page exists, as the web's card leaves it out (3 November 2026): it
+ * went to app.simeonlabs.com/agents/<id> (`CloudAgentInfo.webURL`), which
+ * doesn't yet, so it landed on a page not found.
  */
 struct CloudAgentCardView: View {
   let bcId: String
@@ -2221,15 +2224,11 @@ struct CloudAgentCardView: View {
           .tracking(-0.15)
         }
       }
-      HStack(spacing: 8) {
-        if let pull {
+      if let pull {
+        HStack(spacing: 8) {
           CardButton(title: String(localized: "View PR"), prominent: true, look: look) { NSWorkspace.shared.open(pull) }
             .help("Open the pull request")
         }
-        CardButton(title: String(localized: "Open"), look: look) {
-          if let page = CloudAgentInfo.webURL(bcId) { NSWorkspace.shared.open(page) }
-        }
-        .help("Open this cloud agent")
       }
     }
     .task(id: bcId) {
