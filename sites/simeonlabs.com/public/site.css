@@ -37,9 +37,11 @@
    larger than on the founder's Mac while the headline, the column and the demo, measured from the window, did
    not (the founder, 23 October 2026: "i get the real app when i size it down to 75%"). The page is zoomed to
    75% and --vw, --vh and --dvh still measure the whole window, as the browser's own 75% does. Phones, tablets
-   and windows as narrow as a phone keep their own sizes. */
+   and windows as narrow as a phone keep their own sizes. The 1440 at which --vw stops growing is the screen's
+   1440 here too: 19.2 zoomed points are 14.4 on the screen (it stopped at 1080 before, the column 980 wide in
+   any window: the founder, 3 November 2026, "windows is too small ... do it exactly like mac"). */
 @media (min-width:735px) and (hover:hover) and (pointer:fine){
-  html.pc{zoom:.75;--win:calc(1vw / .75);--vw:min(calc(1vw / .75),14.4px);--vh:calc(1vh / .75);--dvh:calc(1dvh / .75)}
+  html.pc{zoom:.75;--win:calc(1vw / .75);--vw:min(calc(1vw / .75),19.2px);--vh:calc(1vh / .75);--dvh:calc(1dvh / .75)}
 }
 body{font-family:var(--font)}
 
