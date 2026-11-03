@@ -189,7 +189,7 @@ private struct TriggerPopover: View {
           ChoicePill(label: String(localized: "Sentry event"), options: RoutineWords.sentryEvents, value: event, look: look) { edit.pick(.sentry(event: $0, projectIds: projects)) }
         }
         FlowLine {
-          Word("in", look: look)
+          Word(String(localized: "in"), look: look)
           PillField(label: String(localized: "Project IDs"), placeholder: String(localized: "All projects"), value: projects, line: line, look: look) { edit.change(.sentry(event: event, projectIds: $0)) } commit: { edit.commit() }
         }
       case .pagerduty(let event, let services)?:
@@ -197,7 +197,7 @@ private struct TriggerPopover: View {
           ChoicePill(label: String(localized: "PagerDuty event"), options: RoutineWords.pagerdutyEvents, value: event, look: look) { edit.pick(.pagerduty(event: $0, serviceIds: services)) }
         }
         FlowLine {
-          Word("on", look: look)
+          Word(String(localized: "on"), look: look)
           PillField(label: String(localized: "Service IDs"), placeholder: String(localized: "All services"), value: services, line: line, look: look) { edit.change(.pagerduty(event: event, serviceIds: $0)) } commit: { edit.commit() }
         }
       }
@@ -317,32 +317,32 @@ private struct ScheduleFields: View {
   private func inline(_ shape: RoutineSchedule.Shape) -> some View {
     switch shape {
     case .hourly(let minute):
-      Word("at", look: look)
+      Word(String(localized: "hourly.at", defaultValue: "at"), look: look)
       ChoicePill(label: String(localized: "Minute"), options: RoutineSchedule.minuteChoices(minute).map { (value: $0, label: ":" + String(format: "%02d", $0)) }, value: minute, look: look) {
         save(.hourly(minute: $0))
       }
     case .daily(let time):
-      Word("at", look: look)
+      Word(String(localized: "at"), look: look)
       TimePill(time: time, look: look) { save(.daily($0)) }
     case .weekdays(let time):
-      Word("at", look: look)
+      Word(String(localized: "at"), look: look)
       TimePill(time: time, look: look) { save(.weekdays($0)) }
     case .weekly(let day, let time):
-      Word("on", look: look)
+      Word(String(localized: "weekly.on", defaultValue: "on"), look: look)
       ChoicePill(label: String(localized: "Day of week"), options: RoutineWords.weekOrder.map { (value: $0, label: RoutineSchedule.weekdays[$0]) }, value: day, look: look) {
         save(.weekly(dayOfWeek: $0, time))
       }
-      Word("at", look: look)
+      Word(String(localized: "at"), look: look)
       TimePill(time: time, look: look) { save(.weekly(dayOfWeek: day, $0)) }
     case .monthly(let day, let time):
       Word(String(localized: "on the"), look: look)
       ChoicePill(label: String(localized: "Day of month"), options: (1...31).map { (value: $0, label: RoutineSchedule.ordinal($0)) }, value: day, look: look) {
         save(.monthly(dayOfMonth: $0, time))
       }
-      Word("at", look: look)
+      Word(String(localized: "at"), look: look)
       TimePill(time: time, look: look) { save(.monthly(dayOfMonth: day, $0)) }
     case .interval(let amount, let unit):
-      Word("every", look: look)
+      Word(String(localized: "every"), look: look)
       ChoicePill(label: String(localized: "Interval amount"), options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount, look: look) {
         save(.interval(amount: $0, unit: unit))
       }
@@ -459,14 +459,14 @@ private struct AdvancedGrid: View {
       ChoicePill(label: String(localized: "Interval amount"), options: RoutineSchedule.intervalChoices(unit, current: amount).map { (value: $0, label: String($0)) }, value: amount, look: look) {
         change(.interval(unit: unit, amount: $0, fromHour: from, toHour: to))
       }
-      ChoicePill(label: String(localized: "Interval unit"), options: RoutineWords.windowUnits.map { (value: $0, label: $0) }, value: unit, look: look) { next in
+      ChoicePill(label: String(localized: "Interval unit"), options: RoutineWords.windowUnits.map { (value: $0, label: RoutineWords.unitLabel($0)) }, value: unit, look: look) { next in
         change(.interval(unit: next, amount: IntervalUnits.amount(amount, for: next), fromHour: from, toHour: to))
       }
-      Word("between", look: look)
+      Word(String(localized: "between"), look: look)
       ChoicePill(label: String(localized: "From hour"), options: (0..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: from, look: look) {
         change(.interval(unit: unit, amount: amount, fromHour: $0, toHour: max(to, $0)))
       }
-      Word("and", look: look)
+      Word(String(localized: "and"), look: look)
       ChoicePill(label: String(localized: "To hour"), options: (from..<24).map { (value: $0, label: RoutineSchedule.clock($0, 0)) }, value: to, look: look) {
         change(.interval(unit: unit, amount: amount, fromHour: from, toHour: $0))
       }
@@ -551,14 +551,14 @@ private struct SlackFields: View {
           edit.pick(.slack(channel: c, match: Self.match(picked, keyword: k), keyword: k, emoji: e, bySelf: b))
         }
       }
-      Word("in", look: look)
+      Word(String(localized: "in"), look: look)
       PillField(label: String(localized: "Slack channel"), placeholder: "#channel", value: channel, autofocus: channel.trimmingCharacters(in: .whitespaces).isEmpty, line: line, look: look) {
         edit.change(.slack(channel: $0, match: match, keyword: keyword, emoji: emoji, bySelf: bySelf))
       } commit: { edit.commit() }
     }
     if event == "message" {
       FlowLine {
-        Word("containing", look: look)
+        Word(String(localized: "containing"), look: look)
         PillField(label: String(localized: "Message contains"), placeholder: String(localized: "Any text"), value: keyword, line: line, look: look) {
           edit.change(.slack(channel: channel, match: Self.match("message", keyword: $0), keyword: $0, emoji: emoji, bySelf: bySelf))
         } commit: { edit.commit() }
@@ -572,7 +572,7 @@ private struct SlackFields: View {
         } commit: { edit.commit() }
       }
       FlowLine {
-        Word("from", look: look)
+        Word(String(localized: "from"), look: look)
         ChoicePill(label: String(localized: "Reactor"), options: RoutineWords.reactors, value: bySelf, look: look) {
           edit.pick(.slack(channel: channel, match: match, keyword: keyword, emoji: emoji, bySelf: $0))
         }
@@ -610,14 +610,14 @@ private struct GitFields: View {
           edit.pick(.github(repo: r, events: TriggerRow.toggled(list, kind), userAllowlist: a, ciBranch: b))
         }
       }
-      Word("in", look: look)
+      Word(String(localized: "in"), look: look)
       PillField(label: String(localized: "Repository"), placeholder: "owner/repo", value: repo, autofocus: repo.trimmingCharacters(in: .whitespaces).isEmpty, line: line, look: look) {
         edit.change(.github(repo: $0, events: events, userAllowlist: allowlist, ciBranch: branch))
       } commit: { edit.commit() }
     }
     if other {
       FlowLine {
-        Word("from", look: look)
+        Word(String(localized: "from"), look: look)
         PillField(label: String(localized: "User allowlist"), placeholder: String(localized: "Anyone"), value: allowlist, line: line, look: look) {
           edit.change(.github(repo: repo, events: events, userAllowlist: $0, ciBranch: branch))
         } commit: { edit.commit() }
@@ -651,26 +651,26 @@ private struct TeamsFields: View {
       MenuPill(text: String(localized: "New messages"), label: String(localized: "Teams event"), look: look) { frame in
         RoutineMenus.choose([(value: "message", label: String(localized: "New message in channel"))], current: "message", under: frame, minWidth: 200, overSelected: false) { _ in }
       }
-      Word("in", look: look)
+      Word(String(localized: "in"), look: look)
       PillField(label: String(localized: "Team IDs"), placeholder: String(localized: "Team IDs"), value: teams, autofocus: teams.trimmingCharacters(in: .whitespaces).isEmpty, line: line, look: look) {
         edit.change(row(teams: $0))
       } commit: { edit.commit() }
     }
     FlowLine {
-      Word("tenant", look: look)
+      Word(String(localized: "tenant"), look: look)
       PillField(label: String(localized: "Tenant ID"), placeholder: String(localized: "Tenant ID"), value: tenant, line: line, look: look) { edit.change(row(tenant: $0)) } commit: { edit.commit() }
     }
     FlowLine {
-      Word("channels", look: look)
+      Word(String(localized: "channels"), look: look)
       PillField(label: String(localized: "Channel IDs"), placeholder: String(localized: "Every channel"), value: channels, line: line, look: look) { edit.change(row(channels: $0)) } commit: { edit.commit() }
     }
     FlowLine {
-      Word("containing", look: look)
+      Word(String(localized: "containing"), look: look)
       PillField(label: String(localized: "Message contains"), placeholder: String(localized: "Any message"), value: contains, line: line, look: look) { edit.change(row(contains: $0)) } commit: { edit.commit() }
       ChoicePill(label: String(localized: "Message match"), options: RoutineWords.teamsMatch, value: isRegex, look: look) { edit.pick(row(isRegex: $0)) }
     }
     FlowLine {
-      Word("from", look: look)
+      Word(String(localized: "from"), look: look)
       ChoicePill(label: String(localized: "Teams audience"), options: RoutineWords.teamsAudience, value: linkedOnly, look: look) { edit.pick(row(linkedOnly: $0)) }
     }
   }
@@ -704,16 +704,16 @@ private struct LinearFields: View {
     }
     if event == "endOfCycle" {
       FlowLine {
-        Word("cycles", look: look)
+        Word(String(localized: "cycles"), look: look)
         PillField(label: String(localized: "Cycle IDs"), placeholder: String(localized: "Any cycle"), value: cycles, line: line, look: look) { edit.change(row(cycles: $0)) } commit: { edit.commit() }
       }
     }
     FlowLine {
-      Word("in", look: look)
+      Word(String(localized: "in"), look: look)
       PillField(label: String(localized: "Project IDs"), placeholder: String(localized: "All projects"), value: projects, line: line, look: look) { edit.change(row(projects: $0)) } commit: { edit.commit() }
     }
     FlowLine {
-      Word("for", look: look)
+      Word(String(localized: "for"), look: look)
       PillField(label: String(localized: "Team IDs"), placeholder: String(localized: "All teams"), value: teams, line: line, look: look) { edit.change(row(teams: $0)) } commit: { edit.commit() }
     }
   }
@@ -725,7 +725,13 @@ private struct LinearFields: View {
 
 // MARK: - The popover's controls
 
-/** A connecting word (13/18, grey). */
+/**
+ * A connecting word (13/18, grey), given in the app's language where it is
+ * written (`String(localized:)`, docs/localization.md: a custom view's
+ * `String` is shown as it comes). One English word read two ways has its own
+ * key: "at" a minute past the hour (`hourly.at`), "on" a day of the week
+ * (`weekly.on`).
+ */
 private struct Word: View {
   let text: String
   let look: Look

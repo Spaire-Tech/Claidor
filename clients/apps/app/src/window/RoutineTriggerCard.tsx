@@ -75,7 +75,7 @@ import {
   weekdaysLabel,
   windowUnits,
 } from '../core/routineTriggers'
-import { t } from '../l10n'
+import { t, tk } from '../l10n'
 import { windowLetGo } from './AgentPane'
 import { classes } from './classes'
 import { Glyph } from './ContextMenu'
@@ -366,7 +366,7 @@ function rowEdit(
 }
 
 /** A trigger's popover's lines, 8 apart, each line's parts 6 apart and wrapping. */
-function TriggerPopover({
+export function TriggerPopover({
   row,
   edit,
   line,
@@ -398,7 +398,7 @@ function TriggerPopover({
             />
           </FlowLine>
           <FlowLine>
-            <Word text="in" />
+            <Word text={t('in')} />
             <PillField
               label={t('Project IDs')}
               placeholder={t('All projects')}
@@ -422,7 +422,7 @@ function TriggerPopover({
             />
           </FlowLine>
           <FlowLine>
-            <Word text="on" />
+            <Word text={t('on')} />
             <PillField
               label={t('Service IDs')}
               placeholder={t('All services')}
@@ -538,7 +538,7 @@ function ScheduleInline({
     case 'hourly':
       return (
         <>
-          <Word text="at" />
+          <Word text={tk('hourly.at')} />
           <ChoicePill
             label={t('Minute')}
             options={minuteChoices(shape.minute).map((minute) => ({
@@ -554,7 +554,7 @@ function ScheduleInline({
     case 'weekdays':
       return (
         <>
-          <Word text="at" />
+          <Word text={t('at')} />
           <TimePill
             time={shape.time}
             change={(time) => save({ mode: shape.mode, time })}
@@ -564,7 +564,7 @@ function ScheduleInline({
     case 'weekly':
       return (
         <>
-          <Word text="on" />
+          <Word text={tk('weekly.on')} />
           <ChoicePill
             label={t('Day of week')}
             options={weekOrder.map((day) => ({
@@ -574,7 +574,7 @@ function ScheduleInline({
             value={shape.dayOfWeek}
             pick={(dayOfWeek) => save({ ...shape, dayOfWeek })}
           />
-          <Word text="at" />
+          <Word text={t('at')} />
           <TimePill
             time={shape.time}
             change={(time) => save({ ...shape, time })}
@@ -594,7 +594,7 @@ function ScheduleInline({
             value={shape.dayOfMonth}
             pick={(dayOfMonth) => save({ ...shape, dayOfMonth })}
           />
-          <Word text="at" />
+          <Word text={t('at')} />
           <TimePill
             time={shape.time}
             change={(time) => save({ ...shape, time })}
@@ -604,7 +604,7 @@ function ScheduleInline({
     case 'interval':
       return (
         <>
-          <Word text="every" />
+          <Word text={t('every')} />
           <ChoicePill
             label={t('Interval amount')}
             options={intervalChoices(shape.unit, shape.amount).map(
@@ -899,14 +899,16 @@ function TimeControls({
       />
       <ChoicePill
         label={t('Interval unit')}
-        // The Mac lists the units as they are saved, in English ("minutes", "hours").
-        options={windowUnits.map((one) => ({ value: one, label: one }))}
+        options={windowUnits.map((one) => ({
+          value: one,
+          label: unitLabel(one),
+        }))}
         value={unit}
         pick={(next) =>
           change({ ...time, unit: next, amount: unitAmount(amount, next) })
         }
       />
-      <Word text="between" />
+      <Word text={t('between')} />
       <ChoicePill
         label={t('From hour')}
         options={Array.from({ length: 24 }, (_, h) => ({
@@ -918,7 +920,7 @@ function TimeControls({
           change({ ...time, fromHour: next, toHour: Math.max(toHour, next) })
         }
       />
-      <Word text="and" />
+      <Word text={t('and')} />
       <ChoicePill
         label={t('To hour')}
         options={Array.from({ length: 24 - fromHour }, (_, i) => ({
@@ -1025,7 +1027,7 @@ function SlackFields({
             )
           }
         />
-        <Word text="in" />
+        <Word text={t('in')} />
         <PillField
           label={t('Slack channel')}
           placeholder="#channel"
@@ -1038,7 +1040,7 @@ function SlackFields({
       </FlowLine>
       {event === 'message' && (
         <FlowLine>
-          <Word text="containing" />
+          <Word text={t('containing')} />
           <PillField
             label={t('Message contains')}
             placeholder={t('Any text')}
@@ -1069,7 +1071,7 @@ function SlackFields({
             />
           </FlowLine>
           <FlowLine>
-            <Word text="from" />
+            <Word text={t('from')} />
             <ChoicePill
               label={t('Reactor')}
               options={reactors()}
@@ -1134,7 +1136,7 @@ function GitFields({
             })
           }
         />
-        <Word text="in" />
+        <Word text={t('in')} />
         <PillField
           label={t('Repository')}
           placeholder="owner/repo"
@@ -1147,7 +1149,7 @@ function GitFields({
       </FlowLine>
       {other && (
         <FlowLine>
-          <Word text="from" />
+          <Word text={t('from')} />
           <PillField
             label={t('User allowlist')}
             placeholder={t('Anyone')}
@@ -1205,7 +1207,7 @@ function TeamsFields({
             )
           }
         />
-        <Word text="in" />
+        <Word text={t('in')} />
         <PillField
           label={t('Team IDs')}
           placeholder={t('Team IDs')}
@@ -1217,7 +1219,7 @@ function TeamsFields({
         />
       </FlowLine>
       <FlowLine>
-        <Word text="tenant" />
+        <Word text={t('tenant')} />
         <PillField
           label={t('Tenant ID')}
           placeholder={t('Tenant ID')}
@@ -1228,7 +1230,7 @@ function TeamsFields({
         />
       </FlowLine>
       <FlowLine>
-        <Word text="channels" />
+        <Word text={t('channels')} />
         <PillField
           label={t('Channel IDs')}
           placeholder={t('Every channel')}
@@ -1239,7 +1241,7 @@ function TeamsFields({
         />
       </FlowLine>
       <FlowLine>
-        <Word text="containing" />
+        <Word text={t('containing')} />
         <PillField
           label={t('Message contains')}
           placeholder={t('Any message')}
@@ -1256,7 +1258,7 @@ function TeamsFields({
         />
       </FlowLine>
       <FlowLine>
-        <Word text="from" />
+        <Word text={t('from')} />
         <ChoicePill
           label={t('Teams audience')}
           options={teamsAudience()}
@@ -1303,7 +1305,7 @@ function LinearFields({
       )}
       {row.event === 'endOfCycle' && (
         <FlowLine>
-          <Word text="cycles" />
+          <Word text={t('cycles')} />
           <PillField
             label={t('Cycle IDs')}
             placeholder={t('Any cycle')}
@@ -1315,7 +1317,7 @@ function LinearFields({
         </FlowLine>
       )}
       <FlowLine>
-        <Word text="in" />
+        <Word text={t('in')} />
         <PillField
           label={t('Project IDs')}
           placeholder={t('All projects')}
@@ -1326,7 +1328,7 @@ function LinearFields({
         />
       </FlowLine>
       <FlowLine>
-        <Word text="for" />
+        <Word text={t('for')} />
         <PillField
           label={t('Team IDs')}
           placeholder={t('All teams')}
@@ -1348,10 +1350,11 @@ function FlowLine({ children }: { children: ReactNode }) {
 }
 
 /**
- * A connecting word (13/18, grey). The Mac draws these as they are written
- * ("at", "in", "from"…, its `Word` takes plain text), so they stay English
- * in every language; "on the", "with emoji", "on branch" and "with status"
- * are the catalogue's.
+ * A connecting word (13/18, grey), given in the app's language where it is
+ * written, as the Mac's (`Word`, each `String(localized:)`): "at", "in",
+ * "from"… are the catalogue's; one English word read two ways has its own
+ * key ("at" a minute past the hour is `hourly.at`, "on" a day of the week
+ * `weekly.on`).
  */
 function Word({ text }: { text: string }) {
   return <span className="flow-word">{text}</span>
