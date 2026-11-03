@@ -1913,15 +1913,25 @@ public final class AppStore {
     await beginConnect(named: name)?.url
   }
 
+  /** Connect's sign-in page (`startConnect`), for callers that need no more: nil when none opened, whether refused or signed in already. */
+  public func beginConnect(named name: String) async -> ConnectStart? {
+    if case .started(let start) = await startConnect(named: name) { return start }
+    return nil
+  }
+
   /**
    * Connect (`Connecting`): install the app from the catalog when it is not
    * there, then start its sign-in; the sign-in's web address, for the
    * system's sign-in sheet, and whether this connect added the app. An app
    * this connect added whose sign-in then doesn't open is taken back at
-   * once, so nothing stays half added; `problem` says why.
+   * once, so nothing stays half added; `problem` says why. With no sign-in
+   * to open, whether the app is signed in already or the connect was
+   * refused (3 November 2026): the window's connector card marks a refusal,
+   * its button then reading Retry, and on "already-authenticated" only
+   * reads the list again.
    */
-  public func beginConnect(named name: String) async -> ConnectStart? {
-    guard let backend else { return nil }
+  public func startConnect(named name: String) async -> ConnectOutcome {
+    guard let backend else { return .refused }
     // The box's app events keep the list current, so it is read here only when it never was.
     if catalog.isEmpty || appsLoadedAt == nil { await loadApps() }
     let key = name.lowercased()
@@ -1943,22 +1953,22 @@ public final class AppStore {
         }
       } catch {
         problem = L10n.text("Couldn't add \(name): \(error.localizedDescription)")
-        return nil
+        return .refused
       }
     }
-    guard let server else { problem = L10n.text("\(name) isn't in Simeon's apps yet."); return nil }
-    if server.status == "connected" { return nil }
+    guard let server else { problem = L10n.text("\(name) isn't in Simeon's apps yet."); return .refused }
+    if server.status == "connected" { return .connected }
     do {
       let started = try await backend.command("desktopMcp", ["action": "authenticateServer", "args": [.string(server.serverId), .string(server.accountKey), "connector_card"]])
-      if let url = await signInStarted(started, name: name) { return ConnectStart(url: url, addedPlugin: added) }
+      if let url = await signInStarted(started, name: name) { return .started(ConnectStart(url: url, addedPlugin: added)) }
       // Signed in already: kept, whatever the list says yet.
-      if started["status"]?.string == "already-authenticated" { return nil }
+      if started["status"]?.string == "already-authenticated" { return .connected }
     } catch {
       problem = Connecting.didntConnect(name, why: PlainWords.error(error.localizedDescription))
     }
     // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
     if let added { await takeBack(added, name: name) }
-    return nil
+    return .refused
   }
 
   /**

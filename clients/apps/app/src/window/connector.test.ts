@@ -268,6 +268,38 @@ describe('a chat card’s Connect (MacConnector.connect)', () => {
     expect(sent('uninstallPlugin')).toHaveLength(0)
   })
 
+  it('marks a refusal for Retry, never one signed in already (testAConnectSaysARefusalApartFromSignedInAlready)', async () => {
+    // 3 November 2026: a refused Connect said nothing on the card.
+    const { answers, connector, store, sent } = await world()
+    const heard: boolean[] = []
+    answers.authenticateServer = {
+      status: 'not-supported',
+      message: 'Linear is coming soon in Simeon.',
+    }
+    connector.connect('Linear', (refused) => heard.push(refused))
+    connector.confirm()
+    await eventually(() => heard.length === 2)
+    expect(heard).toEqual([false, true])
+    expect(connector.connecting).toBeUndefined()
+    expect(store.problem).toBe(
+      "Linear didn't connect: Linear is coming soon in Simeon.",
+    )
+    expect(sent('uninstallPlugin')).toHaveLength(1)
+
+    // Signed in already: the list read again, the mark taken off and not put back.
+    answers.listServers = linearServer('needsAuth')
+    await store.loadAppCards()
+    answers.authenticateServer = { status: 'already-authenticated' }
+    const lists = sent('listServers').length
+    connector.connect('Linear', (refused) => heard.push(refused))
+    connector.confirm()
+    await eventually(() => heard.length === 3)
+    await eventually(() => connector.connecting === undefined)
+    expect(heard).toEqual([false, true, false])
+    expect(sent('listServers').length).toBeGreaterThan(lists)
+    expect(await store.startConnect('Acme')).toEqual({ kind: 'refused' })
+  })
+
   it('does nothing on Cancel', async () => {
     const { browser, connector } = await world()
     connector.connect('Linear')

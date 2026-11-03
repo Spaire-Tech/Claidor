@@ -444,7 +444,9 @@ struct DraftCardView: View {
  * Connect ("Added" and Add until 13 October 2026, `Connecting`): since the
  * Apple design pass the iPhone's consent, then the app added and its
  * sign-in inside the app in one go (`MacConnector`; the Electron app opened
- * the browser).
+ * the browser). A Connect the computer refused turns the button to Retry,
+ * with no reason, as the window's connector card does (3 November 2026:
+ * the card had said nothing).
  */
 struct ConnectorCards: View {
   let names: [String]
@@ -473,6 +475,8 @@ private struct ConnectorCard: View {
   var markedConnected = false
   let look: Look
   @Environment(AppStore.self) private var store
+  /** Its last Connect was refused (`ConnectOutcome.refused`): the button reads Retry, as the window's card's does, until the next one begins. */
+  @State private var refused = false
 
   var body: some View {
     let catalog = store.catalogApp(named: name)
@@ -529,9 +533,9 @@ private struct ConnectorCard: View {
             .accessibilityLabel("\(catalog?.title ?? name) is coming soon")
         } else {
           // The consent first, then the app's sign-in in the window (the Apple design pass, `MacConnector`).
-          Button { MacConnector.shared.connect(name, store: store) } label: {
+          Button { MacConnector.shared.connect(name, store: store) { refused = $0 } } label: {
             Group {
-              if adding { ProgressView().controlSize(.small) } else { Text(Connecting.connect) }
+              if adding { ProgressView().controlSize(.small) } else { Text(refused ? Connecting.retry : Connecting.connect) }
             }
             .font(.system(size: 13))
             .foregroundStyle(look.ink)

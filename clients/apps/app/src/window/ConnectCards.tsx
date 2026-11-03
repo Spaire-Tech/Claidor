@@ -34,7 +34,7 @@ import {
   type JoinedCard,
   type ListenerCard,
 } from '../core/connectCards'
-import { connectWord } from '../core/connecting'
+import { connectWord, retryWord } from '../core/connecting'
 import { pictureURL } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
@@ -130,7 +130,9 @@ function ConnectorCardsView({
  * that can't be connected yet, or Connect (`ConnectorCard`): the consent,
  * then the app added and its sign-in in a tab (step 6b). A spinner in it
  * while its sign-in is asked for and open; every other Connect waits
- * meanwhile, one sign-in at a time.
+ * meanwhile, one sign-in at a time. A Connect the computer refused turns
+ * the button to Retry, with no reason, as the window's connector card does
+ * (3 November 2026: the card had said nothing).
  */
 function ConnectorCardView({
   name,
@@ -150,6 +152,8 @@ function ConnectorCardView({
   const line = reason ?? app?.summary ?? ''
   const connector = useConnector()
   useConnectorWatched(connector)
+  // Its last Connect was refused: Retry, until the next one begins.
+  const [refused, setRefused] = useState(false)
   return (
     <CardShell>
       <div className="connector-row">
@@ -183,10 +187,12 @@ function ConnectorCardView({
               disabled={connector.connecting !== undefined}
               aria-busy={connector.connecting === name}
               aria-label={t`Connect ${name}`}
-              onClick={() => connector.connect(name)}
+              onClick={() => connector.connect(name, setRefused)}
             >
               {connector.connecting === name ? (
                 <span className="connect-spinner" aria-hidden="true" />
+              ) : refused ? (
+                retryWord()
               ) : (
                 connectWord()
               )}

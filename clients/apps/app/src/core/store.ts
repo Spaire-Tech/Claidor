@@ -113,6 +113,7 @@ import {
 } from './connectCards'
 import { type ConnectedApp, connectedApp, makeApp } from './connectedApps'
 import {
+  type ConnectOutcome,
   type ConnectStart,
   type SignInAnswer,
   alreadySignedIn,
@@ -4716,20 +4717,31 @@ export class AppStore {
   // `Connecting.swift`, `AppAccounts.swift`). The screens' side is
   // src/window/connector.ts and ConnectConsent.tsx.
 
+  /** Connect's sign-in page (`beginConnect`, `startConnect`), for callers that need no more: undefined when none opened, whether refused or signed in already. */
+  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+    const outcome = await this.startConnect(name)
+    return outcome.kind === 'started' ? outcome.start : undefined
+  }
+
   /**
-   * Connect (`beginConnect`, `Connecting`): the app installed from the
+   * Connect (`startConnect`, `Connecting`): the app installed from the
    * catalogue when it is not on the computer yet, then its sign-in started;
    * the sign-in's page, and whether this connect added the app. An app this
    * connect added whose sign-in then doesn't open is taken back at once, so
-   * nothing stays half added; `problem` says why.
+   * nothing stays half added; `problem` says why. With no sign-in to open,
+   * whether the app is signed in already or the connect was refused (3
+   * November 2026): the window's connector card marks a refusal, its button
+   * then reading Retry, and on "already-authenticated" only reads the list
+   * again. Signed out meanwhile, it was refused.
    */
-  async beginConnect(name: string): Promise<ConnectStart | undefined> {
+  async startConnect(name: string): Promise<ConnectOutcome> {
+    const refused: ConnectOutcome = { kind: 'refused' }
     const backend = this.backend
-    if (!backend) return undefined
+    if (!backend) return refused
     // The box's app events keep the list current, so it is read here only when it never was (an empty list counts as never read: the web keeps no time of the last read).
     if (this.catalog.length === 0 || this.apps.length === 0)
       await this.loadAppCards()
-    if (this.backend !== backend) return undefined
+    if (this.backend !== backend) return refused
     const key = name.toLowerCase()
     const plugin = this.catalogApp(name)
     let server = this.apps.find(
@@ -4753,7 +4765,7 @@ export class AppStore {
             })
             .catch(() => undefined),
         ])
-        if (this.backend !== backend) return undefined
+        if (this.backend !== backend) return refused
         added = plugin.id
         this.apps = (arr(field(installed, 'servers')) ?? [])
           .map(connectedApp)
@@ -4772,33 +4784,33 @@ export class AppStore {
           : this.apps.find((app) => app.pluginId === plugin.id)
       } catch (error) {
         this.connectProblem(t`Couldn't add ${name}: ${this.connectWhy(error)}`)
-        return undefined
+        return refused
       }
     }
     if (!server) {
       this.connectProblem(t`${name} isn't in Simeon's apps yet.`)
-      return undefined
+      return refused
     }
-    if (server.status === 'connected') return undefined
+    if (server.status === 'connected') return { kind: 'connected' }
     try {
       const started = await backend.command('desktopMcp', {
         action: 'authenticateServer',
         args: [server.serverId, server.accountKey, 'connector_card'],
       })
-      if (this.backend !== backend) return undefined
+      if (this.backend !== backend) return refused
       const url = await this.signInStarted(started, name)
-      if (url) return { url, addedPlugin: added }
+      if (url) return { kind: 'started', start: { url, addedPlugin: added } }
       // Signed in already: kept, whatever the list says yet.
-      if (alreadySignedIn(started)) return undefined
+      if (alreadySignedIn(started)) return { kind: 'connected' }
     } catch (error) {
-      if (this.backend !== backend) return undefined
+      if (this.backend !== backend) return refused
       this.connectProblem(
         didntConnect(name, plainError(this.connectWhy(error))),
       )
     }
     // No sign-in to open: the app this connect added goes again, unless it turned out signed in already.
     if (added) await this.takeBack(added, name, backend)
-    return undefined
+    return refused
   }
 
   /**
