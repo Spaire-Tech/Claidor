@@ -20,7 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
-| 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (TODO-7F). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: TODO-NEXT |
+| 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
 
@@ -223,7 +223,25 @@ file and the code disagree, the code is right and this file is fixed.
 | 2 November 2026 | Relaunch and Update Now are one path: each asks the app to quit and open again, and the installer starts only after the page's and every part's work. A release waiting is installed as Simeon quits; then the installer opens Simeon (`--force-run`) and the app doesn't, so the two never race; else the app opens a new instance itself, with no link | The session |
 | 2 November 2026 | A report reads `updates.log` too (its last 256 KB, after the page's two logs); the page can't write it | The session |
 | 2 November 2026 | Windows' caption buttons follow the theme: the page tells the app its look at start, at each theme chosen and when the system turns light or dark (`src/desktop/windowLook.ts`) | The session |
-| 2 November 2026 | TODO-7F: 7f's decisions | |
+| 2 November 2026 | The agent's hands: the loop is the page's, the stream the main process's. The page has the gateway, so it dials, waits while the computer rests and asks again, as the Mac's `run`; the main process reads the stream it is handed and runs every request. The address and headers are handed over per stream and kept in memory only; no second credential (the Mac's way: no daemon) | The session |
+| 2 November 2026 | Commands run in PowerShell 7 (`pwsh.exe` in PATH's absolute folders or `%ProgramFiles%\PowerShell\7`), else Windows PowerShell 5.1 by its full path; not cmd, not Git Bash | The session |
+| 2 November 2026 | The state carried from one command to the next is the folder, the environment, functions and aliases (not plain variables, as zsh carries only exports). The command and the state go in on the shell's input, never its command line, which other programs can read on Windows; nothing of it is written to disk | The session |
+| 2 November 2026 | The state comes back after a marker made for each run, which no variable a command lists holds; the app takes the state after its last occurrence, at most 16 MiB, else it is output | The session, after the review (S3) |
+| 2 November 2026 | Windows' places that hold keys are the Mac's list translated (`windows/src/main/hands/sensitivePaths.ts`), with `Vault` and `Crypto` beside `Credentials` and `Protect`, `_netrc`, `%APPDATA%\gcloud`, the registry's hives (`System32\config`) and `.docker` whole; refused whatever the setting, before anything runs, in the Mac's sentence saying "this PC" | The session |
+| 2 November 2026 | Also refused: Arc's folder, Windows' cookie stores and, installed, the app's own folder (per user, so writable by any of the person's programs) | The session, after the review (S5, N6) |
+| 2 November 2026 | Two checks the Mac doesn't make: a command whose folder (the one asked for, or where the shell is) is such a place is refused, as written and at its real path (links, junctions, short names); a file's real place is checked again | The session, after the review (S1) |
+| 2 November 2026 | A command's words are read as Windows reads a path before they are matched (`\\?\`, this PC's own shares, short names, the old junctions, streams, `..`, Windows' variables, names relative to the folder it runs in). What no guard on a command's words can catch is said in the file's header: names built or code fetched while it runs, wildcards, links it makes, secrets reached through Windows' interfaces, not paths. The Mac's guard has the same limits | The session, after the review (S2) |
+| 2 November 2026 | The setting, the commands allowed once and the log (`local-exec-daemon.log`, the Mac's name) are in the app's data folder, not `~\.simeon`: there is no Electron app to share with, and the folder is itself refused | The session |
+| 2 November 2026 | The setting and the commands allowed once are signed (HMAC-SHA256, a key sealed by `safeStorage`, `local-tool-key.sealed`), read once when the app starts and then held; a file that doesn't verify reads as "Ask every time", no ceiling, no answers. It stops a plain edit of the files, not a program of the same person (Open questions) | The session, after the review |
+| 2 November 2026 | The root is the Mac's: its four variables, else the home folder (so `%USERPROFILE%\terminals`, as the Mac's `~/terminals`) | The session |
+| 2 November 2026 | Only the main window may drive the hands; the address only Simeon Labs' servers over https, the app's own server, or this computer (only when the app's server is on it); only the gateway's three headers. The stream and the answers go through Electron's `net.fetch`, with Windows' proxy settings and certificates | The session (this computer: after the review, N2) |
+| 2 November 2026 | A reload ends the stream and leaves commands running, as the Mac's Reload keeps its hands; signing out and quitting stop everything, and signing out forgets the setting and the commands allowed once | The session (the commands allowed once: after the review, N7) |
+| 2 November 2026 | A stop is `taskkill /T /F` at once (a console program with no window can't be asked to close), then `child.kill()` a second later if the shell is still there, and its end told five seconds after whatever happens; what a command left holding its output is found by its parent's number, only among processes made before the shell ended | The session (the fallback and the sweep's limit: after the review, S4, N3) |
+| 2 November 2026 | Files are read and written without holding the main process (`fs/promises`), at the real path that was checked; output reaches the agent with `\n` line ends, as zsh's | The session, after the review (S6, N5, N9) |
+| 2 November 2026 | Pictures read for the agent are made smaller by `nativeImage` (PNG, JPEG; a WebP or GIF made smaller comes back PNG; one it can't read is given as it is) | The session |
+| 2 November 2026 | An Allow once the app didn't write down: the card says the answer didn't go through, rather than telling the computer (the Mac tells it anyway). "Use hardware security keys" is left out: nothing answers it on a PC, or on the Mac. No word the catalogues lack | The session |
+| 2 November 2026 | Two of the Mac's flaws are not followed: a failed read of the team's settings keeps the ceiling this PC last had (the Mac's lifts a team's "Never allow" at every offline launch); after taking the computer's Always or Never, the computer is told what holds when the team's ceiling lowers it | The session, after the review |
+| 2 November 2026 | The engine hears the PC's system and shell in the hello (`platform`, `shell`, `shellVersion`, `osVersion`) and tells the agent in a section of its brief of its own ("The user's computer"), frozen as the channels and routines are; CopyToBox and CopyFromBox take a Windows path's own name and `Downloads\`. A Mac's hello says none, and nothing changes for it | The session, after the review (the engine, `ebc47f773`) |
 
 ## For Windows
 
@@ -487,9 +505,11 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   `windows/src/main/main.ts`); Windows' own languages, a report's facts
   and its logs, `updates.log` too (7b, `desktop/facts.ts`,
   `windows/src/main/session/`); Legal's pages in the default browser (7a);
-  the clipboard through the app's (7d). "Your Computer": 7f (TODO-7F); the
-  security keys: nothing to port (Decisions). Not built yet: the
-  screenshots' dialog with the Mac's title, `nativeImage`'s shrinking.
+  the clipboard through the app's (7d). "Your Computer" is back (7f,
+  `window/SettingsYourComputer.tsx`): Execution on Local Computer under
+  the team's ceiling, Commands Allowed Once with Forget; the security keys
+  left out: nothing to port (Decisions). Not built yet: the screenshots'
+  dialog with the Mac's title, `nativeImage`'s shrinking.
 - **Usage and billing (6f).** Stripe's pages in a child window that comes
   back on the app's own link, as the Mac's sheet (`back: "simeon"` once the
   scheme is registered on Windows, `/desktop/billing/back`); then the
@@ -522,7 +542,18 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   1Password and Chrome on Windows. Step 7: notifications, the taskbar's
   number and the tray (7c), updates (7e), `simeon://` links and 1Password
   (7d) done; Chrome's cookies: nothing to port (Decisions); the agent's
-  hands on the PC: 7f (TODO-7F).
+  hands on the PC done (7f, below).
+- **The agent's hands on the PC (7f).** Built: `windows/src/main/hands/`
+  and `parts/hands.ts` (the stream, PowerShell, Windows' places that hold
+  keys), the store's 7f section, `window/LocalAskDock.tsx` (the Allow card
+  in the composer) and `window/SettingsYourComputer.tsx`. PowerShell 7 and
+  5.1 differ for the agent: 5.1 has no `&&` or `||` and no `$PSStyle`, and
+  reads UTF-8 only once told (the scripts tell it); the engine tells the
+  agent which one runs, once a host bundle is published (Open questions). A
+  native program's own output is read as UTF-8: one that writes the OEM
+  code page shows replacement characters. Windows Defender may slow each
+  PowerShell's start (each command starts one, as each zsh on the Mac).
+  The terminal files and the answers use LF.
 
 ## Open questions
 
@@ -711,10 +742,53 @@ For the founder, each to be answered before the step that needs it:
   checked in 0 seconds." right after Check Now, and the line not moving as
   time passes; the server's Mac release reader matching a version only at
   its start (`releases.py`); on the web, `isForeground` never set, so a
-  chat open in a tab behind another counts as read. For the founder: make
-  them in the Mac and the core (then the web and Windows follow), or leave
-  them.
-- TODO-7F: the engine host bundle (the agent told it is on Windows) and 7f's Mac findings.
+  chat open in a tab behind another counts as read. From the agent's
+  hands (7f): `SensitivePaths` matching letter case while the Mac's disk
+  ignores it (`cat ~/.SSH/id_rsa` reads the key; its own test records it),
+  and missing `cd ~/.ssh; cat id_rsa` (";" ends no name), `echo
+  x>/etc/shadow` (">") and `${HOME}/.aws/x` as a path; a command's
+  `workingDirectory`, the shell's carried folder and a file's real place
+  (a link inside the root) not checked; plain-text tokens not on the list
+  (`.git-credentials`, `.config/gh/hosts.yml`, `.config/op`); a wildcard
+  (`~/.ss*/id_rsa`) caught on neither; `LocalRead`'s line-end rule
+  counting bytes, so a UTF-16 file keeps its CRLF (the engine's too); a
+  failed read of the team's settings lifting the ceiling
+  (`ceiling(teamAdminSettings: nil)`), so a team's "Never allow" goes at
+  every offline launch; after taking the computer's Always or Never, the
+  computer not told when the team's ceiling lowers it, so no card can
+  approve; and, not checked, whether the agent's Shell can write its
+  computer's `settings.json` and so raise the PC from Ask to Always at the
+  next connect (on the Mac too: worth a look in the engine). For the
+  founder: make them in the Mac and the core (then the web and Windows
+  follow), or leave them.
+- **The engine on the cloud computers.** Step 7 changed the engine
+  (`desktop/source`, `ebc47f773`): the hello says the PC's `platform`,
+  `shell`, `shellVersion` and `osVersion`; the agent is told the PC runs
+  Windows and to write PowerShell and Windows paths; CopyToBox and
+  CopyFromBox take Windows' paths. It reaches the cloud computers only once
+  a host bundle is published from a Mac (`cd desktop && npm run package &&
+  npm run publish:host-bundle`, macOS arm64, CLAUDE.md). Until then the
+  agent writes for a Mac: much of it fails in PowerShell, and in Windows
+  PowerShell 5.1 `&&` doesn't parse, so nothing runs. Needed before the
+  first Windows release: a host bundle published.
+- **The call's words on a PC.** The Windows app's call labels are the
+  page's (`clients/apps/app/src/core/voiceCall.ts`) and still say
+  "Running a command on your Mac…" and "Reading a file on your Mac…".
+  "…on your PC…" needs entries in the Mac's String Catalog, with their
+  translations, before the page can say them (the engine's own banner
+  words already do). Add them?
+- **What another program of the same Windows person can still do.** The
+  agent's hands refuse the places that hold keys and sign the setting and
+  the commands allowed once, but a program already running as the person
+  on the PC can still: name those places in ways no guard on a command's
+  words sees (a name built while it runs, a wildcard, a link it makes),
+  reach secrets through Windows' own interfaces (the Credential Manager,
+  which doesn't ask the person, DPAPI, the registry); open the sealed key
+  (Windows opens it for any program of that person) and sign a setting of
+  its own, or put back an earlier signed file, which counts at the next
+  start; or change the app itself, or anything else the person can. What
+  the signing stops is a plain edit of the files. The Mac's setting and
+  `~/.simeon` have no check at all. Leave it at that?
 
 ## Log
 
@@ -879,16 +953,48 @@ review `c8c1fd24f`, `a381fa3ff`, `37dba058d`)
   refusal no longer names the Mac ("…Open the Simeon app on your
   computer.").
 
-**7f: the agent's hands on the PC**
+**7f: the agent's hands on the PC** (`e24316d77`, `162cd8f39`, `ec0e935b6`,
+`14c49323c`, `0b82bd46d`; after the review `17f81799f`, `ac08b47c7`,
+`ebc47f773`)
 
-TODO-7F
+- `windows/src/main/hands/` and `parts/hands.ts` (MacLocalHands.swift;
+  SimeonMacCore's `LocalExecWire`, `LocalExecRules`, `LocalExecFiles`,
+  `SensitivePaths`, `LocalToolApprovals`, `LocalToolPermission`): the
+  stream from the computer's gateway (`wire.ts`, `provider.ts`: hello, a
+  ping every 10 s, the Mac's retries), each command in a PowerShell of its
+  own with the state carried (`powershell.ts`, `shell.ts`: the 1 MiB cap,
+  the 30 s hold then the background with its terminal file, the whole tree
+  stopped), reads, listings, uploads and downloads inside the root
+  (`files.ts`), Windows' places that hold keys (`sensitivePaths.ts`), the
+  gate in the Mac's order (`rules.ts`), the setting and the commands
+  allowed once, signed (`permission.ts`, `approvals.ts`, `signed.ts`). The
+  contract's nine calls, each argument checked, from the main window only.
+- The page: `core/localToolPermission.ts`, `core/localAsk.ts`
+  (LocalToolPermission.swift, Approvals.swift's `LocalToolAsk`); the
+  store's 7f section (the account's setting and its team's ceiling, the
+  computer told only when it changes what it should do, `runHands`, the
+  card's answer, a message sent letting go of the commands allowed once);
+  `window/LocalAskDock.tsx` (MacLocalPermission.swift's `LocalAskDock`:
+  Always allow, Allow once, Never, × and Escape denying once);
+  `window/SettingsYourComputer.tsx` (SettingsPages.swift's
+  `YourComputerGroup`) in Settings › Computer. Outside 7f's files
+  (`14c49323c`): the pane's Escape waits while the card shows, no working
+  line while an ask waits.
+- The engine (`ebc47f773`, Simeon's own files in `desktop/source/host` and
+  `shared`): `local-exec-platform.ts` reads the hello's four fields (each a
+  short plain line) and writes the agent's section for a Windows PC;
+  `local-exec-bridge.ts` keeps them; `system-prompt-assembly.ts` takes the
+  section; CopyToBox and CopyFromBox take Windows' paths
+  (`sand-file-transfer-tools.ts`); the call's banner words say "on your
+  PC" for a Windows PC (`voice-call-prompt.ts`). A Mac's hello and listing
+  are as before. `tests/local-exec-windows.test.mjs`.
 
 **Putting the parts together**
 
 - On the branch, in this order: 7b (`4c677c148`), 7c (`ff90af46e`), 7e
-  (`ba6c0f84b`), four of the merge's own commits, 7d (`d23387591`), then
-  one more of its own. Conflicts: the frame's stubs in `windows/src/main/parts/` met each
-  part's own file (add/add: each part's kept); 7c's in `App.tsx`, the store
+  (`ba6c0f84b`), four of the merge's own commits, 7d (`d23387591`), one
+  more of its own, then 7f (`7e76f30df`). Conflicts: the frame's stubs in
+  `windows/src/main/parts/` met each part's own file (add/add: each part's kept); 7c's in `App.tsx`, the store
   (7b's `agents` and `account` accessors beside 7c's `rosterNews`),
   `main.tsx` and the stand-in (both sides kept) and `windows/.gitignore`;
   `checkForUpdates`, in 7c's and 7e's sections of the contract, kept once,
@@ -896,7 +1002,9 @@ TODO-7F
   session, the surfaces, then 7d's links), `App.tsx`'s imports,
   `windows/.gitignore` (the branch's), the parts' files (each part's own)
   and the stand-in (7e's `{ body, headers }` answers and 7d's `{ text,
-  type, headers }`, both taken).
+  type, headers }`, both taken); 7f's only in `windows/.gitignore` (the
+  branch's), the parts' files (each part's own) and the stand-in (7f's
+  `{ stream }` answer added beside the others).
 - The merge's own commits: `024d4abe9`, the tray's Check for Updates…
   only in a build that updates itself (7c's review, S6); `6be3744d0`, a
   report reads `updates.log` too (7e's review, S8); `7d34b3d05`, Windows'
@@ -916,7 +1024,7 @@ TODO-7F
 - 7e's review, S7 (the tray signed out), checked at the merge: Open Simeon
   and Quit Simeon only (`surfaces.test.ts`); the daily check is the main
   process's, so a signed-out PC still installs as it quits.
-- Then the committed build and the inventory: TODO-FINAL-CHECKS.
+- Then the committed build and the inventory ("Checked", below).
 - Left for later, each named here so it isn't lost: the uninstaller
   leaves `%LOCALAPPDATA%\Simeon\saved-chats` unless the person signed out
   first (the Mac's caches also stay); each launch opens the sidebar's first
@@ -932,7 +1040,11 @@ TODO-7F
   `resources/icon.png` read by nothing yet; from "For Windows", the window
   growing for the pane, the logos and the sites' icons fetched by the main
   process, Disk Saver started by the app, Windows' dialogs with the Mac's
-  titles, the beep.
+  titles, the beep; an ask for a command longer than 256 KiB can't be
+  allowed once (the card says it didn't go through: kept as a guard); a
+  file is read at the real path that was checked, which narrows the moment
+  between the check and the read without closing it; the call's labels
+  saying "on your Mac" in the Windows app (Open questions).
 
 **What the reviews found, and what was done**
 
@@ -1049,7 +1161,45 @@ TODO-7F
     feed, web installers refused, the server's routes (no traversal, no
     open redirect), the release's upload order, the page against
     SettingsPages.swift, the icon, the web unchanged.
-- 7f: TODO-7F
+- 7f (`17f81799f`, `ac08b47c7`, `ebc47f773`): nothing blocking in 7f's own
+  code, and nothing that makes the PC less safe than the Mac. What blocked
+  shipping the hands was outside it: the agent wasn't told the PC runs
+  PowerShell, so it would write zsh. The engine now tells it (`ebc47f773`;
+  Open questions, for when it reaches the computers).
+  - Should fix: a command's folder was checked as written only, so a
+    junction or a short name (`Documents and Settings`, `SSH~1`) ran a
+    command inside `.ssh`: checked at its real path now;
+  - should fix: Windows' own spellings of a path passed in a command's
+    words (`\\?\`, `\\localhost\c$`, short names, the old junctions,
+    `::$DATA`, `HOMEDRIVE`, cmd's `%NAME:~…%`, a name relative to the
+    folder it `cd`s into, so `cd $env:APPDATA; sc Simeon\…` could write the
+    setting): read as Windows reads them now, and what no such guard can
+    catch said in the file's header; the setting and the commands allowed
+    once signed besides;
+  - should fix: a command could see its run's marker, so an ordinary
+    `Get-Variable | Format-List` cut its output and lost its state, and
+    what followed the marker was held without a cap: the marker is in no
+    variable now, the last one is taken, 16 MiB at most;
+  - should fix: a cancel had no fallback when `taskkill` didn't stop the
+    shell: `child.kill()` a second later, its end told whatever happens;
+  - should fix: Arc and Windows' cookie stores were not on the list: added,
+    with the app's own folder (nit 6);
+  - should fix: large files were read and written while holding the main
+    process: `fs/promises` now;
+  - nits taken: the card's buttons greyed with no computer attached; this
+    computer's address only when the app's server is on it; the sweep only
+    among processes made before the shell ended; timeouts past 24.8 days
+    held there; files read at the real path checked; the commands allowed
+    once forgotten on sign-out; the answers not kept for the old address;
+    `\n` line ends to the agent; the record's two overstated sentences.
+    Left: the 256 KiB cap on what can be allowed once (a guard).
+  - Clean, per the reviewer: the gate's order, Ask's exact match, the
+    ceiling, the reconcile and the per-account scope, as the core's; the
+    wire, its timings, retries, caps and parser, byte for byte with the
+    Mac's; the root and `escapesRoot`; a file's real place checked; the
+    shell found by its full path, the command and state on its input; the
+    log with no command, content, address or key; the page's words and its
+    gating to the Windows app.
 
 **Found in the Mac's, the core's and the server's code** (proposed, for
 the founder):
@@ -1078,11 +1228,30 @@ the founder):
   two lines).
 - The web: the store's `isForeground` is never set there, so a chat open
   in a tab behind another counts as read (the Windows app sets it).
-- 7f: TODO-7F
+- The agent's hands: `SensitivePaths` matches letter case while APFS
+  ignores it (`cat ~/.SSH/id_rsa` reads the key on a Mac; its own test
+  records it), and misses `cd ~/.ssh; cat id_rsa`, `echo x>/etc/shadow` and
+  `${HOME}/.aws/x` as a path (the Windows app closes all four); a command's
+  `workingDirectory` (`{command: "cat id_rsa", workingDirectory:
+  "~/.ssh"}` reads the key under Always), the shell's carried folder and a
+  file's real place are not checked; `.git-credentials`,
+  `.config/gh/hosts.yml` and `.config/op` are not on the list; a wildcard
+  (`~/.ss*/id_rsa`) is caught on neither (kept as a gap); `LocalRead`'s
+  CRLF rule counts bytes, so a UTF-16 file keeps its CRLF (the engine's
+  too). The team's settings: a failed read clears the ceiling
+  (`LocalToolPermission.ceiling(teamAdminSettings: nil)`), so a team's
+  "Never allow" is lifted at every offline launch; after taking the
+  computer's always or never, a ceiling that lowers it isn't told to the
+  computer, which then sends no asks this PC can answer (both done
+  otherwise in the Windows app). Not checked: the reconcile trusts the
+  computer's own copy, so if the agent's Shell can write its computer's
+  `settings.json` (`host/extensions/settings/settings-service.ts`) it could
+  raise this PC from Ask to Always at the next connect, on the Mac too.
 
-**Tests:** at the last merge the web app's 1,146 (from step 6's 973) and
-the Windows app's 139, all passing (Hello's script read by PowerShell 7 for
-Linux, on PATH). 7a's 11 and 14 (the contract and the quit's tasks; the
+**Tests:** on the merged tree the web app's 1,175 in 121 files (from step
+6's 973) and the Windows app's 212 in 12 files, all passing (with
+PowerShell 7 for Linux on PATH, so the tests that run a real PowerShell
+run). 7a's 11 and 14 (the contract and the quit's tasks; the
 frame's main process); 7b's 45 and 13 (`signIn.test.ts` with the core's
 `SignInTests`, `logoLightUp.test.ts`, `savedChats.test.ts` with
 `SavedChatsTests`, `desktop/session.test.ts`; `test/session.test.ts`); 7c's
@@ -1094,20 +1263,60 @@ frame's main process); 7b's 45 and 13 (`signIn.test.ts` with the core's
 `outsideGuards.test.ts` with a real loopback listener); 7e's 10 and 59
 (`updates.test.ts` with the Mac's French read in place; the updates'
 rules, the signature, the icon, the release); the merge's 3 and 1
-(`windowLook.test.ts`; the one relaunch), and one more after it (Reload
-opening the chat again, `savedChats.test.ts`). On the server: the CORS test for
-`app://simeon` (7a), the Windows releases and `has_windows_app` (7e).
+(`windowLook.test.ts`; the one relaunch), and one more after 7d (Reload
+opening the chat again, `savedChats.test.ts`); 7f's 28 and 73
+(`localTools.test.ts` with the core's `LocalToolPermissionTests` and
+`ApprovalTests`' local card on its fixture, `handsStore.test.ts`,
+`LocalAskDock.test.tsx`; `hands.test.ts` with `LocalExecTests` and
+`LocalToolTests`, each Mac case beside its Windows path, and the review's
+whole list of Windows spellings, `handsRun.test.ts` with the hands run in
+a real PowerShell against a stand-in gateway). On the server: the CORS
+test for `app://simeon` (7a), the Windows releases and `has_windows_app`
+(7e). The engine: `tests/local-exec-windows.test.mjs`, 7, each failing
+before the change (7f).
 
 **Checked:**
 
-TODO-FINAL-CHECKS
+On the merged tree, with every part in:
+
+- The Windows app: `npx vitest run`, 212 tests in 12 files, with
+  PowerShell 7 on PATH so the script's own test runs; `tsc` clean; `npm run
+  build`.
+- The web app: 1,175 tests in 121 files; `tsc`, Prettier, ESLint, the
+  words', brands' and connector pages' checks clean. `check_names.py` and
+  `check_translations.py` clean.
+- The engine (`desktop`, the whole checkout, `node --test
+  --test-timeout=120000 tests/*.test.mjs`): 990 tests, 966 pass, 22
+  skipped, 2 fail, the two that fail before step 7 (the packaging audit's
+  catalogue, which needs a Mac's bootstrap; the feedback route's test,
+  which reads fields moved in #502). None new.
+- The app run for real, Electron under `xvfb-run` against the stand-in, on
+  the final merged build: the smoke check; 7b's 59 checks; 7c's 79; 7d's
+  77 light, 75 dark and 75 French; 7e's 141; 7f's 59. All passing.
+  Screenshots, looked at (7f's Allow card and Your Computer among them).
+- The committed build, made again from the merged sources: `check-built.mjs`
+  says it matches them (600 files); `web_app_inventory.py` run again
+  (`strings.json`).
+- The installer: `npm run package` in `windows/`, from the checkout's own
+  `node_modules`, not linked: `Simeon-Setup-0.1.0.exe`, NSIS, x64, per
+  user, unsigned (no certificate). electron-updater and its dependencies
+  are inside `app.asar`; the web build inside it is the committed one, file
+  for file; its feed is `https://api.simeonlabs.com/desktop/download/windows`.
+  Not installed anywhere (no Windows PC); `out/` deleted after.
+- The server, on this computer's Postgres and Redis with a local S3
+  stand-in: step 7's three test files (the CORS rule, the Windows releases,
+  the plans' `has_windows_app`), 23 passing. `tests/desktop`, `tests/sand`
+  and `tests/plans`: 1,037 pass and 10 fail, the same 10 that fail on
+  `main` (the model list's and the GPT proxy's tests), compared by name;
+  `main` passes 1,024 of them. Ruff's check and format clean on every
+  server file step 7 changed.
 
 As the parts were merged, on the branch: after 7b and 7c, the web app's
 1,066 tests and the Windows app's 43, both typechecks; after 7d, the last,
 1,146 and 139, both typechecks, lint, and the words', translations' and
 names' checks.
 
-On the merged build (before 7f), every part's real-app check ran again,
+On the merged build before 7f, every part's real-app check ran again,
 all passing: the smoke check, 7b's 59 checks, 7c's 79, 7d's 77 light, 75
 dark and 75 French, 7e's 141. Two checks were brought up to date for the
 merge, the app not changed for them: 7b's now shows the page a dark
@@ -1171,7 +1380,25 @@ the frame's smoke check on each part's build; screenshots, looked at:
   `node_modules` (the version and build inside, the feed and the signer,
   the icon, each refusal before any build or upload); the server's tests,
   ruff and mypy on its files.
-- 7f: TODO-7F
+- 7f, 59 checks after its review, against the stand-in server and a
+  stand-in gateway, with a home, root and data folder of their own and
+  PowerShell 7.5.4 for Linux: signed in from the kept pair, the hands'
+  stream opening with the gateway's key and saying hello with the root,
+  the system and the shell; the card's words and buttons, Ask refusing
+  before Allow once, Allow once written before the computer hears it, the
+  card going when the computer settles it, what was allowed running and
+  nothing else; Settings › Computer › Your Computer, Always allow kept and
+  told; a command run in PowerShell in the root, its stream and its
+  environment carried; `~/.ssh` and the app's data folder refused under
+  Always, the stand-in key never read, nor through a folder reached by a
+  link, `..` or a stream; Never running nothing; a 30 s command cancelled
+  1.5 s in, ended at 1.55 s; Forget; the team's ceiling (its line, Always
+  allow greyed with its reason); Escape denying once; a plain edit of the
+  setting and a forged answer changing nothing mid-run;
+  `Get-Variable | Format-List` ending whole with its state carried;
+  quitting and signing out each stopping a command in the background,
+  signing out forgetting the setting and the answers; the log with no key,
+  command or address.
 - Found by 7e: packaged from a checkout whose `node_modules` is a link,
   electron-builder packs electron-updater without its dependencies (the
   app would not start); with a real `npm ci` they are all packed. The
@@ -1222,9 +1449,21 @@ the frame's smoke check on each part's build; screenshots, looked at:
   the kept chats with many agents and pictures; Reduce Motion; a screen
   reader; the website's billing page in a browser (typecheck and lint
   only); side by side with the Mac.
-- 7f: TODO-7F
+- The agent's hands: on a Windows PC, Windows PowerShell 5.1 running the
+  scripts (the input line, its JSON, the UTF-8 console, `GetNewClosure`),
+  `pwsh.exe`, `taskkill /T /F`, `child.kill()` and the left-behind sweep,
+  no window flashing, real junctions and short names through `realpath`,
+  `safeStorage`'s key with DPAPI, a redirected `%APPDATA%`, `net.fetch`
+  through a proxy; against a real computer, the gateway through
+  `api.simeonlabs.com`, a real agent's commands and asks, the computer's
+  own settling of an ask and its `retire-approval`, the team's ceiling from
+  the real server, a computer that rests (in the store's tests only); the
+  engine's change on a real cloud computer (no host bundle published); in
+  Electron, a picture read and made smaller, an upload, a download and the
+  terminal file (in the unit run only).
 
-**Next:** TODO-NEXT
+**Next:** the founder's open questions (above), then the first signed
+release tried on a Windows PC.
 
 ### 2 November 2026: step 6, Connectors and Settings
 

@@ -133,8 +133,8 @@ it at the same address. Skills publishing is left out, as on the Mac
 | The menu bar icon | – | The system tray icon |
 | Updates (Sparkle, `/desktop/download/mac/appcast.xml`) | Always the latest | Electron's updater, on a Windows feed the server serves |
 | `simeon://` links (packs, plugins, sign-in returns) | Web addresses | The `simeon://` handler registered on Windows |
-| The agent's hands on this Mac (`MacLocalHands`, `LocalExec*`, `SensitivePaths`) | Not possible in a browser | A Windows version: commands in PowerShell, Windows' paths, Windows' sensitive folders: 7f (TODO-7F) |
-| "Execution on Local Computer" | – | With the hands above |
+| The agent's hands on this Mac (`MacLocalHands`, `LocalExec*`, `SensitivePaths`) | Not possible in a browser | A Windows version: commands in PowerShell, Windows' paths, Windows' sensitive folders (7f, `windows/src/main/hands/`) |
+| "Execution on Local Computer" | – | With the hands above (7f, Settings › Computer › Your Computer) |
 | 1Password through its Mac app | – | 1Password's Windows app, through `op.exe`, with Windows Hello (7d) |
 | Chrome's cookies imported (Mac only) | – | Nothing to port: not built on the Mac (`PROGRESS.md`, "Decisions") |
 | Dictation (recorded, transcribed by the server) | The browser's microphone, the same server call | The same |
