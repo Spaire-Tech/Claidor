@@ -816,7 +816,7 @@ Newest first.
 
 ### 3 November 2026: the Mac's bugs fixed, the way the upstream app does
 
-The founder, on the 29 compared below: "yes fix them all the way grok bot
+The founder, on the 29 compared below: "yes fix them all the way [the upstream app]
 does - but be extremely careful not to break anything". Four parts, each
 written in its own worktree off `main`, each read by a second, independent
 reviewer, its findings fixed, then merged here and read once more as a
