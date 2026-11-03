@@ -240,7 +240,7 @@ final class CallOneRecordTests: XCTestCase {
     try await Task.sleep(nanoseconds: 50_000_000)
     XCTAssertEqual(states.last?.phase, .ringing, "the second call is not made live by the first's voice")
     XCTAssertEqual(states.last?.failed, false, "nor ended by it")
-    XCTAssertEqual(voice.ends, 1, "and its voice is not ended for it")
+    XCTAssertEqual(voice.ends, 1, "the voice was ended once, for the failed call, and not again for its late events")
     voice.emit(1, .connected(conversationId: "c2"))
     XCTAssertEqual(states.last?.phase, .live, "its own voice makes it live")
     call.hangUp()
