@@ -338,6 +338,8 @@ public final class AppStore {
   @ObservationIgnored var pendingFaces: [String: AgentFace] = [:]
   /** Agents given a face in this sign-in: one the host refused is not sent again on every roster change. */
   @ObservationIgnored var facesSent: Set<String> = []
+  /** The sign-ins this app named to Simeon Labs' server to come back to it, by their state: the app's name and when (AppReturnSignIn.swift). */
+  @ObservationIgnored var returnedSignIns: [String: (name: String, at: Date)] = [:]
   /** A line search found, to show once its chat is open (agent → entry; Search.swift). */
   public var revealing: [String: String] = [:]
   /** The thread open in each chat (agent → the id of its first message), laid out in `threadRows`. */
@@ -501,6 +503,8 @@ public final class AppStore {
     voiceList = nil
     givingFaces?.cancel(); givingFaces = nil; pendingFaces = [:]; facesSent = []
     sentFiles = []
+    // A sign-in named in this sign-in is finished in it only (the web's `resetDesktopOutside`).
+    returnedSignIns = [:]
     // Last: wiping the list above asked for a save, which must not happen.
     stopSaving()
   }

@@ -169,7 +169,6 @@ import {
   type LocalToolPermission,
   defaultLocalToolPermission,
   isAboveCeiling,
-  reconcilePermission,
   teamCeiling,
 } from './localToolPermission'
 import {
@@ -6780,8 +6779,8 @@ export class AppStore {
   // In the Windows app only (`desktop()`), as MacServices.swift's `track`
   // and MacLocalPermission.swift: signed in, this account's setting and its
   // team's ceiling are read, and the computer told when they change what it
-  // should do; each time the computer is reached the setting is squared
-  // with its own. The hands' loop (`LocalHandsProvider.run`) hands the main
+  // should do; each time the computer is reached it is told this PC's
+  // setting, its own copy never taken back. The hands' loop (`LocalHandsProvider.run`) hands the main
   // process the computer's address and dials again when the stream drops,
   // never a computer that rests; the main process reads the stream and runs
   // what it asks (windows/src/main/hands/). The Allow card's ask is read
@@ -6995,9 +6994,9 @@ export class AppStore {
    * Signed in, and at each launch (`MacLocalPermission.signedIn`): this
    * account's setting, and its team's ceiling read from Simeon Labs. The
    * computer is told when that changes what it should do. When Simeon Labs
-   * does not answer, the ceiling this PC last had for the account holds
-   * (the Mac's counts as none, which lifts a team's "Never" at every
-   * offline launch: proposed for the Mac too).
+   * does not answer, the ceiling this PC last had for the account holds, as
+   * the Mac's does (`LocalToolSettings.take`: taken as none, a team's
+   * "Never" was lifted at every offline launch).
    */
   private async localPermissionSignedIn(
     host: Desktop,
@@ -7042,38 +7041,25 @@ export class AppStore {
     this.changed()
   }
 
-  /** Connected (`MacLocalPermission.connected`): a computer set to always or never while this PC is at the default is taken; otherwise it is told this PC's. */
+  /**
+   * Connected (`MacLocalPermission.connected`; upstream's
+   * `coordinator-resync.ts`, step `local_tool_permission`): the computer is
+   * told this PC's setting, the ceiling applied, and nothing is taken from
+   * its own copy. Only this PC writes it: the computer keeps it in a
+   * `settings.json` its agent can write, so taking it back could raise this
+   * PC from Ask to Always; and a ceiling that lowers the choice reaches the
+   * computer, which then sends the asks this PC can answer.
+   */
   private async localPermissionConnected(
     host: Desktop,
     backend: AgentBackend,
   ): Promise<void> {
-    let box: unknown
-    try {
-      box = field(
-        await backend.command('getHostSettings', {}),
-        'localToolPermission',
-      )
-    } catch {
-      box = undefined
-    }
     const here = await host.call('handsPermission', null).catch(() => undefined)
     if (!here || backend !== this.backend) return
-    const step = reconcilePermission(box, here.effective)
-    if (step.kind === 'adopt') {
-      const now = await host
-        .call('handsChoose', step.value)
-        .catch(() => undefined)
-      if (now) {
-        this.localPermission = now.effective
-        this.changed()
-        // The team's ceiling lowered what was taken: the computer is told what holds, or it would send no asks this PC could answer (the Mac doesn't: proposed for it too).
-        if (now.effective !== step.value)
-          await this.pushHostSetting('localToolPermission', now.effective)
-      }
-      return
-    }
     await quietly(
-      backend.command('setHostSettings', { localToolPermission: step.value }),
+      backend.command('setHostSettings', {
+        localToolPermission: here.effective,
+      }),
     )
   }
 

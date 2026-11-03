@@ -35,14 +35,28 @@ final class LocalToolPermissionTests: XCTestCase {
     XCTAssertNil(LocalToolPermission.ceiling(teamAdminSettings: ["localToolControls": ["permissionCeiling": 0]]))
   }
 
-  func testConnectingTakesTheBoxsWordOnlyOverTheDefault() {
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "always", mac: .ask), .adopt(.always))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "never", mac: .ask), .adopt(.never))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "ask", mac: .ask), .push(.ask))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: nil, mac: .ask), .push(.ask))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "always", mac: .never), .push(.never))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "never", mac: .always), .push(.always))
-    XCTAssertEqual(LocalToolPermission.reconcile(box: "sometimes", mac: .ask), .push(.ask))
+  /** A failed read of the team's answer keeps the last ceiling; only `{}` (no team) lifts it (the Windows app's rule). */
+  func testAFailedReadKeepsTheTeamsCeiling() {
+    let suite = "simeon.tests.localTool.\(UUID().uuidString)"
+    let defaults = UserDefaults(suiteName: suite)!
+    defer { defaults.removePersistentDomain(forName: suite) }
+    let settings = LocalToolSettings(defaults: defaults)
+    settings.scope(to: "a@x.co")
+    settings.choice = .always
+    settings.take(teamAdminSettings: ["localToolControls": ["permissionCeiling": 1]])
+    XCTAssertEqual(settings.ceiling, .never)
+    XCTAssertEqual(settings.effective, .never)
+    // Offline at the next launch: the team's "Never allow" holds.
+    settings.take(teamAdminSettings: nil)
+    XCTAssertEqual(settings.ceiling, .never)
+    XCTAssertEqual(settings.effective, .never)
+    XCTAssertEqual(LocalToolSettings(defaults: defaults).effective, .never)
+    settings.take(teamAdminSettings: ["localToolControls": ["permissionCeiling": 2]])
+    XCTAssertEqual(settings.effective, .ask)
+    // Out of the team: lifted.
+    settings.take(teamAdminSettings: [:])
+    XCTAssertNil(settings.ceiling)
+    XCTAssertEqual(settings.effective, .always)
   }
 
   func testEachAccountKeepsItsOwn() {

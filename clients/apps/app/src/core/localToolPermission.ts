@@ -4,7 +4,9 @@
 // Local Computer" picks it; the computer asks before each action while it
 // is "ask", the default. The Windows app keeps it (its main process, which
 // reads it before every request: windows/src/main/hands/permission.ts);
-// this is its menu, its ceiling and what connecting does with it.
+// this is its menu and its ceiling. Connecting tells the computer this PC's
+// setting and takes nothing back from it (the store's
+// `localPermissionConnected`).
 
 import type { JSONValue } from './json'
 import { field, int } from './json'
@@ -96,23 +98,4 @@ export function teamCeiling(
     default:
       return undefined
   }
-}
-
-/**
- * What connecting to the computer does with the setting
- * (`coordinator-resync.ts`, step `local_tool_permission`): a computer that
- * says always or never while this PC is at "ask" is taken as the choice
- * here (another device set it); otherwise the computer is given this PC's.
- */
-export type Reconcile =
-  | { kind: 'adopt'; value: LocalToolPermission }
-  | { kind: 'push'; value: LocalToolPermission }
-
-export function reconcilePermission(
-  box: unknown,
-  here: LocalToolPermission,
-): Reconcile {
-  if (here === 'ask' && (box === 'always' || box === 'never'))
-    return { kind: 'adopt', value: box }
-  return { kind: 'push', value: here }
 }

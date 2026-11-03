@@ -158,7 +158,7 @@ final class MacServices {
       _ = try? await backend.command("setHostSettings", ["notifications": ["isEnabled": false]])
       // The zone this Mac is in; the person's own pick stays the computer's (Settings).
       _ = try? await backend.command("setHostSettings", ["userTimeZone": .string(TimeZone.current.identifier)])
-      // "Execution on Local Computer" squared with the computer's, and the security key's switch (Settings › General).
+      // "Execution on Local Computer" as this Mac has it (the computer's own copy never taken), and the security key's switch (Settings › General).
       await MacLocalPermission.shared.connected(backend)
       _ = try? await backend.command("setHostSettings", ["webauthnProxyEnabled": .bool(SecurityKeySetting.enabled)])
       sendFocus()
@@ -301,10 +301,14 @@ final class MacServices {
    */
   func handle(_ url: URL) {
     // A connected app's sign-in the browser finished (the sheet could not
-    // open): the app hands it to its computer (`AppReturnSignIn`).
+    // open): the app hands it to its computer (`AppReturnSignIn`), only when
+    // it is a sign-in this app named to the server, signed in, within 10
+    // minutes and once, a refusal in the app's own words; any other link is
+    // dropped without a word (any page can open one: `finishReturnedSignIn`,
+    // as the Windows app does).
     if url.scheme == SimeonConfig.macURLScheme, let answer = AppReturnSignIn.answer(url) {
       NSApp.activate()
-      if let store = session?.store { Task { await store.finishLoopbackSignIn(answer, name: String(localized: "the app")) } }
+      if let store = session?.store { Task { await store.finishReturnedSignIn(answer) } }
       return
     }
     guard let link = DeepLink.parse(url.absoluteString, schemes: [SimeonConfig.macURLScheme]) else { return }

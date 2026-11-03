@@ -53,7 +53,7 @@ describe('the logs', () => {
     expect(isLogName('../kept/simeon.web.tokens.sealed')).toBe(false)
   })
 
-  it('empties the screens’ log at launch, says where it is, and appends the call’s', async () => {
+  it('empties the screens’ log at launch, says its name (never the folder), and appends the call’s', async () => {
     const dir = folder()
     writeFileSync(path.join(dir, 'computer-stream.log'), 'the last launch\n')
     writeFileSync(path.join(dir, 'voice-call.log'), 'an older call\n')
@@ -64,9 +64,11 @@ describe('the logs', () => {
     await logs.write('voice-call.log', 'call started')
     const stream = readFileSync(path.join(dir, 'computer-stream.log'), 'utf8')
     expect(stream).toBe(
-      `2026-11-02T21:00:00.123Z computer stream log at ${path.join(dir, 'computer-stream.log')}\n` +
+      '2026-11-02T21:00:00.123Z computer stream log at computer-stream.log\n' +
         '2026-11-02T21:00:00.123Z screen theo connecting\n',
     )
+    // A report attaches the file: the person's folder is never in it.
+    expect(stream).not.toContain(dir)
     expect(readFileSync(path.join(dir, 'voice-call.log'), 'utf8')).toBe(
       'an older call\n2026-11-02T21:00:00.123Z call started\n',
     )
