@@ -23,6 +23,7 @@ import { SimeonAPI, SimeonAPIError } from './api'
 import { GatewayConnection, GatewayError } from './gatewayConnection'
 import { FetchClient, type HTTPClient, answerJSON, isOk } from './http'
 import { type JSONValue, bool, field, int, parseJSON, text } from './json'
+import { note } from './recentActivity'
 import {
   type SavedGatewayStore,
   decodeSavedGateway,
@@ -503,15 +504,22 @@ export class Gateway {
     const connection = await this.currentConnection(wakes)
     const answer = await this.http.send(connection.commandRequest(method, args))
     if (!isOk(answer)) {
-      // Only the computer's own sentence is passed on, the command kept apart (`method`), as the Electron app's
-      // coordinator does (`gateway-client.ts`, `extractGatewayErrorMessage`; Gateway.swift's `send`): until 3 November
-      // 2026 the message began with the command ("Couldn't create Arlo: createAgent: Not now"). An answer with no
-      // sentence is the coordinator's machine line ("gateway createAgent failed: <the body>"), which plainWords hides.
+      // A refusal the computer means (a 4xx: "Not now", "50 is the maximum", which the host answers with 409,
+      // `statusForCommandError`) passes on its own sentence alone, the command kept apart (`method`), as the Electron
+      // app's coordinator does (`gateway-client.ts`, `extractGatewayErrorMessage`; Gateway.swift's `send`): until 3
+      // November 2026 the message began with the command ("Couldn't create Arlo: createAgent: Not now"). Anything else
+      // (the 500 the host answers for every exception it throws, in its own words: "SQLITE_BUSY: database is locked";
+      // an answer with no sentence) is the coordinator's machine line ("gateway createAgent failed: …", its
+      // `http_5xx`), which plainWords hides. Each failure is noted with its command for a report.
       const parsed = answerJSON(answer)
       const sentence =
         text(field(parsed, 'error')) ?? text(field(parsed, 'message'))
+      const detail = sentence ?? answer.text.slice(0, 300)
+      note(`gateway ${method} ${answer.status}: ${detail}`)
       throw new GatewayError(
-        sentence ?? `gateway ${method} failed: ${answer.text.slice(0, 300)}`,
+        answer.status < 500 && sentence !== undefined
+          ? sentence
+          : `gateway ${method} failed: ${detail}`,
         answer.status < 500,
         answer.status,
         method,

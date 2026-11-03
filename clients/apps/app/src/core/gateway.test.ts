@@ -13,6 +13,7 @@ import {
 import { NetworkError } from './http'
 import { type JSONValue, arr, field } from './json'
 import { plainError, plainProblem, unavailable } from './plainWords'
+import { recentActivity } from './recentActivity'
 import { MemorySavedGateway, decodeSavedGateway } from './savedGateway'
 import {
   Clock,
@@ -185,6 +186,55 @@ describe('the gateway', () => {
     expect(plainProblem(`Couldn't create Arlo: ${bare.message}`)).toBe(
       "Couldn't create Arlo. Try again in a little while.",
     )
+
+    // The host's 500 is any exception it threw, in its own words: the machine line, hidden.
+    for (const words of [
+      'SQLITE_BUSY: database is locked',
+      'MCP server not found.',
+      'production Agent conversation state is not bound',
+      'Invalid Sand agent id',
+      "ENOENT: no such file or directory, open '/home/box/x'",
+    ]) {
+      const thrown = await refusal(
+        'desktopMcp',
+        500,
+        JSON.stringify({ error: words }),
+      )
+      expect(thrown.message).toBe(`gateway desktopMcp failed: ${words}`)
+      expect(thrown.refused).toBe(false)
+      expect(plainError(thrown.message)).toBe(unavailable())
+      expect(plainProblem(`Couldn't create Arlo: ${thrown.message}`)).toBe(
+        "Couldn't create Arlo. Try again in a little while.",
+      )
+    }
+    // The box's own key refused (its 401): its word, hidden too.
+    const unauthorized = await refusal(
+      'listAgents',
+      401,
+      '{"error":"unauthorized"}',
+    )
+    expect(unauthorized.message).toBe('unauthorized')
+    expect(plainError(unauthorized.message)).toBe(unavailable())
+    // Each failure noted with its command, for a report.
+    expect(
+      recentActivity().some((line) =>
+        line.endsWith(
+          'gateway desktopMcp 500: SQLITE_BUSY: database is locked',
+        ),
+      ),
+    ).toBe(true)
+    expect(
+      recentActivity().some((line) =>
+        line.endsWith('gateway createAgent 409: Not now'),
+      ),
+    ).toBe(true)
+    // A stale approval's words (thrown, so 500) are still there for the store to find.
+    const stale = await refusal(
+      'resolveAutoReviewApproval',
+      500,
+      '{"error":"auto-review/stale: The Auto-review request is stale, expired, or not authorized."}',
+    )
+    expect(stale.message).toContain('auto-review/stale')
   })
 
   it("reaches an agent's screen through the proxy", () => {

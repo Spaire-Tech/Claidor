@@ -400,9 +400,11 @@ final class GatewayTests: XCTestCase {
 
   /**
    * A refusal as the person reads it (3 November 2026): the computer's own
-   * sentence, never the command's name ("setAgentAvatarBytes. Try again in
-   * a little while.", "Couldn't create Arlo: createAgent: Not now"). An
-   * answer with no sentence stays a machine's line, which PlainWords hides.
+   * sentence for a refusal it means (a 4xx), never the command's name
+   * ("setAgentAvatarBytes. Try again in a little while.", "Couldn't create
+   * Arlo: createAgent: Not now"). Its 500s (any exception, in its own
+   * words) and an answer with no sentence stay a machine's line, which
+   * PlainWords hides.
    */
   func testARefusalSaysTheComputersSentenceAndNotTheCommand() async {
     func refusal(_ method: String, _ status: Int, _ body: Data) async -> GatewayError? {
@@ -427,6 +429,30 @@ final class GatewayTests: XCTestCase {
     XCTAssertEqual(bare?.method, "setAgentAvatarBytes")
     XCTAssertEqual(PlainWords.error(bare?.message ?? ""), PlainWords.unavailable)
     XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(bare?.message ?? "")"), "Couldn't create Arlo. Try again in a little while.")
+
+    // The host's 500 is any exception it threw, in its own words: the machine line, hidden.
+    for words in ["SQLITE_BUSY: database is locked", "MCP server not found.", "production Agent conversation state is not bound", "Invalid Sand agent id", "ENOENT: no such file or directory, open '/home/box/x'"] {
+      let thrown = await refusal("desktopMcp", 500, Data(#"{"error":"\#(words)"}"#.utf8))
+      XCTAssertEqual(thrown?.message, "gateway desktopMcp failed: \(words)")
+      XCTAssertEqual(thrown?.refused, false)
+      XCTAssertEqual(PlainWords.error(thrown?.localizedDescription ?? ""), PlainWords.unavailable, words)
+      XCTAssertEqual(PlainWords.problem("Couldn't create Arlo: \(thrown?.localizedDescription ?? "")"), "Couldn't create Arlo. Try again in a little while.", words)
+    }
+    // The box's own key refused (its 401): its word, hidden too.
+    let unauthorized = await refusal("listAgents", 401, json(#"{"error":"unauthorized"}"#))
+    XCTAssertEqual(unauthorized?.message, "unauthorized")
+    XCTAssertEqual(PlainWords.error(unauthorized?.message ?? ""), PlainWords.unavailable)
+    // Each failure noted with its command, for a report.
+    XCTAssertTrue(RecentActivity.all.contains { $0.hasSuffix("gateway desktopMcp 500: SQLITE_BUSY: database is locked") })
+    XCTAssertTrue(RecentActivity.all.contains { $0.hasSuffix("gateway createAgent 409: Not now") })
+
+    // The words the store looks for are still there: the limit's (409) and a stale approval's (thrown, so 500).
+    let limit = await refusal("createAgent", 409, json(#"{"error":"50 is the maximum"}"#))
+    guard let limit else { return XCTFail("no refusal") }
+    let failure = await AppStore.createFailure(limit)
+    XCTAssertEqual(failure, .limit)
+    let stale = await refusal("resolveAutoReviewApproval", 500, json(#"{"error":"auto-review/stale: The Auto-review request is stale, expired, or not authorized."}"#))
+    XCTAssertTrue((stale?.localizedDescription ?? "").contains("auto-review/stale"))
   }
 
   func testSendCarriesTheHostsArgumentNames() async throws {
