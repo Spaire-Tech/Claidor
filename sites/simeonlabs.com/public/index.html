@@ -78,7 +78,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* A section title set like the hero's headline: same face, weight, size and spacing. */
 /* The statement between the app and the gallery, in the middle of its own white space: Apple's
    intro-statement setting, large and centred, the point in black and the rest in grey. */
-.statement{padding-block:clamp(72px,7*var(--vw,1vw),140px)} /* the sections a quarter closer together (the founder, 23 October 2026: "too far from each other") */
+.statement{--sp:clamp(72px,7*var(--vw,1vw),140px);padding:calc(var(--sp) + 20px) 0 calc(var(--sp) - 20px)} /* the sections a quarter closer together (the founder, 23 October 2026: "too far from each other"); 20 points moved from under the words to over them, so they sit halfway between the demo and the gallery under them, whose own 40 of margin made the gap below the larger (the founder, 3 November 2026: "not quite in the middle") */
 .statement p{max-width:30em;margin:0 auto;text-align:center;font-size:var(--t-title);line-height:1.21;font-weight:400;letter-spacing:-.022em;color:var(--ink3);text-wrap:balance} /* the hero headline's size, weight and spacing */
 .statement b{font-weight:400;color:#000}
 @supports (-webkit-background-clip:text) or (background-clip:text){
