@@ -43,7 +43,10 @@ Windows' own parts around it. The plan and the record are
   the pointer, wheel and keys go to the tab). The cards' fills (the in-chat
   form, 1Password, saved logins, a new password) are typed into the agent's
   tab here, key by key (the `form` op in `steps.ts`); their values are
-  never logged or sent back.
+  never logged or sent back. So are the checkout card's (the `checkout`
+  op). A frame of another site in a tab (a card form, a bank's check) is
+  reached over its own DevTools session (`frames.ts`): the pointer goes to
+  the frame under it, the agent's and the person's alike.
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 

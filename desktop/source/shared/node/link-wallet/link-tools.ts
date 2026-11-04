@@ -158,7 +158,8 @@ export function createLinkTools(options: LinkToolsOptions) {
     return { status: text(inner.status), type: text(inner.credential_type) || "card", record: inner };
   };
 
-  const payCheckout = async (id: string, checkoutUrl: string): Promise<LinkToolResult> => {
+  /** The approved purchase's card or pay token into the checkout, where the agent's page is (`agentId`: the app's browser for a task there). */
+  const payCheckout = async (id: string, checkoutUrl: string, agentId?: string): Promise<LinkToolResult> => {
     if (options.fillCheckout == null) return { text: "This computer has no browser to fill a checkout in.", isError: true };
     const current = await cli.run(["spend-request", "retrieve", id]);
     if (!current.ok) return answerText(current);
@@ -171,11 +172,11 @@ export function createLinkTools(options: LinkToolsOptions) {
       if (!withToken.ok) return answerText(withToken);
       const token = findString(withToken.value, "link_pay_token");
       if (token == null) return { text: "Link gave no pay token for this purchase.", isError: true };
-      return fillAnswer(await options.fillCheckout({ linkPayToken: token, pageHint: checkoutUrl }));
+      return fillAnswer(await options.fillCheckout({ linkPayToken: token, pageHint: checkoutUrl, ...(agentId == null ? {} : { agentId }) }));
     }
     if (type !== "card") return { text: `This purchase was made for a ${type.replace(/_/g, " ")}, which Simeon can't put into a page.`, isError: true };
     const fill = options.fillCheckout;
-    const used = await withCard(id, async (card) => await fill({ card, pageHint: checkoutUrl }));
+    const used = await withCard(id, async (card) => await fill({ card, pageHint: checkoutUrl, ...(agentId == null ? {} : { agentId }) }));
     if (!used.ok) return used.answer != null ? answerText(used.answer) : { text: used.message, isError: true };
     return fillAnswer(used.value);
   };
@@ -213,7 +214,7 @@ export function createLinkTools(options: LinkToolsOptions) {
     return { ...(name.length > 0 ? { name } : {}), ...(text(info.email).length > 0 ? { email: text(info.email) } : {}), ...(text(info.phone).length > 0 ? { phone: text(info.phone) } : {}) };
   };
 
-  const call = async (name: string, args: Record<string, unknown>): Promise<LinkToolResult> => {
+  const call = async (name: string, args: Record<string, unknown>, context?: { readonly agentId?: string }): Promise<LinkToolResult> => {
     switch (name) {
       case "get_wallet": {
         const [user, methods, addresses] = await Promise.all([
@@ -240,7 +241,7 @@ export function createLinkTools(options: LinkToolsOptions) {
       case "pay_checkout": {
         const id = text(args.spend_request_id);
         if (id.length === 0) return { text: "spend_request_id is required.", isError: true };
-        return await payCheckout(id, text(args.checkout_url));
+        return await payCheckout(id, text(args.checkout_url), context?.agentId);
       }
       case "cancel_purchase": {
         const id = text(args.spend_request_id);

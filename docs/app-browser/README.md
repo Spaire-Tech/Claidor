@@ -6,10 +6,11 @@ A plan (4 November 2026). The founder's decisions are made (below).
 the Windows app with the Computer tab's view of it and Take control, are
 built and tested, off by default ([protocol.md](protocol.md)). Step 3, the
 cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
-and 3b, the fills (the in-chat form, 1Password, saved logins, a new
-password), are built. Nothing has changed for anyone, and nothing has run
-on a real PC yet. Next: 3c, the checkout's card and Duffel's form, which
-need another site's frames read.
+3b, the fills (the in-chat form, 1Password, saved logins, a new password),
+and 3c-1, the checkout card (its total, its picture, Link's or Shop's card
+typed in, a payment provider's frame of another site included), are built.
+Nothing has changed for anyone, and nothing has run on a real PC yet.
+Next: 3c-2, Duffel's form for a flight.
 
 ## The decision
 
@@ -298,7 +299,8 @@ your recommendations".
 | 2b. The Computer tab's view and Take control | Built, 4 November 2026 (`windows/src/main/browser/view.ts`, `control.ts`; `clients/apps/app/src/window/BrowserView.tsx`). Checked in the Windows app itself under a virtual display (`npm run browser-view-smoke`, 15 checks: the page's own hands loop opening the line, the picture, the face, none while the window is hidden, Take control with the real mouse and keys, Give back, Exit) and in the browser's own check (`npm run browser-smoke`, 87). Not run on a Windows PC. |
 | 3a. The take-over and the checkout's buttons open the agent's tab here | Built, 4 November 2026 (`openAgentScreen` in `clients/apps/app/src/window/BrowserView.tsx`; the take-over's picture from the tab, `host-runner-composition.ts`). Checked in the Windows app itself (`npm run browser-view-smoke`, 19 checks, 4 of them the take-over) and the engine's tests. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC. |
 | 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-forms.ts`; the `form` op in `windows/src/main/browser/steps.ts`; the in-chat form's lock line in `RequestCards.tsx`). Checked in Electron (`npm run browser-smoke`, 100 checks, 13 of them the fills, run twice), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and fills drove the Windows browser, which typed a sign-in and a one-time code and sent it. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC or real sites. |
-| 3c. The checkout's card and Duffel's form (needs another site's frames read) | Next |
+| 3c-1. The checkout card: its total and picture, Link's or Shop's card or Link's pay token typed in; the frames of other sites reached (the agent's and the person's clicks too) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-checkout.ts`; `windows/src/main/browser/frames.ts`, the `checkout` op in `steps.ts`). Checked in Electron (`npm run browser-smoke`, 113 checks, 13 of them new, run four times, twice on the final code), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and checkout, with the computer's own field marks, drove the Windows browser, which read the total, took the picture and typed a card into a frame of another site. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC, against a real shop or with a real card. |
+| 3c-2. Duffel's form for a flight, and its bank check | Next |
 | 4-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
@@ -417,4 +419,39 @@ Step 3b, what was decided while building it (4 November 2026):
   never shown to your agent." for a task here (one new word, in the 9
   languages); otherwise Simeon's computer, as before.
 - **Not yet:** a field in another site's frame (a card form) is not found;
-  that is step 3c.
+  that is step 3c (found since 3c-1).
+
+Step 3c-1, what was decided while building it (4 November 2026):
+
+- **Frames of other sites.** Measured in Electron 44: in the app's
+  offscreen tabs a click on such a frame (a card form, a bank's check)
+  went to the page around it, so neither the agent's click on the picture
+  nor the person's, in Take control, reached it. Each tab now keeps a
+  DevTools session for each frame of another site (`frames.ts`); every
+  pointer event goes to the frame under it, what the page draws there
+  deciding (an overlay over a frame is the page's), and a press holds its
+  frame until its release. The keys reach the field that has the focus,
+  as before. The pointer and the keys go one after another.
+- **The helper in those frames** runs in a world of its own the page
+  can't see, as in the page. The fills of step 3b look there too, after
+  the page, as the computer's fills look in every frame. The agent's
+  outline still names such a frame without reading it.
+- **The checkout card** for a task here: its text (the card's total is
+  checked against it), its picture with the shop's icon, Link's one-time
+  card or Shop's, and Link's pay token, all go to the agent's tab on the
+  shop's site, chosen as the computer chooses (the address the agent
+  gave, else the site or a subdomain of it). The engine sends the
+  computer's own field marks (`CHECKOUT_FIELDS`), so both browsers look
+  for the same fields, and the agent reads the computer's sentences.
+- **The card** goes only to the app that types it, key by key, never
+  logged or sent back; the answer says which fields went in. The Pay
+  button stays the agent's. A payment frame's own name and ZIP fields are
+  taken only in a frame of another site holding the card number (the
+  computer also takes them in a same-site frame, which payment providers
+  don't use).
+- **Link and Shop** learn which agent pays (the tool call's agent, passed
+  through `BoxCliWallet.call`), so the card goes where that agent's page
+  is.
+- **Not yet:** Duffel's form for a flight (3c-2). The purchase tool's two
+  sentences for a checkout it can't find still say "your computer's
+  browser", as `OpenPage`'s do since step 1.

@@ -35,6 +35,12 @@ const controlMarginMs = 5_000
 /** A refusal or a failure said to the agent as it is. */
 export class StepError extends Error {}
 
+/** Where a field is: the tab's page, or a frame of another site in it (its DevTools session, frames.ts). */
+interface Place {
+  readonly tab: Tab
+  readonly sessionId?: string
+}
+
 const navigateTimeoutMs = 25_000
 const helperTimeoutMs = 10_000
 const fullPageMaxSide = 2_000
@@ -110,6 +116,36 @@ function formFields(raw: unknown): { id: string; type: string; target: { ref?: s
       target: { ...(ref ? { ref } : {}), ...(selector ? { selector } : {}), ...(label ? { label } : {}) },
     }
   })
+}
+
+/** The checkout's text is cut here (the card's total is looked for in it). */
+const checkoutTextMax = 400_000
+
+/** A card's fields, as the engine names them (`checkout-fill.ts`). */
+const checkoutKinds = new Set(['card number', 'expiry', 'expiry month', 'expiry year', 'security code', 'name on card', 'billing ZIP'])
+
+/** The card's fields in the order they are filled, each with the marks it is found by; a payment frame's own extra marks for its name and ZIP. */
+function checkoutFields(raw: unknown): { kind: string; selector: string; frameOnly?: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > checkoutKinds.size) throw new StepError('The checkout names no card fields.')
+  return raw.map((one) => {
+    const field = typeof one === 'object' && one !== null && !Array.isArray(one) ? (one as JSONObject) : {}
+    const kind = typeof field.kind === 'string' && checkoutKinds.has(field.kind) ? field.kind : undefined
+    const selector = typeof field.selector === 'string' && field.selector.length > 0 && field.selector.length <= 5_000 ? field.selector : undefined
+    if (kind === undefined || selector === undefined) throw new StepError('A card field of the checkout has no kind or marks.')
+    const frameOnly = typeof field.frameOnly === 'string' && field.frameOnly.length > 0 && field.frameOnly.length <= 2_000 ? field.frameOnly : undefined
+    return { kind, selector, ...(frameOnly ? { frameOnly } : {}) }
+  })
+}
+
+/** What each card field takes, a few spellings at most (a month as "04" or "4"). */
+function checkoutValues(raw: unknown): Record<string, string[]> {
+  const given = typeof raw === 'object' && raw !== null && !Array.isArray(raw) ? (raw as JSONObject) : {}
+  const out: Record<string, string[]> = {}
+  for (const kind of checkoutKinds) {
+    const value = given[kind]
+    out[kind] = Array.isArray(value) ? value.filter((one): one is string => typeof one === 'string' && one.length > 0 && one.length <= 200).slice(0, 3) : []
+  }
+  return out
 }
 
 function need(value: string | undefined, name: string): string {
@@ -331,6 +367,8 @@ export class Steps {
         return { ok: true, summary: 'The agent’s tabs.', data: JSON.stringify(this.tabs.reviewState(viewId)) }
       case 'form':
         return this.form(request, signal)
+      case 'checkout':
+        return this.checkout(request, signal)
     }
   }
 
@@ -603,88 +641,115 @@ export class Steps {
     )
     if (onSite.length === 0) throw new StepError(`No tab on ${domain} is open in the browser on this PC. Open the page first (OpenPage, or the browser helper), then ask again.`)
     const delay = Math.max(0, Math.min(200, number(args, 'keyDelayMs') ?? 25))
-    const looked: Tab[] = []
+    const looked: Place[] = []
     try {
       if (action === 'newPassword') {
         const tab = onSite[0] as Tab
-        looked.push(tab)
         const value = typeof args.value === 'string' ? args.value : ''
-        const { count } = await this.helper<{ count: number }>(tab, 'passwordFields')
         let filled = 0
         let failed = 0
-        for (let index = 0; index < count && value.length > 0; index += 1) {
-          if (await this.fillField(tab, `password:${index}`, 'password', value, delay, signal)) filled += 1
-          else failed += 1
+        let seen = 0
+        // The page's own new-password fields, then a frame of another site's (a sign-up held in one): three at most.
+        for (const place of this.places(tab)) {
+          if (seen >= 3 || value.length === 0) break
+          looked.push(place)
+          const { count } = await this.helperIn<{ count: number }>(place, 'passwordFields').catch((error: unknown) => {
+            if (place.sessionId === undefined) throw error
+            return { count: 0 }
+          })
+          for (let index = 0; index < count && seen < 3; index += 1, seen += 1) {
+            if (await this.fillField(place, `password:${index}`, 'password', value, delay, signal)) filled += 1
+            else failed += 1
+          }
         }
         return { ok: true, summary: `Typed a new password on ${domain}.`, data: JSON.stringify({ page: domain, filled, failed }) }
       }
       const fields = formFields(args.fields)
-      // The tab whose fields are all there (the most of them, else): a sign-in may be open twice.
-      let best: { tab: Tab; found: string[]; missing: string[] } | undefined
+      // The tab whose fields are all there (the most of them, else): a sign-in may be open twice. A field may be in a frame of another site.
+      let best: { tab: Tab; at: Map<string, Place>; missing: string[] } | undefined
       for (const tab of onSite) {
-        looked.push(tab)
-        const located = await this.helper<{ found: string[]; missing: string[] }>(tab, 'formFind', fields)
-        if (best === undefined || located.missing.length < best.missing.length) best = { tab, ...located }
-        if (located.missing.length === 0) break
+        const at = new Map<string, Place>()
+        for (const place of this.places(tab)) {
+          const left = fields.filter((field) => !at.has(field.id))
+          if (left.length === 0) break
+          looked.push(place)
+          const located = await this.helperIn<{ found: string[] }>(place, 'formFind', left).catch((error: unknown) => {
+            if (place.sessionId === undefined) throw error
+            return { found: [] as string[] }
+          })
+          for (const id of located.found) at.set(id, place)
+        }
+        const missing = fields.filter((field) => !at.has(field.id)).map((field) => field.id)
+        if (best === undefined || missing.length < best.missing.length) best = { tab, at, missing }
+        if (missing.length === 0) break
       }
-      const chosen = best as { tab: Tab; found: string[]; missing: string[] }
+      const chosen = best as { tab: Tab; at: Map<string, Place>; missing: string[] }
       if (action === 'check') return { ok: true, summary: `Looked for the form's fields on ${domain}.`, data: JSON.stringify({ page: domain, missing: chosen.missing }) }
-      if (action === 'locate') return { ok: true, summary: `Looked for the fields on ${domain}.`, data: JSON.stringify({ page: domain, found: chosen.found }) }
+      const found = fields.filter((field) => chosen.at.has(field.id)).map((field) => field.id)
+      if (action === 'locate') return { ok: true, summary: `Looked for the fields on ${domain}.`, data: JSON.stringify({ page: domain, found }) }
       const values = typeof args.values === 'object' && args.values !== null && !Array.isArray(args.values) ? (args.values as JSONObject) : {}
       const missingAs = text(args, 'missingAs') === 'notFound' ? 'notFound' : 'fillFailed'
       const outcomes: Record<string, string> = {}
       for (const field of fields) {
         checkpoint(signal)
         const value = typeof values[field.id] === 'string' ? (values[field.id] as string) : ''
+        const place = chosen.at.get(field.id)
         if (value.length === 0) outcomes[field.id] = 'notFilled'
-        else if (!chosen.found.includes(field.id)) outcomes[field.id] = missingAs
-        else outcomes[field.id] = (await this.fillField(chosen.tab, `form:${field.id}`, field.type, value, delay, signal)) ? 'filled' : 'fillFailed'
+        else if (!place) outcomes[field.id] = missingAs
+        else outcomes[field.id] = (await this.fillField(place, `form:${field.id}`, field.type, value, delay, signal)) ? 'filled' : 'fillFailed'
       }
       // Enter only for one field that went in (a one-time code); nothing else is ever sent.
       let submitted = false
       const only = fields[0]
-      if (args.submitAfterFill === true && fields.length === 1 && only !== undefined && outcomes[only.id] === 'filled') {
-        submitted = await this.helper(chosen.tab, 'focus', `form:${only.id}`, false)
+      const onlyPlace = only === undefined ? undefined : chosen.at.get(only.id)
+      if (args.submitAfterFill === true && fields.length === 1 && only !== undefined && onlyPlace !== undefined && outcomes[only.id] === 'filled') {
+        submitted = await this.helperIn(onlyPlace, 'focus', `form:${only.id}`, false)
           .then(() => this.press(chosen.tab, 'Enter'))
           .then(() => true, () => false)
         await this.settle(viewId, chosen.tab, Date.now())
       }
       return { ok: true, summary: `Filled the form on ${domain}.`, data: JSON.stringify({ page: domain, outcomes, submitted }) }
     } finally {
-      await Promise.all(looked.map((tab) => this.helper(tab, 'formForget').catch(() => undefined)))
+      await Promise.all(looked.map((place) => this.helperIn(place, 'formForget').catch(() => undefined)))
     }
   }
 
+  /** The tab's page, then each frame of another site in it, outer ones first. */
+  private places(tab: Tab): Place[] {
+    return [{ tab }, ...tab.frames.list().map((sessionId) => ({ tab, sessionId }))]
+  }
+
   /** One field: ticked, chosen, set (a date field), or typed key by key; whether it holds what was asked. A failure is false, a stopped step stops. */
-  private async fillField(tab: Tab, ref: string, type: string, value: string, delay: number, signal: AbortSignal): Promise<boolean> {
+  private async fillField(place: Place, ref: string, type: string, value: string, delay: number, signal: AbortSignal): Promise<boolean> {
+    const { tab } = place
     try {
-      const kind = await this.helper<{ tag: string; inputType: string; role: string }>(tab, 'fieldKind', ref)
+      const kind = await this.helperIn<{ tag: string; inputType: string; role: string }>(place, 'fieldKind', ref)
       if (type === 'checkbox') {
         const wanted = /^(true|yes|on|1|checked)$/i.test(value.trim())
-        if (kind.tag === 'INPUT') await this.helper(tab, 'fill', ref, wanted ? 'true' : 'false')
-        else if ((await this.helper<{ checked?: boolean }>(tab, 'holds', ref)).checked !== wanted) {
-          const point = await this.aim(tab, ref)
+        if (kind.tag === 'INPUT') await this.helperIn(place, 'fill', ref, wanted ? 'true' : 'false')
+        else if ((await this.helperIn<{ checked?: boolean }>(place, 'holds', ref)).checked !== wanted) {
+          const point = await this.aimIn(place, ref)
           await this.click(tab, point.x, point.y, {})
         }
-        return (await this.helper<{ checked?: boolean }>(tab, 'holds', ref)).checked === wanted
+        return (await this.helperIn<{ checked?: boolean }>(place, 'holds', ref)).checked === wanted
       }
       if (type === 'select') {
         if (kind.tag !== 'SELECT') return false
-        await this.helper(tab, 'choose', ref, [value])
-        return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+        await this.helperIn(place, 'choose', ref, [value])
+        return (await this.helperIn<{ holds: boolean }>(place, 'holds', ref)).holds
       }
       if (type === 'date' && kind.inputType === 'date') {
-        await this.helper(tab, 'fill', ref, value)
-        return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+        await this.helperIn(place, 'fill', ref, value)
+        return (await this.helperIn<{ holds: boolean }>(place, 'holds', ref)).holds
       }
-      let focus = await this.helper<{ focused: boolean }>(tab, 'focus', ref, true)
+      let focus = await this.helperIn<{ focused: boolean }>(place, 'focus', ref, true)
       if (!focus.focused) {
-        const point = await this.aim(tab, ref)
+        const point = await this.aimIn(place, ref)
         await this.click(tab, point.x, point.y, {})
-        focus = await this.helper(tab, 'focus', ref, true)
+        focus = await this.helperIn(place, 'focus', ref, true)
       }
       if (!focus.focused) return false
-      // What was there goes (the focus selected it), then each key as a person presses it.
+      // What was there goes (the focus selected it), then each key as a person presses it; the keys reach the frame that has the focus.
       await this.press(tab, 'Backspace')
       for (const character of value) {
         checkpoint(signal)
@@ -693,10 +758,134 @@ export class Steps {
         else await this.cdp(tab, 'Input.insertText', { text: character })
         if (delay > 0) await sleep(delay)
       }
-      return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+      return (await this.helperIn<{ holds: boolean }>(place, 'holds', ref)).holds
     } catch (error) {
       if (error instanceof Stopped) throw error
       return false
+    }
+  }
+
+  // MARK: The checkout (step 3c of docs/app-browser/README.md)
+
+  /**
+   * The checkout card's reads and fills, in the agent's tab on the shop's
+   * site, as the computer's are (`checkout-fill.ts` in the engine): what the
+   * page says (the card's total is checked against it), its picture, Link's
+   * one-time card typed into the card fields (in the page, or in a payment
+   * provider's frame of another site; the engine sends the fields' marks),
+   * or Link's pay token put into Link's own block. The card is typed key by
+   * key and never kept, logged or sent back: the answer says which fields
+   * went in. The Pay button is left to the agent.
+   */
+  private async checkout(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
+    const { args, viewId } = request
+    const action = text(args, 'action')
+    if (!['read', 'picture', 'fill', 'token'].includes(action ?? '')) throw new StepError('action must be one of read, picture, fill, token.')
+    const hint = (text(args, 'pageHint') ?? '').trim().slice(0, 2_000)
+    const site = siteOf(hint)
+    const address = (tab: Tab) => tab.contents.getURL()
+    const current = this.tabs.currentTab(viewId)
+    const mine = [current, ...this.tabs.groupTabs(viewId).filter((tab) => tab !== current)].filter(
+      (tab): tab is Tab => tab !== undefined && !tab.contents.isDestroyed() && openable(address(tab)),
+    )
+    // The tab whose address holds the agent's words, else one on that site or under it (shop.example.com, checkout.shop.example.com).
+    const byAddress = hint === '' ? [] : mine.filter((tab) => address(tab).includes(hint))
+    const bySite = site === '' ? [] : mine.filter((tab) => !byAddress.includes(tab) && (siteOf(address(tab)) === site || siteOf(address(tab)).endsWith(`.${site}`)))
+    const pageOf = (tab: Tab | undefined) => (tab === undefined ? site : siteOf(address(tab)))
+    if (action === 'read' || action === 'picture') {
+      const showing = [...byAddress, ...bySite].slice(0, 2)
+      if (showing.length === 0) throw new StepError(`No tab on ${site || 'the checkout'} is open in the browser on this PC.`)
+      for (const tab of showing) {
+        checkpoint(signal)
+        if (action === 'read') {
+          const { text: words } = await this.helper<{ text: string }>(tab, 'pageText').catch(() => ({ text: '' }))
+          if (words.trim().length > 0) return { ok: true, summary: `Read the checkout on ${pageOf(tab)}.`, data: JSON.stringify({ page: pageOf(tab), text: words.slice(0, checkoutTextMax) }) }
+          continue
+        }
+        const jpeg = await within(tab.contents.capturePage(), 8_000, 'timeout')
+          .then((image) => (image.isEmpty() ? undefined : image.toJPEG(70).toString('base64')))
+          .catch(() => undefined)
+        if (jpeg) return { ok: true, summary: `Took the checkout's picture on ${pageOf(tab)}.`, data: JSON.stringify({ page: pageOf(tab), jpegB64: jpeg, ...(tab.favicon ? { iconUrl: tab.favicon } : {}) }) }
+      }
+      throw new StepError(`The tab on ${pageOf(showing[0])} didn't answer.`)
+    }
+    if (mine.length === 0) throw new StepError('No tab is open in the browser on this PC. Open the checkout page first.')
+    const hinted = hint === '' ? mine : byAddress.length > 0 ? byAddress : bySite
+    const candidates = hinted.length > 0 ? hinted : mine
+    const looked: Place[] = []
+    try {
+      if (action === 'token') {
+        const token = need(text(args, 'token'), 'token')
+        for (const tab of candidates) {
+          for (const place of this.places(tab)) {
+            const { set } = await this.helperIn<{ set: boolean }>(place, 'linkToken', token).catch(() => ({ set: false }))
+            if (set) return { ok: true, summary: `Put Link's pay token into the checkout on ${pageOf(tab)}.`, data: JSON.stringify({ page: pageOf(tab), found: true }) }
+          }
+        }
+        return { ok: true, summary: "Link's block isn't on the checkout.", data: JSON.stringify({ page: pageOf(hinted[0]), found: false }) }
+      }
+      const fields = checkoutFields(args.fields)
+      const values = checkoutValues(args.values)
+      const expiryLong = text(args, 'expiryLong')
+      const delay = Math.max(0, Math.min(200, number(args, 'keyDelayMs') ?? 35))
+      const cardNumber = fields.find((field) => field.kind === 'card number')
+      if (cardNumber === undefined) throw new StepError('The checkout names no card number field.')
+      const findIn = async (place: Place, id: string, selector: string): Promise<boolean> => {
+        if (!looked.includes(place)) looked.push(place)
+        const located = await this.helperIn<{ found: string[] }>(place, 'formFind', [{ id, type: 'text', target: { selector } }]).catch(() => ({ found: [] as string[] }))
+        return located.found.length > 0
+      }
+      // The first tab with a card number field, in the page or in a frame of another site.
+      let tab: Tab | undefined
+      let places: Place[] = []
+      for (const candidate of candidates) {
+        places = this.places(candidate)
+        for (const place of places) {
+          if (await findIn(place, 'probe', cardNumber.selector)) {
+            tab = candidate
+            break
+          }
+        }
+        if (tab) break
+      }
+      if (tab === undefined) return { ok: true, summary: 'No card fields.', data: JSON.stringify({ page: pageOf(hinted[0]), hinted: hinted.length > 0, found: false }) }
+      // In front, as the computer brings the checkout's tab to the front.
+      this.tabs.select(viewId, tab)
+      const filled = new Set<string>()
+      const numberIn = new Set<string>()
+      for (const place of places) {
+        for (const field of fields) {
+          checkpoint(signal)
+          const { kind } = field
+          const options = values[kind] ?? []
+          if (filled.has(kind) || options.length === 0) continue
+          if ((kind === 'expiry month' || kind === 'expiry year') && filled.has('expiry')) continue
+          let found = await findIn(place, kind, field.selector)
+          // A payment frame's own name and ZIP, beside the card number in that frame.
+          if (!found && field.frameOnly !== undefined && place.sessionId !== undefined && (numberIn.has(place.sessionId) || (await findIn(place, 'probe', cardNumber.selector))))
+            found = await findIn(place, kind, field.frameOnly)
+          if (!found) continue
+          const ref = `form:${kind}`
+          const shape = await this.helperIn<{ tag: string; yyyy?: boolean }>(place, 'fieldKind', ref).catch(() => undefined)
+          if (shape === undefined) continue
+          const wanted = kind === 'expiry' && shape.yyyy === true && expiryLong !== undefined ? [expiryLong] : options
+          let done = false
+          if ((kind === 'expiry month' || kind === 'expiry year') && shape.tag === 'SELECT') {
+            for (const option of wanted) {
+              if (await this.helperIn(place, 'choose', ref, [option]).then(() => true, () => false)) {
+                done = true
+                break
+              }
+            }
+          } else done = await this.fillField(place, ref, 'text', wanted[0] ?? '', delay, signal)
+          if (!done) continue
+          filled.add(kind)
+          if (kind === 'card number' && place.sessionId !== undefined) numberIn.add(place.sessionId)
+        }
+      }
+      return { ok: true, summary: `Typed the card into the checkout on ${pageOf(tab)}.`, data: JSON.stringify({ page: pageOf(tab), hinted: hinted.length > 0, found: true, filled: [...filled] }) }
+    } finally {
+      await Promise.all(looked.map((place) => this.helperIn(place, 'formForget').catch(() => undefined)))
     }
   }
 
@@ -735,7 +924,42 @@ export class Steps {
   private mouse(tab: Tab, type: string, x: number, y: number, extra: JSONObject = {}): Promise<unknown> {
     // A press is the click shown; its release leaves it so.
     if (type !== 'mouseReleased') this.point(tab, x, y, type === 'mousePressed' ? 'click' : type === 'mouseMoved' && extra.buttons === 1 ? 'drag' : type === 'mouseWheel' ? 'scroll' : 'move')
-    return this.cdp(tab, 'Input.dispatchMouseEvent', { type, x: Math.round(x), y: Math.round(y), button: 'none', ...extra })
+    if (tab.contents.isDestroyed()) return Promise.reject(new StepError('The tab closed.'))
+    // To the frame under the point, another site's too (frames.ts, step 3c).
+    return tab.frames.pointer({ type, x: Math.round(x), y: Math.round(y), button: 'none', ...extra })
+  }
+
+  /** A helper call where a field is: the tab's page, or a frame of another site in it. */
+  private async helperIn<T>(place: Place, method: string, ...args: unknown[]): Promise<T> {
+    if (place.sessionId === undefined) return this.helper<T>(place.tab, method, ...args)
+    if (place.tab.contents.isDestroyed()) throw new StepError('The tab closed.')
+    const result = (await within(
+      place.tab.frames.evaluate(place.sessionId, helperCall(method, ...args)),
+      helperTimeoutMs,
+      "The page didn't answer (it may be busy); try the step again.",
+    )) as { error?: unknown } | undefined
+    if (result && typeof result === 'object' && typeof result.error === 'string') throw new StepError(result.error)
+    return result as T
+  }
+
+  /** Where to click a ref, on the page: in a frame of another site, scrolled into view and not behind anything of the page around it. */
+  private async aimIn(place: Place, ref: string): Promise<{ x: number; y: number }> {
+    const { tab, sessionId } = place
+    if (sessionId === undefined) return this.aim(tab, ref)
+    await tab.frames.reveal(sessionId)
+    let point = await this.helperIn<{ x: number; y: number; covered?: string }>(place, 'locate', ref)
+    if (point.covered) {
+      await sleep(300)
+      point = await this.helperIn(place, 'locate', ref)
+    }
+    if (point.covered) throw new StepError(`${ref} is behind ${point.covered}.`)
+    const offset = await tab.frames.offsetOf(sessionId)
+    if (!offset) throw new StepError(`The frame holding ${ref} isn't shown.`)
+    const x = point.x + offset.x
+    const y = point.y + offset.y
+    if (x < 0 || y < 0 || x > viewport.width || y > viewport.height) throw new StepError(`${ref} is past the edge of the window.`)
+    if ((await tab.frames.frameAt(x, y)) !== sessionId) throw new StepError(`${ref} is behind something else on the page.`)
+    return { x, y }
   }
 
   private point(tab: Tab, x: number, y: number, type: 'move' | 'click' | 'drag' | 'scroll'): void {

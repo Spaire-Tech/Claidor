@@ -32,6 +32,8 @@ export const ops = [
   'review_state',
   // The cards' fills (step 3b): the in-chat form, 1Password, saved logins, a new password.
   'form',
+  // The checkout card (step 3c): the checkout's text and picture, Link's card or pay token put in.
+  'checkout',
 ] as const
 export type Op = (typeof ops)[number]
 

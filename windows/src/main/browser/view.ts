@@ -163,15 +163,19 @@ export class BrowserViewer {
     if (!this.personHas(agentId)) return
     const tab = this.liveTab(agentId)
     if (!tab || typeof input !== 'object' || input === null) return
+    // In turn on the tab's one line: the pointer to the frame under it (another site's too, step 3c), the keys after it.
     const send = (method: string, params: Record<string, unknown>) => {
-      void tab.contents.debugger.sendCommand(method, params).catch(() => {})
+      void tab.frames.input(method, params).catch(() => {})
+    }
+    const point = (params: Record<string, unknown> & { type: string; x: number; y: number }) => {
+      void tab.frames.pointer(params).catch(() => {})
     }
     switch (input.kind) {
       case 'mouse': {
         const types = ['mousePressed', 'mouseReleased', 'mouseMoved']
         const buttons = ['none', 'left', 'middle', 'right']
         if (!types.includes(input.type) || !buttons.includes(input.button)) return
-        send('Input.dispatchMouseEvent', {
+        point({
           type: input.type,
           x: finite(input.x, 0, viewport.width),
           y: finite(input.y, 0, viewport.height),
@@ -183,7 +187,7 @@ export class BrowserViewer {
         return
       }
       case 'wheel':
-        send('Input.dispatchMouseEvent', {
+        point({
           type: 'mouseWheel',
           x: finite(input.x, 0, viewport.width),
           y: finite(input.y, 0, viewport.height),
