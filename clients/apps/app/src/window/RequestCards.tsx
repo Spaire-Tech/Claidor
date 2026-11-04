@@ -53,9 +53,9 @@ import {
   setupURL,
 } from '../desktop/onePassword'
 import { t } from '../l10n'
+import { handBack, openAgentScreen, useOnThisPC } from './BrowserView'
 import { CardButton, type CardProps, CardShell, GrowingField } from './Cards'
 import { classes } from './classes'
-import { openComputerView } from './ComputerView'
 import { Alert } from './Dialogs'
 import { confirmPresence } from './presence'
 import './RequestCards.css'
@@ -359,8 +359,14 @@ function ComputerHandoffCard({
   const state = handoffCardState(card, store.computer.status(agentId)?.handoff)
   const words = trimmed(state.instruction)
   const snapshot = state.waiting ? picture(state.snapshotDataUrl) : undefined
-  /** Take over, the picture and Open computer: the computer over the window (trigger `handoff`), which starts it. */
-  const takeOver = () => openComputerView(model, store, agentId)
+  /**
+   * Take over, the picture and Open computer: the computer over the window
+   * (trigger `handoff`), which starts it; in the Windows app, the agent's tab
+   * when its page is on this PC, in Take control while the card waits (step
+   * 3 of docs/app-browser/README.md).
+   */
+  const takeOver = () =>
+    void openAgentScreen(model, store, agentId, { control: state.waiting })
   return (
     <div
       className={classes('handoff-card', state.waiting && 'waiting')}
@@ -440,7 +446,7 @@ function ComputerHandoffCard({
             title={t(
               'Cancel this request without doing the step; the agent continues without it',
             )}
-            onClick={() => void store.handBackComputer(agentId, true)}
+            onClick={() => handBack(store, agentId, true)}
           >
             {t('Skip')}
           </button>
@@ -448,7 +454,7 @@ function ComputerHandoffCard({
           <button
             type="button"
             className="handoff-pill"
-            onClick={() => void store.handBackComputer(agentId)}
+            onClick={() => handBack(store, agentId)}
           >
             {t('I’m done')}
           </button>
@@ -502,6 +508,8 @@ function UserFormCardView({
   const [refusal, setRefusal] = useState<string>()
   const ids = useId()
   const open = card.state === 'open'
+  // In the Windows app, the page may be in this PC's browser (step 3b of docs/app-browser/README.md): the lock line says where.
+  const onPC = useOnThisPC(store, agentId, open)
   const status = formStatusLine(card)
   const dot: Dot | undefined =
     card.state === 'filled'
@@ -686,9 +694,15 @@ function UserFormCardView({
             </div>
           )}
           <LockLine
-            words={t(
-              "Typed into the page on Simeon's computer, never shown to your agent.",
-            )}
+            words={
+              onPC
+                ? t(
+                    'Typed into the page on this PC, never shown to your agent.',
+                  )
+                : t(
+                    "Typed into the page on Simeon's computer, never shown to your agent.",
+                  )
+            }
           />
         </>
       ) : card.state === 'filled' || card.state === 'filling' ? (

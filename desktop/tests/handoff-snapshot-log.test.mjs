@@ -45,6 +45,17 @@ test("a picture taken is on the card and in the log", async () => {
   assert.match(lines[0], /^handoff snapshot=ready ms=\d+ agent=agent-1$/);
 });
 
+test("a hand-off whose page is in the app's browser takes that tab's picture, kept as it came (step 3)", async () => {
+  const lines = [];
+  let computerAsked = false;
+  const service = new BoxHandoffService({ grabScreenshot: async () => { computerAsked = true; return "UklGRg=="; }, timeoutMs: 50, log: (line) => lines.push(line) });
+  service.start({ agentId: "agent-1", instruction: "Sign in", grab: async () => "data:image/png;base64,iVBORw==" });
+  for (let i = 0; i < 40 && lines.length === 0; i += 1) await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(service.get("agent-1").snapshotDataUrl, "data:image/png;base64,iVBORw==");
+  assert.equal(computerAsked, false, "the computer's screen is not the page");
+  assert.match(lines[0], /^handoff snapshot=ready /);
+});
+
 test("a picture that takes too long is logged as a time-out", async () => {
   const { lines, pending } = await handOver(() => new Promise(() => {}));
   assert.equal(pending.snapshotDataUrl, undefined);

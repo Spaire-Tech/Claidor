@@ -1,6 +1,16 @@
 # The browser in the app
 
-A plan, not built yet (4 November 2026). Nothing in it has run.
+A plan (4 November 2026). The founder's decisions are made (below).
+
+**Where it is.** Step 1, the engine's route, and step 2, the browser in
+the Windows app with the Computer tab's view of it and Take control, are
+built and tested, off by default ([protocol.md](protocol.md)). Step 3, the
+cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
+3b, the fills (the in-chat form, 1Password, saved logins, a new password),
+and 3c-1, the checkout card (its total, its picture, Link's or Shop's card
+typed in, a payment provider's frame of another site included), are built.
+Nothing has changed for anyone, and nothing has run on a real PC yet.
+Next: 3c-2, Duffel's form for a flight.
 
 ## The decision
 
@@ -146,6 +156,7 @@ use them.
      shaped like local exec: `GET /local-browser/requests` and
      `POST /local-browser/responses`.
    - Otherwise it goes to the computer's Chrome, exactly as today.
+   - The frames, the ops and the answers: [protocol.md](protocol.md).
    - The agent's instructions don't change. `OpenPage` opens in the same
      browser the helper will use.
 3. **The switch.** A setting on the server, off by default, decides
@@ -157,6 +168,10 @@ use them.
    - When the app's browser goes away mid-task (app quit, Mac asleep), the
      step fails with a plain sentence ("The browser on this Mac closed"). The
      agent then starts again on the computer, from the address.
+   - How the engine tells one task from the next, per agent: a task on the
+     computer ends when it has been idle ten minutes and a step opens an
+     address; a task in the app lasts while that browser is open
+     ([protocol.md](protocol.md), "Which browser a step goes to").
 5. **Sign-ins.** One saved session for all of a person's agents, as on the
    computer today (decision 2). The person signs in inside the tab; the pane
    is the browser.
@@ -263,10 +278,180 @@ not decided).
 
 ## Decisions for the founder
 
-| # | Question | Recommendation |
+All five decided as recommended: the founder, 4 November 2026, "go with
+your recommendations".
+
+| # | Question | Decided |
 |---|---|---|
 | 1 | **The Mac's browser.** (a) The same Chrome browser as Windows, run as a helper inside the Mac app, shown in the pane as a live picture. (b) Chrome built into the Mac app itself (CEF): more native, much more work. (c) Apple's WKWebView: ruled out, it can't be driven reliably. | (a): one browser for both, about 100 MB more in the Mac app |
 | 2 | **Sign-ins.** Shared by all of a person's agents, or each agent its own | Shared, as on the computer today |
 | 3 | **Quitting mid-task.** Ask, or always move to the computer | Ask |
 | 4 | **Sign-ins for routines.** Hand the app's sign-ins to the computer: ask once per site, always, or never | Ask once per site |
-| 5 | **OpenBot.** Build our own following its design, or buy a commercial licence | Build our own |
+| 5 | **OpenBot.** Build our own following its design, or buy a commercial licence | Build our own; none of its code |
+
+## Progress
+
+| Step | State |
+|---|---|
+| 0. Decisions | Done, 4 November 2026 |
+| 1. The route in the engine | Built, tested with a stand-in app (`desktop/tests/app-browser-route.test.mjs`), off by default. Not yet on the computers: that needs a host bundle published from a Mac. Not run with a real app. |
+| 2a. The browser on Windows: tabs, the steps, popups, dialogs, downloads, uploads, the line to the engine | Built, 4 November 2026 (`windows/src/main/browser/`). Checked in Electron for real under a virtual display (`npm run browser-smoke`, 64 checks) and driven end to end by step 1's engine. Not run on a Windows PC or against real sites. |
+| 2b. The Computer tab's view and Take control | Built, 4 November 2026 (`windows/src/main/browser/view.ts`, `control.ts`; `clients/apps/app/src/window/BrowserView.tsx`). Checked in the Windows app itself under a virtual display (`npm run browser-view-smoke`, 15 checks: the page's own hands loop opening the line, the picture, the face, none while the window is hidden, Take control with the real mouse and keys, Give back, Exit) and in the browser's own check (`npm run browser-smoke`, 87). Not run on a Windows PC. |
+| 3a. The take-over and the checkout's buttons open the agent's tab here | Built, 4 November 2026 (`openAgentScreen` in `clients/apps/app/src/window/BrowserView.tsx`; the take-over's picture from the tab, `host-runner-composition.ts`). Checked in the Windows app itself (`npm run browser-view-smoke`, 19 checks, 4 of them the take-over) and the engine's tests. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC. |
+| 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-forms.ts`; the `form` op in `windows/src/main/browser/steps.ts`; the in-chat form's lock line in `RequestCards.tsx`). Checked in Electron (`npm run browser-smoke`, 100 checks, 13 of them the fills, run twice), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and fills drove the Windows browser, which typed a sign-in and a one-time code and sent it. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC or real sites. |
+| 3c-1. The checkout card: its total and picture, Link's or Shop's card or Link's pay token typed in; the frames of other sites reached (the agent's and the person's clicks too) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-checkout.ts`; `windows/src/main/browser/frames.ts`, the `checkout` op in `steps.ts`). Checked in Electron (`npm run browser-smoke`, 113 checks, 13 of them new, run four times, twice on the final code), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and checkout, with the computer's own field marks, drove the Windows browser, which read the total, took the picture and typed a card into a frame of another site. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC, against a real shop or with a real card. |
+| 3c-2. Duffel's form for a flight, and its bank check | Next |
+| 4-7 | Not started |
+
+Step 1, what was decided while building it (4 November 2026):
+
+- **The switch** is `SIMEON_APP_BROWSER_USERS` on the server (e-mail
+  addresses or user ids, `*` for everyone; empty is nobody). A listed
+  person's computer gets `SIMEON_APP_BROWSER=1` each time it is made or
+  replaced: a new account, an update of the computer (`RecreateSandBox`,
+  its files kept) or a move between servers. A computer already running
+  keeps what it had until then.
+- **Uploads**: the engine reads the files on the computer, with the
+  helper's checks, and sends them to the app, 25 MB at most together.
+- **Auto-review** reads the app's list of tabs for a step there and refuses
+  the step when it can't, as on the computer.
+- **An answer from the app** wakes a sleeping computer, as local exec's
+  does.
+
+Step 2a, what was decided while building it (4 November 2026):
+
+- **Each tab is an offscreen Chromium window**, not a view in the app's
+  window: measured, only an offscreen window can be drawn, photographed and
+  clicked while nothing shows it. Step 2b shows its picture in the Computer
+  tab, as the Mac's helper will (decision 1).
+- **It dials the engine whenever the hands do**, on their address and keys,
+  so the app's page needed no change.
+- **Each agent has its own tabs**; a popup becomes the agent's tab, its
+  opener kept, and the agent goes back to the opener when it closes.
+  Sign-ins are shared (decision 2).
+- **A dialog is answered at once**: an alert is taken; a confirm or a prompt
+  is dismissed, which is the safe answer; the agent is told which.
+- **Downloads** land in Downloads\Simeon and the agent is told; **uploads**
+  are written in the app's data folder for the page, removed at start and
+  quit.
+- **Signing out** closes the tabs and forgets the sites' sign-ins, so the
+  next account on the PC starts with none; quitting keeps them.
+- **Nothing of the app reaches the tabs**: no preload, sandboxed, every
+  permission refused, only http and https, and the app's rule for its own
+  pages leaves them be (`ownsNavigation`), so no link of theirs opens in
+  the person's own browser.
+- **The words are the app's own.** The outline and the sentences are
+  written for this app, not taken from the computer's helper, which is
+  part of the reconstruction (`desktop/NOTICE.md`); what the agent reads is
+  shaped the same.
+
+Step 2b, what was decided while building it (4 November 2026):
+
+- **What the Computer tab shows.** This PC's browser while the agent has
+  tabs here and no computer-use helper of its is at work on Simeon's
+  computer's screen; otherwise Simeon's computer, as before. The grey line
+  ("On this PC", "On Simeon's computer") shows only once the server's
+  switch is on for the person (the engine's welcome): off, the tab is as
+  it was.
+- **The pane shows, the full view is used.** The pane's frame has the
+  picture, the agent's face where it last pointed, Open, and the site with
+  its lock ("Not Secure" over http) under it. Take control is in the full
+  view, where the page is large enough to use. Opening the browser never
+  starts Simeon's computer; the cards still open the computer until step 3.
+- **Take control.** The agent's steps wait, each until 5 seconds before its
+  deadline; Auto-review still reads the tabs. Back, Forward, Reload and the
+  tabs' pills are the person's only then. Given back, the agent's old refs
+  are refused and its next answer says the person had the browser. Closing
+  the view, the app's page loading again, signing out and quitting give it
+  back.
+- **The pictures** are the tab's own paints as Chromium draws it offscreen,
+  sent as JPEGs: 20 a second while the page watches, 30 while the person
+  has control, none while nothing watches or the app's window is in the
+  tray or minimised (it is drawn again as it comes back). One agent is
+  watched at a time (the full view over the pane's preview).
+- **The person's keys** go to the tab as they are; Ctrl+C, X, V, A, Z and Y
+  are the tab's own editing with this PC's clipboard; a keyboard's
+  composition (accents, Chinese, Japanese) arrives as words.
+- **The words** (9 new, each in the apps' 9 languages) are in the Mac's
+  catalogue, which the web app reads, so the Mac's view in step 4 has them.
+
+Step 3a, what was decided while building it (4 November 2026):
+
+- **Where a card opens.** The take-over's Take over and its picture, the
+  checkout's Review order and the bank's check open the agent's tab on this
+  PC when the Computer tab would show it there (the agent has tabs here, no
+  computer-use helper on the computer's screen), else Simeon's computer as
+  before. The app is asked once, without watching (`browserState`).
+- **Take control when the person must act.** The take-over while it waits
+  and the bank's check open in Take control; Review order and a settled
+  take-over's Open computer open it watched only.
+- **I'm done and Skip** give the tab back first, then answer the agent, so
+  its next step doesn't wait. The take-over's banner shows over the tab,
+  and "Needs your attention" in the Computer tab, as over the computer's
+  screen.
+- **The take-over's picture** is the agent's tab when its task is in the
+  app (the engine asks the app for a `screenshot`), not the computer's
+  screen. The engine knows where a task is without choosing anything
+  (`where`).
+- **Not yet:** the iPhone's Take over still opens the computer's screen for
+  a task in an app's browser (step 5).
+
+Step 3b, what was decided while building it (4 November 2026):
+
+- **Where a fill goes.** The in-chat form, 1Password's fill, the saved
+  login and the new password go to the agent's tab on this PC when its
+  task is in the app (`where`), else to the computer's Chrome as before.
+  The engine sends one `form` step; the app types the values itself.
+- **The values.** They go only to the app that types them, are never
+  logged on either side, and never come back: the answer says which fields
+  went in, never what. The agent reads the computer's own sentences.
+- **Which tab.** The agent's tabs on the card's site, its current tab
+  first; of those, the first with all the fields, else the one missing
+  the fewest. With none, the card says to open the page first.
+- **Typing.** Each key is pressed as a person presses it (trusted keys,
+  25 ms apart), after what was in the field is cleared; a tick box is
+  ticked, a list is chosen, a date field is set. Each field is read back
+  to check it holds what was asked, without reading the value out.
+- **Sending.** Enter only for a one-field form whose field went in (a
+  one-time code). A new password is typed into the page's new-password
+  fields (three at most), never one marked as the current password.
+- **The in-chat form's lock line** reads "Typed into the page on this PC,
+  never shown to your agent." for a task here (one new word, in the 9
+  languages); otherwise Simeon's computer, as before.
+- **Not yet:** a field in another site's frame (a card form) is not found;
+  that is step 3c (found since 3c-1).
+
+Step 3c-1, what was decided while building it (4 November 2026):
+
+- **Frames of other sites.** Measured in Electron 44: in the app's
+  offscreen tabs a click on such a frame (a card form, a bank's check)
+  went to the page around it, so neither the agent's click on the picture
+  nor the person's, in Take control, reached it. Each tab now keeps a
+  DevTools session for each frame of another site (`frames.ts`); every
+  pointer event goes to the frame under it, what the page draws there
+  deciding (an overlay over a frame is the page's), and a press holds its
+  frame until its release. The keys reach the field that has the focus,
+  as before. The pointer and the keys go one after another.
+- **The helper in those frames** runs in a world of its own the page
+  can't see, as in the page. The fills of step 3b look there too, after
+  the page, as the computer's fills look in every frame. The agent's
+  outline still names such a frame without reading it.
+- **The checkout card** for a task here: its text (the card's total is
+  checked against it), its picture with the shop's icon, Link's one-time
+  card or Shop's, and Link's pay token, all go to the agent's tab on the
+  shop's site, chosen as the computer chooses (the address the agent
+  gave, else the site or a subdomain of it). The engine sends the
+  computer's own field marks (`CHECKOUT_FIELDS`), so both browsers look
+  for the same fields, and the agent reads the computer's sentences.
+- **The card** goes only to the app that types it, key by key, never
+  logged or sent back; the answer says which fields went in. The Pay
+  button stays the agent's. A payment frame's own name and ZIP fields are
+  taken only in a frame of another site holding the card number (the
+  computer also takes them in a same-site frame, which payment providers
+  don't use).
+- **Link and Shop** learn which agent pays (the tool call's agent, passed
+  through `BoxCliWallet.call`), so the card goes where that agent's page
+  is.
+- **Not yet:** Duffel's form for a flight (3c-2). The purchase tool's two
+  sentences for a checkout it can't find still say "your computer's
+  browser", as `OpenPage`'s do since step 1.

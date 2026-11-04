@@ -220,6 +220,7 @@ test("the tools build Link's commands, hide cards and tokens, and sign in with t
   assert.equal(filled.length, 1);
   assert.equal(filled[0].card.number, "4242424242424242", "the filler got the card");
   assert.equal(filled[0].pageHint, "shop.example.com");
+  assert.equal("agentId" in filled[0], false, "no agent named: the fill is the computer's, as before");
   assert.doesNotMatch(paid.text, /4242424242424242|123/);
   assert.deepEqual(readdirSync(path.join(root, "link")).filter((name) => name.startsWith("card-")), [], "the card file is gone");
   // Link asks the person for a step first: its words and its page reach the agent, and no card is typed.
@@ -454,7 +455,7 @@ test("the Link app signs in with Link's device code, lists its tools once connec
     signInStatus: async () => { asked.push("status"); return { authenticated, pending: !authenticated }; },
     startSignIn: async (force) => { asked.push(force ? "login (again)" : "login"); return { url: "https://app.link.com/device/setup?code=warmth-woo-won-charm", phrase: "warmth-woo-won-charm" }; },
     signOut: async () => { asked.push("logout"); authenticated = false; },
-    call: async (name, args) => ({ text: `ran ${name} ${JSON.stringify(args)}`, isError: false }),
+    call: async (name, args, context) => ({ text: `ran ${name} ${JSON.stringify(args)}${context?.agentId ? ` for ${context.agentId}` : ""}`, isError: false }),
   };
   let clock = 1_000_000;
   const changed = [];
@@ -481,6 +482,9 @@ test("the Link app signs in with Link's device code, lists its tools once connec
   const ran = await exec.executeTool({ serverIdentifier: "link", toolName: "get_wallet", args: { a: 1 }, toolCallId: "c1" });
   assert.equal(ran.result.case, "success");
   assert.equal(ran.result.value.content[0].content.value.text, 'ran get_wallet {"a":1}');
+  // The agent calling travels with the call, so its checkout is filled where its page is (step 3c of docs/app-browser/README.md).
+  const forAgent = await exec.executeTool({ serverIdentifier: "link", toolName: "get_wallet", args: {}, toolCallId: "c2", agentId: "agent-7" });
+  assert.equal(forAgent.result.value.content[0].content.value.text, "ran get_wallet {} for agent-7");
 
   // Listings ask the CLI at most every 20 s.
   const asks = asked.filter((item) => item === "status").length;

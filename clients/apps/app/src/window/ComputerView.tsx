@@ -18,6 +18,12 @@
 // there (step 7d, clipboard.ts): this PC's words go on a click in the
 // screen, as the window comes forward and as the screen comes up, and the
 // computer's copy is written at once, even while the window is behind.
+//
+// In the Windows app, while an agent's tabs are in this PC's browser, the
+// Computer tab and the full view show that browser instead
+// (BrowserView.tsx, docs/app-browser/README.md, step 2b), with a grey line
+// at the tab's top saying where the work happens once the server's switch
+// is on for the person.
 
 import {
   type CSSProperties,
@@ -47,7 +53,14 @@ import {
 } from '../core/cloudComputer'
 import type { Agent } from '../core/models'
 import type { AppStore } from '../core/store'
+import { showsPCBrowser } from '../desktop/browser'
 import { t } from '../l10n'
+import {
+  BrowserFullView,
+  BrowserPreview,
+  WhereLine,
+  usePCBrowser,
+} from './BrowserView'
 import { classes } from './classes'
 import { appClipboard } from './clipboard'
 import './ComputerView.css'
@@ -195,6 +208,15 @@ export function ComputerLayer({ store }: { store: AppStore }): ReactNode {
     was.current = showing
   }, [open])
   if (!open) return null
+  if (open.browser)
+    return (
+      <BrowserFullView
+        key={`browser:${open.agentId}`}
+        store={store}
+        model={model}
+        agentId={open.agentId}
+      />
+    )
   return (
     <ComputerFullView
       key={open.agentId}
@@ -477,7 +499,7 @@ function ComputerTopBar({ exit }: { exit: () => void }) {
  * (24 high, 6 round, 12/16). Both answer the agent, close the view and give
  * the message field the keys.
  */
-function HandoffBanner({
+export function HandoffBanner({
   name,
   instruction,
   answer,
@@ -621,6 +643,29 @@ export function ComputerPreview({
   store: AppStore
   agent: Agent
 }): ReactNode {
+  // The agent's tabs on this PC (the Windows app), unless a helper of its is at work on the computer's screen.
+  const shown = usePCBrowser(agent.id)
+  if (showsPCBrowser(shown, store.computerHelpers(agent.id).length))
+    return <BrowserPreview store={store} agent={agent} shown={shown!} />
+  return (
+    <ScreenPreview
+      store={store}
+      agent={agent}
+      where={shown?.enabled === true}
+    />
+  )
+}
+
+/** The Computer tab on Simeon's computer's screen; `where`: the grey line over it. */
+function ScreenPreview({
+  store,
+  agent,
+  where,
+}: {
+  store: AppStore
+  agent: Agent
+  where: boolean
+}): ReactNode {
   const model = useWindowModel()
   useWatched(streamLog)
   const id = agent.id
@@ -670,6 +715,7 @@ export function ComputerPreview({
       : undefined
   return (
     <div className="computer-preview">
+      {where && <WhereLine onPC={false} />}
       {status?.handoff && (
         <ComputerAttention
           name={name}
@@ -738,7 +784,7 @@ export function ComputerPreview({
 }
 
 /** "Open" over the screen (`OpenPill`, 67 × 32): the expand arrows (11) and the word (12/16), light on the dark scrim, a capsule. */
-function OpenPill() {
+export function OpenPill() {
   return (
     <span className="open-pill" aria-hidden="true">
       <ExpandGlyph />
@@ -754,7 +800,7 @@ function OpenPill() {
  * and I'm done, continue at the right (24 high, 6 round, 12/16). Both
  * answer the agent; neither opens or closes anything.
  */
-function ComputerAttention({
+export function ComputerAttention({
   name,
   instruction,
   answer,
@@ -859,7 +905,7 @@ function ComputerBar({ percent }: { percent?: number }) {
 }
 
 /** The window's spinner (`ScreenSpinner`): a ring (2) at 30% with its top quarter at 60%, turning every 0.7 s. */
-function ScreenSpinner({ size }: { size: number }) {
+export function ScreenSpinner({ size }: { size: number }) {
   return (
     <span
       className="screen-spinner"
@@ -877,8 +923,16 @@ function ScreenSpinner({ size }: { size: number }) {
  * where it last moved or clicked, gliding there after the first, pressing
  * on a click once it has had half a second to get there (0.13 s down, 0.15
  * s back). Black with a white rim and a soft shadow, sized to the frame.
+ * On this PC's browser it is the agent's face (`face`, its picture or the
+ * quiet disc), centred where it points (docs/app-browser/README.md, 2b).
  */
-function AgentPointerOverlay({ pointer }: { pointer?: AgentPointer }) {
+export function AgentPointerOverlay({
+  pointer,
+  face,
+}: {
+  pointer?: AgentPointer
+  face?: ReactNode
+}) {
   const box = useRef<HTMLSpanElement>(null)
   const [size, setSize] = useState({ width: 0, height: 0 })
   useLayoutEffect(() => {
@@ -933,7 +987,24 @@ function AgentPointerOverlay({ pointer }: { pointer?: AgentPointer }) {
   const scale = pointerScale(size.width)
   return (
     <span ref={box} className="agent-pointer-layer" aria-hidden="true">
-      {place && (
+      {place && face !== undefined && (
+        <span
+          className={classes('agent-face-pointer', gliding && 'gliding')}
+          style={
+            {
+              left: place.x,
+              top: place.y,
+              // The face is 26 at 1: from 0.75 in the pane to 1.2 over the window.
+              '--pointer-scale':
+                Math.min(1.2, Math.max(0.75, (size.width / 1280) * 2)) *
+                (pressed ? 0.8 : 1),
+            } as CSSProperties
+          }
+        >
+          {face}
+        </span>
+      )}
+      {place && face === undefined && (
         <span
           className={classes('agent-pointer', gliding && 'gliding')}
           style={
@@ -1001,7 +1072,7 @@ function ExpandGlyph() {
 }
 
 /** `arrow.down.right.and.arrow.up.left`, 12 medium: the arrows pointing in. */
-function ContractGlyph() {
+export function ContractGlyph() {
   return (
     <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
       <path

@@ -13,6 +13,7 @@ import { boxStoreSyncExtension } from "./extensions/box-store-sync/extension.js"
 import { browserUaExtension } from "./extensions/browser-ua/extension.js";
 import { channelsExtension } from "./extensions/channels/extension.js";
 import { chatCopyExtension } from "./extensions/chat-copy/extension.js";
+import { localBrowserExtension } from "./extensions/local-browser/extension.js";
 import { cloudAgentsExtension } from "./extensions/cloud-agents/extension.js";
 import { codebaseTelemetryExtension } from "./extensions/codebase-telemetry/extension.js";
 import { contentSearchExtension } from "./extensions/content-search/extension.js";
@@ -133,7 +134,10 @@ export function createRecoveredProductionExtensionRegistry<Host extends { log(me
     [HostExtensions.Channels]: bind(channelsExtension),
     // The 37th (26 October 2026): the agents and their chats copied to the
     // server, where the apps read them while the computer is away.
-    [HostExtensions.ChatCopy]: bind(chatCopyExtension)
+    [HostExtensions.ChatCopy]: bind(chatCopyExtension),
+    // The 38th (4 November 2026): the browser in the Mac and Windows apps,
+    // where the agent's browser steps go when the server's switch is on.
+    [HostExtensions.LocalBrowser]: bind(localBrowserExtension)
   };
 }
 

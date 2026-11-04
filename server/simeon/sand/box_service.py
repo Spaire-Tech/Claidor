@@ -486,6 +486,30 @@ async def image_for(db: AsyncSession, user_id: UUID) -> str:
     return box_image_reference()
 
 
+#: The engine's switch for the browser in the app (`shared/local-browser-gateway.ts`).
+APP_BROWSER_ENV = "SIMEON_APP_BROWSER"
+
+
+async def app_browser_for(db: AsyncSession, user_id: UUID) -> bool:
+    """Whether a person's agents may use the browser in their Mac or
+    Windows app: listed in `SIMEON_APP_BROWSER_USERS` by e-mail address or
+    user id, or everyone listed as `*` (docs/app-browser/README.md)."""
+    listed = {
+        entry.strip().lower()
+        for entry in settings.APP_BROWSER_USERS.split(",")
+        if entry.strip()
+    }
+    if not listed:
+        return False
+    if EVERYONE in listed or str(user_id).lower() in listed:
+        return True
+    if any("@" in entry for entry in listed):
+        user = await UserRepository.from_session(db).get_by_id(user_id)
+        if user is not None and user.email.lower() in listed:
+            return True
+    return False
+
+
 # --- moving between servers ---------------------------------------------------
 
 #: After a move that failed, how long a box stays where it is before the
@@ -734,6 +758,9 @@ class BoxBrokerService:
                 restore = None if has is False else "fresh"
             extra_env = box_store.box_env(parent.user_id, restore=restore)
             labels = {box_store.LABEL: box_store.LABEL_VALUE}
+        if await app_browser_for(db, parent.user_id):
+            extra_env = {**extra_env, APP_BROWSER_ENV: "1"}
+            log.info("sand.box.app_browser", box=str(box.id))
         credential_id, credential = await self._mint_credential(db, parent, committed)
         box.credential_session_id = credential_id
         box.gateway_token = box.gateway_token or secrets.token_hex(32)

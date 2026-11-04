@@ -348,6 +348,51 @@ class TestEnsureSandBox:
         await _ensure(client, access)
         assert host.created[0].image == settings.BOX_IMAGE_TRIAL
 
+    async def test_the_app_browser_goes_only_to_the_people_listed(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        user_second: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+    ) -> None:
+        """4 November 2026: the browser in the app, the founder first
+        (docs/app-browser/README.md). Nobody by default."""
+        mocker.patch.object(
+            settings, "APP_BROWSER_USERS", f" {user.email.upper()} , other@x.com"
+        )
+        access, _ = await _signed_in(client, session, user)
+        other, _ = await _signed_in(client, session, user_second)
+        await _ensure(client, access)
+        await _ensure(client, other)
+        envs = [
+            dict(line.split("=", 1) for line in spec.environment())
+            for spec in host.created
+        ]
+        assert envs[0].get("SIMEON_APP_BROWSER") == "1"
+        assert "SIMEON_APP_BROWSER" not in envs[1]
+
+    @pytest.mark.parametrize("listed", ["*", "user-id", ""])
+    async def test_the_app_browser_for_everyone_by_id_or_nobody(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        host: FakeBoxHost,
+        mocker: MockerFixture,
+        listed: str,
+    ) -> None:
+        mocker.patch.object(
+            settings,
+            "APP_BROWSER_USERS",
+            str(user.id) if listed == "user-id" else listed,
+        )
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        env = dict(line.split("=", 1) for line in host.created[0].environment())
+        assert (env.get("SIMEON_APP_BROWSER") == "1") is (listed != "")
+
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
