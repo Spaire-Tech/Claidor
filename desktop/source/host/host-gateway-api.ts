@@ -688,11 +688,29 @@ export function createHostGatewayApi(
         args.pendingWakes
       );
     },
-    handBackForeverBox: (args: any) =>
-      method(deps.extensions.api("session"), "endHandoff")(
-        args.id,
-        args.trigger ?? "button"
-      ),
+    handBackForeverBox: async (args: any) => {
+      const session = deps.extensions.api("session");
+      const trigger = typeof args.trigger === "string" ? args.trigger : "button";
+      if (method(session, "pendingHandoff")(args.id) != null)
+        return await method(session, "endHandoff")(args.id, trigger);
+      // The card outlived its hand-off (4 November 2026, Simeon's card on
+      // the founder's Mac: Skip and I'm done did nothing). A hand-off is
+      // kept in memory only, so after the computer started again its card
+      // still waited and the buttons found nothing to end. Its line is
+      // answered anyway and the agent told, as a hand-off's end does.
+      const requestId = await method(manager, "newestOpenBoxRequestId")(args.id);
+      if (typeof requestId !== "string") return;
+      const resolution =
+        trigger === "dismissed"
+          ? "dismissed"
+          : trigger === "cancel" || trigger === "stopped"
+            ? "cancelled"
+            : "completed";
+      await method(manager, "resolveBoxRequestEntry")(args.id, requestId, resolution);
+      await method(manager, "emitForeverBoxStatus")(args.id);
+      if (trigger !== "stopped")
+        await method(manager, "resumeAfterBoxHandoff")(args.id, trigger);
+    },
     // The phone's keyboard on the whole computer (15 October 2026, `host/box/typing-focus.ts`); `prepare` when the person takes control.
     typingFocus: async (args: any) =>
       deps.typingFocus == null

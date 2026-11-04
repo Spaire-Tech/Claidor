@@ -490,6 +490,10 @@ export class SendPipeline {
     this.tm.appendEntry(entry);
   }
 
+  newestOpenBoxRequestId(agentId: string): Promise<string | null> {
+    return this.boxRequests.newestOpenBoxRequestId(agentId);
+  }
+
   resolveBoxRequestEntry(
     agentId: string,
     requestId: string,

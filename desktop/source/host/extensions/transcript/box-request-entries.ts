@@ -31,6 +31,46 @@ export class BoxRequestEntries {
       requestId: entry.boxRequestId as string,
     };
   }
+  /**
+   * The agent's latest "Your turn on the computer" line still unanswered,
+   * read from its chat (4 November 2026): the hand-off itself is kept in
+   * memory only, so after the computer started again its card still waits
+   * while nothing on the computer does.
+   */
+  async newestOpenBoxRequestId(agentId: string): Promise<string | null> {
+    if (this.tm.sessions?.isAgentGone(agentId)) return null;
+    const liveSession =
+      this.tm.sessions.activeSession?.id === agentId
+        ? this.tm.sessions.activeSession
+        : this.tm.sessions.liveSessions.get(agentId);
+    let session: any;
+    try {
+      session =
+        liveSession ?? (await this.tm.sessionStore.openSession(agentId));
+    } catch {
+      return null;
+    }
+    try {
+      const entries: TranscriptEntry[] = session.db.getTranscriptEntries();
+      for (let index = entries.length - 1; index >= 0; index -= 1) {
+        const entry = entries[index];
+        if (
+          entry != null &&
+          entry.kind === "send-message" &&
+          typeof entry.boxRequestId === "string" &&
+          entry.boxResolution == null
+        )
+          return entry.boxRequestId;
+      }
+      return null;
+    } finally {
+      if (liveSession == null) {
+        await session.agentStore.dispose();
+        session.db.close();
+      }
+    }
+  }
+
   async resolveBoxRequestEntry(
     agentId: string,
     requestId: string,
