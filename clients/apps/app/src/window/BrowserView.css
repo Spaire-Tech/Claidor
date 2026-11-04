@@ -1,0 +1,263 @@
+/*
+ * The browser in the app (BrowserView.tsx, docs/app-browser/README.md, step
+ * 2b): the Computer tab's grey line, the agent's tab in the computer's frame
+ * and full view (ComputerView.css), the agent's face as its pointer, and the
+ * full view's bar, pills and the person's input. The full view is dark in
+ * both, as the computer's.
+ */
+
+/* Where the work happens, at the tab's top: 12/16, the third grey. */
+.computer-where {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-tertiary);
+}
+
+/* The page's picture fills the frame or the screen. */
+.browser-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The agent's face where it points: 22 in a 2-point white rim and a soft shadow, centred on the place, sized to the frame (0.8 of that pressed); it glides after its first place. */
+.agent-face-pointer {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  transform: scale(var(--pointer-scale));
+  transform-origin: 50% 50%;
+  transition: transform 0.14s ease-out;
+  animation: pointer-in 0.09s ease-out;
+}
+
+.agent-face-pointer.gliding {
+  transition:
+    left 0.5s cubic-bezier(0.19, 1, 0.22, 1),
+    top 0.5s cubic-bezier(0.19, 1, 0.22, 1),
+    transform 0.14s ease-out;
+}
+
+.face-pointer-disc {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+/* The site under the frame and in the bar: the lock (or "Not Secure" in the third grey), then the site, one line. */
+.browser-site {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.browser-site-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-lock {
+  flex: none;
+}
+
+.browser-not-secure {
+  flex: none;
+  opacity: 0.75;
+}
+
+/* MARK: The full view */
+
+/* The bar: the computer's (44 high, black at 55%), with Back, Forward and Reload at its left, the site in the middle, Take control and Exit at its right. */
+.browser-bar {
+  gap: 4px;
+}
+
+/* Back, Forward, Reload and Stop: 28 × 28, 6 round, white at 85%; white on the faint grey under the pointer; dim while they can't be pressed. */
+.browser-bar-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: rgb(255 255 255 / 0.85);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease-out,
+    color 0.12s ease-out;
+}
+
+.browser-bar-button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.1);
+  color: #ffffff;
+}
+
+.browser-bar-button:disabled {
+  color: rgb(255 255 255 / 0.3);
+  cursor: default;
+}
+
+/* The site: 28 high, 8 round, white at 8%, 13/16, at most 480 wide. */
+.browser-address {
+  flex: 0 1 480px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  color: rgb(255 255 255 / 0.9);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+/* Take control: a 24-high capsule in the system blue, 12/16 500; Give back: white on a faint wash with a half-point edge. */
+.browser-control {
+  flex: none;
+  height: 24px;
+  margin-right: 4px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: #0a84ff;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s ease-out;
+}
+
+.browser-control:hover {
+  background: #2a94ff;
+}
+
+.browser-control.held {
+  background: rgb(247 234 234 / 0.051);
+  box-shadow: inset 0 0 0 0.5px rgb(252 252 252 / 0.2);
+}
+
+.browser-control.held:hover {
+  background: rgb(247 234 234 / 0.102);
+}
+
+.browser-bar-button:focus-visible,
+.browser-control:focus-visible,
+.browser-pill:focus-visible {
+  outline: 2px solid rgb(252 252 252 / 0.4);
+  outline-offset: 1px;
+}
+
+/* The agent's tabs, two or more: pills 28 high, 8 apart, 8 in, under the bar; each its site's icon (14) and its title (12/16, 200 at most); the current one brighter. */
+.browser-pills {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  padding: 8px 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.browser-pill {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  max-width: 220px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.7);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+.browser-pill.current {
+  background: rgb(255 255 255 / 0.16);
+  color: #ffffff;
+  cursor: default;
+}
+
+.browser-pill:disabled {
+  cursor: default;
+}
+
+.browser-pill-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-pill-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.browser-pill-icon.coming {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.browser-pill-globe {
+  flex: none;
+}
+
+/* While the person has control: "{name} is paused…", 12/16, white at 70%, 8 over the page. */
+.browser-paused {
+  flex: none;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(255 255 255 / 0.7);
+}
+
+/* The page's ground until its first picture. */
+.browser-screen {
+  background: #ffffff;
+}
+
+/* The person's input: over the whole page; the page's own pointer shows. */
+.browser-input {
+  position: absolute;
+  inset: 0;
+}
+
+/* The field that takes the keys: there, focused, unseen. */
+.browser-keys {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  resize: none;
+  pointer-events: none;
+}

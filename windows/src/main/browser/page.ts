@@ -12,7 +12,7 @@ export const helperWorld = 1_001
 const helperSource = String.raw`
 (() => {
   if (globalThis.__simeonPage) return
-  const state = { generation: 0, refs: new Map() }
+  const state = { generation: 0, refs: new Map(), used: false }
 
   const interactiveRoles = new Set(['button', 'link', 'checkbox', 'radio', 'switch', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'combobox', 'listbox', 'textbox', 'searchbox', 'slider', 'spinbutton', 'treeitem'])
   const shownRoles = new Set(['heading', 'img', 'list', 'listitem', 'table', 'row', 'cell', 'columnheader', 'rowheader', 'dialog', 'alertdialog', 'alert', 'navigation', 'main', 'form', 'banner', 'contentinfo', 'region', 'group', 'tablist', 'tabpanel', 'menu', 'menubar', 'toolbar', 'status'])
@@ -137,6 +137,7 @@ const helperSource = String.raw`
   function outline(options) {
     state.generation += 1
     state.refs = new Map()
+    state.used = false
     const maxChars = options.maxChars || 20000
     const maxRefs = options.maxRefs || 500
     const maxDepth = typeof options.maxDepth === 'number' ? Math.max(1, Math.min(60, options.maxDepth)) : 40
@@ -216,6 +217,7 @@ const helperSource = String.raw`
 
   function element(ref) {
     const el = state.refs.get(String(ref))
+    if (!el && state.used) return { error: 'The person used this page since your last snapshot, so ' + String(ref) + ' may point elsewhere now; take a fresh browser_snapshot.' }
     if (!el || !el.isConnected) return { error: String(ref) + ' isn\'t on the page any more; take a fresh browser_snapshot.' }
     return { el }
   }
@@ -402,7 +404,14 @@ const helperSource = String.raw`
     return found.error ? found : { described: describe(found.el) }
   }
 
-  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, generation: () => state.generation }
+  // The person had the page (Take control): the refs of the last snapshot are refused until the next one.
+  function forget() {
+    state.refs = new Map()
+    state.used = true
+    return { forgot: true }
+  }
+
+  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, generation: () => state.generation }
 })()
 `
 

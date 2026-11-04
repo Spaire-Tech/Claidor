@@ -3,12 +3,14 @@
 // addresses a tab may open and the user agent, and the line to the engine
 // against a stand-in engine on this computer (its welcome, the hello, pings,
 // a step and its answer, a cancel, a deadline, a stream that drops and is
-// dialled again, the end). The tabs and the steps run in Electron for real:
+// dialled again, the end); who has control of an agent's browser (step 2b).
+// The tabs, the steps and the view run in Electron for real:
 // `npm run browser-smoke`.
 
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { afterEach, describe, expect, it } from 'vitest'
+import { Control } from '../src/main/browser/control'
 import { BrowserLink } from '../src/main/browser/link'
 import { readKey } from '../src/main/browser/keys'
 import { type Answer, type BrowserRequest, readFrame, response } from '../src/main/browser/protocol'
@@ -51,6 +53,43 @@ describe('the frames', () => {
       screenshot: true,
       screenshotB64: 'iVBOR',
     })
+  })
+})
+
+describe('who has control', () => {
+  it("lets the agent's steps go on at once while the person doesn't have its browser", async () => {
+    const control = new Control()
+    expect(await control.free('a', 1_000, new AbortController().signal)).toBe(true)
+  })
+
+  it('holds them while the person has it, and lets them go when it is given back', async () => {
+    const control = new Control()
+    const told: string[] = []
+    control.onChange((group) => told.push(group))
+    control.take('a')
+    control.take('a')
+    expect(control.isHeld('a')).toBe(true)
+    expect(control.isHeld('b')).toBe(false)
+    const waiting = control.free('a', 5_000, new AbortController().signal)
+    expect(await control.free('b', 5_000, new AbortController().signal)).toBe(true)
+    expect(control.giveBack('a')).toBe(true)
+    expect(await waiting).toBe(true)
+    expect(control.giveBack('a')).toBe(false)
+    expect(told).toEqual(['a', 'a'])
+  })
+
+  it('lets a step go when its time is out or it is stopped, saying it was not given back', async () => {
+    const control = new Control()
+    control.take('a')
+    expect(await control.free('a', 20, new AbortController().signal)).toBe(false)
+    const stop = new AbortController()
+    const stopped = control.free('a', 5_000, stop.signal)
+    stop.abort()
+    expect(await stopped).toBe(false)
+    const already = new AbortController()
+    already.abort()
+    expect(await control.free('a', 5_000, already.signal)).toBe(false)
+    expect(control.heldGroups()).toEqual(['a'])
   })
 })
 

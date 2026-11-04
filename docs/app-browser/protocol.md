@@ -169,6 +169,22 @@ tab, and the tab of the request's view. The engine hashes the list as it
 hashes the computer's tabs, and checks it again before the step runs. A
 failure, or a `data` without `pages`, refuses the step under review.
 
+**While the person has control** (Take control in the Computer tab's full
+view, step 2b), nothing on the line changes. In the app:
+
+- The agent's steps wait in their queue, each until the person gives the
+  browser back or until 5 seconds before its deadline, which answers
+  `ok: false`: "The person has taken control of the browser here and
+  hasn’t given it back yet. Wait a little, then take a fresh
+  browser_snapshot before acting; or ask them in the chat."
+- `review_state` doesn't wait: it is read at once.
+- Given back, the refs of the last snapshot of each of the agent's tabs are
+  refused ("The person used this page since your last snapshot, so eN may
+  point elsewhere now; take a fresh browser_snapshot."), and the next
+  answer says "The person used the browser (Take control) and gave it back;
+  the page may have changed, so take a fresh browser_snapshot before
+  acting."
+
 ## Which browser a step goes to
 
 The engine decides, for each agent's tab (its view):
