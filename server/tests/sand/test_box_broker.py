@@ -108,6 +108,7 @@ class FakeBoxHost:
             "abc",
             self.expected_host_sha256,
             box_store=spec.labels.get("com.simeonlabs.box-store"),
+            app_browser=spec.labels.get("com.simeonlabs.app-browser"),
         )
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
@@ -122,6 +123,7 @@ class FakeBoxHost:
             "abc",
             box["host_sha256"],
             box_store=box["spec"].labels.get("com.simeonlabs.box-store"),
+            app_browser=box["spec"].labels.get("com.simeonlabs.app-browser"),
         )
 
     async def run_state(self, provider_box_id: str) -> Any:
@@ -348,50 +350,65 @@ class TestEnsureSandBox:
         await _ensure(client, access)
         assert host.created[0].image == settings.BOX_IMAGE_TRIAL
 
-    async def test_the_app_browser_goes_only_to_the_people_listed(
+    async def test_the_app_browser_is_on_for_everyone(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         user_second: User,
         host: FakeBoxHost,
-        mocker: MockerFixture,
     ) -> None:
-        """4 November 2026: the browser in the app, the founder first
-        (docs/app-browser/README.md). Nobody by default."""
-        mocker.patch.object(
-            settings, "APP_BROWSER_USERS", f" {user.email.upper()} , other@x.com"
-        )
+        """4 November 2026, the founder: "put it on for everyone". Until
+        then only the people in SIMEON_APP_BROWSER_USERS had it."""
         access, _ = await _signed_in(client, session, user)
         other, _ = await _signed_in(client, session, user_second)
         await _ensure(client, access)
         await _ensure(client, other)
-        envs = [
-            dict(line.split("=", 1) for line in spec.environment())
-            for spec in host.created
-        ]
-        assert envs[0].get("SIMEON_APP_BROWSER") == "1"
-        assert "SIMEON_APP_BROWSER" not in envs[1]
+        for spec in host.created:
+            env = dict(line.split("=", 1) for line in spec.environment())
+            assert env.get("SIMEON_APP_BROWSER") == "1"
+            assert spec.labels.get("com.simeonlabs.app-browser") == "1"
 
-    @pytest.mark.parametrize("listed", ["*", "user-id", ""])
-    async def test_the_app_browser_for_everyone_by_id_or_nobody(
+    async def test_a_computer_made_without_the_app_browser_is_replaced_once(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
         user: User,
         host: FakeBoxHost,
-        mocker: MockerFixture,
-        listed: str,
     ) -> None:
-        mocker.patch.object(
-            settings,
-            "APP_BROWSER_USERS",
-            str(user.id) if listed == "user-id" else listed,
-        )
+        """Bass's computer, 4 November 2026: made before he was listed, it
+        ran the new engine with the browser off, and was "up to date"."""
         access, _ = await _signed_in(client, session, user)
+        auth = {"Authorization": f"Bearer {access}"}
+        body = (await _ensure(client, access)).json()
+        old = next(iter(host.boxes))
+        made = host.boxes[old]["spec"]
+        host.boxes[old]["spec"] = dataclasses.replace(
+            made,
+            labels={
+                key: value
+                for key, value in made.labels.items()
+                if key != "com.simeonlabs.app-browser"
+            },
+        )
+        # The apps offer "Update Simeon's Computer".
+        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
+            "state": RUN_STATE_RUNNING,
+            "imageUpdateAvailable": True,
+        }
+        again = (await _ensure(client, access)).json()
+        assert again["podId"] == body["podId"]
+        assert len(host.created) == 2
+        assert host.removed[-1] == (old, [])
+        assert host.created[1].workspace_volume == made.workspace_volume
+        assert host.created[1].labels.get("com.simeonlabs.app-browser") == "1"
+        # Replaced once: the new one is current.
         await _ensure(client, access)
-        env = dict(line.split("=", 1) for line in host.created[0].environment())
-        assert (env.get("SIMEON_APP_BROWSER") == "1") is (listed != "")
+        assert len(host.created) == 2
+        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
+            "state": RUN_STATE_RUNNING,
+            "imageUpdateAvailable": False,
+        }
 
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -1029,7 +1046,10 @@ class TestBackups:
         access, _ = await _signed_in(client, session, user)
         await _ensure(client, access)
         spec = host.created[0]
-        assert spec.labels == {"com.simeonlabs.box-store": "1"}
+        assert spec.labels == {
+            "com.simeonlabs.box-store": "1",
+            "com.simeonlabs.app-browser": "1",
+        }
         assert spec.extra_env["SAND_BOX_STORE_SYNC"] == "1"
         assert spec.extra_env[
             "SAND_BOX_STORE_ID"
@@ -1064,7 +1084,7 @@ class TestBackups:
         access, _ = await _signed_in(client, session, user)
         body = (await _ensure(client, access)).json()
         old = next(iter(host.boxes))
-        assert host.created[0].labels == {}
+        assert host.created[0].labels == {"com.simeonlabs.app-browser": "1"}
 
         mocker.patch.object(settings, "BOX_STORE_BUCKET", "simeon-backups")
         mocker.patch.object(box_service.box_store, "has_backup", return_value=False)
@@ -1080,7 +1100,10 @@ class TestBackups:
             assert again["podId"] == body["podId"]
             assert len(host.created) == 2
             assert host.removed[-1] == (old, [])
-            assert host.created[1].labels == {"com.simeonlabs.box-store": "1"}
+            assert host.created[1].labels == {
+                "com.simeonlabs.box-store": "1",
+                "com.simeonlabs.app-browser": "1",
+            }
             assert host.created[1].workspace_volume == host.created[0].workspace_volume
             # The old one kept no backup: it is not asked for one.
             assert flushes == []

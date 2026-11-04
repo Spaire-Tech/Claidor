@@ -405,15 +405,6 @@ class Settings(BaseSettings):
     # EnsureSandBox, their files copied back from the backup. Empty: nobody.
     BOX_IMAGE_TRIAL: str = ""
     BOX_IMAGE_TRIAL_USERS: str = ""
-    # The browser in the app (docs/app-browser/README.md, 4 November 2026):
-    # the computers of the people listed (comma-separated e-mail addresses
-    # or user ids, or * for everyone) are given SIMEON_APP_BROWSER=1, and
-    # their agents' browser steps go to the browser in their Mac or Windows
-    # app while it is open. Read each time a computer is made or replaced
-    # (a new account, an update, a move): a computer already running keeps
-    # what it was given until then.
-    # Empty: nobody, every step on the computer's own Chrome.
-    APP_BROWSER_USERS: str = ""
     # E2B (16 October 2026): a server in SIMEON_BOX_HOSTS with
     # "kind": "e2b" makes each computer an E2B sandbox, a small virtual
     # machine that is frozen whole when idle and back in about a second

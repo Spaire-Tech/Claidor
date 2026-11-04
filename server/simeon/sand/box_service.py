@@ -51,6 +51,7 @@ from . import box_store
 from .box_e2b import KIND as E2B_KIND
 from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
+    APP_BROWSER_LABEL,
     EGRESS_TUNNEL_PORT,
     EVERYONE,
     FORK_NOVNC_PORT,
@@ -106,14 +107,16 @@ type SessionOpener = Callable[[], AbstractAsyncContextManager[AsyncSession]]
 @dataclass(frozen=True)
 class OutOfDate:
     """What a box runs that is no longer current: the host program (a newer
-    engine was published), the image, or a box made before backups."""
+    engine was published), the image, a box made before backups, or one
+    made without the browser in the app switched on."""
 
     host: bool = False
     image: bool = False
     store: bool = False
+    browser: bool = False
 
     def __bool__(self) -> bool:
-        return self.host or self.image or self.store
+        return self.host or self.image or self.store or self.browser
 
 
 class BoxEnsureInProgress(Exception):
@@ -486,28 +489,13 @@ async def image_for(db: AsyncSession, user_id: UUID) -> str:
     return box_image_reference()
 
 
-#: The engine's switch for the browser in the app (`shared/local-browser-gateway.ts`).
+#: The engine's switch for the browser in the app (`shared/local-browser-gateway.ts`),
+#: on every computer (4 November 2026, the founder: "put it on for everyone").
+#: Until then only the people in `SIMEON_APP_BROWSER_USERS` had it, given when
+#: their computer was made; a computer made without it is out of date
+#: (`_out_of_date`), so it is replaced with it, files kept, as an update is.
 APP_BROWSER_ENV = "SIMEON_APP_BROWSER"
-
-
-async def app_browser_for(db: AsyncSession, user_id: UUID) -> bool:
-    """Whether a person's agents may use the browser in their Mac or
-    Windows app: listed in `SIMEON_APP_BROWSER_USERS` by e-mail address or
-    user id, or everyone listed as `*` (docs/app-browser/README.md)."""
-    listed = {
-        entry.strip().lower()
-        for entry in settings.APP_BROWSER_USERS.split(",")
-        if entry.strip()
-    }
-    if not listed:
-        return False
-    if EVERYONE in listed or str(user_id).lower() in listed:
-        return True
-    if any("@" in entry for entry in listed):
-        user = await UserRepository.from_session(db).get_by_id(user_id)
-        if user is not None and user.email.lower() in listed:
-            return True
-    return False
+APP_BROWSER_ON = "1"
 
 
 # --- moving between servers ---------------------------------------------------
@@ -758,9 +746,8 @@ class BoxBrokerService:
                 restore = None if has is False else "fresh"
             extra_env = box_store.box_env(parent.user_id, restore=restore)
             labels = {box_store.LABEL: box_store.LABEL_VALUE}
-        if await app_browser_for(db, parent.user_id):
-            extra_env = {**extra_env, APP_BROWSER_ENV: "1"}
-            log.info("sand.box.app_browser", box=str(box.id))
+        extra_env = {**extra_env, APP_BROWSER_ENV: APP_BROWSER_ON}
+        labels = {**labels, APP_BROWSER_LABEL: APP_BROWSER_ON}
         credential_id, credential = await self._mint_credential(db, parent, committed)
         box.credential_session_id = credential_id
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
@@ -941,19 +928,23 @@ class BoxBrokerService:
         same volumes. A box made before 29 September mounts no host at all;
         one on a later image than the pinned one runs the image's own host
         from /opt/sand and never reads the mounted one. One made before
-        backups were switched on (`box_store.py`) is replaced the same way."""
+        backups were switched on (`box_store.py`) is replaced the same way,
+        and one made without the browser in the app (4 November 2026)."""
         current = await host.inspect(box.provider_box_id)
-        stale_image = stale_store = False
+        stale_image = stale_store = stale_browser = False
         if current is not None:
             stale_image = current.image != await self._image_on(db, host, box.user_id)
             stale_store = (
                 box_store.enabled() and current.box_store != box_store.LABEL_VALUE
             )
+            stale_browser = current.app_browser != APP_BROWSER_ON
         expected_host = getattr(host, "expected_host_sha256", None)
         stale_host = expected_host is not None and (
             current is None or current.host_sha256 != expected_host
         )
-        return current, OutOfDate(host=stale_host, image=stale_image, store=stale_store)
+        return current, OutOfDate(
+            host=stale_host, image=stale_image, store=stale_store, browser=stale_browser
+        )
 
     async def _token_rejected(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -1025,8 +1016,9 @@ class BoxBrokerService:
             if state is not None and credential_live:
                 current, stale = await self._out_of_date(db, host, box)
             stale_host, stale_image, stale_store = stale.host, stale.image, stale.store
+            stale_browser = stale.browser
             if (
-                (stale_host or stale_image or stale_store)
+                (stale_host or stale_image or stale_store or stale_browser)
                 and state == "stopped"
                 and credential_live
                 and getattr(host, "keeps_files", True) is False
@@ -1037,7 +1029,9 @@ class BoxBrokerService:
                 await self.check_capacity(repository, host, box)
                 await host.start(box.provider_box_id)
                 state = "running"
-            if (stale_host or stale_image or stale_store) and state == "running":
+            if (
+                stale_host or stale_image or stale_store or stale_browser
+            ) and state == "running":
                 # The upstream app's supervisor swaps the host only when the box is
                 # idle (the upgrade command waits while it is busy): a box
                 # working, or waiting on the person's approval, keeps its
@@ -1049,14 +1043,16 @@ class BoxBrokerService:
                         stale_host=stale_host,
                         stale_image=stale_image,
                         stale_store=stale_store,
+                        stale_browser=stale_browser,
                     )
-                    stale_host = stale_image = stale_store = False
+                    stale_host = stale_image = stale_store = stale_browser = False
             if (
                 state is None
                 or not credential_live
                 or stale_host
                 or stale_image
                 or stale_store
+                or stale_browser
             ):
                 # Absent on the host, its credential died with a sign-out, or
                 # the wrong host program or image: a fresh container on the
@@ -1069,6 +1065,7 @@ class BoxBrokerService:
                     stale_host=stale_host,
                     stale_image=stale_image,
                     stale_store=stale_store,
+                    stale_browser=stale_browser,
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
@@ -1682,6 +1679,7 @@ class BoxBrokerService:
                             stale_host=stale.host,
                             stale_image=stale.image,
                             stale_store=stale.store,
+                            stale_browser=stale.browser,
                         )
                         update(box.user_id)
                         continue
