@@ -83,6 +83,8 @@ export interface FillCheckoutOptions {
   readonly loadPlaywright?: () => PlaywrightLike;
   /** Pause between typed keys, so masked fields keep up. */
   readonly keyDelayMs?: number;
+  /** The agent paying: the engine types the card into its tab in the Mac or Windows app's browser for a task there (step 3c); this computer's fill doesn't read it. */
+  readonly agentId?: string;
 }
 
 /** The DevTools ports Chrome uses on the box: 9223 for :1, 9222+N for a fork window :N. */
@@ -123,6 +125,52 @@ const FRAME_ONLY: Partial<Record<FieldKind, string>> = {
   "billing ZIP": any(['input[name="postal"]', 'input[name="postalCode"]', 'input[name="zip"]', 'input[autocomplete="postal-code"]', 'input[data-elements-stable-field-name="postalCode"]']),
 };
 
+const two = (value: number): string => String(value).padStart(2, "0");
+
+export type CheckoutFieldKind = FieldKind;
+
+/**
+ * The card's fields in the order they are filled, each with its marks and,
+ * for a payment frame, its frame-only ones: what the Mac or Windows app's
+ * browser is sent to find them for a checkout there (step 3c,
+ * `host/runner/tools/app-browser-checkout.ts`), so both browsers look alike.
+ */
+export const CHECKOUT_FIELDS: readonly { readonly kind: FieldKind; readonly selector: string; readonly frameOnly?: string }[] = (Object.keys(SELECTORS) as FieldKind[]).map((kind) => ({
+  kind,
+  selector: SELECTORS[kind],
+  ...(FRAME_ONLY[kind] == null ? {} : { frameOnly: FRAME_ONLY[kind] as string }),
+}));
+
+/** What each card field takes, in the spellings a checkout may want (a month as "04" or "4"), and the expiry with its year in four digits. */
+export function checkoutCardValues(card: CheckoutCard): { readonly values: Record<FieldKind, string[]>; readonly expiryLong: string } {
+  return {
+    values: {
+      "card number": [card.number],
+      expiry: [`${two(card.expMonth)}/${two(card.expYear % 100)}`],
+      "expiry month": [two(card.expMonth), String(card.expMonth)],
+      "expiry year": [String(card.expYear), two(card.expYear % 100)],
+      "security code": [card.cvc],
+      "name on card": card.billing?.name ? [card.billing.name] : [],
+      "billing ZIP": card.billing?.postalCode ? [card.billing.postalCode] : [],
+    },
+    expiryLong: `${two(card.expMonth)}/${card.expYear}`,
+  };
+}
+
+/** What a checkout needs that wasn't filled: the number, an expiry (one field, or its month and year), the code. */
+export function checkoutMissing(filled: ReadonlySet<string>): FieldKind[] {
+  const expected: FieldKind[] = ["card number", filled.has("expiry month") || filled.has("expiry year") ? "expiry month" : "expiry", "security code"];
+  if (filled.has("expiry month")) expected.push("expiry year");
+  return expected.filter((kind) => !filled.has(kind));
+}
+
+/** The sentences the agent reads, the same for either browser. */
+export const CHECKOUT_SENTENCES = {
+  noLinkBlock: "The checkout's Link block (.AiAgentPaymentSteering with link_pay_token) isn't on the open page. Open the checkout's payment step; if the block never shows, cancel this purchase and create a card one.",
+  noCardFields: (where: string) => `No card fields ${where}. Open the checkout's payment step (pick "card" if the page offers several ways to pay), then call pay_checkout again.`,
+  numberNotFilled: (page: string) => `The card number field on ${page} could not be filled. Click into it once and call pay_checkout again.`,
+} as const;
+
 /**
  * Where the browser helper writes Simeon's own copy of playwright-core on the
  * computer, one folder per version (`SAND_BROWSER_DRIVER_BOX_DIR` and
@@ -162,7 +210,6 @@ export function loadBoxPlaywright(helperDir: string = BOX_BROWSER_HELPER_DIR): P
   throw new Error(`playwright-core is not on this computer (${lastError instanceof Error ? lastError.message : String(lastError)})`);
 }
 
-const two = (value: number): string => String(value).padStart(2, "0");
 const hostOf = hostOfAddress;
 
 export async function firstEditable(frame: Frame, selector: string): Promise<Locator | undefined> {
@@ -367,7 +414,7 @@ export async function fillCheckout(options: FillCheckoutOptions): Promise<Checko
         }, options.linkPayToken as never);
         return { ok: true, page: hostOf(page.url()), filled: ["Link pay token"], missing: [] };
       }
-      return { ok: false, message: "The checkout's Link block (.AiAgentPaymentSteering with link_pay_token) isn't on the open page. Open the checkout's payment step; if the block never shows, cancel this purchase and create a card one." };
+      return { ok: false, message: CHECKOUT_SENTENCES.noLinkBlock };
     }
 
     const card = options.card as CheckoutCard;
@@ -375,20 +422,12 @@ export async function fillCheckout(options: FillCheckoutOptions): Promise<Checko
     for (const candidate of candidates) if (await hasCardFields(candidate)) { page = candidate; break; }
     if (page == null) {
       const where = hinted.length > 0 ? `on ${hostOf(hinted[0]?.url() ?? hint)}` : "in any open tab";
-      return { ok: false, message: `No card fields ${where}. Open the checkout's payment step (pick "card" if the page offers several ways to pay), then call pay_checkout again.` };
+      return { ok: false, message: CHECKOUT_SENTENCES.noCardFields(where) };
     }
     await page.bringToFront().catch(() => undefined);
 
     const filled = new Set<FieldKind>();
-    const values: Record<FieldKind, string[]> = {
-      "card number": [card.number],
-      expiry: [`${two(card.expMonth)}/${two(card.expYear % 100)}`],
-      "expiry month": [two(card.expMonth), String(card.expMonth)],
-      "expiry year": [String(card.expYear), two(card.expYear % 100)],
-      "security code": [card.cvc],
-      "name on card": card.billing?.name ? [card.billing.name] : [],
-      "billing ZIP": card.billing?.postalCode ? [card.billing.postalCode] : [],
-    };
+    const { values, expiryLong } = checkoutCardValues(card);
     const numberFrames: Frame[] = [];
     for (const frame of page.frames()) {
       for (const kind of Object.keys(SELECTORS) as FieldKind[]) {
@@ -401,16 +440,14 @@ export async function fillCheckout(options: FillCheckoutOptions): Promise<Checko
         let value = values[kind];
         if (kind === "expiry") {
           const placeholder = (await field.getAttribute("placeholder").catch(() => null)) ?? "";
-          if (/yyyy/i.test(placeholder)) value = [`${two(card.expMonth)}/${card.expYear}`];
+          if (/yyyy/i.test(placeholder)) value = [expiryLong];
         }
         const done = kind === "expiry month" || kind === "expiry year" ? await choose(field, value, delay) : await typeInto(field, value[0] ?? "", delay).catch(() => false);
         if (done) { filled.add(kind); if (kind === "card number") numberFrames.push(frame); }
       }
     }
-    if (!filled.has("card number")) return { ok: false, message: `The card number field on ${hostOf(page.url())} could not be filled. Click into it once and call pay_checkout again.` };
-    const expected: FieldKind[] = ["card number", filled.has("expiry month") || filled.has("expiry year") ? "expiry month" : "expiry", "security code"];
-    if (filled.has("expiry month")) expected.push("expiry year");
-    return { ok: true, page: hostOf(page.url()), filled: [...filled], missing: expected.filter((kind) => !filled.has(kind)) };
+    if (!filled.has("card number")) return { ok: false, message: CHECKOUT_SENTENCES.numberNotFilled(hostOf(page.url())) };
+    return { ok: true, page: hostOf(page.url()), filled: [...filled], missing: checkoutMissing(filled) };
   } finally {
     // Disconnects; the person's Chrome and its tabs stay open.
     await Promise.all(browsers.map((browser) => browser.close().catch(() => undefined)));

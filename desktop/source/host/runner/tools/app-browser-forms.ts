@@ -67,32 +67,41 @@ function fieldsFor(options: UserFormPageOptions): Record<string, unknown>[] {
   }));
 }
 
+/** The app holding an agent's task, when its browser does (`AppBrowserRoute.where`); none for a task on the computer. */
+export interface AppTask {
+  readonly route: AppBrowserRoute;
+  readonly live: AppBrowserLive;
+}
+
+export function appTaskOf(route: AppBrowserRoute | undefined, agentId: string): AppTask | undefined {
+  const live = route?.where?.(agentId);
+  return route === undefined || live === undefined ? undefined : { route, live };
+}
+
+/** One step to the app (a card's fill or read, never shown or logged); its data as JSON, or the app's own sentence. */
+export async function askApp(app: AppTask, agentId: string, op: "form" | "checkout", args: Record<string, unknown>, timeoutMs: number): Promise<{ readonly ok: true; readonly data: Record<string, unknown> } | { readonly ok: false; readonly message: string }> {
+  let answer: Record<string, unknown>;
+  try {
+    answer = await app.route.request(app.live, { op, viewId: agentId, args, screenshot: false }, { timeoutMs });
+  } catch (error) {
+    return { ok: false, message: error instanceof Error && error.message.length > 0 ? error.message : "The browser didn't answer." };
+  }
+  if (answer.ok !== true) return { ok: false, message: typeof answer.error === "string" && answer.error.length > 0 ? answer.error : "The browser couldn't fill the page." };
+  try {
+    const data = JSON.parse(typeof answer.data === "string" ? answer.data : "") as unknown;
+    if (typeof data === "object" && data !== null && !Array.isArray(data)) return { ok: true, data: data as Record<string, unknown> };
+  } catch { /* below */ }
+  return { ok: false, message: "The browser's answer couldn't be read." };
+}
+
 /**
  * The fills, each sent where the agent's task is. `route` is read at each
  * fill (the local-browser extension may start after whoever holds this);
  * without one, or for a task on the computer, the computer's own.
  */
 export function routedForms(route: () => AppBrowserRoute | undefined, box: BoxForms = BOX_FORMS): RoutedForms {
-  const inApp = (agentId: string): { readonly route: AppBrowserRoute; readonly live: AppBrowserLive } | undefined => {
-    const current = route();
-    const live = current?.where?.(agentId);
-    return current === undefined || live === undefined ? undefined : { route: current, live };
-  };
-  /** One `form` step; its data, or the app's own sentence. */
-  const ask = async (app: { readonly route: AppBrowserRoute; readonly live: AppBrowserLive }, agentId: string, args: Record<string, unknown>): Promise<{ readonly ok: true; readonly data: Record<string, unknown> } | { readonly ok: false; readonly message: string }> => {
-    let answer: Record<string, unknown>;
-    try {
-      answer = await app.route.request(app.live, { op: "form", viewId: agentId, args, screenshot: false }, { timeoutMs: APP_FORM_TIMEOUT_MS });
-    } catch (error) {
-      return { ok: false, message: error instanceof Error && error.message.length > 0 ? error.message : "The browser didn't answer." };
-    }
-    if (answer.ok !== true) return { ok: false, message: typeof answer.error === "string" && answer.error.length > 0 ? answer.error : "The browser couldn't fill the page." };
-    try {
-      const data = JSON.parse(typeof answer.data === "string" ? answer.data : "") as unknown;
-      if (typeof data === "object" && data !== null && !Array.isArray(data)) return { ok: true, data: data as Record<string, unknown> };
-    } catch { /* below */ }
-    return { ok: false, message: "The browser's answer couldn't be read." };
-  };
+  const inApp = (agentId: string): AppTask | undefined => appTaskOf(route(), agentId);
+  const ask = (app: AppTask, agentId: string, args: Record<string, unknown>) => askApp(app, agentId, "form", args, APP_FORM_TIMEOUT_MS);
   const pageOf = (data: Record<string, unknown>): string => (typeof data.page === "string" ? data.page : "");
 
   return {

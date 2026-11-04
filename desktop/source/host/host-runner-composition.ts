@@ -200,7 +200,8 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
+import { BOX_CHROME_PORTS, fetchCheckoutIcon, type FillCheckoutOptions } from "../shared/node/link-wallet/checkout-fill.js";
+import { routedCheckout } from "./runner/tools/app-browser-checkout.js";
 import { routedForms } from "./runner/tools/app-browser-forms.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
 import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
@@ -923,6 +924,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // the agent's own Chrome on the box, else a tab on the site in another window.
   // Each fill goes where the agent's page is: the Mac or Windows app's browser for a task there, else the box's Chrome (docs/app-browser/README.md, step 3b).
   const forms = routedForms(() => appBrowserRouteOf(extensions));
+  // The checkout card's reads and Link's or Shop's card typed in, where the agent's page is (step 3c).
+  const checkout = routedCheckout(() => appBrowserRouteOf(extensions));
+  method(extensions.api("mcp"), "setCheckoutFill")?.((options: FillCheckoutOptions) => checkout.fill(options));
   method(extensions.api("transcript"), "setUserFormServices")?.({
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
@@ -2580,16 +2584,16 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   persistPicture,
                   // SearchProducts: Shop's catalog, signed out unless the person connected Shop (then with their preferences).
                   ...(shop == null ? {} : { searchProducts: (args: Record<string, unknown>) => shop.call("search_products", args) }),
-                  // The checkout's text, from the same tab the picture is taken of: the card's total is checked against it.
+                  // The checkout's text, from the same tab the picture is taken of: the card's total is checked against it. In the app's browser for a task there (step 3c).
                   readCheckoutPage: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                    return await readCheckoutText({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: (line) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`) });
+                    return await checkout.read(session.id, { pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: (line) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`) });
                   },
                   // The agent's own Chrome first (9222 + its window), then the computer's others.
                   capturePreview: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
                     const note = (line: string) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`);
-                    const shot = await captureCheckout({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: note });
+                    const shot = await checkout.capture(session.id, { pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: note });
                     if (shot == null) return undefined;
                     if (typeof hooks.persistImage !== "function") { note("no picture: nowhere to keep it"); return undefined; }
                     const saved = await hooks.persistImage(shot.jpeg, "image/jpeg") as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;

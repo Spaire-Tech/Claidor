@@ -20,7 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
-| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) step 2b (the Computer tab's view of it and Take control, #553), step 3a (the take-over and the checkout's buttons open the agent's tab here, #554) and step 3b (the in-chat form, 1Password, saved logins and a new password typed by the app into its tab) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: 3c, the checkout's card and Duffel's form |
+| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) step 2b (the Computer tab's view of it and Take control, #553), step 3a (the take-over and the checkout's buttons open the agent's tab here, #554) step 3b (the in-chat form, 1Password, saved logins and a new password typed by the app into its tab, #555) and step 3c-1 (the checkout card: its total, its picture, Link's or Shop's card typed in; frames of other sites reached) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: 3c-2, Duffel's form for a flight |
 | 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
@@ -254,6 +254,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 4 November 2026 | While the person has control the agent's steps wait, each until 5 s before its deadline, Auto-review still reads; given back, the agent's old refs are refused and it is told; closing the view, the page loading again, signing out and quitting give it back | The session |
 | 4 November 2026 | The take-over, Review order and the bank's check open the agent's tab on this PC when the Computer tab would show it there, else the computer; the take-over and the bank's check in Take control; I'm done and Skip give the tab back before the agent is told; the take-over's picture is the tab's (`docs/app-browser/README.md`, step 3a) | The session; "same cards, same buttons" is the plan's |
 | 4 November 2026 | The in-chat form, 1Password's fill, the saved login and the new password are typed by the app into the agent's tab on this PC for a task there (one `form` step from the engine), else the computer's Chrome; the values never logged or sent back; the agent's tabs on the card's site, the current one first; trusted keys 25 ms apart; Enter only for a one-field form; a new password never into a current-password field (`docs/app-browser/README.md`, step 3b) | The session; "same cards, same buttons" and "the value never goes to the model" are the plan's |
+| 4 November 2026 | Measured: in the app's offscreen tabs a click on a frame of another site went to the page around it. Each tab keeps a DevTools session for each such frame; every pointer event, the agent's and the person's, goes to the frame under it; the helper runs in those frames in a world of its own, and the fills look there after the page (`docs/app-browser/README.md`, step 3c-1) | The session |
+| 4 November 2026 | The checkout card's text, picture, Link's or Shop's card and Link's pay token go to the agent's tab here for a task here, chosen as the computer chooses, with the computer's own field marks and sentences; the card never logged or sent back; Link and Shop told which agent pays | The session; "same cards, same buttons" and "the value never goes to the model" are the plan's |
 | 4 November 2026 | The in-chat form's lock line reads "Typed into the page on this PC, never shown to your agent." for a task here; the word added to the Mac's catalogue in the 9 languages | The session |
 | 4 November 2026 | The browser view's 9 words (On this PC, On Simeon's computer, Give back, Forward, Stop, Not Secure, %@'s browser, Tabs, New Tab) added to the Mac's catalogue in the 9 languages, before the Mac's own view (step 4), since the web app reads only the Mac's catalogue; "Take control" and "%@ is paused while you're in control." were there already | The session |
 
@@ -826,6 +828,71 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 4 November 2026: the browser in the app, step 3c-1, the checkout card and frames of other sites
+
+Step 3c of `docs/app-browser/README.md` split in two: 3c-1 (this) the
+checkout card, which needed frames of other sites reached first; 3c-2
+Duffel's form for a flight.
+
+**Found while building it:** in the app's offscreen tabs, a click on a
+frame of another site (a card form, a bank's check) went to the page
+around it: the agent's `browser_mouse_click_xy` and the person's clicks in
+Take control never reached such a frame, though `protocol.md` said the
+agent's did. Measured with a stand-in page in Electron 44; fixed here.
+
+**What it is:**
+
+- The Windows app: `frames.ts` keeps a DevTools session for each frame of
+  another site in a tab and sends each pointer event to the frame under
+  it, in order with the keys (`view.ts` for the person, `steps.ts` for the
+  agent). The helper runs in those frames in a world of its own; the fills
+  of 3b look there after the page. The `checkout` op reads the checkout's
+  text and picture, types Link's or Shop's card (a list chosen, every
+  other field key by key) and puts Link's pay token in.
+- The engine: `app-browser-checkout.ts` sends the checkout card's reads
+  and fills to the app for a task there, with the computer's own field
+  marks (`CHECKOUT_FIELDS`, `checkoutCardValues`, `CHECKOUT_SENTENCES`
+  exported from `checkout-fill.ts`, which now uses them too). Link and
+  Shop learn the paying agent (`BoxCliWallet.call`'s `context`), and the
+  MCP service takes the routed fill (`setCheckoutFill`).
+
+**Checked:**
+
+- `desktop`: both typechecks pass; `npm test` 1008, 985 pass, 22 skipped,
+  one fails: the packaging audit, which needs a Mac's bootstrap and fails
+  the same way on `main` here. `app-browser-route.test.mjs` has a new
+  test: the checkout's reads and fills go to the app for a task there
+  (one `checkout` step with the computer's marks and values, the
+  computer's sentences from the answer, a bad picture refused) and to the
+  computer for any other task. `link-wallet.test.mjs`: a tool call's
+  agent reaches the wallet; a payment with no agent fills the computer's
+  Chrome as before.
+- `windows`: `npm test` 211, `npm run typecheck`; `npm run browser-smoke`
+  113 checks (13 new: the agent's click and key in a frame of another
+  site; a 3b fill there; the checkout's text, picture and icon; no tab on
+  the site; the card into the frame and the page, each field holding what
+  was asked, typed as a person types; a month and a year chosen from
+  lists; no card fields; Link's pay token; no card or token in the answer
+  or the log; and, in the Take control part, the person's click and keys
+  in such a frame), run four times (the last two on the final code, after
+  the review's two fixes in `frames.ts`); `npm run browser-view-smoke` 21
+  checks, run three times (the last on the final code).
+- End to end once, in Electron under a virtual display: the engine's own
+  bridge, gateway and routed checkout, with the computer's own field
+  marks, drove the Windows browser. It read the total, took a JPEG
+  picture, typed the card into a frame of another site (number, expiry,
+  code, ZIP) and the name into the page, which read back what was asked;
+  another agent's fill went to the computer.
+- `check_names.py`, `check_translations.py`, `web_app_inventory.py`.
+
+**Not checked:** nothing on a Windows PC, against a real shop or payment
+provider, or with a real card; the engine's part runs on the computers
+only once a host bundle is published from a Mac. The purchase tool's
+sentences for a checkout it can't find still say "your computer's
+browser".
+
+**Next:** 3c-2, Duffel's form for a flight and its bank check.
 
 ### 4 November 2026: the browser in the app, step 3b, the fills
 

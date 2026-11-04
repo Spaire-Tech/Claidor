@@ -528,7 +528,34 @@ const helperSource = String.raw`
     if (found.error) return found
     const el = found.el
     const inputType = el.tagName === 'INPUT' ? (el.type || 'text').toLowerCase() : ''
-    return { tag: el.tagName, inputType, role: roleOf(el) }
+    // A card's expiry asking for the year in four digits ("MM / YYYY"), step 3c.
+    return { tag: el.tagName, inputType, role: roleOf(el), yyyy: /yyyy/i.test(el.getAttribute('placeholder') || '') }
+  }
+
+  /**
+   * Link's pay token into the checkout's Link block (".AiAgentPaymentSteering"
+   * with its "link_pay_token" field), set as the page's own code would set it
+   * so the page sees the change (step 3c); whether the block is here.
+   */
+  function linkToken(token) {
+    for (const doc of documents()) {
+      if (!doc.querySelector('.AiAgentPaymentSteering')) continue
+      const input = doc.querySelector('input[name="link_pay_token"]')
+      if (!input) continue
+      const view = doc.defaultView || window
+      const setter = Object.getOwnPropertyDescriptor(view.HTMLInputElement.prototype, 'value')
+      if (!setter || !setter.set) continue
+      setter.set.call(input, String(token))
+      input.dispatchEvent(new view.Event('input', { bubbles: true }))
+      input.dispatchEvent(new view.Event('change', { bubbles: true }))
+      return { set: true }
+    }
+    return { set: false }
+  }
+
+  /** What the page says, as a person reads it (the checkout's total is checked against it). */
+  function pageText() {
+    return { text: document.body ? String(document.body.innerText || '') : '' }
   }
 
   /** The marks the fills left: gone, whatever was found. */
@@ -544,7 +571,7 @@ const helperSource = String.raw`
     return { forgot: true }
   }
 
-  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, formFind, passwordFields, holds, fieldKind, formForget, generation: () => state.generation }
+  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, formFind, passwordFields, holds, fieldKind, formForget, linkToken, pageText, generation: () => state.generation }
 })()
 `
 

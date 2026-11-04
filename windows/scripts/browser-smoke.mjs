@@ -98,6 +98,39 @@ function site() {
          <input id="new" type="password" autocomplete="new-password" aria-label="New password">
          <input id="again" type="password" aria-label="Confirm password">`,
       ),
+    // Step 3c: a checkout whose card form is in a frame of another site (localhost here), as a payment provider's is.
+    '/shop': () =>
+      page(
+        'Checkout',
+        `<h1>Checkout</h1><p>Total $42.00</p>
+         <label>Name on card <input id="ccname" autocomplete="cc-name"></label>
+         <iframe id="pay" src="http://localhost:${port}/card-frame" style="display:block;width:400px;height:140px;border:0;margin-top:20px"></iframe>
+         <script>window.card={};addEventListener('message',e=>{const d=e.data||{};if(d.card)window.card[d.card.name]=d.card})</script>`,
+      ).replace('</title>', '</title><link rel="icon" href="/favicon.png">'),
+    '/card-frame': () =>
+      page(
+        'Card',
+        `<style>input{position:absolute;height:30px;margin:0}</style>
+         <input name="cardnumber" autocomplete="cc-number" placeholder="1234 1234 1234 1234" style="left:10px;top:10px;width:200px">
+         <input name="exp-date" placeholder="MM / YY" style="left:10px;top:50px;width:100px">
+         <input name="cvc" placeholder="CVC" style="left:120px;top:50px;width:90px">
+         <input name="postal" placeholder="ZIP" style="left:10px;top:90px;width:90px">
+         <script>for(const el of document.querySelectorAll('input'))el.addEventListener('input',e=>parent.postMessage({card:{name:el.name,value:el.value,trusted:e.isTrusted}},'*'))</script>`,
+      ),
+    '/shop-selects': () =>
+      page(
+        'Checkout',
+        `<input id="num" autocomplete="cc-number">
+         <select name="exp_month"><option value="">Month</option>${Array.from({ length: 12 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}">${i + 1}</option>`).join('')}</select>
+         <select name="exp_year"><option value="">Year</option><option>2030</option><option>2031</option></select>
+         <input id="cvc" name="cvc">`,
+      ),
+    '/link-pay': () =>
+      page(
+        'Checkout',
+        `<div class="AiAgentPaymentSteering"><input type="hidden" name="link_pay_token"></div>
+         <script>document.querySelector('input[name=link_pay_token]').addEventListener('change',e=>{document.title='token '+e.target.value.length})</script>`,
+      ),
     '/view': () =>
       page(
         'View',
@@ -117,6 +150,11 @@ function site() {
     if (url.pathname === '/file.txt') {
       res.writeHead(200, { 'content-type': 'text/plain', 'content-disposition': 'attachment; filename="report.txt"' })
       res.end('the report')
+      return
+    }
+    if (url.pathname === '/favicon.png') {
+      res.writeHead(200, { 'content-type': 'image/png' })
+      res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'))
       return
     }
     if (url.pathname === '/set-cookie') {
@@ -475,6 +513,79 @@ try {
   const logged = output.join('')
   check(!logged.includes(secret) && !logged.includes('nate@example.com'), 'nothing typed is in the app’s log')
 
+  // MARK: Step 3c, frames of other sites and the checkout
+  // The fields' marks as the engine sends them (checkout-fill.ts has the full lists).
+  const cardFields = [
+    { kind: 'card number', selector: 'input[autocomplete="cc-number"], input[name="cardnumber"]' },
+    { kind: 'expiry', selector: 'input[name="exp-date"], input[placeholder*="MM / YY" i]' },
+    { kind: 'expiry month', selector: 'select[name*="exp_month" i]' },
+    { kind: 'expiry year', selector: 'select[name*="exp_year" i]' },
+    { kind: 'security code', selector: 'input[name="cvc"]' },
+    { kind: 'name on card', selector: 'input[autocomplete="cc-name"]', frameOnly: 'input[name="name"]' },
+    { kind: 'billing ZIP', selector: 'input[autocomplete*="billing postal-code"]', frameOnly: 'input[name="postal"]' },
+  ]
+  const cardNumber = '4242424242424242'
+  const cardValues = { 'card number': [cardNumber], expiry: ['04/31'], 'expiry month': ['04', '4'], 'expiry year': ['2031', '31'], 'security code': ['737'], 'name on card': ['Nate Doe'], 'billing ZIP': ['94107'] }
+  const card = async (viewId) => {
+    const read = await evaluate('JSON.stringify(window.card || {})', viewId)
+    try {
+      return JSON.parse(read)
+    } catch {
+      return {}
+    }
+  }
+  const pause = (ms) => new Promise((done) => setTimeout(done, ms))
+  await run('navigate', { url: `${pages.base}/shop` }, { viewId: 'agent-g' })
+  await pause(300)
+  // The agent's click on the picture reaches the frame (it went to the page before, measured), and its keys follow.
+  const frameBox = JSON.parse((await evaluate('JSON.stringify(document.getElementById("pay").getBoundingClientRect())', 'agent-g')) || '{}')
+  answer = await run('mouse_click_xy', { x: Math.round(frameBox.left + 165), y: Math.round(frameBox.top + 65), element: 'CVC' }, { viewId: 'agent-g' })
+  await run('press_key', { key: '9' }, { viewId: 'agent-g' })
+  await pause(200)
+  let inFrame = await card('agent-g')
+  check(answer.ok && inFrame.cvc?.value === '9' && inFrame.cvc?.trusted === true, "the agent's click lands in a frame of another site, and the key after it", JSON.stringify(inFrame))
+  // The in-chat form finds a field in that frame (step 3b, extended).
+  answer = await run('form', { action: 'fill', domain: site, fields: [{ id: 'zip', type: 'text', target: { selector: 'input[name="postal"]' } }], values: { zip: '10001' } }, { viewId: 'agent-g' })
+  inFrame = await card('agent-g')
+  check(answer.ok && JSON.parse(answer.data).outcomes.zip === 'filled' && inFrame.postal?.value === '10001', "a card's field in a frame of another site is found and typed into", answer.data ?? answer.error)
+  // The checkout card's reads.
+  answer = await run('checkout', { action: 'read', pageHint: `${pages.base}/shop` }, { viewId: 'agent-g' })
+  check(answer.ok && JSON.parse(answer.data).page === site && JSON.parse(answer.data).text.includes('Total $42.00'), "the checkout's text, for the card's total", answer.data ?? answer.error)
+  answer = await run('checkout', { action: 'picture', pageHint: site }, { viewId: 'agent-g' })
+  const shot = answer.ok ? JSON.parse(answer.data) : {}
+  check(answer.ok && Buffer.from(shot.jpegB64 ?? '', 'base64').subarray(0, 2).toString('hex') === 'ffd8' && shot.iconUrl === `${pages.base}/favicon.png`, "the checkout's picture, a JPEG, and the shop's icon", JSON.stringify({ ...shot, jpegB64: shot.jpegB64?.length }))
+  answer = await run('checkout', { action: 'read', pageHint: 'other.test' }, { viewId: 'agent-g' })
+  check(!answer.ok && answer.error === 'No tab on other.test is open in the browser on this PC.', 'no tab on the site: no text, said so', answer.error)
+  // Link's card: into the frame's fields and the page's own, key by key.
+  answer = await run('checkout', { action: 'fill', pageHint: site, fields: cardFields, values: cardValues, expiryLong: '04/2031' }, { viewId: 'agent-g' })
+  const paid = answer.ok ? JSON.parse(answer.data) : {}
+  inFrame = await card('agent-g')
+  const name = await evaluate('document.getElementById("ccname").value', 'agent-g')
+  check(
+    answer.ok && paid.found === true && paid.page === site && JSON.stringify([...(paid.filled ?? [])].sort()) === JSON.stringify(['billing ZIP', 'card number', 'expiry', 'name on card', 'security code']),
+    'the card goes in: number, expiry, code and ZIP in the frame of another site, the name on the page',
+    answer.data ?? answer.error,
+  )
+  check(
+    inFrame.cardnumber?.value === cardNumber && inFrame['exp-date']?.value === '04/31' && inFrame.cvc?.value === '737' && inFrame.postal?.value === '94107' && name === 'Nate Doe' && ['cardnumber', 'exp-date', 'cvc', 'postal'].every((one) => inFrame[one]?.trusted === true),
+    'each field holds what was asked (what was there replaced), typed as a person types',
+    JSON.stringify({ ...inFrame, name }),
+  )
+  check(!JSON.stringify(answer).includes(cardNumber) && !JSON.stringify(answer).includes('737'), 'the answer never holds the card')
+  await run('navigate', { url: `${pages.base}/shop-selects` }, { viewId: 'agent-g' })
+  answer = await run('checkout', { action: 'fill', pageHint: `${pages.base}/shop-selects`, fields: cardFields, values: cardValues, expiryLong: '04/2031' }, { viewId: 'agent-g' })
+  const chosen = await evaluate('JSON.stringify([document.getElementById("num").value, document.querySelector("[name=exp_month]").value, document.querySelector("[name=exp_year]").value, document.getElementById("cvc").value])', 'agent-g')
+  check(answer.ok && chosen === JSON.stringify([cardNumber, '04', '2031', '737']) && JSON.parse(answer.data).filled.includes('expiry month'), "a month and a year chosen from the checkout's lists", `${answer.data ?? answer.error} ${chosen}`)
+  await run('navigate', { url: `${pages.base}/other` }, { viewId: 'agent-g' })
+  answer = await run('checkout', { action: 'fill', pageHint: site, fields: cardFields, values: cardValues }, { viewId: 'agent-g' })
+  check(answer.ok && JSON.parse(answer.data).found === false && JSON.parse(answer.data).hinted === true, 'no card fields: nothing typed, said so', answer.data ?? answer.error)
+  // Link's pay token, into Link's block.
+  await run('navigate', { url: `${pages.base}/link-pay` }, { viewId: 'agent-g' })
+  answer = await run('checkout', { action: 'token', pageHint: site, token: 'lpt_test_token_0123' }, { viewId: 'agent-g' })
+  check(answer.ok && JSON.parse(answer.data).found === true && (await evaluate('document.title', 'agent-g')) === 'token 19', "Link's pay token is put into its block, the page told", answer.data ?? answer.error)
+  const loggedNow = output.join('')
+  check(!loggedNow.includes(cardNumber) && !loggedNow.includes('lpt_test_token_0123'), 'no card and no token in the app’s log')
+
   // MARK: Step 2b, the Computer tab's view and Take control
   const viewLine = output.join('').split('\n').find((line) => line.startsWith('[harness] view '))
   const viewBase = viewLine?.slice('[harness] view '.length).trim()
@@ -570,6 +681,21 @@ try {
   answer = await Promise.race([run('snapshot', {}, { viewId: 'agent-v' }), soon(4_000).then(() => ({ timedOut: true }))])
   shown = await view('watch', { agentId: 'agent-v' })
   check(answer.ok && shown?.person === false, 'the app’s page loading again gives the browser back', JSON.stringify({ ok: answer.ok, person: shown?.person }))
+  // Step 3c: the person's click reaches a frame of another site (a card form, a bank's check), their keys after it.
+  await run('navigate', { url: `${pages.base}/shop` }, { viewId: 'agent-v' })
+  await soon(300)
+  const payBox = JSON.parse((await evaluate('JSON.stringify(document.getElementById("pay").getBoundingClientRect())', 'agent-v')) || '{}')
+  await view('control', { agentId: 'agent-v', person: true })
+  await mouse('mousePressed', Math.round(payBox.left + 110), Math.round(payBox.top + 25))
+  await mouse('mouseReleased', Math.round(payBox.left + 110), Math.round(payBox.top + 25))
+  for (const [key, code, keyCode] of [['4', 'Digit4', 52], ['2', 'Digit2', 50]]) {
+    await view('input', { agentId: 'agent-v', input: { kind: 'key', type: 'keyDown', key, code, keyCode, text: key, modifiers: 0 } })
+    await view('input', { agentId: 'agent-v', input: { kind: 'key', type: 'keyUp', key, code, keyCode, modifiers: 0 } })
+  }
+  await soon(300)
+  await view('control', { agentId: 'agent-v', person: false })
+  const personTyped = JSON.parse((await evaluate('JSON.stringify(window.card || {})', 'agent-v')) || '{}')
+  check(personTyped.cardnumber?.value === '42' && personTyped.cardnumber?.trusted === true, "the person's click lands in a frame of another site, their keys after it", JSON.stringify(personTyped))
   await view('watch', { agentId: null })
   const framesUnwatched = (await told()).frames
   await run('navigate', { url: `${pages.base}/other` }, { viewId: 'agent-v' })

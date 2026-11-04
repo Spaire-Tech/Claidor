@@ -22,6 +22,7 @@ import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { BrowserWindow, type Session, type WebContents, app, session as sessions } from 'electron'
 import { ownsNavigation } from '../navigation'
+import { Frames } from './frames'
 import { chromeAgent, openable, zoneIdentifier } from './rules'
 
 export const partition = 'persist:simeon-browser'
@@ -45,6 +46,10 @@ export interface Tab {
   /** When the page last started a navigation of its own document. */
   navigatedAt: number
   loading: boolean
+  /** Its frames of other sites, each over its own DevTools session; the pointer goes through it (step 3c). */
+  readonly frames: Frames
+  /** The page's icon, as it names it (the checkout card's shop icon). */
+  favicon?: string
 }
 
 export interface TabsOptions {
@@ -163,6 +168,7 @@ export class Tabs {
       notes: [],
       navigatedAt: 0,
       loading: false,
+      frames: new Frames(contents),
     }
     this.all.set(tab.id, tab)
     this.current.set(group, tab.id)
@@ -185,6 +191,15 @@ export class Tabs {
     contents.on('did-navigate', () => this.changed(group))
     contents.on('did-navigate-in-page', () => this.changed(group))
     contents.on('page-title-updated', () => this.changed(group))
+    contents.on('did-start-navigation', (details) => {
+      if (details.isMainFrame && !details.isSameDocument) delete tab.favicon
+    })
+    contents.on('page-favicon-updated', (_event, favicons) => {
+      // The icon the page names, before the site's default one.
+      const web = favicons.filter((one) => /^https?:\/\//i.test(one))
+      const icon = web.find((one) => !/\/favicon\.ico(?:[?#]|$)/i.test(one)) ?? web[0]
+      if (icon) tab.favicon = icon.slice(0, 2_000)
+    })
     contents.on('will-navigate', (event) => {
       if (!openable(event.url)) event.preventDefault()
     })
@@ -229,6 +244,7 @@ export class Tabs {
       )
     })
     void devtools.sendCommand('Page.enable').catch(() => {})
+    tab.frames.start()
     // An offscreen popup's page is 0×0 whatever its window's size (measured 4 November 2026): it is given its size
     // over DevTools once its page is up, and keeps it when it moves on. (Before a tab's first page, that crashes Electron.)
     if (tab.opener !== undefined)

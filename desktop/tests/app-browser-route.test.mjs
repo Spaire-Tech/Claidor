@@ -329,6 +329,87 @@ test("the cards' fills go where the agent's page is: the app's tab for a task th
   } finally { await dispose(); }
 });
 
+test("the checkout card reads and fills where the agent's page is: the app's tab for a task there, the computer's Chrome otherwise (step 3c)", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/app-browser-checkout.ts", "app-checkout");
+  try {
+    const boxCalls = [];
+    const box = {
+      fill: async (options) => { boxCalls.push(["fill", options.pageHint]); return { ok: true, page: "box.test", filled: ["card number"], missing: [] }; },
+      read: async (options) => { boxCalls.push(["read", options.pageHint]); return "Total $1"; },
+      capture: async (options) => { boxCalls.push(["capture", options.pageHint]); return undefined; },
+      icon: async (address) => (address === "https://shop.test/icon.png" ? { bytes: new Uint8Array([1]), mimeType: "image/png" } : undefined),
+    };
+    const live = { route: "app", browserSession: SESSION, place: "this PC" };
+    const steps = [];
+    let reply = () => ({ ok: true, data: "{}" });
+    const route = {
+      where: (viewId) => (viewId === "agent-app" ? live : undefined),
+      request: async (choice, step, options) => { steps.push({ choice, step, timeoutMs: options.timeoutMs }); return reply(step); },
+      choose: async () => { throw new Error("a checkout never chooses"); },
+    };
+    const checkout = module.routedCheckout(() => route, box);
+    const card = { number: "4242424242424242", cvc: "737", expMonth: 4, expYear: 2031, billing: { name: "Nate Doe", line1: "", line2: "", city: "", state: "", postalCode: "94107", country: "US" } };
+    const logs = [];
+
+    // A task on the computer, a fill with no agent (an older caller), or no route: the computer's own; the app never asked.
+    await checkout.fill({ card, pageHint: "shop.test", agentId: "agent-box" });
+    await checkout.fill({ card, pageHint: "shop.test" });
+    await checkout.read("agent-box", { pageHint: "shop.test" });
+    await module.routedCheckout(() => undefined, box).capture("agent-app", { pageHint: "shop.test" });
+    assert.deepEqual(boxCalls, [["fill", "shop.test"], ["fill", "shop.test"], ["read", "shop.test"], ["capture", "shop.test"]]);
+    assert.equal(steps.length, 0);
+
+    // The card: one `checkout` step with the computer's own marks and values; the agent reads the computer's sentences.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", hinted: true, found: true, filled: ["card number", "expiry", "security code", "billing ZIP", "made up"] }) });
+    assert.deepEqual(await checkout.fill({ card, pageHint: " shop.test/pay ", agentId: "agent-app", ports: [9223] }), { ok: true, page: "shop.test", filled: ["card number", "expiry", "security code", "billing ZIP"], missing: [] });
+    const sent = steps.at(-1);
+    assert.equal(sent.step.op, "checkout");
+    assert.equal(sent.step.viewId, "agent-app");
+    assert.equal(sent.step.screenshot, false);
+    assert.equal(sent.timeoutMs, 60_000);
+    assert.equal(sent.step.args.action, "fill");
+    assert.equal(sent.step.args.pageHint, "shop.test/pay");
+    assert.equal(sent.step.args.expiryLong, "04/2031");
+    assert.equal(sent.step.args.keyDelayMs, 35);
+    assert.deepEqual(sent.step.args.values["card number"], ["4242424242424242"]);
+    assert.deepEqual(sent.step.args.values["expiry month"], ["04", "4"]);
+    assert.deepEqual(sent.step.args.fields.map((field) => field.kind), ["card number", "expiry", "expiry month", "expiry year", "security code", "name on card", "billing ZIP"]);
+    assert.ok(sent.step.args.fields[0].selector.includes('input[autocomplete="cc-number"]'), "the computer's own marks");
+    assert.equal(sent.step.args.fields.find((field) => field.kind === "billing ZIP").frameOnly.includes('input[name="postal"]'), true);
+    assert.equal("ports" in sent.step.args, false, "the computer's ports stay here");
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", hinted: true, found: true, filled: ["card number", "expiry month", "expiry year"] }) });
+    assert.deepEqual((await checkout.fill({ card, pageHint: "shop.test", agentId: "agent-app" })).missing, ["security code"]);
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", hinted: true, found: false }) });
+    assert.deepEqual(await checkout.fill({ card, pageHint: "shop.test", agentId: "agent-app" }), { ok: false, message: 'No card fields on shop.test. Open the checkout\'s payment step (pick "card" if the page offers several ways to pay), then call pay_checkout again.' });
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "", hinted: false, found: false }) });
+    assert.match((await checkout.fill({ card, pageHint: "", agentId: "agent-app" })).message, /^No card fields in any open tab\./);
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", hinted: true, found: true, filled: ["expiry"] }) });
+    assert.deepEqual(await checkout.fill({ card, pageHint: "shop.test", agentId: "agent-app" }), { ok: false, message: "The card number field on shop.test could not be filled. Click into it once and call pay_checkout again." });
+
+    // Link's pay token.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", found: true }) });
+    assert.deepEqual(await checkout.fill({ linkPayToken: "lpt_1", pageHint: "shop.test", agentId: "agent-app" }), { ok: true, page: "shop.test", filled: ["Link pay token"], missing: [] });
+    assert.deepEqual(steps.at(-1).step.args, { action: "token", pageHint: "shop.test", token: "lpt_1" });
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", found: false }) });
+    assert.match((await checkout.fill({ linkPayToken: "lpt_1", pageHint: "shop.test", agentId: "agent-app" })).message, /^The checkout's Link block/);
+
+    // The checkout's text and picture, for the card's total and Review order.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", text: "Total $42.00" }) });
+    assert.equal(await checkout.read("agent-app", { pageHint: "https://shop.test/pay", log: (line) => logs.push(line) }), "Total $42.00");
+    assert.deepEqual([steps.at(-1).step.args, steps.at(-1).timeoutMs], [{ action: "read", pageHint: "https://shop.test/pay" }, 25_000]);
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString("base64");
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", jpegB64: jpeg, iconUrl: "https://shop.test/icon.png" }) });
+    const shot = await checkout.capture("agent-app", { pageHint: "shop.test" });
+    assert.deepEqual([shot.page, [...shot.jpeg.subarray(0, 2)], shot.icon.mimeType], ["shop.test", [0xff, 0xd8], "image/png"]);
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", jpegB64: Buffer.from("not a picture").toString("base64") }) });
+    assert.equal(await checkout.capture("agent-app", { pageHint: "shop.test", log: (line) => logs.push(line) }), undefined);
+    reply = () => ({ ok: false, error: "No tab on shop.test is open in the browser on this PC." });
+    assert.equal(await checkout.read("agent-app", { pageHint: "shop.test", log: (line) => logs.push(line) }), undefined);
+    assert.deepEqual(logs, ["no picture: the app's browser sent none", "no page text: No tab on shop.test is open in the browser on this PC."]);
+    assert.equal(boxCalls.length, 4, "the computer was never asked for a task in the app");
+  } finally { await dispose(); }
+});
+
 test("the app's browser closed: one plain sentence, then the computer; an address starts afresh; a dropped stream is waited for", async () => {
   const { module, dispose } = await load("source/host/extensions/local-browser/local-browser-bridge.ts", "lb-closed");
   try {

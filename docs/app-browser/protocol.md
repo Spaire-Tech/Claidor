@@ -147,13 +147,15 @@ the outline with `[ref=eN]` handles, the page, `data`, the picture. In short:
 | `screenshot` | `browser_take_screenshot` | `fullPage` (at most 2000 pixels on a side, as the helper) |
 | `review_state` | Auto-review | none; see below |
 | `form` | The cards' fills (step 3b) | `action`, `domain`, `fields`, `values`, `submitAfterFill`, `missingAs`, `keyDelayMs`, `value`; see below (no picture) |
+| `checkout` | The checkout card (step 3c-1) | `action`, `pageHint`, `fields`, `values`, `expiryLong`, `keyDelayMs`, `token`; see below (no picture) |
 
 A ref is good only for the latest snapshot of its tab: an old one is
 refused with a sentence that says to take a fresh snapshot.
 
 In the Windows app (step 2a), a frame of another site is named in the
 outline but not read (its controls have no refs; `browser_mouse_click_xy`
-on the picture reaches them). Frames of the page's own site are read.
+on the picture reaches them, since step 3c-1: until then the click went
+to the page around the frame). Frames of the page's own site are read.
 
 **Files.** For `upload_file` the engine reads the files on the computer,
 with the helper's checks (an existing file, inside `/workspace` once links
@@ -186,7 +188,8 @@ sends, with a 60-second deadline:
   current tab first.
 - `fields` (not for `newPassword`): 30 at most,
   `[{ "id": "email", "type": "email", "target": { "ref": "e4", "selector": "#email", "label": "Email" } }]`,
-  each found by its ref, else its selector, else the words that label it.
+  each found by its ref, else its selector, else the words that label it,
+  in the page first, then in its frames of other sites (since 3c-1).
   The types are the card's: `text`, `email`, `tel`, `password`, `otp`,
   `number`, `date`, `select`, `textarea`, `checkbox`.
 - `values` (`fill` only): each field's value by its id, and nothing else.
@@ -203,6 +206,32 @@ The app answers `ok: true` with `data` as JSON, never a value:
 writes the computer's own sentences from it. A step with no tab on the
 site answers `ok: false`. Neither side logs the arguments; the app's log
 has only the op and how long it took.
+
+**`checkout`**, the checkout card (step 3c-1), for a task in the app
+(`desktop/source/host/runner/tools/app-browser-checkout.ts`). The app uses
+the agent's tabs whose address holds `pageHint`, else those on its site or
+under it (the agent's current tab first), as the computer does:
+
+- `read`: the page's text, `{ "page", "text" }`; the card's total is
+  checked against it. 25 seconds at most.
+- `picture`: `{ "page", "jpegB64", "iconUrl" }`, the tab as it shows now
+  and the icon the page names, for Review order. 25 seconds at most.
+- `fill`: Link's or Shop's one-time card. `fields` are the computer's own
+  marks, in the order they are filled:
+  `[{ "kind": "card number", "selector": "…", "frameOnly": "…" }]` (the
+  kinds: card number, expiry, expiry month, expiry year, security code,
+  name on card, billing ZIP); `values` each kind's spellings
+  (`{ "expiry month": ["04", "4"] }`); `expiryLong` the expiry for a field
+  asking for `YYYY`; `keyDelayMs` 35 unless given. The answer:
+  `{ "page", "hinted", "found", "filled": [kinds] }`, never a value. 60
+  seconds at most.
+- `token`: Link's pay token into Link's block (`.AiAgentPaymentSteering`
+  with `link_pay_token`): `{ "page", "found" }`.
+
+The card's fields are looked for in the page and in its frames of other
+sites (a payment provider's); a list (a month, a year) is chosen, every
+other field typed key by key. The engine writes the computer's own
+sentences from the answer. Neither side logs the arguments.
 
 **While the person has control** (Take control in the Computer tab's full
 view, step 2b), nothing on the line changes. In the app:
