@@ -44606,6 +44606,64 @@
         }
       }
     },
+    "Typed into the page on this PC, never shown to your agent." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird auf diesem PC in die Seite eingetragen und deinem Agenten nie gezeigt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se escribe en la página en esta PC y nunca se muestra a tu agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisi dans la page sur ce PC, jamais montré à ton agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserito nella pagina su questo PC, mai mostrato al tuo agente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt op deze pc in de pagina ingetypt en nooit aan je agent getoond."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisywane na stronie na tym komputerze, nigdy nie pokazywane agentowi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitado na página neste PC, nunca mostrado ao seu agente."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrivs in på sidan på den här datorn och visas aldrig för din agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bilgisayardaki sayfaya yazılır, ajanına asla gösterilmez."
+          }
+        }
+      }
+    },
     "Typing…" : {
       "localizations" : {
         "de" : {

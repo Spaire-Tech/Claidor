@@ -40,7 +40,10 @@ Windows' own parts around it. The plan and the record are
   Downloads\Simeon. The Computer tab shows an agent's tab as a live picture
   (`view.ts`: the page watches one agent, the tab's paints come as JPEGs)
   and the person can Take control (`control.ts`: the agent's steps wait;
-  the pointer, wheel and keys go to the tab).
+  the pointer, wheel and keys go to the tab). The cards' fills (the in-chat
+  form, 1Password, saved logins, a new password) are typed into the agent's
+  tab here, key by key (the `form` op in `steps.ts`); their values are
+  never logged or sent back.
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 

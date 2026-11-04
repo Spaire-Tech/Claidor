@@ -53,7 +53,7 @@ import {
   setupURL,
 } from '../desktop/onePassword'
 import { t } from '../l10n'
-import { handBack, openAgentScreen } from './BrowserView'
+import { handBack, openAgentScreen, useOnThisPC } from './BrowserView'
 import { CardButton, type CardProps, CardShell, GrowingField } from './Cards'
 import { classes } from './classes'
 import { Alert } from './Dialogs'
@@ -508,6 +508,8 @@ function UserFormCardView({
   const [refusal, setRefusal] = useState<string>()
   const ids = useId()
   const open = card.state === 'open'
+  // In the Windows app, the page may be in this PC's browser (step 3b of docs/app-browser/README.md): the lock line says where.
+  const onPC = useOnThisPC(store, agentId, open)
   const status = formStatusLine(card)
   const dot: Dot | undefined =
     card.state === 'filled'
@@ -692,9 +694,15 @@ function UserFormCardView({
             </div>
           )}
           <LockLine
-            words={t(
-              "Typed into the page on Simeon's computer, never shown to your agent.",
-            )}
+            words={
+              onPC
+                ? t(
+                    'Typed into the page on this PC, never shown to your agent.',
+                  )
+                : t(
+                    "Typed into the page on Simeon's computer, never shown to your agent.",
+                  )
+            }
           />
         </>
       ) : card.state === 'filled' || card.state === 'filling' ? (

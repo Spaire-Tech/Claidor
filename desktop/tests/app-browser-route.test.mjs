@@ -249,6 +249,86 @@ test("where a task is now (step 3, the cards): its app while that browser is con
   } finally { await dispose(); }
 });
 
+test("the cards' fills go where the agent's page is: the app's tab for a task there, the computer's Chrome otherwise (step 3b)", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/app-browser-forms.ts", "app-forms");
+  try {
+    const boxCalls = [];
+    const box = {
+      check: async (options) => { boxCalls.push(["check", options.domain]); return { ok: true, page: "box.test" }; },
+      locate: async (options) => { boxCalls.push(["locate", options.domain]); return { ok: true, page: "box.test", found: [] }; },
+      fill: async (options) => { boxCalls.push(["fill", options.domain]); return { ok: true, page: "box.test", outcomes: {}, submitted: false }; },
+      newPassword: async (options) => { boxCalls.push(["newPassword", options.domain]); return { ok: true, page: "box.test", filled: 0, failed: 0 }; },
+    };
+    const live = { route: "app", browserSession: SESSION, place: "this PC" };
+    const steps = [];
+    let reply = () => ({ ok: true, data: "{}" });
+    const route = {
+      where: (viewId) => (viewId === "agent-app" ? live : undefined),
+      request: async (choice, step, options) => { steps.push({ choice, step, timeoutMs: options.timeoutMs }); return reply(step); },
+      choose: async () => { throw new Error("a fill never chooses"); },
+    };
+    const forms = module.routedForms(() => route, box);
+    const fields = [
+      { id: "email", type: "email", target: { ref: "e3" } },
+      { id: "password", type: "password", target: { label: "Password" } },
+    ];
+    const options = { domain: "shop.test", fields, ports: [9223], values: { email: "nate@example.com", password: "s3cret", other: "never sent" } };
+
+    // A task on the computer, or no route at all: the computer's own fill, the app never asked.
+    await forms.fill("agent-box", options);
+    await module.routedForms(() => undefined, box).check("agent-app", options);
+    assert.deepEqual(boxCalls, [["fill", "shop.test"], ["check", "shop.test"]]);
+    assert.equal(steps.length, 0);
+
+    // A task in the app: one `form` step with the fields and only their values; ports stay home.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", outcomes: { email: "filled", password: "notFound", extra: "filled" }, submitted: false }) });
+    const filled = await forms.fill("agent-app", { ...options, missingAs: "notFound" });
+    assert.deepEqual(filled, { ok: true, page: "shop.test", outcomes: { email: "filled", password: "notFound" }, submitted: false });
+    const sent = steps.at(-1);
+    assert.equal(sent.step.op, "form");
+    assert.equal(sent.step.viewId, "agent-app");
+    assert.equal(sent.step.screenshot, false);
+    assert.deepEqual(sent.step.args, {
+      action: "fill",
+      domain: "shop.test",
+      fields: [
+        { id: "email", type: "email", target: { ref: "e3" } },
+        { id: "password", type: "password", target: { label: "Password" } },
+      ],
+      values: { email: "nate@example.com", password: "s3cret" },
+      submitAfterFill: false,
+      missingAs: "notFound",
+    });
+    assert.equal(sent.timeoutMs, 60_000);
+
+    // An outcome the app doesn't say, or says wrong, is a failure, never a fill.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", outcomes: { email: "done" } }) });
+    assert.deepEqual((await forms.fill("agent-app", options)).outcomes, { email: "fillFailed", password: "fillFailed" });
+
+    // The check and the locate send no values; the check's sentence is the computer's.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", missing: ["password"], found: ["email"] }) });
+    assert.deepEqual(await forms.check("agent-app", options), { ok: false, missing: ["password"], message: "These fields can't be found on shop.test: password." });
+    assert.equal("values" in steps.at(-1).step.args, false);
+    assert.deepEqual(await forms.locate("agent-app", options), { ok: true, page: "shop.test", found: ["email"] });
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", missing: [] }) });
+    assert.deepEqual(await forms.check("agent-app", options), { ok: true, page: "shop.test" });
+
+    // A new password: its value goes, how many went in comes back.
+    reply = () => ({ ok: true, data: JSON.stringify({ page: "shop.test", filled: 2, failed: 0 }) });
+    assert.deepEqual(await forms.newPassword("agent-app", { domain: "shop.test", value: "N3w!", ports: [] }), { ok: true, page: "shop.test", filled: 2, failed: 0 });
+    assert.deepEqual(steps.at(-1).step.args, { action: "newPassword", domain: "shop.test", value: "N3w!" });
+
+    // The app's own sentence, a stream gone, an answer that can't be read.
+    reply = () => ({ ok: false, error: "No tab on shop.test is open in the browser on this PC." });
+    assert.deepEqual(await forms.fill("agent-app", options), { ok: false, message: "No tab on shop.test is open in the browser on this PC." });
+    reply = () => { throw new Error("The browser on this PC stopped answering; try the step again."); };
+    assert.deepEqual(await forms.locate("agent-app", options), { ok: false, message: "The browser on this PC stopped answering; try the step again." });
+    reply = () => ({ ok: true, data: "not json" });
+    assert.deepEqual(await forms.check("agent-app", options), { ok: false, message: "The browser's answer couldn't be read." });
+    assert.equal(boxCalls.length, 2, "the computer was never asked for a task in the app");
+  } finally { await dispose(); }
+});
+
 test("the app's browser closed: one plain sentence, then the computer; an address starts afresh; a dropped stream is waited for", async () => {
   const { module, dispose } = await load("source/host/extensions/local-browser/local-browser-bridge.ts", "lb-closed");
   try {

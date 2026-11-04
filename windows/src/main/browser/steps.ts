@@ -76,6 +76,42 @@ function strings(args: JSONObject, key: string): string[] | undefined {
   return Array.isArray(value) ? value.filter((one): one is string => typeof one === 'string') : undefined
 }
 
+/** A site as a card names it: its host, "www." aside, in lower case; nothing for a page that has none. */
+function siteOf(address: string): string {
+  const trimmed = address.trim()
+  if (trimmed === '') return ''
+  try {
+    const url = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return ''
+    return url.hostname.replace(/^www\./, '').toLowerCase()
+  } catch {
+    return ''
+  }
+}
+
+const fieldTypes = new Set(['text', 'email', 'tel', 'password', 'otp', 'number', 'date', 'select', 'textarea', 'checkbox'])
+
+/** A card's fields as the engine sends them: an id, a type, and where it is (a ref, a selector, the words that label it). */
+function formFields(raw: unknown): { id: string; type: string; target: { ref?: string; selector?: string; label?: string } }[] {
+  if (!Array.isArray(raw) || raw.length === 0) throw new StepError('The form names no field.')
+  if (raw.length > 30) throw new StepError('The form has too many fields (30 at most).')
+  return raw.map((one) => {
+    const field = typeof one === 'object' && one !== null && !Array.isArray(one) ? (one as JSONObject) : {}
+    const id = typeof field.id === 'string' && field.id.length > 0 && field.id.length <= 100 ? field.id : undefined
+    if (id === undefined) throw new StepError('A field of the form has no id.')
+    const target = typeof field.target === 'object' && field.target !== null && !Array.isArray(field.target) ? (field.target as JSONObject) : {}
+    const short = (value: unknown, max: number) => (typeof value === 'string' && value.length > 0 && value.length <= max ? value : undefined)
+    const ref = short(target.ref, 40)
+    const selector = short(target.selector, 500)
+    const label = short(target.label, 200)
+    return {
+      id,
+      type: typeof field.type === 'string' && fieldTypes.has(field.type) ? field.type : 'text',
+      target: { ...(ref ? { ref } : {}), ...(selector ? { selector } : {}), ...(label ? { label } : {}) },
+    }
+  })
+}
+
 function need(value: string | undefined, name: string): string {
   if (value === undefined) throw new StepError(`${name} is required.`)
   return value
@@ -293,6 +329,8 @@ export class Steps {
       }
       case 'review_state':
         return { ok: true, summary: 'The agent’s tabs.', data: JSON.stringify(this.tabs.reviewState(viewId)) }
+      case 'form':
+        return this.form(request, signal)
     }
   }
 
@@ -541,6 +579,125 @@ export class Steps {
     if (page.width > fullPageMaxSide || page.height > fullPageMaxSide)
       summary = `The page is ${page.width}×${page.height} pixels; the picture shows ${height} of them, from ${top} to ${top + height}. Scroll and take another to see the rest.`
     return this.finish(request, tab, summary, undefined, shot.data)
+  }
+
+  // MARK: The cards' fills (step 3b of docs/app-browser/README.md)
+
+  /**
+   * The in-chat form, 1Password, a saved login, a new password: what the
+   * person gave is typed into the agent's tab on the site the card named,
+   * key by key as a person types, into the fields the card points at (the
+   * ref of the last snapshot, a selector, or the words that label it). The
+   * answer says which fields went in, never what; nothing of the values is
+   * kept or logged. `check` and `locate` only look for the fields.
+   */
+  private async form(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
+    const { args, viewId } = request
+    const action = text(args, 'action')
+    if (!['check', 'locate', 'fill', 'newPassword'].includes(action ?? '')) throw new StepError('action must be one of check, locate, fill, newPassword.')
+    const domain = siteOf(text(args, 'domain') ?? '')
+    if (domain === '') throw new StepError("The form needs the site's domain, as the browser bar shows it.")
+    const current = this.tabs.currentTab(viewId)
+    const onSite = [current, ...this.tabs.groupTabs(viewId).filter((tab) => tab !== current)].filter(
+      (tab): tab is Tab => tab !== undefined && !tab.contents.isDestroyed() && siteOf(tab.contents.getURL()) === domain,
+    )
+    if (onSite.length === 0) throw new StepError(`No tab on ${domain} is open in the browser on this PC. Open the page first (OpenPage, or the browser helper), then ask again.`)
+    const delay = Math.max(0, Math.min(200, number(args, 'keyDelayMs') ?? 25))
+    const looked: Tab[] = []
+    try {
+      if (action === 'newPassword') {
+        const tab = onSite[0] as Tab
+        looked.push(tab)
+        const value = typeof args.value === 'string' ? args.value : ''
+        const { count } = await this.helper<{ count: number }>(tab, 'passwordFields')
+        let filled = 0
+        let failed = 0
+        for (let index = 0; index < count && value.length > 0; index += 1) {
+          if (await this.fillField(tab, `password:${index}`, 'password', value, delay, signal)) filled += 1
+          else failed += 1
+        }
+        return { ok: true, summary: `Typed a new password on ${domain}.`, data: JSON.stringify({ page: domain, filled, failed }) }
+      }
+      const fields = formFields(args.fields)
+      // The tab whose fields are all there (the most of them, else): a sign-in may be open twice.
+      let best: { tab: Tab; found: string[]; missing: string[] } | undefined
+      for (const tab of onSite) {
+        looked.push(tab)
+        const located = await this.helper<{ found: string[]; missing: string[] }>(tab, 'formFind', fields)
+        if (best === undefined || located.missing.length < best.missing.length) best = { tab, ...located }
+        if (located.missing.length === 0) break
+      }
+      const chosen = best as { tab: Tab; found: string[]; missing: string[] }
+      if (action === 'check') return { ok: true, summary: `Looked for the form's fields on ${domain}.`, data: JSON.stringify({ page: domain, missing: chosen.missing }) }
+      if (action === 'locate') return { ok: true, summary: `Looked for the fields on ${domain}.`, data: JSON.stringify({ page: domain, found: chosen.found }) }
+      const values = typeof args.values === 'object' && args.values !== null && !Array.isArray(args.values) ? (args.values as JSONObject) : {}
+      const missingAs = text(args, 'missingAs') === 'notFound' ? 'notFound' : 'fillFailed'
+      const outcomes: Record<string, string> = {}
+      for (const field of fields) {
+        checkpoint(signal)
+        const value = typeof values[field.id] === 'string' ? (values[field.id] as string) : ''
+        if (value.length === 0) outcomes[field.id] = 'notFilled'
+        else if (!chosen.found.includes(field.id)) outcomes[field.id] = missingAs
+        else outcomes[field.id] = (await this.fillField(chosen.tab, `form:${field.id}`, field.type, value, delay, signal)) ? 'filled' : 'fillFailed'
+      }
+      // Enter only for one field that went in (a one-time code); nothing else is ever sent.
+      let submitted = false
+      const only = fields[0]
+      if (args.submitAfterFill === true && fields.length === 1 && only !== undefined && outcomes[only.id] === 'filled') {
+        submitted = await this.helper(chosen.tab, 'focus', `form:${only.id}`, false)
+          .then(() => this.press(chosen.tab, 'Enter'))
+          .then(() => true, () => false)
+        await this.settle(viewId, chosen.tab, Date.now())
+      }
+      return { ok: true, summary: `Filled the form on ${domain}.`, data: JSON.stringify({ page: domain, outcomes, submitted }) }
+    } finally {
+      await Promise.all(looked.map((tab) => this.helper(tab, 'formForget').catch(() => undefined)))
+    }
+  }
+
+  /** One field: ticked, chosen, set (a date field), or typed key by key; whether it holds what was asked. A failure is false, a stopped step stops. */
+  private async fillField(tab: Tab, ref: string, type: string, value: string, delay: number, signal: AbortSignal): Promise<boolean> {
+    try {
+      const kind = await this.helper<{ tag: string; inputType: string; role: string }>(tab, 'fieldKind', ref)
+      if (type === 'checkbox') {
+        const wanted = /^(true|yes|on|1|checked)$/i.test(value.trim())
+        if (kind.tag === 'INPUT') await this.helper(tab, 'fill', ref, wanted ? 'true' : 'false')
+        else if ((await this.helper<{ checked?: boolean }>(tab, 'holds', ref)).checked !== wanted) {
+          const point = await this.aim(tab, ref)
+          await this.click(tab, point.x, point.y, {})
+        }
+        return (await this.helper<{ checked?: boolean }>(tab, 'holds', ref)).checked === wanted
+      }
+      if (type === 'select') {
+        if (kind.tag !== 'SELECT') return false
+        await this.helper(tab, 'choose', ref, [value])
+        return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+      }
+      if (type === 'date' && kind.inputType === 'date') {
+        await this.helper(tab, 'fill', ref, value)
+        return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+      }
+      let focus = await this.helper<{ focused: boolean }>(tab, 'focus', ref, true)
+      if (!focus.focused) {
+        const point = await this.aim(tab, ref)
+        await this.click(tab, point.x, point.y, {})
+        focus = await this.helper(tab, 'focus', ref, true)
+      }
+      if (!focus.focused) return false
+      // What was there goes (the focus selected it), then each key as a person presses it.
+      await this.press(tab, 'Backspace')
+      for (const character of value) {
+        checkpoint(signal)
+        const key = readKey(character)
+        if (key?.text !== undefined && key.code !== '') await this.pressKey(tab, key)
+        else await this.cdp(tab, 'Input.insertText', { text: character })
+        if (delay > 0) await sleep(delay)
+      }
+      return (await this.helper<{ holds: boolean }>(tab, 'holds', ref)).holds
+    } catch (error) {
+      if (error instanceof Stopped) throw error
+      return false
+    }
   }
 
   // MARK: The parts of a step

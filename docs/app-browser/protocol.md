@@ -146,6 +146,7 @@ the outline with `[ref=eN]` handles, the page, `data`, the picture. In short:
 | `tabs` | `browser_tabs` | `action` (`list`, `new`, `close`, `select`), `index` (no picture) |
 | `screenshot` | `browser_take_screenshot` | `fullPage` (at most 2000 pixels on a side, as the helper) |
 | `review_state` | Auto-review | none; see below |
+| `form` | The cards' fills (step 3b) | `action`, `domain`, `fields`, `values`, `submitAfterFill`, `missingAs`, `keyDelayMs`, `value`; see below (no picture) |
 
 A ref is good only for the latest snapshot of its tab: an old one is
 refused with a sentence that says to take a fresh snapshot.
@@ -173,6 +174,35 @@ failure, or a `data` without `pages`, refuses the step under review.
 engine asks the app for a `screenshot` (8 seconds at most) and the card
 shows that picture instead of the computer's screen. Nothing else changes
 on the line; the person's answer goes to the engine as before.
+
+**`form`**, the cards' fills (step 3b): the in-chat form, 1Password's
+fill, the saved login and the new password, for a task in the app
+(`desktop/source/host/runner/tools/app-browser-forms.ts`). The engine
+sends, with a 60-second deadline:
+
+- `action`: `check` or `locate` (only look for the fields), `fill`, or
+  `newPassword`.
+- `domain`: the card's site; the app uses the agent's tabs on it, its
+  current tab first.
+- `fields` (not for `newPassword`): 30 at most,
+  `[{ "id": "email", "type": "email", "target": { "ref": "e4", "selector": "#email", "label": "Email" } }]`,
+  each found by its ref, else its selector, else the words that label it.
+  The types are the card's: `text`, `email`, `tel`, `password`, `otp`,
+  `number`, `date`, `select`, `textarea`, `checkbox`.
+- `values` (`fill` only): each field's value by its id, and nothing else.
+- `submitAfterFill` (`fill`): Enter after a one-field form whose field
+  went in; `missingAs`: `fillFailed` or `notFound`, for a field not found.
+- `value` (`newPassword`): the password, typed into the page's
+  new-password fields (three at most).
+- `keyDelayMs`: between keys, 25 unless given, 200 at most.
+
+The app answers `ok: true` with `data` as JSON, never a value:
+`{ "page", "missing": [ids] }` (`check`), `{ "page", "found": [ids] }`
+(`locate`), `{ "page", "outcomes": { id: "filled" | "fillFailed" | "notFilled" | "notFound" }, "submitted" }`
+(`fill`), `{ "page", "filled", "failed" }` (`newPassword`). The engine
+writes the computer's own sentences from it. A step with no tab on the
+site answers `ok: false`. Neither side logs the arguments; the app's log
+has only the op and how long it took.
 
 **While the person has control** (Take control in the Computer tab's full
 view, step 2b), nothing on the line changes. In the app:
