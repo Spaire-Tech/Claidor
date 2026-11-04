@@ -1658,6 +1658,11 @@ class BoxBrokerService:
                 # The computer used only for runs (26 October 2026): asleep
                 # soon after its last run, woken for the next.
                 idle_after = min(idle_after, settings.BOX_IDLE_AFTER_RUN)
+            # What the update check found, said when the box is put to sleep
+            # (4 November 2026: the founder's computer slept with no line
+            # saying whether it was out of date, and why it was not updated).
+            seen: OutOfDate | None = None
+            update_sent = False
             if (
                 update is not None
                 and not health.holds_awake
@@ -1676,6 +1681,7 @@ class BoxBrokerService:
                 # minutes for hours, never updated, its skip never logged.
                 # The turn waiting on the card ends with the old container.
                 _, stale = await self._out_of_date(db, host, box)
+                seen = stale
                 if stale and not health.reachable:
                     # Its backup can't be brought up to date unheard: it
                     # waits, and says so once in a while.
@@ -1700,7 +1706,13 @@ class BoxBrokerService:
                         first = await redis.set(
                             update_key(box.id), "1", ex=UPDATE_RETRY_SECONDS, nx=True
                         )
-                    except Exception:
+                        update_sent = not first
+                    except Exception as error:
+                        log.warning(
+                            "sand.box.update_idle.unsent",
+                            box=str(box.id),
+                            error=str(error),
+                        )
                         first = False
                     if first:
                         log.info(
@@ -1738,6 +1750,21 @@ class BoxBrokerService:
                 # message the box can't take never keeps it awake for good.
                 log.info("sand.box.sleep.deferred", box=str(box.id), reason="inbox")
                 continue
+            log.info(
+                "sand.box.sleep",
+                box=str(box.id),
+                idle_minutes=round((now - idle_since).total_seconds() / 60, 1),
+                idle_after_minutes=round(idle_after.total_seconds() / 60, 1),
+                reachable=health.reachable,
+                awaiting_approval=health.busy_only_awaiting_approval,
+                update_checked=seen is not None,
+                out_of_date=bool(seen) if seen is not None else None,
+                stale_host=seen.host if seen is not None else None,
+                stale_image=seen.image if seen is not None else None,
+                stale_store=seen.store if seen is not None else None,
+                stale_browser=seen.browser if seen is not None else None,
+                update_sent_before=update_sent,
+            )
             try:
                 outcome = await self.hibernate(
                     db, host, box, force=False, health=health

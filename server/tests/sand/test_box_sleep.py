@@ -354,6 +354,31 @@ class TestSleep:
         await broker.hibernate_idle(session, redis, update=sent.append)
         assert sent == []
 
+    async def test_the_sleep_line_says_what_the_update_check_saw(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """4 November 2026: the founder's computer was put to sleep with no
+        line saying whether it was out of date or why it was not updated."""
+        from structlog.testing import capture_logs
+
+        _, box = await _awake_box(client, session, user)
+        await _age(session, box, 31)
+        with capture_logs() as logs:
+            assert await broker.hibernate_idle(
+                session, redis, update=lambda _: None
+            ) == [box.id]
+        line = next(one for one in logs if one["event"] == "sand.box.sleep")
+        assert line["update_checked"] is True
+        assert line["out_of_date"] is False
+        assert line["reachable"] is True
+        assert line["update_sent_before"] is False
+
     async def test_a_box_only_waiting_on_an_approval_is_updated(
         self,
         client: httpx.AsyncClient,
