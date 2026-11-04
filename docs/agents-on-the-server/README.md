@@ -1,6 +1,8 @@
 # The agents on the server, the computer as their hands
 
-A plan, 4 November 2026. Nothing in it is built yet.
+A plan, 4 November 2026. Step 0 (prove it) is done; what it found is in
+[What step 0 found](#what-step-0-found-4-november-2026). Nothing else is
+built yet.
 
 ## What the founder asked for
 
@@ -59,7 +61,8 @@ last:
 Today a running job already keeps it awake (`BoxHealth.holds_awake`). An
 open screen most likely does too, since its connection to the proxy does
 not carry the app's "let it sleep" mark (`box_proxy.keep_attached`), but
-that is not confirmed. Step 0 checks both.
+that is not confirmed. Step 0 reached no real computer, so step 1 checks
+both on the founder's.
 
 **In practice:**
 - **The person closes the app mid-task.** The agent goes on, on the
@@ -102,9 +105,130 @@ computer only.
   are the computer's exec daemon (`desktop/source/box-exec-daemon`). It
   runs commands, reads and writes files and starts the browser driver, at
   `127.0.0.1:1337`, with a token (`host/box/loopback-sand-box.ts`,
-  `BoxEndpoint`). The browser tools are a script the engine runs on the
-  computer through it (`sand-browser-driver-source.ts`). Whether all of it
-  works from outside the computer has never been tried. Step 0 proves it.
+  `BoxEndpoint`). Each agent also has a window of its own on the computer
+  (`box/bin/start-window`): a desktop on display :N with its own hands on
+  `14000+N`, reached through the window router on `1339`
+  (`box/bin/simeon-window-router.mjs`). The browser tools are a script the
+  engine runs on the computer through the hands
+  (`sand-browser-driver-source.ts`). Step 0 ran all of this from outside
+  the computer; see below.
+
+## What step 0 found (4 November 2026)
+
+**The short answer: it works.** The engine, unchanged, ran outside a
+computer. An agent's turn ran start to finish, and its command reached a
+stand-in computer through the computer's own router and ran there. No real
+server, model or computer was reached: the API and the model were stand-ins,
+and so was the computer.
+
+**How it was run.** All in a test machine (Linux), with the probe in
+`desktop/scripts/agents-on-the-server/`:
+
+- `build-host.mjs <dir>`: the engine built as `scripts/build-simeon.mjs`
+  builds it (the engine, its four worker threads, the agent coordinator),
+  in 2.6 s.
+- `stand-in-api.mjs <port> <log>`: a stand-in for the API. It writes down
+  every call. It answers the model credential and the model: the stand-in
+  model asks for one Shell command, then tells the person what came back
+  with SendMessage. Everything else gets 404.
+- The stand-in computer: the real hands program (`hands-daemon.ts`, the
+  daemon started by itself), the real window router
+  (`box/bin/simeon-window-router.mjs` on 1339), and
+  `stand-in-start-window.sh` in place of `/usr/local/bin/start-window`. It
+  starts a window's hands program but no screen, since the test machine
+  has none.
+- `hands-client.ts`: the engine's own client, driving the hands program
+  directly over the network.
+
+The engine was started with its data in a folder of its own
+(`SAND_DATA_ROOT`), its gateway on a local port with a token, and
+`SAND_BACKEND_URL` pointing at the stand-in.
+
+**What was measured:**
+
+| | |
+|---|---|
+| Engine start, to its gateway answering | about 1 s |
+| Engine at rest | 244 MB of memory, 0.4% of one CPU |
+| Engine during a turn | 350–380 MB at the most; about 0.3 s of CPU per turn |
+| An app command through the gateway (status, the agent list) | 2–5 ms |
+| A whole turn (message, command, reply), the agent's window already open | about 460 ms |
+| From the model asking for the command to its result going back | 86–88 ms, two safety checks included |
+| The command itself on the computer | 8 ms |
+| The first command of an agent's turn, its window not yet open | about 400 ms more (start-window) |
+| The hands program directly, over the network (step 0b) | ping 15–22 ms, a command 12 ms, a file read 5–6 ms |
+
+The stand-in model answers at once, so a real turn is as slow as the real
+model plus these numbers. The distance to E2B through the API's proxy is not
+in them; it is measured in step 1.
+
+**What the engine asks of the server** (one start and four turns): the
+model and its credential, the model list, the chat copy, the inbox, memory,
+routines' events, teams, skills, plugins, privacy mode, notifications,
+sharing and channels. All of them are the API's own routes. None is the
+computer.
+
+**Where an agent's work lands.** `Shell` ran in the agent's window on the
+computer, in `/workspace`, through the router on 1339. A file it made was in
+the computer's `/workspace`, not on the engine's machine. `ExternalShell` and
+`ExternalRead` are the Mac's own hands (the local-exec line) and are
+unchanged by this plan.
+
+**What has to change for step 1.** Each one was found by running it:
+
+1. **Where the engine finds its hands.** Today it dials `127.0.0.1:1337` and
+   `127.0.0.1:1339` with the token `local` (`loopback-sand-box.ts`,
+   `box-windows.ts`). From the server it must dial the person's computer
+   through the API's proxy, with a token that is that computer's own, over
+   https and a path, not `http://host:port`. One door is enough: the router on
+   1339 already sends a request without a window header to the main hands
+   program.
+2. **The router's door, opened only to the brain.** Today nothing outside
+   the computer can reach 1337 or 1339. E2B's public traffic is off
+   (`box_e2b.py`, `allow_public_traffic: False`), and the API's proxy
+   forwards only 1340, 6080, 6081 and 8790 (`box_hosts.py`, `BOX_PORTS`).
+   Step 1 adds 1339 for the brain alone. The hands behind the router accept
+   `local`, so the router must check the computer's own token before passing
+   anything on.
+3. **Files are written through the shell.** The hands program has no write
+   call (`writeArgs` is refused), so the engine's writes already go through
+   the shell. Over the network that took 75 ms for 100 KB in 30 KB pieces;
+   one long command fails (`E2BIG`).
+4. **Six places check `SAND_HOST_IN_BOX`** (the plan said five before it
+   was run):
+   - the engine updating itself (`host-upgrade`): off on the server, since
+     Render deploys it;
+   - sending its log from the computer (`box-log-shipper.ts`): off, since
+     Render keeps the log;
+   - **phone notifications: today only an engine inside a computer sends
+     them** (`mobile-push-notifier.ts`), so the brain must send them;
+   - the computer's rebuild and update (`forever-box`), which today assumes
+     it runs on the computer it rebuilds;
+   - the computer's disk check (`forever-box`): it belongs to the computer,
+     not the brain;
+   - writing the agents' reference pages (`/home/box/reference`: the
+     computer guide, the app guide, the routines guide), which agents read
+     on the computer. The brain must write them to the computer through
+     the hands, or the computer image must carry them.
+5. **The engine must not start a hands program of its own.** It does so
+   unless `SAND_USE_EXISTING_BOX_EXEC_DAEMON=1`. With that set it also uses
+   the agents' own windows, as on the computer.
+6. **Its native parts.** The command parser (tree-sitter) is loaded from
+   the installed packages (`SAND_TREE_SITTER_NODE_DEPS`, `NODE_PATH`), so
+   the brain's image installs them.
+7. **The computer has to be awake.** Start-window, the router and the hands
+   all live on the computer. When it sleeps, the engine's command waits for
+   the wake (step 1: "asks the API for the computer").
+
+**Not verified in step 0:**
+
+- the founder's real computer, through the API's proxy (step 1);
+- a real model;
+- the browser driver and a real Chrome: they go over the same shell path,
+  but the test machine has no screen;
+- a file read through an agent's `Read` (read was checked through the
+  client only, at 5–6 ms);
+- connectors (the stand-in answered 404).
 
 ## The design
 
@@ -148,21 +272,18 @@ Two rules hold:
 
 ## The order of work
 
-0. **Prove it.** Run the engine outside a computer,
-   here and against a stand-in computer, then against the founder's
-   computer through the proxy. Measure:
-   - which of the five `SAND_HOST_IN_BOX` places, and which paths that
-     assume `/home/box`, break;
-   - whether commands, files and the browser driver work over the network,
-     and how slowly;
-   - the engine's memory and CPU at rest and during a turn.
-
-   This gives the real cost and the list of changes.
+0. **Prove it. Done, 4 November 2026** ([what it found](#what-step-0-found-4-november-2026)).
+   The engine ran outside a computer against a stand-in computer, with its
+   memory, CPU and speed measured and the list of changes written. The
+   founder's computer through the proxy moved into step 1, so that step 0
+   reached nothing real.
 1. **The brain service.** The founder's engine on Render, with their data
    copied from their computer's backup. The proxy sends
-   their apps to it; their computer is reached only for its hands. Checked by talking to an
+   their apps to it; their computer is reached only for its hands. It
+   carries the seven changes step 0 found. Checked by talking to an
    agent and using a connector with the computer asleep, then opening a
-   website, which wakes it.
+   website, which wakes it, with the time each step takes through the
+   proxy written down.
 2. **Cards on the server.** Hand-offs, approvals and permission prompts
    live in the engine's data, not its memory, so a restart can't strand
    them.
@@ -188,8 +309,11 @@ Two rules hold:
 
 ## What is not known yet
 
-- How much the engine depends on being inside the computer. Step 0 answers
-  it.
-- The cost of an always-on engine per person.
-- How long a step takes through the proxy, compared with inside the
-  computer.
+- How long a step takes through the proxy to E2B. Inside the test machine,
+  the command's round trip was 86–88 ms; step 1 measures it for real.
+- The cost on Render. Step 0 measured the engine at 244 MB at rest and
+  under 400 MB during a turn, and nearly no CPU at rest. That fits a
+  1 GB service with room to spare; the price is read when step 1 picks the
+  plan.
+- Whether an open screen keeps the computer awake (step 0 did not reach a
+  real computer).
