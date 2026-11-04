@@ -27,6 +27,8 @@ export interface StepsOptions {
   pointer?(group: string, x: number, y: number, type: 'move' | 'click' | 'drag' | 'scroll'): void
   /** An agent's steps started or settled. */
   activity?(group: string): void
+  /** Where this browser is, in its sentences: "this PC", or "this Mac" for the Mac's helper (step 4). */
+  place?: string
 }
 
 /** A step that waited out its time for the person to give control back says so this long before its deadline. */
@@ -269,6 +271,10 @@ export class Steps {
 
   private get tabs(): Tabs {
     return this.options.tabs
+  }
+
+  private get place(): string {
+    return this.options.place ?? 'this PC'
   }
 
   private async step(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
@@ -641,7 +647,7 @@ export class Steps {
     const onSite = [current, ...this.tabs.groupTabs(viewId).filter((tab) => tab !== current)].filter(
       (tab): tab is Tab => tab !== undefined && !tab.contents.isDestroyed() && siteOf(tab.contents.getURL()) === domain,
     )
-    if (onSite.length === 0) throw new StepError(`No tab on ${domain} is open in the browser on this PC. Open the page first (OpenPage, or the browser helper), then ask again.`)
+    if (onSite.length === 0) throw new StepError(`No tab on ${domain} is open in the browser on ${this.place}. Open the page first (OpenPage, or the browser helper), then ask again.`)
     const delay = Math.max(0, Math.min(200, number(args, 'keyDelayMs') ?? 25))
     const looked: Place[] = []
     try {
@@ -798,7 +804,7 @@ export class Steps {
     const pageOf = (tab: Tab | undefined) => (tab === undefined ? site : siteOf(address(tab)))
     if (action === 'read' || action === 'picture') {
       const showing = [...byAddress, ...bySite].slice(0, 2)
-      if (showing.length === 0) throw new StepError(`No tab on ${site || 'the checkout'} is open in the browser on this PC.`)
+      if (showing.length === 0) throw new StepError(`No tab on ${site || 'the checkout'} is open in the browser on ${this.place}.`)
       for (const tab of showing) {
         checkpoint(signal)
         if (action === 'read') {
@@ -813,7 +819,7 @@ export class Steps {
       }
       throw new StepError(`The tab on ${pageOf(showing[0])} didn't answer.`)
     }
-    if (mine.length === 0) throw new StepError('No tab is open in the browser on this PC. Open the checkout page first.')
+    if (mine.length === 0) throw new StepError(`No tab is open in the browser on ${this.place}. Open the checkout page first.`)
     const hinted = hint === '' ? mine : byAddress.length > 0 ? byAddress : bySite
     const candidates = hinted.length > 0 ? hinted : mine
     const looked: Place[] = []
@@ -928,7 +934,7 @@ export class Steps {
     }
     const current = this.tabs.currentTab(viewId)
     const tab = [current, ...this.tabs.groupTabs(viewId).filter((one) => one !== current)].find((one): one is Tab => one !== undefined && !one.contents.isDestroyed() && isPay(one.contents.getURL()))
-    if (tab === undefined) throw new StepError("The pay page isn't open in the browser on this PC.")
+    if (tab === undefined) throw new StepError(`The pay page isn't open in the browser on ${this.place}.`)
     const frames = (Array.isArray(args.frames) ? args.frames : [])
       .filter((one): one is string => typeof one === 'string' && one.length > 0 && one.length <= 200)
       .slice(0, 4)

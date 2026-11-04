@@ -99,6 +99,8 @@ export function readFrame(json: JSONValue): EngineFrame | undefined {
 }
 
 export interface HelloFields {
+  /** Where the browser is: the Windows app's, or the Mac's helper (step 4). */
+  platform?: 'windows' | 'mac'
   label: string
   deviceId: string
   browserSession: string
@@ -109,7 +111,7 @@ export function hello(fields: HelloFields): JSONObject {
     kind: 'hello',
     protocol: protocolVersion,
     browser: true,
-    platform: 'windows',
+    platform: fields.platform ?? 'windows',
     label: fields.label,
     deviceId: fields.deviceId,
     browserSession: fields.browserSession,
