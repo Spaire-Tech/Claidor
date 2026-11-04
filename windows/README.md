@@ -31,6 +31,13 @@ Windows' own parts around it. The plan and the record are
   down with a release waiting. The switches, the last checks and the release
   waiting are kept in `%APPDATA%\Simeon\updates.json`; what the updater did
   is in `updates.log` beside it.
+- **The browser in the app** (`src/main/browser/`, `docs/app-browser/`): the
+  agents' websites in tabs of the app's own while it is open, when the
+  server's switch is on for the person. Each tab is an offscreen Chromium
+  window driven over the DevTools protocol; it dials the agents' engine
+  whenever the hands do (`/local-browser/*`, `docs/app-browser/protocol.md`).
+  Its log is `browser.log` in the data folder; downloads land in
+  Downloads\Simeon.
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 
@@ -45,6 +52,7 @@ npm run typecheck
 npm start                  # the app, against https://api.simeonlabs.com
 npm start -- --api=http://127.0.0.1:8000   # against a server on this computer
 npm run smoke              # the app run for real against a stand-in (Linux: xvfb-run -a npm run smoke)
+npm run browser-smoke      # the browser in the app run for real against a stand-in engine and test pages (Linux: xvfb-run -a)
 npm run package            # a developer's installer in out/ (on Linux: needs Wine)
 node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD, for lib/release.mjs's signers)
 node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)
