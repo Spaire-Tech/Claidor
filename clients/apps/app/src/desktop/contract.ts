@@ -55,6 +55,10 @@ export interface DesktopCalls {
   setWindowLook(look: WindowLook): void
   /** The page has done what it does before the app quits (after `quitting`). */
   readyToQuit(): void
+  /** The page is asking the person whether to quit (an agent still at work in the app's browser): no time limit until its answer. */
+  holdQuit(): void
+  /** The person chose Cancel: the app stays open. */
+  cancelQuit(): void
 
   // MARK: 7b, signing in and the session
 
@@ -326,7 +330,10 @@ export interface DesktopEvents {
   // MARK: 7a, the frame
 
   /** The app is about to quit: do what must be done (hang up, keep the chats), then `readyToQuit`. It waits a second at most. */
-  quitting: null
+  quitting: null | {
+    /** The agents with tabs in the app's browser (step 3c-2 of docs/app-browser/README.md): one at work there is asked about first. */
+    browsing: string[]
+  }
 
   // MARK: 7b, signing in and the session
 

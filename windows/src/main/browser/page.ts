@@ -294,7 +294,8 @@ const helperSource = String.raw`
       }
     }
     const active = el.ownerDocument.activeElement
-    return { focused: active === el || el.contains(active), editable: el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable }
+    // Whether its document has the keys: a frame of another site has them only once clicked (step 3c-2).
+    return { focused: active === el || el.contains(active), frameFocused: el.ownerDocument.hasFocus(), editable: el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable }
   }
 
   function setValue(el, value) {
@@ -466,6 +467,19 @@ const helperSource = String.raw`
         if (el) return el
       }
     }
+    // The words that label it as a pattern (Duffel's form, step 3c-2), as a person reads them.
+    if (typeof target.pattern === 'string' && target.pattern.length > 0) {
+      let pattern = null
+      try { pattern = new RegExp(target.pattern, 'i') } catch { pattern = null }
+      if (pattern) {
+        for (const doc of docs) {
+          for (const el of doc.querySelectorAll(fieldSelector)) {
+            if (!usable(el, type)) continue
+            if (namesOf(el).some((name) => pattern.test(name))) return el
+          }
+        }
+      }
+    }
     const label = typeof target.label === 'string' ? squash(target.label, 200).toLowerCase() : ''
     if (label.length > 0) {
       for (const exact of [true, false]) {
@@ -553,6 +567,18 @@ const helperSource = String.raw`
     return { set: false }
   }
 
+  /** A form's fields by tag, name, id, autocomplete, label and type, never a value: for the log when one isn't found. */
+  function fieldsSeen() {
+    const seen = []
+    for (const doc of documents()) {
+      for (const el of doc.querySelectorAll('input, select, textarea')) {
+        if (seen.length >= 40) break
+        seen.push([el.tagName.toLowerCase(), el.getAttribute('name'), el.getAttribute('id'), el.getAttribute('autocomplete'), el.getAttribute('aria-label') || (el.labels && el.labels[0] ? squash(el.labels[0].textContent || '', 60) : ''), el.getAttribute('type')].filter(Boolean).join('|'))
+      }
+    }
+    return { seen: seen.join('; ').slice(0, 1500) }
+  }
+
   /** What the page says, as a person reads it (the checkout's total is checked against it). */
   function pageText() {
     return { text: document.body ? String(document.body.innerText || '') : '' }
@@ -571,7 +597,7 @@ const helperSource = String.raw`
     return { forgot: true }
   }
 
-  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, formFind, passwordFields, holds, fieldKind, formForget, linkToken, pageText, generation: () => state.generation }
+  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, formFind, passwordFields, holds, fieldKind, formForget, linkToken, pageText, fieldsSeen, generation: () => state.generation }
 })()
 `
 

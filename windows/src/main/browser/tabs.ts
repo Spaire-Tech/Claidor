@@ -120,6 +120,11 @@ export class Tabs {
     return this.open(group)
   }
 
+  /** The agents with tabs open (the quit's question, decision 3). */
+  groups(): string[] {
+    return [...new Set([...this.all.values()].filter((tab) => !tab.contents.isDestroyed()).map((tab) => tab.group))]
+  }
+
   /** The agent's tabs, oldest first. */
   groupTabs(group: string): Tab[] {
     return [...this.all.values()].filter((tab) => tab.group === group && !tab.contents.isDestroyed())

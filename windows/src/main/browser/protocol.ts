@@ -34,6 +34,8 @@ export const ops = [
   'form',
   // The checkout card (step 3c): the checkout's text and picture, Link's card or pay token put in.
   'checkout',
+  // A flight paid on Duffel's form (step 3c-2): Simeon's pay page, opened and driven step by step.
+  'flight',
 ] as const
 export type Op = (typeof ops)[number]
 

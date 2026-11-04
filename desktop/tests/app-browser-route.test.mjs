@@ -666,3 +666,61 @@ test("the extension reads the switch, logs it, and is the host's 38th", async ()
   const main = await src("host/main.ts");
   assert.match(main, /localBrowser: host\.getLocalBrowserBridge\(\)/, "the gateway is given the bridge");
 });
+
+test("a flight is paid where the agent's page is: Duffel's form in the app's tab for a task there, the bank check there too (step 3c-2)", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/app-browser-duffel.ts", "app-duffel");
+  try {
+    const boxCalls = [];
+    const box = {
+      pay: async (options) => { boxCalls.push(["pay", options.offerId]); return { ok: false, stage: "browser", message: "the computer's" }; },
+      say: async (port, words) => { boxCalls.push(["say", port, words]); },
+    };
+    const live = { route: "app", browserSession: SESSION, place: "this PC" };
+    const steps = [];
+    let phase = "loading";
+    const route = {
+      where: (viewId) => (viewId === "agent-app" ? live : undefined),
+      choose: async () => { throw new Error("a payment never chooses"); },
+      request: async (choice, step) => {
+        steps.push(step.args.action === "call" ? `call ${step.args.fn}` : step.args.action);
+        const answer = (data) => ({ ok: true, data: JSON.stringify(data) });
+        switch (step.args.action) {
+          case "open": phase = "form"; return answer({ page: "api.simeonlabs.com" });
+          case "status": {
+            const now = { phase, session: phase === "ready" ? { id: "3ds_1" } : null };
+            if (phase === "verifying") phase = "challenge";
+            else if (phase === "challenge") phase = "ready";
+            return answer({ status: now, cardFrames: 1 });
+          }
+          case "fill": return answer({ filled: ["name on card", "card number", "expiry", "security code", "postal code"], seen: "", frames: 1 });
+          case "call":
+            if (step.args.fn === "createCard") return answer({ value: { ok: true, card: { id: "tcd_1", last_4_digits: "4242" } } });
+            if (step.args.fn === "verify") { phase = "verifying"; return answer({ value: true }); }
+            return answer({ value: null });
+          case "front": return answer({});
+          default: return { ok: false, error: "no" };
+        }
+      },
+    };
+    const duffel = module.routedDuffel(() => route, box);
+    const card = { number: "4242424242424242", cvc: "737", expMonth: 4, expYear: 2031, billing: { name: "Nate Doe", line1: "", line2: "", city: "", state: "", postalCode: "94107", country: "" } };
+    let challenges = 0;
+    const options = { port: 9223, pageUrl: "https://api.simeonlabs.com/desktop/flights/pay#key=k", offerId: "off_1", card, holder: "Nate Doe", pollMs: 1, onChallenge: () => { challenges += 1; } };
+
+    // A task on the computer, or no agent named: the computer pays, the app never asked.
+    assert.equal((await duffel.pay({ ...options, agentId: "agent-box" })).message, "the computer's");
+    assert.equal((await duffel.pay(options)).message, "the computer's");
+    await duffel.say(9223, "Booked", "agent-box");
+    assert.deepEqual(boxCalls, [["pay", "off_1"], ["pay", "off_1"], ["say", 9223, "Booked"]]);
+    assert.equal(steps.length, 0);
+
+    // In the app: the computer's steps, one short `flight` step each; the bank check brings the tab to the front.
+    const paid = await duffel.pay({ ...options, agentId: "agent-app" });
+    assert.deepEqual(paid, { ok: true, threeDSecureSessionId: "3ds_1", cardLast4: "4242", filled: ["name on card", "card number", "expiry", "security code", "postal code"], challenged: true });
+    assert.equal(challenges, 1);
+    assert.deepEqual(steps.filter((one) => one !== "status"), ["open", "fill", "call createCard", "call verify", "front"]);
+    await duffel.say(9223, "Booked", "agent-app");
+    assert.equal(steps.at(-1), "call say");
+    assert.equal(boxCalls.length, 3, "the computer was never asked for a task in the app");
+  } finally { await dispose(); }
+});
