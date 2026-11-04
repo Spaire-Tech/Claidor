@@ -830,6 +830,25 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 4 November 2026: the sleeper says what it saw; what I got wrong
+
+- **Found** by the founder's agent in Render's logs. Simeon's computer was
+  put to sleep at 2:31 PM PT with no update tried and no reason logged. The
+  sleep line had no fields at all.
+- **My mistakes today**, in order:
+  1. I said "Update Simeon's Computer" would appear. The Mac's update flag
+     comes from a check the engine makes once a day
+     (`FOREVER_BOX_IMAGE_WATCH_INTERVAL_MS`).
+  2. I said the computer would update itself while it was asleep. The
+     sleeper only looks at computers that are awake.
+  3. I gave "On this Mac" as the sign it works. It shows only once an agent
+     has a tab in the Mac's browser (`MacBrowserHelper.showsHere`), so
+     saying "hi" could never show it.
+  4. I never had the computer's own log read again after #563.
+- **Done:** `sand.box.sleep`, logged before every sleep, says what the
+  update check saw. A Redis failure while sending the update is now logged.
+- **Checked:** `tests/sand`, 235 passed, with a new test for the sleep line.
+
 ### 4 November 2026: "Your turn on the computer" cards that outlived their hand-off
 
 - **Found:** Simeon's card on the founder's Mac waited, and only Take over

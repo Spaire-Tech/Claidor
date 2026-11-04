@@ -1432,6 +1432,12 @@ on an iPhone or a Mac.
     the session was rolled back before answering.
   - `sand.box.update_deferred` means a new version is waiting for the box to
     be idle.
+  - `sand.box.sleep`, just before the sleeper puts a box to sleep, says
+    what it saw: `idle_minutes`, `idle_after_minutes`, `reachable`,
+    `awaiting_approval`, whether the update check ran (`update_checked`),
+    `out_of_date` with each `stale_*`, and `update_sent_before` (sent
+    within the last 10 minutes, so not sent again). Read this first when a
+    box isn't updated.
   - `sand.box.update_skipped` (`reason=unreachable`) means the sleeper found
     the box out of date but could not reach it, so its backup can't be
     brought up to date; it says so every 10 minutes at most.
