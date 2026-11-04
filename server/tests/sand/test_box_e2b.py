@@ -200,7 +200,7 @@ def _spec(**kw: Any) -> BoxSpec:
         "image": "ignored",
         "workspace_volume": "w",
         "data_volume": "d",
-        "labels": {"com.simeonlabs.box-store": "1"},
+        "labels": {"com.simeonlabs.box-store": "1", "com.simeonlabs.app-browser": "1"},
     }
     fields.update(kw)
     return BoxSpec(**fields)
@@ -227,6 +227,7 @@ class TestE2BHost:
             "image": "e2b:simeon-box",
             "host_sha256": BUNDLE.folder_sha256,
             "box_store": "1",
+            "app_browser": "1",
         }
         assert sdk.api == [{"api_key": "e2b_test"}]
 
@@ -359,9 +360,10 @@ class TestE2BHost:
 
         read = await host.inspect(sandbox)
         assert read is not None
-        assert (read.image, read.host_sha256, read.box_store) == (
+        assert (read.image, read.host_sha256, read.box_store, read.app_browser) == (
             "e2b:simeon-box",
             BUNDLE.folder_sha256,
+            "1",
             "1",
         )
         # A read never carries the traffic token: E2B gives it only at create.

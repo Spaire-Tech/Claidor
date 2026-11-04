@@ -56,6 +56,7 @@ from simeon.config import settings
 
 from . import box_store
 from .box_hosts import (
+    APP_BROWSER_LABEL,
     BOX_PORTS,
     HOST_COMPANIONS,
     BoxBlocked,
@@ -236,6 +237,7 @@ class E2BBoxHost:
             None,
             metadata.get("host_sha256") or None,
             box_store=metadata.get("box_store") or None,
+            app_browser=metadata.get("app_browser") or None,
             host_meta=meta,
         )
 
@@ -255,6 +257,9 @@ class E2BBoxHost:
         store = spec.labels.get(box_store.LABEL)
         if store:
             metadata["box_store"] = store
+        browser = spec.labels.get(APP_BROWSER_LABEL)
+        if browser:
+            metadata["app_browser"] = browser
         try:
             sandbox = await self.sdk.create(
                 template=self.template,

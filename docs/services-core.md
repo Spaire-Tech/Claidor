@@ -1073,12 +1073,15 @@ the Mac's internal Docker path); every box is replaced on its next
 **The browser in the app** (4 November 2026, `docs/app-browser/`). The
 agent's browser steps can go to a browser inside the person's Mac or
 Windows app while it is open, instead of the computer's Chrome. Step 1 is
-in the engine only, and no app has the browser yet. The switch is
-`SIMEON_APP_BROWSER_USERS` (comma-separated e-mail addresses or user ids,
-`*` for everyone; empty, the default, is nobody, `box_service.app_browser_for`).
-A listed person's computer is given `SIMEON_APP_BROWSER=1` each time it is
-made or replaced (a new account, an update, a move); one already running
-keeps what it had until then. The app's answers on
+in the engine only, and no app has the browser yet. It is on for everyone
+(4 November 2026, the founder): every computer is made with
+`SIMEON_APP_BROWSER=1` and the label `com.simeonlabs.app-browser` (on E2B,
+the metadata `app_browser`). One made without it, before that day, is out
+of date: the apps offer "Update Simeon's Computer" and it is replaced, its
+files kept, as for a newer engine (`stale_browser` in
+`sand.box.ensure.recreate`). Until then only the people in
+`SIMEON_APP_BROWSER_USERS` had it, given when their computer was made; the
+setting is no longer read. The app's answers on
 `/local-browser/responses` wake a sleeping computer, like local exec's
 (`box_proxy.ANSWERS`). The frames and the rules for which browser a step
 uses are in `docs/app-browser/protocol.md`.
@@ -1208,7 +1211,6 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_HOST_BUNDLE_URL` | the public HTTPS folder of host bundles |
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
 | `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
-| `SIMEON_APP_BROWSER_USERS` | empty; the people whose agents may use the browser in their app (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
 | `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` | `false`; `true` lets an open app's computer sleep (step 4, above) |
 | `SIMEON_BOX_IDLE_AFTER_RUN` | `PT10M`; how soon after its last run a box sleeps, with the line above on |
@@ -1467,7 +1469,8 @@ on an iPhone or a Mac.
     value, at start; then `[simeon] local-browser {"event":…}` for the
     app's streams, its hello, each task's browser (`route`), a browser that
     closed, a step that timed out (`docs/app-browser/protocol.md`). On the
-    API, `sand.box.app_browser` when a computer is made with the switch on.
+    API, `stale_browser=True` in `sand.box.ensure.recreate` when a computer
+    made without the switch is replaced.
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the
     renewal worked.

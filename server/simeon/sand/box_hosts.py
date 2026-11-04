@@ -62,6 +62,9 @@ BOX_HOST_UNAVAILABLE_SENTENCE = (
 #: same way `docker ps` on a Mac does. A box made before 29 September 2026
 #: carries the earlier prefix; its host version is still read from it.
 OWNER_LABEL = "com.simeonlabs.box"
+#: A computer made with the browser in the app switched on
+#: (`SIMEON_APP_BROWSER=1`, 4 November 2026); one without is out of date.
+APP_BROWSER_LABEL = "com.simeonlabs.app-browser"
 LEGACY_OWNER_LABEL = "com.grok-bot.local-vm"
 SCHEMA_VERSION = "10"
 
@@ -180,6 +183,9 @@ class ProvisionedBox:
     #: The `com.simeonlabs.box-store` label: made with backups on
     #: (`box_store.py`). None on a container made without.
     box_store: str | None = None
+    #: The `com.simeonlabs.app-browser` label: made with the browser in
+    #: the app switched on. None on a container made without.
+    app_browser: str | None = None
     #: What the API needs to reach a box that is not a published Docker
     #: port: `{"kind": "e2b", "traffic_token": …}` (`box_service.dial_headers`).
     #: Empty for Docker.
@@ -667,6 +673,7 @@ class DockerBoxHost:
             )
             or None,
             box_store=str(labels.get("com.simeonlabs.box-store") or "") or None,
+            app_browser=str(labels.get(APP_BROWSER_LABEL) or "") or None,
         )
 
     async def run_state(self, provider_box_id: str) -> BoxRunState | None:

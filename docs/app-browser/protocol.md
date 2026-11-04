@@ -256,9 +256,8 @@ The engine decides, for each agent's tab (its view):
 
 1. **The switch.** Off, every step runs on the computer's Chrome, as before.
    It is `SIMEON_APP_BROWSER=1` on the computer, which Simeon Labs' server
-   sets for the people in `SIMEON_APP_BROWSER_USERS` each time their
-   computer is made or replaced (`docs/services-core.md`, the cloud
-   computer).
+   sets on every computer it makes, and a computer made without it is
+   replaced (`docs/services-core.md`, the cloud computer).
 2. **A new task** goes to the app heard from last, when one with a browser
    is connected; else to the computer.
 3. **A task stays where it started.** A task on the computer stays there
@@ -287,7 +286,8 @@ In the computer's `/tmp/sand-host.log`:
   `detached`), `hello`, `refused-hello`, a task's `route` (`app` with its
   place, or `box`), `closed`, `timeout` and `stopped`.
 
-On the API: `sand.box.app_browser` when a computer is made with the switch on.
+On the API: `stale_browser=True` in `sand.box.ensure.recreate` when a computer
+made without the switch is replaced.
 
 ## The Mac's helper (step 4)
 

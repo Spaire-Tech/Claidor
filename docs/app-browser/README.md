@@ -223,9 +223,9 @@ before the browser is called done.
 
 ## Not breaking anything
 
-- **Off by default.** With the server's switch off, or an app that doesn't
-  say it has a browser (every app built before this), the engine takes
-  today's route. An app newer than its engine does nothing new.
+- **Today's route without the app.** With the computer's switch off, or an
+  app that doesn't say it has a browser (every app built before this), the
+  engine takes today's route. An app newer than its engine does nothing new.
 - **The computer's browser is not changed.** Its driver, tools, sign-ins
   and screen stay as they are. It is the route for every case the app's
   browser doesn't cover.
@@ -270,7 +270,8 @@ a real machine before the next one starts.
    tab, through the server.
 6. **Sign-ins for routines.** Handing the app's sign-ins to the computer,
    so a routine at night has them (decision 4).
-7. **Switched on.** For the founder, then for everyone.
+7. **Switched on.** For everyone, 4 November 2026 (the founder: "I don't
+   have customers, so it's just me").
 
 Later, and separate: the agents' thinking moving from the computer to the
 server, so nothing waits on the computer at all (discussed 4 November 2026,
@@ -303,12 +304,14 @@ your recommendations".
 | 3c-2. Duffel's form for a flight, and its bank check; the question before quitting on Windows (decision 3) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-duffel.ts`; the `flight` op in `windows/src/main/browser/steps.ts`; `window/QuitAlert.tsx`, `desktop/quitting.ts`). Checked in Electron (`npm run browser-smoke`, 119 checks, three runs), the Windows app's view smoke (21), the engine's and the web app's tests. Not run on a Windows PC or with Duffel's real form. |
 | 4a. The Mac's browser: the Windows browser run as a helper the Mac app starts | Built, 4 November 2026 (`windows/src/helper/macBrowser.ts`; `scripts/build-mac-helper.mjs`). Checked in Electron here with a stand-in for the Mac app (`npm run mac-helper-smoke`, 14 checks). Not run on a Mac. |
 | 4b. The Mac app's side: start the helper, the Computer tab's view, Take Control, the cards, the quit alert | Built, 4 November 2026 (`mac/scripts/browser-helper.sh`; `mac/Simeon/MacBrowserHelper.swift`, `MacBrowserView.swift`, `MacQuitAlert.swift`). Checked on a Mac: `build.sh` builds and signs it; the packaged helper passes `mac-helper-smoke` (14), signed for Developer ID it was notarized (Accepted) and passes Gatekeeper; the Swift helper class, compiled alone, starts it with its arguments, starts it again when killed, and quits it. Not tried by hand in the signed-in app: the Computer tab, Take Control, the cards and the quit alert. |
-| 5-7 | Not started |
+| 5-6 | Not started |
+| 7. On for everyone | Done, 4 November 2026 (`server/simeon/sand/box_service.py`): every computer is made with the switch and its label, and one made without it is out of date, so it is replaced with its files kept. Found on the founder's computer: the new engine, its Mac's browser connected and greeted, every task routed to the computer, `local-browser off`, and the apps said "up to date". Checked in the server's tests (`tests/sand`, 233). Not yet seen on the founder's computer after the update. |
 
 Step 1, what was decided while building it (4 November 2026):
 
-- **The switch** is `SIMEON_APP_BROWSER_USERS` on the server (e-mail
-  addresses or user ids, `*` for everyone; empty is nobody). A listed
+- **The switch** was `SIMEON_APP_BROWSER_USERS` on the server (e-mail
+  addresses or user ids, `*` for everyone; empty is nobody), until step 7
+  put it on for everyone. A listed
   person's computer gets `SIMEON_APP_BROWSER=1` each time it is made or
   replaced: a new account, an update of the computer (`RecreateSandBox`,
   its files kept) or a move between servers. A computer already running
