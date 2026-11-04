@@ -20,7 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
-| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) step 2b (the Computer tab's view of it and Take control, #553), step 3a (the take-over and the checkout's buttons open the agent's tab here, #554) step 3b (the in-chat form, 1Password, saved logins and a new password typed by the app into its tab, #555) step 3c-1 (the checkout card; frames of other sites reached, #556) and step 3c-2 (a flight paid on Duffel's form; the question before quitting) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: step 4, the Mac |
+| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) step 2b (the Computer tab's view of it and Take control, #553), step 3a (the take-over and the checkout's buttons open the agent's tab here, #554) step 3b (the in-chat form, 1Password, saved logins and a new password typed by the app into its tab, #555) step 3c-1 (the checkout card; frames of other sites reached, #556) step 3c-2 (a flight paid on Duffel's form; the question before quitting, #558) and step 4a (the Mac's browser helper, checked here) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC or a Mac. Next: 4b, the Mac app's side, built on a Mac |
 | 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
@@ -829,6 +829,20 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 4 November 2026: the browser in the app, step 4a, the Mac's browser helper
+
+- **What:** `windows/src/helper/macBrowser.ts`, the Windows browser run as
+  a helper with no window, talking to the Mac app in JSON lines
+  (`docs/app-browser/protocol.md`); `scripts/build-mac-helper.mjs`; the
+  hello's platform and the steps' "this PC" made settings; the smokes'
+  stand-in engine in `scripts/stand-in-engine.mjs`.
+- **Checked:** `npm run mac-helper-smoke` 14 (a script as the Mac app:
+  hello as a Mac, a step, pictures and none while hidden, Take control, the
+  agents with tabs, quit); browser smoke 119; view smoke 21; `npm test`
+  211; typecheck.
+- **Not checked:** on a Mac. 4b (the .app, signing, the Swift side) needs
+  one.
 
 ### 4 November 2026: the browser in the app, step 3c-2, flights and the question before quitting
 

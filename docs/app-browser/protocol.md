@@ -288,3 +288,21 @@ In the computer's `/tmp/sand-host.log`:
   place, or `box`), `closed`, `timeout` and `stopped`.
 
 On the API: `sand.box.app_browser` when a computer is made with the switch on.
+
+## The Mac's helper (step 4)
+
+The Mac app starts `Simeon Browser` (`windows/src/helper/macBrowser.ts`)
+with `--data=<its folder>` and `--api=<the app's server>`, and talks to it
+in JSON lines, one object a line. An `id` asks for a `reply` with that id
+(`value`, or `error`).
+
+From the Mac app: `engine` (`target`: the gateway's `baseURL` and
+`headers`, as MacLocalHands has them), `engineClosed`, `signedOut` (the
+tabs closed and the sign-ins forgotten), `visible` (the window shown or
+not), `watch`, `state`, `control` (`agentId`, `person`), `bar`, `input` (as
+the Windows page sends them), `browsing` (the agents with tabs), `quit`.
+
+From the helper: `ready`, `reply`, `shown` (as `browserShown`), `frame`
+(`agentId`, `tabId`, `width`, `height`, `jpeg` in base64), `problem` (an
+address refused). Its input closing (the Mac app gone) quits it.
+

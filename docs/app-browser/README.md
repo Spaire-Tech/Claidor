@@ -10,7 +10,7 @@ cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
 3c-1, the checkout card, and 3c-2, a flight paid on Duffel's form, are
 built: step 3 is done on Windows, and the app asks before quitting while an
 agent works in its browser. Nothing has changed for anyone, and nothing has
-run on a real PC yet. Next: step 4, the Mac.
+run on a real PC yet. Step 4 has begun: 4a, the Mac's browser helper, is built and checked here; 4b, the Mac app's side, needs a Mac to build. Next: 4b.
 
 ## The decision
 
@@ -301,7 +301,9 @@ your recommendations".
 | 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-forms.ts`; the `form` op in `windows/src/main/browser/steps.ts`; the in-chat form's lock line in `RequestCards.tsx`). Checked in Electron (`npm run browser-smoke`, 100 checks, 13 of them the fills, run twice), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and fills drove the Windows browser, which typed a sign-in and a one-time code and sent it. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC or real sites. |
 | 3c-1. The checkout card: its total and picture, Link's or Shop's card or Link's pay token typed in; the frames of other sites reached (the agent's and the person's clicks too) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-checkout.ts`; `windows/src/main/browser/frames.ts`, the `checkout` op in `steps.ts`). Checked in Electron (`npm run browser-smoke`, 113 checks, 13 of them new, run four times, twice on the final code), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and checkout, with the computer's own field marks, drove the Windows browser, which read the total, took the picture and typed a card into a frame of another site. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC, against a real shop or with a real card. |
 | 3c-2. Duffel's form for a flight, and its bank check; the question before quitting on Windows (decision 3) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-duffel.ts`; the `flight` op in `windows/src/main/browser/steps.ts`; `window/QuitAlert.tsx`, `desktop/quitting.ts`). Checked in Electron (`npm run browser-smoke`, 119 checks, three runs), the Windows app's view smoke (21), the engine's and the web app's tests. Not run on a Windows PC or with Duffel's real form. |
-| 4-7 | Not started |
+| 4a. The Mac's browser: the Windows browser run as a helper the Mac app starts | Built, 4 November 2026 (`windows/src/helper/macBrowser.ts`; `scripts/build-mac-helper.mjs`). Checked in Electron here with a stand-in for the Mac app (`npm run mac-helper-smoke`, 14 checks). Not run on a Mac. |
+| 4b. The Mac app's side: start the helper, the Computer tab's view, Take Control, the cards, the quit alert | Next. Swift: needs a Mac to build and try before it merges |
+| 5-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
 
@@ -474,3 +476,19 @@ Step 3c-2, what was decided while building it (4 November 2026):
   protocol.md), Stop (its task stopped, then quit) and Cancel. Not asked
   when Windows itself shuts down. The words are in the Mac's catalogue, for
   the Mac's alert in step 4.
+
+Step 4a, what was decided while building it (4 November 2026):
+
+- **The helper** is the Windows browser's own code (`src/main/browser/`)
+  in an Electron app with no window and no Dock icon, started by the Mac
+  app. It says hello as a Mac ("this Mac" in its sentences), keeps its
+  sign-ins in the folder the Mac app gives it (`--data=`), and quits when
+  told or when the Mac app goes.
+- **It talks to the Mac app in JSON lines** on its standard input and
+  output ([protocol.md](protocol.md), "The Mac's helper"): the engine's
+  address and keys while the Mac's hands are connected, checked as the
+  Windows app checks its page's; the Computer tab's watch, state, Take
+  control, bar and input; the tab's pictures as base64 JPEGs, none while
+  the Mac's window is hidden; which agents have tabs, for the quit alert.
+- **Left for 4b, on a Mac:** the .app around it (Electron's, renamed,
+  `LSUIElement`), its signing and place in Simeon.app, and the Swift side.
