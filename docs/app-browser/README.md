@@ -10,7 +10,7 @@ cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
 3c-1, the checkout card, and 3c-2, a flight paid on Duffel's form, are
 built: step 3 is done on Windows, and the app asks before quitting while an
 agent works in its browser. Nothing has changed for anyone, and nothing has
-run on a real PC yet. Step 4 has begun: 4a, the Mac's browser helper, is built and checked here; 4b, the Mac app's side, needs a Mac to build. Next: 4b.
+run on a real PC yet. Step 4 is built: 4a, the Mac's browser helper, and 4b, the Mac app's side (the helper inside Simeon.app, signed and notarized, and the Swift side); its clicks in the app are still to be tried by hand. Next: step 5.
 
 ## The decision
 
@@ -302,7 +302,7 @@ your recommendations".
 | 3c-1. The checkout card: its total and picture, Link's or Shop's card or Link's pay token typed in; the frames of other sites reached (the agent's and the person's clicks too) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-checkout.ts`; `windows/src/main/browser/frames.ts`, the `checkout` op in `steps.ts`). Checked in Electron (`npm run browser-smoke`, 113 checks, 13 of them new, run four times, twice on the final code), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and checkout, with the computer's own field marks, drove the Windows browser, which read the total, took the picture and typed a card into a frame of another site. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC, against a real shop or with a real card. |
 | 3c-2. Duffel's form for a flight, and its bank check; the question before quitting on Windows (decision 3) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-duffel.ts`; the `flight` op in `windows/src/main/browser/steps.ts`; `window/QuitAlert.tsx`, `desktop/quitting.ts`). Checked in Electron (`npm run browser-smoke`, 119 checks, three runs), the Windows app's view smoke (21), the engine's and the web app's tests. Not run on a Windows PC or with Duffel's real form. |
 | 4a. The Mac's browser: the Windows browser run as a helper the Mac app starts | Built, 4 November 2026 (`windows/src/helper/macBrowser.ts`; `scripts/build-mac-helper.mjs`). Checked in Electron here with a stand-in for the Mac app (`npm run mac-helper-smoke`, 14 checks). Not run on a Mac. |
-| 4b. The Mac app's side: start the helper, the Computer tab's view, Take Control, the cards, the quit alert | Next. Swift: needs a Mac to build and try before it merges |
+| 4b. The Mac app's side: start the helper, the Computer tab's view, Take Control, the cards, the quit alert | Built, 4 November 2026 (`mac/scripts/browser-helper.sh`; `mac/Simeon/MacBrowserHelper.swift`, `MacBrowserView.swift`, `MacQuitAlert.swift`). Checked on a Mac: `build.sh` builds and signs it; the packaged helper passes `mac-helper-smoke` (14), signed for Developer ID it was notarized (Accepted) and passes Gatekeeper; the Swift helper class, compiled alone, starts it with its arguments, starts it again when killed, and quits it. Not tried by hand in the signed-in app: the Computer tab, Take Control, the cards and the quit alert. |
 | 5-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
@@ -492,3 +492,27 @@ Step 4a, what was decided while building it (4 November 2026):
   the Mac's window is hidden; which agents have tabs, for the quit alert.
 - **Left for 4b, on a Mac:** the .app around it (Electron's, renamed,
   `LSUIElement`), its signing and place in Simeon.app, and the Swift side.
+
+Step 4b, what was decided while building it (4 November 2026):
+
+- **The .app.** Electron's own, renamed `Simeon Browser` with its four
+  helpers (Electron finds them by the app's name), id
+  `com.simeonlabs.simeon.browser`, `LSUIElement`, in
+  `Simeon.app/Contents/Helpers`, put there after Xcode's build (Debug) or
+  export (release) by `mac/scripts/browser-helper.sh`, then everything
+  signed inside out with the app's identity, the hardened runtime and
+  `Browser.entitlements` (JIT, unsigned executable memory, library
+  validation off), and Simeon.app signed again over it. A framework is
+  signed by its `Versions/A` (its bundle path with a timestamp fails).
+  About 290 MB more in the app.
+- **When it runs.** Started once signed in with a computer, beside the
+  hands; started again 1, 2, 4… 30 s after it dies. It is given the
+  engine's address and keys while the hands' line is open, kept in memory
+  only, again after a restart. Its errors are not kept.
+- **The views** are the Windows ones in Apple's parts: the pane's frame,
+  and the full view over the window (tab pills, Back, Forward, Reload,
+  the site and its lock, Take control in blue, Give back). The person's
+  keys go as keys, ⌘C/X/V/A/Z and ⇧⌘Z as edits; a keyboard's composition
+  (accents typed by holding a key, Chinese, Japanese) is not sent yet.
+- **The quit alert** is the app delegate's `applicationShouldTerminate`
+  (`.terminateLater`): asked only when the helper names running agents.

@@ -68,7 +68,8 @@ sign() {
   said=$(codesign --force --sign "$IDENTITY" --options runtime --entitlements "$ENTITLEMENTS" ${TIMESTAMP:+--timestamp} "$1" 2>&1) || { echo "$said"; exit 1; }
 }
 while IFS= read -r -d '' file; do sign "$file"; done < <(find "$FRAMEWORKS" -type f \( -name '*.dylib' -o -name chrome_crashpad_handler -o -name app_shim_loader -o -name ShipIt \) -print0)
-for framework in "$FRAMEWORKS"/*.framework; do sign "$framework"; done
+# A framework by its version (its bundle path with a timestamp fails with "internal error in Code Signing subsystem").
+for framework in "$FRAMEWORKS"/*.framework; do sign "$framework/Versions/A"; done
 for helper in "$FRAMEWORKS"/*.app; do sign "$helper"; done
 sign "$BROWSER"
 

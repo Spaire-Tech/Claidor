@@ -830,6 +830,26 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 4 November 2026: the browser in the app, step 4b, the Mac app's side
+
+- **What:** `mac/scripts/browser-helper.sh` (the helper as
+  `Simeon.app/Contents/Helpers/Simeon Browser.app`, signed; run by
+  `build.sh` and `release.sh`); `MacBrowserHelper.swift` (starts it,
+  restarts it, the JSON lines); `MacBrowserView.swift` (the Computer tab,
+  the full view, the person's input); `MacQuitAlert.swift`; the cards and
+  the in-chat form's lock line; 3 words in 9 languages; the web app's
+  words and build. `mac-helper-smoke` can run the packaged helper
+  (`SIMEON_MAC_HELPER_BINARY`).
+- **Checked, on a Mac:** `build.sh`; the packaged helper's smoke 14 (and
+  the plain one 14); a copy signed for Developer ID notarized (Accepted),
+  stapled, `spctl` accepted, its smoke 14; the Swift class, compiled
+  alone, against the packaged helper (its arguments, a restart after
+  `kill -9`, quit); `check_names.py`, `check_translations.py`.
+- **Not checked:** the signed-in Debug app (it waits on a Keychain
+  password for the release app's sign-in), so the Computer tab, Take
+  Control, the cards, the lock line and the quit alert are untried by
+  hand; `release.sh` itself; real sites. Decision: Bass's task (4b).
+
 ### 4 November 2026: the browser in the app, step 4a, the Mac's browser helper
 
 - **What:** `windows/src/helper/macBrowser.ts`, the Windows browser run as
