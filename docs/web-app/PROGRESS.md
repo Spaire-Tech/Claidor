@@ -830,6 +830,25 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 4 November 2026: the browser in the app, step 7, the update not blocked by a waiting card
+
+- **Found** by the founder's agent, reading Render's logs. The deploy was
+  live at 12:13 PT. Box `f512cc0d` was put to sleep at 12:34 by
+  `sand.box.hibernate_idle`, and about every 11 minutes since 11:05. There
+  was never an `update_idle` line, and the skip wasn't logged.
+- **Cause.** An unreachable box sleeps only after 30 minutes, so this one
+  was reachable. The only condition left was busy: an agent was waiting on
+  a card. The founder then reported Simeon's "Your turn on the computer"
+  card, where only Take over works.
+- **Done** (`box_service.py`):
+  - the sleeper's update replaces a box that only waits on an approval;
+  - `update_idle` now logs `awaiting_approval`;
+  - an unreachable out-of-date box logs `sand.box.update_skipped`.
+- **Checked:** `tests/sand`, 234 passed, with a new test for the founder's
+  case.
+- **Not checked:** the founder's computer after the deploy. Also not looked
+  into yet: why Skip and I'm done do nothing on the card.
+
 ### 4 November 2026: the browser in the app, step 7, on for everyone
 
 - **Found:** after #560, the founder's Computer tab never showed "On this

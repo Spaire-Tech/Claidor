@@ -970,11 +970,18 @@ class BoxBrokerService:
         caller: DesktopSession,
         *,
         committed: SessionOpener | None = None,
+        idle_update: bool = False,
     ) -> SandBox:
         """`EnsureSandBox`: the person's box, created, started or reused,
         with its URLs stamped. Raises `BoxBrokerRefused` (a Connect code
         and a sentence) and `BoxHostError`. `committed` writes a new box's
-        credential before the box starts (`_mint_credential`)."""
+        credential before the box starts (`_mint_credential`).
+        `idle_update`: the sleeper's update (`update_idle`), which replaces
+        an out-of-date box that only waits on an approval card."""
+
+        def busy(health: BoxHealth) -> bool:
+            return health.holds_awake if idle_update else health.is_busy
+
         parent = await self._parent_of(db, caller)
         # One ensure per person at a time (Render, 4 October 2026). The page,
         # the Mac app and its helper all ask within seconds of each other,
@@ -1036,7 +1043,7 @@ class BoxBrokerService:
                 # idle (the upgrade command waits while it is busy): a box
                 # working, or waiting on the person's approval, keeps its
                 # program until the app connects to it idle.
-                if (await self.health_of(box)).is_busy:
+                if busy(await self.health_of(box)):
                     log.info(
                         "sand.box.update_deferred",
                         box=str(box.id),
@@ -1072,7 +1079,7 @@ class BoxBrokerService:
                 flushed = state == "running" and await self.flush_box_store(
                     box, current
                 )
-                if flushed and credential_live and (await self.health_of(box)).is_busy:
+                if flushed and credential_live and busy(await self.health_of(box)):
                     # Only out of date, and a message came while its backup
                     # was made: the backup does not have it, and its turn
                     # would die with the old container. Opening the app
@@ -1653,8 +1660,7 @@ class BoxBrokerService:
                 idle_after = min(idle_after, settings.BOX_IDLE_AFTER_RUN)
             if (
                 update is not None
-                and health.reachable
-                and not health.is_busy
+                and not health.holds_awake
                 and now - idle_since >= min(UPDATE_QUIET, idle_after)
             ):
                 # Updated once it is idle (19 October 2026). Until then a box
@@ -1664,8 +1670,32 @@ class BoxBrokerService:
                 # version every 10 minutes) and kept it for hours. Nobody is
                 # on its screen now (not attached) and nothing has run on it
                 # for `UPDATE_QUIET`, so the swap interrupts no one.
+                #
+                # A box only waiting on the person's approval is updated too
+                # (4 November 2026): the founder's computer slept every 11
+                # minutes for hours, never updated, its skip never logged.
+                # The turn waiting on the card ends with the old container.
                 _, stale = await self._out_of_date(db, host, box)
-                if stale:
+                if stale and not health.reachable:
+                    # Its backup can't be brought up to date unheard: it
+                    # waits, and says so once in a while.
+                    try:
+                        first = await redis.set(
+                            f"{update_key(box.id)}:skipped",
+                            "1",
+                            ex=UPDATE_RETRY_SECONDS,
+                            nx=True,
+                        )
+                    except Exception:
+                        first = False
+                    if first:
+                        log.info(
+                            "sand.box.update_skipped",
+                            box=str(box.id),
+                            reason="unreachable",
+                            stale_browser=stale.browser,
+                        )
+                elif stale:
                     try:
                         first = await redis.set(
                             update_key(box.id), "1", ex=UPDATE_RETRY_SECONDS, nx=True
@@ -1680,6 +1710,7 @@ class BoxBrokerService:
                             stale_image=stale.image,
                             stale_store=stale.store,
                             stale_browser=stale.browser,
+                            awaiting_approval=health.busy_only_awaiting_approval,
                         )
                         update(box.user_id)
                         continue
@@ -1789,7 +1820,7 @@ class BoxBrokerService:
         )
         if parent is None or parent.is_revoked:
             return "signed-out"
-        await self.ensure(db, parent, committed=committed)
+        await self.ensure(db, parent, committed=committed, idle_update=True)
         return "ensured"
 
     async def box_of_watcher(

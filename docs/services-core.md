@@ -925,10 +925,13 @@ It is updated at the first of:
 
 - an app connecting to it while it is idle;
 - the sleeper's minute (since 19 October 2026): a running box that is out of
-  date, idle (not busy, not waiting on an approval card) and with no app
-  attached is replaced on its files by the `sand.box.update_idle` job, the
-  same way an idle connect replaces it. It is sent once every 10 minutes at
-  most. Before then a published engine reached a box only at an idle
+  date, idle and with no app attached is replaced on its files by the
+  `sand.box.update_idle` job, the same way an idle connect replaces it. It is
+  sent once every 10 minutes at most. A box only waiting on an approval
+  card is replaced too (4 November 2026): the founder's computer, an agent
+  waiting on a "Your turn on the computer" card, slept every 11 minutes and
+  was never updated. The waiting turn ends with the old container. An app
+  connecting still waits for the card. Before then a published engine reached a box only at an idle
   connect, and Rhea's box ran the old engine for hours after a publish;
 - "Update Simeon's Computer" in the app. `GetSandBoxRunState` now answers
   `imageUpdateAvailable: true` while the box is out of date (it answered
@@ -1429,8 +1432,11 @@ on an iPhone or a Mac.
     the session was rolled back before answering.
   - `sand.box.update_deferred` means a new version is waiting for the box to
     be idle.
-  - `sand.box.update_idle` (with `stale_host`, `stale_image`, `stale_store`)
-    means the sleeper found the box idle, with no app on it, and out of date,
+  - `sand.box.update_skipped` (`reason=unreachable`) means the sleeper found
+    the box out of date but could not reach it, so its backup can't be
+    brought up to date; it says so every 10 minutes at most.
+  - `sand.box.update_idle` (with `stale_host`, `stale_image`, `stale_store`,
+    `stale_browser`, and `awaiting_approval`) means the sleeper found the box idle, with no app on it, and out of date,
     and sent it to be replaced; `sand.box.update_idle.done` with
     `outcome=ensured` follows, then the usual `sand.box.ensure.recreate`.
     `sand.box.update_idle.failed` gives the reason it was left as it was

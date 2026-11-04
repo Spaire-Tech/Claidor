@@ -345,7 +345,6 @@ class TestSleep:
         sent: list[Any] = []
         for busy in (
             BoxHealth(reachable=True, is_busy=True),
-            BoxHealth(reachable=True, is_busy=True, busy_only_awaiting_approval=True),
             BoxHealth(reachable=False),
         ):
             health["now"] = busy
@@ -354,6 +353,34 @@ class TestSleep:
         await mark_attached(redis, box.id)
         await broker.hibernate_idle(session, redis, update=sent.append)
         assert sent == []
+
+    async def test_a_box_only_waiting_on_an_approval_is_updated(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        redis: Redis,
+        host: FakeBoxHost,
+        health: dict[str, BoxHealth],
+    ) -> None:
+        """The founder's computer, 4 November 2026: made without the browser
+        in the app, an agent waiting on an approval card, it slept every 11
+        minutes and was never updated. The card's turn ends with it."""
+        _, box = await _awake_box(client, session, user)
+        old = box.provider_box_id
+        host.expected_host_sha256 = "f2805435"
+        health["now"] = BoxHealth(
+            reachable=True, is_busy=True, busy_only_awaiting_approval=True
+        )
+        await _age(session, box, 31)
+        sent: list[Any] = []
+        assert await broker.hibernate_idle(session, redis, update=sent.append) == []
+        assert sent == [user.id]
+
+        assert await broker.update_idle(session, user.id, committed=None) == "ensured"
+        assert host.removed == [(old, [])]
+        assert len(host.created) == 2
+        assert host.created[1].workspace_volume == host.created[0].workspace_volume
 
     async def test_the_update_replaces_it_on_its_files(
         self,
