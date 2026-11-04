@@ -12,6 +12,8 @@ import SimeonMacCore
  */
 @main
 struct SimeonMacApp: App {
+  // The quit alert while an agent works in this Mac's browser (MacQuitAlert.swift).
+  @NSApplicationDelegateAdaptor(SimeonAppDelegate.self) private var delegate
   @State private var session = MacSession()
   @State private var window = WindowState()
   @State private var layout = SidebarLayout()

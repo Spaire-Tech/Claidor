@@ -279,7 +279,7 @@ private struct OpenPill: View {
  * continue at the right (24 high, 6 round, 12/16). Both answer the agent;
  * neither opens or closes anything.
  */
-private struct ComputerAttention: View {
+struct ComputerAttention: View {
   let agentId: String
   let name: String
   let instruction: String
@@ -304,10 +304,10 @@ private struct ComputerAttention: View {
       HStack(spacing: 4) {
         Spacer(minLength: 0)
         AttentionButton(title: String(localized: "Skip this step"), fill: look.rowHover, ink: look.ink) {
-          Task { await store.handBackComputer(agentId, skip: true) }
+          handBack(store, agentId, skip: true)
         }
         AttentionButton(title: String(localized: "I'm done, continue"), fill: look.primaryFill, ink: look.onPrimary) {
-          Task { await store.handBackComputer(agentId) }
+          handBack(store, agentId)
         }
       }
     }

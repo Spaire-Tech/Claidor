@@ -28405,6 +28405,64 @@
         }
       }
     },
+    "On this Mac" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf diesem Mac"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En esta Mac"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur ce Mac"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo Mac"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op deze Mac"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tym Macu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neste Mac"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "På den här Macen"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Mac’te"
+          }
+        }
+      }
+    },
     "On this PC" : {
       "localizations" : {
         "de" : {
@@ -42280,6 +42338,64 @@
         }
       }
     },
+    "The pages on this Mac close when you quit Simeon." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Seiten auf diesem Mac schließen sich, wenn du Simeon beendest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas de esta Mac se cierran cuando sales de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages sur ce Mac se ferment quand tu quittes Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine su questo Mac si chiudono quando esci da Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De pagina’s op deze Mac sluiten als je Simeon afsluit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strony na tym Macu zamkną się, gdy zamkniesz Simeona."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas neste Mac fecham quando você sai do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidorna på den här Macen stängs när du avslutar Simeon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’dan çıktığında bu Mac’teki sayfalar kapanır."
+          }
+        }
+      }
+    },
     "The pages on this PC close when you quit Simeon." : {
       "localizations" : {
         "de" : {
@@ -44834,6 +44950,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon’un bilgisayarındaki sayfaya yazılır, ajanına asla gösterilmez."
+          }
+        }
+      }
+    },
+    "Typed into the page on this Mac, never shown to your agent." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird auf diesem Mac in die Seite eingetragen und deinem Agenten nie gezeigt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se escribe en la página en esta Mac y nunca se muestra a tu agente."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisi dans la page sur ce Mac, jamais montré à ton agent."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserito nella pagina su questo Mac, mai mostrato al tuo agente."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt op deze Mac in de pagina ingetypt en nooit aan je agent getoond."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wpisywane na stronie na tym Macu, nigdy nie pokazywane agentowi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitado na página neste Mac, nunca mostrado ao seu agente."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrivs in på sidan på den här Macen och visas aldrig för din agent."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Mac’teki sayfaya yazılır, ajanına asla gösterilmez."
           }
         }
       }
