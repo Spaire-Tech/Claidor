@@ -37,7 +37,10 @@ Windows' own parts around it. The plan and the record are
   window driven over the DevTools protocol; it dials the agents' engine
   whenever the hands do (`/local-browser/*`, `docs/app-browser/protocol.md`).
   Its log is `browser.log` in the data folder; downloads land in
-  Downloads\Simeon.
+  Downloads\Simeon. The Computer tab shows an agent's tab as a live picture
+  (`view.ts`: the page watches one agent, the tab's paints come as JPEGs)
+  and the person can Take control (`control.ts`: the agent's steps wait;
+  the pointer, wheel and keys go to the tab).
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 
@@ -53,6 +56,7 @@ npm start                  # the app, against https://api.simeonlabs.com
 npm start -- --api=http://127.0.0.1:8000   # against a server on this computer
 npm run smoke              # the app run for real against a stand-in (Linux: xvfb-run -a npm run smoke)
 npm run browser-smoke      # the browser in the app run for real against a stand-in engine and test pages (Linux: xvfb-run -a)
+npm run browser-view-smoke # the app itself: the Computer tab's view of a tab, Take control with the real mouse and keys (Linux: xvfb-run -a)
 npm run package            # a developer's installer in out/ (on Linux: needs Wine)
 node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD, for lib/release.mjs's signers)
 node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)

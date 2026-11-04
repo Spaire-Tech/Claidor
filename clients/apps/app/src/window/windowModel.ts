@@ -60,6 +60,8 @@ export interface RoutineEditing {
 export interface ComputerOpen {
   agentId: string
   helper?: string
+  /** The agent's browser on this PC, not Simeon's computer (docs/app-browser/README.md, step 2b): the Windows app only. */
+  browser?: boolean
 }
 
 /** A computer question the person asked (step 5c, ComputerStates.swift's `ComputerAsk`): ⌘K or "/" Update Simeon's Computer, the sidebar's or "Couldn't Reach"'s Recover. */
@@ -639,6 +641,12 @@ export class WindowModel {
    */
   openComputer(agentId: string, helper?: string): void {
     this.computer = { agentId, helper }
+    this.changed()
+  }
+
+  /** The agent's browser on this PC over the window (the Computer tab's Open, Take control): Simeon's computer isn't started. */
+  openBrowser(agentId: string): void {
+    this.computer = { agentId, browser: true }
     this.changed()
   }
 

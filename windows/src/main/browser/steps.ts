@@ -10,6 +10,7 @@ import { randomBytes } from 'node:crypto'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { JSONObject } from '../hands/wire'
+import type { Control } from './control'
 import { readKey } from './keys'
 import { helperCall, helperWorld } from './page'
 import type { Answer, BrowserRequest } from './protocol'
@@ -20,7 +21,16 @@ export interface StepsOptions {
   tabs: Tabs
   /** Where the files of an upload are written for the page to take. */
   uploads: string
+  /** Who has control: while the person has an agent's browser, its steps wait (step 2b). */
+  control?: Control
+  /** Where the agent's pointer went on its tab, for the Computer tab's view. */
+  pointer?(group: string, x: number, y: number, type: 'move' | 'click' | 'drag' | 'scroll'): void
+  /** An agent's steps started or settled. */
+  activity?(group: string): void
 }
+
+/** A step that waited out its time for the person to give control back says so this long before its deadline. */
+const controlMarginMs = 5_000
 
 /** A refusal or a failure said to the agent as it is. */
 export class StepError extends Error {}
@@ -121,21 +131,61 @@ export class Steps {
 
   /** One step, after the agent's step before it. */
   run(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
+    const startedAt = Date.now()
+    // Auto-review reads the tabs before a step; while the person has them, it doesn't queue behind the step that waits for them.
+    if (request.op === 'review_state' && this.options.control?.isHeld(request.viewId)) return this.now(request, signal, startedAt)
     const before = this.chains.get(request.viewId) ?? Promise.resolve()
-    const step = before.then(() => this.now(request, signal))
+    const step = before.then(() => this.now(request, signal, startedAt))
     const settled = step.then(
       () => undefined,
       () => undefined,
     )
     this.chains.set(request.viewId, settled)
+    this.options.activity?.(request.viewId)
     void settled.then(() => {
       if (this.chains.get(request.viewId) === settled) this.chains.delete(request.viewId)
+      this.options.activity?.(request.viewId)
     })
     return step
   }
 
-  private async now(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
+  /** Whether a step of the agent's is running or waiting. */
+  busy(group: string): boolean {
+    return this.chains.has(group)
+  }
+
+  /**
+   * The person gave the agent's browser back: the refs of its last snapshot
+   * are refused until the next one (the page may have changed under them),
+   * and its next answer says so.
+   */
+  async personGaveBack(group: string): Promise<void> {
+    const tabs = this.tabs.groupTabs(group)
+    await Promise.all(
+      tabs.map((tab) =>
+        tab.contents.getURL() === ''
+          ? undefined
+          : within(tab.contents.executeJavaScriptInIsolatedWorld(helperWorld, [{ code: helperCall('forget') }]), helperTimeoutMs, 'timeout').catch(() => undefined),
+      ),
+    )
+    const current = this.tabs.currentTab(group)
+    current?.notes.push('The person used the browser (Take control) and gave it back; the page may have changed, so take a fresh browser_snapshot before acting.')
+  }
+
+  private async now(request: BrowserRequest, signal: AbortSignal, startedAt: number): Promise<Answer> {
     checkpoint(signal)
+    // The person has the agent's browser: the step waits for it back, as long as its deadline allows. Reading the tabs for Auto-review doesn't wait.
+    const control = this.options.control
+    if (control?.isHeld(request.viewId) && request.op !== 'review_state') {
+      const left = request.deadlineMs - (Date.now() - startedAt) - controlMarginMs
+      const freed = await control.free(request.viewId, left, signal)
+      checkpoint(signal)
+      if (!freed)
+        return {
+          ok: false,
+          error: 'The person has taken control of the browser here and hasn’t given it back yet. Wait a little, then take a fresh browser_snapshot before acting; or ask them in the chat.',
+        }
+    }
     try {
       return await this.step(request, signal)
     } catch (error) {
@@ -389,13 +439,7 @@ export class Steps {
       else deltaY = amount
       said = `Scrolled ${['up', 'left', 'right'].includes(direction) ? direction : 'down'} ${amount} pixels.`
     } else said = `Scrolled by (${deltaX}, ${deltaY}).`
-    await this.cdp(tab, 'Input.dispatchMouseEvent', {
-      type: 'mouseWheel',
-      x: Math.round(viewport.width / 2),
-      y: Math.round(viewport.height / 2),
-      deltaX,
-      deltaY,
-    })
+    await this.mouse(tab, 'mouseWheel', viewport.width / 2, viewport.height / 2, { deltaX, deltaY })
     await sleep(250)
     return this.finish(request, tab, said)
   }
@@ -532,7 +576,13 @@ export class Steps {
   }
 
   private mouse(tab: Tab, type: string, x: number, y: number, extra: JSONObject = {}): Promise<unknown> {
+    // A press is the click shown; its release leaves it so.
+    if (type !== 'mouseReleased') this.point(tab, x, y, type === 'mousePressed' ? 'click' : type === 'mouseMoved' && extra.buttons === 1 ? 'drag' : type === 'mouseWheel' ? 'scroll' : 'move')
     return this.cdp(tab, 'Input.dispatchMouseEvent', { type, x: Math.round(x), y: Math.round(y), button: 'none', ...extra })
+  }
+
+  private point(tab: Tab, x: number, y: number, type: 'move' | 'click' | 'drag' | 'scroll'): void {
+    this.options.pointer?.(tab.group, Math.round(x), Math.round(y), type)
   }
 
   private async click(tab: Tab, x: number, y: number, args: JSONObject): Promise<void> {

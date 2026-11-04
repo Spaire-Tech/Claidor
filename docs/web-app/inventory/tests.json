@@ -237,7 +237,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/LocalExecTests.swift",
-  "tests": 16
+  "tests": 17
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/LocalToolTests.swift",

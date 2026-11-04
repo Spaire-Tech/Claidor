@@ -1,8 +1,10 @@
-// The browser in the app run for real (docs/app-browser/README.md, step 2a):
+// The browser in the app run for real (docs/app-browser/README.md, steps 2a and 2b):
 // Electron on this computer (Windows, or Linux under a virtual display), the
 // tabs and the steps (test/browserHarness.ts), driven as the agents' engine
-// drives them, by a stand-in engine here, on pages a test site here serves.
-// No real site and no real service is reached.
+// drives them, by a stand-in engine here, on pages a test site here serves;
+// and the Computer tab's view of them (step 2b): the pictures, Take control,
+// the person's pointer and keys, the bar. No real site and no real service
+// is reached.
 //
 //   npm run browser-smoke                (Linux: xvfb-run -a npm run browser-smoke)
 //
@@ -77,6 +79,13 @@ function site() {
     '/geo': () => page('Geo', `<script>navigator.geolocation.getCurrentPosition(()=>document.title='geo allowed',e=>document.title='geo refused '+e.code)</script>`),
     '/read-cookie': () => page('Cookie', `<script>document.title='cookie '+document.cookie</script>`),
     '/file-link': () => page('File link', `<a href="file:///etc/hostname">A file of this computer</a>`),
+    '/view': () =>
+      page(
+        'View',
+        `<button id="press" style="position:absolute;left:100px;top:100px;width:200px;height:60px" onclick="document.title='person '+event.isTrusted">Press</button>
+         <input id="field" style="position:absolute;left:100px;top:300px;width:300px;height:30px" oninput="document.title='typed '+this.value">
+         <button id="agent" style="position:absolute;left:500px;top:100px;width:120px;height:40px" onclick="document.title='agent clicked'">Agent</button>`,
+      ),
   }
   const server = http.createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://site')
@@ -230,7 +239,7 @@ try {
   // Opening a page, its picture.
   let answer = await run('navigate', { url: `${pages.base}/form` }, { screenshot: true })
   check(answer.ok && answer.summary === `Opened ${pages.base}/form.` && answer.title === 'Form' && answer.url === `${pages.base}/form`, 'navigate opens the page and says where it is', JSON.stringify({ ...answer, screenshotB64: undefined }))
-  check(typeof answer.screenshotB64 === 'string' && Buffer.from(answer.screenshotB64, 'base64').subarray(1, 4).toString() === 'PNG', 'its picture is a PNG of the page, drawn while nothing shows the tab')
+  check(typeof answer.screenshotB64 === 'string' && Buffer.from(answer.screenshotB64, 'base64').subarray(1, 4).toString() === 'PNG', 'its picture is a PNG of the page, drawn while nothing shows the tab', typeof answer.screenshotB64 === 'string' ? `${answer.screenshotB64.length} characters` : JSON.stringify(answer))
 
   // The outline.
   answer = await run('snapshot')
@@ -397,6 +406,107 @@ try {
   check(!late.ok && late.error === 'The browser took too long to respond (2 seconds).', 'a step past its deadline is answered so', JSON.stringify(late))
   answer = await run('snapshot', {}, { viewId: 'agent-c' })
   check(answer.ok, 'the agent whose step was cancelled browses on')
+
+  // MARK: Step 2b, the Computer tab's view and Take control
+  const viewLine = output.join('').split('\n').find((line) => line.startsWith('[harness] view '))
+  const viewBase = viewLine?.slice('[harness] view '.length).trim()
+  const view = async (what, body = {}) => {
+    const answer = await fetch(`${viewBase}/${what}`, { method: 'POST', body: JSON.stringify(body) })
+    return answer.json()
+  }
+  const told = () => view('told')
+  const soon = (ms) => new Promise((done) => setTimeout(done, ms))
+  /** Waits up to 5 s for what the view told to pass `test`. */
+  const until = async (test) => {
+    for (let n = 0; n < 50; n += 1) {
+      const now = await told()
+      if (test(now)) return now
+      await soon(100)
+    }
+    return told()
+  }
+  const pending = (promise, ms) => Promise.race([promise.then(() => 'answered'), soon(ms).then(() => 'waiting')])
+  const shownTitle = (now) => now.last?.tabs?.find((tab) => tab.id === now.last.current)?.title
+  const shownUrl = (now) => now.last?.tabs?.find((tab) => tab.id === now.last.current)?.url
+
+  await run('navigate', { url: `${pages.base}/other` }, { viewId: 'agent-v' })
+  let shown = await view('watch', { agentId: 'agent-v' })
+  check(shown?.agentId === 'agent-v' && shown.enabled === true && shown.tabs.length === 1 && shown.current === shown.tabs[0].id && shown.person === false, 'watching an agent tells its tabs, the one it acts on, and the switch', JSON.stringify(shown))
+  await run('navigate', { url: `${pages.base}/view` }, { viewId: 'agent-v' })
+  let now = await until((one) => one.frames > 0 && shownTitle(one) === 'View')
+  check(now.frames > 0 && now.frame?.width === 1280 && now.frame?.height === 800 && now.frame.head.join() === '255,216,255', "the agent's tab comes as pictures, JPEGs of the page's 1280 × 800, while nothing shows it", JSON.stringify(now.frame))
+  check(shownUrl(now) === `${pages.base}/view` && now.last.canGoBack === true && now.last.canGoForward === false, 'the view is told the page, and that it can go back', JSON.stringify(now.last))
+  const framesBefore = now.frames
+  const viewOutline = (await run('snapshot', {}, { viewId: 'agent-v' })).data ?? ''
+  answer = await run('click', { ref: refOf(viewOutline, /button "Agent"/), element: 'Agent' }, { viewId: 'agent-v' })
+  now = await until((one) => one.last?.pointer?.type === 'click' && shownTitle(one) === 'agent clicked')
+  check(answer.ok && now.last.pointer?.type === 'click' && Math.abs(now.last.pointer.x - 560) <= 2 && Math.abs(now.last.pointer.y - 120) <= 2, "the agent's click is where its pointer is shown", JSON.stringify(now.last?.pointer))
+  check(now.frames > framesBefore, 'a change on the page is a new picture', `${framesBefore} → ${now.frames}`)
+  now = await until((one) => one.last?.working === false)
+  check(now.last.working === false, 'the agent is shown working only while a step runs', JSON.stringify(now.last))
+
+  // Take control: the agent's steps wait; the person's pointer and keys reach the page, trusted.
+  shown = await view('control', { agentId: 'agent-v', person: true })
+  check(shown?.person === true, 'Take control gives the person the agent’s browser', JSON.stringify(shown))
+  const waitingClick = stand.step('click', { ref: refOf(viewOutline, /button "Agent"/), element: 'Agent' }, { viewId: 'agent-v' }).answer
+  check((await pending(waitingClick, 1_200)) === 'waiting', "the agent's next step waits while the person has control")
+  now = await until((one) => one.last?.working === true)
+  check(now.last.working === true, 'the waiting step shows the agent as working')
+  const review = await Promise.race([run('review_state', {}, { viewId: 'agent-v' }), soon(3_000).then(() => undefined)])
+  check(review?.ok === true, 'Auto-review still reads the tabs while the person has control', JSON.stringify(review))
+  const mouse = (type, x, y, extra = {}) => view('input', { agentId: 'agent-v', input: { kind: 'mouse', type, x, y, button: type === 'mouseMoved' ? 'none' : 'left', buttons: type === 'mousePressed' ? 1 : 0, clickCount: type === 'mouseMoved' ? 0 : 1, modifiers: 0, ...extra } })
+  await mouse('mouseMoved', 200, 130)
+  await mouse('mousePressed', 200, 130)
+  await mouse('mouseReleased', 200, 130)
+  now = await until((one) => shownTitle(one) === 'person true')
+  check(shownTitle(now) === 'person true', "the person's click lands on the page, trusted", shownTitle(now))
+  await mouse('mousePressed', 250, 315)
+  await mouse('mouseReleased', 250, 315)
+  for (const [key, code, keyCode] of [['h', 'KeyH', 72], ['i', 'KeyI', 73]]) {
+    await view('input', { agentId: 'agent-v', input: { kind: 'key', type: 'keyDown', key, code, keyCode, text: key, modifiers: 0 } })
+    await view('input', { agentId: 'agent-v', input: { kind: 'key', type: 'keyUp', key, code, keyCode, modifiers: 0 } })
+  }
+  await view('input', { agentId: 'agent-v', input: { kind: 'text', text: ' é' } })
+  now = await until((one) => shownTitle(one) === 'typed hi é')
+  check(shownTitle(now) === 'typed hi é', "the person's keys and composed words type into the page", shownTitle(now))
+  await view('input', { agentId: 'agent-v', input: { kind: 'wheel', x: 640, y: 400, deltaX: 0, deltaY: 'lots', modifiers: 0 } })
+  check((await told()).last !== undefined, 'a malformed input is dropped, nothing breaks')
+  await view('bar', { agentId: 'agent-v', act: { act: 'back' } })
+  now = await until((one) => shownUrl(one) === `${pages.base}/other` && one.last.canGoForward === true)
+  check(shownUrl(now) === `${pages.base}/other`, 'Back goes back', shownUrl(now))
+  await view('bar', { agentId: 'agent-v', act: { act: 'forward' } })
+  now = await until((one) => shownUrl(one) === `${pages.base}/view` && shownTitle(one) === 'View')
+  check(shownUrl(now) === `${pages.base}/view`, 'Forward goes forward', shownUrl(now))
+  check((await pending(waitingClick, 10)) === 'waiting', 'the agent still waits')
+
+  // Give back: the step that waited is told the page may have changed; the agent looks again.
+  shown = await view('control', { agentId: 'agent-v', person: false })
+  answer = await waitingClick
+  check(shown?.person === false && !answer.ok && /^The person used this page since your last snapshot, so e\d+ may point elsewhere now; take a fresh browser_snapshot\.$/.test(answer.error ?? ''), 'given back, a ref from before is refused: the person used the page', JSON.stringify(answer))
+  answer = await run('snapshot', {}, { viewId: 'agent-v' })
+  check(answer.ok && /The person used the browser \(Take control\) and gave it back/.test(answer.summary), 'the agent is told the person had the browser', answer.summary)
+  await mouse('mousePressed', 560, 120)
+  await mouse('mouseReleased', 560, 120)
+  await soon(400)
+  check(shownTitle(await told()) === 'View', "the person's input reaches the page only while they have control", shownTitle(await told()))
+  await view('bar', { agentId: 'agent-v', act: { act: 'back' } })
+  await soon(400)
+  check(shownUrl(await told()) === `${pages.base}/view`, 'the bar is the person’s only while they have control')
+
+  // Held past a step's time: the step says so before its deadline; the page loading again gives everything back.
+  await view('control', { agentId: 'agent-v', person: true })
+  const heldStarted = Date.now()
+  answer = await run('snapshot', {}, { viewId: 'agent-v', deadlineMs: 7_000 })
+  check(!answer.ok && /^The person has taken control of the browser here/.test(answer.error ?? '') && Date.now() - heldStarted < 6_500, 'a step that waits out its time is told the person has the browser, before its deadline', `${JSON.stringify(answer)} after ${Date.now() - heldStarted} ms`)
+  await view('reload-page')
+  answer = await Promise.race([run('snapshot', {}, { viewId: 'agent-v' }), soon(4_000).then(() => ({ timedOut: true }))])
+  shown = await view('watch', { agentId: 'agent-v' })
+  check(answer.ok && shown?.person === false, 'the app’s page loading again gives the browser back', JSON.stringify({ ok: answer.ok, person: shown?.person }))
+  await view('watch', { agentId: null })
+  const framesUnwatched = (await told()).frames
+  await run('navigate', { url: `${pages.base}/other` }, { viewId: 'agent-v' })
+  await soon(500)
+  check((await told()).frames === framesUnwatched, 'unwatched, no pictures are made', `${framesUnwatched} → ${(await told()).frames}`)
 
   // Under the app's own rule for its pages (main.ts), the tabs are their own: no link, popup or page went to the person's browser.
   const outside = output.join('').split('\n').filter((line) => line.includes('[harness] opened outside'))

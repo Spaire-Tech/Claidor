@@ -29,6 +29,8 @@ export interface LinkOptions {
   /** Runs one step; the signal says it was cancelled or ran out of time. */
   run(request: BrowserRequest, signal: AbortSignal): Promise<Answer>
   log(line: string): void
+  /** The engine's switch was said again (a welcome). */
+  welcomed?(enabled: boolean): void
   /** Shorter waits for the tests. */
   timing?: { pingMs?: number; stallMs?: number; backoffMs?: readonly number[]; postGapMs?: number }
 }
@@ -174,6 +176,7 @@ export class BrowserLink {
       case 'welcome':
         this.providerId = frame.providerId
         this.enabled = frame.enabled
+        this.options.welcomed?.(frame.enabled)
         void this.post([hello(this.options.hello)], 10_000)
         return
       case 'cancel':

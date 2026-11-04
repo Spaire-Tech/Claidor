@@ -2,10 +2,11 @@
 
 A plan (4 November 2026). The founder's decisions are made (below).
 
-**Where it is.** Step 1, the engine's route, and step 2a, the browser in
-the Windows app, are built and tested, off by default ([protocol.md](protocol.md)).
-Nothing has changed for anyone, and nothing has run on a real PC yet. Next:
-step 2b, the Computer tab's view of the browser and Take Control.
+**Where it is.** Step 1, the engine's route, and step 2, the browser in
+the Windows app with the Computer tab's view of it and Take control, are
+built and tested, off by default ([protocol.md](protocol.md)). Nothing has
+changed for anyone, and nothing has run on a real PC yet. Next: step 3,
+the cards on Windows.
 
 ## The decision
 
@@ -291,8 +292,9 @@ your recommendations".
 | 0. Decisions | Done, 4 November 2026 |
 | 1. The route in the engine | Built, tested with a stand-in app (`desktop/tests/app-browser-route.test.mjs`), off by default. Not yet on the computers: that needs a host bundle published from a Mac. Not run with a real app. |
 | 2a. The browser on Windows: tabs, the steps, popups, dialogs, downloads, uploads, the line to the engine | Built, 4 November 2026 (`windows/src/main/browser/`). Checked in Electron for real under a virtual display (`npm run browser-smoke`, 64 checks) and driven end to end by step 1's engine. Not run on a Windows PC or against real sites. |
-| 2b. The Computer tab's view and Take Control | Next |
-| 3-7 | Not started |
+| 2b. The Computer tab's view and Take control | Built, 4 November 2026 (`windows/src/main/browser/view.ts`, `control.ts`; `clients/apps/app/src/window/BrowserView.tsx`). Checked in the Windows app itself under a virtual display (`npm run browser-view-smoke`, 15 checks: the page's own hands loop opening the line, the picture, the face, none while the window is hidden, Take control with the real mouse and keys, Give back, Exit) and in the browser's own check (`npm run browser-smoke`, 87). Not run on a Windows PC. |
+| 3. The cards on Windows | Next |
+| 4-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
 
@@ -335,3 +337,33 @@ Step 2a, what was decided while building it (4 November 2026):
   written for this app, not taken from the computer's helper, which is
   part of the reconstruction (`desktop/NOTICE.md`); what the agent reads is
   shaped the same.
+
+Step 2b, what was decided while building it (4 November 2026):
+
+- **What the Computer tab shows.** This PC's browser while the agent has
+  tabs here and no computer-use helper of its is at work on Simeon's
+  computer's screen; otherwise Simeon's computer, as before. The grey line
+  ("On this PC", "On Simeon's computer") shows only once the server's
+  switch is on for the person (the engine's welcome): off, the tab is as
+  it was.
+- **The pane shows, the full view is used.** The pane's frame has the
+  picture, the agent's face where it last pointed, Open, and the site with
+  its lock ("Not Secure" over http) under it. Take control is in the full
+  view, where the page is large enough to use. Opening the browser never
+  starts Simeon's computer; the cards still open the computer until step 3.
+- **Take control.** The agent's steps wait, each until 5 seconds before its
+  deadline; Auto-review still reads the tabs. Back, Forward, Reload and the
+  tabs' pills are the person's only then. Given back, the agent's old refs
+  are refused and its next answer says the person had the browser. Closing
+  the view, the app's page loading again, signing out and quitting give it
+  back.
+- **The pictures** are the tab's own paints as Chromium draws it offscreen,
+  sent as JPEGs: 20 a second while the page watches, 30 while the person
+  has control, none while nothing watches or the app's window is in the
+  tray or minimised (it is drawn again as it comes back). One agent is
+  watched at a time (the full view over the pane's preview).
+- **The person's keys** go to the tab as they are; Ctrl+C, X, V, A, Z and Y
+  are the tab's own editing with this PC's clipboard; a keyboard's
+  composition (accents, Chinese, Japanese) arrives as words.
+- **The words** (9 new, each in the apps' 9 languages) are in the Mac's
+  catalogue, which the web app reads, so the Mac's view in step 4 has them.

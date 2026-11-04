@@ -59,6 +59,7 @@ export class Tabs {
   private readonly all = new Map<string, Tab>()
   /** The tab each agent's view acts on. */
   private readonly current = new Map<string, string>()
+  private readonly listeners = new Set<(group: string) => void>()
   private next = 1
   readonly session: Session
 
@@ -91,6 +92,16 @@ export class Tabs {
     })
   }
 
+  /** Told when an agent's tabs change: one opened, closed or chosen, a page loading, loaded, moved or renamed (the Computer tab's view, view.ts). */
+  onChange(listener: (group: string) => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private changed(group: string): void {
+    for (const listener of [...this.listeners]) listener(group)
+  }
+
   private byContents(contents: WebContents): Tab | undefined {
     for (const tab of this.all.values()) if (tab.contents === contents) return tab
     return undefined
@@ -116,6 +127,7 @@ export class Tabs {
 
   select(group: string, tab: Tab): void {
     this.current.set(group, tab.id)
+    this.changed(group)
   }
 
   /** A new tab for the agent, which becomes its tab. */
@@ -164,10 +176,15 @@ export class Tabs {
     })
     contents.on('did-start-loading', () => {
       tab.loading = true
+      this.changed(group)
     })
     contents.on('did-stop-loading', () => {
       tab.loading = false
+      this.changed(group)
     })
+    contents.on('did-navigate', () => this.changed(group))
+    contents.on('did-navigate-in-page', () => this.changed(group))
+    contents.on('page-title-updated', () => this.changed(group))
     contents.on('will-navigate', (event) => {
       if (!openable(event.url)) event.preventDefault()
     })
@@ -187,6 +204,7 @@ export class Tabs {
     contents.once('destroyed', () => this.forget(tab))
     window.once('closed', () => this.forget(tab))
     this.attach(tab)
+    this.changed(group)
     return tab
   }
 
@@ -223,6 +241,7 @@ export class Tabs {
 
   private forget(tab: Tab): void {
     if (!this.all.delete(tab.id)) return
+    this.changed(tab.group)
     if (this.current.get(tab.group) !== tab.id) return
     // The agent's tab closed: back to its opener, else its newest tab.
     const opener = tab.opener === undefined ? undefined : this.all.get(tab.opener)
@@ -231,6 +250,7 @@ export class Tabs {
       this.current.set(tab.group, fallback.id)
       fallback.notes.push(`The tab ${tab.id} closed; the next steps act on ${fallback.id} again.`)
     } else this.current.delete(tab.group)
+    this.changed(tab.group)
   }
 
   close(tab: Tab): void {
