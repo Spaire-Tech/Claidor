@@ -11,6 +11,7 @@
 | [ops/box-host/](ops/box-host/) | Setting up a server for cloud computers, and the settings Render needs. |
 | [launch-film.md](launch-film.md) | The film that introduces Simeon: the reference it follows, Iris (`clay-06`) presenting, the first test, and running Higgsfield from a session. |
 | [kept-names.md](kept-names.md) | Which earlier names are still in the code, why, and how the name check works. |
+| [agents-on-the-server/](agents-on-the-server/README.md) | The agents on the server, the computer as their hands (a plan, 4 November 2026): thinking, talking, connectors, memory, cards and routines on Simeon Labs' side; the computer woken only for websites, code, files and sign-ins; how it is today, the order of work and the founder's decisions. |
 | [app-browser/](app-browser/README.md) | The browser in the app (a plan, 4 November 2026): websites in the Mac and Windows apps while they are open, the cloud computer for routines and when no app is; OpenBot's design followed, none of its code; the cards; how nothing breaks; the order of work and the founder's decisions. |
 | [web-app/](web-app/README.md) | The web and Windows app: the Mac app's audit, area by area, against the old web app, read from the code (`scripts/web_app_inventory.py`); what the Mac's own parts become; the checks that keep it complete; the order of work. [PROGRESS.md](web-app/PROGRESS.md) is the running record: where it is, decisions, open questions, the log. |
 
