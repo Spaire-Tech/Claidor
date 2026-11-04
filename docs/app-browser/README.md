@@ -6,8 +6,10 @@ A plan (4 November 2026). The founder's decisions are made (below).
 the Windows app with the Computer tab's view of it and Take control, are
 built and tested, off by default ([protocol.md](protocol.md)). Step 3, the
 cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
-is built. Nothing has changed for anyone, and nothing has run on a real PC
-yet. Next: 3b, the fills (the in-chat form, 1Password, saved logins).
+and 3b, the fills (the in-chat form, 1Password, saved logins, a new
+password), are built. Nothing has changed for anyone, and nothing has run
+on a real PC yet. Next: 3c, the checkout's card and Duffel's form, which
+need another site's frames read.
 
 ## The decision
 
@@ -295,8 +297,8 @@ your recommendations".
 | 2a. The browser on Windows: tabs, the steps, popups, dialogs, downloads, uploads, the line to the engine | Built, 4 November 2026 (`windows/src/main/browser/`). Checked in Electron for real under a virtual display (`npm run browser-smoke`, 64 checks) and driven end to end by step 1's engine. Not run on a Windows PC or against real sites. |
 | 2b. The Computer tab's view and Take control | Built, 4 November 2026 (`windows/src/main/browser/view.ts`, `control.ts`; `clients/apps/app/src/window/BrowserView.tsx`). Checked in the Windows app itself under a virtual display (`npm run browser-view-smoke`, 15 checks: the page's own hands loop opening the line, the picture, the face, none while the window is hidden, Take control with the real mouse and keys, Give back, Exit) and in the browser's own check (`npm run browser-smoke`, 87). Not run on a Windows PC. |
 | 3a. The take-over and the checkout's buttons open the agent's tab here | Built, 4 November 2026 (`openAgentScreen` in `clients/apps/app/src/window/BrowserView.tsx`; the take-over's picture from the tab, `host-runner-composition.ts`). Checked in the Windows app itself (`npm run browser-view-smoke`, 19 checks, 4 of them the take-over) and the engine's tests. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC. |
-| 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Next |
-| 3c. The checkout's card and Duffel's form (needs another site's frames read) | Not started |
+| 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-forms.ts`; the `form` op in `windows/src/main/browser/steps.ts`; the in-chat form's lock line in `RequestCards.tsx`). Checked in Electron (`npm run browser-smoke`, 100 checks, 13 of them the fills, run twice), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and fills drove the Windows browser, which typed a sign-in and a one-time code and sent it. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC or real sites. |
+| 3c. The checkout's card and Duffel's form (needs another site's frames read) | Next |
 | 4-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
@@ -391,3 +393,28 @@ Step 3a, what was decided while building it (4 November 2026):
   (`where`).
 - **Not yet:** the iPhone's Take over still opens the computer's screen for
   a task in an app's browser (step 5).
+
+Step 3b, what was decided while building it (4 November 2026):
+
+- **Where a fill goes.** The in-chat form, 1Password's fill, the saved
+  login and the new password go to the agent's tab on this PC when its
+  task is in the app (`where`), else to the computer's Chrome as before.
+  The engine sends one `form` step; the app types the values itself.
+- **The values.** They go only to the app that types them, are never
+  logged on either side, and never come back: the answer says which fields
+  went in, never what. The agent reads the computer's own sentences.
+- **Which tab.** The agent's tabs on the card's site, its current tab
+  first; of those, the first with all the fields, else the one missing
+  the fewest. With none, the card says to open the page first.
+- **Typing.** Each key is pressed as a person presses it (trusted keys,
+  25 ms apart), after what was in the field is cleared; a tick box is
+  ticked, a list is chosen, a date field is set. Each field is read back
+  to check it holds what was asked, without reading the value out.
+- **Sending.** Enter only for a one-field form whose field went in (a
+  one-time code). A new password is typed into the page's new-password
+  fields (three at most), never one marked as the current password.
+- **The in-chat form's lock line** reads "Typed into the page on this PC,
+  never shown to your agent." for a task here (one new word, in the 9
+  languages); otherwise Simeon's computer, as before.
+- **Not yet:** a field in another site's frame (a card form) is not found;
+  that is step 3c.

@@ -714,6 +714,7 @@
 {"text": "Type it again", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsGeneral.swift"], "old_web_app": false, "web_app": true},
 {"text": "Type your own answer", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Cards.swift"], "old_web_app": true, "web_app": true},
 {"text": "Typed into the page on Simeon's computer, never shown to your agent.", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/UserFormCard.swift"], "old_web_app": false, "web_app": true},
+{"text": "Typed into the page on this PC, never shown to your agent.", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": [], "old_web_app": false, "web_app": true},
 {"text": "Typing…", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/ChatMotion.swift", "ios/SimeonCore/Sources/SimeonCore/Activity.swift", "ios/SimeonCore/Sources/SimeonCore/AgentNetwork.swift"], "old_web_app": true, "web_app": true},
 {"text": "Unhide", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SidebarMenus.swift"], "old_web_app": true, "web_app": true},
 {"text": "Uninstall", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/PluginsWindow.swift"], "old_web_app": true, "web_app": true},

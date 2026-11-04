@@ -138,6 +138,10 @@ const pages = await site()
 const stand = engine()
 const standIn = await startStandIn({ routes: stand.routes })
 // The take-over's card in Theo's chat, as the engine writes it (`boxRequestId`).
+// An in-chat form in Theo's chat and in Iris's: its lock line says where the values are typed (step 3b).
+const formLine = (id) => ({ kind: 'send-message', id, message: { type: 'user-form', form: { title: 'Sign in to the shop', domain: '127.0.0.1', fields: [{ id: 'email', label: 'Email', type: 'email' }] } }, timestampMs: Date.now() - 60_000 })
+standIn.state.box.lines.theo.push(formLine('form-theo'))
+standIn.state.box.lines.iris.push(formLine('form-iris'))
 standIn.state.box.lines.theo.push({ kind: 'send-message', id: 'take-over', message: { type: 'text', content: stand.handoff.instruction }, boxRequestId: stand.handoff.requestId, timestampMs: Date.now() })
 const dataFolder = mkdtempSync(path.join(os.tmpdir(), 'simeon-browser-view-'))
 const shots = process.env.SHOTS
@@ -210,6 +214,12 @@ try {
   const shownFrames = await page.evaluate(() => window.__frames)
   check(answer.ok === true && hiddenFrames === 0 && shownFrames > 0, 'no pictures while the window is hidden; one as it comes back', `${hiddenFrames} hidden, ${shownFrames} shown`)
 
+  // The in-chat form's lock line: typed into the page on this PC, where Theo's page is.
+  await page.waitForSelector('.ask-lock', { timeout: 5_000 }).catch(() => {})
+  await page.waitForFunction(() => document.querySelector('.ask-lock span')?.textContent?.includes('this PC'), null, { timeout: 5_000 }).catch(() => {})
+  const theoLock = await page.locator('.ask-lock span').first().textContent().catch(() => null)
+  check(theoLock === 'Typed into the page on this PC, never shown to your agent.', "Theo's in-chat form says its values are typed into the page on this PC", theoLock)
+
   // The full view, and Take control.
   await page.locator('.computer-preview .frame-open').click()
   await page.waitForSelector('.browser-view', { timeout: 5_000 }).catch(() => {})
@@ -263,6 +273,11 @@ try {
     'I’m done gives the tab back, closes the view and answers Theo',
     JSON.stringify({ ok: answer.ok, answers: stand.takeOver.answers }),
   )
+  // Iris has no tab here: her form's values are typed on Simeon's computer, as before.
+  await page.locator('.sidebar').getByText('Iris', { exact: true }).first().click()
+  await page.waitForTimeout(800)
+  const irisLock = await page.locator('.ask-lock span').first().textContent().catch(() => null)
+  check(irisLock === "Typed into the page on Simeon's computer, never shown to your agent.", "Iris's in-chat form still says Simeon's computer", irisLock)
   check(errors.length === 0, `no page errors (${errors.join(' | ')})`)
 } catch (error) {
   check(false, 'the run went to its end', error instanceof Error ? error.stack : String(error))

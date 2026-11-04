@@ -1,6 +1,7 @@
 // What runs inside an agent's page (docs/app-browser/protocol.md): the
 // outline of the page with a ref for each control, finding a ref again,
-// filling a field, choosing in a list, a highlight. It runs in a world of
+// filling a field, choosing in a list, a highlight, the fields a card's
+// fill points at (step 3b). It runs in a world of
 // its own (`executeJavaScriptInIsolatedWorld`), which shares the page's
 // document but not its scripts: the page can neither read the refs nor
 // change them. A navigation empties that world, and every ref with it.
@@ -404,6 +405,138 @@ const helperSource = String.raw`
     return found.error ? found : { described: describe(found.el) }
   }
 
+  // MARK: The cards' fills (step 3b)
+
+  /** The page's document and its same-site frames' documents (another site's can't be reached). */
+  function documents() {
+    const out = [document]
+    for (let index = 0; index < out.length && out.length < 20; index += 1) {
+      for (const frame of out[index].querySelectorAll('iframe, frame')) {
+        let inner = null
+        try { inner = frame.contentDocument } catch { inner = null }
+        if (inner && !out.includes(inner)) out.push(inner)
+      }
+    }
+    return out
+  }
+
+  const fieldSelector = 'input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="textbox"], [role="combobox"], [role="listbox"], [role="checkbox"], [role="spinbutton"], [role="searchbox"]'
+  const noValue = new Set(['hidden', 'button', 'submit', 'reset', 'image', 'file', 'radio'])
+
+  /** Whether a control is the kind a field of this type is typed into. */
+  function kindFits(el, type) {
+    const role = roleOf(el)
+    const inputType = el.tagName === 'INPUT' ? (el.getAttribute('type') || 'text').toLowerCase() : ''
+    if (type === 'checkbox') return inputType === 'checkbox' || role === 'checkbox'
+    if (type === 'select') return el.tagName === 'SELECT' || role === 'combobox' || role === 'listbox'
+    if (el.tagName === 'SELECT' || inputType === 'checkbox' || noValue.has(inputType)) return false
+    return el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable || ['textbox', 'spinbutton', 'searchbox', 'combobox'].includes(role)
+  }
+
+  /** Shown, and for anything but a checkbox (often drawn under its label) able to take what is typed. */
+  function usable(el, type) {
+    if (!el || !el.isConnected || !visible(el)) return false
+    if (type === 'checkbox') return !el.disabled
+    const rect = el.getBoundingClientRect()
+    if (rect.width < 1 && rect.height < 1) return false
+    return !el.disabled && !el.readOnly && el.getAttribute('aria-disabled') !== 'true' && el.getAttribute('aria-readonly') !== 'true'
+  }
+
+  /** The words a control is known by: its name, its labels, its placeholder. */
+  function namesOf(el) {
+    const names = [nameOf(el, roleOf(el)), el.getAttribute('placeholder') || '', el.getAttribute('aria-label') || '']
+    if (el.labels) for (const one of el.labels) names.push(one.innerText || one.textContent || '')
+    return names.map((name) => squash(name, 200).toLowerCase()).filter(Boolean)
+  }
+
+  /** The control a card's field points at: the ref of the last snapshot, else a selector, else the words that label it (exactly, then in part). */
+  function findField(spec) {
+    const target = spec && typeof spec.target === 'object' && spec.target ? spec.target : {}
+    const type = String(spec.type || 'text')
+    if (typeof target.ref === 'string' && target.ref.length > 0) {
+      const el = state.refs.get(target.ref)
+      if (usable(el, type)) return el
+    }
+    const docs = documents()
+    if (typeof target.selector === 'string' && target.selector.length > 0) {
+      for (const doc of docs) {
+        let all = []
+        try { all = Array.from(doc.querySelectorAll(target.selector)) } catch { all = [] }
+        const el = all.slice(0, 6).find((one) => usable(one, type))
+        if (el) return el
+      }
+    }
+    const label = typeof target.label === 'string' ? squash(target.label, 200).toLowerCase() : ''
+    if (label.length > 0) {
+      for (const exact of [true, false]) {
+        for (const doc of docs) {
+          for (const el of doc.querySelectorAll(fieldSelector)) {
+            if (!kindFits(el, type) || !usable(el, type)) continue
+            const names = namesOf(el)
+            if (exact ? names.includes(label) : names.some((name) => name.includes(label))) return el
+          }
+        }
+      }
+    }
+    return undefined
+  }
+
+  /** Each field found is held for the fill as the ref "form:<id>"; which were found and which weren't. */
+  function formFind(fields) {
+    const found = []
+    const missing = []
+    for (const spec of Array.isArray(fields) ? fields : []) {
+      const id = String(spec && spec.id)
+      const el = findField(spec)
+      if (el) {
+        state.refs.set('form:' + id, el)
+        found.push(id)
+      } else missing.push(id)
+    }
+    return { found, missing }
+  }
+
+  /** A sign-up's new password fields, at most three, never one asking for the current password; held as "password:0"… */
+  function passwordFields() {
+    let count = 0
+    for (const doc of documents()) {
+      for (const el of doc.querySelectorAll('input[type="password"]:not([autocomplete="current-password"])')) {
+        if (count >= 3) break
+        if (!usable(el, 'password')) continue
+        state.refs.set('password:' + count, el)
+        count += 1
+      }
+    }
+    return { count }
+  }
+
+  /** Whether a field holds something now (never what): a value, a choice, a tick. */
+  function holds(ref) {
+    const found = element(ref)
+    if (found.error) return { holds: false }
+    const el = found.el
+    if (el.tagName === 'INPUT' && (el.type || '').toLowerCase() === 'checkbox') return { holds: true, checked: el.checked }
+    if (el.getAttribute('role') === 'checkbox') return { holds: true, checked: el.getAttribute('aria-checked') === 'true' }
+    if (el.tagName === 'SELECT') return { holds: el.selectedIndex >= 0 }
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return { holds: String(el.value || '').length > 0, isDate: el.tagName === 'INPUT' && (el.type || '').toLowerCase() === 'date' }
+    return { holds: String(el.innerText || el.textContent || '').trim().length > 0 }
+  }
+
+  /** What a field is, to know how to fill it (never its value). */
+  function fieldKind(ref) {
+    const found = element(ref)
+    if (found.error) return found
+    const el = found.el
+    const inputType = el.tagName === 'INPUT' ? (el.type || 'text').toLowerCase() : ''
+    return { tag: el.tagName, inputType, role: roleOf(el) }
+  }
+
+  /** The marks the fills left: gone, whatever was found. */
+  function formForget() {
+    for (const key of [...state.refs.keys()]) if (key.startsWith('form:') || key.startsWith('password:')) state.refs.delete(key)
+    return {}
+  }
+
   // The person had the page (Take control): the refs of the last snapshot are refused until the next one.
   function forget() {
     state.refs = new Map()
@@ -411,7 +544,7 @@ const helperSource = String.raw`
     return { forgot: true }
   }
 
-  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, generation: () => state.generation }
+  globalThis.__simeonPage = { outline, locate, focus, fill, choose, box, highlight, markFileField, unmark, page, scrollTo, describeRef, forget, formFind, passwordFields, holds, fieldKind, formForget, generation: () => state.generation }
 })()
 `
 

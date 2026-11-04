@@ -277,6 +277,28 @@ export async function openAgentScreen(
   openComputerView(model, store, agentId)
 }
 
+/** Whether the agent's page is in this PC's browser now, asked once while `asking` (an open in-chat form says where its values are typed). */
+export function useOnThisPC(
+  store: AppStore,
+  agentId: string,
+  asking: boolean,
+): boolean {
+  const [onPC, setOnPC] = useState(false)
+  useEffect(() => {
+    const browser = pcBrowser()
+    if (!browser || !asking) return
+    let live = true
+    void browser.peek(agentId).then((shown) => {
+      if (live)
+        setOnPC(showsPCBrowser(shown, store.computerHelpers(agentId).length))
+    })
+    return () => {
+      live = false
+    }
+  }, [store, agentId, asking])
+  return onPC
+}
+
 /** The take-over answered (I'm done, Skip): the agent's browser on this PC given back first, so its next step doesn't wait, then the agent told. */
 export function handBack(store: AppStore, agentId: string, skip = false): void {
   pcBrowser()?.control(agentId, false)

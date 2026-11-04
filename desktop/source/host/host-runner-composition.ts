@@ -201,7 +201,7 @@ import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
-import { checkUserForm, fillNewPassword, fillUserForm, locateFields } from "../shared/node/user-form/form-fill.js";
+import { routedForms } from "./runner/tools/app-browser-forms.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
 import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
@@ -921,9 +921,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   });
   // The in-chat form (28 October 2026, transcript/user-forms.ts): typed into
   // the agent's own Chrome on the box, else a tab on the site in another window.
+  // Each fill goes where the agent's page is: the Mac or Windows app's browser for a task there, else the box's Chrome (docs/app-browser/README.md, step 3b).
+  const forms = routedForms(() => appBrowserRouteOf(extensions));
   method(extensions.api("transcript"), "setUserFormServices")?.({
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
+    fill: (options: Parameters<typeof forms.fill>[1], agentId: string) => forms.fill(agentId, options),
   });
   // The person's 1Password (28 October 2026, shared/node/onepassword/): the
   // key their Mac's 1Password app made, kept in the engine's own folder, read
@@ -933,6 +936,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     onePassword,
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
+    fill: (options: Parameters<typeof forms.fill>[1], agentId: string) => forms.fill(agentId, options),
   });
   // The person's Credentials Store (28 October 2026, shared/node/credentials-store/):
   // their logins and contact info, held sealed by the server and asked for as this computer.
@@ -2457,7 +2461,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               dependencies: {
                 checkForm: async (request) => {
                   const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                  return await checkUserForm({ ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
+                  return await forms.check(session.id, { ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
                 },
                 emitFormCard: (message, timestampMs) => {
                   const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
@@ -2477,8 +2481,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               return {
                 dependencies: {
                   store: credentialsStore,
-                  fillLogin: async (request) => await fillUserForm({ ...request, ports: ports(), missingAs: "notFound" }),
-                  fillNewPassword: async (request) => await fillNewPassword({ ...request, ports: ports() }),
+                  fillLogin: async (request) => await forms.fill(session.id, { ...request, ports: ports(), missingAs: "notFound" }),
+                  fillNewPassword: async (request) => await forms.newPassword(session.id, { ...request, ports: ports() }),
                   requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
                   agentName: () => resolveAgentDisplayName(session.id) ?? undefined,
                   log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
@@ -2495,7 +2499,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 fillAllowed: async (args) => await method(extensions.api("transcript"), "fillAllowedCredential")?.({ agentId: session.id, ...args }),
                 locateFields: async (request) => {
                   const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                  return await locateFields({ ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
+                  return await forms.locate(session.id, { ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
                 },
                 emitCard: (message, timestampMs) => {
                   const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };

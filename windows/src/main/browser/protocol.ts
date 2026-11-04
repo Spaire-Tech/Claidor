@@ -30,6 +30,8 @@ export const ops = [
   'tabs',
   'screenshot',
   'review_state',
+  // The cards' fills (step 3b): the in-chat form, 1Password, saved logins, a new password.
+  'form',
 ] as const
 export type Op = (typeof ops)[number]
 

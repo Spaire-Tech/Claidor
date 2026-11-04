@@ -247,7 +247,8 @@ test("a sign-up's new password goes into the password and its confirmation, neve
 test("the store's tools are in the agent's turn and brief, never in a shared room, and the server keeps the store", async () => {
   const composition = await src("host/host-runner-composition.ts");
   assert.match(composition, /createCredentialsStoreToolInputs: \(\) =>/);
-  assert.match(composition, /fillLogin: async \(request\) => await fillUserForm\(\{ \.\.\.request, ports: ports\(\), missingAs: "notFound" \}\)/);
+  // Typed where the agent's page is (the app's browser or the computer's, step 3b of docs/app-browser/README.md), a sign-in's later step not a failure.
+  assert.match(composition, /fillLogin: async \(request\) => await forms\.fill\(session\.id, \{ \.\.\.request, ports: ports\(\), missingAs: "notFound" \}\)/);
   assert.match(composition, /requestSource: \(\) => \{ const source = method\(extensions\.api\("transcript"\), "activeRequestSource"\)\?\.\(session\.id\)/);
   assert.match(await src("host/extensions/transcript/transcript-manager.ts"), /\["activeRequestSource", "turnRuntime"\]/);
   const toolset = await src("host/runner/tools/turn-toolset.ts");
