@@ -26,6 +26,58 @@ So:
   The thinking stays on the server; the computer is woken for the steps
   that need it.
 
+## How the app behaves when it is done
+
+**Never wakes the computer:**
+- opening the app on the Mac, the Windows PC or the iPhone: agents and
+  chats are there at once;
+- talking to an agent: the reply comes from the server;
+- connectors (email, calendar, Slack, Notion…);
+- memory, making or changing agents;
+- answering a card (a question, an approval, a form, a draft), unless the
+  card is about the computer itself;
+- a routine that only uses connectors;
+- an email or a message coming in that the agent can handle with
+  connectors;
+- opening a file an agent already made. Every finished file is copied off
+  the computer to the server automatically, as soon as it is finished, and
+  opens from there.
+
+**Wakes the computer, in about a second:**
+- a website (its Chrome, where the sign-ins stay);
+- running code or commands;
+- making or changing files on it;
+- the person opening its screen or pressing Take control;
+- a "Your turn on the computer" card.
+
+**The sleep timer:** the computer sleeps 10 minutes after its work ends,
+never in the middle of it. Two things keep it awake for as long as they
+last:
+- a job running on it;
+- an open screen or Take control session.
+
+Today a running job already keeps it awake (`BoxHealth.holds_awake`). An
+open screen most likely does too, since its connection to the proxy does
+not carry the app's "let it sleep" mark (`box_proxy.keep_attached`), but
+that is not confirmed. Step 0 checks both.
+
+**In practice:**
+- **The person closes the app mid-task.** The agent goes on, on the
+  server, and wakes the computer if it needs it. The result is in the chat
+  next time, with a notification.
+- **All devices are off.** Routines run at their time, emails and messages
+  that come in are handled, and the computer does the website, code and
+  file steps. It all waits in the chats.
+- **A stranger writes.** The agent reads it and answers with no tools.
+- **The computer restarts or updates.** Nothing breaks: cards, chats and
+  tasks live on the server. Updates happen while it is quiet, and the logs
+  say what happened.
+- **The computer can't wake.** The agent says so in the chat, plainly. It
+  never fails silently.
+
+The browser in the Mac and Windows apps is not used: websites open on the
+computer only.
+
 ## How it is today (read in the code, 4 November 2026)
 
 - **The whole engine runs inside the computer.** `desktop/source/host` is
@@ -118,8 +170,8 @@ Two rules hold:
    woken only for the steps that need it, whether the Mac is open or not.
    The runner's routine jobs become the brain's; mail from strangers
    follows decision 3.
-4. **Files.** What an agent makes is also kept on the server, so it opens
-   in the chat while the computer sleeps.
+4. **Files.** Every finished file is copied off the computer to the
+   server automatically, so opening it never wakes the computer.
 5. **The computer as hands only.** The engine is no longer started on the
    computer. The computer image keeps the exec daemon,
    Chrome, the screen and the files.
