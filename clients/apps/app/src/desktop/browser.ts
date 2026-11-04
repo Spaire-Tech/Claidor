@@ -79,6 +79,15 @@ export class PCBrowser {
     return () => this.frameListeners.delete(wrapped)
   }
 
+  /** The agent's browser on this PC now, read once without watching it (a card choosing where to open); undefined when the app doesn't answer. */
+  async peek(agentId: string): Promise<BrowserShown | undefined> {
+    try {
+      return await this.host.call('browserState', agentId)
+    } catch {
+      return undefined
+    }
+  }
+
   /** Take control (true) or give it back (false). */
   control(agentId: string, person: boolean): void {
     this.host

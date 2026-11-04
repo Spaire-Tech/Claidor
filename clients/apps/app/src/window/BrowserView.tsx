@@ -35,6 +35,7 @@ import {
   keyInput,
   modifiersOf,
   pcBrowser,
+  showsPCBrowser,
   siteOf,
 } from '../desktop/browser'
 import type { BrowserTabShown } from '../desktop/contract'
@@ -44,9 +45,12 @@ import './BrowserView.css'
 import { classes } from './classes'
 import {
   AgentPointerOverlay,
+  ComputerAttention,
   ContractGlyph,
+  HandoffBanner,
   OpenPill,
   ScreenSpinner,
+  openComputerView,
 } from './ComputerView'
 import { useSiteIcon } from './MessageText'
 import { useWatched } from './useStore'
@@ -184,9 +188,11 @@ function SiteLine({ tab }: { tab: BrowserTabShown | undefined }) {
  * spinner until the first picture, and the site with its lock under it.
  */
 export function BrowserPreview({
+  store,
   agent,
   shown,
 }: {
+  store: AppStore
   agent: Agent
   shown: BrowserShown
 }): ReactNode {
@@ -195,10 +201,18 @@ export function BrowserPreview({
   const [drawn, setDrawn] = useState(false)
   const tab = shown.tabs.find((one) => one.id === shown.current)
   const name = shownName(agent)
+  const handoff = store.computer.status(agent.id)?.handoff
   if (!browser) return null
   return (
     <div className="computer-preview">
       <WhereLine onPC />
+      {handoff && (
+        <ComputerAttention
+          name={name}
+          instruction={handoff.instruction}
+          answer={(skip) => handBack(store, agent.id, skip)}
+        />
+      )}
       <div
         className="computer-frame"
         role="group"
@@ -239,6 +253,34 @@ export function openBrowserView(model: WindowModel, agentId: string): void {
   model.openBrowser(agentId)
   const focused = document.activeElement
   if (focused instanceof HTMLElement) focused.blur()
+}
+
+/**
+ * Where a card opens the agent's screen (step 3): its tab on this PC when
+ * the Computer tab shows it there, in Take control when the person is
+ * asked to act (the take-over, the bank's check); else Simeon's computer
+ * over the window, as before, which starts it.
+ */
+export async function openAgentScreen(
+  model: WindowModel,
+  store: AppStore,
+  agentId: string,
+  options: { control: boolean },
+): Promise<void> {
+  const browser = pcBrowser()
+  const shown = browser ? await browser.peek(agentId) : undefined
+  if (browser && showsPCBrowser(shown, store.computerHelpers(agentId).length)) {
+    if (options.control) browser.control(agentId, true)
+    openBrowserView(model, agentId)
+    return
+  }
+  openComputerView(model, store, agentId)
+}
+
+/** The take-over answered (I'm done, Skip): the agent's browser on this PC given back first, so its next step doesn't wait, then the agent told. */
+export function handBack(store: AppStore, agentId: string, skip = false): void {
+  pcBrowser()?.control(agentId, false)
+  void store.handBackComputer(agentId, skip)
 }
 
 // MARK: The full view
@@ -290,6 +332,8 @@ export function BrowserFullView({
   const [stage, fitted] = useFitted()
   const view = useRef<HTMLDivElement>(null)
   const person = shown?.person === true
+  // The agent asked for the person here (request_box_help): its banner, as over the computer's screen.
+  const handoff = store.computer.status(agentId)?.handoff
 
   // Nothing of the agent's here any more (its tabs closed, or the web): back to the window.
   const known = shown !== undefined
@@ -416,7 +460,17 @@ export function BrowserFullView({
         </div>
       )}
       <div className="computer-body">
-        {person && (
+        {handoff && (
+          <HandoffBanner
+            name={name}
+            instruction={handoff.instruction}
+            answer={(skip) => {
+              handBack(store, agentId, skip)
+              model.closeComputer()
+            }}
+          />
+        )}
+        {person && !handoff && (
           <div className="browser-paused">
             {t`${name} is paused while you're in control.`}
           </div>

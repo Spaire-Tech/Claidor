@@ -2655,7 +2655,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           requestHelp: async (request) => {
             const start = method(extensions.api("session"), "startHandoff");
             if (start == null) throw new Error("The box hand-off service is not bound.");
-            return await start(request) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
+            // The agent's page in the Mac or Windows app's browser (docs/app-browser/README.md, step 3):
+            // the card shows that tab, not the computer's screen.
+            const live = appBrowser?.where?.(session.id);
+            const handed = live === undefined || appBrowser === undefined ? request : {
+              ...(request as object),
+              grab: async () => {
+                const answer = await appBrowser.request(live, { op: "screenshot", viewId: session.id, args: {}, screenshot: true }, { timeoutMs: 8_000 });
+                const picture = answer.ok === true && typeof answer.screenshotB64 === "string" ? answer.screenshotB64 : "";
+                return picture.length > 0 ? `data:image/png;base64,${picture}` : null;
+              },
+            };
+            return await start(handed) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
           },
           onSendMessage: (message, timestampMs, metadata) => {
             // `boxHandoff` is what `turn-runtime.ts` stamps on the entry

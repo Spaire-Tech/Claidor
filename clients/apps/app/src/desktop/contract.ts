@@ -193,6 +193,8 @@ export interface DesktopCalls {
 
   /** The agent whose browser on this PC the page shows (the Computer tab, its full view), or none: while watched, its state comes as `browserShown` and its page as `browserFrame`. The answer is its state now. */
   browserWatch(agentId: string | null): BrowserShown | null
+  /** The agent's browser on this PC as it is now, read once without watching it (a card choosing where to open, step 3). */
+  browserState(agentId: string): BrowserShown
   /** Take control of the agent's browser here (true: its next steps wait) or give it back (false: it is told to look again). The answer is its state now. */
   browserControl(agentId: string, person: boolean): BrowserShown | null
   /** The bar's buttons on the agent's tab, or one of its tabs chosen: the person's, while they have control. */

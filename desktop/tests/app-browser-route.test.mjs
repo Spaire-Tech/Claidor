@@ -232,6 +232,23 @@ test("a task stays where it started: the computer's until idle and an address, t
   } finally { await dispose(); }
 });
 
+test("where a task is now (step 3, the cards): its app while that browser is connected, never a new choice", async () => {
+  const { module, dispose } = await load("source/host/extensions/local-browser/local-browser-bridge.ts", "lb-where");
+  try {
+    const reports = [];
+    const bridge = new module.LocalBrowserBridge({ clock: fakeClock(), enabled: () => true, reconnectGraceMs: 0, report: (entry) => reports.push(entry) });
+    const app = standInApp(bridge);
+    assert.equal(bridge.where("agent-1"), undefined, "no task yet: the computer's, as before");
+    assert.equal(reports.filter((entry) => entry.event === "route").length, 0, "and nothing was chosen for it");
+    assert.equal((await bridge.choose("agent-1", { opensAddress: true })).route, "app");
+    assert.deepEqual(bridge.where("agent-1"), { route: "app", browserSession: SESSION, place: "this Mac" });
+    assert.equal(bridge.where("agent-2"), undefined, "another agent's task is its own");
+    app.close();
+    assert.equal(bridge.where("agent-1"), undefined, "the app gone: no tab of it to act on");
+    assert.equal((await bridge.choose("agent-1", { opensAddress: false })).route, "gone", "where changed nothing: the next step is still told");
+  } finally { await dispose(); }
+});
+
 test("the app's browser closed: one plain sentence, then the computer; an address starts afresh; a dropped stream is waited for", async () => {
   const { module, dispose } = await load("source/host/extensions/local-browser/local-browser-bridge.ts", "lb-closed");
   try {

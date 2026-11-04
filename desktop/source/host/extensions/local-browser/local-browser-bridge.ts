@@ -222,6 +222,12 @@ export class LocalBrowserBridge implements AppBrowserRoute {
     return { route: "gone", message: appBrowserClosedMessage(task.place) };
   }
 
+  where(viewId: string): AppBrowserLive | undefined {
+    const task = this.tasks.get(viewId);
+    if (task?.route !== "app" || this.forSession(task.browserSession, this.deps.clock.now()) === undefined) return undefined;
+    return { route: "app", browserSession: task.browserSession, place: task.place };
+  }
+
   async request(choice: AppBrowserLive, step: AppBrowserStep, options: { readonly signal?: AbortSignal; readonly timeoutMs: number }): Promise<Record<string, unknown>> {
     if (options.signal?.aborted === true) throw abortError();
     const provider = this.forSession(choice.browserSession, this.deps.clock.now());

@@ -169,6 +169,11 @@ tab, and the tab of the request's view. The engine hashes the list as it
 hashes the computer's tabs, and checks it again before the step runs. A
 failure, or a `data` without `pages`, refuses the step under review.
 
+**The take-over** (`request_box_help`, step 3) for a task in the app: the
+engine asks the app for a `screenshot` (8 seconds at most) and the card
+shows that picture instead of the computer's screen. Nothing else changes
+on the line; the person's answer goes to the engine as before.
+
 **While the person has control** (Take control in the Computer tab's full
 view, step 2b), nothing on the line changes. In the app:
 

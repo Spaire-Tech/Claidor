@@ -4,9 +4,10 @@ A plan (4 November 2026). The founder's decisions are made (below).
 
 **Where it is.** Step 1, the engine's route, and step 2, the browser in
 the Windows app with the Computer tab's view of it and Take control, are
-built and tested, off by default ([protocol.md](protocol.md)). Nothing has
-changed for anyone, and nothing has run on a real PC yet. Next: step 3,
-the cards on Windows.
+built and tested, off by default ([protocol.md](protocol.md)). Step 3, the
+cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
+is built. Nothing has changed for anyone, and nothing has run on a real PC
+yet. Next: 3b, the fills (the in-chat form, 1Password, saved logins).
 
 ## The decision
 
@@ -293,7 +294,9 @@ your recommendations".
 | 1. The route in the engine | Built, tested with a stand-in app (`desktop/tests/app-browser-route.test.mjs`), off by default. Not yet on the computers: that needs a host bundle published from a Mac. Not run with a real app. |
 | 2a. The browser on Windows: tabs, the steps, popups, dialogs, downloads, uploads, the line to the engine | Built, 4 November 2026 (`windows/src/main/browser/`). Checked in Electron for real under a virtual display (`npm run browser-smoke`, 64 checks) and driven end to end by step 1's engine. Not run on a Windows PC or against real sites. |
 | 2b. The Computer tab's view and Take control | Built, 4 November 2026 (`windows/src/main/browser/view.ts`, `control.ts`; `clients/apps/app/src/window/BrowserView.tsx`). Checked in the Windows app itself under a virtual display (`npm run browser-view-smoke`, 15 checks: the page's own hands loop opening the line, the picture, the face, none while the window is hidden, Take control with the real mouse and keys, Give back, Exit) and in the browser's own check (`npm run browser-smoke`, 87). Not run on a Windows PC. |
-| 3. The cards on Windows | Next |
+| 3a. The take-over and the checkout's buttons open the agent's tab here | Built, 4 November 2026 (`openAgentScreen` in `clients/apps/app/src/window/BrowserView.tsx`; the take-over's picture from the tab, `host-runner-composition.ts`). Checked in the Windows app itself (`npm run browser-view-smoke`, 19 checks, 4 of them the take-over) and the engine's tests. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC. |
+| 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Next |
+| 3c. The checkout's card and Duffel's form (needs another site's frames read) | Not started |
 | 4-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
@@ -367,3 +370,24 @@ Step 2b, what was decided while building it (4 November 2026):
   composition (accents, Chinese, Japanese) arrives as words.
 - **The words** (9 new, each in the apps' 9 languages) are in the Mac's
   catalogue, which the web app reads, so the Mac's view in step 4 has them.
+
+Step 3a, what was decided while building it (4 November 2026):
+
+- **Where a card opens.** The take-over's Take over and its picture, the
+  checkout's Review order and the bank's check open the agent's tab on this
+  PC when the Computer tab would show it there (the agent has tabs here, no
+  computer-use helper on the computer's screen), else Simeon's computer as
+  before. The app is asked once, without watching (`browserState`).
+- **Take control when the person must act.** The take-over while it waits
+  and the bank's check open in Take control; Review order and a settled
+  take-over's Open computer open it watched only.
+- **I'm done and Skip** give the tab back first, then answer the agent, so
+  its next step doesn't wait. The take-over's banner shows over the tab,
+  and "Needs your attention" in the Computer tab, as over the computer's
+  screen.
+- **The take-over's picture** is the agent's tab when its task is in the
+  app (the engine asks the app for a `screenshot`), not the computer's
+  screen. The engine knows where a task is without choosing anything
+  (`where`).
+- **Not yet:** the iPhone's Take over still opens the computer's screen for
+  a task in an app's browser (step 5).

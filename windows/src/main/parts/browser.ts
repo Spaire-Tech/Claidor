@@ -106,6 +106,10 @@ export function register(context: AppContext): void {
     fromWindow(from)
     return shown.watch(from, agentId === null ? null : agentOf(agentId))
   })
+  handle('browserState', (from, agentId) => {
+    fromWindow(from)
+    return shown.state(agentOf(agentId))
+  })
   handle('browserControl', (from, agentId, person) => {
     fromWindow(from)
     return shown.control(from, agentOf(agentId), person === true)
