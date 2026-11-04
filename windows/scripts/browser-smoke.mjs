@@ -131,6 +131,35 @@ function site() {
         `<div class="AiAgentPaymentSteering"><input type="hidden" name="link_pay_token"></div>
          <script>document.querySelector('input[name=link_pay_token]').addEventListener('change',e=>{document.title='token '+e.target.value.length})</script>`,
       ),
+    // Step 3c-2: a stand-in for Simeon's pay page, its card form in a frame of another site as Duffel's is.
+    '/desktop/flights/pay': () =>
+      page(
+        'Pay',
+        `<p id="line">Paying</p>
+         <iframe id="duffel" src="http://localhost:${port}/duffel-frame" style="display:block;width:400px;height:160px;border:0"></iframe>
+         <script>
+           window.card = {}
+           let phase = 'loading'
+           addEventListener('message', (e) => { const d = e.data || {}; if (d.card) window.card[d.card.name] = d.card })
+           document.getElementById('duffel').addEventListener('load', () => { phase = 'form' })
+           window.simeonPay = {
+             status: () => ({ phase, session: phase === 'ready' ? { id: '3ds_test' } : null }),
+             createCard: async () => ({ ok: true, card: { id: 'tcd_test', last_4_digits: (window.card.cardNumber?.value || '').slice(-4) } }),
+             verify: (offer, card) => { phase = offer === 'off_test' && card === 'tcd_test' ? 'challenge' : 'failed'; return true },
+             say: (words) => { document.getElementById('line').textContent = words },
+           }
+         </script>`,
+      ),
+    '/duffel-frame': () =>
+      page(
+        'Card',
+        `<style>input{position:absolute;height:28px;margin:0}</style>
+         <label for="holder" style="position:absolute;left:10px;top:0">Name on card</label><input id="holder" style="left:120px;top:0;width:200px">
+         <input name="cardNumber" style="left:10px;top:40px;width:200px">
+         <input name="expiryDate" placeholder="MM/YY" style="left:10px;top:80px;width:90px">
+         <input name="cvc" style="left:120px;top:80px;width:80px">
+         <script>for(const el of document.querySelectorAll('input'))el.addEventListener('input',e=>parent.postMessage({card:{name:el.name||el.id,value:el.value,trusted:e.isTrusted}},'*'))</script>`,
+      ),
     '/view': () =>
       page(
         'View',
@@ -583,6 +612,36 @@ try {
   await run('navigate', { url: `${pages.base}/link-pay` }, { viewId: 'agent-g' })
   answer = await run('checkout', { action: 'token', pageHint: site, token: 'lpt_test_token_0123' }, { viewId: 'agent-g' })
   check(answer.ok && JSON.parse(answer.data).found === true && (await evaluate('document.title', 'agent-g')) === 'token 19', "Link's pay token is put into its block, the page told", answer.data ?? answer.error)
+  // A flight (step 3c-2): Simeon's pay page opened, Link's card typed into Duffel's frame only, the bank check in front.
+  const duffelFields = [
+    { kind: 'name on card', selector: 'input[name="cardholderName"]', pattern: 'name on( the)? card|card ?holder', chosen: false },
+    { kind: 'card number', selector: 'input[name="cardNumber"]', pattern: 'card number', chosen: false },
+    { kind: 'expiry', selector: 'input[name="expiryDate"]', pattern: 'expir', chosen: false },
+    { kind: 'security code', selector: 'input[name="cvc"]', pattern: 'cvc', chosen: false },
+  ]
+  answer = await run('flight', { action: 'open', url: `${pages.base}/elsewhere` }, { viewId: 'agent-h' })
+  check(!answer.ok && answer.error === "Only Simeon's pay page opens here.", 'only the pay page opens', answer.error)
+  answer = await run('flight', { action: 'open', url: `${pages.base}/desktop/flights/pay#key=test` }, { viewId: 'agent-h' })
+  await pause(500)
+  answer = await run('flight', { action: 'status', frames: ['^http://localhost:'] }, { viewId: 'agent-h' })
+  check(answer.ok && JSON.parse(answer.data).status?.phase === 'form' && JSON.parse(answer.data).cardFrames === 1, "the pay page's own state is read, its card frame counted", answer.data ?? answer.error)
+  answer = await run('flight', { action: 'fill', frames: ['^http://localhost:'], fields: duffelFields, values: { 'name on card': ['Nate Doe'], 'card number': [cardNumber], expiry: ['04/31'], 'security code': ['737'] } }, { viewId: 'agent-h' })
+  const inDuffel = await card('agent-h')
+  check(
+    answer.ok && JSON.stringify(JSON.parse(answer.data).filled) === JSON.stringify(['name on card', 'card number', 'expiry', 'security code']) && inDuffel.holder?.value === 'Nate Doe' && inDuffel.cardNumber?.value === cardNumber && inDuffel.cvc?.trusted === true && !JSON.stringify(answer).includes(cardNumber),
+    "the card goes into Duffel's frame (the name found by its label), never back in the answer",
+    `${answer.data ?? answer.error} ${JSON.stringify(inDuffel)}`,
+  )
+  answer = await run('flight', { action: 'call', fn: 'createCard' }, { viewId: 'agent-h' })
+  check(answer.ok && JSON.parse(answer.data).value?.card?.last_4_digits === '4242', "the page's own calls are made (Duffel's card id)", answer.data ?? answer.error)
+  await run('flight', { action: 'call', fn: 'verify', args: ['off_test', 'tcd_test'] }, { viewId: 'agent-h' })
+  await run('navigate', { url: `${pages.base}/other`, newTab: true }, { viewId: 'agent-h' })
+  answer = await run('flight', { action: 'front' }, { viewId: 'agent-h' })
+  const tabsNow = JSON.parse((await run('review_state', {}, { viewId: 'agent-h' })).data ?? '{}')
+  const inFront = (tabsNow.pages ?? []).find((one) => one.id === tabsNow.viewPageId)?.url ?? ''
+  check(answer.ok && inFront.includes('/desktop/flights/pay'), "the bank's check brings the pay page to the front", inFront)
+  await run('flight', { action: 'call', fn: 'say', args: ['Booked'] }, { viewId: 'agent-h' })
+  check((await evaluate('document.getElementById("line").textContent', 'agent-h')) === 'Booked', 'words on the pay page')
   const loggedNow = output.join('')
   check(!loggedNow.includes(cardNumber) && !loggedNow.includes('lpt_test_token_0123'), 'no card and no token in the app’s log')
 

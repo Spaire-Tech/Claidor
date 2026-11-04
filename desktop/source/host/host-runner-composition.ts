@@ -202,6 +202,8 @@ import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
 import { BOX_CHROME_PORTS, fetchCheckoutIcon, type FillCheckoutOptions } from "../shared/node/link-wallet/checkout-fill.js";
 import { routedCheckout } from "./runner/tools/app-browser-checkout.js";
+import { routedDuffel } from "./runner/tools/app-browser-duffel.js";
+import type { DuffelPayOptions } from "../shared/node/flight-booking/duffel-pay.js";
 import { routedForms } from "./runner/tools/app-browser-forms.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
 import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
@@ -911,6 +913,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // server's booking doors, the box's Link, each agent's own Chrome on the
   // box (where Duffel's card form is filled) and the data folder (where the
   // travellers' details wait between the form and the order).
+  const duffel = routedDuffel(() => appBrowserRouteOf(extensions));
   method(extensions.api("transcript"), "setFlightBookingServices")?.({
     // The order waits longer than the server's own wait on Duffel (135 s), so its answer is never lost here.
     // Its refusals come back in the person's language; a search's fields stay English (the apps read them).
@@ -919,6 +922,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     backendUrl: () => getConfiguredBackendUrl(),
     dataDir: () => getSandRootDir(),
+    // Paid where the agent's page is: the app's browser for a task there (step 3c-2).
+    pay: (options: DuffelPayOptions) => duffel.pay(options),
+    say: (port: number, words: string, agentId?: string) => duffel.say(port, words, agentId),
   });
   // The in-chat form (28 October 2026, transcript/user-forms.ts): typed into
   // the agent's own Chrome on the box, else a tab on the site in another window.

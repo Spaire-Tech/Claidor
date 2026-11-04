@@ -369,6 +369,8 @@ export class Steps {
         return this.form(request, signal)
       case 'checkout':
         return this.checkout(request, signal)
+      case 'flight':
+        return this.flight(request, signal)
     }
   }
 
@@ -742,13 +744,15 @@ export class Steps {
         await this.helperIn(place, 'fill', ref, value)
         return (await this.helperIn<{ holds: boolean }>(place, 'holds', ref)).holds
       }
-      let focus = await this.helperIn<{ focused: boolean }>(place, 'focus', ref, true)
-      if (!focus.focused) {
+      // In a frame of another site the keys go there only once it is clicked, as a person's first click gives it them.
+      const takesKeys = (one: { focused: boolean; frameFocused?: boolean }) => one.focused && (place.sessionId === undefined || one.frameFocused !== false)
+      let focus = await this.helperIn<{ focused: boolean; frameFocused?: boolean }>(place, 'focus', ref, true)
+      if (!takesKeys(focus)) {
         const point = await this.aimIn(place, ref)
         await this.click(tab, point.x, point.y, {})
         focus = await this.helperIn(place, 'focus', ref, true)
       }
-      if (!focus.focused) return false
+      if (!takesKeys(focus)) return false
       // What was there goes (the focus selected it), then each key as a person presses it; the keys reach the frame that has the focus.
       await this.press(tab, 'Backspace')
       for (const character of value) {
@@ -886,6 +890,123 @@ export class Steps {
       return { ok: true, summary: `Typed the card into the checkout on ${pageOf(tab)}.`, data: JSON.stringify({ page: pageOf(tab), hinted: hinted.length > 0, found: true, filled: [...filled] }) }
     } finally {
       await Promise.all(looked.map((place) => this.helperIn(place, 'formForget').catch(() => undefined)))
+    }
+  }
+
+  // MARK: A flight (step 3c-2 of docs/app-browser/README.md)
+
+  /**
+   * Paying a flight on Duffel's form, as the computer does (`duffel-pay.ts`
+   * in the engine), one short step at a time: Simeon's pay page opened in a
+   * tab of the agent's (only that page: its address's path), its state read
+   * and its calls made in the page's own world (`simeonPay`), Link's card
+   * typed into Duffel's frames only (the engine names their addresses), and
+   * the tab brought to the front for the bank's check, which the person
+   * answers there. The card is typed key by key and never kept, logged or
+   * sent back.
+   */
+  private async flight(request: BrowserRequest, signal: AbortSignal): Promise<Answer> {
+    const { args, viewId } = request
+    const action = text(args, 'action')
+    if (!['open', 'status', 'front', 'fill', 'call'].includes(action ?? '')) throw new StepError('action must be one of open, status, front, fill, call.')
+    const isPay = (address: string): boolean => {
+      try {
+        const url = new URL(address)
+        return (url.protocol === 'https:' || url.protocol === 'http:') && url.pathname.replace(/\/+$/, '') === '/desktop/flights/pay'
+      } catch {
+        return false
+      }
+    }
+    if (action === 'open') {
+      const url = need(text(args, 'url'), 'url')
+      if (!isPay(url)) throw new StepError("Only Simeon's pay page opens here.")
+      const tab = this.tabs.open(viewId)
+      await within(tab.contents.loadURL(url), navigateTimeoutMs, "The pay page didn't open in time.", signal).catch((error: unknown) => {
+        if (error instanceof Stopped || tab.contents.getURL() === '') throw error
+      })
+      return { ok: true, summary: 'Opened the pay page.', data: JSON.stringify({ page: siteOf(tab.contents.getURL()) }) }
+    }
+    const current = this.tabs.currentTab(viewId)
+    const tab = [current, ...this.tabs.groupTabs(viewId).filter((one) => one !== current)].find((one): one is Tab => one !== undefined && !one.contents.isDestroyed() && isPay(one.contents.getURL()))
+    if (tab === undefined) throw new StepError("The pay page isn't open in the browser on this PC.")
+    const frames = (Array.isArray(args.frames) ? args.frames : [])
+      .filter((one): one is string => typeof one === 'string' && one.length > 0 && one.length <= 200)
+      .slice(0, 4)
+      .flatMap((source) => {
+        try {
+          return [new RegExp(source)]
+        } catch {
+          return []
+        }
+      })
+    const isCardFrame = (address: string) => frames.some((origin) => origin.test(address))
+    // The page's own world: Simeon's page, whose calls these are.
+    const inPage = (code: string): Promise<unknown> => within(tab.contents.executeJavaScript(code), 25_000, "The pay page didn't answer.", signal)
+    if (action === 'status') {
+      const status = await inPage('(() => { const pay = globalThis.simeonPay; return pay ? pay.status() : null })()')
+      const cardFrames = tab.contents.mainFrame.framesInSubtree.filter((frame) => isCardFrame(frame.url)).length
+      return { ok: true, summary: 'Read the pay page.', data: JSON.stringify({ status, cardFrames }) }
+    }
+    if (action === 'front') {
+      this.tabs.select(viewId, tab)
+      return { ok: true, summary: 'The pay page is in front.', data: '{}' }
+    }
+    if (action === 'call') {
+      const fn = text(args, 'fn')
+      if (fn !== 'createCard' && fn !== 'verify' && fn !== 'say') throw new StepError('fn must be one of createCard, verify, say.')
+      const callArgs = (Array.isArray(args.args) ? args.args : []).filter((one): one is string => typeof one === 'string' && one.length <= 2_000).slice(0, 2)
+      const value = await inPage(`(async () => { const pay = globalThis.simeonPay; if (!pay) return { ok: false, error: 'The pay page is not ready.' }; return await pay.${fn}(...${JSON.stringify(callArgs)}) })()`)
+      return { ok: true, summary: 'Asked the pay page.', data: JSON.stringify({ value: value === undefined ? null : value }) }
+    }
+    // fill: in Duffel's frames only, never the page around them.
+    const places: Place[] = []
+    for (const sessionId of tab.frames.list()) {
+      const address = await tab.frames.evaluate(sessionId, 'location.href').catch(() => '')
+      if (typeof address === 'string' && isCardFrame(address)) places.push({ tab, sessionId })
+    }
+    const fields = (Array.isArray(args.fields) ? args.fields : []).slice(0, 20).flatMap((one) => {
+      const field = typeof one === 'object' && one !== null && !Array.isArray(one) ? (one as JSONObject) : {}
+      const kind = typeof field.kind === 'string' && field.kind.length <= 40 ? field.kind : undefined
+      const selector = typeof field.selector === 'string' && field.selector.length <= 5_000 ? field.selector : undefined
+      const pattern = typeof field.pattern === 'string' && field.pattern.length <= 500 ? field.pattern : undefined
+      return kind && (selector || pattern) ? [{ kind, selector, pattern, chosen: field.chosen === true }] : []
+    })
+    const given = typeof args.values === 'object' && args.values !== null && !Array.isArray(args.values) ? (args.values as JSONObject) : {}
+    const valuesOf = (kind: string): string[] => (Array.isArray(given[kind]) ? (given[kind] as unknown[]).filter((one): one is string => typeof one === 'string' && one.length > 0 && one.length <= 200).slice(0, 3) : [])
+    const delay = Math.max(0, Math.min(200, number(args, 'keyDelayMs') ?? 35))
+    const filled = new Set<string>()
+    try {
+      for (const field of fields) {
+        checkpoint(signal)
+        const options = valuesOf(field.kind)
+        if (options.length === 0) continue
+        if ((field.kind === 'expiry month' || field.kind === 'expiry year') && filled.has('expiry')) continue
+        if (field.kind === 'expiry' && filled.has('expiry month')) continue
+        for (const place of places) {
+          const target = { ...(field.selector ? { selector: field.selector } : {}), ...(field.pattern ? { pattern: field.pattern } : {}) }
+          const located = await this.helperIn<{ found: string[] }>(place, 'formFind', [{ id: field.kind, type: 'text', target }]).catch(() => ({ found: [] as string[] }))
+          if (located.found.length === 0) continue
+          const ref = `form:${field.kind}`
+          const shape = await this.helperIn<{ tag: string }>(place, 'fieldKind', ref).catch(() => undefined)
+          let done = false
+          if (field.chosen && shape?.tag === 'SELECT') {
+            for (const option of options) {
+              if (await this.helperIn(place, 'choose', ref, [option]).then(() => true, () => false)) {
+                done = true
+                break
+              }
+            }
+          } else done = await this.fillField(place, ref, 'text', options[0] ?? '', delay, signal)
+          if (done) {
+            filled.add(field.kind)
+            break
+          }
+        }
+      }
+      const seen = (await Promise.all(places.map((place) => this.helperIn<{ seen: string }>(place, 'fieldsSeen').then((one) => one.seen, () => '')))).filter(Boolean).join(' / ')
+      return { ok: true, summary: "Typed the card into Duffel's form.", data: JSON.stringify({ filled: [...filled], seen: seen.slice(0, 1500), frames: places.length }) }
+    } finally {
+      await Promise.all(places.map((place) => this.helperIn(place, 'formForget').catch(() => undefined)))
     }
   }
 

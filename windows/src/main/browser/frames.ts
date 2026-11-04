@@ -46,6 +46,8 @@ export class Frames {
   private chain: Promise<unknown> = Promise.resolve()
   /** A press holds its frame until its release, as a person's drag does. */
   private captured: Target | undefined
+  /** The frame last pressed in: the keys after go straight to it (it takes the keyboard a moment after the click). */
+  private keysTo: string | undefined
 
   constructor(private readonly contents: WebContents) {}
 
@@ -76,6 +78,7 @@ export class Frames {
     } else if (method === 'Target.detachedFromTarget' && typeof event.sessionId === 'string') {
       this.children.delete(event.sessionId)
       if (this.captured?.sessionId === event.sessionId) this.captured = undefined
+      if (this.keysTo === event.sessionId) this.keysTo = undefined
     }
   }
 
@@ -185,7 +188,10 @@ export class Frames {
   pointer(params: Params & { type: string; x: number; y: number }): Promise<void> {
     return this.queue(async () => {
       const where = params.type !== 'mousePressed' && this.captured ? this.captured : await this.route(params.x, params.y)
-      if (params.type === 'mousePressed') this.captured = where
+      if (params.type === 'mousePressed') {
+        this.captured = where
+        this.keysTo = where.sessionId
+      }
       try {
         await this.send('Input.dispatchMouseEvent', { ...params, x: Math.round(params.x - where.dx), y: Math.round(params.y - where.dy) }, where.sessionId)
       } catch (error) {
@@ -198,10 +204,15 @@ export class Frames {
     })
   }
 
-  /** A key or typed words, after the pointer events before it; they reach the frame that has the focus. */
+  /** A key or typed words, after the pointer events before it: to the frame last pressed in, else the page (whose focused frame has them). */
   input(method: string, params: Params): Promise<void> {
     return this.queue(async () => {
-      await this.send(method, params)
+      const to = this.keysTo
+      if (to === undefined) return void (await this.send(method, params))
+      await this.send(method, params, to).catch(async () => {
+        this.keysTo = undefined
+        await this.send(method, params)
+      })
     })
   }
 

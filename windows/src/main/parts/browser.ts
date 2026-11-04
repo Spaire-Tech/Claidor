@@ -54,6 +54,7 @@ export function register(context: AppContext): void {
   const log = (line: string) => written.write(line)
   const tabs = new Tabs({ downloads: path.join(app.getPath('downloads'), 'Simeon'), log })
   const control = new Control()
+  context.browsing(() => tabs.groups())
   // The viewer is made just below; the steps tell it where the agent points and when it works.
   let viewer: BrowserViewer | undefined
   const steps = new Steps({

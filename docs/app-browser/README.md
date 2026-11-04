@@ -7,10 +7,10 @@ the Windows app with the Computer tab's view of it and Take control, are
 built and tested, off by default ([protocol.md](protocol.md)). Step 3, the
 cards on Windows, has begun: 3a, the take-over and the checkout's buttons,
 3b, the fills (the in-chat form, 1Password, saved logins, a new password),
-and 3c-1, the checkout card (its total, its picture, Link's or Shop's card
-typed in, a payment provider's frame of another site included), are built.
-Nothing has changed for anyone, and nothing has run on a real PC yet.
-Next: 3c-2, Duffel's form for a flight.
+3c-1, the checkout card, and 3c-2, a flight paid on Duffel's form, are
+built: step 3 is done on Windows, and the app asks before quitting while an
+agent works in its browser. Nothing has changed for anyone, and nothing has
+run on a real PC yet. Next: step 4, the Mac.
 
 ## The decision
 
@@ -300,7 +300,7 @@ your recommendations".
 | 3a. The take-over and the checkout's buttons open the agent's tab here | Built, 4 November 2026 (`openAgentScreen` in `clients/apps/app/src/window/BrowserView.tsx`; the take-over's picture from the tab, `host-runner-composition.ts`). Checked in the Windows app itself (`npm run browser-view-smoke`, 19 checks, 4 of them the take-over) and the engine's tests. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC. |
 | 3b. The fills: the in-chat form, 1Password, saved logins, a new password | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-forms.ts`; the `form` op in `windows/src/main/browser/steps.ts`; the in-chat form's lock line in `RequestCards.tsx`). Checked in Electron (`npm run browser-smoke`, 100 checks, 13 of them the fills, run twice), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and fills drove the Windows browser, which typed a sign-in and a one-time code and sent it. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC or real sites. |
 | 3c-1. The checkout card: its total and picture, Link's or Shop's card or Link's pay token typed in; the frames of other sites reached (the agent's and the person's clicks too) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-checkout.ts`; `windows/src/main/browser/frames.ts`, the `checkout` op in `steps.ts`). Checked in Electron (`npm run browser-smoke`, 113 checks, 13 of them new, run four times, twice on the final code), in the Windows app itself (`npm run browser-view-smoke`, 21 checks), the engine's tests, and once end to end: the engine's own bridge and checkout, with the computer's own field marks, drove the Windows browser, which read the total, took the picture and typed a card into a frame of another site. The engine's part reaches the computers only with a host bundle published from a Mac. Not run on a Windows PC, against a real shop or with a real card. |
-| 3c-2. Duffel's form for a flight, and its bank check | Next |
+| 3c-2. Duffel's form for a flight, and its bank check; the question before quitting on Windows (decision 3) | Built, 4 November 2026 (`desktop/source/host/runner/tools/app-browser-duffel.ts`; the `flight` op in `windows/src/main/browser/steps.ts`; `window/QuitAlert.tsx`, `desktop/quitting.ts`). Checked in Electron (`npm run browser-smoke`, 119 checks, three runs), the Windows app's view smoke (21), the engine's and the web app's tests. Not run on a Windows PC or with Duffel's real form. |
 | 4-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
@@ -455,3 +455,22 @@ Step 3c-1, what was decided while building it (4 November 2026):
 - **Not yet:** Duffel's form for a flight (3c-2). The purchase tool's two
   sentences for a checkout it can't find still say "your computer's
   browser", as `OpenPage`'s do since step 1.
+
+Step 3c-2, what was decided while building it (4 November 2026):
+
+- **A flight** for a task here is paid in the agent's tab on this PC: the
+  engine takes the computer's steps (open Simeon's pay page, wait for the
+  form, type the card into Duffel's frame only, make the card, run the bank
+  check), each one short `flight` step, with the computer's fields and
+  sentences (`duffel-pay.ts`). The bank check brings the tab to the front,
+  and its card opens it there (step 3a).
+- **In a frame of another site** a field takes the keys only once the frame
+  has them: a script's focus isn't enough, so the field is clicked, as a
+  person's first click would. The person's keys go to the frame they last
+  pressed in. (Both seen as lost first keys in the smoke, then fixed.)
+- **Quitting while an agent works in the browser** (decision 3): the page
+  asks, "Theo is still working in the browser", with Move to Simeon's
+  Computer (the app quits and the engine moves the task, rule 4 of
+  protocol.md), Stop (its task stopped, then quit) and Cancel. Not asked
+  when Windows itself shuts down. The words are in the Mac's catalogue, for
+  the Mac's alert in step 4.

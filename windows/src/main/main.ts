@@ -181,8 +181,25 @@ function start(): void {
   // Quitting: the page first (a call hung up, the chats kept), a second at most; then the main process's own.
   const quitTasks: (() => void | Promise<void>)[] = []
   let pageReady: (() => void) | undefined
+  let pageHolds: (() => void) | undefined
+  let pageCancels: (() => void) | undefined
+  let browsingNow: (() => readonly string[]) | undefined
+  // Windows shutting down: nothing is asked, it would only hold the shutdown.
+  let sessionEnding = false
+  app.on('browser-window-created', (_event, window) => {
+    window.on('session-end', () => {
+      sessionEnding = true
+    })
+  })
   handle('readyToQuit', () => {
     pageReady?.()
+  })
+  // The page asks the person (an agent at work in the browser, decision 3): no time limit, then quit or stay.
+  handle('holdQuit', () => {
+    pageHolds?.()
+  })
+  handle('cancelQuit', () => {
+    pageCancels?.()
   })
   app.on('before-quit', (event) => {
     if (quitting) return
@@ -191,11 +208,32 @@ function start(): void {
     void (async () => {
       const window = mainWindow
       if (window && !window.isDestroyed()) {
-        await new Promise<void>((done) => {
-          pageReady = done
-          setTimeout(done, 1_000)
-          emit(window.webContents, 'quitting', null)
+        let browsing: string[] = []
+        try {
+          browsing = sessionEnding ? [] : [...(browsingNow?.() ?? [])]
+        } catch {
+          browsing = []
+        }
+        const answer = await new Promise<'quit' | 'stay'>((done) => {
+          const timer = setTimeout(() => done('quit'), 1_000)
+          pageReady = () => {
+            clearTimeout(timer)
+            done('quit')
+          }
+          pageHolds = () => clearTimeout(timer)
+          pageCancels = () => {
+            clearTimeout(timer)
+            done('stay')
+          }
+          emit(window.webContents, 'quitting', browsing.length > 0 ? { browsing } : null)
         })
+        pageHolds = undefined
+        pageCancels = undefined
+        if (answer === 'stay') {
+          quitting = false
+          if (relaunch === 'asked') relaunch = 'no'
+          return
+        }
       }
       for (const task of quitTasks) {
         await Promise.race([
@@ -245,6 +283,9 @@ function start(): void {
     },
     beforeQuit(task) {
       quitTasks.push(task)
+    },
+    browsing(provider) {
+      browsingNow = provider
     },
   }
   for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart, browserPart])

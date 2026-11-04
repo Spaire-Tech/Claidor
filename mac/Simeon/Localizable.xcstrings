@@ -117,6 +117,64 @@
         }
       }
     },
+    "%@ are still working in the browser" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ arbeiten noch im Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ siguen trabajando en el navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ travaillent encore dans le navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ stanno ancora lavorando nel browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ zijn nog bezig in de browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nadal pracują w przeglądarce"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ainda estão trabalhando no navegador"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ arbetar fortfarande i webbläsaren"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hâlâ tarayıcıda çalışıyor"
+          }
+        }
+      }
+    },
     "%@ at %@, %@" : {
       "localizations" : {
         "de" : {
@@ -461,6 +519,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kontrol sendeyken %@ duraklatıldı."
+          }
+        }
+      }
+    },
+    "%@ is still working in the browser" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ arbeitet noch im Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sigue trabajando en el navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ travaille encore dans le navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sta ancora lavorando nel browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is nog bezig in de browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ nadal pracuje w przeglądarce"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ainda está trabalhando no navegador"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ arbetar fortfarande i webbläsaren"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hâlâ tarayıcıda çalışıyor"
           }
         }
       }
@@ -25447,6 +25563,64 @@
         }
       }
     },
+    "Move to Simeon's Computer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Simeons Computer verschieben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pasar a la computadora de Simeon"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passer sur l’ordinateur de Simeon"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sposta sul computer di Simeon"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Naar de computer van Simeon"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przenieś na komputer Simeona"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para o computador do Simeon"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flytta till Simeons dator"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’un bilgisayarına taşı"
+          }
+        }
+      }
+    },
     "Move up" : {
       "localizations" : {
         "de" : {
@@ -42102,6 +42276,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demoda bilgisayar yok."
+          }
+        }
+      }
+    },
+    "The pages on this PC close when you quit Simeon." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Seiten auf diesem PC schließen sich, wenn du Simeon beendest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas de esta PC se cierran cuando sales de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages sur ce PC se ferment quand tu quittes Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine su questo PC si chiudono quando esci da Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De pagina’s op deze pc sluiten als je Simeon afsluit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strony na tym komputerze zamkną się, gdy zamkniesz Simeona."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas neste PC fecham quando você sai do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidorna på den här datorn stängs när du avslutar Simeon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’dan çıktığında bu bilgisayardaki sayfalar kapanır."
           }
         }
       }

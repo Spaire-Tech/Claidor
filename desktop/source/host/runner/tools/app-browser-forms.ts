@@ -79,7 +79,7 @@ export function appTaskOf(route: AppBrowserRoute | undefined, agentId: string): 
 }
 
 /** One step to the app (a card's fill or read, never shown or logged); its data as JSON, or the app's own sentence. */
-export async function askApp(app: AppTask, agentId: string, op: "form" | "checkout", args: Record<string, unknown>, timeoutMs: number): Promise<{ readonly ok: true; readonly data: Record<string, unknown> } | { readonly ok: false; readonly message: string }> {
+export async function askApp(app: AppTask, agentId: string, op: "form" | "checkout" | "flight", args: Record<string, unknown>, timeoutMs: number): Promise<{ readonly ok: true; readonly data: Record<string, unknown> } | { readonly ok: false; readonly message: string }> {
   let answer: Record<string, unknown>;
   try {
     answer = await app.route.request(app.live, { op, viewId: agentId, args, screenshot: false }, { timeoutMs });

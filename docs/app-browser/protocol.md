@@ -148,6 +148,7 @@ the outline with `[ref=eN]` handles, the page, `data`, the picture. In short:
 | `review_state` | Auto-review | none; see below |
 | `form` | The cards' fills (step 3b) | `action`, `domain`, `fields`, `values`, `submitAfterFill`, `missingAs`, `keyDelayMs`, `value`; see below (no picture) |
 | `checkout` | The checkout card (step 3c-1) | `action`, `pageHint`, `fields`, `values`, `expiryLong`, `keyDelayMs`, `token`; see below (no picture) |
+| `flight` | A flight paid on Duffel's form (step 3c-2) | `action` (`open` Simeon's pay page only, `status`, `front`, `fill`, `call` `createCard`, `verify` or `say` in the page's own world), `url`, `frames` (the card frames' address patterns), `fields` (`kind`, `selector`, `pattern`, `chosen`), `values`, `args`; no picture. The card is typed into those frames only and never sent back |
 
 A ref is good only for the latest snapshot of its tab: an old one is
 refused with a sentence that says to take a fresh snapshot.
