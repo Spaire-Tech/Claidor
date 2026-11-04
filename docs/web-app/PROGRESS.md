@@ -20,6 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
+| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551) and step 2a (the browser in the Windows app's main process) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: 2b, the Computer tab's view and Take Control |
 | 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
@@ -246,6 +247,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
 | 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
 | 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
+
+| 4 November 2026 | The browser in the app on Windows: each tab an offscreen Chromium window in a partition of its own (`persist:simeon-browser`), driven over the DevTools protocol; it dials the engine while the hands' stream is open, on its address and keys; each agent has its own tabs, sign-ins shared; a popup becomes the agent's tab, its opener kept; an alert is taken and a confirm or prompt dismissed, the agent told; downloads in Downloads\Simeon; signing out closes the tabs and forgets the sites' sign-ins (`docs/app-browser/README.md`, step 2a) | The session; sign-ins shared and the browser's design are the founder's ("go with your recommendations") |
+| 4 November 2026 | The app's rule for its own pages (only the app's page; addresses to the default browser) moved from `main.ts` into `navigation.ts` (`ruleEveryPage`), unchanged, so the browser's checks run under it; the agents' tabs rule their own navigation (`ownsNavigation`) | The session |
 
 ## For Windows
 
@@ -816,6 +820,97 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 4 November 2026: the browser in the app, step 2a, on Windows
+
+The founder: "start step 2". Step 2 of `docs/app-browser/README.md` split
+in two: 2a, the browser itself in the Windows app's main process (this);
+2b, the Computer tab's view of it and Take Control.
+
+**What it is** (`windows/src/main/browser/`, `parts/browser.ts`):
+
+- `tabs.ts`: the tabs. One partition for all agents' sign-ins; each tab an
+  offscreen window at 1280×800, sandboxed, no preload, every permission
+  refused, only http and https (`rules.ts`), the user agent Chrome's
+  without Electron's or the app's name. Popups are tabs of the same agent
+  with their opener; dialogs are answered at once; downloads go to
+  Downloads\Simeon, marked as from the internet as Chrome marks them
+  (`Zone.Identifier`), so Windows still warns before such a program runs.
+  At most 12 tabs an agent, 40 in all.
+- `page.ts`: what runs in the page, in a world of its own the page's
+  scripts can't see: the outline with a ref for each control (roles and
+  names, values, states, a password's value never shown, hidden things
+  left out, the page's own frames read, another site's named), finding a
+  ref again (scrolled into view, and refused when something covers it),
+  filling, choosing in a list, the box, a highlight.
+- `steps.ts`: the seventeen ops of `protocol.md`, one at a time for each
+  agent, agents side by side. Clicks, keys, the wheel and drags go over the
+  DevTools protocol, trusted as a person's. Uploads go to a file field, or
+  to the file window a button opens, caught before it shows. A cancelled
+  or late step stops, its page's load with it. The DevTools commands the
+  computer's helper refuses are refused, and also those that reach this
+  PC's files or the browser's own navigation (`DOM.setFileInputFiles`,
+  `Network.loadNetworkResource`, `Page.navigate`, `Page.setDownloadBehavior`…).
+- `link.ts`: the line to the engine: the welcome, the hello (protocol 1,
+  Windows, a browser session new each launch), a ping every 10 s, 35 s of
+  silence ends the stream, dialled again 1, 2, 4, 8, then every 10 s;
+  each request run once, inside its deadline; a cancel stops it.
+- `parts/browser.ts`: made at launch; follows the hands' stream
+  (`followHandsLine` in `parts/hands.ts`); signing out closes the tabs and
+  forgets the sites' sign-ins; quitting closes the tabs.
+
+**Measured while building it** (Electron 44.10.1 under a virtual display):
+
+- A hidden window or a view can't be photographed ("UnknownVizError",
+  "Current display surface not available"); an offscreen window can, and
+  takes trusted clicks and typing. So each tab is one.
+- An offscreen popup's page is 0×0 whatever its window's size; set over
+  DevTools once its page is up, it keeps 1280×800, after moving to
+  another site too. Set before a tab's first page, that crashes Electron
+  (a segmentation fault): so only popups get it, at `dom-ready`.
+- The app's own rule for every page (main.ts) cancelled any navigation
+  that isn't the app's page and opened the address in the person's own
+  browser: every link an agent clicked would have opened on the person's
+  screen. The tabs now rule their own navigation, and the browser's
+  checks run under the app's rule.
+
+**Checked:**
+
+- `npm test`: 208 passed (196 before, 12 new: the frames, the keys, the
+  rules and the download's mark, and the line to a stand-in engine: hello, pings, a step answered
+  once, a request delivered twice run once, a refusal, a cancel, a
+  deadline, a dropped stream dialled again, the end). `npm run typecheck`
+  clean. `npm run smoke` (the app itself, with the browser part in it): all
+  23 checks.
+- `npm run browser-smoke`, four runs, all passed (64 checks in the last):
+  Electron for real, a stand-in engine and test pages on this computer.
+  Opening pages and their pictures; the outline; trusted clicks, in a frame
+  too; a covered button refused; typing, filling, choosing, keys, a form
+  sent; a stale ref refused; scrolling, a whole-page picture, a drag, a
+  box, a highlight; a popup with its opener, and back when it closes; a
+  confirm dismissed and an alert taken; a download; both kinds of upload;
+  the refused DevTools commands; no file of this PC opened, from the agent
+  or a page's link; the app's page out of reach; Chrome's user agent; the
+  location refused; a page asking for Node in a popup gets none (probed
+  apart); one agent's sign-in shared with another, each with its own tabs; Auto-review's tabs; two agents at once; a cancel; a deadline;
+  nothing opened in the person's own browser.
+- End to end with step 1's engine (a one-off script, not kept): the
+  engine's own gateway, local-browser bridge and browser tools drove the
+  Windows browser in Electron through `/local-browser/*`. OpenPage,
+  `browser_snapshot`, `browser_type`, `browser_click` (a button, then a
+  link to the next page), `browser_take_screenshot`, `browser_tabs`, and a
+  refused `browser_cdp` each answered as the agent reads them today, with
+  pictures, and the computer was never asked.
+
+**Not checked:** nothing has run on a Windows PC, against real sites, or
+signed in to one. A frame of another site (a card form, a sign-in widget)
+is named in the outline but not read; its controls are reached only by
+clicking on the picture. Before the switch goes on for anyone, that is
+done.
+
+**Next:** 2b, the Computer tab's view of the app's browser (its picture,
+the tabs as pills, the site and its lock, Back, Forward, Reload, "On this
+PC") and Take Control.
 
 ### 3 November 2026: the Mac's bugs fixed, the way the upstream app does
 

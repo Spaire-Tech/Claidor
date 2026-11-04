@@ -1,9 +1,9 @@
 # The browser in the app: the bridge
 
 How the engine sends the agent's browser steps to the browser in the Mac or
-Windows app. Step 1 of [the plan](README.md) (4 November 2026). The engine's
-side is built and tested; no app speaks it yet (step 2 on Windows, step 4 on
-the Mac).
+Windows app (4 November 2026). The engine's side is step 1 of [the plan](README.md);
+the Windows app speaks it since step 2a (`windows/src/main/browser/`); the
+Mac's browser comes with step 4.
 
 The code: `desktop/source/shared/local-browser-gateway.ts` (paths, numbers,
 sentences), `desktop/source/host/extensions/local-browser/local-browser-bridge.ts`
@@ -121,9 +121,11 @@ picture is a PNG, sent only when `screenshot` was asked, and left out above
 
 ## The ops
 
-The same ops, arguments, behaviour and sentences as the computer's helper
-(`desktop/source/host/runner/tools/sand-browser-driver-source.ts`, its
-`OPS`), which is the reference for each. In short:
+The same ops and arguments as the computer's helper, each doing what it
+does there (`desktop/source/host/runner/tools/sand-browser-driver-source.ts`,
+its `OPS`, is the reference for what each does). Each app writes its own
+sentences and its own outline; what the agent reads is shaped the same:
+the outline with `[ref=eN]` handles, the page, `data`, the picture. In short:
 
 | Op | Tool | Arguments |
 |---|---|---|
@@ -147,6 +149,10 @@ The same ops, arguments, behaviour and sentences as the computer's helper
 
 A ref is good only for the latest snapshot of its tab: an old one is
 refused with a sentence that says to take a fresh snapshot.
+
+In the Windows app (step 2a), a frame of another site is named in the
+outline but not read (its controls have no refs; `browser_mouse_click_xy`
+on the picture reaches them). Frames of the page's own site are read.
 
 **Files.** For `upload_file` the engine reads the files on the computer,
 with the helper's checks (an existing file, inside `/workspace` once links

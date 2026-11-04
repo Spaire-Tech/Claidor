@@ -2,10 +2,10 @@
 
 A plan (4 November 2026). The founder's decisions are made (below).
 
-**Where it is.** Step 1, the engine's route, is built and tested with a
-stand-in app, off by default ([protocol.md](protocol.md)). No app has a
-browser yet, so nothing has changed for anyone, and nothing has run on a
-Mac or a PC. Next: step 2, the browser on Windows.
+**Where it is.** Step 1, the engine's route, and step 2a, the browser in
+the Windows app, are built and tested, off by default ([protocol.md](protocol.md)).
+Nothing has changed for anyone, and nothing has run on a real PC yet. Next:
+step 2b, the Computer tab's view of the browser and Take Control.
 
 ## The decision
 
@@ -290,7 +290,9 @@ your recommendations".
 |---|---|
 | 0. Decisions | Done, 4 November 2026 |
 | 1. The route in the engine | Built, tested with a stand-in app (`desktop/tests/app-browser-route.test.mjs`), off by default. Not yet on the computers: that needs a host bundle published from a Mac. Not run with a real app. |
-| 2-7 | Not started |
+| 2a. The browser on Windows: tabs, the steps, popups, dialogs, downloads, uploads, the line to the engine | Built, 4 November 2026 (`windows/src/main/browser/`). Checked in Electron for real under a virtual display (`npm run browser-smoke`, 64 checks) and driven end to end by step 1's engine. Not run on a Windows PC or against real sites. |
+| 2b. The Computer tab's view and Take Control | Next |
+| 3-7 | Not started |
 
 Step 1, what was decided while building it (4 November 2026):
 
@@ -306,3 +308,30 @@ Step 1, what was decided while building it (4 November 2026):
   the step when it can't, as on the computer.
 - **An answer from the app** wakes a sleeping computer, as local exec's
   does.
+
+Step 2a, what was decided while building it (4 November 2026):
+
+- **Each tab is an offscreen Chromium window**, not a view in the app's
+  window: measured, only an offscreen window can be drawn, photographed and
+  clicked while nothing shows it. Step 2b shows its picture in the Computer
+  tab, as the Mac's helper will (decision 1).
+- **It dials the engine whenever the hands do**, on their address and keys,
+  so the app's page needed no change.
+- **Each agent has its own tabs**; a popup becomes the agent's tab, its
+  opener kept, and the agent goes back to the opener when it closes.
+  Sign-ins are shared (decision 2).
+- **A dialog is answered at once**: an alert is taken; a confirm or a prompt
+  is dismissed, which is the safe answer; the agent is told which.
+- **Downloads** land in Downloads\Simeon and the agent is told; **uploads**
+  are written in the app's data folder for the page, removed at start and
+  quit.
+- **Signing out** closes the tabs and forgets the sites' sign-ins, so the
+  next account on the PC starts with none; quitting keeps them.
+- **Nothing of the app reaches the tabs**: no preload, sandboxed, every
+  permission refused, only http and https, and the app's rule for its own
+  pages leaves them be (`ownsNavigation`), so no link of theirs opens in
+  the person's own browser.
+- **The words are the app's own.** The outline and the sentences are
+  written for this app, not taken from the computer's helper, which is
+  part of the reconstruction (`desktop/NOTICE.md`); what the agent reads is
+  shaped the same.

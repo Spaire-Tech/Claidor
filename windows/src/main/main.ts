@@ -32,7 +32,8 @@ import { type AppFacts, factsFor } from './facts'
 import { KeptValues } from './kept'
 import { relaunchArguments } from './session/relaunch'
 import { appLinkScheme, linksIn } from './links'
-import { navigatesOnItsOwn } from './navigation'
+import { ruleEveryPage } from './navigation'
+import * as browserPart from './parts/browser'
 import * as handsPart from './parts/hands'
 import * as outsidePart from './parts/outside'
 import * as sessionPart from './parts/session'
@@ -246,7 +247,7 @@ function start(): void {
       quitTasks.push(task)
     },
   }
-  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart])
+  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart, browserPart])
     part.register(context)
   // After every part's own `quit` (the updater's first, which may take the relaunch over): a new instance with no link, as the Mac's (the one Windows started this one with is not handed over again).
   app.on('quit', (_event, exitCode) => {
@@ -257,19 +258,8 @@ function start(): void {
   makeWindow()
 }
 
-// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser. A window a part made for another site's page (7d's Stripe window) is ruled by that part (navigation.ts).
-app.on('web-contents-created', (_event, contents) => {
-  contents.on('will-attach-webview', (event) => event.preventDefault())
-  contents.on('will-navigate', (event, url) => {
-    if (url.startsWith(appStart) || navigatesOnItsOwn(contents)) return
-    event.preventDefault()
-    if (opensOutside(url)) void shell.openExternal(url)
-  })
-  contents.setWindowOpenHandler(({ url }) => {
-    if (opensOutside(url)) void shell.openExternal(url)
-    return { action: 'deny' }
-  })
-})
+// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser. A window a part made for another site's page (7d's Stripe window, the agents' tabs) is ruled by that part (navigation.ts).
+ruleEveryPage({ appStart, opensOutside, openOutside: (url) => void shell.openExternal(url) })
 
 if (!app.requestSingleInstanceLock()) {
   // Another launch: it hands its command line (a link) to the first and goes.
