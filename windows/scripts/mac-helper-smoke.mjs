@@ -5,6 +5,7 @@
 // real site and no real service is reached.
 //
 //   npm run mac-helper-smoke            (Linux: xvfb-run -a npm run mac-helper-smoke)
+//   SIMEON_MAC_HELPER_BINARY=…/Simeon Browser npm run mac-helper-smoke   (the packaged helper, on a Mac)
 //
 // It prints what it saw and exits 1 on a failure.
 
@@ -44,9 +45,11 @@ const helper = path.join(work, 'main.js')
 await build({ absWorkingDir: here, entryPoints: ['src/helper/macBrowser.ts'], outfile: helper, bundle: true, format: 'cjs', platform: 'node', target: 'node22', external: ['electron'], logLevel: 'warning' })
 
 const stand = await engine()
-const args = [helper, `--data=${path.join(work, 'data')}`, `--api=${stand.base}`]
+// SIMEON_MAC_HELPER_BINARY: the helper as the Mac app carries it (Simeon.app/Contents/Helpers/Simeon Browser.app/Contents/MacOS/Simeon Browser, step 4b), its code inside.
+const packaged = process.env.SIMEON_MAC_HELPER_BINARY
+const args = [...(packaged ? [] : [helper]), `--data=${path.join(work, 'data')}`, `--api=${stand.base}`]
 if (process.platform === 'linux') args.push('--no-sandbox')
-const child = spawn(binary, args, { env: { ...process.env, NODE_OPTIONS: '' }, stdio: ['pipe', 'pipe', 'pipe'] })
+const child = spawn(packaged ?? binary, args, { env: { ...process.env, NODE_OPTIONS: '' }, stdio: ['pipe', 'pipe', 'pipe'] })
 const heard = []
 const waiters = []
 const replies = new Map()

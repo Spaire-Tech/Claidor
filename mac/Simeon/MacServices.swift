@@ -88,6 +88,8 @@ final class MacServices {
           store.saveNow()
           store.saved?.waitForWrites()
         }
+        // The browser told to quit, its tabs closed (its sign-ins kept).
+        MainActor.assumeIsolated { MacBrowserHelper.shared.quit() }
         let done = DispatchSemaphore(value: 0)
         Task.detached {
           await MacLocalHands.shared.stopAndWait()
@@ -126,10 +128,17 @@ final class MacServices {
         // "Execution on Local Computer" (kept for this account once its profile names it) and the team's ceiling; the hands
         // for this computer (not the demo's). Neither waits on the profile, which is read once: the computer is this account's.
         Task { await MacLocalPermission.shared.signedIn(next, store: store) }
-        if let live = backend as? LiveBackend { Task { await MacLocalHands.shared.start(live.gateway) } }
+        if let live = backend as? LiveBackend {
+          // The Mac's browser (step 4b) beside the hands; it reaches the engine only once their line is open.
+          MacBrowserHelper.shared.store = store
+          MacBrowserHelper.shared.start(server: session.server)
+          Task { await MacLocalHands.shared.start(live.gateway) }
+        }
       } else if next == nil {
         MacLocalPermission.shared.signedOut()
         Task { await MacLocalHands.shared.stop() }
+        // Its tabs closed and the sites' sign-ins forgotten: the next account on this Mac starts with none.
+        MacBrowserHelper.shared.signedOut()
       }
     }
     if state.live && !wasLive, let backend = store.backend { connected(backend) }

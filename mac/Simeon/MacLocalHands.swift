@@ -156,6 +156,9 @@ actor LocalHandsProvider {
     connected()
     lastChunk = Date()
     await post([helloFrame()], deadline: LocalExec.controlPostSeconds)
+    // The Mac's browser (step 4b) dials the same gateway while this line is open, and lets go when it closes.
+    MacBrowserHelper.shared.engineOpened(baseURL: connection.baseURL, headers: connection.headers())
+    defer { MacBrowserHelper.shared.engineClosed() }
     // The stream's bytes are read in this task (they cannot be handed to another); the ping's task ends them by cancelling their request.
     let dataTask = bytes.task
     try await withThrowingTaskGroup(of: Void.self) { group in

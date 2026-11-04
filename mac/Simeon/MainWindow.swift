@@ -61,7 +61,7 @@ final class WindowState {
    * Plugins close it, as do its own Exit and its banner's buttons.
    */
   var computer: ComputerOpen? {
-    didSet { WindowState.computerShowing = computer != nil }
+    didSet { WindowState.computerShowing = computer != nil || browser != nil }
   }
   /** The computer is over the window: the window's own keys go to its screen. */
   static var computerShowing = false
@@ -74,6 +74,42 @@ final class WindowState {
     store.openComputer(agentId)
     computer = ComputerOpen(agentId: agentId, helper: helper)
     NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  /** The full view of the agent's browser on this Mac (step 4b of docs/app-browser/README.md), over the window. */
+  var browser: String? {
+    didSet { WindowState.computerShowing = computer != nil || browser != nil; WindowState.browserShowing = browser != nil }
+  }
+  /** The browser's full view is over the window: Tab is the page's. */
+  static var browserShowing = false
+
+  /** Opening it never starts Simeon's computer; nothing behind keeps the keys. */
+  func openBrowser(_ agentId: String) {
+    computer = nil
+    browser = agentId
+    NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  /** Closing it gives the browser back to the agent, and the message field takes the keys. */
+  func closeBrowser() {
+    guard let agentId = browser else { return }
+    browser = nil
+    Task { await MacBrowserHelper.shared.control(agentId, person: false) }
+    WindowState.composerFocus += 1
+  }
+
+  /** Where a card opens the agent's screen (step 3a): its tab on this Mac when the Computer tab shows it there, in Take control when the person must act; else Simeon's computer, as before. */
+  func openAgentScreen(_ agentId: String, control: Bool, store: AppStore) {
+    Task {
+      let browser = MacBrowserHelper.shared
+      let shown = browser.running ? await browser.state(agentId) : nil
+      if MacBrowserHelper.showsHere(shown, helpers: store.computerHelpers(agentId).count) {
+        if control { await browser.control(agentId, person: true) }
+        openBrowser(agentId)
+      } else {
+        openComputer(agentId, helper: nil, store: store)
+      }
+    }
   }
 
   /** Exit and the banner's buttons: the view goes and the message field takes the keys (`W`). */
@@ -101,8 +137,9 @@ final class WindowState {
   /** A row clicked: its agent opens (its chat read, its unread cleared). */
   func open(_ agentId: String, store: AppStore) {
     orgChart = false
-    // Choosing an agent closes the computer (`Fzn`).
+    // Choosing an agent closes the computer (`Fzn`), and the browser's view.
     computer = nil
+    if browser != nil { closeBrowser() }
     selected = agentId
     store.windowSelection = agentId
     Task { await store.open(agentId) }
@@ -264,6 +301,8 @@ struct MainWindow: View {
       .overlay { ViewerLayer() }
       // An agent's computer (step 13), over the whole window.
       .overlay { ComputerLayer() }
+      // The agent's browser on this Mac (step 4b), over the whole window.
+      .overlay { BrowserLayer() }
       // Settings (⌘,, step 8), over the window; search over it.
       .overlay { SettingsLayer() }
       // Plugins (Connect apps, step 9), in Settings' place.
@@ -471,6 +510,8 @@ private struct KeyWatcher: NSViewRepresentable {
       // screen has the keys); Tab stays inside the view, and the arrows switch helpers' screens while the screen has no keys.
       if WindowState.computerShowing, let windowState {
         if screenHasKeys { return false }
+        // The browser's page takes Tab while the person has it.
+        if WindowState.browserShowing { return false }
         if event.keyCode == 48 { return true }
         if mods.isEmpty, let store, [123, 124, 125, 126].contains(event.keyCode) {
           windowState.stepComputerHelper(event.keyCode == 123 || event.keyCode == 126 ? -1 : 1, store: store)
