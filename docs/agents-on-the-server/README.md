@@ -84,19 +84,19 @@ the agent's: those all go to the computer.
 
 ## Not breaking anything
 
-- **The person's data is copied, never moved, until it is checked.** The
-  computer's engine stays as it is until the new one has served the founder
-  for a while. Turning it back is one switch.
-- **One person first, behind a switch:** the founder. Nobody else's agents
-  change until the founder says so.
-- **Every step logs what it decided.** That way nobody has to guess from
-  outside, as on 4 November. Each step is checked on the founder's Mac before
-  the next one, by sending a message, using a connector, opening a website and
-  running a routine.
+Simeon has one person on it, the founder ("ive no customer. its just me"),
+so there are no switches for other people and no step for "everyone".
+Two rules hold:
+
+- **The founder's data is backed up before anything moves**, and the
+  computer's engine is kept until the new one works.
+- **Every step logs what it decided**, so nobody has to guess from outside,
+  as on 4 November. Each step is checked on the founder's Mac: sending a
+  message, using a connector, opening a website and running a routine.
 
 ## The order of work
 
-0. **Prove it (no change for anyone).** Run the engine outside a computer,
+0. **Prove it.** Run the engine outside a computer,
    here and against a stand-in computer, then against the founder's
    computer through the proxy. Measure:
    - which of the five `SAND_HOST_IN_BOX` places, and which paths that
@@ -106,8 +106,8 @@ the agent's: those all go to the computer.
    - the engine's memory and CPU at rest and during a turn.
 
    This gives the real cost and the list of changes.
-1. **The brain service.** One engine for the founder, on Render, with the
-   founder's data copied from their computer's backup. The proxy sends
+1. **The brain service.** The founder's engine on Render, with their data
+   copied from their computer's backup. The proxy sends
    their apps to it; their computer is reached only for its hands. Checked by talking to an
    agent and using a connector with the computer asleep, then opening a
    website, which wakes it.
@@ -120,25 +120,19 @@ the agent's: those all go to the computer.
    follows decision 3.
 4. **Files.** What an agent makes is also kept on the server, so it opens
    in the chat while the computer sleeps.
-5. **Everyone, then the computer as hands only.** The engine is no longer
-   started on the computer. The computer image keeps the exec daemon,
+5. **The computer as hands only.** The engine is no longer started on the
+   computer. The computer image keeps the exec daemon,
    Chrome, the screen and the files.
 
-## Decisions for the founder
+## Decisions (taken 4 November 2026; the founder may overrule)
 
-1. **Where the brain runs:** a Render service, one process per person
-   (recommended), or one shared process for everyone (cheaper, a large
-   rewrite).
-2. **The browser in the app** (`docs/app-browser/`): switched off while
-   this is built, with the code kept (recommended). Websites go back to the
-   computer's Chrome, as asked on 4 November.
-3. **Mail and messages from strangers:** keep the runner's no-tools rule
-   for them (recommended), or let the brain handle them with its tools.
-4. **A routine that only uses connectors** ("every morning, read my email
-   and post a summary in Slack"):
-   - (a) runs on the server and never wakes the computer, which follows
-     the rule "the computer when a connector can't do it" (recommended);
-   - (b) runs on the computer, like every routine.
+1. **Where it runs:** a Render service, one engine process per person. Today
+   that is one process.
+2. **The browser in the app** (`docs/app-browser/`): off while this is
+   built, with the code kept. Websites go back to the computer's Chrome.
+3. **Mail and messages from strangers:** the runner's no-tools rule stays.
+4. **A routine that only uses connectors** runs on the server and never
+   wakes the computer.
 
 ## What is not known yet
 
