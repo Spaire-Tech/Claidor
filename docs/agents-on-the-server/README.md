@@ -19,6 +19,12 @@ So:
 - **On the computer, woken only for it:** websites (its Chrome and the
   sign-ins that stick there), running code and commands, making and keeping
   files, the screen for Take control.
+- **While none of the person's devices is connected** (Mac, Windows PC,
+  iPhone all off), the computer is where that work gets done. That covers
+  routines, what comes in (an email, a Slack or Discord message, a
+  listener's event), and tasks that keep going after the app is closed.
+  The thinking stays on the server; the computer is woken for the steps
+  that need it.
 
 ## How it is today (read in the code, 4 November 2026)
 
@@ -128,6 +134,11 @@ the agent's: those all go to the computer.
    computer's Chrome, as asked on 4 November.
 3. **Mail and messages from strangers:** keep the runner's no-tools rule
    for them (recommended), or let the brain handle them with its tools.
+4. **A routine that only uses connectors** ("every morning, read my email
+   and post a summary in Slack"):
+   - (a) runs on the server and never wakes the computer, which follows
+     the rule "the computer when a connector can't do it" (recommended);
+   - (b) runs on the computer, like every routine.
 
 ## What is not known yet
 
