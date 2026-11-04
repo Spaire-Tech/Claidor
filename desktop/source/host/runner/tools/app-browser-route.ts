@@ -30,6 +30,12 @@ export interface AppBrowserStep {
 export interface AppBrowserRoute {
   choose(viewId: string, options: { readonly opensAddress: boolean; readonly signal?: AbortSignal }): Promise<AppBrowserChoice>;
   request(choice: AppBrowserLive, step: AppBrowserStep, options: { readonly signal?: AbortSignal; readonly timeoutMs: number }): Promise<Record<string, unknown>>;
+  /**
+   * Where the view's task is now, choosing nothing (step 3: the cards): its
+   * app when the task is in an app's browser that is connected now; else
+   * undefined, and a card acts on the computer as before.
+   */
+  where?(viewId: string): AppBrowserLive | undefined;
 }
 
 export const BOX_ROUTE: AppBrowserChoice = Object.freeze({ route: "box" });

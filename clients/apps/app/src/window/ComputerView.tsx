@@ -499,7 +499,7 @@ function ComputerTopBar({ exit }: { exit: () => void }) {
  * (24 high, 6 round, 12/16). Both answer the agent, close the view and give
  * the message field the keys.
  */
-function HandoffBanner({
+export function HandoffBanner({
   name,
   instruction,
   answer,
@@ -646,7 +646,7 @@ export function ComputerPreview({
   // The agent's tabs on this PC (the Windows app), unless a helper of its is at work on the computer's screen.
   const shown = usePCBrowser(agent.id)
   if (showsPCBrowser(shown, store.computerHelpers(agent.id).length))
-    return <BrowserPreview agent={agent} shown={shown!} />
+    return <BrowserPreview store={store} agent={agent} shown={shown!} />
   return (
     <ScreenPreview
       store={store}
@@ -800,7 +800,7 @@ export function OpenPill() {
  * and I'm done, continue at the right (24 high, 6 round, 12/16). Both
  * answer the agent; neither opens or closes anything.
  */
-function ComputerAttention({
+export function ComputerAttention({
   name,
   instruction,
   answer,

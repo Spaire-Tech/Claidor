@@ -5,7 +5,9 @@
 // browser's line as the engine does. The page's own hands loop opens the
 // line; the stand-in engine opens a page in Theo's tab; the Computer tab
 // shows it, then the full view, Take control with the real mouse and keys,
-// Give back. No real site and no real service is reached.
+// Give back; then the take-over card (step 3): Take over opens Theo's tab in
+// Take control and I'm done gives it back and answers the agent. No real
+// site and no real service is reached.
 //
 //   npm run browser-view-smoke           (Linux: xvfb-run -a npm run browser-view-smoke)
 //   SHOTS=<folder> npm run browser-view-smoke   (keeps screenshots)
@@ -70,7 +72,17 @@ function engine() {
   const hello = new Promise((done) => (helloSeen = done))
   const waiting = new Map()
   let count = 0
+  // The take-over the engine would start (request_box_help): its status on the computer, and the answers to it.
+  const takeOver = { pending: false, answers: [] }
+  const handoff = { requestId: 'h1', instruction: 'Sign in to the shop, then press I’m done.' }
   const routes = (record, args) => {
+    if (record.path === '/box/api/getForeverBoxStatus' && args.id === 'theo' && takeOver.pending)
+      return { json: { agentId: 'theo', state: 'running', handoff } }
+    if (record.path === '/box/api/handBackForeverBox') {
+      takeOver.answers.push(args)
+      takeOver.pending = false
+      return { json: {} }
+    }
     if (record.path === '/box/local-exec/requests' && record.method === 'GET')
       return { stream: (response, headers) => hold(response, headers, { kind: 'welcome', providerId: 'hands-1' }) }
     if (record.path === '/box/local-exec/responses' && record.method === 'POST') return { json: {} }
@@ -93,6 +105,8 @@ function engine() {
   return {
     routes,
     hello,
+    takeOver,
+    handoff,
     /** One browser step for Theo, as the engine sends it; its answer. */
     step(op, args = {}, { deadlineMs = 60_000, waitMs = 70_000 } = {}) {
       const requestId = `r${++count}`
@@ -123,8 +137,11 @@ async function launch(standIn, dataFolder) {
 const pages = await site()
 const stand = engine()
 const standIn = await startStandIn({ routes: stand.routes })
+// The take-over's card in Theo's chat, as the engine writes it (`boxRequestId`).
+standIn.state.box.lines.theo.push({ kind: 'send-message', id: 'take-over', message: { type: 'text', content: stand.handoff.instruction }, boxRequestId: stand.handoff.requestId, timestampMs: Date.now() })
 const dataFolder = mkdtempSync(path.join(os.tmpdir(), 'simeon-browser-view-'))
 const shots = process.env.SHOTS
+let running
 try {
   // The first launch keeps the pair and opens the pane next time.
   {
@@ -137,6 +154,7 @@ try {
     await app.close()
   }
   const { app, page, errors } = await launch(standIn, dataFolder)
+  running = app
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(1400, 900))
   await page.waitForSelector('.sidebar', { timeout: 15_000 }).catch(() => {})
 
@@ -224,13 +242,36 @@ try {
   await page.locator('.browser-view .computer-exit').click()
   answer = await Promise.race([stand.step('snapshot'), soon(4_000).then(() => ({ timedOut: true }))])
   check(answer.ok === true && (await page.locator('.browser-view').count()) === 0, 'Exit gives the browser back', JSON.stringify({ ok: answer.ok, timedOut: answer.timedOut }))
+  // The take-over (step 3): the agent asks; the card's Take over opens its tab on this PC in Take control; I'm done gives it back and answers.
+  stand.takeOver.pending = true
+  standIn.state.box.queued.push({ channel: 'forever-box', payload: { agentId: 'theo', state: 'running', handoff: stand.handoff } })
+  await page.waitForSelector('.computer-preview .computer-attention', { timeout: 15_000 }).catch(() => {})
+  check((await page.locator('.computer-preview .computer-attention').count()) === 1, 'the take-over waits in the Computer tab, over Theo’s tab')
+  await page.locator('.handoff-card .handoff-pill.blue').click()
+  await page.waitForSelector('.browser-view .handoff-banner', { timeout: 5_000 }).catch(() => {})
+  await page.waitForSelector('.browser-control.held', { timeout: 5_000 }).catch(() => {})
+  const banner = await page.locator('.browser-view .handoff-banner-words').textContent().catch(() => null)
+  check(banner === stand.handoff.instruction && (await page.locator('.browser-control.held').count()) === 1, 'Take over opens Theo’s tab on this PC in Take control, with the request over it', banner)
+  if (shots) await page.screenshot({ path: path.join(shots, 'browser-take-over.png') })
+  const heldStep = stand.step('snapshot')
+  check((await Promise.race([heldStep.then(() => 'answered'), soon(1_000).then(() => 'waiting')])) === 'waiting', 'Theo waits while the person does the step')
+  await page.locator('.browser-view .handoff-banner-button.primary').click()
+  answer = await Promise.race([heldStep, soon(4_000).then(() => ({ timedOut: true }))])
+  await page.waitForTimeout(300)
+  check(
+    answer.ok === true && (await page.locator('.browser-view').count()) === 0 && stand.takeOver.answers.at(-1)?.trigger === 'button' && stand.takeOver.answers.at(-1)?.id === 'theo',
+    'I’m done gives the tab back, closes the view and answers Theo',
+    JSON.stringify({ ok: answer.ok, answers: stand.takeOver.answers }),
+  )
   check(errors.length === 0, `no page errors (${errors.join(' | ')})`)
-  await app.close()
+} catch (error) {
+  check(false, 'the run went to its end', error instanceof Error ? error.stack : String(error))
 } finally {
+  await running?.close().catch(() => {})
   stand.close()
   await standIn.close()
   pages.close()
-  rmSync(dataFolder, { recursive: true, force: true })
+  rmSync(dataFolder, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 })
 }
 
 console.log(failures.length === 0 ? '\nAll checks passed.' : `\n${failures.length} failed.`)

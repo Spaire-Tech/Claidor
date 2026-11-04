@@ -20,7 +20,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4. The agent's pane, search, new chat, the org chart, starter packs | Done, 2 November 2026: 4a (the agent's pane: its frame, Profile and Notifications, a flight's details taken in; the window's model; Search and New Agent in the sidebar), 4b (the avatar editor: faces and voices, a picture generated or of one's own; New Agent), 4c (an agent's routines and a routine's editor), 4d (search, ⌘K; an agent's channels; a group's members), 4e (the org chart, starter packs from `?pack=`). An agent's own Computer tab and the computer's screen come with step 5 (done); in search and "/", Settings' pages, Connectors and the themes come with step 6, Update Simeon's Computer with step 5 (done); the sidebar's account and Connect apps with step 6. Next: step 5, the computer and calls |
 | 5. The computer and calls | Done, 2 November 2026: 5a (the frame: the window model's and the store's places, noVNC and ElevenLabs' kit, the app window's policy), 5b (the pane's Computer tab, the full computer view with its keys, paste and helpers, the agent's pointer, step 3's buttons that open the computer), 5c (the rebuild, recovery and move, the computer's dialogs and pills, low disk, the access notice, the sidebar's card and Update pill, Update Simeon's Computer in ⌘K and "/"), 5d (calls with an agent: the ring, the banner, the call's line and its lines over the chat; and two agents' exchange over the chat, missed in step 2). Next: step 6, Connectors and Settings |
 | 6. Connectors and Settings | Done, 2 November 2026: 6a (the frame: the window's overlay slot, the theme chosen, Settings' shell and parts, the sidebar's account and Connect apps), 6b (connecting an app: the consent, the sign-in in a tab, the card's Connect, Add Another Account, the new app's return page), 6c (Connectors' core, model and list), 6d (Connectors' pages: an app's, a server's, setup, a skill, accounts and tools; the 232 written pages as data), 6e (Settings' General, Account, Permissions, Computer, Help & support and Legal; Send Feedback and Report an Issue), 6f (Usage & Billing, Wallet, the Credentials Store, the credits' line, the account menu and About). Updates and the Mac's "Your Computer" are left out (the Mac's alone). Next: step 7, Windows |
-| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) and step 2b (the Computer tab's view of it and Take control) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: step 3, the cards on Windows |
+| The browser in the app (`docs/app-browser/`) | Step 1 (the engine's route, #551), step 2a (the browser in the Windows app's main process, #552) step 2b (the Computer tab's view of it and Take control, #553) and step 3a (the take-over and the checkout's buttons open the agent's tab here) done, 4 November 2026, off by default (`SIMEON_APP_BROWSER_USERS`). Nothing has run on a Windows PC. Next: 3b, the fills |
 | 7. Windows | Done, 2 November 2026: 7a (the frame: `windows/`, the committed build served from inside the app at `app://simeon/app-next/`, the bridge's contract, the policy, the window and its drag areas, the server's CORS for the app), 7b (signing in through the browser, the session, the agents and chats kept on the PC, Relaunch, About's and a report's facts and logs), 7c (Windows' notifications, the taskbar's number, the tray, the menu and zoom keys, Control-Tab, the call's own window), 7d (`simeon://` links, connecting through the default browser and the loopback, Stripe's window and `billing/settle`, Windows Hello, the clipboard, 1Password through `op.exe`), 7e (updates and Settings › Updates, the release, the icon, the workflow, the server's Windows routes), 7f (the agent's hands on the PC: commands in PowerShell, Windows' places that hold keys refused, the Allow card, Settings › Computer › Your Computer with the team's ceiling and the commands allowed once; the engine told the PC runs Windows, which reaches the computers with the next host bundle). Nothing has run on a Windows PC yet, and no release is signed (Open questions). Next: the founder's open questions, then the first signed release tried on a Windows PC |
 
 ## Decisions
@@ -252,6 +252,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 4 November 2026 | The app's rule for its own pages (only the app's page; addresses to the default browser) moved from `main.ts` into `navigation.ts` (`ruleEveryPage`), unchanged, so the browser's checks run under it; the agents' tabs rule their own navigation (`ownsNavigation`) | The session |
 | 4 November 2026 | The Computer tab shows this PC's browser while the agent has tabs here and no computer-use helper is on Simeon's computer's screen, else the computer as before; the grey line ("On this PC", "On Simeon's computer") only once the server's switch is on for the person; Take control in the full view, the pane's picture only shown; opening the browser never starts the computer; the cards still open the computer until step 3 (`docs/app-browser/README.md`, step 2b) | The session; the pane's tab name, the grey line and Take control are the founder's ("keep computer", the plan) |
 | 4 November 2026 | While the person has control the agent's steps wait, each until 5 s before its deadline, Auto-review still reads; given back, the agent's old refs are refused and it is told; closing the view, the page loading again, signing out and quitting give it back | The session |
+| 4 November 2026 | The take-over, Review order and the bank's check open the agent's tab on this PC when the Computer tab would show it there, else the computer; the take-over and the bank's check in Take control; I'm done and Skip give the tab back before the agent is told; the take-over's picture is the tab's (`docs/app-browser/README.md`, step 3a) | The session; "same cards, same buttons" is the plan's |
 | 4 November 2026 | The browser view's 9 words (On this PC, On Simeon's computer, Give back, Forward, Stop, Not Secure, %@'s browser, Tabs, New Tab) added to the Mac's catalogue in the 9 languages, before the Mac's own view (step 4), since the web app reads only the Mac's catalogue; "Take control" and "%@ is paused while you're in control." were there already | The session |
 
 ## For Windows
@@ -823,6 +824,57 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 4 November 2026: the browser in the app, step 3a, the take-over and the checkout's buttons
+
+The founder: "start step 3". Step 3 of `docs/app-browser/README.md` split
+in three: 3a (this) the cards that open the agent's screen; 3b the fills
+(the in-chat form, 1Password, saved logins, a new password); 3c the
+checkout's card and Duffel's form, which first need another site's frames
+read.
+
+**What it is:**
+
+- The web app (`BrowserView.tsx`): `openAgentScreen` opens the agent's tab
+  here (Take control when asked) or Simeon's computer, as the Computer tab
+  would show it; `handBack` gives the tab back, then answers the agent. The
+  take-over's Take over, picture and Open computer, the checkout's Review
+  order and the bank's check use it (`RequestCards.tsx`, `ShopCards.tsx`).
+  The take-over's banner over the browser's full view, "Needs your
+  attention" in its Computer tab.
+- The contract: `browserState` (the agent's browser read once, no watch);
+  the Windows app answers it (`parts/browser.ts`).
+- The engine: `where(viewId)` on the route and the local-browser bridge
+  (where a task is now, choosing nothing); `request_box_help` takes the
+  card's picture from the app's tab for a task there
+  (`host-runner-composition.ts`, a hand-off's own `grab` in
+  `box-handoff-service.ts`, a `data:image/…` picture kept as it came).
+
+**Checked:**
+
+- `desktop`: `app-browser-route.test.mjs` and `handoff-snapshot-log.test.mjs`
+  (24 with `phone-take-control`, 2 new). `npm run check`: both typechecks
+  pass; of the 1006 tests one fails, the packaging audit, which reads the
+  upstream window's built files that only a Mac's bootstrap makes; it fails
+  the same way on `main` here.
+- `windows`: `npm test` 211, `npm run typecheck`; `npm run
+  browser-view-smoke` 19 checks, three runs: the take-over pushed by the
+  stand-in computer waited in the Computer tab; the card's Take over opened
+  Theo's tab in Take control with the request over it; Theo's step waited;
+  I'm done gave the tab back, closed the view and answered Theo (`trigger:
+  button`). Screenshot looked at.
+- `clients/apps/app`: vitest 1218 (4 new: where a card opens, on the web
+  and with a helper on the computer's screen too; the tab given back before
+  the agent is told; the banners), tsc, eslint, Prettier, `check-built`,
+  `make-words --check`.
+- `check_names.py`, `check_translations.py`.
+
+**Not checked:** nothing on a Windows PC or against real sites; the
+engine's part runs on the computers only once a host bundle is published
+from a Mac. The iPhone's Take over still opens the computer's screen for a
+task in an app's browser (step 5).
+
+**Next:** 3b, the fills typed by the app into its tab.
 
 ### 4 November 2026: the browser in the app, step 2b, the Computer tab's view and Take control
 

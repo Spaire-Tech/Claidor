@@ -2,11 +2,12 @@
 // of docs/app-browser/README.md), in the Windows app (a stand-in for it,
 // FakeDesktop): the Computer tab with the agent's tabs on this PC, the grey
 // line over Simeon's computer once the server's switch is on, nothing new on
-// the web; the full view's bar, pills and Take control.
+// the web; the full view's bar, pills and Take control; the cards that open
+// the agent's screen (step 3) and the take-over's banner over the browser.
 
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeAgent } from '../core/models'
 import { AppStore } from '../core/store'
 import {
@@ -15,6 +16,7 @@ import {
   resetPCBrowserForTests,
 } from '../desktop/browser'
 import { FakeDesktop } from '../desktop/testing'
+import { handBack, openAgentScreen } from './BrowserView'
 import { ComputerLayer, ComputerPreview } from './ComputerView'
 import { WindowContext, WindowModel } from './windowModel'
 
@@ -237,5 +239,128 @@ describe('the full view of the browser in the app', () => {
     model.openBrowser('theo')
     draw(model, <ComputerLayer store={store} />)
     expect(store.computer.demanded.has('theo')).toBe(false)
+  })
+})
+
+describe('the cards that open the agent’s screen (step 3)', () => {
+  let remove: (() => void) | undefined
+  // The openers drop the focus (`document.activeElement`): none here.
+  beforeEach(() => {
+    vi.stubGlobal('document', { activeElement: null })
+    vi.stubGlobal('HTMLElement', class {})
+  })
+  afterEach(() => {
+    remove?.()
+    remove = undefined
+    resetPCBrowserForTests()
+    vi.unstubAllGlobals()
+  })
+
+  it('open the agent’s tab on this PC, in Take control when the person must act', async () => {
+    const fake = new FakeDesktop()
+      .answer('browserState', () => theoShown())
+      .answer('browserControl', (_agentId, person) => theoShown({ person }))
+    remove = fake.install()
+    const store = storeWithTheo()
+    const model = new WindowModel('theo')
+    await openAgentScreen(model, store, 'theo', { control: true })
+    expect(model.computer).toEqual({ agentId: 'theo', browser: true })
+    expect(fake.calls.map((call) => [call.name, ...call.args])).toEqual([
+      ['browserState', 'theo'],
+      ['browserControl', 'theo', true],
+    ])
+    expect(store.computer.demanded.has('theo')).toBe(false)
+    const review = new WindowModel('theo')
+    await openAgentScreen(review, store, 'theo', { control: false })
+    expect(review.computer).toEqual({ agentId: 'theo', browser: true })
+    expect(
+      fake.calls.filter((call) => call.name === 'browserControl'),
+    ).toHaveLength(1)
+  })
+
+  it('open Simeon’s computer when the agent has no tab here, a helper is on the computer’s screen, or on the web', async () => {
+    remove = new FakeDesktop()
+      .answer('browserState', () => theoShown({ tabs: [], current: undefined }))
+      .install()
+    let model = new WindowModel('theo')
+    await openAgentScreen(model, storeWithTheo(), 'theo', { control: true })
+    expect(model.computer).toEqual({ agentId: 'theo', helper: undefined })
+    remove()
+    resetPCBrowserForTests()
+    remove = new FakeDesktop()
+      .answer('browserState', () => theoShown())
+      .install()
+    const store = storeWithTheo()
+    store.apply({
+      kind: 'computer',
+      status: {
+        agentId: 'theo',
+        state: 'running',
+        vncUrl: 'http://127.0.0.1:6080/vnc.html',
+      },
+    })
+    store.apply({
+      kind: 'subagents',
+      parentId: 'theo',
+      subagents: [
+        {
+          subagentId: 's1',
+          subagentType: 'computerUse',
+          status: 'running',
+          title: 'Helper 1',
+        },
+      ],
+    })
+    model = new WindowModel('theo')
+    await openAgentScreen(model, store, 'theo', { control: true })
+    expect(model.computer?.browser).toBeUndefined()
+    remove()
+    remove = undefined
+    resetPCBrowserForTests()
+    // On the web, at once, as before.
+    model = new WindowModel('theo')
+    void openAgentScreen(model, storeWithTheo(), 'theo', { control: true })
+    expect(model.computer).toEqual({ agentId: 'theo', helper: undefined })
+  })
+
+  it('the take-over answered gives the browser back before the agent is told', async () => {
+    const fake = new FakeDesktop().answer('browserControl', () => theoShown())
+    remove = fake.install()
+    const store = storeWithTheo()
+    const told: unknown[] = []
+    store.handBackComputer = async (agentId: string, skip = false) => {
+      told.push([agentId, skip, fake.calls.length])
+    }
+    handBack(store, 'theo', true)
+    expect(fake.calls.map((call) => [call.name, ...call.args])).toEqual([
+      ['browserControl', 'theo', false],
+    ])
+    expect(told).toEqual([['theo', true, 1]])
+  })
+
+  it('the take-over waits in the Computer tab and over the full view of the browser', async () => {
+    remove = await windowsApp(theoShown({ person: true }))
+    const store = storeWithTheo()
+    store.apply({
+      kind: 'computer',
+      status: {
+        agentId: 'theo',
+        state: 'running',
+        handoff: { requestId: 'r1', instruction: 'Sign in to the shop' },
+      },
+    })
+    const pane = draw(
+      new WindowModel('theo'),
+      <ComputerPreview store={store} agent={theo} />,
+    )
+    expect(pane).toContain('Needs your attention')
+    expect(pane).toContain('Sign in to the shop')
+    expect(pane).toContain('browser-canvas')
+    const model = new WindowModel('theo')
+    model.openBrowser('theo')
+    const full = draw(model, <ComputerLayer store={store} />)
+    expect(full).toContain('handoff-banner')
+    expect(full).toContain('I&#x27;m done, continue')
+    expect(full).not.toContain('browser-paused')
   })
 })
