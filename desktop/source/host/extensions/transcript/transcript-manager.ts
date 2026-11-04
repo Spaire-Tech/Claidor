@@ -435,6 +435,9 @@ export class TranscriptManager {
   resolveBoxRequestEntry(...args: any[]) {
     return invoke(this.sendPipeline, "resolveBoxRequestEntry", args);
   }
+  newestOpenBoxRequestId(...args: any[]) {
+    return invoke(this.sendPipeline, "newestOpenBoxRequestId", args);
+  }
   devAppendSendMessage(...args: any[]) {
     return invoke(this.sendPipeline, "devAppendSendMessage", args);
   }

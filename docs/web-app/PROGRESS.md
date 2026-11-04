@@ -830,6 +830,25 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 4 November 2026: "Your turn on the computer" cards that outlived their hand-off
+
+- **Found:** Simeon's card on the founder's Mac waited, and only Take over
+  worked. A hand-off is kept in the engine's memory only
+  (`session/box-handoff-service.ts`). The card's line in the chat had no
+  answer, so the apps showed it waiting
+  (`HandoffCardState`: waiting while the line has no resolution). After the
+  computer started again on the new engine, `handBackForeverBox` found no
+  hand-off to end and returned without a word.
+- **Done:** `handBackForeverBox` (`host-gateway-api.ts`) now handles a card
+  whose hand-off is gone. It answers the agent's latest unanswered card
+  (`newestOpenBoxRequestId`): Skip gives Skipped, I'm done gives Done. Then
+  it tells the agent, as a hand-off's end does. No app change.
+- **Checked:** `tests/handoff-card-outlives.test.mjs` (4 tests) and the
+  engine suite (990 passed). The one failure needs the renderer built by
+  `npm run bootstrap`; it fails the same on `main` here.
+- **Not done:** it reaches the computer only with a host bundle published
+  from a Mac.
+
 ### 4 November 2026: the browser in the app, step 7, the update not blocked by a waiting card
 
 - **Found** by the founder's agent, reading Render's logs. The deploy was
