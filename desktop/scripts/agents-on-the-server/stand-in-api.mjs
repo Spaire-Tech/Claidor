@@ -84,6 +84,9 @@ function handsDoor(req, res, path) {
     return res.end(JSON.stringify({ state }));
   }
   const headers = Object.fromEntries(Object.entries(req.headers).filter(([name]) => !BRAIN_HEADERS.has(name)));
+  // The computer's own token, which the API adds for a computer in the hands
+  // role (its router checks it, step 1b): PROBE_BOX_TOKEN.
+  if (process.env.PROBE_BOX_TOKEN) headers["x-simeon-box-token"] = process.env.PROBE_BOX_TOKEN;
   const upstream = http.request({ host: "127.0.0.1", port: ROUTER_PORT, method: req.method, path: path.slice("/hands".length) || "/", headers }, (reply) => {
     res.writeHead(reply.statusCode ?? 502, reply.headers);
     reply.pipe(res);
