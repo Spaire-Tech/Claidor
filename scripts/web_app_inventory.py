@@ -42,7 +42,7 @@ AREAS = [
   "Sidebar SidebarList SidebarMenus SidebarState Pictures NewAgentSheet NewChatPane StarterPackSheet OrgChart",
   "StoreAgents StoreNewChat SidebarSections AgentFaces StoreFaces AgentDraft StarterPacks AgentNetwork NewChat GroupMembers GeneratedNameGenders SidebarOrder"),
  ("chat", "The chat: messages, the composer, reactions, find, threads, dictation",
-  "ChatPane ChatMotion MessageText MessageActions Composer ComposerPicks Attachments EmojiPicker Tapback Find Exchange Dictation Rendering CodeColours",
+  "ChatPane ChatMotion MessageText MessageActions Composer ComposerPicks Attachments EmojiPicker Tapback Find Exchange Dictation Rendering CodeColours TranscriptSelection",
   "Chat ChatRuns ChatFind Exchanges ComposerDocument ComposerLists ComposerMenus Emoji AttachmentLimits Markdown LinkMetadata LinkIcons DictatedText Activity Trays Models"),
  ("cards", "Cards in the chat: questions, drafts, approvals, secrets, forms, 1Password, products, checkout, flights, joined",
   "Cards FlightBooking UserFormCard OnePasswordCards",

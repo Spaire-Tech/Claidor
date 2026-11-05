@@ -358,7 +358,9 @@ struct Composer: View {
           .allowsHitTesting(false)
       }
     }
-    .overlay(alignment: .topLeading) { list }
+    // The open list is hung once, from the field's row (`body`): hung here too, it showed a second copy behind the
+    // first, 64 right and 10 down, its place counted from the field's corner and not the row's (the founder, 5 November
+    // 2026: "the @ shows two screens").
   }
 
   /**
@@ -803,6 +805,8 @@ struct MessageField: NSViewRepresentable {
 
     func textViewDidChangeSelection(_ notification: Notification) {
       guard !rebuilding, let view = notification.object as? NSTextView else { return }
+      // Words chosen here let go of those chosen in the chat: one choice at a time, as on a page.
+      if view.selectedRange().length > 0 { TranscriptSelection.current?.clear() }
       report(view)
     }
 
@@ -933,10 +937,13 @@ final class FieldTextView: NSTextView {
     return true
   }
 
-  /** The words chosen, a pick as its words ("@Nora"), plain. */
+  /** The words chosen, a pick as its words ("@Nora"), plain; with none chosen here, the words a drag chose in the chat (`TranscriptSelection`). */
   override func copy(_ sender: Any?) {
     let range = selectedRange()
-    guard range.length > 0, let storage = textStorage, NSMaxRange(range) <= storage.length else { return }
+    guard range.length > 0, let storage = textStorage, NSMaxRange(range) <= storage.length else {
+      if range.length == 0 { TranscriptSelection.current?.copy() }
+      return
+    }
     let words = MessageField.document(storage.attributedSubstring(from: range)).draft
     let board = NSPasteboard.general
     board.clearContents()
@@ -959,7 +966,7 @@ final class FieldTextView: NSTextView {
   override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
     let action = item.action
     if action == #selector(paste(_:)) || action == #selector(pasteAsPlainText(_:)) { return isEditable }
-    if action == #selector(copy(_:)) { return selectedRange().length > 0 }
+    if action == #selector(copy(_:)) { return selectedRange().length > 0 || TranscriptSelection.hasWords }
     if action == #selector(cut(_:)) { return isEditable && selectedRange().length > 0 }
     return super.validateUserInterfaceItem(item)
   }

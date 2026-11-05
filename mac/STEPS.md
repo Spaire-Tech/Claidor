@@ -2771,3 +2771,32 @@ so its tabs are the top of the screen, as the Mac's search has them.
 
 Not yet built or run on a Mac or an iPhone (Linux here: the files parse, and
 SimeonCore and its tests build and pass).
+
+### Choosing words across messages, and one "@" list (5 November 2026)
+
+The founder, with the upstream window for reference: "you can only select one
+dialogue at the time when you should be able to select all". Each message's
+words were SwiftUI's own selectable text, which keeps a drag inside the words
+it began in. Now the chat takes the drag (`TranscriptSelection.swift`): from
+where it began to where it is, every word is chosen, through as many messages
+as it crosses, lit in the system's highlight (white on the person's colour). A
+click lets go, as does another chat or thread, or words chosen in the message
+field. ⌘C copies them in order, a message from the next a blank line apart:
+the first and last as much as is chosen, those between whole (read from the
+chat, so the ones scrolled out of view too). The message field's Copy (⌘C and
+the Edit menu) does the same while it has no words of its own chosen. Each
+run of words draws its own part of the choice (`WordsRenderer`) and, while a
+drag is choosing, is laid out one marked piece a word (`ChosenWord`) so the
+chosen glyphs read back as the words they draw. Code blocks' lines, a lone
+emoji and the chat's notices take part; the cards do not.
+
+Not done: a double click choosing a word (it did when each message was its
+own selectable text), and the chat scrolling by itself while a drag holds at
+its top or bottom edge.
+
+The founder: "the @ shows two screens". The "@", "/", "#" and ":" list was
+hung twice: from the field's row, and again from the field itself, whose place
+was counted from the row's corner, so a second copy sat 64 right and 10 down
+behind the first. It is hung once now.
+
+Not yet built or run on a Mac (Linux here: the files parse).
