@@ -508,6 +508,41 @@ would still run the old router, so 1e waits for the rebuild.
 
     The desktop and computer suites pass except 10 model and proxy tests,
     which fail the same way on `main`.
+
+  **Part 2a, the door to the computer's hands: done, 5 November 2026.**
+  - Every path under `/sand-box/brain/hands/` except `state` goes to the
+    computer's window router on 1339 (`simeon/sand/brain.py`, `hands`). The
+    brain's `SIMEON_HANDS_URL` is `https://api.simeonlabs.com/sand-box/brain/hands`.
+  - It checks the brain's token and the person's user id. It adds the
+    computer's own token (`x-simeon-box-token`, the router's check from 1b)
+    and E2B's traffic token, and drops the brain's headers.
+  - A computer the record says is asleep is woken first, under the person's
+    lock (`broker.wake_locked`), as the apps' proxy wakes one for an
+    answer. A call E2B turns away because it lost the computer (paused
+    under the call) is woken and sent again, for up to 40 s. It never
+    reached the computer, so it can't run twice.
+  - While a call is open the computer counts as in use, so the sleeper
+    leaves it. A long command waiting for its answer counts too.
+  - The engine sends its bearer for the hands (`local`) as it came. The
+    API's sign-in layer would have refused it with a 401 before the door
+    ran, as it did on the apps' proxy on 28 September. The door's paths are
+    now left to the door (`is_box_proxy_path`).
+  - Only E2B computers have the door: Docker publishes only the apps' ports.
+  - Checked in tests (`server/tests/sand/test_brain.py`, 6 more, and
+    `test_box_proxy_auth.py`, 2 more):
+    - what the computer receives: the path, the query, the body, the
+      engine's headers, the two tokens, and none of the brain's headers;
+    - a sleeping computer woken first;
+    - a lost one woken and the call sent again;
+    - the router's refusal passed back;
+    - a full E2B account and an update in progress each answered with
+      a retry time;
+    - the refusals.
+
+    The sign-in layer test fails without the change.
+  - Not checked: a real E2B computer (the router on a real computer is
+    still the old one until the image is rebuilt, 1b), and how long a call
+    takes through the API (`sand.brain.hands.call` logs it).
 - **1d. The brain service.** Its Dockerfile and start script in the repo,
   and the settings to make it on Render: a private service in Oregon,
   2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing

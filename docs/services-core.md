@@ -1248,11 +1248,33 @@ The brain's routes (`simeon/sand/brain.py`) take the token in
 - `GET /sand-box/brain/hands/state`, with the person's user id in
   `x-simeon-brain-user`, returns the computer's state from the record
   (`running`, `hibernated`, `absent`) and never wakes it.
+- Every other path under `/sand-box/brain/hands/` (the same two headers) is
+  the door to the computer's hands. The brain sets `SIMEON_HANDS_URL` to
+  `https://api.simeonlabs.com/sand-box/brain/hands`.
+  - The door wakes a sleeping computer first, then sends the call on to the
+    computer's window router on 1339, streamed both ways.
+  - The API adds the computer's own token (`x-simeon-box-token`) and E2B's
+    traffic token. The brain's headers stop at the door.
+  - The engine's bearer for the hands (`local`) passes the API's sign-in
+    layer untouched, as on the apps' proxy paths.
+  - While a call is open, and for 3 minutes after, the computer counts as in
+    use and the sleeper leaves it.
+  - Only an E2B computer has the door (409 `no_door` otherwise).
 
-Log lines: `sand.brain.bootstrap` (user, box, the computer's state) and
-`sand.brain.refused` (the reason: `brain_token`, `brain_user`,
-`not_on_brain`, `no_user`, `no_computer`, `signed_out`). Neither ever
-carries a token.
+Log lines:
+- `sand.brain.bootstrap`: user, box, the computer's state.
+- `sand.brain.hands.call`: path, status and milliseconds, one per call on
+  the hands.
+- `sand.brain.hands.woke`: why (asleep, or E2B lost it under a call), what
+  the wake did, milliseconds.
+- `sand.brain.hands.upstream_error`: the hands' or the router's own refusal.
+- `sand.brain.hands.unreachable`: the computer did not answer.
+- `sand.brain.refused`: the reason. That is one of `brain_token`,
+  `brain_user`, `not_on_brain`, `no_user`, `no_computer`, `signed_out`,
+  `no_door`, `computer_full`, `computer_updating`, `wake_failed`,
+  `computer_unreachable`.
+
+None of them ever carries a token.
 
 ### In the app
 

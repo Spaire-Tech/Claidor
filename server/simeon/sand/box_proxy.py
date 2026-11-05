@@ -111,6 +111,12 @@ def _default_client() -> httpx.AsyncClient:
 _client_factory: Callable[[], httpx.AsyncClient] = _default_client
 
 
+def upstream_client() -> httpx.AsyncClient:
+    """A client that dials a box, as the proxy does (the brain's door to the
+    computer's hands too, `brain.py`); a stand-in in tests."""
+    return _client_factory()
+
+
 def set_lookup_for_tests(lookup: BoxLookup | None) -> None:
     global _lookup
     _lookup = lookup or broker.box_for_network_token
@@ -364,7 +370,7 @@ async def _proxy_http(
     except ClientDisconnect:
         return Response(status_code=499)
     query = request.url.query
-    client = _client_factory()
+    client = upstream_client()
 
     async def send(base: str, dial: dict[str, str]) -> httpx.Response | Response:
         upstream = client.build_request(
