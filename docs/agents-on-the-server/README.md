@@ -437,6 +437,38 @@ Each piece below is safe by itself. Nothing changes for the founder until
 
   The brain's own backup store needs no code: its start script sets
   `SAND_BOX_STORE_ID` to a source of its own (1d).
+
+**1b, the computer's router: done in the code, 5 November 2026; the image
+is not rebuilt yet.** On a computer in the `hands` role, the router on 1339
+lets a call through only with the computer's own gateway token in
+`x-simeon-box-token`. The server gave the computer that token
+(`SAND_GATEWAY_TOKEN`) and alone holds it. The router takes the header off
+before the call goes on. Without the token, or with a wrong one, it answers
+401. A computer in the `hands` role with no token of its own refuses every
+call. In any other role nothing changes. The supervisor needs no change:
+the router and the engine get the computer's settings, the role among them,
+as they are (`{...process.env}`).
+
+Checked:
+- in tests (`desktop/tests/window-router-box-token.test.mjs`, 3 tests),
+  with the real router script and a stand-in hands program;
+- end to end on the test machine: the brain, then the stand-in door
+  (which adds the token, as the API's door will), then the real router in
+  the `hands` role, then the hands program. A turn's 11 calls went through
+  and the command ran; a call straight to the router without the token was
+  refused.
+
+The computer's image has to be rebuilt before the router changes on a real
+computer. That takes three steps:
+1. **Box image** in GitHub Actions, run by hand (`.github/workflows/box_image.yml`);
+2. its name and digest copied into `SIMEON_BOX_IMAGE` and
+   `SIMEON_BOX_IMAGE_DIGEST` on Render;
+3. the E2B template rebuilt (the **E2B template** workflow, or
+   `bash box/e2b/build-and-check.sh`).
+
+GitHub Actions jobs have failed within 3 seconds, with no log, since #560,
+so this may need the founder. Until then a computer in the `hands` role
+would still run the old router, so 1e waits for the rebuild.
 - **1b. The computer image.** The router on 1339 lets a request from
   outside the computer through only with the computer's own gateway token,
   which the server already holds. The supervisor starts the engine as
