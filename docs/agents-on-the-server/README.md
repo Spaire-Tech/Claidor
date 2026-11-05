@@ -410,6 +410,33 @@ Each piece below is safe by itself. Nothing changes for the founder until
 
   It uses about 240 MB, as the whole engine does at rest: the engine's
   bundle loads all its code even when the keeper uses little of it.
+
+  **Part 3, the brain's own needs: done, 5 November 2026.**
+  - **What the brain brings in at its first start** (`copyInKeepsRelPath`,
+    `box-copy-in.ts`): only the agents' folder from the backup. The
+    computer's files and Chrome's sign-ins stay on the computer. The
+    restore's log says how many of the backup's files it took.
+  - **The Computer tab's state** (`readBoxRunStateThroughRoute`): the brain
+    asks `GET {SIMEON_HANDS_URL}/state`. The API answers it from its own
+    record and never wakes the computer for it (1c). The answer is in the
+    apps' words: `running`, `hibernated` (shown as asleep) or `absent`.
+    When the server can't be asked, the answer is `running`, which is what
+    the engine on the computer always says.
+  - The screen's address needs no change: the apps already turn the
+    engine's `127.0.0.1:6080` address into the API's own
+    (`Gateway.swift`, `screenSocket`).
+
+  Checked:
+  - in tests (`desktop/tests/brain-role.test.mjs`, 5 tests): what each
+    role brings in; a restore with three files in the backup downloads
+    only the agents' one; the state in each answer, including the server
+    being down;
+  - with the built engine as the brain: with the stand-in door answering
+    "asleep", the Computer tab's call (`getForeverBoxStatus`) said
+    `hibernated`, and nothing was sent to the computer.
+
+  The brain's own backup store needs no code: its start script sets
+  `SAND_BOX_STORE_ID` to a source of its own (1d).
 - **1b. The computer image.** The router on 1339 lets a request from
   outside the computer through only with the computer's own gateway token,
   which the server already holds. The supervisor starts the engine as

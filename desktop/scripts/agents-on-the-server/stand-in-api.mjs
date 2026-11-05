@@ -75,6 +75,14 @@ function handsDoor(req, res, path) {
     res.writeHead(401, { "content-type": "text/plain" });
     return res.end("brain token refused");
   }
+  // The computer's state, answered by the API itself, never waking it
+  // (PROBE_COMPUTER_STATE: running, hibernated or absent).
+  if (req.method === "GET" && path.split("?")[0] === "/hands/state") {
+    const state = process.env.PROBE_COMPUTER_STATE ?? "running";
+    appendFileSync(logFile, `${JSON.stringify({ at: started, method: req.method, path, hands: "state", state })}\n`);
+    res.writeHead(200, { "content-type": "application/json" });
+    return res.end(JSON.stringify({ state }));
+  }
   const headers = Object.fromEntries(Object.entries(req.headers).filter(([name]) => !BRAIN_HEADERS.has(name)));
   const upstream = http.request({ host: "127.0.0.1", port: ROUTER_PORT, method: req.method, path: path.slice("/hands".length) || "/", headers }, (reply) => {
     res.writeHead(reply.statusCode ?? 502, reply.headers);
