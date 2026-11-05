@@ -60,7 +60,37 @@ function modelAnswer(body) {
   ] };
 }
 
+// Step 1a: the API's door to the computer's hands, for an engine off the
+// computer (SIMEON_HANDS_URL=http://127.0.0.1:<port>/hands). A call under
+// /hands/ with the brain's token (PROBE_BRAIN_TOKEN) goes on, streamed both
+// ways, to the computer's window router (PROBE_ROUTER_PORT); the brain's own
+// headers stop here. Without the token: 401.
+const BRAIN_TOKEN = process.env.PROBE_BRAIN_TOKEN ?? "";
+const ROUTER_PORT = Number(process.env.PROBE_ROUTER_PORT ?? 1339);
+const BRAIN_HEADERS = new Set(["x-simeon-brain-token", "x-simeon-brain-user", "host", "connection"]);
+function handsDoor(req, res, path) {
+  const started = Date.now();
+  if (BRAIN_TOKEN.length === 0 || req.headers["x-simeon-brain-token"] !== BRAIN_TOKEN) {
+    appendFileSync(logFile, `${JSON.stringify({ at: started, method: req.method, path, hands: "refused" })}\n`);
+    res.writeHead(401, { "content-type": "text/plain" });
+    return res.end("brain token refused");
+  }
+  const headers = Object.fromEntries(Object.entries(req.headers).filter(([name]) => !BRAIN_HEADERS.has(name)));
+  const upstream = http.request({ host: "127.0.0.1", port: ROUTER_PORT, method: req.method, path: path.slice("/hands".length) || "/", headers }, (reply) => {
+    res.writeHead(reply.statusCode ?? 502, reply.headers);
+    reply.pipe(res);
+    reply.on("end", () => appendFileSync(logFile, `${JSON.stringify({ at: started, method: req.method, path, hands: reply.statusCode, display: req.headers["x-sand-display"] ?? "1", ms: Date.now() - started })}\n`));
+  });
+  upstream.on("error", (error) => {
+    appendFileSync(logFile, `${JSON.stringify({ at: started, method: req.method, path, hands: "error", error: error.message })}\n`);
+    if (!res.headersSent) { res.writeHead(502, { "content-type": "text/plain" }); res.end("no router"); } else res.destroy();
+  });
+  req.pipe(upstream);
+}
+
 http.createServer((req, res) => {
+  const handsPath = (req.url ?? "").split("?")[0];
+  if (handsPath === "/hands" || handsPath.startsWith("/hands/")) return handsDoor(req, res, req.url ?? "");
   const chunks = [];
   req.on("data", (chunk) => { chunks.push(chunk); });
   req.on("end", () => {

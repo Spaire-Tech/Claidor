@@ -137,9 +137,13 @@ function connectCodeName(error: unknown): string {
 }
 
 export function createBoxAuthorizationInterceptor(
-  endpoint: BoxEndpoint
+  endpoint: BoxEndpoint,
+  routeHeaders: Readonly<Record<string, string>> = {}
 ): BoxTransportInterceptor {
   return next => async request => {
+    for (const [name, value] of Object.entries(routeHeaders)) {
+      request.header.set(name, value);
+    }
     request.header.set("Authorization", `Bearer ${endpoint.authToken}`);
     for (const [name, value] of Object.entries(endpoint.headers ?? {})) {
       request.header.set(name, value);
@@ -148,15 +152,91 @@ export function createBoxAuthorizationInterceptor(
   };
 }
 
+/**
+ * Where the engine reaches the computer's hands when it runs off the
+ * computer (the brain, `docs/agents-on-the-server/README.md`, step 1).
+ * Every call goes to `SIMEON_HANDS_URL`, the API's door to the computer's
+ * window router (1339), with the headers in `SIMEON_HANDS_HEADERS` (a JSON
+ * object of strings) added. A call meant for the main hands program (1337)
+ * carries no window header, and the router sends such a call there, so one
+ * door serves both. Neither set (the engine on the computer): the hands are
+ * dialled at `http://host:port` as before.
+ */
+export interface BoxHandsRoute {
+  readonly baseUrl: string;
+  readonly headers: Readonly<Record<string, string>>;
+}
+
+export const SIMEON_HANDS_URL_ENV = "SIMEON_HANDS_URL";
+export const SIMEON_HANDS_HEADERS_ENV = "SIMEON_HANDS_HEADERS";
+
+/** Headers the route may not set: the hands program's own bearer, and the
+ * window headers each call carries for itself. */
+const ROUTE_HEADERS_REFUSED = new Set(["authorization", "x-sand-display", "x-sand-window-owner"]);
+
+export class BoxHandsRouteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BoxHandsRouteError";
+  }
+}
+
+/**
+ * The route read from the environment, or null when neither setting is
+ * there. A half-set or malformed route throws: an engine on the brain that
+ * quietly dialled 127.0.0.1 would wait for a computer that is not there.
+ * The message names the setting, never its value (the headers hold tokens).
+ */
+export function boxHandsRouteFromEnv(env: Record<string, string | undefined> = process.env): BoxHandsRoute | null {
+  const rawUrl = env[SIMEON_HANDS_URL_ENV]?.trim() ?? "";
+  const rawHeaders = env[SIMEON_HANDS_HEADERS_ENV]?.trim() ?? "";
+  if (rawUrl.length === 0 && rawHeaders.length === 0) return null;
+  if (rawUrl.length === 0) throw new BoxHandsRouteError(`${SIMEON_HANDS_HEADERS_ENV} is set without ${SIMEON_HANDS_URL_ENV}`);
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new BoxHandsRouteError(`${SIMEON_HANDS_URL_ENV} is not a URL`);
+  }
+  const local = url.hostname === "127.0.0.1" || url.hostname === "localhost";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && local)) {
+    throw new BoxHandsRouteError(`${SIMEON_HANDS_URL_ENV} must be https (http only for 127.0.0.1 or localhost)`);
+  }
+  if (url.search.length > 0 || url.hash.length > 0) throw new BoxHandsRouteError(`${SIMEON_HANDS_URL_ENV} must have no query or fragment`);
+  const headers: Record<string, string> = {};
+  if (rawHeaders.length > 0) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(rawHeaders);
+    } catch {
+      throw new BoxHandsRouteError(`${SIMEON_HANDS_HEADERS_ENV} is not JSON`);
+    }
+    if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new BoxHandsRouteError(`${SIMEON_HANDS_HEADERS_ENV} must be a JSON object`);
+    }
+    for (const [name, value] of Object.entries(parsed)) {
+      if (typeof value !== "string" || !/^[A-Za-z0-9-]+$/.test(name)) {
+        throw new BoxHandsRouteError(`${SIMEON_HANDS_HEADERS_ENV} must map header names to strings`);
+      }
+      if (ROUTE_HEADERS_REFUSED.has(name.toLowerCase())) {
+        throw new BoxHandsRouteError(`${SIMEON_HANDS_HEADERS_ENV} may not set ${name.toLowerCase()}`);
+      }
+      headers[name] = value;
+    }
+  }
+  return { baseUrl: url.toString().replace(/\/+$/, ""), headers };
+}
+
 export function createBoxTransport<Transport>(
   endpoint: BoxEndpoint,
-  factory: BoxTransportFactory<Transport>
+  factory: BoxTransportFactory<Transport>,
+  route: BoxHandsRoute | null = boxHandsRouteFromEnv()
 ): Transport {
   return factory({
     httpVersion: "1.1",
-    baseUrl: `http://${endpoint.host}:${endpoint.port}`,
+    baseUrl: route?.baseUrl ?? `http://${endpoint.host}:${endpoint.port}`,
     useBinaryFormat: true,
-    interceptors: [createBoxAuthorizationInterceptor(endpoint)]
+    interceptors: [createBoxAuthorizationInterceptor(endpoint, route?.headers)]
   });
 }
 
