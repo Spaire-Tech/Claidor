@@ -1261,6 +1261,25 @@ The brain's routes (`simeon/sand/brain.py`) take the token in
     use and the sleeper leaves it.
   - Only an E2B computer has the door (409 `no_door` otherwise).
 
+For a person on the brain, the apps change nothing; the server does
+(`simeon/sand/brain_users.py`):
+- The apps' calls to the engine's port (1340) on the API's proxy go to the
+  brain's gateway at `SIMEON_BRAIN_URL`. They use the same address, the same
+  bearer (the person's gateway token, which the brain's engine checks), and
+  none of the computer's tokens. They never wake the computer and never
+  count as it in use. The screen (6080, 6081) and the tunnel (8790) still go
+  to the computer.
+- `EnsureSandBox` answers with the computer as it is recorded, never woken
+  or made, with `letsSleep: false`, so the apps always reach the agents.
+  `GetSandBoxRunState` from the record says `letsSleep: false` too. A
+  computer the record says is gone (`absent`), or none at all, is made as
+  before.
+- Incoming work (`sand.box.wake`, from the notify bus) never wakes the
+  computer: the brain's engine takes it. The computer wakes only when the
+  engine needs its hands, through the door.
+- One brain serves one person today: list one address. The brain's gateway
+  refuses any other person's bearer.
+
 Log lines:
 - `sand.brain.bootstrap`: user, box, the computer's state.
 - `sand.brain.hands.call`: path, status and milliseconds, one per call on
@@ -1269,6 +1288,11 @@ Log lines:
   the wake did, milliseconds.
 - `sand.brain.hands.upstream_error`: the hands' or the router's own refusal.
 - `sand.brain.hands.unreachable`: the computer did not answer.
+- `sand.box.ensure.on_brain`: an app asked for the computer and got it as
+  recorded (its state is in the line).
+- `sand.box.wake.on_brain`: incoming work left the computer asleep.
+- `sand.box.proxy.brain_unreachable`, `sand.box.proxy.brain_error`: an
+  app's call to the brain failed, or the brain refused it.
 - `sand.brain.refused`: the reason. That is one of `brain_token`,
   `brain_user`, `not_on_brain`, `no_user`, `no_computer`, `signed_out`,
   `no_door`, `computer_full`, `computer_updating`, `wake_failed`,

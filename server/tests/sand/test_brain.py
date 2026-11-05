@@ -15,8 +15,9 @@ from simeon.config import settings
 from simeon.desktop.service import BRAIN_CREDENTIAL_AGENT, desktop
 from simeon.models import DesktopSession, SandBox, User
 from simeon.postgres import AsyncSession
-from simeon.sand import box_proxy, box_store
+from simeon.sand import box_proxy, box_store, brain_users
 from simeon.sand.box_service import broker
+from simeon.sand.box_tasks import sand_box_wake
 from simeon.sand.brain import brain_source_id
 
 from ..desktop.test_endpoints import _signed_in
@@ -491,3 +492,183 @@ class TestHandsDoor:
         assert response.status_code == 409
         assert response.json()["error"] == "no_door"
         assert computer_side.seen == []
+
+
+# --- the apps, for a person on the brain -------------------------------------------
+
+ENSURE = "/simeon.v1.ComputerService/EnsureSandBox"
+RUN_STATE = "/simeon.v1.ComputerService/GetSandBoxRunState"
+
+
+@pytest.fixture(autouse=True)
+def _forget_who_is_on_the_brain() -> Iterator[None]:
+    brain_users.forget_for_tests()
+    yield
+    brain_users.forget_for_tests()
+
+
+async def _app_computer(
+    client: httpx.AsyncClient,
+    session: AsyncSession,
+    user: User,
+    *,
+    state: str = "hibernated",
+) -> tuple[SandBox, str]:
+    """The person's computer as the apps know it (its address on the API's
+    proxy), and an access token of their device."""
+    box = await _e2b_computer(client, session, user, state=state)
+    box.gateway_url = f"https://api.simeonlabs.com/sand-box/{box.id}/p/1340"
+    box.vnc_url = f"https://api.simeonlabs.com/sand-box/{box.id}/p/6080/vnc.html"
+    session.add(box)
+    await session.commit()
+    access, _ = await _signed_in(client, session, user)
+    return box, access
+
+
+def _app_headers(box: SandBox) -> dict[str, str]:
+    return {
+        "authorization": f"Bearer {box.gateway_token}",
+        "x-anyrun-network-token": box.network_token,
+    }
+
+
+@pytest.mark.asyncio
+class TestTheAppsReachTheBrain:
+    async def test_the_engines_port_goes_to_the_brain_and_the_screen_to_the_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+        computer_side: SimpleNamespace,
+    ) -> None:
+        box, _ = await _app_computer(client, session, user)
+        _brain_on(mocker, user)
+        wake = mocker.patch.object(broker, "wake_locked", autospec=True)
+        response = await client.post(
+            f"/sand-box/{box.id}/p/1340/api/listAgents?x=1",
+            content=b"{}",
+            headers=_app_headers(box),
+        )
+        assert response.status_code == 200, response.text
+        screen = await client.get(
+            f"/sand-box/{box.id}/p/6080/vnc.html", headers=_app_headers(box)
+        )
+        assert screen.status_code == 200, screen.text
+        wake.assert_not_called()
+        to_brain, to_computer = computer_side.seen
+        assert str(to_brain.url) == "http://simeon-brain:10000/api/listAgents?x=1"
+        # The person's own bearer, which the brain's engine checks; none of
+        # the computer's tokens.
+        assert to_brain.headers["authorization"] == f"Bearer {box.gateway_token}"
+        assert "x-anyrun-network-token" not in to_brain.headers
+        assert "e2b-traffic-access-token" not in to_brain.headers
+        assert str(to_computer.url) == "https://6080-sbx-brain-test.e2b.app/vnc.html"
+        assert to_computer.headers["e2b-traffic-access-token"] == TRAFFIC
+
+    async def test_someone_not_on_the_brain_reaches_their_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+        computer_side: SimpleNamespace,
+    ) -> None:
+        box, _ = await _app_computer(client, session, user, state="running")
+        _brain_on(mocker, user)
+        mocker.patch.object(settings, "BRAIN_USERS", "someone-else@example.com")
+        response = await client.post(
+            f"/sand-box/{box.id}/p/1340/api/listAgents",
+            content=b"{}",
+            headers=_app_headers(box),
+        )
+        assert response.status_code == 200, response.text
+        [sent] = computer_side.seen
+        assert str(sent.url) == "https://1340-sbx-brain-test.e2b.app/api/listAgents"
+
+    async def test_the_brain_not_answering_is_said(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        box, _ = await _app_computer(client, session, user)
+        _brain_on(mocker, user)
+
+        def down(request: httpx.Request) -> httpx.Response:
+            raise httpx.ConnectError("refused", request=request)
+
+        box_proxy.set_client_factory_for_tests(
+            lambda: httpx.AsyncClient(transport=httpx.MockTransport(down))
+        )
+        try:
+            response = await client.get(
+                f"/sand-box/{box.id}/p/1340/health", headers=_app_headers(box)
+            )
+        finally:
+            box_proxy.set_client_factory_for_tests(None)
+        assert response.status_code == 502
+
+    async def test_ensure_never_wakes_the_computer_and_the_apps_never_wait_for_it(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        box, access = await _app_computer(client, session, user)
+        _brain_on(mocker, user)
+        mocker.patch.object(settings, "BOX_SLEEPS_WITH_APP_OPEN", True)
+        ensure = mocker.patch.object(broker, "ensure", autospec=True)
+        auth = {"Authorization": f"Bearer {access}"}
+        response = await client.post(ENSURE, json={}, headers=auth)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        ensure.assert_not_called()
+        assert body["gatewayUrl"] == box.gateway_url
+        assert body["gatewayToken"] == box.gateway_token
+        assert body["networkToken"] == box.network_token
+        assert body["vncUrl"] == box.vnc_url
+        assert body["podId"] == str(box.id)
+        assert body["letsSleep"] is False
+        record = await client.post(RUN_STATE, json={"fromRecord": True}, headers=auth)
+        assert record.status_code == 200, record.text
+        assert record.json()["letsSleep"] is False
+        # Someone else, on the same server, still lets theirs sleep.
+        mocker.patch.object(settings, "BRAIN_USERS", "someone-else@example.com")
+        record = await client.post(RUN_STATE, json={"fromRecord": True}, headers=auth)
+        assert record.json()["letsSleep"] is True
+
+    async def test_a_computer_the_record_says_is_gone_is_made_again(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        box, access = await _app_computer(client, session, user, state="absent")
+        _brain_on(mocker, user)
+        ensure = mocker.patch.object(broker, "ensure", autospec=True, return_value=box)
+        response = await client.post(
+            ENSURE, json={}, headers={"Authorization": f"Bearer {access}"}
+        )
+        assert response.status_code == 200, response.text
+        ensure.assert_called_once()
+
+    async def test_incoming_work_never_wakes_the_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        await _app_computer(client, session, user)
+        _brain_on(mocker, user)
+        wake = mocker.patch.object(broker, "wake", autospec=True)
+        await sand_box_wake(str(user.id))
+        wake.assert_not_called()
+        mocker.patch.object(settings, "BRAIN_USERS", "someone-else@example.com")
+        wake.return_value = "woken"
+        await sand_box_wake(str(user.id))
+        wake.assert_called_once()

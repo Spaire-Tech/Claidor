@@ -543,6 +543,43 @@ would still run the old router, so 1e waits for the rebuild.
   - Not checked: a real E2B computer (the router on a real computer is
     still the old one until the image is rebuilt, 1b), and how long a call
     takes through the API (`sand.brain.hands.call` logs it).
+
+  **Part 2b, the apps reach the brain: done, 5 November 2026.** No change
+  in the apps; the server routes them (`simeon/sand/brain_users.py` says
+  who is on the brain).
+  - The apps' calls to the engine's port (1340) go to the brain's gateway
+    (`SIMEON_BRAIN_URL`), at the address the apps already keep, with their
+    own bearer and none of the computer's tokens. They never wake the
+    computer and never count as it in use. The screen and the tunnel still
+    go to the computer.
+  - `EnsureSandBox` answers with the computer as recorded and never wakes
+    it, with `letsSleep: false`. The apps' sleep rule (step 4 of the
+    computer-as-worker work) then never holds them back: the agents are
+    always reachable, whatever the computer is doing. A computer the record
+    says is gone is still made, as before.
+  - The Computer tab still works. The engine reads the computer's state from
+    the record (1a part 3). Opening an agent's screen asks the engine
+    (`ensureForeverBox`), and the engine wakes the computer through the
+    door.
+  - Incoming work (a message, a routine, a Slack event) no longer wakes the
+    computer (`sand.box.wake.on_brain`). The brain's engine is always on and
+    takes it.
+  - Whether someone is on the brain is read once a minute per person,
+    not at every call, and not at all while nobody is.
+  - One brain serves one person today, so `SIMEON_BRAIN_USERS` lists one
+    address. A second person's apps would be refused by the brain's gateway
+    (their bearer is not the one it holds), never shown the first person's
+    agents. Several people on one brain needs a way to find each person's
+    engine: later.
+  - Checked in tests (`server/tests/sand/test_brain.py`, 6 more):
+    - the engine's port goes to the brain and the screen to the computer;
+    - someone not listed still reaches their computer;
+    - the brain down answers 502;
+    - `EnsureSandBox` and the record never wake and say `letsSleep: false`;
+    - a gone computer is still made;
+    - incoming work leaves the computer asleep.
+
+    Three of them fail without the change.
 - **1d. The brain service.** Its Dockerfile and start script in the repo,
   and the settings to make it on Render: a private service in Oregon,
   2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing

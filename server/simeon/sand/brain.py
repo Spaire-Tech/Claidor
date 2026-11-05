@@ -38,7 +38,6 @@ from __future__ import annotations
 import asyncio
 import secrets
 import time
-import uuid
 from collections.abc import AsyncIterator, Mapping
 from typing import Any
 from uuid import UUID
@@ -65,6 +64,12 @@ from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import BoxHostError
 from .box_repository import SandBoxRepository
 from .box_service import broker, dial_headers
+from .brain_users import (
+    brain_on,
+    brain_source_id,
+    email_on_brain,
+    user_on_brain,
+)
 
 log = structlog.get_logger()
 
@@ -99,37 +104,6 @@ FULL_RETRY_AFTER_S = 60
 
 #: The computer's states as the apps read them (`CloudComputer.swift`).
 APP_STATES = frozenset({"running", "hibernated", "absent"})
-
-
-def brain_on() -> bool:
-    """Whether the brain is configured at all."""
-    return bool(settings.BRAIN_URL.strip() and settings.BRAIN_TOKEN.strip())
-
-
-def brain_emails() -> frozenset[str]:
-    return frozenset(
-        address.strip().lower()
-        for address in settings.BRAIN_USERS.split(",")
-        if address.strip()
-    )
-
-
-def email_on_brain(email: str | None) -> bool:
-    """Whether this person's agents run on the brain."""
-    if not email or not brain_on():
-        return False
-    return email.strip().lower() in brain_emails()
-
-
-def user_on_brain(user: User | None) -> bool:
-    return user is not None and email_on_brain(user.email)
-
-
-def brain_source_id(user_id: UUID | str) -> str:
-    """The source the brain backs the person's agents up under
-    (`SAND_BOX_STORE_ID` on the brain): its own, beside the computer's
-    (`box_store.box_source_id`), so the two never share a store."""
-    return str(uuid.uuid5(box_store.NAMESPACE, f"brain:{user_id}"))
 
 
 def brain_token_ok(request: Request) -> bool:
