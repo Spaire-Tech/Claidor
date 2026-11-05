@@ -71,3 +71,53 @@ SIMEON_HANDS_HEADERS='{"x-simeon-brain-token":"<the same token>","x-simeon-brain
 
 `api.log` then shows every call to the computer as a `hands` line: the path,
 the answer, the window (`display`) and how long it took.
+
+## The brain's service (step 1d)
+
+The brain's image (`brain/`) run end to end on a test machine with Docker,
+against the stand-ins only. With `S` a folder of your own:
+
+```sh
+# The engine, packed as a published bundle is
+node scripts/agents-on-the-server/build-host.mjs $S/engine
+mkdir -p $S/pack/box-exec-daemon $S/bundle && cp -R $S/engine/host $S/pack/host
+echo '// unused' > $S/pack/box-exec-daemon/main.cjs
+(cd $S/pack && tar -czf $S/bundle/sand-host-bundle-probe0001.tgz host box-exec-daemon)
+echo probe0001 > $S/bundle/sand-host-bundle-latest.version
+python3 -m http.server 41500 --bind 127.0.0.1 -d $S/bundle &
+
+# The stand-in API, answering the brain's bootstrap
+PROBE_BRAIN_TOKEN=<a token> PROBE_GATEWAY_TOKEN=<another> PROBE_HOST_BUNDLE_URL=http://127.0.0.1:41500 \
+  node scripts/agents-on-the-server/stand-in-api.mjs 41400 $S/api.log &
+
+# The image (from the repository root)
+docker build -f brain/Dockerfile -t simeon-brain:test .
+```
+
+Then:
+1. **A "computer" with agents and a backup.** Run the engine in its usual
+   role from the image, backing up to a local folder
+   (`--entrypoint node`, `SAND_BOX_STORE_SYNC=1`,
+   `SAND_BOX_STORE_ID=11111111-1111-4111-8111-111111111111`,
+   `SAND_BOX_STORE_LOCAL_DIR=/store` with `$S/store` mounted there, and the
+   other settings as in step 0c). Make an agent (`/api/createAgent`), then
+   take a backup (`/api/snapshotBoxStoreNow`), then stop it.
+2. **The brain, as Render runs it.** The image's own command, with
+   `--network host`, `$S/store` mounted at `/store`, and
+   `SIMEON_BRAIN_USER`, `SIMEON_BRAIN_TOKEN`,
+   `SIMEON_API_URL=http://127.0.0.1:41400`, `PORT` and
+   `SAND_BOX_STORE_LOCAL_DIR=/store`.
+
+On 5 November 2026 this showed:
+- the brain's own backup empty, then 14 of 14 files brought in from the
+  computer's;
+- the engine started as `brain`, with the agent there;
+- its backup written to its own store, and the computer's untouched;
+- a restart keeping the disk;
+- a new disk brought back from the brain's own backup;
+- a wrong token refused and tried again a minute later;
+- no token in its log.
+
+If the machine's outbound proxy re-signs HTTPS, build on a local copy of
+`debian:trixie-slim` that trusts the proxy's certificate. That changes the
+`FROM` line of a copy of the Dockerfile, never the Dockerfile itself.

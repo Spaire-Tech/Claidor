@@ -1241,7 +1241,9 @@ The brain's routes (`simeon/sand/brain.py`) take the token in
 - `POST /sand-box/brain/bootstrap`, with `{"email": …}`, is what the brain
   starts the person's engine with. It returns their computer's gateway
   token, a credential of the brain's own, the API's address, and the two
-  backup sources: the computer's, and the brain's own. The brain's credential
+  backup sources: the computer's, and the brain's own, and where the engine
+  is published (`hostBundleUrl`, `SIMEON_BOX_HOST_BUNDLE_URL`), which the
+  brain's start script downloads (`brain/README.md`). The brain's credential
   (user agent `simeon-brain/`) is a child of the device the computer's
   belongs to. It never revokes the computer's and the computer's never
   revokes it; asking again replaces the last brain credential.
@@ -1308,7 +1310,7 @@ Log lines:
 - `sand.box.proxy.brain_unreachable`, `sand.box.proxy.brain_error`: an
   app's call to the brain failed, or the brain refused it.
 - `sand.brain.refused`: the reason. That is one of `brain_token`,
-  `brain_user`, `not_on_brain`, `no_user`, `no_computer`, `signed_out`,
+  `brain_user`, `not_on_brain`, `no_user`, `no_computer`, `computer_not_hands`, `signed_out`,
   `no_door`, `computer_full`, `computer_updating`, `wake_failed`,
   `computer_unreachable`.
 

@@ -39,9 +39,11 @@ async def _computer(
     user: User,
     *,
     state: str = "hibernated",
+    hands: bool = True,
 ) -> tuple[SandBox, str]:
     """The person signed in on a device, with a computer holding the box
-    credential that device asked for: the state the founder's account is in."""
+    credential that device asked for: the state the founder's account is in.
+    Made in the `hands` role unless `hands` is False."""
     await _signed_in(client, session, user)
     parent = (
         (
@@ -67,6 +69,7 @@ async def _computer(
         network_token="nt-brain-test",
         state=state,
         credential_session_id=row.id,
+        host_meta={"engine_role": "hands"} if hands else {},
     )
     session.add(box)
     await session.commit()
@@ -106,6 +109,19 @@ class TestBootstrap:
         assert (await _bootstrap(client, user.email, token="wrong")).status_code == 401
         assert (await _bootstrap(client, "other-person@example.com")).status_code == 403
 
+    async def test_the_brain_waits_until_the_computer_is_hands_only(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        await _computer(client, session, user, hands=False)
+        _brain_on(mocker, user)
+        response = await _bootstrap(client, user.email)
+        assert response.status_code == 409
+        assert response.json()["error"] == "computer_not_hands"
+
     async def test_a_person_without_a_computer_is_told_to_open_simeon_first(
         self, client: httpx.AsyncClient, user: User, mocker: MockerFixture
     ) -> None:
@@ -132,6 +148,7 @@ class TestBootstrap:
         assert body["backendUrl"] == settings.BASE_URL
         assert body["computerStoreSource"] == box_store.box_source_id(user.id)
         assert body["brainStoreSource"] == brain_source_id(user.id)
+        assert body["hostBundleUrl"] == settings.BOX_HOST_BUNDLE_URL.strip()
         assert body["brainStoreSource"] != body["computerStoreSource"], (
             "two stores, never shared"
         )

@@ -16,7 +16,8 @@ start, in the body (their e-mail address). This module answers:
   the brain's engine checks it), a credential of the brain's own
   (`issue_brain_credential`), the API's address, and the two backup sources:
   the computer's, to bring the agents in from once, and the brain's own, to
-  back them up to.
+  back them up to; and where the engine is published (`hostBundleUrl`), so
+  the brain runs the one the computers run.
 - `GET /sand-box/brain/hands/state`: the computer's state from the server's
   record (`running`, `hibernated`, `absent`), never waking it, for the
   Computer tab (`readBoxRunStateThroughRoute` in the engine).
@@ -187,6 +188,18 @@ async def bootstrap(
             "This person has no computer yet: open Simeon on a device first.",
             user=str(user.id),
         )
+    if not made_as_hands(box):
+        # Its own engine still runs the agents, and its backup is not the
+        # last one yet: the brain waits until it is made again as hands
+        # (Rebuild, or the apps' next EnsureSandBox), which takes a fresh
+        # backup first, and brings the agents in from that one.
+        return refused(
+            "computer_not_hands",
+            409,
+            "The computer still runs the agents itself: rebuild it once "
+            "(Settings, Computer, files kept), and the brain starts after.",
+            user=str(user.id),
+        )
     repository = DesktopSessionRepository.from_session(session)
     box_credential = await repository.get_by_id(box.credential_session_id)
     parent = (
@@ -219,6 +232,9 @@ async def bootstrap(
             "backendUrl": settings.BASE_URL,
             "computerStoreSource": box_store.box_source_id(user.id),
             "brainStoreSource": brain_source_id(user.id),
+            # Where the engine is published (the host bundle the computers
+            # run): the brain downloads the same one at each start.
+            "hostBundleUrl": settings.BOX_HOST_BUNDLE_URL.strip(),
         },
         headers=NO_STORE,
     )

@@ -614,16 +614,21 @@ would still run the old router, so 1e waits for the rebuild.
     - `test_brain.py`, 2: the door refuses a computer that isn't hands, and
       `EnsureSandBox` makes such a computer again.
 - **Switching it on, in this order** (1e; each step needs the founder):
+  0. Publish the engine from the Mac (`cd desktop && npm run package &&
+     npm run publish:host-bundle`). Both the brain and the hands-only
+     computer need this engine: the roles (1a) are in it.
   1. Rebuild the computer image (1b), so the router checks its token.
-  2. Make the brain service on Render (1d) without starting it. Set
-     `SIMEON_BRAIN_USERS`, `SIMEON_BRAIN_URL` and `SIMEON_BRAIN_TOKEN` on the
-     API. From then on the apps' calls go to the brain, which isn't up yet,
-     so do steps 3 and 4 straight away.
-  3. In the app, Settings → Computer → Rebuild (files kept). The computer is
-     backed up and made again as hands. That fresh backup is what the brain
-     brings in.
-  4. Start the brain. At its first start it brings the agents and chats in
-     from the computer's backup, then backs up to its own store.
+  2. Make the brain service on Render (1d, `brain/README.md`). It can be
+     made at any time: until steps 3 and 4 are done, the API refuses its
+     start (`not_on_brain`, then `computer_not_hands`) and it tries again
+     every few minutes, logging why.
+  3. Set `SIMEON_BRAIN_USERS`, `SIMEON_BRAIN_URL` and `SIMEON_BRAIN_TOKEN` on
+     the API. From then on the apps' calls go to the brain, which isn't up
+     yet, so do step 4 straight away.
+  4. In the app, Settings → Computer → Rebuild (files kept). The computer is
+     backed up and made again as hands. Within a few minutes the brain's next
+     try starts it, and it brings the agents and chats in from that fresh
+     backup, then backs up to its own store.
   5. Check on the Mac: a message and a connector with the computer asleep,
      then a website, which wakes it.
 - **1d. The brain service.** Its Dockerfile and start script in the repo,
@@ -631,6 +636,44 @@ would still run the old router, so 1e waits for the rebuild.
   2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing
   here can reach Render), and adds the brain's token to it and to the API
   without pasting it anywhere.
+  **Done, 5 November 2026** (`brain/`, and its `README.md` for Render).
+  - The image: Debian trixie, Node 22 and the tree-sitter add-ons from the
+    computer's lockfile. No desktop, Chrome or VNC.
+  - The start script (`brain/start-brain.mjs`):
+    1. asks the API for what it starts with;
+    2. downloads the engine the computers run (the bootstrap now names it,
+       `hostBundleUrl`);
+    3. brings the agents in once per disk: from the brain's own backup if it
+       has one, else the computer's, else a fresh start, and never starts on
+       an empty disk after a failed copy;
+    4. runs the engine as `brain`, and again whenever it stops, with a fresh
+       credential.
+  - The API refuses the brain's start (`computer_not_hands`) until the
+    computer has been made again as hands. That remake takes the fresh
+    backup the brain brings the agents in from, so the brain can be made at
+    any time and still never brings in an older backup.
+  - It clears the hand-off marker a copy from an older backup can leave: the
+    brain's new store has no manifest yet, and the marker would have blocked
+    its first backup.
+  - The disk must be mounted at `/home/box/sand-data`: the backup's paths
+    are written from the root.
+  - Checked:
+    - `brain/test/start-brain.test.mjs` (9 tests): settings, the engine's
+      settings, the bootstrap, the bundle's address, the order the agents
+      are brought in, a failed copy, the hand-off marker, retries.
+    - **The image itself, on this test machine with Docker**, against the
+      stand-in API. A "computer" engine made an agent and backed up to a
+      local store. The brain container then:
+      - found its own backup empty and brought 14 of 14 files in from the
+        computer's;
+      - started as `brain` with the agent there;
+      - backed up to its own store, leaving the computer's untouched;
+      - kept its disk across a restart, and stopped cleanly on `SIGTERM`;
+      - on a new disk, came back from its own backup;
+      - with a wrong token, was refused and tried again a minute later;
+      - wrote no token into its log.
+  - Not checked: Render itself, a real published bundle, a real computer
+    through the API's door, a real model.
 - **1e. On for the founder.** A fresh backup first. The brain brings the
   founder's agents and chats in from it, then the switch is turned on. It
   is checked on the founder's Mac: a message and a connector with the

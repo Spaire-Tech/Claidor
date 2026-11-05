@@ -2,7 +2,7 @@
 // It writes down each call's path, so a run of the engine outside a computer
 // shows what it asks of the server. Reaches nothing real.
 //
-// It answers two calls; everything else gets 404:
+// It answers these calls; everything else gets 404:
 // - the model credential (`/sand-box/inference-credential`), with a stand-in
 //   token;
 // - the model (`/desktop/api/proxy/v1/responses`, the Responses stream the
@@ -108,6 +108,27 @@ http.createServer((req, res) => {
     const raw = Buffer.concat(chunks);
     const path = (req.url ?? "").split("?")[0];
     const line = { at: Date.now(), method: req.method, path, bytes: raw.length };
+    // Step 1d: what the brain starts with (`POST /sand-box/brain/bootstrap`),
+    // for the brain's own start script (brain/start-brain.mjs). With the
+    // brain's token (PROBE_BRAIN_TOKEN) and any address; fixed answers: the
+    // gateway token (PROBE_GATEWAY_TOKEN), this stand-in as the API, two
+    // stores (PROBE_COMPUTER_STORE, PROBE_BRAIN_STORE) and the engine's
+    // bundle (PROBE_HOST_BUNDLE_URL).
+    if (req.method === "POST" && path === "/sand-box/brain/bootstrap") {
+      const ok = BRAIN_TOKEN.length > 0 && req.headers["x-simeon-brain-token"] === BRAIN_TOKEN;
+      appendFileSync(logFile, `${JSON.stringify({ ...line, bootstrap: ok ? "answered" : "refused" })}\n`);
+      res.writeHead(ok ? 200 : 401, { "content-type": "application/json" });
+      if (!ok) return res.end(JSON.stringify({ error: "brain_token", message: "The brain's token was refused." }));
+      return res.end(JSON.stringify({
+        userId: "probe-user",
+        gatewayToken: process.env.PROBE_GATEWAY_TOKEN ?? "probe-gateway-token",
+        credential: "stand-in",
+        backendUrl: `http://127.0.0.1:${port}`,
+        computerStoreSource: process.env.PROBE_COMPUTER_STORE ?? "11111111-1111-4111-8111-111111111111",
+        brainStoreSource: process.env.PROBE_BRAIN_STORE ?? "22222222-2222-4222-8222-222222222222",
+        hostBundleUrl: process.env.PROBE_HOST_BUNDLE_URL ?? "",
+      }));
+    }
     if (req.method === "POST" && path === "/sand-box/inference-credential") {
       appendFileSync(logFile, `${JSON.stringify(line)}\n`);
       res.writeHead(200, { "content-type": "application/json" });

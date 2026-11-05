@@ -18,6 +18,7 @@ the website's footer and the invoices (`INVOICES_NAME`). The brand
 | `desktop/` | **Retired** Electron Mac app (11 October 2026). Kept only to build the agents' engine (`source/host`, `source/box-exec-daemon`, published through `npm run package` and `npm run publish:host-bundle` on a Mac) and the web app (`web/`). `desktop/README.md`. |
 | `server/` | The API at `api.simeonlabs.com` (FastAPI, PostgreSQL, Redis, Dramatiq). The Python package is `simeon`. Patterns: `server/CLAUDE.md`. |
 | `runner/` | The cloud runner (Node): queued work while the Mac is closed. |
+| `brain/` | The brain: the agents' engine off the cloud computer, as a Render private service (`docs/agents-on-the-server/README.md`). Its image and start script; making it on Render is in `brain/README.md`. |
 | `box/` | The cloud computer image (Dockerfile, supervisor, desktop scripts). `box/README.md`. |
 | `clients/` | The web app at `app.simeonlabs.com` (sign-in pages, account dashboard). Patterns: `clients/CLAUDE.md`. |
 | `ios/` | **The iPhone app** (SwiftUI), the phone design in Apple's own parts. `ios/README.md`. |
@@ -100,6 +101,10 @@ cd clients && pnpm typecheck && pnpm test && pnpm lint
 
 # Runner
 cd runner && npm test
+
+# The brain (brain/README.md)
+cd brain && npm test
+docker build -f brain/Dockerfile -t simeon-brain .   # from the repository root
 
 # iPhone app (ios/README.md; the core's tests run on Linux too)
 cd ios/SimeonCore && swift test
