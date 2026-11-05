@@ -73,15 +73,6 @@ if ! xcodebuild -project SimeonMac.xcodeproj -scheme Simeon -configuration Debug
 fi
 echo "Built: mac/build/Build/Products/Debug/Simeon.app"
 
-say "The Mac's browser (Contents/Helpers/Simeon Browser.app)"
-# Node, for its bundle: nvm's when the shell has none.
-if ! command -v node >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then . "$HOME/.nvm/nvm.sh" && nvm use --silent default >/dev/null || true; fi
-command -v node >/dev/null 2>&1 || { echo "Node is needed for the browser's bundle (https://nodejs.org), then run this again."; exit 1; }
-APP=build/Build/Products/Debug/Simeon.app
-# Signed as Xcode signed the app (this Mac's Apple Development identity), else for this Mac only.
-SIGNER=$(codesign -dvv "$APP" 2>&1 | sed -nE 's/^Authority=(.*)$/\1/p' | head -1 || true)
-scripts/browser-helper.sh "$APP" "${SIGNER:--}"
-
 if [ "$(sw_vers -productVersion | cut -d. -f1)" -ge 15 ]; then
   say "Opening Simeon"
   open -n build/Build/Products/Debug/Simeon.app --args "$@"

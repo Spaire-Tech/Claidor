@@ -509,8 +509,7 @@ private struct AgentPage: View {
           ChannelsBody(agent: agent, look: look)
         case .computer where !agent.isGroup:
           // The agent's computer (step 13, I03).
-          // Since step 4b of docs/app-browser/README.md: this Mac's browser while the agent works there.
-          ComputerTab(agent: agent, look: look)
+          ComputerPreview(agent: agent, look: look)
         case .computer:
           // A shared room has no computer: its tab is empty.
           Color.clear.frame(height: 0)

@@ -1073,22 +1073,6 @@ published, the switch is the two settings above (and `SIMEON_BOX_IMAGE` in
 the Mac's internal Docker path); every box is replaced on its next
 `EnsureSandBox`, its workspace and data kept.
 
-**The browser in the app** (4 November 2026, `docs/app-browser/`). The
-agent's browser steps can go to a browser inside the person's Mac or
-Windows app while it is open, instead of the computer's Chrome. Step 1 is
-in the engine only, and no app has the browser yet. It is on for everyone
-(4 November 2026, the founder): every computer is made with
-`SIMEON_APP_BROWSER=1` and the label `com.simeonlabs.app-browser` (on E2B,
-the metadata `app_browser`). One made without it, before that day, is out
-of date: the apps offer "Update Simeon's Computer" and it is replaced, its
-files kept, as for a newer engine (`stale_browser` in
-`sand.box.ensure.recreate`). Until then only the people in
-`SIMEON_APP_BROWSER_USERS` had it, given when their computer was made; the
-setting is no longer read. The app's answers on
-`/local-browser/responses` wake a sleeping computer, like local exec's
-(`box_proxy.ANSWERS`). The frames and the rules for which browser a step
-uses are in `docs/app-browser/protocol.md`.
-
 **Trying an image on a few accounts first** (16 October 2026). With
 `SIMEON_BOX_IMAGE_TRIAL` (a full `repo@sha256:…` reference) and
 `SIMEON_BOX_IMAGE_TRIAL_USERS` (comma-separated e-mail addresses or user
@@ -1225,96 +1209,6 @@ because the worker runs the sleeper and the wake. Full steps are in
 
 Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE` empty so
 the API proxies the ports itself.
-
-**The brain** (5 November 2026, `docs/agents-on-the-server/README.md`): the
-agents' engine off the computer, for the accounts listed. None of these is set
-yet, and with any of them empty nobody's agents run there.
-
-| Setting | Value |
-|---|---|
-| `SIMEON_BRAIN_USERS` | the e-mail addresses whose agents run on the brain, comma-separated |
-| `SIMEON_BRAIN_URL` | the brain service's private address on Render's network |
-| `SIMEON_BRAIN_TOKEN` | the secret the brain and the API share; the same value on both services, typed into Render, never written anywhere else |
-
-The brain's routes (`simeon/sand/brain.py`) take the token in
-`x-simeon-brain-token`:
-- `POST /sand-box/brain/bootstrap`, with `{"email": …}`, is what the brain
-  starts the person's engine with. It returns their computer's gateway
-  token, a credential of the brain's own, the API's address, and the two
-  backup sources: the computer's, and the brain's own, and where the engine
-  is published (`hostBundleUrl`, `SIMEON_BOX_HOST_BUNDLE_URL`), which the
-  brain's start script downloads (`brain/README.md`). The brain's credential
-  (user agent `simeon-brain/`) is a child of the device the computer's
-  belongs to. It never revokes the computer's and the computer's never
-  revokes it; asking again replaces the last brain credential.
-- `GET /sand-box/brain/hands/state`, with the person's user id in
-  `x-simeon-brain-user`, returns the computer's state from the record
-  (`running`, `hibernated`, `absent`) and never wakes it.
-- Every other path under `/sand-box/brain/hands/` (the same two headers) is
-  the door to the computer's hands. The brain sets `SIMEON_HANDS_URL` to
-  `https://api.simeonlabs.com/sand-box/brain/hands`.
-  - The door wakes a sleeping computer first, then sends the call on to the
-    computer's window router on 1339, streamed both ways.
-  - The API adds the computer's own token (`x-simeon-box-token`) and E2B's
-    traffic token. The brain's headers stop at the door.
-  - The engine's bearer for the hands (`local`) passes the API's sign-in
-    layer untouched, as on the apps' proxy paths.
-  - While a call is open, and for 3 minutes after, the computer counts as in
-    use and the sleeper leaves it.
-  - Only an E2B computer has the door (409 `no_door` otherwise).
-
-For a person on the brain, the apps change nothing; the server does
-(`simeon/sand/brain_users.py`):
-- The apps' calls to the engine's port (1340) on the API's proxy go to the
-  brain's gateway at `SIMEON_BRAIN_URL`. They use the same address, the same
-  bearer (the person's gateway token, which the brain's engine checks), and
-  none of the computer's tokens. They never wake the computer and never
-  count as it in use. The screen (6080, 6081) and the tunnel (8790) still go
-  to the computer.
-- `EnsureSandBox` answers with the computer as it is recorded, never woken
-  or made, with `letsSleep: false`, so the apps always reach the agents.
-  `GetSandBoxRunState` from the record says `letsSleep: false` too. A
-  computer the record says is gone (`absent`), or none at all, is made as
-  before.
-- Incoming work (`sand.box.wake`, from the notify bus) never wakes the
-  computer: the brain's engine takes it. The computer wakes only when the
-  engine needs its hands, through the door.
-- One brain serves one person today: list one address. The brain's gateway
-  refuses any other person's bearer.
-- Their computer is made in the `hands` role (`SIMEON_ENGINE_ROLE=hands`, the
-  `com.simeonlabs.engine-role` label, `engine_role` in the row's
-  `host_meta`). Its engine only keeps the computer's backup and serves the
-  hands, and its router lets in only the door's calls.
-  - A computer made before the person was listed still runs the agents
-    itself. It is out of date: the next `EnsureSandBox` (or Rebuild with
-    files kept) makes it again as hands, after a fresh backup.
-  - Until then the door refuses it (409 `computer_not_hands`), so the agents
-    never run in two places.
-  - Taken off the list, the person's computer is made again without a role,
-    files kept. Nobody else's computer changes.
-
-Log lines:
-- `sand.brain.bootstrap`: user, box, the computer's state.
-- `sand.brain.hands.call`: path, status and milliseconds, one per call on
-  the hands.
-- `sand.brain.hands.woke`: why (asleep, or E2B lost it under a call), what
-  the wake did, milliseconds.
-- `sand.brain.hands.upstream_error`: the hands' or the router's own refusal.
-- `sand.brain.hands.unreachable`: the computer did not answer.
-- `sand.box.ensure.on_brain`: an app asked for the computer and got it as
-  recorded (its state is in the line).
-- `sand.box.engine_role`: a computer was made, with its role (`hands` or
-  `all`). `sand.box.ensure.recreate` and the sleeper's lines carry
-  `stale_role` when the role was why it was made again.
-- `sand.box.wake.on_brain`: incoming work left the computer asleep.
-- `sand.box.proxy.brain_unreachable`, `sand.box.proxy.brain_error`: an
-  app's call to the brain failed, or the brain refused it.
-- `sand.brain.refused`: the reason. That is one of `brain_token`,
-  `brain_user`, `not_on_brain`, `no_user`, `no_computer`, `computer_not_hands`, `signed_out`,
-  `no_door`, `computer_full`, `computer_updating`, `wake_failed`,
-  `computer_unreachable`.
-
-None of them ever carries a token.
 
 ### In the app
 
@@ -1531,8 +1425,8 @@ on an iPhone or a Mac.
   - `sand.box.update_skipped` (`reason=unreachable`) means the sleeper found
     the box out of date but could not reach it, so its backup can't be
     brought up to date; it says so every 10 minutes at most.
-  - `sand.box.update_idle` (with `stale_host`, `stale_image`, `stale_store`,
-    `stale_browser`, and `awaiting_approval`) means the sleeper found the box idle, with no app on it, and out of date,
+  - `sand.box.update_idle` (with `stale_host`, `stale_image`, `stale_store`
+    and `awaiting_approval`) means the sleeper found the box idle, with no app on it, and out of date,
     and sent it to be replaced; `sand.box.update_idle.done` with
     `outcome=ensured` follows, then the usual `sand.box.ensure.recreate`.
     `sand.box.update_idle.failed` gives the reason it was left as it was
@@ -1567,12 +1461,6 @@ on an iPhone or a Mac.
   `reason=unreachable` (the box did not answer its health check, so it may be
   busy: it sleeps only once idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER`).
 - In the box, `/tmp/sand-host.log`:
-  - `[simeon] local-browser on` or `off`, with `SIMEON_APP_BROWSER`'s
-    value, at start; then `[simeon] local-browser {"event":…}` for the
-    app's streams, its hello, each task's browser (`route`), a browser that
-    closed, a step that timed out (`docs/app-browser/protocol.md`). On the
-    API, `stale_browser=True` in `sand.box.ensure.recreate` when a computer
-    made without the switch is replaced.
   - `[simeon] box-stream guarded on …` shows the stream guard is up.
   - `inference credential renewed with the box's own credential` shows the
     renewal worked.

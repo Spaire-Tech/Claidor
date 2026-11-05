@@ -184,7 +184,7 @@ private struct ComputerFullView: View {
  * arrows in white at 85%; white on a faint grey under the pointer). No
  * title.
  */
-struct ComputerTopBar: View {
+private struct ComputerTopBar: View {
   let fullScreen: Bool
   let look: Look
   let exit: () -> Void
@@ -230,7 +230,7 @@ struct ComputerTopBar: View {
  * round, 12/16). Both answer the agent, close the view and give the
  * message field the keys.
  */
-struct HandoffBanner: View {
+private struct HandoffBanner: View {
   let agentId: String
   let name: String
   let instruction: String
@@ -260,10 +260,8 @@ struct HandoffBanner: View {
   }
 
   private func answer(skip: Bool) {
-    // The agent's tab on this Mac given back first (step 4b), so its next step doesn't wait.
-    handBack(store, agentId, skip: skip)
+    Task { await store.handBackComputer(agentId, skip: skip) }
     window.closeComputer()
-    window.closeBrowser()
   }
 }
 

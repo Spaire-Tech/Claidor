@@ -40,7 +40,7 @@ from simeon.desktop.allowance import billing_url
 from simeon.desktop.auth import get_desktop_session
 from simeon.desktop.service import desktop
 from simeon.kit.db.postgres import AsyncSessionMaker
-from simeon.models import DesktopSession, SandBox
+from simeon.models import DesktopSession
 from simeon.openapi import APITag
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
@@ -53,15 +53,7 @@ from .box_hosts import (
     BoxHostUnavailable,
     BoxStorageDisabled,
 )
-from .box_repository import SandBoxRepository
-from .box_service import (
-    BoxBrokerRefused,
-    BoxEnsureInProgress,
-    broker,
-    made_as_hands,
-    migrations,
-)
-from .brain_users import user_on_brain
+from .box_service import BoxBrokerRefused, BoxEnsureInProgress, broker, migrations
 from .connect import ConnectCall, ConnectError, ConnectService
 
 log = structlog.get_logger()
@@ -255,46 +247,9 @@ def _committed(call: ConnectCall) -> AsyncSessionMaker | None:
     return getattr(call.request.state, "async_sessionmaker", None)
 
 
-#: The computer's record says it is gone: made again by an ensure, even for
-#: a person on the brain.
-GONE_STATES = frozenset({"absent"})
-
-
-async def _on_brain_box(call: ConnectCall) -> SandBox | None:
-    """For a person on the brain (`brain_users`, 5 November 2026), the
-    computer as it is recorded, never woken or made here: the apps reach the
-    agents' engine at the brain through the same address (`box_proxy`), and
-    the engine wakes the computer through its door when it needs the hands
-    (`brain.py`). None when the computer has to be made (no row, or a row
-    the record says is gone), or made again in the `hands` role (one made
-    before the person was on the brain still runs the agents itself): the
-    ensure makes it, files kept, as before."""
-    if not user_on_brain(call.caller.user):
-        return None
-    box = await SandBoxRepository.from_session(call.db).get_by_user(call.caller.user_id)
-    if (
-        box is None
-        or not box.gateway_url
-        or not box.gateway_token
-        or box.state in GONE_STATES
-        or not made_as_hands(box)
-    ):
-        return None
-    log.info(
-        "sand.box.ensure.on_brain",
-        user=str(call.caller.user_id),
-        box=str(box.id),
-        computer_state=box.state,
-    )
-    return box
-
-
 @service.unary("EnsureSandBox")
 async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
     await require_a_plan(call, reaching=True)
-    on_brain = await _on_brain_box(call)
-    if on_brain is not None:
-        return _connection(on_brain, call, lets_sleep=False)
     try:
         box = await broker.ensure(call.db, call.caller, committed=_committed(call))
     except (BoxHostError, BoxBrokerRefused) as error:
@@ -304,10 +259,6 @@ async def ensure_sand_box(call: ConnectCall) -> dict[str, Any]:
         raise connect_error_for(error)
     except (TimeoutError, BoxEnsureInProgress) as error:
         raise await _still_starting(call, error)
-    return _connection(box, call, lets_sleep=settings.BOX_SLEEPS_WITH_APP_OPEN)
-
-
-def _connection(box: SandBox, call: ConnectCall, *, lets_sleep: bool) -> dict[str, Any]:
     return {
         "cluster": "simeon",
         "tenantId": str(call.caller.user_id),
@@ -319,10 +270,8 @@ def _connection(box: SandBox, call: ConnectCall, *, lets_sleep: bool) -> dict[st
         "gatewayUrl": box.gateway_url,
         "gatewayToken": box.gateway_token,
         # An app built since 26 October 2026 lets the box sleep while it is
-        # open, and does not wake it until something needs it, when this says
-        # so. Never for a person on the brain: their agents' engine is always
-        # on, so the apps always reach it, whether the computer sleeps or not.
-        "letsSleep": lets_sleep,
+        # open, and does not wake it until something needs it, when this says so.
+        "letsSleep": settings.BOX_SLEEPS_WITH_APP_OPEN,
     }
 
 
@@ -404,10 +353,7 @@ async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
         return {
             "state": state,
             "imageUpdateAvailable": False,
-            # A person on the brain: the apps never wait for the computer to
-            # reach their agents (`_connection`).
-            "letsSleep": settings.BOX_SLEEPS_WITH_APP_OPEN
-            and not user_on_brain(call.caller.user),
+            "letsSleep": settings.BOX_SLEEPS_WITH_APP_OPEN,
         }
     state, update_available = await broker.run_state(call.db, call.caller)
     return {"state": state, "imageUpdateAvailable": update_available}

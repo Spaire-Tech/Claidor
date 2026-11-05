@@ -124,10 +124,6 @@ test("only the host in the person's computer pushes", async () => {
   }
   assert.equal(push.isSandPhonePushEnabled({ SAND_HOST_IN_BOX: "1" }), true);
   assert.equal(push.isSandPhonePushEnabled({}), false);
-  // The brain, the engine off the computer, runs the agents and pushes too
-  // (docs/agents-on-the-server/README.md, step 1a); the computer's keeper does not.
-  assert.equal(push.isSandPhonePushEnabled({ SIMEON_ENGINE_ROLE: "brain" }), true);
-  assert.equal(push.isSandPhonePushEnabled({ SIMEON_ENGINE_ROLE: "hands" }), false);
 });
 
 test("the baseline never fires, nor an agent with notifications off or a hidden one", async () => {

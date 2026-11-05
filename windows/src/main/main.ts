@@ -32,8 +32,7 @@ import { type AppFacts, factsFor } from './facts'
 import { KeptValues } from './kept'
 import { relaunchArguments } from './session/relaunch'
 import { appLinkScheme, linksIn } from './links'
-import { ruleEveryPage } from './navigation'
-import * as browserPart from './parts/browser'
+import { navigatesOnItsOwn } from './navigation'
 import * as handsPart from './parts/hands'
 import * as outsidePart from './parts/outside'
 import * as sessionPart from './parts/session'
@@ -181,25 +180,8 @@ function start(): void {
   // Quitting: the page first (a call hung up, the chats kept), a second at most; then the main process's own.
   const quitTasks: (() => void | Promise<void>)[] = []
   let pageReady: (() => void) | undefined
-  let pageHolds: (() => void) | undefined
-  let pageCancels: (() => void) | undefined
-  let browsingNow: (() => readonly string[]) | undefined
-  // Windows shutting down: nothing is asked, it would only hold the shutdown.
-  let sessionEnding = false
-  app.on('browser-window-created', (_event, window) => {
-    window.on('session-end', () => {
-      sessionEnding = true
-    })
-  })
   handle('readyToQuit', () => {
     pageReady?.()
-  })
-  // The page asks the person (an agent at work in the browser, decision 3): no time limit, then quit or stay.
-  handle('holdQuit', () => {
-    pageHolds?.()
-  })
-  handle('cancelQuit', () => {
-    pageCancels?.()
   })
   app.on('before-quit', (event) => {
     if (quitting) return
@@ -208,32 +190,11 @@ function start(): void {
     void (async () => {
       const window = mainWindow
       if (window && !window.isDestroyed()) {
-        let browsing: string[] = []
-        try {
-          browsing = sessionEnding ? [] : [...(browsingNow?.() ?? [])]
-        } catch {
-          browsing = []
-        }
-        const answer = await new Promise<'quit' | 'stay'>((done) => {
-          const timer = setTimeout(() => done('quit'), 1_000)
-          pageReady = () => {
-            clearTimeout(timer)
-            done('quit')
-          }
-          pageHolds = () => clearTimeout(timer)
-          pageCancels = () => {
-            clearTimeout(timer)
-            done('stay')
-          }
-          emit(window.webContents, 'quitting', browsing.length > 0 ? { browsing } : null)
+        await new Promise<void>((done) => {
+          pageReady = done
+          setTimeout(done, 1_000)
+          emit(window.webContents, 'quitting', null)
         })
-        pageHolds = undefined
-        pageCancels = undefined
-        if (answer === 'stay') {
-          quitting = false
-          if (relaunch === 'asked') relaunch = 'no'
-          return
-        }
       }
       for (const task of quitTasks) {
         await Promise.race([
@@ -284,11 +245,8 @@ function start(): void {
     beforeQuit(task) {
       quitTasks.push(task)
     },
-    browsing(provider) {
-      browsingNow = provider
-    },
   }
-  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart, browserPart])
+  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart])
     part.register(context)
   // After every part's own `quit` (the updater's first, which may take the relaunch over): a new instance with no link, as the Mac's (the one Windows started this one with is not handed over again).
   app.on('quit', (_event, exitCode) => {
@@ -299,8 +257,19 @@ function start(): void {
   makeWindow()
 }
 
-// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser. A window a part made for another site's page (7d's Stripe window, the agents' tabs) is ruled by that part (navigation.ts).
-ruleEveryPage({ appStart, opensOutside, openOutside: (url) => void shell.openExternal(url) })
+// What any page of the app may open: nothing but the app's own page in its windows; addresses go to the default browser. A window a part made for another site's page (7d's Stripe window) is ruled by that part (navigation.ts).
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('will-attach-webview', (event) => event.preventDefault())
+  contents.on('will-navigate', (event, url) => {
+    if (url.startsWith(appStart) || navigatesOnItsOwn(contents)) return
+    event.preventDefault()
+    if (opensOutside(url)) void shell.openExternal(url)
+  })
+  contents.setWindowOpenHandler(({ url }) => {
+    if (opensOutside(url)) void shell.openExternal(url)
+    return { action: 'deny' }
+  })
+})
 
 if (!app.requestSingleInstanceLock()) {
   // Another launch: it hands its command line (a link) to the first and goes.

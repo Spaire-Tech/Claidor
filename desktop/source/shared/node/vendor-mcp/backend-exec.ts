@@ -135,8 +135,7 @@ export const SHOP_CONNECTED_CLIENT_ID = "simeon-shop";
 /** An app run on the cloud computer rather than at a server (`boxCli`): its tools, and a device-code sign-in. */
 export interface BoxCliWallet {
   readonly tools: readonly { readonly name: string; readonly title: string; readonly description: string; readonly inputSchema: Record<string, unknown> }[];
-  /** `context.agentId`: the agent calling, so a checkout is filled where its page is (step 3c of docs/app-browser/README.md). */
-  call(name: string, args: Record<string, unknown>, context?: { readonly agentId?: string }): Promise<{ readonly text: string; readonly isError: boolean }>;
+  call(name: string, args: Record<string, unknown>): Promise<{ readonly text: string; readonly isError: boolean }>;
   signInStatus(): Promise<{ readonly authenticated: boolean; readonly pending: boolean; readonly error?: string }>;
   startSignIn(forceReauth: boolean): Promise<{ readonly authenticated: true } | { readonly url: string; readonly phrase: string } | { readonly error: string }>;
   signOut(): Promise<void>;
@@ -478,7 +477,7 @@ export function createVendorMcpBackendExec(options: VendorMcpBackendExecOptions)
       if (boxWallet != null) {
         try {
           const record = plain != null && typeof plain === "object" && !Array.isArray(plain) ? plain as Record<string, unknown> : {};
-          const result = await boxWallet.call(args.toolName, record, args.agentId == null ? undefined : { agentId: args.agentId });
+          const result = await boxWallet.call(args.toolName, record);
           return new McpResult({ result: { case: "success", value: new McpSuccess({ content: [contentItem({ type: "text", text: result.text })], isError: result.isError }) } });
         } catch (error) {
           return errorResult(`"${args.toolName}" on ${boxName(install)} failed: ${errorLabel(error)}`);

@@ -69,9 +69,9 @@ import {
 } from '../core/shopCards'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
-import { openAgentScreen } from './BrowserView'
 import { type CardProps, StatusPill, cardWidth } from './Cards'
 import { classes } from './classes'
+import { openComputerView } from './ComputerView'
 import { Alert, Sheet } from './Dialogs'
 import { AirlineMark } from './FlightCards'
 import { confirmPresence } from './presence'
@@ -402,12 +402,12 @@ function PurchaseCardView({
     24 << 20,
   )
   const model = useWindowModel()
-  /** Review order: the agent's computer, on the checkout (its tab on this PC when the checkout is there, step 3); for a Shop checkout, the store's page, since Shop holds the checkout and nothing is open on the computer. */
+  /** Review order: the agent's computer, on the checkout; for a Shop checkout, the store's page, since Shop holds the checkout and nothing is open on the computer. */
   const shopPage = shown.isShopCheckout ? shown.url : undefined
   const reviewOrder = () =>
     shopPage != null
       ? openPage(shopPage)
-      : void openAgentScreen(model, store, agentId, { control: false })
+      : openComputerView(model, store, agentId)
   const icon = useComputerPicture(card.icon?.url, agentId, store, 1 << 20)
   // A picture that came but can't be drawn shows the photo symbol, as one that never came.
   const [brokenPreview, setBrokenPreview] = useState<string>()
@@ -501,10 +501,7 @@ function PurchaseCardView({
       </div>
       <PurchaseFooter
         shown={shown}
-        // The bank's check: the person acts on the page, so its tab on this PC opens in Take control.
-        openComputer={() =>
-          void openAgentScreen(model, store, agentId, { control: true })
-        }
+        openComputer={() => openComputerView(model, store, agentId)}
         answer={(allow) => {
           // Deny goes at once.
           if (!allow) {

@@ -34,8 +34,7 @@ export interface UserFormServices {
   browserPort(agentId: string): number;
   /** Every DevTools port on the box, for a page the agent opened in another window. */
   readonly otherPorts?: readonly number[];
-  /** Types the form where the agent's page is (the app's browser or the computer's, `app-browser-forms.ts`); the computer's Chrome without it. */
-  readonly fill?: (options: Parameters<typeof fillUserForm>[0], agentId: string) => Promise<UserFormFill>;
+  readonly fill?: typeof fillUserForm;
 }
 
 type FormEntry = TranscriptEntry & UserFormEntryFields & { readonly message: UserFormMessage };
@@ -80,8 +79,7 @@ export class UserForms {
     void (async () => {
       let result: UserFormFill;
       try {
-        const fill = services.fill ?? ((options) => fillUserForm(options));
-        result = await fill({ domain: form.message.form.domain, fields: formFieldSpecs(form.message), values: checked.values, submitAfterFill: form.message.form.submitAfterFill, ports }, args.agentId);
+        result = await (services.fill ?? fillUserForm)({ domain: form.message.form.domain, fields: formFieldSpecs(form.message), values: checked.values, submitAfterFill: form.message.form.submitAfterFill, ports });
       } catch (error) {
         result = { ok: false, message: error instanceof Error && error.message.length > 0 ? error.message : "The browser didn't answer." };
       }

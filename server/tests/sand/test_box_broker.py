@@ -35,7 +35,7 @@ from simeon.desktop.service import DesktopUnauthenticated, desktop
 from simeon.kit.db.postgres import create_async_engine, create_async_sessionmaker
 from simeon.models import DesktopSession, SandBox, User
 from simeon.postgres import AsyncSession
-from simeon.sand import box_hosts, box_proxy, box_service, brain_users
+from simeon.sand import box_hosts, box_proxy, box_service
 from simeon.sand.box_hosts import (
     BOX_HOST_UNAVAILABLE_SENTENCE,
     BoxBlocked,
@@ -108,8 +108,6 @@ class FakeBoxHost:
             "abc",
             self.expected_host_sha256,
             box_store=spec.labels.get("com.simeonlabs.box-store"),
-            app_browser=spec.labels.get("com.simeonlabs.app-browser"),
-            engine_role=spec.labels.get("com.simeonlabs.engine-role"),
         )
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
@@ -124,8 +122,6 @@ class FakeBoxHost:
             "abc",
             box["host_sha256"],
             box_store=box["spec"].labels.get("com.simeonlabs.box-store"),
-            app_browser=box["spec"].labels.get("com.simeonlabs.app-browser"),
-            engine_role=box["spec"].labels.get("com.simeonlabs.engine-role"),
         )
 
     async def run_state(self, provider_box_id: str) -> Any:
@@ -351,66 +347,6 @@ class TestEnsureSandBox:
         access, _ = await _signed_in(client, session, user)
         await _ensure(client, access)
         assert host.created[0].image == settings.BOX_IMAGE_TRIAL
-
-    async def test_the_app_browser_is_on_for_everyone(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        user_second: User,
-        host: FakeBoxHost,
-    ) -> None:
-        """4 November 2026, the founder: "put it on for everyone". Until
-        then only the people in SIMEON_APP_BROWSER_USERS had it."""
-        access, _ = await _signed_in(client, session, user)
-        other, _ = await _signed_in(client, session, user_second)
-        await _ensure(client, access)
-        await _ensure(client, other)
-        for spec in host.created:
-            env = dict(line.split("=", 1) for line in spec.environment())
-            assert env.get("SIMEON_APP_BROWSER") == "1"
-            assert spec.labels.get("com.simeonlabs.app-browser") == "1"
-
-    async def test_a_computer_made_without_the_app_browser_is_replaced_once(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        host: FakeBoxHost,
-    ) -> None:
-        """Bass's computer, 4 November 2026: made before he was listed, it
-        ran the new engine with the browser off, and was "up to date"."""
-        access, _ = await _signed_in(client, session, user)
-        auth = {"Authorization": f"Bearer {access}"}
-        body = (await _ensure(client, access)).json()
-        old = next(iter(host.boxes))
-        made = host.boxes[old]["spec"]
-        host.boxes[old]["spec"] = dataclasses.replace(
-            made,
-            labels={
-                key: value
-                for key, value in made.labels.items()
-                if key != "com.simeonlabs.app-browser"
-            },
-        )
-        # The apps offer "Update Simeon's Computer".
-        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
-            "state": RUN_STATE_RUNNING,
-            "imageUpdateAvailable": True,
-        }
-        again = (await _ensure(client, access)).json()
-        assert again["podId"] == body["podId"]
-        assert len(host.created) == 2
-        assert host.removed[-1] == (old, [])
-        assert host.created[1].workspace_volume == made.workspace_volume
-        assert host.created[1].labels.get("com.simeonlabs.app-browser") == "1"
-        # Replaced once: the new one is current.
-        await _ensure(client, access)
-        assert len(host.created) == 2
-        assert (await client.post(RUN_STATE, json={}, headers=auth)).json() == {
-            "state": RUN_STATE_RUNNING,
-            "imageUpdateAvailable": False,
-        }
 
     async def test_no_host_is_one_sentence_as_unavailable(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -1048,10 +984,7 @@ class TestBackups:
         access, _ = await _signed_in(client, session, user)
         await _ensure(client, access)
         spec = host.created[0]
-        assert spec.labels == {
-            "com.simeonlabs.box-store": "1",
-            "com.simeonlabs.app-browser": "1",
-        }
+        assert spec.labels == {"com.simeonlabs.box-store": "1"}
         assert spec.extra_env["SAND_BOX_STORE_SYNC"] == "1"
         assert spec.extra_env[
             "SAND_BOX_STORE_ID"
@@ -1086,7 +1019,7 @@ class TestBackups:
         access, _ = await _signed_in(client, session, user)
         body = (await _ensure(client, access)).json()
         old = next(iter(host.boxes))
-        assert host.created[0].labels == {"com.simeonlabs.app-browser": "1"}
+        assert host.created[0].labels == {}
 
         mocker.patch.object(settings, "BOX_STORE_BUCKET", "simeon-backups")
         mocker.patch.object(box_service.box_store, "has_backup", return_value=False)
@@ -1102,10 +1035,7 @@ class TestBackups:
             assert again["podId"] == body["podId"]
             assert len(host.created) == 2
             assert host.removed[-1] == (old, [])
-            assert host.created[1].labels == {
-                "com.simeonlabs.box-store": "1",
-                "com.simeonlabs.app-browser": "1",
-            }
+            assert host.created[1].labels == {"com.simeonlabs.box-store": "1"}
             assert host.created[1].workspace_volume == host.created[0].workspace_volume
             # The old one kept no backup: it is not asked for one.
             assert flushes == []
@@ -1618,96 +1548,3 @@ async def test_the_boxs_own_refusal_reaches_the_app_and_the_log(
         assert logged.call_args.kwargs["network_token_sent"] is False
     finally:
         box_proxy.set_client_factory_for_tests(None)
-
-
-def _on_brain(mocker: MockerFixture, user: User, on: bool = True) -> None:
-    """The person's agents on the brain (`brain_users`), or not."""
-    brain_users.forget_for_tests()
-    mocker.patch.object(settings, "BRAIN_URL", "http://simeon-brain:10000")
-    mocker.patch.object(settings, "BRAIN_TOKEN", "brain-test-token")
-    mocker.patch.object(
-        settings, "BRAIN_USERS", user.email if on else "someone-else@example.com"
-    )
-
-
-@pytest.mark.asyncio
-class TestEngineRole:
-    """A computer for a person on the brain is made in the `hands` role
-    (5 November 2026, docs/agents-on-the-server/README.md, step 1c)."""
-
-    async def test_a_person_on_the_brain_gets_a_computer_made_as_hands(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        host: FakeBoxHost,
-        mocker: MockerFixture,
-    ) -> None:
-        _on_brain(mocker, user)
-        access, _ = await _signed_in(client, session, user)
-        response = await _ensure(client, access)
-        assert response.status_code == 200, response.text
-        [spec] = host.created
-        assert spec.extra_env["SIMEON_ENGINE_ROLE"] == "hands"
-        assert "SIMEON_ENGINE_ROLE=hands" in spec.environment()
-        assert spec.labels["com.simeonlabs.engine-role"] == "hands"
-        box = await box_service.SandBoxRepository.from_session(session).get_by_user(
-            user.id
-        )
-        assert box is not None
-        assert (box.host_meta or {}).get("engine_role") == "hands"
-        # Asked again, the computer is answered as recorded: nothing is made.
-        again = await _ensure(client, access)
-        assert again.status_code == 200, again.text
-        assert again.json()["letsSleep"] is False
-        assert len(host.created) == 1
-
-    async def test_everyone_else_gets_no_role(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        host: FakeBoxHost,
-        mocker: MockerFixture,
-    ) -> None:
-        _on_brain(mocker, user, on=False)
-        access, _ = await _signed_in(client, session, user)
-        assert (await _ensure(client, access)).status_code == 200
-        assert (await _ensure(client, access)).status_code == 200
-        [spec] = host.created
-        assert "SIMEON_ENGINE_ROLE" not in spec.extra_env
-        assert "com.simeonlabs.engine-role" not in spec.labels
-        box = await box_service.SandBoxRepository.from_session(session).get_by_user(
-            user.id
-        )
-        assert box is not None
-        assert "engine_role" not in (box.host_meta or {})
-
-    async def test_a_computer_made_before_is_made_again_as_hands_once_and_back(
-        self,
-        client: httpx.AsyncClient,
-        session: AsyncSession,
-        user: User,
-        host: FakeBoxHost,
-        mocker: MockerFixture,
-    ) -> None:
-        access, _ = await _signed_in(client, session, user)
-        assert (await _ensure(client, access)).status_code == 200
-        [before] = host.created
-        assert "com.simeonlabs.engine-role" not in before.labels
-        # On the brain: made again in the hands role, on the same volumes.
-        _on_brain(mocker, user)
-        assert (await _ensure(client, access)).status_code == 200
-        assert len(host.created) == 2
-        made = host.created[1]
-        assert made.labels["com.simeonlabs.engine-role"] == "hands"
-        assert made.workspace_volume == before.workspace_volume
-        assert made.data_volume == before.data_volume
-        assert (await _ensure(client, access)).status_code == 200
-        assert len(host.created) == 2
-        # Off the brain again: made again without a role, files kept.
-        _on_brain(mocker, user, on=False)
-        assert (await _ensure(client, access)).status_code == 200
-        assert len(host.created) == 3
-        assert "com.simeonlabs.engine-role" not in host.created[2].labels
-        assert host.created[2].data_volume == before.data_volume

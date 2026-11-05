@@ -81,7 +81,6 @@ import {
 } from "./sand-activity.js";
 import { connectorCardEmissionToMessage } from "./runner/tools/box-help-tool.js";
 import type { FlightSearchAnswer } from "./runner/tools/flight-search-tool.js";
-import type { AppBrowserRoute } from "./runner/tools/app-browser-route.js";
 import type { BookFlightDependencies } from "./runner/tools/book-flight-tool.js";
 import { getSandRootDir } from "./host-paths.js";
 import { getConfiguredBackendUrl } from "../shared/node/simeon-token.js";
@@ -200,11 +199,8 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { BOX_CHROME_PORTS, fetchCheckoutIcon, type FillCheckoutOptions } from "../shared/node/link-wallet/checkout-fill.js";
-import { routedCheckout } from "./runner/tools/app-browser-checkout.js";
-import { routedDuffel } from "./runner/tools/app-browser-duffel.js";
-import type { DuffelPayOptions } from "../shared/node/flight-booking/duffel-pay.js";
-import { routedForms } from "./runner/tools/app-browser-forms.js";
+import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
+import { checkUserForm, fillNewPassword, fillUserForm, locateFields } from "../shared/node/user-form/form-fill.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
 import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
@@ -263,18 +259,6 @@ export interface HostRunnerOverrides {
 
 export interface HostRunnerExtensions {
   api(id: string): DynamicApi;
-}
-
-/**
- * The browser in the Mac and Windows apps, when the local-browser extension
- * is there (docs/app-browser/README.md); the browser tools then ask it which
- * browser each step goes to. A host without it keeps the computer's only.
- */
-function appBrowserRouteOf(extensions: HostRunnerExtensions): AppBrowserRoute | undefined {
-  let api: unknown;
-  try { api = extensions.api("local-browser"); } catch { return undefined; }
-  const route = api as Partial<AppBrowserRoute> | undefined;
-  return typeof route?.choose === "function" && typeof route.request === "function" ? route as AppBrowserRoute : undefined;
 }
 
 /**
@@ -913,7 +897,6 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   // server's booking doors, the box's Link, each agent's own Chrome on the
   // box (where Duffel's card form is filled) and the data folder (where the
   // travellers' details wait between the form and the order).
-  const duffel = routedDuffel(() => appBrowserRouteOf(extensions));
   method(extensions.api("transcript"), "setFlightBookingServices")?.({
     // The order waits longer than the server's own wait on Duffel (135 s), so its answer is never lost here.
     // Its refusals come back in the person's language; a search's fields stay English (the apps read them).
@@ -922,21 +905,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     backendUrl: () => getConfiguredBackendUrl(),
     dataDir: () => getSandRootDir(),
-    // Paid where the agent's page is: the app's browser for a task there (step 3c-2).
-    pay: (options: DuffelPayOptions) => duffel.pay(options),
-    say: (port: number, words: string, agentId?: string) => duffel.say(port, words, agentId),
   });
   // The in-chat form (28 October 2026, transcript/user-forms.ts): typed into
   // the agent's own Chrome on the box, else a tab on the site in another window.
-  // Each fill goes where the agent's page is: the Mac or Windows app's browser for a task there, else the box's Chrome (docs/app-browser/README.md, step 3b).
-  const forms = routedForms(() => appBrowserRouteOf(extensions));
-  // The checkout card's reads and Link's or Shop's card typed in, where the agent's page is (step 3c).
-  const checkout = routedCheckout(() => appBrowserRouteOf(extensions));
-  method(extensions.api("mcp"), "setCheckoutFill")?.((options: FillCheckoutOptions) => checkout.fill(options));
   method(extensions.api("transcript"), "setUserFormServices")?.({
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
-    fill: (options: Parameters<typeof forms.fill>[1], agentId: string) => forms.fill(agentId, options),
   });
   // The person's 1Password (28 October 2026, shared/node/onepassword/): the
   // key their Mac's 1Password app made, kept in the engine's own folder, read
@@ -946,7 +920,6 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     onePassword,
     browserPort: (agentId: string) => 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1),
     otherPorts: BOX_CHROME_PORTS,
-    fill: (options: Parameters<typeof forms.fill>[1], agentId: string) => forms.fill(agentId, options),
   });
   // The person's Credentials Store (28 October 2026, shared/node/credentials-store/):
   // their logins and contact info, held sealed by the server and asked for as this computer.
@@ -1027,7 +1000,6 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
   ): Runner {
     const isSharedRoomTurn = overrides.isSharedRoomTurn === true;
     const localExec = extensions.api("local-exec");
-    const appBrowser = appBrowserRouteOf(extensions);
     const attachments = extensions.api("attachments");
     const memory = extensions.api("memory");
     const transcript = extensions.api("transcript");
@@ -1219,7 +1191,6 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               ...(persistImageForTurn === undefined
                 ? {}
                 : { getPersistImage: () => persistImageForTurn }),
-              ...(appBrowser === undefined ? {} : { appBrowser }),
             }),
             createBoxShellExecutor: () => shell,
           };
@@ -2471,7 +2442,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               dependencies: {
                 checkForm: async (request) => {
                   const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                  return await forms.check(session.id, { ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
+                  return await checkUserForm({ ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
                 },
                 emitFormCard: (message, timestampMs) => {
                   const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
@@ -2491,8 +2462,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               return {
                 dependencies: {
                   store: credentialsStore,
-                  fillLogin: async (request) => await forms.fill(session.id, { ...request, ports: ports(), missingAs: "notFound" }),
-                  fillNewPassword: async (request) => await forms.newPassword(session.id, { ...request, ports: ports() }),
+                  fillLogin: async (request) => await fillUserForm({ ...request, ports: ports(), missingAs: "notFound" }),
+                  fillNewPassword: async (request) => await fillNewPassword({ ...request, ports: ports() }),
                   requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
                   agentName: () => resolveAgentDisplayName(session.id) ?? undefined,
                   log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
@@ -2509,7 +2480,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 fillAllowed: async (args) => await method(extensions.api("transcript"), "fillAllowedCredential")?.({ agentId: session.id, ...args }),
                 locateFields: async (request) => {
                   const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                  return await forms.locate(session.id, { ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
+                  return await locateFields({ ...request, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)] });
                 },
                 emitCard: (message, timestampMs) => {
                   const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
@@ -2590,16 +2561,16 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   persistPicture,
                   // SearchProducts: Shop's catalog, signed out unless the person connected Shop (then with their preferences).
                   ...(shop == null ? {} : { searchProducts: (args: Record<string, unknown>) => shop.call("search_products", args) }),
-                  // The checkout's text, from the same tab the picture is taken of: the card's total is checked against it. In the app's browser for a task there (step 3c).
+                  // The checkout's text, from the same tab the picture is taken of: the card's total is checked against it.
                   readCheckoutPage: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
-                    return await checkout.read(session.id, { pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: (line) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`) });
+                    return await readCheckoutText({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: (line) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`) });
                   },
                   // The agent's own Chrome first (9222 + its window), then the computer's others.
                   capturePreview: async (checkoutUrl) => {
                     const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
                     const note = (line: string) => logHostLine(`${HOST_LOG_PREFIX} [purchase] ${line} (${session.id})`);
-                    const shot = await checkout.capture(session.id, { pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: note });
+                    const shot = await captureCheckout({ pageHint: checkoutUrl, ports: [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)], log: note });
                     if (shot == null) return undefined;
                     if (typeof hooks.persistImage !== "function") { note("no picture: nowhere to keep it"); return undefined; }
                     const saved = await hooks.persistImage(shot.jpeg, "image/jpeg") as { fileUrl?: unknown; width?: unknown; height?: unknown } | null | undefined;
@@ -2669,18 +2640,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           requestHelp: async (request) => {
             const start = method(extensions.api("session"), "startHandoff");
             if (start == null) throw new Error("The box hand-off service is not bound.");
-            // The agent's page in the Mac or Windows app's browser (docs/app-browser/README.md, step 3):
-            // the card shows that tab, not the computer's screen.
-            const live = appBrowser?.where?.(session.id);
-            const handed = live === undefined || appBrowser === undefined ? request : {
-              ...(request as object),
-              grab: async () => {
-                const answer = await appBrowser.request(live, { op: "screenshot", viewId: session.id, args: {}, screenshot: true }, { timeoutMs: 8_000 });
-                const picture = answer.ok === true && typeof answer.screenshotB64 === "string" ? answer.screenshotB64 : "";
-                return picture.length > 0 ? `data:image/png;base64,${picture}` : null;
-              },
-            };
-            return await start(handed) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
+            return await start(request) as { kind: "started"; requestId: string } | { kind: "already-pending"; requestId: string; instruction: string };
           },
           onSendMessage: (message, timestampMs, metadata) => {
             // `boxHandoff` is what `turn-runtime.ts` stamps on the entry

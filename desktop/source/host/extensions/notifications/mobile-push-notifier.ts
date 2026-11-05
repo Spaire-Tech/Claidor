@@ -28,21 +28,17 @@ import { clipForHostLog, HOST_LOG_PREFIX, logHostLine } from "../../../shared/ho
 import { getSandBackendClientHeaders } from "../../../shared/node/sand-client-metadata.js";
 import { buildNotificationContent, SandOsNotificationDecider, toNotificationSnapshot, type NotificationAgent, type NotificationTransition } from "../../../shared/os-notification.js";
 import { acceptLanguageHeader, currentUserLanguage } from "../../../shared/user-language.js";
-import { engineRoleFromEnv } from "../../engine-role.js";
 
 export const SAND_PHONE_PUSH_PATH = "/desktop/push";
 export const SAND_PHONE_PUSH_TIMEOUT_MS = 10_000;
 export const SAND_PHONE_PUSH_THROTTLE_MS = 30_000;
 
-/** Only the engine that runs the person's agents pushes: the one in their
- * computer (the box's supervisor sets `SAND_HOST_IN_BOX=1`,
- * `box/bin/simeon-supervisor.mjs`), or the brain, the engine off the
- * computer (`SIMEON_ENGINE_ROLE=brain`, `engine-role.ts`; 5 November 2026).
- * A host under test or anywhere else stays quiet. The local-docker computer
- * (internal testing) runs the same image, so it pushes to the tester's own
- * phone. */
+/** Only the host in the person's computer pushes: the box's supervisor sets
+ * `SAND_HOST_IN_BOX=1` (`box/bin/simeon-supervisor.mjs`), and a host under
+ * test or anywhere else stays quiet. The local-docker computer (internal
+ * testing) runs the same image, so it pushes to the tester's own phone. */
 export function isSandPhonePushEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.SAND_HOST_IN_BOX === "1" || engineRoleFromEnv(env) === "brain";
+  return env.SAND_HOST_IN_BOX === "1";
 }
 
 /**

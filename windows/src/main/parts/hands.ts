@@ -16,33 +16,8 @@ import { Hands } from '../hands/hands'
 import { shrinkImage } from '../hands/images'
 import { isPermission } from '../hands/permission'
 import type { Permission } from '../hands/rules'
-import { type Target, checkTarget as checked } from '../hands/target'
+import { checkTarget } from '../hands/target'
 import { fetchTransport } from '../hands/transport'
-
-/**
- * The hands' stream to the computer, as others follow it: the browser in
- * the app (parts/browser.ts) dials the engine while a stream is open, on
- * the same address and keys, and stops when it closes or the hands sign out.
- */
-export interface HandsLine {
-  opened(target: Target): void
-  closed(): void
-  signedOut(): void
-}
-const followers = new Set<HandsLine>()
-export function followHandsLine(follower: HandsLine): () => void {
-  followers.add(follower)
-  return () => followers.delete(follower)
-}
-function tell(say: (follower: HandsLine) => void): void {
-  for (const follower of followers) {
-    try {
-      say(follower)
-    } catch {
-      // A follower's trouble is its own; the hands go on.
-    }
-  }
-}
 
 function choiceOf(value: unknown): Permission {
   if (!isPermission(value)) throw new Error('A setting was expected.')
@@ -95,16 +70,10 @@ export function register(context: AppContext): void {
     from.once('destroyed', () => made.end())
   }
 
-  handle('handsStream', async (from, target) => {
+  handle('handsStream', (from, target) => {
     fromWindow(from)
     watch(from)
-    const address = checked(target, context.facts.apiBase)
-    tell((follower) => follower.opened(address))
-    try {
-      return await made.stream(address)
-    } finally {
-      tell((follower) => follower.closed())
-    }
+    return made.stream(checkTarget(target, context.facts.apiBase))
   })
   handle('handsEnd', (from) => {
     fromWindow(from)
@@ -116,7 +85,6 @@ export function register(context: AppContext): void {
   })
   handle('handsSignedOut', async (from) => {
     fromWindow(from)
-    tell((follower) => follower.signedOut())
     await made.signedOut()
   })
   handle('handsPermission', (from, account) => {

@@ -13,7 +13,6 @@ import { followWindowLook } from './desktop/windowLook'
 import './index.css'
 import { WebSession } from './session'
 import { mountDeepLinks } from './window/DeepLinks'
-import { QuitAlert, quitAsk } from './window/QuitAlert'
 import './window/desktop.css'
 import { applyTheme } from './window/theme'
 
@@ -40,12 +39,7 @@ async function start() {
     return
   }
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
-  // Quitting while an agent works in the app's browser asks first (window/QuitAlert.tsx).
-  if (host)
-    listenForQuitting(
-      host,
-      quitAsk(() => session.store),
-    )
+  if (host) listenForQuitting(host)
   // Windows' caption buttons in the page's colours, following the theme (src/desktop/windowLook.ts).
   if (host) followWindowLook(host)
   // The logs and the chats kept on this PC (src/desktop/session.ts); the call's window returned above and never signs in.
@@ -60,7 +54,6 @@ async function start() {
     createRoot(root).render(
       <StrictMode>
         <App session={session} />
-        {host && <QuitAlert />}
       </StrictMode>,
     )
   }
