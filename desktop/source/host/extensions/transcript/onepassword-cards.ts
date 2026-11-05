@@ -45,8 +45,7 @@ export interface OnePasswordServices {
   /** The agent's own Chrome on the box (its DevTools port). */
   browserPort(agentId: string): number;
   readonly otherPorts?: readonly number[];
-  /** Types the login where the agent's page is (the app's browser or the computer's, `app-browser-forms.ts`); the computer's Chrome without it. */
-  readonly fill?: (options: Parameters<typeof fillUserForm>[0], agentId: string) => ReturnType<typeof fillUserForm>;
+  readonly fill?: typeof fillUserForm;
   readonly now?: () => number;
 }
 
@@ -93,8 +92,7 @@ export class OnePasswordCards {
     if (fields.length === 0) return { ok: false, message: "That login has no username or password in 1Password." };
     const own = services.browserPort(agentId);
     const ports = [own, ...(services.otherPorts ?? []).filter((port) => port !== own)];
-    const fill = services.fill ?? ((options) => fillUserForm(options));
-    const typed = await fill({ domain: site, fields, values, ports, missingAs: "notFound" }, agentId).catch((error: unknown) => ({ ok: false as const, message: error instanceof Error ? error.message : String(error) }));
+    const typed = await (services.fill ?? fillUserForm)({ domain: site, fields, values, ports, missingAs: "notFound" }).catch((error: unknown) => ({ ok: false as const, message: error instanceof Error ? error.message : String(error) }));
     if (!typed.ok) return typed;
     const outcomes: Outcomes = {};
     for (const field of fields) {

@@ -298,8 +298,6 @@ class TestAnswerWakes:
 def test_only_an_answer_to_the_box_wakes_it() -> None:
     assert box_proxy.answers_the_box("POST", "local-exec/responses")
     assert box_proxy.answers_the_box("POST", "/webauthn/responses")
-    assert box_proxy.answers_the_box("POST", "local-browser/responses")
-    assert not box_proxy.answers_the_box("GET", "local-browser/requests")
     assert not box_proxy.answers_the_box("GET", "local-exec/requests")
     assert not box_proxy.answers_the_box("GET", "local-exec/responses")
     assert not box_proxy.answers_the_box("POST", "api/sendPrompt")

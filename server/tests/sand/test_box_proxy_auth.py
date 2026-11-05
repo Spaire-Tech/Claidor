@@ -16,14 +16,14 @@ BOX = "1da35e98-a0cb-4cbc-9612-69333079cc45"
 GATEWAY_BEARER = "ab" * 32
 
 
-def _request(path: str, bearer: str = GATEWAY_BEARER) -> Request:
+def _request(path: str) -> Request:
     return Request(
         {
             "type": "http",
             "method": "GET",
             "path": path,
             "query_string": b"",
-            "headers": [(b"authorization", f"Bearer {bearer}".encode())],
+            "headers": [(b"authorization", f"Bearer {GATEWAY_BEARER}".encode())],
         }
     )
 
@@ -36,11 +36,6 @@ def test_the_box_proxy_paths() -> None:
     assert not is_box_proxy_path("/sand-box/local-exec-connection")
     assert not is_box_proxy_path(f"/sand-box/{BOX}/p/1340x")
     assert not is_box_proxy_path("/v1/products/")
-    # The brain's door to the computer's hands (`simeon.sand.brain`).
-    assert is_box_proxy_path("/sand-box/brain/hands/sand.box.exec.v1.ExecService/Exec")
-    assert is_box_proxy_path("/sand-box/brain/hands/state")
-    assert not is_box_proxy_path("/sand-box/brain/bootstrap")
-    assert not is_box_proxy_path("/sand-box/brain/handsx")
 
 
 @pytest.mark.asyncio
@@ -59,17 +54,3 @@ async def test_the_same_bearer_anywhere_else_is_still_refused(
 ) -> None:
     with pytest.raises(InvalidTokenError):
         await get_auth_subject(_request("/v1/products/"), session)
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("bearer", [GATEWAY_BEARER, "local"])
-async def test_the_engines_bearer_on_the_brains_door_is_nobody(
-    session: AsyncSession, bearer: str
-) -> None:
-    """The engine off the computer sends its bearer for the hands (`local`)
-    through the door as it came; the door checks the brain's own token."""
-    subject = await get_auth_subject(
-        _request("/sand-box/brain/hands/sand.box.exec.v1.ExecService/Exec", bearer),
-        session,
-    )
-    assert isinstance(subject.subject, Anonymous)

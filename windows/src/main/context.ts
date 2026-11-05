@@ -35,6 +35,4 @@ export interface AppContext {
   onLink(listener: (url: string) => void): void
   /** Something of the main process's own to do before quitting, after the page's (`quitting`). */
   beforeQuit(task: () => void | Promise<void>): void
-  /** Which agents have tabs in the app's browser, told to the page as the app quits (parts/browser.ts). */
-  browsing(provider: () => readonly string[]): void
 }

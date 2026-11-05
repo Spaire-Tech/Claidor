@@ -72,8 +72,7 @@ export interface FlightBookingServices {
   /** Where the travellers' details wait between the form and the order. */
   dataDir(): string;
   readonly pay?: typeof payOnDuffelPage;
-  /** Words on the open pay page; `agentId` for one in the app's browser (step 3c-2). */
-  readonly say?: (port: number, words: string, agentId?: string) => Promise<void>;
+  readonly say?: typeof sayOnPayPage;
 }
 
 type FormEntry = TranscriptEntry & FlightPassengersEntryFields & { readonly message: FlightPassengersMessage };
@@ -310,7 +309,6 @@ export class FlightBookings {
           card: typed,
           holder,
           onChallenge: () => { void step("verify", say(language, "flight.bankCheck")); },
-          agentId,
           ...(language == null ? {} : { language }),
         });
       });
@@ -333,11 +331,11 @@ export class FlightBookings {
         this.log(`[flight] the order's answer was lost ${agentId}/${entryId}: ${sentence(error, "no answer")}`);
         order = { booked: false, uncertain: true };
       }
-      const sayOnPage = services.say ?? ((pagePort: number, words: string) => sayOnPayPage(pagePort, words));
+      const sayOnPage = services.say ?? sayOnPayPage;
       if (order.booked === true) {
         const reference = text(order.bookingReference);
         await this.booked(agentId, entryId, flight, card, spendRequestId, order, offer.test);
-        void sayOnPage(port, reference.length > 0 ? say(language, "flight.bookedPageRef", { reference }) : say(language, "flight.bookedPage"), agentId).catch(() => undefined);
+        void sayOnPage(port, reference.length > 0 ? say(language, "flight.bookedPageRef", { reference }) : say(language, "flight.bookedPage")).catch(() => undefined);
         return;
       }
       // The airline never answered: it may have the booking. Never ask again; ask Duffel after it for a while.

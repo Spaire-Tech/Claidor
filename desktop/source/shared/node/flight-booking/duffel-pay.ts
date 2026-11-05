@@ -18,8 +18,6 @@ import { say } from "../../say.js";
 import { choose, firstEditable, loadBoxPlaywright, typeInto, type CheckoutCard, type Frame, type Locator, type PlaywrightLike } from "../link-wallet/checkout-fill.js";
 
 const CARDS_ORIGIN = "https://api.duffel.cards";
-/** The frames Duffel's card form lives in: the only ones the card is typed into. */
-export const DUFFEL_CARD_FRAMES: readonly RegExp[] = [/^https:\/\/api\.duffel\.cards/, /^https:\/\/[^/]*evervault\.com\//];
 
 type PayFrame = Frame & { getByLabel?(label: RegExp, options?: Record<string, unknown>): Locator };
 interface PayPage {
@@ -67,8 +65,6 @@ export interface DuffelPayOptions {
   readonly onChallenge?: () => void;
   readonly loadPlaywright?: () => PayPlaywright;
   readonly keyDelayMs?: number;
-  /** The agent paying: its tab in the Mac or Windows app's browser for a task there (`app-browser-duffel.ts`); this computer's pay ignores it. */
-  readonly agentId?: string;
   /** How long the bank check may take, the person's part included. */
   readonly verifyTimeoutMs?: number;
   readonly pollMs?: number;
@@ -76,11 +72,10 @@ export interface DuffelPayOptions {
   readonly language?: string;
 }
 
-export type DuffelFieldKind = FieldKind;
 type FieldKind = "name on card" | "card number" | "expiry" | "expiry month" | "expiry year" | "security code" | "address line 1" | "address line 2" | "city" | "region" | "postal code" | "country";
 
 const any = (selectors: readonly string[]): string => selectors.join(", ");
-export const DUFFEL_FIELDS: Record<FieldKind, { readonly selector: string; readonly label: RegExp }> = {
+const FIELDS: Record<FieldKind, { readonly selector: string; readonly label: RegExp }> = {
   "name on card": { selector: any(['[autocomplete="cc-name"]', '[autocomplete$=" cc-name"]', 'input[name="cardholderName"]', 'input[name="cardholder_name"]', 'input[name="name"]', 'input[id="name"]', 'input[name*="holder" i]']), label: /name on( the)? card|card ?holder|full name|^name$/i },
   "card number": { selector: any(['input[autocomplete="cc-number"]', 'input[autocomplete$=" cc-number"]', 'input[name="cardNumber"]', 'input[name="card_number"]', 'input[name="number"]', 'input[id="number"]', 'input[name*="number" i][inputmode="numeric"]']), label: /card number|^number$/i },
   expiry: { selector: any(['input[autocomplete="cc-exp"]', 'input[autocomplete$=" cc-exp"]', 'input[name="expiry"]', 'input[name="expiryDate"]', 'input[name="expiry_date"]', 'input[name="exp"]', 'input[placeholder*="MM" i]']), label: /expir|exp\.? date|valid (thru|until)/i },
@@ -106,7 +101,7 @@ function countryNames(code: string): string[] {
 }
 
 /** The fields Duffel's form must get, in the order a person fills them. */
-export function duffelValues(card: CheckoutCard, holder: string): Partial<Record<FieldKind, string[]>> {
+function valuesFor(card: CheckoutCard, holder: string): Partial<Record<FieldKind, string[]>> {
   const billing = card.billing;
   const name = billing?.name?.trim() || holder.trim();
   return {
@@ -123,15 +118,6 @@ export function duffelValues(card: CheckoutCard, holder: string): Partial<Record
     ...(billing?.postalCode ? { "postal code": [billing.postalCode] } : {}),
     ...(billing?.country ? { country: countryNames(billing.country) } : {}),
   };
-}
-
-/** What the form still needs (the number, an expiry, the code), and the address fields it had no place for. */
-export function duffelMissing(filled: ReadonlySet<string>, values: Partial<Record<FieldKind, string[]>>): { readonly missing: FieldKind[]; readonly absent: FieldKind[] } {
-  const needed: FieldKind[] = ["card number", filled.has("expiry month") ? "expiry month" : "expiry", "security code"];
-  if (filled.has("expiry month")) needed.push("expiry year");
-  const missing = needed.filter((kind) => !filled.has(kind));
-  const absent = (Object.keys(values) as FieldKind[]).filter((kind) => !filled.has(kind) && kind !== "expiry month" && kind !== "expiry year" && kind !== "expiry" && !needed.includes(kind));
-  return { missing, absent };
 }
 
 async function byLabel(frame: PayFrame, label: RegExp): Promise<Locator | undefined> {
@@ -196,17 +182,17 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
     await pause(Math.min(1500, poll * 2));
 
     // The card and its billing address, typed in Duffel's frames only (never the page around them).
-    const frames = page.frames().filter((frame) => DUFFEL_CARD_FRAMES.some((origin) => origin.test(frame.url())));
-    const values = duffelValues(options.card, options.holder);
+    const frames = page.frames().filter((frame) => frame.url().startsWith(CARDS_ORIGIN) || /^https:\/\/[^/]*evervault\.com\//.test(frame.url()));
+    const values = valuesFor(options.card, options.holder);
     const delay = options.keyDelayMs ?? 35;
     const filled = new Set<FieldKind>();
-    for (const kind of Object.keys(DUFFEL_FIELDS) as FieldKind[]) {
+    for (const kind of Object.keys(FIELDS) as FieldKind[]) {
       const value = values[kind];
       if (value == null || value.length === 0) continue;
       if ((kind === "expiry month" || kind === "expiry year") && filled.has("expiry")) continue;
       if (kind === "expiry" && filled.has("expiry month")) continue;
       for (const frame of frames) {
-        const field = await firstEditable(frame, DUFFEL_FIELDS[kind].selector) ?? await byLabel(frame, DUFFEL_FIELDS[kind].label);
+        const field = await firstEditable(frame, FIELDS[kind].selector) ?? await byLabel(frame, FIELDS[kind].label);
         if (field == null) continue;
         const done = kind === "country" || kind === "region" || kind === "expiry month" || kind === "expiry year"
           ? await choose(field, value, delay).catch(() => false)
@@ -214,7 +200,10 @@ export async function payOnDuffelPage(options: DuffelPayOptions): Promise<Duffel
         if (done) { filled.add(kind); break; }
       }
     }
-    const { missing, absent } = duffelMissing(filled, values);
+    const needed: FieldKind[] = ["card number", filled.has("expiry month") ? "expiry month" : "expiry", "security code"];
+    if (filled.has("expiry month")) needed.push("expiry year");
+    const missing = needed.filter((kind) => !filled.has(kind));
+    const absent = (Object.keys(values) as FieldKind[]).filter((kind) => !filled.has(kind) && kind !== "expiry month" && kind !== "expiry year" && kind !== "expiry" && !needed.includes(kind));
     if (missing.length > 0) return { ok: false, stage: "card", message: say(language, "pay.fieldsMissing", { fields: missing.join(", ") }), filled: [...filled], missing: [...missing, ...absent], fieldsSeen: await describeFields(frames) };
 
     // Duffel keeps the card for 25 minutes under an id.

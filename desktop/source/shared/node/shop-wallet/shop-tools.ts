@@ -808,7 +808,7 @@ export function createShopTools(options: ShopToolsOptions) {
     return { status: "waiting" };
   };
 
-  const call = async (name: string, args: Record<string, unknown>, context?: { readonly agentId?: string }): Promise<LinkToolResult> => {
+  const call = async (name: string, args: Record<string, unknown>): Promise<LinkToolResult> => {
     switch (name) {
       case "search_products": {
         const query = text(args.query);
@@ -880,9 +880,7 @@ export function createShopTools(options: ShopToolsOptions) {
         if (id.length === 0) return { text: "spend_request_id is required.", isError: true };
         if (options.fillCheckout == null) return { text: "This computer has no browser to fill a checkout in.", isError: true };
         const fill = options.fillCheckout;
-        // Where the agent's page is: the app's browser for a task there (step 3c).
-        const agentId = context?.agentId;
-        const used = await withCard(id, async (card) => await fill({ card, pageHint: text(args.checkout_url), ...(agentId == null ? {} : { agentId }) }));
+        const used = await withCard(id, async (card) => await fill({ card, pageHint: text(args.checkout_url) }));
         if (!used.ok) return { text: used.message, isError: true };
         return fillAnswer(used.value);
       }

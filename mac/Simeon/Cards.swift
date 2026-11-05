@@ -1657,7 +1657,7 @@ struct ComputerHandoffCard: View {
       if waiting {
         HStack(spacing: 8) {
           Button {
-            handBack(store, agentId, skip: true)
+            Task { await store.handBackComputer(agentId, skip: true) }
           } label: {
             Text("Skip")
               .font(.system(size: 13))
@@ -1670,7 +1670,7 @@ struct ComputerHandoffCard: View {
           .help("Cancel this request without doing the step; the agent continues without it")
           Spacer(minLength: 8)
           pill(String(localized: "I’m done"), ground: fill, ink: ink) {
-            handBack(store, agentId)
+            Task { await store.handBackComputer(agentId) }
           }
           pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
         }
@@ -1696,10 +1696,9 @@ struct ComputerHandoffCard: View {
     }
   }
 
-  /** Take over, the snapshot and Open computer: the agent's tab on this Mac when the Computer tab shows it there (in Take control while it waits), else the computer over the window (trigger `handoff`), which starts it. */
+  /** Take over, the snapshot and Open computer: the computer over the window (trigger `handoff`), which starts it. */
   private func takeOver() {
-    let waiting = HandoffCardState.of(requestId: requestId, instruction: instruction, resolution: resolution, status: store.computer.status(agentId)).waiting
-    window.openAgentScreen(agentId, control: waiting, store: store)
+    window.openComputer(agentId, helper: nil, store: store)
   }
 
   /** A `data:image/…;base64,…` picture. */
@@ -1795,7 +1794,7 @@ struct PurchaseCardView: View {
   /** Review order: the agent's computer, on the checkout; for a Shop checkout (14 October 2026), the product's page, since Shop holds the checkout and nothing is open on the computer. */
   private func reviewOrder() {
     if card.isShopCheckout, let url = card.url { openURL(url); return }
-    window.openAgentScreen(agentId, control: false, store: store)
+    window.openComputer(agentId, helper: nil, store: store)
   }
 
   var body: some View {
@@ -2004,7 +2003,7 @@ struct PurchaseCardView: View {
         if shown.waitsOnBank {
           HStack {
             Spacer(minLength: 0)
-            pill(PurchaseCard.openComputer, ground: blue, ink: .white) { window.openAgentScreen(agentId, control: true, store: store) }
+            pill(PurchaseCard.openComputer, ground: blue, ink: .white) { window.openComputer(agentId, helper: nil, store: store) }
           }
         }
       }

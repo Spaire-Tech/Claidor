@@ -109,18 +109,11 @@ async def get_member_session(session: AsyncSession, value: str) -> MemberSession
 
 
 _BOX_PROXY_PATH = re.compile(r"^/sand-box/[0-9a-fA-F-]{36}/p/\d+(?:/|$)")
-#: The brain's door to the computer's hands (`simeon.sand.brain`), which
-#: forwards the engine's bearer for the hands (`local`) as it came.
-_BRAIN_HANDS_PATH = re.compile(r"^/sand-box/brain/hands(?:/|$)")
 
 
 def is_box_proxy_path(path: str) -> bool:
-    """`/sand-box/{box_id}/p/{port}` and everything under it, and the
-    brain's door to the computer's hands."""
-    return (
-        _BOX_PROXY_PATH.match(path) is not None
-        or _BRAIN_HANDS_PATH.match(path) is not None
-    )
+    """`/sand-box/{box_id}/p/{port}` and everything under it."""
+    return _BOX_PROXY_PATH.match(path) is not None
 
 
 async def get_auth_subject(
@@ -140,9 +133,7 @@ async def get_auth_subject(
     # token and the gateway checks the bearer. Reading that bearer here
     # answered every proxied call with an OAuth2 401 before the proxy ran
     # (the first live cloud box, 28 September 2026: /health passed because
-    # it carried no bearer, /events and every /api call were refused). The
-    # brain's door is the same: its own token is checked by the door, and
-    # the bearer belongs to the computer's hands.
+    # it carried no bearer, /events and every /api call were refused).
     if is_box_proxy_path(request.url.path):
         return AuthSubject(Anonymous(), set(), None)
 

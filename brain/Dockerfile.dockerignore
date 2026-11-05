@@ -1,8 +1,0 @@
-# The build context for brain/Dockerfile (Docker reads <Dockerfile>.dockerignore
-# in place of the root .dockerignore, which keeps only runner/). The image
-# copies the start script and the computer's tree-sitter lockfile; nothing
-# else from the repository is sent.
-*
-!brain/start-brain.mjs
-!box/deps/package.json
-!box/deps/package-lock.json

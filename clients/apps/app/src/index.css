@@ -2388,11 +2388,6 @@ button {
   margin-top: 16px;
 }
 
-/* Three buttons stacked, the default on top, as a Mac alert with three (the quit's question). */
-.alert-buttons.stacked {
-  flex-direction: column-reverse;
-}
-
 .alert-button {
   flex: 1;
   height: 28px;

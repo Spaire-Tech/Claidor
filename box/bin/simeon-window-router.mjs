@@ -11,16 +11,6 @@
  * daemon that does not answer is a 502. The host (loopback-sand-box.ts)
  * dials this port with those two headers; the request itself, bearer and
  * all, passes through unchanged.
- *
- * On a computer whose agents run on the brain (`SIMEON_ENGINE_ROLE=hands`,
- * docs/agents-on-the-server/README.md, step 1b), every call comes from
- * outside the computer, through the API's door. Each must then carry the
- * computer's own gateway token (`SAND_GATEWAY_TOKEN`, which the server gave
- * the computer and alone holds) in `x-simeon-box-token`; without it, 401. The
- * header is taken off before the call goes on. The hands programs behind the
- * router accept their loopback bearer, so this check is what keeps them for
- * the brain. In any other role nothing changes: the engine inside the
- * computer dials the router itself.
  */
 import { timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -30,9 +20,6 @@ const listenPort = Number.parseInt(process.argv[2] ?? "1339", 10) || 1339;
 const primaryPort = Number.parseInt(process.argv[3] ?? "1337", 10) || 1337;
 const forkBase = Number.parseInt(process.argv[4] ?? "14000", 10) || 14000;
 const TOKEN_DIR = "/tmp/sand-window-tokens.d";
-const HANDS_ROLE = (process.env.SIMEON_ENGINE_ROLE ?? "").trim().toLowerCase() === "hands";
-const BOX_TOKEN = (process.env.SAND_GATEWAY_TOKEN ?? "").trim();
-const BOX_TOKEN_HEADER = "x-simeon-box-token";
 
 function sameToken(offered, expected) {
   if (typeof offered !== "string" || offered.length === 0 || expected.length === 0) return false;
@@ -54,16 +41,6 @@ function route(request) {
 }
 
 const server = http.createServer((request, response) => {
-  if (HANDS_ROLE) {
-    // An empty token refuses everything: a computer without one has no brain to serve.
-    const offered = request.headers[BOX_TOKEN_HEADER];
-    if (!sameToken(Array.isArray(offered) ? offered[0] : offered, BOX_TOKEN)) {
-      response.writeHead(401, { "content-type": "text/plain" });
-      response.end("sand-window-router: box token refused");
-      return;
-    }
-    delete request.headers[BOX_TOKEN_HEADER];
-  }
   const target = route(request);
   if (target.forbidden) {
     response.writeHead(403, { "content-type": "text/plain" });
@@ -84,5 +61,5 @@ const server = http.createServer((request, response) => {
 server.timeout = 0;
 server.keepAliveTimeout = 0;
 server.listen(listenPort, "0.0.0.0", () => {
-  process.stdout.write(`simeon-window-router listening pid=${process.pid} port=${listenPort} primary=${primaryPort} fork_base=${forkBase} (owner-token enforced${HANDS_ROLE ? ", box token required: agents on the brain" : ""})\n`);
+  process.stdout.write(`simeon-window-router listening pid=${process.pid} port=${listenPort} primary=${primaryPort} fork_base=${forkBase} (owner-token enforced)\n`);
 });

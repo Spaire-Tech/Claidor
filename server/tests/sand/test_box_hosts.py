@@ -175,21 +175,6 @@ def _spec(**overrides: Any) -> BoxSpec:
     return BoxSpec(**values)
 
 
-@pytest.mark.asyncio
-async def test_a_computer_made_with_the_app_browser_reads_back_as_such() -> None:
-    daemon = FakeDaemon()
-    client = httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=daemon.app), base_url="http://docker"
-    )
-    host = DockerBoxHost(
-        client, host_address="box.example", bundle=HostBundle.from_tar(_bundle_tar())
-    )
-    made = await host.create(_spec(labels={"com.simeonlabs.app-browser": "1"}))
-    read = await host.inspect(made.provider_box_id)
-    assert read is not None
-    assert read.app_browser == "1"
-
-
 def _bundle_tar() -> bytes:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
@@ -279,8 +264,6 @@ async def test_the_docker_provider_runs_the_macs_docker_run_with_the_bundle_moun
     legacy = await host.inspect(provisioned.provider_box_id)
     assert legacy is not None
     assert legacy.host_sha256 == bundle.host_sha256
-    # Made without the browser in the app: read back as such, so it is replaced.
-    assert legacy.app_browser is None
     assert set(container["HostConfig"]["PortBindings"]) == {
         "1340/tcp",
         "6080/tcp",

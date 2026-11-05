@@ -768,10 +768,6 @@ export class SandHost {
     return this.requireHostExtensions().api("webauthn-proxy");
   }
 
-  getLocalBrowserBridge(): unknown {
-    return this.requireHostExtensions().api("local-browser");
-  }
-
   async dispose(): Promise<void> {
     const extensions = this.hostExtensions;
     if (extensions == null) return;

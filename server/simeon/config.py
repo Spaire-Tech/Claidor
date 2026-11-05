@@ -450,17 +450,6 @@ class Settings(BaseSettings):
     # awake either way. Turn it on once the apps are tested against it.
     BOX_SLEEPS_WITH_APP_OPEN: bool = False
     BOX_IDLE_AFTER_RUN: timedelta = timedelta(minutes=10)
-    # The brain (5 November 2026, `docs/agents-on-the-server/README.md`,
-    # step 1): the agents' engine off the computer, on a Render service of
-    # its own, with the computer used only for its hands. BRAIN_USERS is the
-    # e-mail addresses whose agents run there, comma-separated (today only the
-    # founder's). Empty, or without BRAIN_URL and BRAIN_TOKEN, nobody's do,
-    # and every computer runs as before. BRAIN_URL is the brain's private
-    # address on Render's network; BRAIN_TOKEN is the secret the brain and
-    # the API share, entered on both services and nowhere else.
-    BRAIN_USERS: str = ""
-    BRAIN_URL: str = ""
-    BRAIN_TOKEN: str = ""
     # Per-box limits (Docker `--memory`, no swap beyond it, and `--cpus`).
     # Zero: no limit.
     BOX_MEMORY_LIMIT_MB: int = 4096

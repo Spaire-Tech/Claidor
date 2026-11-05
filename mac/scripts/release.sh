@@ -187,8 +187,6 @@ xcodebuild -exportArchive -archivePath "$WORK/Simeon.xcarchive" -exportPath "$WO
 }
 APP="$WORK/export/Simeon.app"
 [ -d "$APP" ] || fail "The export has no Simeon.app."
-# The Mac's browser (step 4b of docs/app-browser/README.md) into it, signed for Developer ID, before Apple checks it all.
-"$MAC/scripts/browser-helper.sh" "$APP" "$IDENTITY" --timestamp || fail "The browser could not be put into Simeon.app (above)."
 codesign --verify --deep --strict --verbose=2 "$APP"
 # grep reads all of codesign's output: `grep -q` stops at the first match, codesign
 # then dies of SIGPIPE, and pipefail read that as unsigned (17 October 2026).

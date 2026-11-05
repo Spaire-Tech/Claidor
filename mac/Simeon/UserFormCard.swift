@@ -17,8 +17,6 @@ struct UserFormCardView: View {
   @State private var values: [String: String] = [:]
   @State private var busy = false
   @State private var refusal: String?
-  /** The agent's page is in this Mac's browser (step 4b): the values are typed there. */
-  @State private var onMac = false
 
   var body: some View {
     CardShell(look: look) {
@@ -99,17 +97,11 @@ struct UserFormCardView: View {
           .font(.system(size: 9))
           .frame(width: 12, height: 12)
           .padding(.top, 3)
-        Text(onMac ? String(localized: "Typed into the page on this Mac, never shown to your agent.") : String(localized: "Typed into the page on Simeon's computer, never shown to your agent."))
+        Text("Typed into the page on Simeon's computer, never shown to your agent.")
           .font(.system(size: 13))
           .tracking(-0.08)
       }
       .foregroundStyle(look.inkTertiary)
-      // Asked once, without watching, where the agent's page is.
-      .task(id: agentId) {
-        let browser = MacBrowserHelper.shared
-        guard browser.running else { return }
-        onMac = MacBrowserHelper.showsHere(await browser.state(agentId), helpers: store.computerHelpers(agentId).count)
-      }
     }
   }
 

@@ -3,11 +3,8 @@ name: Windows app
 # The Windows app (windows/, docs/web-app/README.md step 7) on a Windows
 # runner: its tests, its typecheck, the app run for real against the
 # stand-in server on the runner itself (scripts/smoke.mjs: nothing outside
-# is reached), the browser in the app against a stand-in engine and test
-# pages (scripts/browser-smoke.mjs) and its view and Take control in the
-# app itself (scripts/browser-view-smoke.mjs), then a release's installer
-# (scripts/release.mjs, without --publish: nothing is uploaded), kept as an
-# artifact of the run.
+# is reached), then a release's installer (scripts/release.mjs, without
+# --publish: nothing is uploaded), kept as an artifact of the run.
 #
 # Two jobs:
 # - `build`, from any branch, with no secret: the installer unsigned. An
@@ -75,12 +72,6 @@ jobs:
 
       - name: Run the app against the stand-in
         run: npm run smoke
-
-      - name: Run the browser in the app against a stand-in engine
-        run: npm run browser-smoke
-
-      - name: Run the browser's view and Take control in the app
-        run: npm run browser-view-smoke
 
       - name: Build the installer (unsigned)
         run: node scripts/release.mjs

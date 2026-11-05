@@ -92,16 +92,6 @@ HOURLY_BUDGET_CODE = 40201
 #: A bad auth code, a bad refresh token, a missing bearer.
 log = structlog.get_logger()
 
-#: The user agent of the brain's credential (`issue_brain_credential`).
-BRAIN_CREDENTIAL_AGENT = "simeon-brain/"
-
-
-def kept_beside_the_box(row: DesktopSession) -> bool:
-    """A desktop's child credential that a box's own neither replaces nor
-    is replaced by: the local-exec daemon's, and the brain's."""
-    return row.user_agent.startswith(("simeon-local-exec/", BRAIN_CREDENTIAL_AGENT))
-
-
 AUTH_CODE_INVALID = 40101
 REFRESH_INVALID = 40102
 UNAUTHENTICATED = 40100
@@ -701,53 +691,6 @@ class DesktopService:
 
     # --- the box's own credential --------------------------------------------
 
-    async def issue_brain_credential(
-        self, session: AsyncSession, parent: DesktopSession
-    ) -> tuple[DesktopSession, str]:
-        """The brain's own credential (5 November 2026,
-        `docs/agents-on-the-server/README.md`, step 1c): the agents' engine
-        off the computer renews its access token with it, as the box does
-        with its own. It cannot share the box's: a renewal replaces the
-        row's one access token, so two holders would keep cancelling each
-        other. A child of the same desktop, marked by its user agent
-        (`simeon-brain/`), kept beside the box's credential as the
-        local-exec daemon's is, and revoked with the desktop on sign-out.
-        One live brain credential per desktop: asking again revokes the
-        last one."""
-        if parent.is_job_token or parent.is_box_credential or parent.is_revoked:
-            raise DesktopUnauthenticated(
-                "Only a signed-in desktop can ask for a brain credential."
-            )
-        now = utc_now()
-        repository = DesktopSessionRepository.from_session(session)
-        for previous in await repository.list_box_credentials_of(parent.id):
-            if previous.is_revoked or not previous.user_agent.startswith(
-                BRAIN_CREDENTIAL_AGENT
-            ):
-                continue
-            previous.revoked_at = now
-            session.add(previous)
-        access, access_hash = generate_token_hash_pair(
-            secret=settings.SECRET, prefix=ACCESS_TOKEN_PREFIX
-        )
-        credential, credential_hash = generate_token_hash_pair(
-            secret=settings.SECRET, prefix=BOX_CREDENTIAL_PREFIX
-        )
-        row = DesktopSession(
-            access_token_hash=access_hash,
-            access_expires_at=now + settings.DESKTOP_ACCESS_TOKEN_TTL,
-            refresh_token_hash=credential_hash,
-            refresh_expires_at=now + settings.DESKTOP_REFRESH_TOKEN_TTL,
-            user_agent=f"{BRAIN_CREDENTIAL_AGENT}{parent.id}"[:2000],
-            client_version=parent.client_version,
-            user_id=parent.user_id,
-            box_of_session_id=parent.id,
-        )
-        row.user = parent.user
-        session.add(row)
-        await session.flush()
-        return row, credential
-
     async def issue_box_credential(
         self, session: AsyncSession, parent: DesktopSession
     ) -> tuple[DesktopSession, str]:
@@ -776,8 +719,10 @@ class DesktopService:
         for previous in await repository.list_box_credentials_of(parent.id):
             # The local-exec daemon's credential is a child row too
             # (`simeon.sand.box_service`, user agent "simeon-local-exec/…")
-            # and is not replaced by a box's; nor is the brain's.
-            if previous.is_revoked or kept_beside_the_box(previous):
+            # and is not replaced by a box's.
+            if previous.is_revoked or previous.user_agent.startswith(
+                "simeon-local-exec/"
+            ):
                 continue
             previous.revoked_at = now
             session.add(previous)
@@ -823,7 +768,7 @@ class DesktopService:
             found is None
             or not found.is_box_credential
             or found.user_id != parent.user_id
-            or kept_beside_the_box(found)
+            or found.user_agent.startswith("simeon-local-exec/")
             or not found.user.can_authenticate
         ):
             return False
@@ -833,7 +778,7 @@ class DesktopService:
             if (
                 previous.id == found.id
                 or previous.is_revoked
-                or kept_beside_the_box(previous)
+                or previous.user_agent.startswith("simeon-local-exec/")
             ):
                 continue
             previous.revoked_at = now

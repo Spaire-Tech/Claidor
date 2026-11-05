@@ -47,7 +47,6 @@ from simeon.postgres import AsyncSession
 from simeon.routing import APIRouter
 
 from .box_e2b import KIND as E2B_KIND
-from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import BOX_PORTS, BoxHostError
 from .box_service import (
     ATTACHED_REFRESH_SECONDS,
@@ -56,7 +55,6 @@ from .box_service import (
     lets_sleep,
     mark_attached,
 )
-from .brain_users import brain_base_url, brain_on, user_id_on_brain
 
 log = structlog.get_logger()
 
@@ -111,12 +109,6 @@ def _default_client() -> httpx.AsyncClient:
 
 
 _client_factory: Callable[[], httpx.AsyncClient] = _default_client
-
-
-def upstream_client() -> httpx.AsyncClient:
-    """A client that dials a box, as the proxy does (the brain's door to the
-    computer's hands too, `brain.py`); a stand-in in tests."""
-    return _client_factory()
 
 
 def set_lookup_for_tests(lookup: BoxLookup | None) -> None:
@@ -299,9 +291,7 @@ async def _replacement(
 # --- a box asleep under a run's answer --------------------------------------------
 #
 # A run on the box can wait on an answer from an app: a command's output from
-# the person's Mac (`local-exec/responses`), a passkey (`webauthn/responses`),
-# or a browser step in the app's own browser (`local-browser/responses`,
-# docs/app-browser/protocol.md).
+# the person's Mac (`local-exec/responses`) or a passkey (`webauthn/responses`).
 # When the box slept or E2B froze it in between, E2B said "The sandbox was not
 # found" and the answer went nowhere (Nora's Stripe check, 27 October 2026:
 # the Mac's three tries at 18:38:01 refused, the box put to sleep a second
@@ -311,7 +301,7 @@ async def _replacement(
 # (EnsureSandBox), and reading never does.
 
 #: The paths that answer the box's own requests.
-ANSWERS = ("local-exec/responses", "webauthn/responses", "local-browser/responses")
+ANSWERS = ("local-exec/responses", "webauthn/responses")
 
 #: Wakes the person's box under their ensure lock (`broker.wake_locked`).
 BoxWake = Callable[[AsyncSession, UUID], Awaitable[str]]
@@ -352,98 +342,6 @@ async def _woken(
     return outcome, None if target is None else (current, target[0], target[1])
 
 
-# --- the engine on the brain -------------------------------------------------------
-#
-# For a person on the brain (`brain_users`, 5 November 2026), the agents'
-# engine runs off the computer, so the apps' calls to the engine's port go to
-# the brain's gateway: the same paths and the same bearer (the person's
-# gateway token, which the brain's engine checks), at the same address the
-# apps already keep. They never wake the computer and never count as it in
-# use; its screen (6080, 6081) and tunnel (8790) still go to the computer.
-
-#: The engine's gateway port on the computer (`gateway-server.ts`).
-GATEWAY_PORT = 1340
-#: The computer's own tokens, which the brain has no use for.
-NOT_FOR_THE_BRAIN = frozenset(
-    {
-        NETWORK_TOKEN_HEADER,
-        E2B_TRAFFIC_HEADER,
-        "x-simeon-box-token",
-        "x-simeon-brain-token",
-        "x-simeon-brain-user",
-    }
-)
-
-
-async def _proxy_to_brain(request: Request, box: SandBox, path: str) -> Any:
-    query = request.url.query
-    client = upstream_client()
-    upstream = client.build_request(
-        request.method,
-        f"{brain_base_url()}/{path}" + (f"?{query}" if query else ""),
-        headers={
-            name: value
-            for name, value in forwardable(request.headers).items()
-            if name.lower() not in NOT_FOR_THE_BRAIN
-        },
-        content=request.stream(),
-    )
-    try:
-        response = await client.send(upstream, stream=True)
-    except ClientDisconnect:
-        await client.aclose()
-        return Response(status_code=499)
-    except httpx.HTTPError as error:
-        await client.aclose()
-        log.warning(
-            "sand.box.proxy.brain_unreachable",
-            box=str(box.id),
-            path=path[:120],
-            error=type(error).__name__,
-        )
-        return JSONResponse(
-            {"error": "Simeon's agents did not answer. Try again in a minute."},
-            status_code=502,
-        )
-    if response.status_code >= 400:
-        content = await response.aread()
-        await response.aclose()
-        await client.aclose()
-        log.warning(
-            "sand.box.proxy.brain_error",
-            box=str(box.id),
-            path=path[:120],
-            status=response.status_code,
-            body=content[:300].decode("utf-8", "replace"),
-        )
-        return Response(
-            content=content,
-            status_code=response.status_code,
-            headers=forwardable(response.headers),
-        )
-
-    async def body() -> AsyncIterator[bytes]:
-        try:
-            async for chunk in response.aiter_raw():
-                yield chunk
-        except httpx.HTTPError as error:
-            log.info(
-                "sand.box.proxy.brain_stream_ended",
-                box=str(box.id),
-                path=path[:120],
-                error=type(error).__name__,
-            )
-        finally:
-            await response.aclose()
-
-    return StreamingResponse(
-        body(),
-        status_code=response.status_code,
-        headers=forwardable(response.headers),
-        background=BackgroundTask(client.aclose),
-    )
-
-
 # --- HTTP ------------------------------------------------------------------------
 
 
@@ -455,11 +353,6 @@ async def _proxy_http(
     if isinstance(resolved, JSONResponse):
         return resolved
     box, base, dial = resolved
-    if port == GATEWAY_PORT and brain_on():
-        async with sessions() as db:
-            on_brain = await user_id_on_brain(db, box.user_id)
-        if on_brain:
-            return await _proxy_to_brain(request, box, path)
     redis = _redis_of(request)
     sleeps = lets_sleep(request.headers)
     if redis is not None and not sleeps:
@@ -469,7 +362,7 @@ async def _proxy_http(
     except ClientDisconnect:
         return Response(status_code=499)
     query = request.url.query
-    client = upstream_client()
+    client = _client_factory()
 
     async def send(base: str, dial: dict[str, str]) -> httpx.Response | Response:
         upstream = client.build_request(

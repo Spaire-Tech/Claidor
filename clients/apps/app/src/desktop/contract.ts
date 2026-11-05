@@ -55,10 +55,6 @@ export interface DesktopCalls {
   setWindowLook(look: WindowLook): void
   /** The page has done what it does before the app quits (after `quitting`). */
   readyToQuit(): void
-  /** The page is asking the person whether to quit (an agent still at work in the app's browser): no time limit until its answer. */
-  holdQuit(): void
-  /** The person chose Cancel: the app stays open. */
-  cancelQuit(): void
 
   // MARK: 7b, signing in and the session
 
@@ -192,108 +188,7 @@ export interface DesktopCalls {
   handsAllowOnce(approval: HandsApproval): void
   /** The commands allowed once forgotten: a message sent, or Settings' Forget. */
   handsForgetOnce(): void
-
-  // MARK: The browser in the app (docs/app-browser/README.md, step 2b)
-
-  /** The agent whose browser on this PC the page shows (the Computer tab, its full view), or none: while watched, its state comes as `browserShown` and its page as `browserFrame`. The answer is its state now. */
-  browserWatch(agentId: string | null): BrowserShown | null
-  /** The agent's browser on this PC as it is now, read once without watching it (a card choosing where to open, step 3). */
-  browserState(agentId: string): BrowserShown
-  /** Take control of the agent's browser here (true: its next steps wait) or give it back (false: it is told to look again). The answer is its state now. */
-  browserControl(agentId: string, person: boolean): BrowserShown | null
-  /** The bar's buttons on the agent's tab, or one of its tabs chosen: the person's, while they have control. */
-  browserBar(agentId: string, act: BrowserBarAct): void
-  /** The person's pointer, wheel and keys on the agent's tab, while they have control. */
-  browserInput(agentId: string, input: BrowserInput): void
 }
-
-// MARK: The browser's shapes, for its calls above
-
-/** One of the agent's tabs on this PC. */
-export interface BrowserTabShown {
-  id: string
-  title: string
-  url: string
-  loading: boolean
-}
-
-/** The watched agent's browser on this PC. */
-export interface BrowserShown {
-  agentId: string
-  /** The server's switch is on for this person (the engine's last welcome): while it is off, the page shows nothing of the browser. */
-  enabled: boolean
-  /** The agent's tabs here, oldest first: none, and the Computer tab shows Simeon's computer. */
-  tabs: BrowserTabShown[]
-  /** The tab the agent acts on, the one shown. */
-  current?: string
-  canGoBack: boolean
-  canGoForward: boolean
-  /** The person has control: the agent's steps wait. */
-  person: boolean
-  /** A step of the agent's is running or waiting. */
-  working: boolean
-  /** Where the agent last pointed on its tab (in the page's 1280 × 800), how, and when (ms). */
-  pointer?: {
-    x: number
-    y: number
-    type: 'move' | 'click' | 'drag' | 'scroll'
-    at: number
-  }
-  /** The page's pointer under the person's (a CSS cursor). */
-  cursor: string
-}
-
-/** A picture of the agent's tab: a JPEG, the page's 1280 × 800. */
-export interface BrowserFrame {
-  agentId: string
-  tabId: string
-  jpeg: Uint8Array
-  width: number
-  height: number
-}
-
-/** Back, Forward, Reload, Stop, or a tab chosen. */
-export type BrowserBarAct =
-  | { act: 'back' | 'forward' | 'reload' | 'stop' }
-  | { act: 'select'; tabId: string }
-
-/** The person's input, in the page's own pixels (1280 × 800); `modifiers` as DevTools has them (Alt 1, Ctrl 2, Meta 4, Shift 8). */
-export type BrowserInput =
-  | {
-      kind: 'mouse'
-      type: 'mousePressed' | 'mouseReleased' | 'mouseMoved'
-      x: number
-      y: number
-      button: 'none' | 'left' | 'middle' | 'right'
-      buttons: number
-      clickCount: number
-      modifiers: number
-    }
-  | {
-      kind: 'wheel'
-      x: number
-      y: number
-      deltaX: number
-      deltaY: number
-      modifiers: number
-    }
-  | {
-      kind: 'key'
-      type: 'keyDown' | 'keyUp'
-      key: string
-      code: string
-      keyCode: number
-      /** The character it types, for a key that types one. */
-      text?: string
-      modifiers: number
-    }
-  /** Words from the keyboard's composition (accents, Chinese, Japanese…). */
-  | { kind: 'text'; text: string }
-  /** Ctrl+C, X, V, A, Z and Y, done by the tab with this PC's clipboard. */
-  | {
-      kind: 'edit'
-      command: 'copy' | 'cut' | 'paste' | 'selectAll' | 'undo' | 'redo'
-    }
 
 // MARK: 7f's shapes, for its calls above
 
@@ -330,10 +225,7 @@ export interface DesktopEvents {
   // MARK: 7a, the frame
 
   /** The app is about to quit: do what must be done (hang up, keep the chats), then `readyToQuit`. It waits a second at most. */
-  quitting: null | {
-    /** The agents with tabs in the app's browser (step 3c-2 of docs/app-browser/README.md): one at work there is asked about first. */
-    browsing: string[]
-  }
+  quitting: null
 
   // MARK: 7b, signing in and the session
 
@@ -403,13 +295,6 @@ export interface DesktopEvents {
   // `checkForUpdates` (the tray's Check for Updates…) is declared in 7c's section above: 7e's Updates page answers it with a check.
 
   // MARK: 7f, the agent's hands on this PC
-
-  // MARK: The browser in the app (step 2b)
-
-  /** The watched agent's browser changed (its tabs, their pages, who has control, the agent's pointer). */
-  browserShown: BrowserShown
-  /** A new picture of the watched agent's tab, as the page draws (20 a second at most, 30 while the person has control). */
-  browserFrame: BrowserFrame
 }
 
 // MARK: 7c's shapes

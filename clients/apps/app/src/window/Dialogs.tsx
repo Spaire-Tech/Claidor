@@ -41,8 +41,6 @@ export function Alert({
   onCancel,
   busy,
   busyAction,
-  other,
-  onOther,
 }: {
   title: string
   message: string
@@ -56,9 +54,6 @@ export function Alert({
   busy?: boolean
   /** The action's words while it is on its way ("Canceling…", the Mac's `PendingAlert`); its own words otherwise. */
   busyAction?: string
-  /** A second choice beside the action (the quit's Stop): the three stacked, as a Mac alert with three buttons. */
-  other?: string
-  onOther?: () => void
 }) {
   const first = useRef<HTMLButtonElement>(null)
   useTakesFocus(first)
@@ -92,13 +87,7 @@ export function Alert({
         />
         <div className="alert-title">{title}</div>
         {message !== '' && <div className="alert-message">{message}</div>}
-        <div
-          className={
-            other !== undefined && onOther
-              ? 'alert-buttons stacked'
-              : 'alert-buttons'
-          }
-        >
+        <div className="alert-buttons">
           {onCancel && (
             <button
               type="button"
@@ -107,16 +96,6 @@ export function Alert({
               onClick={onCancel}
             >
               {cancel ?? t('Cancel')}
-            </button>
-          )}
-          {other !== undefined && onOther && (
-            <button
-              type="button"
-              className="alert-button"
-              disabled={busy}
-              onClick={onOther}
-            >
-              {other}
             </button>
           )}
           <button
