@@ -65,6 +65,10 @@ OWNER_LABEL = "com.simeonlabs.box"
 #: A computer made with the browser in the app switched on
 #: (`SIMEON_APP_BROWSER=1`, 4 November 2026); one without is out of date.
 APP_BROWSER_LABEL = "com.simeonlabs.app-browser"
+#: Made with an engine role of its own (`SIMEON_ENGINE_ROLE`, 5 November 2026,
+#: `docs/agents-on-the-server/README.md`): `hands` for a person on the brain,
+#: whose agents' engine runs off the computer. None for everyone else.
+ENGINE_ROLE_LABEL = "com.simeonlabs.engine-role"
 LEGACY_OWNER_LABEL = "com.grok-bot.local-vm"
 SCHEMA_VERSION = "10"
 
@@ -186,6 +190,9 @@ class ProvisionedBox:
     #: The `com.simeonlabs.app-browser` label: made with the browser in
     #: the app switched on. None on a container made without.
     app_browser: str | None = None
+    #: The `com.simeonlabs.engine-role` label: `hands` on a computer made
+    #: for a person on the brain. None on one made without.
+    engine_role: str | None = None
     #: What the API needs to reach a box that is not a published Docker
     #: port: `{"kind": "e2b", "traffic_token": …}` (`box_service.dial_headers`).
     #: Empty for Docker.
@@ -674,6 +681,7 @@ class DockerBoxHost:
             or None,
             box_store=str(labels.get("com.simeonlabs.box-store") or "") or None,
             app_browser=str(labels.get(APP_BROWSER_LABEL) or "") or None,
+            engine_role=str(labels.get(ENGINE_ROLE_LABEL) or "") or None,
         )
 
     async def run_state(self, provider_box_id: str) -> BoxRunState | None:

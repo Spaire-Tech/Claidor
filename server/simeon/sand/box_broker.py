@@ -54,7 +54,13 @@ from .box_hosts import (
     BoxStorageDisabled,
 )
 from .box_repository import SandBoxRepository
-from .box_service import BoxBrokerRefused, BoxEnsureInProgress, broker, migrations
+from .box_service import (
+    BoxBrokerRefused,
+    BoxEnsureInProgress,
+    broker,
+    made_as_hands,
+    migrations,
+)
 from .brain_users import user_on_brain
 from .connect import ConnectCall, ConnectError, ConnectService
 
@@ -260,7 +266,9 @@ async def _on_brain_box(call: ConnectCall) -> SandBox | None:
     agents' engine at the brain through the same address (`box_proxy`), and
     the engine wakes the computer through its door when it needs the hands
     (`brain.py`). None when the computer has to be made (no row, or a row
-    the record says is gone): the ensure makes it, as before."""
+    the record says is gone), or made again in the `hands` role (one made
+    before the person was on the brain still runs the agents itself): the
+    ensure makes it, files kept, as before."""
     if not user_on_brain(call.caller.user):
         return None
     box = await SandBoxRepository.from_session(call.db).get_by_user(call.caller.user_id)
@@ -269,6 +277,7 @@ async def _on_brain_box(call: ConnectCall) -> SandBox | None:
         or not box.gateway_url
         or not box.gateway_token
         or box.state in GONE_STATES
+        or not made_as_hands(box)
     ):
         return None
     log.info(

@@ -580,6 +580,52 @@ would still run the old router, so 1e waits for the rebuild.
     - incoming work leaves the computer asleep.
 
     Three of them fail without the change.
+
+  **Part 3, the computer as hands only: done, 5 November 2026.**
+  - A computer for a person on the brain is made in the `hands` role. The
+    server records it three ways:
+    - `SIMEON_ENGINE_ROLE=hands` in its settings;
+    - the `com.simeonlabs.engine-role` label (E2B metadata);
+    - `engine_role` in the row's `host_meta`, so the door and
+      `EnsureSandBox` can tell without asking E2B.
+  - A computer with another role than the person's is out of date, as one
+    made without the browser was (#563). It is made again once, on its
+    files, after a fresh backup. Nobody else's computer changes: with no
+    role expected and none given, nothing is out of date.
+  - For a person on the brain, `EnsureSandBox` answers from the record only
+    once the computer is hands. Before that it runs the usual ensure, which
+    makes it again.
+  - The door refuses a computer that isn't hands yet (409
+    `computer_not_hands`): its own engine would run the agents next to the
+    brain's.
+  - **Decision: the sleeper doesn't ask the brain.** The plan had the sleep
+    timer ask the brain whether a job is running. It isn't needed: the door
+    already counts the computer as in use while the brain uses its hands,
+    and for 3 minutes after. Asking the brain would keep the computer awake
+    through turns that use only connectors, which is the cost this work
+    removes. If a long turn pauses between two commands, the computer may
+    sleep and is woken by the next command. E2B keeps its memory, so the
+    programs on it carry on. The founder may overrule this.
+  - Checked in tests:
+    - `test_box_broker.py`, 3: a person on the brain gets a hands computer,
+      and asking again makes nothing; everyone else gets no role; a
+      computer made before is made again as hands, once, on the same
+      volumes, and again without a role when taken off the list.
+    - `test_brain.py`, 2: the door refuses a computer that isn't hands, and
+      `EnsureSandBox` makes such a computer again.
+- **Switching it on, in this order** (1e; each step needs the founder):
+  1. Rebuild the computer image (1b), so the router checks its token.
+  2. Make the brain service on Render (1d) without starting it. Set
+     `SIMEON_BRAIN_USERS`, `SIMEON_BRAIN_URL` and `SIMEON_BRAIN_TOKEN` on the
+     API. From then on the apps' calls go to the brain, which isn't up yet,
+     so do steps 3 and 4 straight away.
+  3. In the app, Settings → Computer → Rebuild (files kept). The computer is
+     backed up and made again as hands. That fresh backup is what the brain
+     brings in.
+  4. Start the brain. At its first start it brings the agents and chats in
+     from the computer's backup, then backs up to its own store.
+  5. Check on the Mac: a message and a connector with the computer asleep,
+     then a website, which wakes it.
 - **1d. The brain service.** Its Dockerfile and start script in the repo,
   and the settings to make it on Render: a private service in Oregon,
   2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing

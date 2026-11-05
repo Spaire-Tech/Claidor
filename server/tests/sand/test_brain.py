@@ -258,10 +258,14 @@ async def _e2b_computer(
     user: User,
     *,
     state: str = "running",
+    hands: bool = True,
 ) -> SandBox:
+    """An E2B computer, made in the `hands` role unless `hands` is False."""
     box, _ = await _computer(client, session, user, state=state)
     box.host_address = "e2b.app"
     box.host_meta = {"kind": "e2b", "traffic_token": TRAFFIC}
+    if hands:
+        box.host_meta["engine_role"] = "hands"
     session.add(box)
     await session.commit()
     return box
@@ -482,8 +486,18 @@ class TestHandsDoor:
         )
         assert response.status_code == 401
         assert response.json()["error"] == "brain_token"
+        # A computer made before the person was on the brain runs the agents
+        # itself: never woken for the brain.
+        box.host_meta = {"kind": "e2b", "traffic_token": TRAFFIC}
+        session.add(box)
+        await session.commit()
+        response = await client.post(
+            HANDS_CALL, content=b"{}", headers=_brain_headers(user)
+        )
+        assert response.status_code == 409
+        assert response.json()["error"] == "computer_not_hands"
         # A Docker computer has no door.
-        box.host_meta = {"kind": "docker"}
+        box.host_meta = {"kind": "docker", "engine_role": "hands"}
         session.add(box)
         await session.commit()
         response = await client.post(
@@ -639,6 +653,25 @@ class TestTheAppsReachTheBrain:
         mocker.patch.object(settings, "BRAIN_USERS", "someone-else@example.com")
         record = await client.post(RUN_STATE, json={"fromRecord": True}, headers=auth)
         assert record.json()["letsSleep"] is True
+
+    async def test_a_computer_still_running_the_agents_itself_is_made_again(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        box, access = await _app_computer(client, session, user)
+        box.host_meta = {"kind": "e2b", "traffic_token": TRAFFIC}
+        session.add(box)
+        await session.commit()
+        _brain_on(mocker, user)
+        ensure = mocker.patch.object(broker, "ensure", autospec=True, return_value=box)
+        response = await client.post(
+            ENSURE, json={}, headers={"Authorization": f"Bearer {access}"}
+        )
+        assert response.status_code == 200, response.text
+        ensure.assert_called_once()
 
     async def test_a_computer_the_record_says_is_gone_is_made_again(
         self,

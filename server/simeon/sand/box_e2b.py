@@ -58,6 +58,7 @@ from . import box_store
 from .box_hosts import (
     APP_BROWSER_LABEL,
     BOX_PORTS,
+    ENGINE_ROLE_LABEL,
     HOST_COMPANIONS,
     BoxBlocked,
     BoxHostError,
@@ -238,6 +239,7 @@ class E2BBoxHost:
             metadata.get("host_sha256") or None,
             box_store=metadata.get("box_store") or None,
             app_browser=metadata.get("app_browser") or None,
+            engine_role=metadata.get("engine_role") or None,
             host_meta=meta,
         )
 
@@ -260,6 +262,9 @@ class E2BBoxHost:
         browser = spec.labels.get(APP_BROWSER_LABEL)
         if browser:
             metadata["app_browser"] = browser
+        role = spec.labels.get(ENGINE_ROLE_LABEL)
+        if role:
+            metadata["engine_role"] = role
         try:
             sandbox = await self.sdk.create(
                 template=self.template,

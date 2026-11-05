@@ -53,6 +53,7 @@ from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
     APP_BROWSER_LABEL,
     EGRESS_TUNNEL_PORT,
+    ENGINE_ROLE_LABEL,
     EVERYONE,
     FORK_NOVNC_PORT,
     GATEWAY_PORT,
@@ -67,6 +68,7 @@ from .box_hosts import (
     resolve_box_hosts,
 )
 from .box_repository import SandBoxRepository
+from .brain_users import user_id_on_brain
 
 log = structlog.get_logger()
 
@@ -114,9 +116,11 @@ class OutOfDate:
     image: bool = False
     store: bool = False
     browser: bool = False
+    #: Made with another engine role than the person's (`engine_role_for`).
+    role: bool = False
 
     def __bool__(self) -> bool:
-        return self.host or self.image or self.store or self.browser
+        return self.host or self.image or self.store or self.browser or self.role
 
 
 class BoxEnsureInProgress(Exception):
@@ -497,6 +501,30 @@ async def image_for(db: AsyncSession, user_id: UUID) -> str:
 APP_BROWSER_ENV = "SIMEON_APP_BROWSER"
 APP_BROWSER_ON = "1"
 
+#: The engine's role on the computer (`desktop/source/host/engine-role.ts`,
+#: 5 November 2026, `docs/agents-on-the-server/README.md`). For a person on
+#: the brain (`brain_users`) the computer is made in the `hands` role: its
+#: engine only keeps the computer's backup and serves the hands, and its
+#: window router lets in only calls that carry the computer's own token (the
+#: brain's door, `brain.py`). For everyone else no role is given and the
+#: engine runs everything, as before. A computer made with another role than
+#: the person's is out of date (`_out_of_date`) and replaced once, files kept.
+ENGINE_ROLE_ENV = "SIMEON_ENGINE_ROLE"
+HANDS_ROLE = "hands"
+#: Where the row says which role its computer was made with (`host_meta`),
+#: so the brain's door and EnsureSandBox can tell without asking the server.
+ENGINE_ROLE_META = "engine_role"
+
+
+async def engine_role_for(db: AsyncSession, user_id: UUID) -> str | None:
+    """The role a person's computer is made with: `hands` on the brain."""
+    return HANDS_ROLE if await user_id_on_brain(db, user_id) else None
+
+
+def made_as_hands(box: SandBox) -> bool:
+    """Whether the row's computer was made in the `hands` role."""
+    return (box.host_meta or {}).get(ENGINE_ROLE_META) == HANDS_ROLE
+
 
 # --- moving between servers ---------------------------------------------------
 
@@ -748,6 +776,10 @@ class BoxBrokerService:
             labels = {box_store.LABEL: box_store.LABEL_VALUE}
         extra_env = {**extra_env, APP_BROWSER_ENV: APP_BROWSER_ON}
         labels = {**labels, APP_BROWSER_LABEL: APP_BROWSER_ON}
+        role = await engine_role_for(db, parent.user_id)
+        if role is not None:
+            extra_env = {**extra_env, ENGINE_ROLE_ENV: role}
+            labels = {**labels, ENGINE_ROLE_LABEL: role}
         credential_id, credential = await self._mint_credential(db, parent, committed)
         box.credential_session_id = credential_id
         box.gateway_token = box.gateway_token or secrets.token_hex(32)
@@ -779,6 +811,13 @@ class BoxBrokerService:
         box.provider = host.name
         mark_running(box)
         self._apply(box, provisioned)
+        meta = {
+            key: value
+            for key, value in (box.host_meta or {}).items()
+            if key != ENGINE_ROLE_META
+        }
+        box.host_meta = meta if role is None else {**meta, ENGINE_ROLE_META: role}
+        log.info("sand.box.engine_role", box=str(box.id), role=role or "all")
 
     @staticmethod
     async def _image_on(db: AsyncSession, host: BoxHost, user_id: UUID) -> str:
@@ -931,19 +970,24 @@ class BoxBrokerService:
         backups were switched on (`box_store.py`) is replaced the same way,
         and one made without the browser in the app (4 November 2026)."""
         current = await host.inspect(box.provider_box_id)
-        stale_image = stale_store = stale_browser = False
+        stale_image = stale_store = stale_browser = stale_role = False
         if current is not None:
             stale_image = current.image != await self._image_on(db, host, box.user_id)
             stale_store = (
                 box_store.enabled() and current.box_store != box_store.LABEL_VALUE
             )
             stale_browser = current.app_browser != APP_BROWSER_ON
+            stale_role = current.engine_role != await engine_role_for(db, box.user_id)
         expected_host = getattr(host, "expected_host_sha256", None)
         stale_host = expected_host is not None and (
             current is None or current.host_sha256 != expected_host
         )
         return current, OutOfDate(
-            host=stale_host, image=stale_image, store=stale_store, browser=stale_browser
+            host=stale_host,
+            image=stale_image,
+            store=stale_store,
+            browser=stale_browser,
+            role=stale_role,
         )
 
     async def _token_rejected(self, box: SandBox) -> bool:
@@ -1023,9 +1067,15 @@ class BoxBrokerService:
             if state is not None and credential_live:
                 current, stale = await self._out_of_date(db, host, box)
             stale_host, stale_image, stale_store = stale.host, stale.image, stale.store
-            stale_browser = stale.browser
+            stale_browser, stale_role = stale.browser, stale.role
             if (
-                (stale_host or stale_image or stale_store or stale_browser)
+                (
+                    stale_host
+                    or stale_image
+                    or stale_store
+                    or stale_browser
+                    or stale_role
+                )
                 and state == "stopped"
                 and credential_live
                 and getattr(host, "keeps_files", True) is False
@@ -1037,7 +1087,7 @@ class BoxBrokerService:
                 await host.start(box.provider_box_id)
                 state = "running"
             if (
-                stale_host or stale_image or stale_store or stale_browser
+                stale_host or stale_image or stale_store or stale_browser or stale_role
             ) and state == "running":
                 # The upstream app's supervisor swaps the host only when the box is
                 # idle (the upgrade command waits while it is busy): a box
@@ -1051,8 +1101,10 @@ class BoxBrokerService:
                         stale_image=stale_image,
                         stale_store=stale_store,
                         stale_browser=stale_browser,
+                        stale_role=stale_role,
                     )
-                    stale_host = stale_image = stale_store = stale_browser = False
+                    stale_host = stale_image = stale_store = False
+                    stale_browser = stale_role = False
             if (
                 state is None
                 or not credential_live
@@ -1060,6 +1112,7 @@ class BoxBrokerService:
                 or stale_image
                 or stale_store
                 or stale_browser
+                or stale_role
             ):
                 # Absent on the host, its credential died with a sign-out, or
                 # the wrong host program or image: a fresh container on the
@@ -1073,6 +1126,7 @@ class BoxBrokerService:
                     stale_image=stale_image,
                     stale_store=stale_store,
                     stale_browser=stale_browser,
+                    stale_role=stale_role,
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
@@ -1700,6 +1754,7 @@ class BoxBrokerService:
                             box=str(box.id),
                             reason="unreachable",
                             stale_browser=stale.browser,
+                            stale_role=stale.role,
                         )
                 elif stale:
                     try:
@@ -1722,6 +1777,7 @@ class BoxBrokerService:
                             stale_image=stale.image,
                             stale_store=stale.store,
                             stale_browser=stale.browser,
+                            stale_role=stale.role,
                             awaiting_approval=health.busy_only_awaiting_approval,
                         )
                         update(box.user_id)
@@ -1763,6 +1819,7 @@ class BoxBrokerService:
                 stale_image=seen.image if seen is not None else None,
                 stale_store=seen.store if seen is not None else None,
                 stale_browser=seen.browser if seen is not None else None,
+                stale_role=seen.role if seen is not None else None,
                 update_sent_before=update_sent,
             )
             try:
