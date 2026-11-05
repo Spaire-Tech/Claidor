@@ -61,6 +61,7 @@ import {
   BOX_STORE_MANIFEST_RETRY_DELAY_MS,
 } from "./box-store-sync-service.js";
 import { BoxStoreCanonicalWriteConflictError } from "./object-store-port.js";
+import { engineRoleFromEnv } from "../../engine-role.js";
 
 export const BOX_COPY_IN_EXIT_NOOP = 0;
 export const BOX_COPY_IN_EXIT_FAILED = 1;
@@ -258,6 +259,9 @@ export async function runBoxCopyIn(deps: {
   log?: ((message: string) => void) | undefined;
   onProgress?: BoxStoreDownloadOptions["onProgress"] | undefined;
   onTrace?: BoxStoreDownloadOptions["onTrace"] | undefined;
+  /** Which of the backup's files this engine brings in (`copyInKeepsRelPath`):
+   * the brain takes the agents' folder alone. Unset, every file, as before. */
+  keepRelPath?: ((relPath: string) => boolean) | undefined;
 }): Promise<CopyInResult> {
   const log = deps.log ?? (() => {});
   let manifestPresent: boolean;
@@ -371,6 +375,11 @@ export async function runBoxCopyIn(deps: {
     }
   }
 
+  if (deps.keepRelPath != null) {
+    const before = manifest.size;
+    manifest = new Map([...manifest].filter(([relPath]) => deps.keepRelPath!(relPath)));
+    log(`bringing in ${manifest.size} of the backup's ${before} files (this engine's own folders)`);
+  }
   if (manifest.size === 0) return empty("store empty; first boot");
   if (hydrateSource === "legacy") {
     try {
@@ -520,6 +529,20 @@ async function runBoxCopyInWithRetry(
     result = await runBoxCopyIn(retryDeps);
   }
   return result;
+}
+
+/** The agents' folder in the backup (`buildBoxStoreCategories`' `sand-data`). */
+export const SAND_DATA_REL_PREFIX = "home/box/sand-data/";
+
+/**
+ * Which of the backup's files the engine brings in at start, by role
+ * (`engine-role.ts`; `docs/agents-on-the-server/README.md`, "The backups,
+ * kept apart"). The brain takes the agents' folder alone: the computer's
+ * files and Chrome's sign-ins stay on the computer, which brings them in
+ * itself. Other roles take every file, as before.
+ */
+export function copyInKeepsRelPath(env: NodeJS.ProcessEnv = process.env): ((relPath: string) => boolean) | undefined {
+  return engineRoleFromEnv(env) === "brain" ? (relPath) => relPath.startsWith(SAND_DATA_REL_PREFIX) : undefined;
 }
 
 export async function executeBoxCopyInFromEnv(
@@ -687,6 +710,7 @@ export async function executeBoxCopyInFromEnv(
           ...(legacySync === undefined ? {} : { legacySync }),
           targetDir: "/",
           downloadOwner: (await resolveCopyInDownloadOwner())!,
+          ...(copyInKeepsRelPath(env) === undefined ? {} : { keepRelPath: copyInKeepsRelPath(env) }),
           log,
           onProgress: progress => {
             progressEvents += 1;

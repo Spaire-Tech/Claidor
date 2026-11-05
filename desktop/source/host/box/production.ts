@@ -13,9 +13,11 @@ import {
   type BoxMcpControlClient
 } from "./box-mcp.js";
 import {
+  boxHandsRouteFromEnv,
   createBoxRemoteResourceAccessorFromTransport,
   createBoxTransport,
   pingBoxTransportClassified,
+  readBoxRunStateThroughRoute,
   type BoxControlClientFactory,
   type BoxPingControlClient,
   type BoxRemoteExecClient,
@@ -159,7 +161,11 @@ export function createProductionBoxInner<
   const transportFor = (endpoint: BoxEndpoint): Transport =>
     createBoxTransport(endpoint, generated.createTransport);
 
+  // Off the computer (the brain), its state comes from the server, which
+  // knows whether it sleeps; inside the computer it is always running.
+  const handsRoute = boxHandsRouteFromEnv();
   const loopback = createSandBox<Accessor>({
+    ...(handsRoute == null ? {} : { readRunState: () => readBoxRunStateThroughRoute(handsRoute) }),
     ...(options.host === undefined ? {} : { host: options.host }),
     ...(options.authToken === undefined ? {} : { authToken: options.authToken }),
     telemetry: options.telemetry,

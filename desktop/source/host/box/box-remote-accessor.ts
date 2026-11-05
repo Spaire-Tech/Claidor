@@ -227,6 +227,36 @@ export function boxHandsRouteFromEnv(env: Record<string, string | undefined> = p
   return { baseUrl: url.toString().replace(/\/+$/, ""), headers };
 }
 
+/** The computer's states as the apps read them (`CloudComputer.swift`):
+ * the screen is shown when running, "asleep" when hibernated, off otherwise. */
+export type BoxRunState = "running" | "hibernated" | "absent";
+
+/**
+ * The computer's state as the server has it, for an engine off the computer:
+ * `GET {SIMEON_HANDS_URL}/state` with the route's headers. The API answers it
+ * from its own record and never wakes the computer for it; no call to the
+ * hands program has a path without a dot, so this one can't be mistaken for
+ * one. When the server can't be asked, "running", which is what the engine on
+ * the computer always says.
+ */
+export async function readBoxRunStateThroughRoute(
+  route: BoxHandsRoute,
+  fetchImpl: typeof fetch = fetch,
+): Promise<BoxRunState> {
+  try {
+    const response = await fetchImpl(`${route.baseUrl}/state`, {
+      method: "GET",
+      headers: route.headers,
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) return "running";
+    const body = await response.json() as { state?: unknown };
+    return body.state === "hibernated" || body.state === "absent" ? body.state : "running";
+  } catch {
+    return "running";
+  }
+}
+
 export function createBoxTransport<Transport>(
   endpoint: BoxEndpoint,
   factory: BoxTransportFactory<Transport>,
