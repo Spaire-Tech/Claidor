@@ -28,6 +28,7 @@ from simeon.worker import (
 
 from .box_hosts import BoxHostError
 from .box_service import BoxBrokerRefused, BoxEnsureInProgress, broker
+from .brain_users import user_id_on_brain
 
 log = structlog.get_logger()
 
@@ -54,6 +55,12 @@ async def sand_box_hibernate_idle() -> None:
 @actor(actor_name="sand.box.wake", priority=TaskPriority.HIGH, max_retries=0)
 async def sand_box_wake(user_id: str, attempt: int = 1) -> None:
     async with AsyncSessionMaker() as session:
+        # A person on the brain (`brain_users`): their agents' engine is
+        # always on and takes the work itself; the computer is woken only
+        # when the engine needs its hands (`brain.py`, the door).
+        if await user_id_on_brain(session, UUID(user_id)):
+            log.info("sand.box.wake.on_brain", user=user_id)
+            return
         try:
             outcome = await broker.wake(session, UUID(user_id))
         except BoxHostError as error:
