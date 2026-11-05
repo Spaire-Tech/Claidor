@@ -10,6 +10,7 @@
 | [cost-test-set.md](cost-test-set.md) | Thirty real tasks to run before and after a change that could move cost or quality, and how to read the cost per reason. |
 | [ops/box-host/](ops/box-host/) | Setting up a server for cloud computers, and the settings Render needs. |
 | [launch-film.md](launch-film.md) | The film that introduces Simeon: the reference it follows, Iris (`clay-06`) presenting, the first test, and running Higgsfield from a session. |
+| [later.md](later.md) | Things the founder wants looked at later, each with where to start in the code. |
 | [kept-names.md](kept-names.md) | Which earlier names are still in the code, why, and how the name check works. |
 | [web-app/](web-app/README.md) | The web and Windows app: the Mac app's audit, area by area, against the old web app, read from the code (`scripts/web_app_inventory.py`); what the Mac's own parts become; the checks that keep it complete; the order of work. [PROGRESS.md](web-app/PROGRESS.md) is the running record: where it is, decisions, open questions, the log. |
 
