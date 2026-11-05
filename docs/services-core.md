@@ -1226,6 +1226,34 @@ because the worker runs the sleeper and the wake. Full steps are in
 Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE` empty so
 the API proxies the ports itself.
 
+**The brain** (5 November 2026, `docs/agents-on-the-server/README.md`): the
+agents' engine off the computer, for the accounts listed. None of these is set
+yet, and with any of them empty nobody's agents run there.
+
+| Setting | Value |
+|---|---|
+| `SIMEON_BRAIN_USERS` | the e-mail addresses whose agents run on the brain, comma-separated |
+| `SIMEON_BRAIN_URL` | the brain service's private address on Render's network |
+| `SIMEON_BRAIN_TOKEN` | the secret the brain and the API share; the same value on both services, typed into Render, never written anywhere else |
+
+The brain's routes (`simeon/sand/brain.py`) take the token in
+`x-simeon-brain-token`:
+- `POST /sand-box/brain/bootstrap`, with `{"email": …}`, is what the brain
+  starts the person's engine with. It returns their computer's gateway
+  token, a credential of the brain's own, the API's address, and the two
+  backup sources: the computer's, and the brain's own. The brain's credential
+  (user agent `simeon-brain/`) is a child of the device the computer's
+  belongs to. It never revokes the computer's and the computer's never
+  revokes it; asking again replaces the last brain credential.
+- `GET /sand-box/brain/hands/state`, with the person's user id in
+  `x-simeon-brain-user`, returns the computer's state from the record
+  (`running`, `hibernated`, `absent`) and never wakes it.
+
+Log lines: `sand.brain.bootstrap` (user, box, the computer's state) and
+`sand.brain.refused` (the reason: `brain_token`, `brain_user`,
+`not_on_brain`, `no_user`, `no_computer`, `signed_out`). Neither ever
+carries a token.
+
 ### In the app
 
 The runtime is the cloud (`remote`) unless `SAND_BOX_RUNTIME=local-docker`,
