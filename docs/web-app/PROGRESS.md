@@ -246,6 +246,7 @@ file and the code disagree, the code is right and this file is fixed.
 | 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
 | 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
 | 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
+| 5 November 2026 | The Help Center is the website's docs (`https://www.simeonlabs.com/docs`): the Mac's "Simeon Help Center" row and the iPhone's "Help Center" open them. The web app's row can come back pointing there (not done yet) | The founder |
 
 ## For Windows
 
@@ -726,9 +727,9 @@ For the founder, each to be answered before the step that needs it:
   there, unlinked, as the founder's way to look at the Windows app's page
   on a Mac, or take it off the website (the build then lives beside the
   Windows app only, and the website stops serving it)?
-- **Simeon Help Center.** The Mac's row does nothing (kept on 22 October
-  2026: "leave it there even tho it doesn't point to anything yet"); the
-  web leaves it out until it points somewhere. Where should it point?
+- **Simeon Help Center.** Answered 5 November 2026: the website's docs
+  (`https://www.simeonlabs.com/docs`), on the Mac and the iPhone. The web
+  app's row can come back now, pointing there; not done yet.
 - **A checkout's approval on Windows.** A checkout's Allow hands Link the
   approval only after Windows Hello says yes; where Hello isn't there, the
   window's alert asks and hands none, so Link asks in its own app, as on
@@ -816,6 +817,23 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 5 November 2026: the Help Center points at the docs
+
+The founder: "add a help center in iphone and link it to docs. link that
+in mac too."
+
+- **Done.** The Mac's "Simeon Help Center" row in Help & support, which did
+  nothing since 22 October, opens `https://www.simeonlabs.com/docs`
+  (`HelpSupport.openHelpCenter`, `mac/Simeon/SettingsGeneral.swift`). The
+  iPhone has a "Help Center" row first in the Send Feedback section of
+  Settings, opening the same page. The inventory was run again.
+- **Not done.** The web app's row, left out on 2 November until it pointed
+  somewhere (Decisions), is not back yet: the founder asked for the iPhone
+  and the Mac.
+- **Checked.** The page answers 200 ("SimeonLabs | Docs");
+  `check_translations.py` and `check_names.py` clean. **Not checked:** the
+  rows on a Mac or an iPhone (no Xcode here).
 
 ### 5 November 2026: the browser in the app and the agents on the server taken back out
 

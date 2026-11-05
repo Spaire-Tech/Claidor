@@ -651,8 +651,8 @@ private struct RuleIcon: View {
 
 /**
  * Help & support (the founder, 22 October 2026, with another app's for
- * reference: "leave it there even tho it doesn't point to anything yet"):
- * the Help Center on the web and Send feedback in one card, Report an issue
+ * reference): the Help Center on the web (the website's docs, since 5
+ * November 2026) and Send feedback in one card, Report an issue
  * with its bug in the next. Each goes through `HelpSupport`.
  */
 struct SettingsHelpPage: View {
@@ -675,12 +675,13 @@ struct SettingsHelpPage: View {
  * Where Help & support's rows and the account menu's Report an issue go.
  * Send feedback and Report an issue open their sheet over the window
  * (Feedback.swift, 30 October 2026), e-mailed to Simeon Labs once sent. The
- * Help Center is not pointed anywhere yet (the founder, 22 October 2026:
- * "i'll take care of it").
+ * Help Center is the website's docs (the founder, 5 November 2026: "add a
+ * help center … link it to docs"), as the iPhone's Settings opens them.
  */
 @MainActor
 enum HelpSupport {
-  static func openHelpCenter() {}
+  static let helpCenter = URL(string: "https://www.simeonlabs.com/docs")!
+  static func openHelpCenter() { NSWorkspace.shared.open(helpCenter) }
   static func sendFeedback() { FeedbackSheets.shared.showing = .feedback }
   static func reportIssue() { FeedbackSheets.shared.showing = .issue }
 }

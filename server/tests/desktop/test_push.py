@@ -730,7 +730,7 @@ class TestSendToApple:
             "aps": {
                 "alert": {"title": "Ada needs you", "body": "Which card should I use?"},
                 "sound": "default",
-                "badge": 1,
+                # No number: the app counts the chats waiting (BadgeShelf).
                 "mutable-content": 1,
                 "thread-id": "agent-1",
             },

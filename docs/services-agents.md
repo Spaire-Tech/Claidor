@@ -2262,6 +2262,11 @@ notifications are unchanged.
   (`ios/SimeonNotifications`, 12 October 2026) shows each one as a message from the agent, with
   the agent's picture and the app's icon in the corner. The app shows no banner for the chat
   on screen, and opening a chat clears its notifications (`ios/Simeon/Notifications.swift`).
+  Since 5 November 2026 these pushes carry no `badge` (it was 1 on every push, and nothing took
+  it off, so a phone with every chat read still showed 1). The number on the app's icon is the
+  chats the list shows as unread (`NotificationBadge`); the app keeps them in the App Group
+  (`ios/SimeonNotifications/BadgeShelf.swift`), and the extension adds a push's chat to them
+  while the app is closed.
 - The phone registers itself after sign-in: `POST /desktop/push-devices`
   `{"expo_push_token": "ExponentPushToken[…]", "platform": "ios"}` (`ExpoPushToken[…]` is taken
   too; anything else is 422), with the desktop token the app's sign-in gives (`/auth/poll`,

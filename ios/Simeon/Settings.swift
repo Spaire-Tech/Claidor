@@ -115,6 +115,8 @@ struct SettingsSheet: View {
         }
         .listRowBackground(Ink.groupedRow)
         Section {
+          // The founder, 5 November 2026: a Help Center, the website's docs, first.
+          LegalLink(title: String(localized: "Help Center"), url: Legal.helpCenter)
           // The founder, 30 October 2026: Send Feedback and Report an Issue, e-mailed to Simeon Labs (Feedback.swift).
           NavigationLink { SendFeedbackPage() } label: { Text("Send Feedback").foregroundStyle(Ink.primary) }
           NavigationLink { ReportIssuePage() } label: { Text("Report an Issue").foregroundStyle(Ink.primary) }
@@ -219,6 +221,8 @@ struct SettingsSheet: View {
 enum Legal {
   static let privacy = URL(string: "https://www.simeonlabs.com/privacy")!
   static let terms = URL(string: "https://www.simeonlabs.com/terms")!
+  /** The Help Center: the website's docs (sites/simeonlabs.com/source/docs.py), as the Mac's Help & support opens them. */
+  static let helpCenter = URL(string: "https://www.simeonlabs.com/docs")!
 }
 
 /** A page on the web from Settings: its name, and the arrow out at the right, as the reference has them. */

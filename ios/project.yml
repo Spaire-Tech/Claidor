@@ -62,6 +62,8 @@ targets:
         buildPhase: resources
       # The agents' pictures, shared with the notification extension.
       - path: SimeonNotifications/PictureShelf.swift
+      # The chats waiting to be read, for the icon's number (shared too).
+      - path: SimeonNotifications/BadgeShelf.swift
     dependencies:
       - package: SimeonCore
       - package: ElevenLabs
