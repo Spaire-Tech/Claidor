@@ -55,3 +55,19 @@ the command's output included.
 
 Take the stand-in `start-window`, `stop-window` and `/workspace` away
 afterwards.
+
+## Through the API's door (step 1a)
+
+To check an engine that reaches the computer only through the API, move the
+stand-in computer off its usual ports: run the hands program on 41337 and the
+router with `simeon-window-router.mjs 41339 41337 14000`. Then start the
+stand-in API with `PROBE_BRAIN_TOKEN=<a token> PROBE_ROUTER_PORT=41339`, and
+the engine with these settings added:
+
+```sh
+SIMEON_HANDS_URL=http://127.0.0.1:41400/hands \
+SIMEON_HANDS_HEADERS='{"x-simeon-brain-token":"<the same token>","x-simeon-brain-user":"probe-user"}'
+```
+
+`api.log` then shows every call to the computer as a `hands` line: the path,
+the answer, the window (`display`) and how long it took.

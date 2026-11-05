@@ -283,7 +283,8 @@ Two rules hold:
    carries the seven changes step 0 found. Checked by talking to an
    agent and using a connector with the computer asleep, then opening a
    website, which wakes it, with the time each step takes through the
-   proxy written down.
+   proxy written down. Started 5 November 2026 on the founder's "go ahead
+   with step 1"; [its pieces](#step-1-in-pieces) are below.
 2. **Cards on the server.** Hand-offs, approvals and permission prompts
    live in the engine's data, not its memory, so a restart can't strand
    them.
@@ -295,7 +296,94 @@ Two rules hold:
    server automatically, so opening it never wakes the computer.
 5. **The computer as hands only.** The engine is no longer started on the
    computer. The computer image keeps the exec daemon,
-   Chrome, the screen and the files.
+   Chrome, the screen and the files. Most of this comes with step 1 (the
+   engine's `hands` role, 1a); step 5 removes what is left.
+
+### Step 1, in pieces
+
+Reading the code for step 1 (5 November 2026) found four things step 0's
+list missed:
+- **The computer's files are backed up by the engine.** `/workspace`,
+  Chrome's sign-ins and the command-line tools' settings are copied to the
+  backup by the engine on the computer (`box-store-sync`, its categories
+  `workspace`, `chrome-profile`, `cli-config`). A computer the server
+  rebuilds gets them back from that backup. So a small part of the engine
+  has to stay on the computer, or a rebuild would lose them.
+- **Two engines must not both answer.** If the computer's engine kept
+  running beside the brain, both would read the same inbox and run the
+  same routines, and every message would be answered twice.
+- **The sleep timer asks the computer's engine whether it is busy**
+  (`/health`). With the agents on the brain, it has to ask the brain, or
+  the computer could sleep in the middle of one of the brain's commands.
+- **The Computer tab gets the computer's state and screen address from
+  the engine** (`getForeverBoxStatus`). On the brain, the engine has to
+  read them from the server.
+
+Each piece below is safe by itself. Nothing changes for the founder until
+1e turns it on, and turning it off puts everything back on the computer.
+
+- **1a. The engine's two roles.** One setting, `SIMEON_ENGINE_ROLE`:
+  - `brain` (on Render): everything the person talks to. It reaches the
+    computer through the API, sends phone notifications, writes the
+    agents' reference pages onto the computer, reads the computer's state
+    from the server for the Computer tab, and backs up its own data;
+  - `hands` (on the computer): only what has to stay there. That is backing
+    up and restoring the computer's files, the disk check and the log. No
+    agents, no inbox, no routines;
+  - not set: as today.
+
+  **The backups, kept apart.** A person's backups are kept by source
+  (`box_store.py`: `store_id(user, source)`), and the server makes a store
+  for any source it is given. A store has one record of what it holds, and
+  each backup run also clears the agents' databases it does not find on its
+  own disk (`pruneMissingAgentStoreDbs`). So if a computer with no agents
+  backed up into the agents' store, it would erase them. Therefore:
+  - the brain backs up the agents and chats (`sand-data`) to a store of its
+    own. The first time, it brings them in from the computer's store;
+  - the computer backs up only its files (`workspace`, `chrome-profile`,
+    `cli-config`) to its own store, as today, and never runs the agents'
+    part. The agents' copy already in the computer's store stays as it was
+    at the switch: it is the way back if the brain is turned off.
+
+  **Part 1, the hands through the API: done, 5 November 2026.** Two
+  settings, `SIMEON_HANDS_URL` and `SIMEON_HANDS_HEADERS`
+  (`box-remote-accessor.ts`, `boxHandsRouteFromEnv`). When they are set,
+  every call to the computer goes to that address, with those headers
+  added. A half-set or malformed one stops the call with a message naming
+  the setting, never its value. Checked on the test machine:
+  - the computer's usual ports (1337, 1339) were closed and its hands and
+    router ran on other ports, so nothing could reach them directly;
+  - a stand-in for the API's door (`stand-in-api.mjs`, `/hands`) forwarded
+    calls to the router;
+  - a turn ran: 11 calls to the computer, all through the door, first to
+    the main hands program and then to the agent's own window; the file was
+    made in `/workspace`;
+  - without the brain's token, the door answered 401.
+
+  The tests are in `desktop/tests/hands-route.test.mjs`.
+- **1b. The computer image.** The router on 1339 lets a request from
+  outside the computer through only with the computer's own gateway token,
+  which the server already holds. The supervisor starts the engine as
+  `hands` when the server says so. The image is rebuilt once.
+- **1c. The server.** For a person on the brain (a list of e-mail
+  addresses in one setting; today only the founder's):
+  - the apps' calls go to the brain, not the computer, and never wake it;
+  - a door to the computer's router for the brain alone, with its own
+    token; it wakes the computer first;
+  - the sleep timer asks the brain whether a job is running;
+  - the brain is given the person's tokens and model credential when it
+    starts;
+  - the computer is made with the `hands` role: rebuilt once, its files
+    kept from the backup.
+- **1d. The brain service.** Its Dockerfile and start script in the repo,
+  and the settings to make it on Render: a private service in Oregon,
+  2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing
+  here can reach Render), and adds the brain's token to it and to the API
+  without pasting it anywhere.
+- **1e. On for the founder.** A fresh backup first. The brain brings the
+  founder's agents and chats in from it, then the switch is turned on. It
+  is checked on the founder's Mac: a message and a connector with the
+  computer asleep, then a website, which wakes it.
 
 ## Decisions (taken 4 November 2026; the founder may overrule)
 
