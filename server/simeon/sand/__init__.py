@@ -16,6 +16,7 @@ from simeon.routing import APIRouter
 
 from . import (
     box_broker,
+    brain,
     cloud_agents,
     dashboard,
     listeners,
@@ -33,6 +34,7 @@ router.include_router(box_broker.router)
 router.include_router(cloud_agents.router)
 router.include_router(skill_registry.router)
 router.include_router(sharing.router)
+router.include_router(brain.router)
 # After every served service.
 router.include_router(unimplemented_router("simeon.v1", "aiserver.v1", "agent.v1"))
 

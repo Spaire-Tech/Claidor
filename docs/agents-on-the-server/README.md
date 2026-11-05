@@ -483,6 +483,31 @@ would still run the old router, so 1e waits for the rebuild.
     starts;
   - the computer is made with the `hands` role: rebuilt once, its files
     kept from the backup.
+  **Part 1, the brain's own routes: done, 5 November 2026.**
+  - Three settings: `SIMEON_BRAIN_USERS`, `SIMEON_BRAIN_URL`,
+    `SIMEON_BRAIN_TOKEN` (`docs/services-core.md`, "The brain"). With any
+    of them empty, nothing changes for anyone.
+  - `POST /sand-box/brain/bootstrap` gives the brain what it starts the
+    person's engine with.
+  - `GET /sand-box/brain/hands/state` gives the computer's state from the
+    record.
+  - The brain's credential is new (`issue_brain_credential`, user agent
+    `simeon-brain/`). It can't share the computer's: a renewal replaces the
+    credential's one access token, so two holders would keep cancelling each
+    other. It is kept beside the computer's as the Mac's local helper's is
+    (`kept_beside_the_box`): neither revokes the other, and both move to
+    another signed-in device when one signs out.
+  - Checked in tests (`server/tests/sand/test_brain.py`, 7):
+    - the refusals;
+    - what the brain gets;
+    - the brain's credential and the computer's both renewing;
+    - a new brain credential replacing the last one but never the
+      computer's;
+    - a new computer credential never revoking the brain's;
+    - the state.
+
+    The desktop and computer suites pass except 10 model and proxy tests,
+    which fail the same way on `main`.
 - **1d. The brain service.** Its Dockerfile and start script in the repo,
   and the settings to make it on Render: a private service in Oregon,
   2 GB, a 1 GB disk. The founder makes it in Render's dashboard (nothing
