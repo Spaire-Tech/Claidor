@@ -21,8 +21,10 @@ final class NotificationService: UNNotificationServiceExtension {
 
   override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
     handler = contentHandler
-    original = request.content
-    let shown = Self.message(from: request.content) ?? request.content
+    // The icon's number: the chats waiting, this one with them (BadgeShelf). None for a push from no chat.
+    let badge = Self.badge(for: request.content)
+    original = Self.counted(request.content, badge)
+    let shown = Self.message(from: request.content, badge: badge) ?? Self.counted(request.content, badge)
     handler = nil
     contentHandler(shown)
   }
@@ -32,7 +34,20 @@ final class NotificationService: UNNotificationServiceExtension {
     handler = nil
   }
 
-  static func message(from content: UNNotificationContent) -> UNNotificationContent? {
+  /** How many chats wait once this push's chat is among them; nil for a push from no chat. */
+  static func badge(for content: UNNotificationContent) -> NSNumber? {
+    guard let agentId = content.userInfo["agentId"] as? String, !agentId.isEmpty else { return nil }
+    return NSNumber(value: BadgeShelf.adding(agentId))
+  }
+
+  /** The push as it came, with the icon's number when there is one. */
+  static func counted(_ content: UNNotificationContent, _ badge: NSNumber?) -> UNNotificationContent {
+    guard let badge, let mutable = content.mutableCopy() as? UNMutableNotificationContent else { return content }
+    mutable.badge = badge
+    return mutable
+  }
+
+  static func message(from content: UNNotificationContent, badge: NSNumber? = nil) -> UNNotificationContent? {
     guard let agentId = content.userInfo["agentId"] as? String, !agentId.isEmpty else { return nil }
     let given = (content.userInfo["agentName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let name = given.isEmpty ? senderName(fromTitle: content.title) : given
@@ -63,6 +78,7 @@ final class NotificationService: UNNotificationServiceExtension {
     interaction.donate(completion: nil)
     guard let mutable = content.mutableCopy() as? UNMutableNotificationContent else { return nil }
     mutable.body = words
+    if let badge { mutable.badge = badge }
     return try? mutable.updating(from: intent)
   }
 

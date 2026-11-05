@@ -104,12 +104,16 @@ def payload(
     from the agent, with its picture and the app's icon in the corner;
     `thread-id` keeps each chat's notifications together. Without the
     extension (an older build), the alert shows as it is.
+
+    No `badge`: it set the app's icon to 1 on every push, and nothing took
+    it off again, so a phone with every chat read still showed 1 (the
+    founder, 5 November 2026). The app counts the chats waiting itself, and
+    the extension adds the push's chat to that count (`BadgeShelf`).
     """
     message: dict[str, Any] = {
         "aps": {
             "alert": {"title": title, "body": body},
             "sound": "default",
-            "badge": 1,
             "mutable-content": 1,
             "thread-id": agent_id,
         },

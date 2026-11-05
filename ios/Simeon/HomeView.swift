@@ -56,8 +56,13 @@ struct HomeView: View {
     guard orgChartOn && store.hasAgents else { return nil }
     return { letGoOfSearch(); showsOrgChart = true }
   }
-  /** The search field has the focus. */
-  @FocusState private var searchFocused: Bool
+  /**
+   * The search field has the keyboard, as the bar at the foot tells it (ListBottomBar); set here to put the keyboard
+   * away or to give it (`--screen=search`). A plain value, not a FocusState: the field is in the bar at the foot
+   * (`safeAreaBar`), and focus bound across to this screen never reached it, so tapping Search opened nothing until a
+   * letter was typed (the founder, 5 November 2026: "No tabs when I tap Search").
+   */
+  @State private var searchFocused = false
   /**
    * Search is open (SearchResults over the list): from the field's first focus until it is closed (×, the swipe down,
    * a result opened with nothing typed). Not the focus itself: scrolling the results puts the keyboard away, and with
@@ -129,7 +134,7 @@ struct HomeView: View {
             deletingPicked = picked.compactMap { store.agent($0) }
           }, done: endSelecting)
         } else {
-          ListBottomBar(query: $query, focus: $searchFocused, searching: inSearch, close: closeSearch, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
+          ListBottomBar(query: $query, focused: $searchFocused, searching: inSearch, began: { searching = true }, close: closeSearch, newAgent: { sheet = .newAgent }, newGroup: { sheet = .newGroup })
         }
       }
       .inlineBarTitle()
@@ -252,6 +257,11 @@ struct HomeView: View {
     .task(id: store.hasAgents) { openAtLaunch() }
     // Each agent's picture where the notification extension finds it, as it changes (NotificationPictures).
     .task(id: NotificationPictures.keys(store.agents)) { NotificationPictures.save(store.agents) }
+    // The icon's number: the chats waiting to be read, as the list shows them (NotificationBadge); untouched until the
+    // list has its agents, so a launch that cannot read them leaves the number as it was.
+    .task(id: store.hasAgents ? NotificationBadge.unread(store.agents) : nil) {
+      if store.hasAgents { NotificationBadge.show(NotificationBadge.unread(store.agents)) }
+    }
     // A tapped notification opens that agent's chat (once the roster has it).
     .task(id: OpenRequest(agent: Notifications.shared.openAgent, ready: store.hasAgents)) {
       guard let agentId = Notifications.shared.openAgent, store.agent(agentId) != nil else { return }
@@ -601,13 +611,18 @@ private struct ListFilterMenu: View {
 /** The list's foot, as Messages': the search field in glass with its mic, and new chat in a glass circle at the right; while searching, a close in its place. */
 struct ListBottomBar: View {
   @Binding var query: String
-  var focus: FocusState<Bool>.Binding
+  /** The screen's word on the keyboard: told when the field takes it or lets it go; set by the screen to put it away or give it. */
+  @Binding var focused: Bool
   /** Search is open: × in the place of new chat. */
   let searching: Bool
+  /** The field took the keyboard: search opens at once, its tabs at the top, before a letter is typed. */
+  let began: () -> Void
   let close: () -> Void
   let newAgent: () -> Void
   let newGroup: () -> Void
   @State private var dictation = Dictation()
+  /** The field's own focus, kept beside it: the bar is drawn apart from the screen (`safeAreaBar`). */
+  @FocusState private var hasFocus: Bool
 
   var body: some View {
     HStack(spacing: 10) {
@@ -615,9 +630,16 @@ struct ListBottomBar: View {
         Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary)
         TextField("Search", text: $query)
           .font(.system(size: 17))
-          .focused(focus)
+          .focused($hasFocus)
           .submitLabel(.search)
           .autocorrectionDisabled()
+          .onChange(of: hasFocus) { _, now in
+            if now { began() }
+            if focused != now { focused = now }
+          }
+          .onChange(of: focused, initial: true) { _, now in
+            if hasFocus != now { hasFocus = now }
+          }
         if !query.isEmpty {
           Button { query = "" } label: {
             Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
@@ -637,7 +659,7 @@ struct ListBottomBar: View {
       }
       .padding(.leading, 14).padding(.trailing, 8)
       .frame(height: 48)
-      .background { Color.clear.contentShape(.capsule).onTapGesture { focus.wrappedValue = true } }
+      .background { Color.clear.contentShape(.capsule).onTapGesture { hasFocus = true; began() } }
       // Glass, not interactive glass: the field and its buttons take the touches (GlassDisc).
       .glassEffect(.regular, in: .capsule)
       if searching {

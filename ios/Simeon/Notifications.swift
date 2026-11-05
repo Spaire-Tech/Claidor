@@ -33,6 +33,8 @@ final class Notifications {
    * screen, whose message is already there; a banner for another chat.
    */
   func presentation(for agentId: String?) -> UNNotificationPresentationOptions {
+    // The extension counted the push's chat; the list says whether it really waits (the chat may be on screen).
+    NotificationBadge.refresh()
     if let agentId, let store, store.isForeground, agentId == store.openChat { return [] }
     return [.banner, .list, .sound]
   }
@@ -76,8 +78,9 @@ final class Notifications {
       if let api { await start(api: api) }
     } else {
       if let api, let token { try? await api.registerPushDevice(apnsToken: token, sandbox: Self.sandbox, remove: true) }
-      try? await UNUserNotificationCenter.current().setBadgeCount(0)
     }
+    // Off: no number; on again: the chats waiting, as the list last showed them.
+    NotificationBadge.refresh()
   }
 
   /** After sign-in: asks once, then registers this phone with Apple and, through it, with Simeon; not while Settings has them off. */
@@ -114,7 +117,47 @@ final class Notifications {
   func stop() async {
     if let api, let token { try? await api.registerPushDevice(apnsToken: token, sandbox: Self.sandbox, remove: true) }
     api = nil
-    try? await UNUserNotificationCenter.current().setBadgeCount(0)
+    NotificationBadge.forget()
+  }
+}
+
+/**
+ * The number on the app's icon: the chats the list shows as unread, and
+ * none when there are none (5 November 2026, the founder: "apple shows
+ * notifications 1 even when there is no"). Every push used to set it to 1
+ * and only signing out took it off. Written as the list's unread chats
+ * change and when a push arrives with the app open; kept in the App Group
+ * (BadgeShelf) for the notification extension, which adds a push's chat
+ * while the app is closed.
+ */
+@MainActor
+enum NotificationBadge {
+  /** The unread chats last shown, for a push heard with the app open. */
+  private static var last: Set<String>?
+
+  /** The chats waiting to be read: those the list shows with the unread dot (not hidden ones). */
+  static func unread(_ agents: [Agent]) -> Set<String> {
+    Set(agents.filter { $0.hasUnread && !$0.isHidden }.map(\.id))
+  }
+
+  static func show(_ ids: Set<String>) {
+    // With Settings › Notifications off, no number either.
+    let shown = Notifications.isOn ? ids : []
+    last = ids
+    Task.detached(priority: .utility) { BadgeShelf.write(shown) }
+    Task { try? await UNUserNotificationCenter.current().setBadgeCount(shown.count) }
+  }
+
+  /** The list's own count again: over the extension's when a push is heard with the app open, or as Settings › Notifications turns. */
+  static func refresh() {
+    show(last ?? [])
+  }
+
+  /** Signed out: no number, nothing kept for the next account. */
+  static func forget() {
+    last = nil
+    Task.detached(priority: .utility) { BadgeShelf.clear() }
+    Task { try? await UNUserNotificationCenter.current().setBadgeCount(0) }
   }
 }
 
