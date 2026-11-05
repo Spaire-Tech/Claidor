@@ -309,6 +309,8 @@ private struct Transcript: View {
   @State private var arrivals = Arrivals()
   /** The agents' messages that came while the chat was read further up: the count on ⌄. */
   @State private var unseen = 0
+  /** Words a drag chose across the messages (`TranscriptSelection`). */
+  @State private var selection = TranscriptSelection()
 
   /** The chat's rows, or the open thread's. */
   private var allRows: [ChatRow] { threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? [] }
@@ -337,6 +339,8 @@ private struct Transcript: View {
     let entering = arrivals.entering(rows.map(\.id), of: "\(agentId)|\(threadRoot ?? "")", pinned: pinned)
     // Each entry's time, for a sideways swipe (`Lpt`'s `timestampMs`).
     let times = Dictionary((store.transcripts[agentId] ?? []).compactMap { entry in entry.timestampMs.map { (entry.id, $0) } }, uniquingKeysWith: { first, _ in first })
+    // The rows as drawn, for ⌘C to copy the messages a choice runs through (in view or not).
+    let _ = (selection.rows = rows)
     GeometryReader { box in
       let width = max(0, box.size.width - 32)
       ScrollView {
@@ -348,6 +352,13 @@ private struct Transcript: View {
               // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
               TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, entering: entering.contains(row.id), time: Transcript.time(of: row, in: times), look: look)
                 .environment(\.findMarks, find?.marks(for: row.id))
+                // Where the row is, for a drag to know whose words it starts and ends in.
+                .onGeometryChange(for: CGRect.self) { proxy in
+                  proxy.frame(in: .named(TranscriptSelection.space))
+                } action: { frame in
+                  selection.place(row.id, frame)
+                }
+                .onDisappear { selection.forget(row.id) }
             }
           }
           ActivitySlot(agent: agent, line: activity, look: look)
@@ -357,6 +368,17 @@ private struct Transcript: View {
         // chat stood empty for a moment (16 October 2026).
         .animation(nil, value: width)
         .scrollTargetLayout()
+        // A drag over the chat chooses words across its messages, and a click lets them go, as on a page (the founder,
+        // 5 November 2026: "you should be able to select all"; `TranscriptSelection`). The whole width takes it, the
+        // room beside a bubble too; a click still reaches what is under it.
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+          DragGesture(minimumDistance: 3, coordinateSpace: .named(TranscriptSelection.space))
+            .onChanged { drag in selection.drag(from: drag.startLocation, to: drag.location) }
+        )
+        .simultaneousGesture(SpatialTapGesture().onEnded { _ in selection.clear() })
+        .coordinateSpace(.named(TranscriptSelection.space))
+        .environment(selection)
         .padding(.horizontal, 16)
         .padding(.top, (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight))
         // Over the message field: its frame and 28 (the working line's 40 is in the slot).
@@ -375,7 +397,11 @@ private struct Transcript: View {
         pinned = false
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
       }
+      // Another chat or thread: the words chosen in this one go.
+      .onChange(of: agentId) { _, _ in selection.clear() }
+      .onDisappear { selection.clear() }
       .onChange(of: threadRoot) { _, _ in
+        selection.clear()
         // A quote that opened the thread jumps to its message there; otherwise the thread opens at its newest.
         if let id = control.jumpAfterThread, rows.contains(where: { $0.id == id }) {
           control.jumpAfterThread = nil
@@ -573,12 +599,15 @@ private struct TranscriptRow: View {
   let look: Look
   @Environment(ChatControl.self) private var control
   @Environment(\.findMarks) private var findMarks
+  @Environment(TranscriptSelection.self) private var selection: TranscriptSelection?
 
   private var startsGroup: Bool { run.startsGroup }
 
   var body: some View {
     let mine = row.side == .person
     content
+      // Whose words a drag over the chat chooses (`TranscriptSelection`).
+      .environment(\.transcriptRow, row.id)
       .padding(.vertical, 2)
       .modifier(PeekShift(mine: mine))
       .modifier(RowEntrance(active: entering && Transcript.enters(row), anchor: mine ? .bottomTrailing : .bottomLeading))
@@ -610,7 +639,8 @@ private struct TranscriptRow: View {
       CallLineRow(id: id, seconds: seconds, lines: lines, live: live, agentId: agentId, look: look)
     case .notice(_, let text):
       // Spaced as the chat's other events ("Messaged Sage", `SystemEvent`): it sat against the bubble above.
-      FindLine.marked(text, marks: findMarks, look: look)
+      FindLine.marked(text, marks: findMarks, look: look, marksWords: selection?.active == true)
+        .modifier(Choosable())
         .font(.system(size: 12))
         .foregroundStyle(look.inkSecondary)
         .multilineTextAlignment(.center)
@@ -780,6 +810,8 @@ private struct BubbleRow: View {
   @Environment(WindowState.self) private var window
   @Environment(ChatControl.self) private var control
   @Environment(\.findMarks) private var findMarks
+  /** The chat's choice of words (`TranscriptSelection`): while a drag chooses, the words are laid out to be read back. */
+  @Environment(TranscriptSelection.self) private var selection: TranscriptSelection?
   @State private var hovered = false
   @State private var barHovered = false
   @State private var bubbleWidth: CGFloat = 0
@@ -930,10 +962,12 @@ private struct BubbleRow: View {
     let trimmed = bubble.text.trimmingCharacters(in: .whitespacesAndNewlines)
     // An emoji on its own (`standaloneEmoji`): 32 on 38, no bubble.
     if Chat.isOneEmoji(trimmed) && bubble.channel == nil {
+      // Chosen by a drag over the chat, as every message's words are (`TranscriptSelection`).
       Text(trimmed)
+        .customAttribute(ChosenWord(id: 0, text: trimmed))
+        .modifier(Choosable())
         .font(.system(size: 32))
         .cssLineHeight(38, size: 32)
-        .textSelection(.enabled)
     } else if bubble.fromPerson {
       VStack(alignment: .leading, spacing: 0) {
         FoldingText(text: bubble.text, lineHeight: look.dark ? 20 : 21, centred: isShort(trimmed), marks: findMarks, look: look)
@@ -953,7 +987,7 @@ private struct BubbleRow: View {
         if let call = CallRecordView.parse(bubble.text) {
           CallRecordView(duration: call.duration, recap: call.recap, look: look)
         } else {
-          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, find: findMarks, speaker: bubble.author?.id ?? agentId, introducing: bubble.introduces))
+          MessageBlocks(blocks: Markdown.cachedBlocks(bubble.text), line: MessageLine(size: 14, lineHeight: 20, colour: look.theirsText, look: look, agents: store.mentionNames, personName: store.account?.name, find: findMarks, speaker: bubble.author?.id ?? agentId, introducing: bubble.introduces, marksWords: selection?.active == true))
         }
         if let tag = bubble.channel {
           ChannelTagView(tag: tag, ink: look.theirsText)
@@ -963,7 +997,8 @@ private struct BubbleRow: View {
         .tracking(-0.042)
         .foregroundStyle(look.theirsText)
         .tint(look.link)
-        .textSelection(.enabled)
+        // No selectable text of its own: it kept a drag inside this one message. The chat chooses across messages
+        // (`TranscriptSelection`; the founder, 5 November 2026: "you should be able to select all").
         .environment(\.messageStreaming, bubble.isStreaming)
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
@@ -1389,18 +1424,20 @@ private struct FoldingText: View {
   /** Find's marks on the words, while find has words. */
   let marks: FindMarks?
   let look: Look
+  @Environment(TranscriptSelection.self) private var selection: TranscriptSelection?
   @State private var full: CGFloat = 0
   @State private var open = false
 
   var body: some View {
     let folds = full > 161
     VStack(alignment: .leading, spacing: 4) {
-      FindLine.marked(text, marks: marks, look: look)
+      // Chosen by a drag over the chat (`TranscriptSelection`), lit in white on the person's colour.
+      FindLine.marked(text, marks: marks, look: look, marksWords: selection?.active == true)
+        .modifier(Choosable(tint: Color.white.opacity(0.32)))
         .font(.system(size: 14))
         .tracking(-0.042)
         .foregroundStyle(look.yoursText)
         .multilineTextAlignment(centred ? .center : .leading)
-        .textSelection(.enabled)
         .fixedSize(horizontal: false, vertical: true)
         .cssLineHeight(lineHeight, size: 14)
         .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.height } action: { value in full = value }

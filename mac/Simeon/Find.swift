@@ -89,15 +89,20 @@ struct FindLine {
     mark == .current ? look.warn : look.warn.opacity(0.3)
   }
 
-  /** Plain words (the person's message, a notice) with find's marks; the words' colour comes from around them. */
+  /**
+   * Plain words (the person's message, a notice) with find's marks; the
+   * words' colour comes from around them. `marksWords` while a drag chooses
+   * words in the chat (`ChosenWord`).
+   */
   @MainActor
-  static func marked(_ words: String, marks: FindMarks?, look: Look) -> Text {
-    guard let line = FindLine(marks, text: words) else { return Text(verbatim: words) }
+  static func marked(_ words: String, marks: FindMarks?, look: Look, marksWords: Bool = false) -> Text {
+    guard let line = FindLine(marks, text: words) else { return ChosenWord.text(words, at: 0, marked: marksWords) }
+    var at = 0
     return MessageLine.joined(line.cut(words, at: 0).map { part in
-      guard let mark = part.mark else { return Text(verbatim: part.text) }
-      var painted = AttributedString(part.text)
-      painted.backgroundColor = paint(mark, look: look)
-      return mark == .current ? Text(painted).foregroundColor(look.onWarn) : Text(painted)
+      defer { at += (part.text as NSString).length }
+      guard let mark = part.mark else { return ChosenWord.text(part.text, at: at, marked: marksWords) }
+      let painted = ChosenWord.text(part.text, at: at, marked: marksWords, background: paint(mark, look: look))
+      return mark == .current ? painted.foregroundColor(look.onWarn) : painted
     })
   }
 }

@@ -533,6 +533,9 @@ private struct KeyWatcher: NSViewRepresentable {
       // The message field's ⌘V ⌘C ⌘X ⌘A, done by the field before the Edit menu, which never brought it a paste (the
       // founder, 28 October 2026: "absolutely nothing in the composer"; `FieldTextView.editKey`).
       if let field = window?.firstResponder as? FieldTextView, field.editKey(event) { return true }
+      // ⌘C with words chosen across the chat's messages by a drag, and none chosen in what has the keys
+      // (`TranscriptSelection`; the founder, 5 November 2026: "you should be able to select all").
+      if mods == .command, event.charactersIgnoringModifiers?.lowercased() == "c", TranscriptSelection.copyChosen(over: window?.firstResponder) { return true }
       // ⌘V with no field holding the keys (after a click in the chat, or words copied from a message): the message field
       // takes the keys and pastes (the founder, 22 October 2026: "can't copy and paste in the chat"). Not over anything
       // else, nor into a field that is one of two.

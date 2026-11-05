@@ -116,6 +116,12 @@ struct MentionPills: TextRenderer {
   var displayPadding: EdgeInsets { EdgeInsets(top: 3, leading: 1, bottom: 3, trailing: 1) }
 
   func draw(layout: Text.Layout, in ctx: inout GraphicsContext) {
+    drawPills(layout, in: &ctx)
+    for line in layout { ctx.draw(line) }
+  }
+
+  /** The pills' glass, under the words (which `draw`, or the chat's `WordsRenderer`, draws after). */
+  func drawPills(_ layout: Text.Layout, in ctx: inout GraphicsContext) {
     var pills: [MentionSpots.Spot] = []
     var links: [CGRect] = []
     for line in layout {
@@ -141,7 +147,6 @@ struct MentionPills: TextRenderer {
     }
     spots?.record(pills, links: links)
     for pill in pills { glass(pill.rect, in: &ctx) }
-    for line in layout { ctx.draw(line) }
   }
 
   private func glass(_ rect: CGRect, in ctx: inout GraphicsContext) {
@@ -210,10 +215,11 @@ struct MentionClicks: ViewModifier {
   @ViewBuilder
   func body(content: Content) -> some View {
     if agents.isEmpty && !links {
-      content
+      // In a chat, words a drag can choose across messages (`TranscriptSelection`).
+      content.modifier(Choosable(dark: line.look.dark))
     } else {
       content
-        .textRenderer(MentionPills(dark: line.look.dark, spots: spots))
+        .modifier(Choosable(spots: spots, dark: line.look.dark))
         .simultaneousGesture(SpatialTapGesture().onEnded { click in
           if let id = spots.agent(at: click.location) { open(id) }
         })
@@ -275,10 +281,16 @@ struct MessageLine {
   var speaker: String?
   /** The speaker is saying who it is (`Bubble.introduces`): its own name is dressed there. */
   var introducing = false
+  /**
+   * A drag is choosing words in the chat (`TranscriptSelection.active`): each
+   * word laid out as its own marked piece (`ChosenWord`), so what is chosen
+   * can be read back. Only meanwhile: it costs.
+   */
+  var marksWords = false
 
   /** The same line at another size or in another colour (a heading, a table, a quote). */
   func with(size: CGFloat? = nil, lineHeight: CGFloat? = nil, colour: Color? = nil) -> MessageLine {
-    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find, speaker: speaker, introducing: introducing)
+    MessageLine(size: size ?? self.size, lineHeight: lineHeight ?? self.lineHeight, colour: colour ?? self.colour, look: look, agents: agents, personName: personName, marksNames: marksNames, find: find, speaker: speaker, introducing: introducing, marksWords: marksWords)
   }
 
   /** The same line with these marks (a table's cell). */
@@ -373,14 +385,15 @@ struct MessageLine {
     return pieces
   }
 
-  /** Words in their colour and style, find's marks under the times it found. */
+  /** Words in their colour and style, find's marks under the times it found (each word marked while a drag chooses words). */
   private func painted(_ words: String, ink: Color, style: Style, at offset: Int, marks: FindLine?) -> Text {
-    guard let marks else { return style.apply(Text(verbatim: words).foregroundColor(ink)) }
+    guard let marks else { return style.apply(ChosenWord.text(words, at: offset, marked: marksWords).foregroundColor(ink)) }
+    var at = offset
     return MessageLine.joined(marks.cut(words, at: offset).map { part in
-      guard let mark = part.mark else { return style.apply(Text(verbatim: part.text).foregroundColor(ink)) }
-      var piece = AttributedString(part.text)
-      piece.backgroundColor = FindLine.paint(mark, look: look)
-      return style.apply(Text(piece).foregroundColor(mark == .current ? look.onWarn : ink))
+      defer { at += (part.text as NSString).length }
+      guard let mark = part.mark else { return style.apply(ChosenWord.text(part.text, at: at, marked: marksWords).foregroundColor(ink)) }
+      let piece = ChosenWord.text(part.text, at: at, marked: marksWords, background: FindLine.paint(mark, look: look))
+      return style.apply(piece.foregroundColor(mark == .current ? look.onWarn : ink))
     })
   }
 
@@ -400,7 +413,8 @@ struct MessageLine {
       if let mark = part.mark { piece.backgroundColor = FindLine.paint(mark, look: look) }
       whole += piece
     }
-    let link = style.apply(Text(whole)).customAttribute(LinkRun())
+    var link = style.apply(Text(whole)).customAttribute(LinkRun())
+    if marksWords { link = link.customAttribute(ChosenWord(id: offset, text: words)) }
     guard marksNames, let found = LinkIcons.shared.icon(for: url), let icon = InlineImages.site(found, side: (1.05 * size).rounded()) else { return link }
     return MessageLine.joined([Text(icon).baselineOffset(-0.18 * size), Text(verbatim: "\u{202F}"), link])
   }
@@ -421,7 +435,8 @@ struct MessageLine {
       piece += cut
     }
     piece += AttributedString("\u{2009}", attributes: container)
-    return Text(piece)
+    // Its thin spaces are glyphs too: read back with them, and taken out when copied (`ChosenWords.cleaned`).
+    return marksWords ? Text(piece).customAttribute(ChosenWord(id: offset, text: "\u{2009}\(words)\u{2009}")) : Text(piece)
   }
 
   /**
@@ -821,7 +836,10 @@ struct CodeBlock: View {
     ScrollView(.horizontal) {
       VStack(alignment: .leading, spacing: 0) {
         ForEach(Array(lines.enumerated()), id: \.offset) { _, words in
+          // Each line a piece a drag in the chat can choose (`TranscriptSelection`); outside a chat, SwiftUI's own choice.
           Text(verbatim: words.isEmpty ? " " : words)
+            .customAttribute(ChosenWord(id: 0, text: words.isEmpty ? " " : words))
+            .modifier(Choosable())
             .font(.system(size: 12, design: .monospaced))
             .foregroundStyle(look.codeText)
             .lineLimit(1)
@@ -831,7 +849,7 @@ struct CodeBlock: View {
       }
       .padding(.horizontal, 10)
       .padding(.vertical, 6)
-      .textSelection(.enabled)
+      .modifier(OwnSelection())
     }
     .scrollIndicators(.never)
     .frame(maxWidth: .infinity, alignment: .leading)

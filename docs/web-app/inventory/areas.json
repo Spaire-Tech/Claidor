@@ -82,7 +82,7 @@
    "mac/Simeon/SimeonMacApp.swift",
    "mac/Simeon/WindowChrome.swift"
   ],
-  "mac_lines": 1355,
+  "mac_lines": 1358,
   "core_lines": 408,
   "views": 4,
   "files_needing_a_mac": 5,
@@ -188,12 +188,13 @@
    "mac/Simeon/MessageActions.swift",
    "mac/Simeon/MessageText.swift",
    "mac/Simeon/Rendering.swift",
-   "mac/Simeon/Tapback.swift"
+   "mac/Simeon/Tapback.swift",
+   "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 7054,
+  "mac_lines": 7602,
   "core_lines": 4784,
   "views": 61,
-  "files_needing_a_mac": 14,
+  "files_needing_a_mac": 15,
   "strings": 311,
   "strings_in_old_web_app": 232,
   "box_commands": [],
