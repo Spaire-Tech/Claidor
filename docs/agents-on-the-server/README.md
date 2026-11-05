@@ -361,6 +361,55 @@ Each piece below is safe by itself. Nothing changes for the founder until
   - without the brain's token, the door answered 401.
 
   The tests are in `desktop/tests/hands-route.test.mjs`.
+
+  **Part 2, the computer's `hands` role: done, 5 November 2026.**
+  - `SIMEON_ENGINE_ROLE` (`engine-role.ts`): `hands`, `brain`, or not set
+    (the whole engine). An unknown value is the whole engine, and the
+    start's log line says so.
+  - With `hands`, the engine's start makes the keeper (`hands-keeper.ts`) in
+    place of the whole engine. Everything else at start is unchanged: the
+    backup is copied in at boot, the data folder is locked, and the gateway
+    answers the server on 1340.
+  - The keeper runs the computer's backup and answers `/health` (never
+    busy), `snapshotBoxStoreNow` and `getBoxStoreStatus`. At start it writes
+    the agents' reference pages into `/home/box/reference`, as the whole
+    engine does. Nothing else: no agents, no inbox, no routines, no chat
+    copy.
+  - Phone notifications are sent by the engine that runs the agents: the one
+    in a computer, as before, or the brain (`mobile-push-notifier.ts`). The
+    keeper sends none.
+  - What each role backs up (`boxStoreCategoriesForRole`): `hands`
+    everything but the agents' folder; `brain` the agents' folder alone;
+    not set, everything. Without the agents' folder, the backup's sweep and
+    clearing of the agents' databases do nothing (`store-db-capture.ts`
+    returns before reading anything).
+  - The computer passes its settings on to the engine (the supervisor's
+    `{...process.env}`), so the server sets the role when it makes the
+    computer (step 1c), with no change to the image for this.
+
+  Checked:
+  - in tests (`desktop/tests/engine-roles.test.mjs`, 5 tests):
+    - the roles;
+    - each role's folders, on the engine's real folder list;
+    - on the computer, the agents' databases are neither swept nor
+      cleared, and the backup's record and storage are not touched;
+    - the keeper's answers;
+    - the start makes the keeper and nothing of the whole engine;
+  - with the built engine on the test machine (`SIMEON_ENGINE_ROLE=hands`,
+    backups on, the stand-in API):
+    - its gateway answered after about 1 s;
+    - `/health` said not busy;
+    - `snapshotBoxStoreNow` answered;
+    - a message sent to it was refused;
+    - it wrote the 3 reference pages;
+    - it made three calls to the server: the credential, the privacy
+      setting and the backup's store. There was no chat, inbox, routine or
+      model call, so nothing can be answered twice;
+  - the stand-in has no storage, so its backup runs failed. A real backup
+    in the `hands` role is checked on the founder's computer in 1e.
+
+  It uses about 240 MB, as the whole engine does at rest: the engine's
+  bundle loads all its code even when the keeper uses little of it.
 - **1b. The computer image.** The router on 1339 lets a request from
   outside the computer through only with the computer's own gateway token,
   which the server already holds. The supervisor starts the engine as

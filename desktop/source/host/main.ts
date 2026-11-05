@@ -9,6 +9,8 @@ import { acquireHostLock } from "./host-lock.js";
 import { getSandRootDir } from "./host-paths.js";
 import path from "node:path";
 import { installProcessCrashGuards } from "./process-crash-guard.js";
+import { describeEngineRole, engineRoleFromEnv } from "./engine-role.js";
+import { createHandsKeeperHost } from "./hands-keeper.js";
 import {
   createProductionSandHost,
   type ProductionSandHostPorts
@@ -159,13 +161,22 @@ export function createProductionHostMainDependencies(
         ...(ports.log === undefined ? {} : { log: ports.log }),
       }) }),
     getSandRootDir,
-    createHost: () => createProductionSandHost({
-      ...ports,
-      extensionHost: {
-        ...ports.extensionHost,
-        standaloneBoxExecDaemon: !useExistingBoxExecDaemon,
-      },
-    }),
+    // The engine's role (`engine-role.ts`): on a computer whose agents run
+    // on the brain, only the keeper of its files (`hands-keeper.ts`).
+    createHost: () => {
+      const log = ports.log ?? console;
+      log.log(describeEngineRole());
+      if (engineRoleFromEnv() === "hands") {
+        return createHandsKeeperHost({ log: line => log.log(line) });
+      }
+      return createProductionSandHost({
+        ...ports,
+        extensionHost: {
+          ...ports.extensionHost,
+          standaloneBoxExecDaemon: !useExistingBoxExecDaemon,
+        },
+      });
+    },
     resolveGatewayServerConfig,
     gatewayScheme,
     startGatewayServer: options => startGatewayServer(
