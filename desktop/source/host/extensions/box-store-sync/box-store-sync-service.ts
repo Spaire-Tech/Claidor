@@ -16,6 +16,7 @@ import { SAND_MANIFEST_V2_ENV } from "./box-store-manifest-format.js";
 import { boxStoreDbCaptureTelemetry } from "./store-db-capture.js";
 import { BoxStoreSync, boxStoreSyncCycleTelemetry, evaluateBoxStoreFlush, type BoxStoreCaptureSummary, type BoxStoreCategory, type BoxStoreCycleSummary } from "./box-store-sync.js";
 import { compileWorkspaceIgnore, loadWorkspaceIgnore } from "./workspace-ignore.js";
+import { engineRoleFromEnv, type EngineRole } from "../../engine-role.js";
 
 export const SAND_STORE_BETTER_CLI_ENV = "SAND_STORE_BETTER_CLI";
 export const BOX_HOME_CATEGORY_NAME = "home";
@@ -50,7 +51,7 @@ export class DefaultBoxStoreSyncService {
   constructor(readonly deps: BoxStoreSyncServiceDependencies) {
     this.env = deps.env ?? process.env; this.sandRoot = getSandRootDir(); this.backendPolicy = getBoxStoreBackendPolicy(this.env);
     const objectStoreProvider = resolveBoxObjectStoreProvider({ env: this.env, agentStore: deps.auth }), enabled = isBoxStoreSyncEnabled(this.env); this.lastChromeSyncMs = deps.clock.monotonicNow();
-    this.sync = enabled ? this.createSync(buildBoxStoreCategories({ sandRoot: this.sandRoot, chromeStageRetry: deps.chromeStageRetry, reportChromeSessionStage: (outcome) => this.reportChromeSessionStage(outcome), env: this.env }), objectStoreProvider, "[box-store-sync]") : undefined;
+    this.sync = enabled ? this.createSync(boxStoreCategoriesForRole(buildBoxStoreCategories({ sandRoot: this.sandRoot, chromeStageRetry: deps.chromeStageRetry, reportChromeSessionStage: (outcome) => this.reportChromeSessionStage(outcome), env: this.env }), engineRoleFromEnv(this.env)), objectStoreProvider, "[box-store-sync]") : undefined;
     this.api = { isEnabled: enabled, objectStoreProvider, getStoreId: () => this.getStoreId(), snapshotBoxStoreNow: (args) => this.snapshotBoxStoreNow(args), getBoxStoreStatus: () => this.accessor().readStoreStatus(), clearBoxStoreNow: () => this.clearBoxStoreNow(), scheduleStoreDbSnapshot: (agentId) => { if (!this.waitingForCredential()) this.sync?.scheduleStoreDbSnapshot(agentId); }, forgetAgent: async (agentId) => { await (this.sync ?? this.accessor()).forgetAgent(agentId); } };
   }
   start(): void { if (this.started) return; this.started = true; if (this.sync == null) { this.deps.telemetry.reportBoxStoreSyncCycle("warn", { ok: "false", reason: "disabled", phase: "startup" }); return; } const startupSweep = this.sync.sweepLeakedTemps().then((removed) => { if (removed > 0) this.deps.log(`swept ${removed} leaked box-store temp file(s)`); }).catch((error) => this.deps.log(`box-store temp sweep failed: ${errorMessage(error)}`)); this.pollingHandle = this.deps.polling.start(async () => { await startupSweep; await this.runCycle(); }); this.chromeSessionWatcher = new ChromeSessionWatcher({ watchDir: CHROME_SESSION_DB_DIR, sessionDbNames: CHROME_SESSION_DB_NAMES, debounce: this.deps.chromeSessionDebounce, onSessionChange: () => { if (this.waitingForCredential()) return; void this.sync?.snapshotNow({ chromeSessionOnly: true, waitForInFlight: true }).catch((error) => this.deps.log(`chrome-session snapshot rejected: ${errorMessage(error)}`)); }, log: this.deps.log }); this.chromeSessionWatcher.start(); this.deps.log("box-store sync enabled (snapshot-out only)"); this.deps.telemetry.reportBoxStoreSyncCycle("info", { ok: "true", reason: "enabled", phase: "startup" }); }
@@ -80,4 +81,21 @@ export class DefaultBoxStoreSyncService {
 }
 
 export function buildBoxStoreCategories(args: { sandRoot: string; chromeStageRetry: RetryPolicy; reportChromeSessionStage(outcome: ChromeStageReport): void; env: NodeJS.ProcessEnv }): BoxStoreCategory[] { const sandDataPrefix = "home/box/sand-data"; return [{ name: "sand-data", absRoot: args.sandRoot, relPrefix: sandDataPrefix, containsAgentStoreDbs: true, excludes: [`${sandDataPrefix}/host.lock`, `${sandDataPrefix}/gateway.json`, `${sandDataPrefix}/box-store-sync.lock`, `${sandDataPrefix}/${BOX_STORE_HYDRATION_HANDOFF_FILE_NAME}`, ...BOX_STORE_SAND_DATA_EXCLUDED_FILE_NAMES.map((name) => `${sandDataPrefix}/${name}`)] }, { name: "workspace", absRoot: "/workspace", relPrefix: "workspace", ignore: () => loadWorkspaceIgnore("/workspace") }, { name: "cli-config", absRoot: "/home/box/cli-config", relPrefix: "home/box/cli-config", excludes: ["home/box/cli-config/.cli-auth-tmp*", "home/box/cli-config/*.cli-auth-old", "home/box/cli-config/**/*.cli-auth-old"] }, { name: CHROME_SESSION_CATEGORY_NAME, absRoot: CHROME_SESSION_DB_DIR, relPrefix: "home/box/chrome-profile", stageOnly: true, stage: () => stageBoxChromeSession({ retry: args.chromeStageRetry, report: args.reportChromeSessionStage }) }, ...CHROME_AUTH_STATE_REL_DIRS.map((dir) => ({ name: `chrome-${dir.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, absRoot: `${CHROME_SESSION_DB_DIR}/${dir}`, relPrefix: `${CHROME_SESSION_DB_REL_DIR}/${dir}`, excludes: CHROME_AUTH_STATE_CACHE_EXCLUDE_NAMES.map((cache) => `${CHROME_SESSION_DB_REL_DIR}/${dir}/${cache}`) })), { name: "chrome-profile", absRoot: "/home/box/chrome-profile", relPrefix: "home/box/chrome-profile", excludes: [...SAND_BOX_PERSIST_ARCHIVE_EXCLUDES, ...CHROME_SESSION_DB_NAMES.flatMap((name) => ["", "-wal", "-shm", "-journal"].map((suffix) => `${CHROME_SESSION_DB_REL_DIR}/${name}${suffix}`)), ...CHROME_AUTH_STATE_REL_DIRS.map((dir) => `${CHROME_SESSION_DB_REL_DIR}/${dir}`)], idleOnly: true }, ...(args.env[SAND_STORE_BETTER_CLI_ENV] === "1" && args.env.SAND_USER_NON_ROOT === "1" ? [buildBoxHomeCategory(BOX_HOME_DIR)] : [])]; }
+/**
+ * The folders each role of the engine backs up (`engine-role.ts`;
+ * `docs/agents-on-the-server/README.md`, "The backups, kept apart"). A run
+ * removes from the backup what a folder no longer holds on this disk, and
+ * the agents' folder also clears the agents it does not find
+ * (`pruneMissingAgentStoreDbs`). So each role backs up only the folders that
+ * are really on its disk:
+ * - `hands` (the computer, agents on the brain): everything but the agents'
+ *   folder, which it never touches;
+ * - `brain` (off the computer): the agents' folder alone, to its own store;
+ * - `all`: everything, as before.
+ */
+export function boxStoreCategoriesForRole(categories: readonly BoxStoreCategory[], role: EngineRole): BoxStoreCategory[] {
+  if (role === "hands") return categories.filter((category) => category.containsAgentStoreDbs !== true);
+  if (role === "brain") return categories.filter((category) => category.containsAgentStoreDbs === true);
+  return [...categories];
+}
 export function createBoxStoreSyncService(deps: BoxStoreSyncServiceDependencies): DefaultBoxStoreSyncService { return new DefaultBoxStoreSyncService(deps); }
