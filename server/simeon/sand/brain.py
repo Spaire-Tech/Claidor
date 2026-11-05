@@ -63,7 +63,7 @@ from .box_e2b import KIND as E2B_KIND
 from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import BoxHostError
 from .box_repository import SandBoxRepository
-from .box_service import broker, dial_headers
+from .box_service import broker, dial_headers, made_as_hands
 from .brain_users import (
     brain_on,
     brain_source_id,
@@ -345,6 +345,18 @@ async def _hands_http(
             "no_computer",
             409,
             "This person has no computer yet: open Simeon on a device first.",
+            user=str(user.id),
+        )
+    if not made_as_hands(box):
+        # Made before the person was on the brain: its own engine still runs
+        # the agents, and waking it would run them twice. The apps' next
+        # EnsureSandBox makes it again in the `hands` role, files kept
+        # (`box_broker._on_brain_box`).
+        return refused(
+            "computer_not_hands",
+            409,
+            "The computer still runs the agents itself. Open Simeon on a "
+            "device once and it is made again for the brain, files kept.",
             user=str(user.id),
         )
     if hands_target(box) is None:

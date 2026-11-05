@@ -1279,6 +1279,17 @@ For a person on the brain, the apps change nothing; the server does
   engine needs its hands, through the door.
 - One brain serves one person today: list one address. The brain's gateway
   refuses any other person's bearer.
+- Their computer is made in the `hands` role (`SIMEON_ENGINE_ROLE=hands`, the
+  `com.simeonlabs.engine-role` label, `engine_role` in the row's
+  `host_meta`). Its engine only keeps the computer's backup and serves the
+  hands, and its router lets in only the door's calls.
+  - A computer made before the person was listed still runs the agents
+    itself. It is out of date: the next `EnsureSandBox` (or Rebuild with
+    files kept) makes it again as hands, after a fresh backup.
+  - Until then the door refuses it (409 `computer_not_hands`), so the agents
+    never run in two places.
+  - Taken off the list, the person's computer is made again without a role,
+    files kept. Nobody else's computer changes.
 
 Log lines:
 - `sand.brain.bootstrap`: user, box, the computer's state.
@@ -1290,6 +1301,9 @@ Log lines:
 - `sand.brain.hands.unreachable`: the computer did not answer.
 - `sand.box.ensure.on_brain`: an app asked for the computer and got it as
   recorded (its state is in the line).
+- `sand.box.engine_role`: a computer was made, with its role (`hands` or
+  `all`). `sand.box.ensure.recreate` and the sleeper's lines carry
+  `stale_role` when the role was why it was made again.
 - `sand.box.wake.on_brain`: incoming work left the computer asleep.
 - `sand.box.proxy.brain_unreachable`, `sand.box.proxy.brain_error`: an
   app's call to the brain failed, or the brain refused it.
