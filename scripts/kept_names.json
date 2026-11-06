@@ -376,6 +376,16 @@
         "spaire"
       ],
       "paths": [
+        "windows/store.json"
+      ],
+      "reason": "The Microsoft Store package's identity, exactly as Partner Center gives it (Package/Identity/Name Spaire.Simeon, PublisherDisplayName Spaire; the founder, 6 November 2026): the Store refuses a package whose identity is not Partner Center's. At the rename it changes in Partner Center first, then here."
+    },
+    {
+      "kind": "record",
+      "names": [
+        "spaire"
+      ],
+      "paths": [
         "sites/simeonlabs.com/source/legal/privacy.html",
         "sites/simeonlabs.com/source/legal/terms.html",
         "sites/simeonlabs.com/source/legal/template.html",

@@ -607,6 +607,8 @@ For the founder, each to be answered before the step that needs it:
   6 November 2026: the account waits on Microsoft's business verification;
   the Store's build is ready and waits for those three values, pasted into
   `windows/store.json`, then `node scripts/store.mjs` on the Windows PC.
+  Later that day the founder gave them, and they are in `store.json`
+  (log below); next, the build on the Windows PC.
   Then the Store's listing: description, screenshots, the privacy policy's
   address, the age rating. The Store's review runs on each release.
 - **GitHub Actions doesn't run.** Every job on every pull request (#539 to
@@ -832,6 +834,29 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 6 November 2026: the Store's identity from Partner Center
+
+The founder gave Partner Center's three values; "Next is building that
+prepared Store version on the Dell and testing it before upload."
+
+- **Done.** `windows/store.json`: identity name `Spaire.Simeon`, publisher
+  `CN=95811681-55B1-49D5-8542-DCC11BB21E65`, publisher name `Spaire`,
+  exactly as Partner Center writes them (the Store refuses any other, so
+  the publisher name is "Spaire", not "Spaire, Inc."). `scripts/kept_names.json`
+  keeps the legal name in that file, for that reason.
+- **Checked.** `readStoreIdentity` takes the file; `test/store.test.ts`
+  (6); the manifest written from it by electron-builder's own code (as in
+  the entry below): `Identity Name="Spaire.Simeon"`, the publisher, version
+  `0.1.0.0`, `PublisherDisplayName` Spaire, display name Simeon; well-formed;
+  `check_names.py`.
+- **Not checked.** The `.appx` itself, built on the Windows PC
+  (`node scripts/store.mjs`). Installing it there before the upload needs
+  it signed by a certificate whose subject is that publisher: the Store
+  signs the uploaded one, and Windows installs no unsigned package.
+
+**Next:** the build on the Dell; a test install signed for that PC only;
+the upload.
 
 ### 6 November 2026: the Microsoft Store's build, ready for Partner Center
 
