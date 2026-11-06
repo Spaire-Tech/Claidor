@@ -246,7 +246,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 3 November 2026 | The old web app at `/app` is not touched by this. The new one stays at `/app-next` on the website, where the founder can look at it in a browser, until the founder says otherwise (Open questions). The plan's checks (`README.md`) still hold: they measure the Windows app's page | The session |
 | 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
 | 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
-| 5 November 2026 | The Help Center is the website's docs (`https://www.simeonlabs.com/docs`): the Mac's "Simeon Help Center" row and the iPhone's "Help Center" open them. The web app's row can come back pointing there (not done yet) | The founder |
+| 5 November 2026 | The Help Center is the website's docs (`https://www.simeonlabs.com/docs`): the Mac's "Simeon Help Center" row and the iPhone's "Help Center" open them. The web app's row can come back pointing there (done 6 November 2026, below) | The founder |
+| 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
 
 ## For Windows
 
@@ -728,8 +729,8 @@ For the founder, each to be answered before the step that needs it:
   on a Mac, or take it off the website (the build then lives beside the
   Windows app only, and the website stops serving it)?
 - **Simeon Help Center.** Answered 5 November 2026: the website's docs
-  (`https://www.simeonlabs.com/docs`), on the Mac and the iPhone. The web
-  app's row can come back now, pointing there; not done yet.
+  (`https://www.simeonlabs.com/docs`), on the Mac and the iPhone; the web
+  and Windows app's row is back, pointing there, since 6 November 2026.
 - **A checkout's approval on Windows.** A checkout's Allow hands Link the
   approval only after Windows Hello says yes; where Hello isn't there, the
   window's alert asks and hands none, so Link asks in its own app, as on
@@ -817,6 +818,39 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 6 November 2026: clearer words, and the Help Center row
+
+The founder, looking at the web app beside the Mac app: "the mac app font
+is clearer web app/window seems cheap seems like its fading. can you fix
+that. also i dont think you added help center in the webapp/window".
+
+- **Done.** The words: the window (`src/index.css`) and the page after
+  connecting an app (`src/connected.css`) no longer set
+  `-webkit-font-smoothing: antialiased`. On macOS, Chrome and Electron then
+  draw text with the system's own smoothing, as the Mac app's SwiftUI text
+  is drawn; with the rule, every word was thinner and lighter. Sizes,
+  weights and colours already matched the Mac's (the bubble's 14 points,
+  `#1d1d1f`), so nothing else changed. On Windows the rule did nothing
+  (ClearType), so the Windows app looks as before.
+- **Done.** Help & support has the "Simeon Help Center" row again, first,
+  in the Send feedback card, as on the Mac. It opens
+  `https://www.simeonlabs.com/docs` in a new tab with no opener or referrer
+  (`helpCenterPage`, `src/core/generalSettings.ts`). Its words were already
+  in the Mac's catalogue, in every language. The test that said it was left
+  out now asks for it; the inventory was run again (the string is now in
+  the web app).
+- **Checked.** `pnpm typecheck`, `pnpm test` (1195), `pnpm lint`, the
+  build committed and `check:built`; `check_translations.py`,
+  `check_names.py`. In Chromium, against a stand-in server, light and
+  dark: the page lists Simeon Help Center, Send feedback, Report an issue;
+  the first opens the docs with no opener or referrer, Send feedback still
+  opens its sheet, no page errors. The built CSS carries no
+  `font-smoothing`.
+- **Not checked.** The words' look on a Mac: the rule only acts on macOS,
+  and Chromium here runs on Linux, so no picture from here can show the
+  difference. Open `/app-next` in Chrome on the Mac after the website
+  deploys and compare with the Mac app. Nothing run on a Windows PC.
 
 ### 5 November 2026: the Help Center points at the docs
 

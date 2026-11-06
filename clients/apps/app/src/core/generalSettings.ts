@@ -434,6 +434,11 @@ export function languageChoices(
   ]
 }
 
+// MARK: Help & support (`HelpSupport.helpCenter`)
+
+/** The Simeon Help Center: the website's docs, as the Mac's and the iPhone's row open (5 November 2026). */
+export const helpCenterPage = 'https://www.simeonlabs.com/docs'
+
 // MARK: Legal (`SettingsLegal`, `AboutSimeon.copyright`)
 
 /** Where the legal pages are: the iPhone's and the website's sign-in link to the same two. */

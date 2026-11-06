@@ -596,7 +596,7 @@
 {"text": "Signed in as %@", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/ComputerStates.swift"], "old_web_app": false, "web_app": true},
 {"text": "Simeon %@ is available", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsPages.swift"], "old_web_app": true, "web_app": true},
 {"text": "Simeon Account", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsGeneral.swift"], "old_web_app": false, "web_app": true},
-{"text": "Simeon Help Center", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsGeneral.swift"], "old_web_app": false, "web_app": false},
+{"text": "Simeon Help Center", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsGeneral.swift"], "old_web_app": false, "web_app": true},
 {"text": "Simeon asks you before doing these. When two rules disagree, it asks.", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsGeneral.swift"], "old_web_app": false, "web_app": true},
 {"text": "Simeon call", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/CallBannerWindow.swift"], "old_web_app": false, "web_app": true},
 {"text": "Simeon can see your logins and contact info so it can type them in for you.", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsCredentials.swift"], "old_web_app": false, "web_app": true},

@@ -11,11 +11,9 @@
 // - Permissions (`SettingsPermissionsPage`): Auto-review and its two lists
 //   of rules, each rule edited in its row and deleted at once, the last row
 //   adding one.
-// - Help & support (`SettingsHelpPage`): Send feedback and Report an issue
-//   open their sheets (Feedback.tsx). The Mac's "Simeon Help Center" row
-//   does nothing (the founder, 22 October 2026: "leave it there even tho it
-//   doesn't point to anything yet"); a page never shows a button that does
-//   nothing, so it is left out here until it points somewhere.
+// - Help & support (`SettingsHelpPage`): the Simeon Help Center opens the
+//   website's docs in a new tab, as the Mac's row does (5 November 2026);
+//   Send feedback and Report an issue open their sheets (Feedback.tsx).
 // - Legal (`SettingsLegalPage`): the Privacy Policy and the Terms of
 //   Service in a new tab, the company under them.
 
@@ -38,6 +36,7 @@ import {
   automaticZone,
   characterCount,
   copyrightLine,
+  helpCenterPage,
   isFullList,
   knownTimeZones,
   languageChoices,
@@ -1102,10 +1101,10 @@ function RuleIcon({
 // MARK: Help & support
 
 /**
- * Help & support (`SettingsHelpPage`): Send feedback in one card, Report an
- * issue with its bug in the next; each opens its sheet over the window
- * (`HelpSupport`). The Mac's Simeon Help Center row, which points nowhere
- * yet, is left out.
+ * Help & support (`SettingsHelpPage`): the Simeon Help Center (the website's
+ * docs, in a new tab) and Send feedback in one card, Report an issue with its
+ * bug in the next; the last two open their sheets over the window
+ * (`HelpSupport`).
  */
 export function SettingsHelpPage({ store }: { store: AppStore }) {
   void store
@@ -1114,7 +1113,13 @@ export function SettingsHelpPage({ store }: { store: AppStore }) {
     <div className="settings-page general-page">
       <SettingsGroup>
         <SettingsLinkRow
+          label={t('Simeon Help Center')}
+          external
+          onClick={() => openPage(helpCenterPage)}
+        />
+        <SettingsLinkRow
           label={t('Send feedback')}
+          divided
           onClick={() => windowModel.openFeedback('feedback')}
         />
       </SettingsGroup>

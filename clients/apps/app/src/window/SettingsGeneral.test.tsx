@@ -1,13 +1,13 @@
 // Step 6e's pages as the window draws them (mac/Simeon/SettingsGeneral.swift,
-// SettingsPages.swift's `AgentsComputerGroup`): Help & support without the
-// Help Center row that points nowhere, Legal's two pages and the company,
+// SettingsPages.swift's `AgentsComputerGroup`): Help & support with the
+// Help Center opening the docs, Legal's two pages and the company,
 // the Computer page's status and version in each state, and the account's
 // lines.
 
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { copyrightLine } from '../core/generalSettings'
+import { copyrightLine, helpCenterPage } from '../core/generalSettings'
 import { AppStore } from '../core/store'
 import { SettingsComputerPage } from './SettingsComputer'
 import {
@@ -36,11 +36,15 @@ const words = (html: string) =>
     .replace(/&amp;/g, '&')
 
 describe('Help & support and Legal', () => {
-  it('lists Send feedback and Report an issue, and not the Help Center, which points nowhere yet', () => {
+  it('lists the Simeon Help Center (the docs), Send feedback and Report an issue, in the Mac order', () => {
     const page = words(draw(<SettingsHelpPage store={new AppStore()} />))
+    expect(page).toContain('|Simeon Help Center|')
     expect(page).toContain('|Send feedback|')
     expect(page).toContain('|Report an issue|')
-    expect(page).not.toContain('Help Center')
+    expect(page.indexOf('Simeon Help Center')).toBeLessThan(
+      page.indexOf('Send feedback'),
+    )
+    expect(helpCenterPage).toBe('https://www.simeonlabs.com/docs')
   })
 
   it('opens the Privacy Policy and the Terms of Service on the web, the company under them', () => {
