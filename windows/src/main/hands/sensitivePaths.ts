@@ -617,6 +617,12 @@ export function sensitiveRefusal(
   return refusalWords(found.shown)
 }
 
+/**
+ * The refusal the agent reads. It names the PC and PowerShell, so the agent
+ * asks the person in the PC's own words ("your PC", `Get-Content` in
+ * PowerShell), never the Mac's Terminal and `cat` (the founder, on the
+ * first run on a Windows PC, 6 November 2026).
+ */
 export function refusalWords(shown: string): string {
-  return `Simeon does not read, write or run anything under ${shown} on this PC: it holds keys or sign-ins. Ask the person to do that part themselves.`
+  return `Simeon does not read, write or run anything under ${shown} on this PC: it holds keys or sign-ins. Ask the person to do that part themselves on their PC, in PowerShell (for example \`Get-Content\`), not in a Mac's Terminal.`
 }

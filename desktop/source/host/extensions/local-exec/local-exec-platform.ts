@@ -66,5 +66,6 @@ export function userComputerSection(info: LocalExecPlatform | undefined): string
       (shell === undefined ? "" : ` This one is ${shell}.`),
     "- Separate commands with `;` (Windows PowerShell 5.1 has no `&&` or `||`); read and set variables as `$env:NAME`; use `Get-ChildItem`, `Get-Content`, `Select-String`, `Copy-Item`, `Remove-Item -Recurse -Force`.",
     "- Paths look like `C:\\Users\\<name>\\Documents\\report.pdf` (`~` is their home folder); give ExternalRead, CopyToBox and CopyFromBox the same Windows paths.",
+    "- When you ask the user to do something on their computer themselves (a refused place such as `~\\.ssh`, a sign-in, a step only they can take), call it their PC, never their Mac, and give PowerShell for them to run (`Get-Content $env:USERPROFILE\\.ssh\\id_ed25519.pub`), never Terminal, bash or `cat`.",
   ].join("\n");
 }

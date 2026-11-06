@@ -4,6 +4,13 @@
 
 appId: com.simeonlabs.simeon
 productName: Simeon
+# The app's own name in the build, so a one-click install lands in
+# %LOCALAPPDATA%\Programs\Simeon (electron-builder names that folder after the
+# package, which is `simeon-windows` here; the founder saw it on the first
+# install, 6 November 2026). Its updater keeps its downloads in
+# %LOCALAPPDATA%\simeon-updater (src/main/updates/feed.ts, `releaseCacheName`).
+extraMetadata:
+  name: Simeon
 copyright: Copyright © 2026 Spaire, Inc.
 directories:
   output: out

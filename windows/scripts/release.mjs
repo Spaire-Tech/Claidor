@@ -174,7 +174,7 @@ const updateSettings = readFileSync(path.join(OUT, 'win-unpacked/resources/app-u
 if (!updateSettings.includes('url: https://api.simeonlabs.com/desktop/download/windows'))
   fail('The app’s app-update.yml does not name the server’s feed.')
 // Where the installed app looks for what it downloaded (src/main/updates/feed.ts, `releaseCacheName`).
-if (!updateSettings.includes('updaterCacheDirName: simeon-windows-updater'))
+if (!updateSettings.includes('updaterCacheDirName: simeon-updater'))
   fail('The app’s app-update.yml names another cache folder than the app looks in.')
 if (signed !== /^publisherName:/m.test(updateSettings))
   fail(signed ? 'The app’s app-update.yml asks no signer of updates.' : 'An unsigned app asks updates to be signed.')
