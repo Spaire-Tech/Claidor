@@ -71,9 +71,12 @@ node scripts/store.mjs --test   # a test copy signed for this PC only, installed
 
 The test copy (`out/store-test/`) is never the one uploaded. It is signed
 with "Simeon Store test (this PC only)", a certificate made on this PC for
-the Store's publisher and trusted by this PC alone. Uninstall the
-developer's Simeon (the installer's) before trying it, and the test copy
-before installing the Store's.
+the Store's publisher and trusted by this PC alone. electron-builder signs
+it with Windows Kits 10.0.26100's signtool, which this command downloads;
+the older signtool it would use otherwise signs the program and cannot
+sign the package. No separate Windows SDK install is required. Uninstall
+the developer's Simeon (the installer's) before trying it, and the test
+copy before installing the Store's.
 
 For each new Store submission, raise `version` in `package.json` first: the
 Store takes only a higher one.
