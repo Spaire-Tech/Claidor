@@ -1858,7 +1858,17 @@ the background while the call goes on, and says how it is going when asked.
   - On hang-up the address closes (`kind:"ended"`, with the seconds, the recap and the
     transcript). The record is written to `voice-calls/<start>-<callId>.json` in the agent's
     own files. If anything was asked on the call, the agent is told "The call ended…" and puts
-    anything still owed into the chat, nudged once if it sent nothing.
+    anything still owed into the chat, nudged once if it sent nothing. That message waits for a
+    request still at work, and carries what the call said (its last 40 lines, "The user heard
+    this and nothing else") and what the agent sent it that was never said: unread by the
+    voice at the hang-up, or sent after it. The agent may say it told the person something on
+    the call only if those lines show it; anything else is sent as new ("if they asked you to
+    text it, this is that text"). A send on the call's address after that message is reported
+    to the agent as a failed send ("The call had already ended, so the user never heard
+    this…"). 6 November 2026: before this, an answer that came after the hang-up went nowhere
+    without a word, and the chat said "On the call I gave you the roster" when nothing of it
+    was said (Simeon's chat, 5 November 2026). These words are ours, not the upstream app's
+    (`shared/voice-call/main-loop-voice.ts`, `callEndedFacts`, `callEndedClosing`).
   - Every agent's system prompt carries the `## Voice calls` section.
   - The host part ships with the host bundle (`npm run publish:host-bundle`).
 - **After.** The banner says "Call ended", plays the hang-up tone and leaves by itself after

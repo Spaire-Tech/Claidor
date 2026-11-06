@@ -741,7 +741,7 @@ export class TurnRuntime {
             incoming.channel,
           );
         // What the agent says on a voice call goes to the call only: the upstream app's
-        // "Anything you already sent on that closed address is not in this chat".
+        // "Anything you sent on that closed address is not in this chat".
         if (isVoiceAddress(incoming.channel)) return undefined;
         if (incoming.type === "listener-connect")
           this.notifyListenerConnect(runSession, incoming);

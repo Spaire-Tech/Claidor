@@ -28,7 +28,7 @@ const src = (relative) => readFile(path.join(repoRoot, "source", relative), "utf
 const words = await loadModule("source/shared/voice-call/main-loop-voice.ts", "main-loop-voice");
 const channelModule = await loadModule("source/host/extensions/transcript/voice-call-channel.ts", "voice-call-channel");
 
-test("the agent's side of a call is the upstream app's text, with SendToUser named SendMessage", () => {
+test("the agent's side of a call is the upstream app's text, with SendToUser named SendMessage, but for the call's end", () => {
   assert.equal(words.CALL_ENDED_NOTICE, "The call ended. This channel is closed from now on, so anything still owed goes in the chat.");
   assert.equal(words.RELAY_SOFT_FAIL, "That did not come back. Say you could not get to it, and offer to try again.");
   assert.equal(words.DEFAULT_LEFTOVER_TASK, "surface whatever my work turns up for the caller");
@@ -36,8 +36,11 @@ test("the agent's side of a call is the upstream app's text, with SendToUser nam
   assert.equal(words.sendRules(), "Every request the call relays gets its result back on this channel: send the result, and send a mid-work update only when it changes what the call can say. Send nothing else.\n\nDo not send to acknowledge its message, to report that you have started or are still going, or to repeat an update you already sent, and do not include ids, paths, or detail it did not ask for. You are answering that agent, so never write back as though its message were the user's own words.");
   assert.equal(words.wakeClosing({ address: "voice:c1" }), "Answer by calling SendMessage with the channel set to voice:c1. That is the only route back to the call: text you write as your reply, or a SendMessage without that channel, never reaches it and the caller keeps waiting. Lead with the result in a sentence or two of plain text, and keep working the rest of your task.");
   assert.equal(words.replyNudge({ address: "voice:c1" }), "Your last turn sent nothing, so the call is still waiting on its result. Deliver it now by actually invoking SendMessage with the channel set to voice:c1: a real tool call, not text you write. Text you write as your reply, and a SendMessage without that channel, never reach the call. That one goes to the chat instead, and the caller waits on regardless. Lead with the result in a sentence or two of plain text. If the result is not ready, send one line on that channel saying what you are doing and that it will take a moment, then keep working and send the result when you have it.");
-  assert.equal(words.callEndedClosing(), "The call is over. Anything you already sent on that closed address is not in this chat. If work is still going, a follow-up is owed, or you already delivered a result on the call, call SendMessage with no channel: one short message covering those, then keep working them. Text you write as your reply never reaches the user. If nothing was owed, send nothing. Do not call SendMessage with that closed address.");
-  assert.equal(words.callEndedNudge(), "Your last turn sent nothing to this chat. If work is still going, a follow-up is owed, or you already delivered a result on the call, deliver it now by actually invoking SendMessage with no channel: a real tool call, not text you write. If nothing was owed, send nothing. Do not call SendMessage with that closed address.");
+  // The call's end, ours since 6 November 2026: "On the call I gave you the roster", when nothing of it was said.
+  assert.equal(words.callEndedClosing(), "The call is over. Anything you sent on that closed address is not in this chat. If work is still going, a follow-up is owed, or the call's work has a result, call SendMessage with no channel: one short message covering those, then keep working them. Say you told the user something on the call only if the call's words show it was said; anything else is new to them, so give it as new (if they asked you to text it, this is that text). Text you write as your reply never reaches the user. If nothing was owed, send nothing. Do not call SendMessage with that closed address.");
+  assert.equal(words.callEndedNudge(), "Your last turn sent nothing to this chat. If work is still going, a follow-up is owed, or the call's work has a result, deliver it now by actually invoking SendMessage with no channel: a real tool call, not text you write. Say you told the user something on the call only if the call's words show it was said; anything else is new to them, so give it as new (if they asked you to text it, this is that text). If nothing was owed, send nothing. Do not call SendMessage with that closed address.");
+  assert.doesNotMatch(words.callEndedClosing() + words.callEndedNudge() + words.voiceChannelSection(), /already delivered a result on the call|any result you already sent on the call/);
+  assert.match(words.voiceChannelSection(), /When the call ends you get a message on the same channel with what was said on it, and its address closes with it\..*What you send the call is said only if the call is still on when its voice gets to it: the user may hang up first\./s);
   assert.match(words.voiceCallsSection(), /^## Voice calls\n\nA call the user places is run by a second agent that talks to them, and it reaches you as a channel like any other connected one: an \[inbound\] message from a voice:<call> address\./);
   assert.match(words.voiceCallsSection(), /Every finished call is written to voice-calls\/ under your own files as one JSON file per call\. Read or grep that folder with Shell when the user refers back to a call\. It is the only record; the chat shows just a duration receipt\./);
   assert.match(words.voiceChannelSection(), /^## The voice channel\n\nWhile a call is open, SendMessage with the channel set to the call's voice:<call> address is how you answer it/);
@@ -53,6 +56,13 @@ test("a relayed request wakes the agent with the call's ask, the caller's own wo
   assert.match(words.voiceRequestWake({ address: "voice:c1", request: " ", midTurn: false }), /^\[inbound\] From voice:c1:\nsurface whatever my work turns up for the caller/);
   assert.equal(words.clampRelay("x".repeat(2500)).length, 2000);
   assert.equal(words.voiceEndedWake({ address: "voice:c1" }).split("\n").slice(0, 2).join("\n"), "[inbound] From voice:c1:\nThe call ended. This channel is closed from now on, so anything still owed goes in the chat.");
+  assert.match(words.voiceEndedWake({ address: "voice:c1" }), /\n\nThe call's words were not recorded, so do not tell the user what was said on it\.\n\nThe call is over\./);
+  const heard = Array.from({ length: 45 }, (_, index) => ({ speaker: index % 2 === 0 ? "user" : "agent", text: `line ${index}` }));
+  const facts = words.callEndedFacts({ heard, unsaid: ["Iris (main inbox), Marcus (Prime email)", "  "] });
+  assert.match(facts, /^What was said on the call\. The user heard this and nothing else:\n\(earlier lines left out\)\n- The call's voice: line 5\n- User: line 6\n/);
+  assert.equal(facts.split("\n").filter((line) => line.startsWith("- User: ") || line.startsWith("- The call's voice: ")).length, 40);
+  assert.match(facts, /\n\nYou sent these to the call, but it ended before they were said, so the user has not heard them:\n- Iris \(main inbox\), Marcus \(Prime email\)$/);
+  assert.equal(words.callEndedFacts({ heard: [{ speaker: "user", text: "x".repeat(500) }], unsaid: [] }).split("\n")[1].length, "- User: ".length + 400);
   assert.equal(words.isVoiceAddress("voice:c1"), true);
   assert.equal(words.isVoiceAddress("slack:C1"), false);
   assert.equal(words.isVoiceCallId("../etc"), false);
@@ -61,7 +71,10 @@ test("a relayed request wakes the agent with the call's ask, the caller's own wo
 function fakeHost({ dir, sends = [], running = false }) {
   const prompts = [];
   const lanes = [];
+  const failures = [];
   let interrupted = 0;
+  // One run at a time for the agent, as the host's queue: the call's end waits for the request in progress.
+  let queue = Promise.resolve();
   const written = [];
   const removed = [];
   const db = {
@@ -75,8 +88,18 @@ function fakeHost({ dir, sends = [], running = false }) {
     sessions: { resolveBackgroundSession: async (id) => ({ id, db }), activeSession: null, inMemoryTranscriptAgentId: null },
     groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
     runnerRegistry: { getRunner: () => runner },
-    runLifecycle: { runningAgentIds: () => new Set(running ? ["a1"] : []), beginSessionRun() {}, endSessionRun() {}, enqueueExclusiveRun: async (_id, run, options) => { lanes.push(options); await run(); } },
-    backgroundWakes: { dmPreemptedWakeAgentIds: new Set() },
+    runLifecycle: {
+      runningAgentIds: () => new Set(running ? ["a1"] : []),
+      beginSessionRun() {},
+      endSessionRun() {},
+      enqueueExclusiveRun: (_id, run, options) => {
+        lanes.push(options);
+        const next = queue.then(run);
+        queue = next.catch(() => {});
+        return next;
+      },
+    },
+    backgroundWakes: { dmPreemptedWakeAgentIds: new Set(), queueChannelDeliveryFailure: (agentId, failure) => failures.push({ agentId, ...failure }) },
     turnRuntime: { activeRequestPrompts: new Map(), activeRequestSources: new Map() },
     roster: { emitAgentUpdate: async () => {}, emit() {} },
     sessionStore: { getAgentDir: () => dir, markSessionActivity() {} },
@@ -86,6 +109,7 @@ function fakeHost({ dir, sends = [], running = false }) {
     run: async (prompt) => {
       prompts.push(prompt);
       const send = sends.shift();
+      if (send?.wait != null) await send.wait;
       let sent = 0;
       if (send?.call != null) { channel.deliver("a1", send.call, { kind: "text", text: send.text }); sent += 1; }
       if (send?.chat === true) sent += 1;
@@ -93,7 +117,7 @@ function fakeHost({ dir, sends = [], running = false }) {
     },
   };
   const channel = new channelModule.VoiceCallChannel(tm);
-  return { channel, prompts, lanes, interruptions: () => interrupted, tm, written, removed };
+  return { channel, prompts, lanes, failures, interruptions: () => interrupted, tm, written, removed };
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -139,7 +163,9 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     assert.equal(host.written.some((entry) => entry.fromAgent != null || entry.toAgent != null), false);
     assert.match(host.prompts[3], /^\[inbound\] From voice:call-0001:\nThe call ended\. This channel is closed from now on/);
     assert.match(host.prompts[4], /^Your last turn sent nothing to this chat\./, "the call-ended turn that sent nothing is nudged once");
+    assert.match(host.prompts[3], /\n\nWhat was said on the call\. The user heard this and nothing else:\n- User: Move it\n- The call's voice: On it\.\n\nThe call is over\./, "the call's end says what was said, the app's nudges left out");
     assert.equal(host.channel.deliver("a1", "voice:call-0001", { kind: "text", text: "late" }), true, "a send on the closed address is dropped");
+    assert.deepEqual(host.failures, [{ agentId: "a1", addressToken: "voice:call-0001", reason: words.CALL_ALREADY_ENDED }], "after the call's end was settled, the agent is told the send went nowhere");
     assert.deepEqual((await host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "outbox", after: 1 })).messages, []);
     await assert.rejects(() => host.channel.handle({ agentId: "a1", callId: "call-0001", kind: "request", request: "more" }), /not open/);
 
@@ -154,6 +180,69 @@ test("the call opens, relays mid-turn, carries the agent's answer back, nudges o
     assert.equal(record.requests, 2);
     assert.deepEqual(record.transcript, [{ speaker: "user", text: "Move it" }, { speaker: "agent", text: "On it." }]);
     assert.deepEqual(record.sentOnCall, ["Moved it to Monday at ten."]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// 5 November 2026, Simeon's chat: the person asked for the roster, said "You can just text it to me" and hung up;
+// the answer came after, went to the closed call, and the chat said "On the call I gave you the roster".
+test("an answer sent after the hang-up is told to the agent as never said, with what the call did say", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-voice-agent-"));
+  try {
+    let finish;
+    const working = new Promise((resolve) => { finish = resolve; });
+    const roster = "Iris (main inbox), Marcus (Prime email), Nora (finances)";
+    const host = fakeHost({ dir, sends: [{ wait: working, call: "voice:call-0004", text: roster }, { chat: true }] });
+    await host.channel.handle({ agentId: "a1", callId: "call-0004", kind: "open" });
+    await settle();
+    await host.channel.handle({ agentId: "a1", callId: "call-0004", kind: "request", request: "What is the user's current roster of agents?" });
+    await settle();
+    assert.deepEqual((await host.channel.handle({ agentId: "a1", callId: "call-0004", kind: "outbox", after: 0 })).messages, []);
+    const transcript = [
+      { speaker: "user", text: "So what is my current roster for my agents?" },
+      { speaker: "agent", text: "I'm getting that information for you now, Bass." },
+      { speaker: "user", text: "Okay. I'm gonna hang up now. You can just text it to me." },
+      { speaker: "agent", text: "Okay, Bass. I'll text you the agent roster." },
+    ];
+    await host.channel.handle({ agentId: "a1", callId: "call-0004", kind: "ended", record: { seconds: 81, transcript } });
+    await settle();
+    assert.equal(host.prompts.length, 1, "the call's end waits for the request still at work");
+    finish();
+    await settle();
+    assert.equal(host.prompts.length, 2, "no nudge to answer a call that has ended");
+    const ended = host.prompts[1];
+    assert.match(ended, /^\[inbound\] From voice:call-0004:\nThe call ended\./);
+    assert.match(ended, /What was said on the call\. The user heard this and nothing else:\n- User: So what is my current roster for my agents\?\n- The call's voice: I'm getting that information for you now, Bass\.\n- User: Okay\. I'm gonna hang up now\. You can just text it to me\.\n- The call's voice: Okay, Bass\. I'll text you the agent roster\./);
+    assert.match(ended, new RegExp(`You sent these to the call, but it ended before they were said, so the user has not heard them:\\n- ${roster.replace(/[()]/g, "\\$&")}\\n`));
+    assert.match(ended, /Say you told the user something on the call only if the call's words show it was said; anything else is new to them, so give it as new \(if they asked you to text it, this is that text\)\./);
+    assert.deepEqual(host.failures, [], "told in the call's end, not again as a failed send");
+    const files = await readdir(path.join(dir, "voice-calls"));
+    assert.deepEqual(JSON.parse(await readFile(path.join(dir, "voice-calls", files[0]), "utf8")).sentOnCall, [], "the record holds only what reached the call");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("what the voice never read before the hang-up is never said; what it read is left to the call's words", async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-voice-agent-"));
+  try {
+    const host = fakeHost({ dir, sends: [{ call: "voice:call-0005", text: "Tessa found no message from Apple." }, { call: "voice:call-0005", text: "The build is still Removed." }, { chat: true }] });
+    await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "open" });
+    await settle();
+    await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "request", request: "Check Tessa's messages about Apple" });
+    await settle();
+    assert.deepEqual((await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "outbox", after: 0 })).messages, [{ seq: 1, text: "Tessa found no message from Apple." }]);
+    await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "request", request: "And the build?" });
+    await settle();
+    // No transcript from this app: nothing can be claimed as said.
+    await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "ended", record: { seconds: 30 } });
+    await settle();
+    const ended = host.prompts.at(-1);
+    assert.match(ended, /The call's words were not recorded, so do not tell the user what was said on it\.\n\nYou sent these to the call, but it ended before they were said, so the user has not heard them:\n- The build is still Removed\.\n\nThe call is over\./);
+    assert.doesNotMatch(ended, /- Tessa found no message from Apple\./, "read by the voice: whether it was said is the call's words' to show");
+    // Read after the hang-up, a message can't be said: the voice's late read changes nothing.
+    assert.deepEqual((await host.channel.handle({ agentId: "a1", callId: "call-0005", kind: "outbox", after: 1 })).messages, [{ seq: 2, text: "The build is still Removed." }]);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
