@@ -157,3 +157,48 @@
   font-size: 16px;
   line-height: 22px;
 }
+
+/* MARK: The chat's column on Windows */
+
+/* 7 November 2026, the founder: the other app's chat "has a width max. we  */
+/* don't. our composer, and chats go far even in a big screen". Measured:   */
+/* its messages and message field keep to a column 960 wide, centred in    */
+/* the chat. Ours ran from the sidebar to the window's edge. The same      */
+/* column here: the messages' rows and the field, 16 in at the least.      */
+:root[data-desktop] .transcript-rows,
+:root[data-desktop] .composer {
+  padding-left: max(16px, calc((100% - 960px) / 2));
+  padding-right: max(16px, calc((100% - 960px) / 2));
+}
+
+/* MARK: The sidebar's words on Windows */
+
+/* The founder: the sidebar's words are "either too small, or too light".   */
+/* Measured beside the other app: as dark, a size smaller (its names 15,   */
+/* previews 14, sections 13; ours 14, 13, 12), next to pictures 46 to its   */
+/* 34. A size up each, and the time and the title tag with them; the time  */
+/* at the previews' grey, not the lighter one.                             */
+:root[data-desktop] .agent-row .name {
+  font-size: 15px;
+}
+
+:root[data-desktop] .agent-row .preview {
+  font-size: 14px;
+  line-height: 19px;
+  height: 19px;
+}
+
+:root[data-desktop] .agent-row .title {
+  font-size: 12.5px;
+}
+
+:root[data-desktop] .agent-row .time {
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+:root[data-desktop] .header-line {
+  height: 18px;
+  font-size: 13px;
+  line-height: 18px;
+}
