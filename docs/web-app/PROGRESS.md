@@ -864,7 +864,8 @@ both".
 - **Not checked.** The install on a Windows PC; the agent's own words
   after a refusal (they follow the engine, which reaches the computers only
   when it is published from a Mac: `npm run package && npm run
-  publish:host-bundle`).
+  publish:host-bundle`). The Partner Center / Store build remains
+  separate: this change is the developer installer, not that package.
 
 ### 6 November 2026: the Windows app's small things left from step 7
 
