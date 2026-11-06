@@ -254,6 +254,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 6 November 2026 | In a Store install (`process.windowsStore`) the app's own updater is off (`releasedBuild`), Settings › Updates is left out (as on the web; `DesktopFacts.store`), and the app doesn't register `simeon://` itself: the package's manifest declares it | The session |
 | 6 November 2026 | The Store's manifest declares English (en-US) only, so the first submission has one listing to write; each language added later comes with its own listing. Its capabilities: the internet, the microphone (calls and dictation) and full trust (as the installer's app). Its tiles show the icon in their middle on a clear ground, without the name; its description is "Simeon" (package.json's is written for us) | The session |
 | 7 November 2026 | The Windows app draws no blur (`backdrop-filter`) anywhere: Chrome drew every word of the chat in grey anti-aliasing instead of Windows' ClearType while any blurred glass was in the window (measured, below). Its glass is solid (white, `#1e1e1e` on dark), the chat's head fades the messages out without blurring them, the sidebar is a solid grey (`#f5f5f5`). The web keeps the Mac's glass | The founder: "how light our design seem"; the cause measured by the session |
+| 7 November 2026 | In the Windows app the chat keeps to a column 960 wide, centred (its messages and the message field), as the other Windows chat app: in a wide window ours ran from the sidebar to the window's edge. A bubble's own limit stays the Mac's (640; the other app's 560). The Mac has no such column | The founder: "grok bot's limit their to a point. can we get the same" |
+| 7 November 2026 | In the Windows app the sidebar's words are a size up: names 15, previews 14, times 13 at the previews' grey (not the lighter one), title tags 12.5, section names 13, as measured in the other app (its names 15, previews 14, sections 13); its pictures stay 46 | The founder: the sidebar is "either too small, or too light"; measured: as dark, a size smaller |
 | 7 November 2026 | In the Windows app a message's words are 16 on 22 (the Mac's 14 on 20, 21 for the person's), as the other Windows chat app the founder compared: only the words grow, the gaps and a bubble's padding stay the Mac's | The founder, comparing the two apps side by side; the sizes measured by the session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
 
@@ -836,6 +838,36 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 7 November 2026: the chat's column and the sidebar's words on Windows
+
+The founder, the Windows app (with the sharp words) beside the other app
+full screen: "it has a width max. we don't. our composer, and chats go
+far even in a big screen … can we get the same", and the sidebar is
+"either too small, or too light".
+
+- **Measured** (the founder's screenshots, the same screen):
+  - The other app's messages and field keep to a column 960 wide, centred
+    in the chat (its agent's bubbles 675 to 1234, its person's and the
+    field ending at 1634); ours ran from 415 to 1902.
+  - The sidebars' words are as dark (a preview's darkest strokes 116 to
+    its 112, the same grey #F5F5F5 behind), but each a size smaller:
+    names 14 to its 15 ("Chief" 27 wide in our 11.5 tag, 35 in its name),
+    previews 13 to its 14 ("the" 18 to 20), section names 12 to its 13;
+    our pictures 46 to its 34.
+- **Done** (`src/window/desktop.css`, the Windows app only): the
+  messages' rows and the message field padded to a 960 column, 16 in at
+  the least; the sidebar's names 15, previews 14, times 13 at the
+  previews' grey, title tags 12.5, section names 13.
+- **Checked.** The real app here at 1600 wide (Electron, the stand-in's
+  chat): the chat 320 to 1600, its messages and the + from 480, the
+  person's bubbles and the field to 1440; the sidebar's names 15,
+  previews 14, times 13 (a section's name not shown: the stand-in has no
+  sections); `pnpm typecheck`, `pnpm lint`, `pnpm test` (1205), the build
+  committed; `npm run smoke` (all checks).
+- **Not checked.** On the Dell, full screen.
+
+**Next:** the founder's next design point.
 
 ### 7 November 2026: sharp, bigger words in the Windows app
 
