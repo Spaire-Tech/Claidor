@@ -35,6 +35,7 @@ import { join } from "node:path";
 
 import { EARLIER_WORK_CAME_BACK_NUDGES, WORK_CAME_BACK_NUDGE } from "../../../shared/voice-call/voice-call-prompt.js";
 import {
+  CALL_ALREADY_ENDED,
   callEndedNudge,
   clampRelay,
   isVoiceAddress,
@@ -70,6 +71,14 @@ interface VoiceCallState {
   relayed: number;
   /** The id of the call's line in the chat, once written (null when it could not be). */
   receipt: Promise<string | null> | null;
+  /** The last outbox message the voice read while the call was on: after it, nothing was said. */
+  readSeq: number;
+  /** What the call said, from its record (null when the app sent none). */
+  heard: { speaker: "user" | "agent"; text: string }[] | null;
+  /** Sent on the address after the call ended, before the agent was told so: never said. */
+  readonly lateSends: string[];
+  /** The agent's word on the call's end: still to come, given, or none (nothing was asked). */
+  endedWake: "pending" | "given" | "none";
 }
 
 export interface VoiceCallRecordInput {
@@ -110,17 +119,24 @@ export class VoiceCallChannel {
 
   /**
    * A SendMessage on a `voice:` address. True when it was taken (the call is
-   * open, or it is closed and the message is dropped, as the upstream app does);
-   * false when the address is not a call this agent has.
+   * open, or it is closed and the message goes nowhere, as the upstream app's);
+   * false when the address is not a call this agent has. A message sent after
+   * the call ended is never said, and the agent is told so: in the call's end
+   * when that is still to come (`lateSends`), as a failed send after it.
    */
   deliver(agentId: string, address: string, outbound: unknown): boolean {
     if (!isVoiceAddress(address)) return false;
     const call = this.callAt(agentId, address);
     if (call == null) return false;
-    if (!call.open) return true;
     // `buildChannelOutboundMessage`: {kind:"text", text} or {kind:"attachment", url, caption}.
     // The call carries words only; a file is said in writing, as its caption.
     const said = (isRecord(outbound) ? text(outbound.text) || text(outbound.caption) : "").trim();
+    if (!call.open) {
+      if (said.length === 0) return true;
+      if (call.endedWake === "pending") call.lateSends.push(clampRelay(said));
+      else this.tm.backgroundWakes.queueChannelDeliveryFailure(agentId, { addressToken: address, reason: CALL_ALREADY_ENDED });
+      return true;
+    }
     if (said.length === 0) return true;
     call.outbox.push({ seq: call.nextSeq++, text: clampRelay(said), atMs: this.now() });
     if (call.outbox.length > OUTBOX_LIMIT) call.outbox.splice(0, call.outbox.length - OUTBOX_LIMIT);
@@ -140,7 +156,7 @@ export class VoiceCallChannel {
       case "open": {
         const existing = this.calls.get(address);
         if (existing == null) {
-          const call: VoiceCallState = { agentId, callId, address, openedAtMs: this.now(), open: true, closedAtMs: null, nextSeq: 1, outbox: [], sentOnCall: 0, relayed: 0, receipt: null };
+          const call: VoiceCallState = { agentId, callId, address, openedAtMs: this.now(), open: true, closedAtMs: null, nextSeq: 1, outbox: [], sentOnCall: 0, relayed: 0, receipt: null, readSeq: 0, heard: null, lateSends: [], endedWake: "pending" };
           this.calls.set(address, call);
           call.receipt = this.appendReceipt(call).catch(() => null);
         } else if (existing.agentId !== agentId) throw new Error("That call belongs to another agent.");
@@ -157,8 +173,11 @@ export class VoiceCallChannel {
       case "outbox": {
         const call = this.callAt(agentId, address);
         const after = typeof args.after === "number" && Number.isFinite(args.after) ? args.after : 0;
+        const messages = call == null ? [] : call.outbox.filter((message) => message.seq > after);
+        // Read while the call is on, the voice can still say it; read after, it can't.
+        if (call?.open === true) call.readSeq = Math.max(call.readSeq, after, ...messages.map((message) => message.seq));
         return {
-          messages: call == null ? [] : call.outbox.filter((message) => message.seq > after).map((message) => ({ seq: message.seq, text: message.text })),
+          messages: messages.map((message) => ({ seq: message.seq, text: message.text })),
           open: call?.open === true,
           working: this.tm.runLifecycle.runningAgentIds().has(agentId),
         };
@@ -169,9 +188,11 @@ export class VoiceCallChannel {
         call.open = false;
         call.closedAtMs = this.now();
         const input: VoiceCallRecordInput = isRecord(args.record) ? args.record : {};
+        call.heard = Array.isArray(input.transcript) ? transcriptOf(input) : null;
         const recordPath = this.writeRecord(call, input);
         const exchange = await this.settleReceipt(call, input).catch(() => 0);
         if (call.relayed > 0 || call.sentOnCall > 0) void this.runEnded(call).catch(() => {});
+        else call.endedWake = "none";
         return { closed: true, exchange, ...(recordPath == null ? {} : { record: recordPath }) };
       }
       default:
@@ -220,12 +241,16 @@ export class VoiceCallChannel {
     );
   }
 
-  /** The call ended: after any run in progress, the agent settles what it owes the chat. */
+  /**
+   * The call ended: after any run in progress (whose answer to the call may
+   * come after the hang-up), the agent settles what it owes the chat, told
+   * what the call said and what it never said.
+   */
   private async runEnded(call: VoiceCallState): Promise<void> {
     const tm = this.tm;
-    if (!tm.execution.canExecute) return;
+    if (!tm.execution.canExecute) return void (call.endedWake = "none");
     const session = await tm.sessions.resolveBackgroundSession(call.agentId);
-    if (tm.groupChat.isGroupSession(session) || tm.groupChat.isRemoteRoomSession(session)) return;
+    if (tm.groupChat.isGroupSession(session) || tm.groupChat.isRemoteRoomSession(session)) return void (call.endedWake = "none");
     const runner = tm.runnerRegistry.getRunner(session);
     tm.runLifecycle.beginSessionRun(session);
     await tm.runLifecycle.enqueueExclusiveRun(
@@ -234,7 +259,9 @@ export class VoiceCallChannel {
         tm.turnRuntime.activeRequestPrompts.delete(session.id);
         tm.turnRuntime.activeRequestSources.set(session.id, "voice-call");
         try {
-          const result = await runner.run(voiceEndedWake({ address: call.address }), { hidden: true, callReason: "voice" });
+          const unsaid = [...call.outbox.filter((message) => message.seq > call.readSeq).map((message) => message.text), ...call.lateSends];
+          call.endedWake = "given";
+          const result = await runner.run(voiceEndedWake({ address: call.address, heard: call.heard, unsaid }), { hidden: true, callReason: "voice" });
           if (!result.aborted && result.sentMessageCount === 0) await runner.run(callEndedNudge(), { hidden: true, callReason: "nudge" });
           await tm.roster.emitAgentUpdate(session.id);
         } finally {
