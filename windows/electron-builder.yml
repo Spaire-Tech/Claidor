@@ -28,7 +28,7 @@ protocols:
     schemes:
       - simeon
 win:
-  # The Mac's icon (scripts/make-icon.mjs).
+  # The icon drawn for Windows (scripts/make-icon.mjs).
   icon: resources/icon.ico
   target:
     - target: nsis
@@ -46,6 +46,23 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Simeon
   artifactName: Simeon-Setup-${version}.${ext}
+# The Microsoft Store's package (`node scripts/store.mjs`, on Windows only):
+# its identity from Partner Center (store.json, put in by the script), its
+# pictures in resources/appx/ (scripts/make-icon.mjs). The Store signs it and
+# updates it, so the app's own updater stays off in it (`process.windowsStore`).
+# It runs with the person's own rights (runFullTrust), as the installer's
+# app does; the microphone for calls and dictation.
+appx:
+  applicationId: Simeon
+  displayName: Simeon
+  backgroundColor: transparent
+  languages:
+    - en-US
+  capabilities:
+    - runFullTrust
+    - internetClient
+    - microphone
+  artifactName: Simeon-Store-${version}.${ext}
 # Updates (src/main/updates): electron-updater reads `latest.yml` here and the
 # installer it names; the server sends both on to the release bucket's
 # releases/win32-x64/, as the Mac's appcast (server/simeon/desktop/releases.py).

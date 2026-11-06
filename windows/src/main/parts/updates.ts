@@ -55,6 +55,7 @@ export function updatesItself(context: AppContext): boolean {
     build: context.app.build,
     platform: context.app.platform,
     signers: signersOf(appPackage()),
+    store: context.app.store === true,
   })
 }
 

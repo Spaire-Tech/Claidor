@@ -34,6 +34,8 @@ export interface DesktopFacts {
   env: Record<string, string>
   /** Which window this page is: the app's own, or the call's banner (7c). */
   window: 'main' | 'call'
+  /** Installed from the Microsoft Store (`process.windowsStore`): the Store updates it, so Settings › Updates and the app's own updater are left out. */
+  store?: boolean
 }
 
 /** The window's look, for Windows' own parts (the caption buttons, the menus' theme). */

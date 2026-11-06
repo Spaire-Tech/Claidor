@@ -68,7 +68,7 @@ function parentOf(page: SettingsPage): SettingsPage | undefined {
 }
 
 /** The pages listed, in the Mac's order: Usage & Billing as the iPhone lists it, not for an enterprise team (`store.usageListed`); Updates in the Windows app only (a web page is always the latest). */
-function listed(store: AppStore): SettingsPage[] {
+export function listed(store: AppStore): SettingsPage[] {
   const order: SettingsPage[] = [
     'general',
     'usage',
@@ -83,7 +83,9 @@ function listed(store: AppStore): SettingsPage[] {
   return order.filter(
     (page) =>
       (page !== 'usage' || store.usageListed) &&
-      (page !== 'updates' || desktop() !== undefined),
+      // Updates: the Windows app's own, not a Store install's (the Store updates it).
+      (page !== 'updates' ||
+        (desktop() !== undefined && desktop()?.facts.store !== true)),
   )
 }
 

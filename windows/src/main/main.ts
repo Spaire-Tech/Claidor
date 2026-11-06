@@ -81,6 +81,7 @@ function start(): void {
     systemLanguages: app.getPreferredSystemLanguages(),
     argv: process.argv,
     env: process.env,
+    store: process.windowsStore === true,
   }
   const facts = factsFor(appFacts, 'main')
   const dataFolder = app.getPath('userData')
@@ -287,7 +288,8 @@ if (!app.requestSingleInstanceLock()) {
   // Another launch: it hands its command line (a link) to the first and goes.
   app.quit()
 } else {
-  if (process.platform === 'win32') {
+  // The Store's package declares `simeon://` itself (electron-builder.yml's `protocols`); a packaged app can't write the registry's.
+  if (process.platform === 'win32' && !process.windowsStore) {
     // `simeon://` opens this app (the installer registers it too).
     if (process.defaultApp && process.argv[1])
       app.setAsDefaultProtocolClient(appLinkScheme, process.execPath, [

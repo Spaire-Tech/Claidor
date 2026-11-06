@@ -36,8 +36,11 @@ export function releasedBuild(facts: {
   build: string
   platform: string
   signers: readonly string[]
+  /** A Microsoft Store install: the Store updates it, never the app. */
+  store?: boolean
 }): boolean {
   return (
+    !facts.store &&
     facts.packaged &&
     facts.platform === 'win32' &&
     /^[1-9]\d{0,8}$/.test(facts.build) &&
