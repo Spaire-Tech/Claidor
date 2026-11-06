@@ -253,6 +253,8 @@ file and the code disagree, the code is right and this file is fixed.
 | 6 November 2026 | The Store's package takes its identity from `windows/store.json`, committed: the identity name, publisher and publisher name Partner Center gives are not secret (Partner Center shows them, every package carries them). `node scripts/store.mjs` refuses to build while one is empty or not in Partner Center's form, and says which field to copy from where | The session; the founder said "yup" to preparing the Store's build |
 | 6 November 2026 | In a Store install (`process.windowsStore`) the app's own updater is off (`releasedBuild`), Settings › Updates is left out (as on the web; `DesktopFacts.store`), and the app doesn't register `simeon://` itself: the package's manifest declares it | The session |
 | 6 November 2026 | The Store's manifest declares English (en-US) only, so the first submission has one listing to write; each language added later comes with its own listing. Its capabilities: the internet, the microphone (calls and dictation) and full trust (as the installer's app). Its tiles show the icon in their middle on a clear ground, without the name; its description is "Simeon" (package.json's is written for us) | The session |
+| 7 November 2026 | The Windows app draws no blur (`backdrop-filter`) anywhere: Chrome drew every word of the chat in grey anti-aliasing instead of Windows' ClearType while any blurred glass was in the window (measured, below). Its glass is solid (white, `#1e1e1e` on dark), the chat's head fades the messages out without blurring them, the sidebar is a solid grey (`#f5f5f5`). The web keeps the Mac's glass | The founder: "how light our design seem"; the cause measured by the session |
+| 7 November 2026 | In the Windows app a message's words are 16 on 22 (the Mac's 14 on 20, 21 for the person's), as the other Windows chat app the founder compared: only the words grow, the gaps and a bubble's padding stay the Mac's | The founder, comparing the two apps side by side; the sizes measured by the session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
 
 ## For Windows
@@ -834,6 +836,45 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 7 November 2026: sharp, bigger words in the Windows app
+
+The founder, the Windows app beside another Windows chat app: "first thing
+is just how light our design seem. even tho you said we fixed it
+yesterday … I'm thinking perhaps its the size of the message boxes, and
+the sidebar." (6 November's fix, the Mac's font smoothing, does nothing on
+Windows, as that entry said.)
+
+- **Measured** (the founder's screenshots, both apps on the same screen):
+  - The other app's words are ClearType (colour at the letters' edges, its
+    text #1C1C1C); ours were grey anti-aliasing, most of each letter's
+    pixels mid-grey (#4F4F51), so they read pale and thin. That is the
+    "light" look.
+  - Its words are about 16 on 22 lines (capitals 11 high to our 10;
+    "computer" 68 wide to our 57); ours 14 on 20. Its gaps are ours (10
+    between blocks, 4 between list items) on its taller lines.
+  - The sidebars are the same width (88), spacing and avatar size (34 to
+    our 36); its rail is a grey of its own (#F5F5F5), ours nearly white.
+- **Why grey** (measured in the real app here: Electron with the
+  stand-in's chat, ClearType-style text switched on, the colour pixels of
+  an agent's bubble counted): 0 of 10,160 as it was; with every blur
+  removed, 8,904 of 10,567. Any one blurred element in the window (the
+  head's veil, the message field, the name pill, a round button, even the
+  sidebar's) kept the whole chat grey; an opaque chat behind them changed
+  nothing.
+- **Done** (`src/window/desktop.css`, the Windows app only): no
+  `backdrop-filter` anywhere; the glass solid (`--glass` white, #1e1e1e on
+  dark), the head's veil the window's ground fading out, the sidebar
+  #f5f5f5; a message's words 16 on 22 (and a small heading in one).
+- **Checked.** The same capture after: 10,824 of 13,267 colour pixels in
+  the agent's bubble, the person's and the sidebar's too; before and after
+  side by side (the head still fades the messages out, nothing moved);
+  `pnpm typecheck`, `pnpm lint`, `pnpm test` (1205), the build committed;
+  `npm run smoke` (all checks).
+- **Not checked.** On the Dell: ClearType itself (here it is FreeType's
+  equivalent, with another font than Segoe UI), and how 16 reads there.
+
+**Next:** the founder's next design point.
 
 ### 6 November 2026: a test copy of the Store's package for the Dell
 
