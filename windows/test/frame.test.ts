@@ -137,6 +137,13 @@ describe('the facts', () => {
     expect(facts.env).toEqual({ SIMEON_VOICE_CALLS: '1' })
     expect(facts.track).toBe('stable')
     expect(facts.window).toBe('main')
+    // A Microsoft Store install says so; any other says nothing.
+    expect(facts.store).toBeUndefined()
+    const fromStore = factsFor(
+      { version: '0.1.0', build: '0', osVersion: '10.0.26100', platform: 'win32', systemLanguages: [], argv: [], env: {}, store: true },
+      'main',
+    )
+    expect(fromStore.store).toBe(true)
     const argument = factsArgument(facts)
     expect(argument.startsWith(factsFlag)).toBe(true)
     expect(

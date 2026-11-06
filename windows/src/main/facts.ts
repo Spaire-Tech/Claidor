@@ -56,6 +56,8 @@ export interface AppFacts {
   systemLanguages: string[]
   argv: readonly string[]
   env: Readonly<Record<string, string | undefined>>
+  /** Installed from the Microsoft Store (`process.windowsStore`). */
+  store?: boolean
 }
 
 /** The facts for a window's page. */
@@ -75,6 +77,7 @@ export function factsFor(app: AppFacts, window: DesktopFacts['window']): Desktop
     systemLanguages: [...app.systemLanguages],
     env,
     window,
+    ...(app.store ? { store: true } : {}),
   }
 }
 

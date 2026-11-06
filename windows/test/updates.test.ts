@@ -513,6 +513,8 @@ describe('which builds update themselves, and from where', () => {
     expect(releasedBuild({ ...release, signers: [] })).toBe(false)
     expect(releasedBuild({ ...release, build: '0' })).toBe(false)
     expect(releasedBuild({ ...release, packaged: false })).toBe(false)
+    // A Microsoft Store install: the Store updates it, never the app, signed or not.
+    expect(releasedBuild({ ...release, store: true })).toBe(false)
     expect(releasedBuild({ ...release, platform: 'linux' })).toBe(false)
     expect(releasedBuild({ ...release, build: '12a' })).toBe(false)
   })

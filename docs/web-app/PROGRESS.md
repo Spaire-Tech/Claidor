@@ -250,6 +250,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 6 November 2026 | The Windows app reads pictures from other sites in its main process (an airline's logo, a saved login's touch icon) and keeps them on the PC a week, as the Mac's caches. Only `https:` on port 443, public hosts only, the host's addresses looked up before each request and each redirect (stricter than the Mac's, which checks the name only), 2 MB a picture, 512 KB a page's head, eight seconds a request; a picture must be one by its first bytes | The session |
 | 6 November 2026 | The window doesn't grow for a flight's details in the Windows app, as on the Mac (`PaneState.toggleFlight` never grows it); it grows for the agent's pane and for ⌘B beside it | The session, from the Mac's code |
 | 6 November 2026 | "…on your PC…" for the call's two lines is added to the core's String Catalog by hand (`extractionState: manual`), since only the Windows app says it | The session |
+| 6 November 2026 | The Store's package takes its identity from `windows/store.json`, committed: the identity name, publisher and publisher name Partner Center gives are not secret (Partner Center shows them, every package carries them). `node scripts/store.mjs` refuses to build while one is empty or not in Partner Center's form, and says which field to copy from where | The session; the founder said "yup" to preparing the Store's build |
+| 6 November 2026 | In a Store install (`process.windowsStore`) the app's own updater is off (`releasedBuild`), Settings › Updates is left out (as on the web; `DesktopFacts.store`), and the app doesn't register `simeon://` itself: the package's manifest declares it | The session |
+| 6 November 2026 | The Store's manifest declares English (en-US) only, so the first submission has one listing to write; each language added later comes with its own listing. Its capabilities: the internet, the microphone (calls and dictation) and full trust (as the installer's app). Its tiles show the icon in their middle on a clear ground, without the name; its description is "Simeon" (package.json's is written for us) | The session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
 
 ## For Windows
@@ -601,6 +604,9 @@ For the founder, each to be answered before the step that needs it:
   D-U-N-S number, typed by the founder into Partner Center), the name
   "Simeon" reserved for the app there, and the package's identity it gives
   (its identity name, publisher and publisher name) for the Store's build.
+  6 November 2026: the account waits on Microsoft's business verification;
+  the Store's build is ready and waits for those three values, pasted into
+  `windows/store.json`, then `node scripts/store.mjs` on the Windows PC.
   Then the Store's listing: description, screenshots, the privacy policy's
   address, the age rating. The Store's review runs on each release.
 - **GitHub Actions doesn't run.** Every job on every pull request (#539 to
@@ -826,6 +832,56 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 6 November 2026: the Microsoft Store's build, ready for Partner Center
+
+While Microsoft verifies the company, the session offered to prepare the
+Store's build; the founder: "yup".
+
+- **Done.**
+  - **The build**: `node scripts/store.mjs` (in `windows/`, on Windows)
+    reads the identity from `windows/store.json`, checks this is Windows
+    and the web app's committed build is there, builds the app as the
+    installer's is, and makes `out/store/Simeon-Store-<version>.appx` with
+    electron-builder's `appx` target (`electron-builder.yml`). Nothing is
+    signed: no certificate of the PC's is used (the Store signs). It
+    prints where to upload it.
+  - **The identity**: `windows/store.json` holds the three values, empty
+    until Partner Center gives them (Apps and games › Simeon › Product
+    management › Product identity). `scripts/lib/store.mjs` checks them:
+    the identity name 3 to 50 letters, digits, dots and dashes; the
+    publisher a `CN=…` name; each missing or malformed one named with the
+    field to copy.
+  - **The pictures**: `make-icon.mjs` now also draws the Store's 25 in
+    `resources/appx/`: the app list's and taskbar's (44 at five scales, and
+    16 to 256 with and without a plate), the Store's logo (50 at five
+    scales), the Start menu's square and wide tiles (the icon at 60% of
+    their height, in their middle, on a clear ground). `--check` covers
+    them.
+  - **A Store install**: the app tells the page it is one
+    (`DesktopFacts.store`, from `process.windowsStore`); its own updater
+    stays off (`releasedBuild`), Settings › Updates is left out
+    (`SettingsWindow.tsx`), and it doesn't register `simeon://` itself
+    (the manifest does).
+- **Checked.** The package's manifest written here from the config with a
+  made-up identity, by electron-builder's own code without `makeappx`
+  (its `writeManifest` and `computeUserAssets`): the identity, version
+  `0.1.0.0`, display name "Simeon", the capabilities, the `simeon`
+  protocol, English, the tiles; well-formed XML; all 25 pictures mapped
+  and none of electron-builder's samples. `windows`: `npm test` (221, with
+  `store.test.ts`), `npm run typecheck`, `make-icon.mjs --check`.
+  `clients/apps/app`: `pnpm typecheck`, `pnpm lint`, `pnpm test` (1205,
+  with `SettingsWindow.test.tsx`), the build committed.
+- **Not checked.** The `.appx` itself: electron-builder makes it only on
+  Windows ("AppX is supported only on Windows 10"), so `makeappx` and
+  `makepri` haven't run on these pictures. A Store install hasn't run
+  (Settings without Updates, `simeon://` from a browser). Partner Center
+  hasn't seen the package. If the name Partner Center reserved isn't
+  exactly "Simeon", `appx.displayName` must be changed to it.
+
+**Next:** when the account is verified, the three values into
+`windows/store.json`, `node scripts/store.mjs` on the Windows PC, the
+`.appx` uploaded with the listing.
 
 ### 6 November 2026: the Windows icon drawn for Windows
 

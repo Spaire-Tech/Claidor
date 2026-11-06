@@ -39,6 +39,16 @@ Windows' own parts around it. The plan and the record are
   `scripts/make-icon.mjs`): a white tile that fills the picture with Simeon's
   mark across 78% of it, the mark the tray draws (`scripts/lib/tile.mjs`,
   `src/main/surfaces/picture.ts`).
+- **The Microsoft Store's package** (`scripts/store.mjs`, on Windows only:
+  it needs Windows' own `makeappx`) is the same app as an `.appx` for
+  Partner Center. Its identity is the three values on Partner Center's
+  Product identity page, written once in `store.json` (none is secret); the
+  script refuses to build while one is empty or not in Partner Center's
+  form. Its pictures are `resources/appx/` (drawn by `make-icon.mjs`), its
+  settings `electron-builder.yml`'s `appx`. The Store signs and updates it,
+  so in a Store install (`process.windowsStore`) the app's own updater is
+  off, Settings › Updates is left out, and `simeon://` is the package's,
+  not registered by the app.
 
 ## Commands
 
@@ -54,8 +64,12 @@ npm run smoke              # the app run for real against a stand-in (Linux: xvf
 npm run package            # a developer's installer in out/ (on Linux: needs Wine)
 node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD, for lib/release.mjs's signers)
 node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)
-node scripts/make-icon.mjs # the icon drawn again
+node scripts/make-icon.mjs # the icon and the Store's pictures drawn again
+node scripts/store.mjs     # the Store's package in out/store/ (on Windows; store.json filled in from Partner Center)
 ```
+
+For each new Store submission, raise `version` in `package.json` first: the
+Store takes only a higher one.
 
 `SIMEON_UPDATES_FEED=http://127.0.0.1:<port>/<path>` gives a build that
 isn't a release a stand-in feed on this computer (the checks); a release
