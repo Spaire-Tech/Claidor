@@ -3,6 +3,7 @@
 // which signs and updates it):
 //
 //   node scripts/store.mjs          (in windows/, on Windows; writes out/store/Simeon-Store-<version>.appx)
+//   node scripts/store.mjs --test   (the same, signed for this PC only and installed on it, to try before the upload)
 //
 // 1. Its identity comes from store.json: the three values on Partner
 //    Center's Product identity page (Apps and games › Simeon › Product
@@ -15,26 +16,54 @@
 //    new submission raise `version` in package.json first: the Store takes
 //    only a higher one.
 //
-// To try the package on this PC before uploading, Windows asks for it to be
-// signed; install the installer's build instead (npm run package), which is
-// the same app.
+// --test: Windows installs only a signed package, so the test copy
+// (out/store-test/Simeon-Store-<version>-test.appx, never the one uploaded)
+// is signed with a certificate made on this PC for the Store's publisher,
+// "Simeon Store test (this PC only)" in this person's certificates, which this
+// PC is told to trust (Windows asks once, Yes), and then installed: Simeon in
+// the Start menu, as the Store's will be. Uninstall the developer's Simeon
+// (the installer's) first, so the two don't share `simeon://`; uninstall
+// the test copy before installing the Store's.
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { identityFields, readStoreIdentity } from './lib/store.mjs'
+import {
+  encodeScript,
+  identityFields,
+  installScript,
+  readStoreIdentity,
+  testCertificateScript,
+  trustScript,
+  trustedScript,
+} from './lib/store.mjs'
 
 const require = createRequire(import.meta.url)
 const windows = fileURLToPath(new URL('..', import.meta.url))
 const root = path.resolve(windows, '..')
-const OUT = path.join(windows, 'out', 'store')
+const test = process.argv.includes('--test')
+const OUT = path.join(windows, 'out', test ? 'store-test' : 'store')
 
 const say = (text) => console.log(`\n\x1b[1m${text}\x1b[0m`)
 const fail = (text) => {
   console.error(`\n\x1b[31m${text}\x1b[0m`)
   process.exit(1)
+}
+
+/** Windows PowerShell (5.1, the one with Add-AppxPackage), the script encoded; its output, or its error in `fail`. */
+function powershell(script, what) {
+  try {
+    return execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encodeScript(script)], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim()
+  } catch (error) {
+    const said = [error?.stderr, error?.stdout].filter((text) => typeof text === 'string' && text.trim() !== '').join('\n')
+    fail(`${what}: ${said.trim() || (error instanceof Error ? error.message : String(error))}`)
+  }
 }
 
 say('Reading the Store identity (store.json)')
@@ -56,8 +85,25 @@ if (process.platform !== 'win32')
   fail('The Store’s package is made on Windows: it needs Windows’ own packaging tools (makeappx). Run this on the Windows PC.')
 if (!existsSync(path.join(root, 'clients/apps/web/public/app-next/index.html')))
   fail('The web app’s committed build is missing (clients/apps/web/public/app-next): build it in clients/apps/app (pnpm build) and commit it.')
-// The Store signs the package: no certificate of this PC's is used.
+// The Store signs the package: no certificate of this PC's is used (but the test copy's own).
 for (const name of ['CSC_LINK', 'CSC_KEY_PASSWORD', 'CSC_NAME', 'WIN_CSC_LINK', 'WIN_CSC_KEY_PASSWORD']) delete process.env[name]
+
+let thumbprint = null
+if (test) {
+  say('The test certificate (this PC only)')
+  thumbprint = powershell(testCertificateScript(identity.publisher), 'The test certificate was not made').split(/\r?\n/).pop()?.trim() ?? ''
+  if (!/^[0-9A-F]{40}$/i.test(thumbprint)) fail(`The test certificate was not made: PowerShell gave "${thumbprint}" for its thumbprint.`)
+  console.log(`  ${thumbprint}, for ${identity.publisher}`)
+  if (powershell(trustedScript(thumbprint), 'Could not read this PC’s trusted certificates') !== 'True') {
+    say('Trusting it on this PC: Windows asks whether to allow PowerShell to make changes. Click Yes.')
+    powershell(trustScript(thumbprint, path.join(os.tmpdir(), 'simeon-store-test.cer')), 'This PC was not told to trust the test certificate')
+    if (powershell(trustedScript(thumbprint), 'Could not read this PC’s trusted certificates') !== 'True')
+      fail('This PC does not trust the test certificate yet (was Windows’ question answered No?). Run this again and click Yes.')
+  }
+  console.log('  Trusted by this PC')
+  // A test copy needs no timestamp from the internet (electron-builder's only use of it).
+  process.env.ELECTRON_BUILDER_OFFLINE = 'true'
+}
 
 const version = JSON.parse(readFileSync(path.join(windows, 'package.json'), 'utf8')).version
 let build = '0'
@@ -67,7 +113,7 @@ try {
   // Not a clone: the build number stays 0 (About shows it).
 }
 
-say(`Building Simeon ${version} for the Microsoft Store (a few minutes)`)
+say(`Building Simeon ${version} for the Microsoft Store${test ? ', a test copy for this PC' : ''} (a few minutes)`)
 rmSync(OUT, { recursive: true, force: true })
 execFileSync(process.execPath, [path.join(windows, 'scripts/build.mjs')], { cwd: windows, stdio: 'inherit' })
 const builder = require('electron-builder')
@@ -77,8 +123,10 @@ try {
     targets: builder.Platform.WINDOWS.createTarget(['appx'], builder.Arch.x64),
     publish: 'never',
     config: {
-      directories: { output: 'out/store' },
-      appx: identity,
+      directories: { output: test ? 'out/store-test' : 'out/store' },
+      appx: test ? { ...identity, artifactName: 'Simeon-Store-${version}-test.${ext}' } : identity,
+      // The test copy, signed from this person's certificates; the Store's, not at all.
+      ...(test ? { win: { signtoolOptions: { certificateSha1: thumbprint } } } : {}),
       // The build number for About; no signers, so the app's own updater stays off (and `process.windowsStore` keeps it off).
       // The manifest's Description is package.json's, which is written for us: the package says only its name.
       extraMetadata: { simeonBuild: build, description: 'Simeon' },
@@ -88,8 +136,19 @@ try {
   fail(`The Store's package was not built: ${error instanceof Error ? error.message : String(error)}`)
 }
 
-const made = path.join(OUT, `Simeon-Store-${version}.appx`)
+const made = path.join(OUT, `Simeon-Store-${version}${test ? '-test' : ''}.appx`)
 if (!existsSync(made)) fail(`electron-builder made no ${path.basename(made)}.`)
-say('Done')
-console.log(`  ${made}`)
-console.log('  Upload it in Partner Center: Apps and games › Simeon › the submission › Packages.')
+
+if (test) {
+  say('Installing the test copy')
+  powershell(installScript(made), 'The test copy was not installed')
+  say('Done')
+  console.log(`  ${made}`)
+  console.log('  Simeon is installed from it: open it from the Start menu.')
+  console.log('  Try it as the Store’s: Settings has no Updates page, a simeon:// link opens it, its tiles and icon.')
+  console.log('  Not for the upload: upload the one `node scripts/store.mjs` makes. Before installing the Store’s, uninstall this one.')
+} else {
+  say('Done')
+  console.log(`  ${made}`)
+  console.log('  Upload it in Partner Center: Apps and games › Simeon › the submission › Packages.')
+}

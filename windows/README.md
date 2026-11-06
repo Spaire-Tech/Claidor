@@ -66,7 +66,14 @@ node scripts/release.mjs   # a release in out/release/<version>/ (signed with WI
 node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)
 node scripts/make-icon.mjs # the icon and the Store's pictures drawn again
 node scripts/store.mjs     # the Store's package in out/store/ (on Windows; store.json filled in from Partner Center)
+node scripts/store.mjs --test   # a test copy signed for this PC only, installed on it (Windows asks once to trust it: Yes)
 ```
+
+The test copy (`out/store-test/`) is never the one uploaded. It is signed
+with "Simeon Store test (this PC only)", a certificate made on this PC for
+the Store's publisher and trusted by this PC alone. Uninstall the
+developer's Simeon (the installer's) before trying it, and the test copy
+before installing the Store's.
 
 For each new Store submission, raise `version` in `package.json` first: the
 Store takes only a higher one.

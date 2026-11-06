@@ -835,21 +835,57 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 6 November 2026: a test copy of the Store's package for the Dell
+
+The founder chose to try the package before the upload: "ok lets test
+then".
+
+- **Done.** `node scripts/store.mjs --test` (on Windows) builds the same
+  package as a test copy, `out/store-test/Simeon-Store-<version>-test.appx`,
+  and installs it. Windows installs only a signed package, so:
+  - a certificate is made on the PC for the Store's publisher (Windows
+    wants the two to match), "Simeon Store test (this PC only)" in the
+    person's own certificates, for code signing only, three months;
+    made once and found again after;
+  - the PC is told to trust it (its public half into the PC's Trusted
+    People), after Windows' own question;
+  - electron-builder signs the copy with it from the person's certificates
+    (`win.signtoolOptions.certificateSha1`), with no internet timestamp
+    (`ELECTRON_BUILDER_OFFLINE`, which electron-builder uses for nothing
+    else);
+  - `Add-AppxPackage` installs it, over an earlier test copy.
+  The PowerShell is written in `scripts/lib/store.mjs` and sent encoded
+  (`-EncodedCommand`), so no quote or path is lost.
+- **Checked.** `test/store.test.ts` (9); every script it runs parsed by
+  PowerShell 7.4.6 here (the certificate, the trust and its elevated part,
+  the install); electron-builder's own check of the test build's settings;
+  the script stops on Linux with "made on Windows"; `npm test`, `npm run
+  typecheck`.
+- **Not checked.** Any of it on Windows: the certificate, the trust,
+  signing and the install run first on the Dell. Windows PowerShell 5.1
+  (the Dell's) parses the same as 7.4 for these lines, but wasn't run.
+
+**Next:** on the Dell, uninstall the developer's Simeon, `node
+scripts/store.mjs --test`, try it; then `node scripts/store.mjs` and the
+upload.
+
 ### 6 November 2026: the Store's identity from Partner Center
 
 The founder gave Partner Center's three values; "Next is building that
 prepared Store version on the Dell and testing it before upload."
 
-- **Done.** `windows/store.json`: identity name `Spaire.Simeon`, publisher
-  `CN=95811681-55B1-49D5-8542-DCC11BB21E65`, publisher name `Spaire`,
+- **Done.** `windows/store.json`: the identity name, the publisher
+  (`CN=95811681-55B1-49D5-8542-DCC11BB21E65`) and the publisher name,
   exactly as Partner Center writes them (the Store refuses any other, so
-  the publisher name is "Spaire", not "Spaire, Inc."). `scripts/kept_names.json`
-  keeps the legal name in that file, for that reason.
+  the publisher name is the legal company's short name, without ", Inc.").
+  `scripts/kept_names.json` keeps the legal name in that file, for that
+  reason.
 - **Checked.** `readStoreIdentity` takes the file; `test/store.test.ts`
   (6); the manifest written from it by electron-builder's own code (as in
-  the entry below): `Identity Name="Spaire.Simeon"`, the publisher, version
-  `0.1.0.0`, `PublisherDisplayName` Spaire, display name Simeon; well-formed;
-  `check_names.py`.
+  the entry below): the identity, the publisher, version `0.1.0.0`, the
+  publisher name, display name Simeon; well-formed. `check_names.py` was
+  run before this entry was written, and this entry first named the
+  company itself, which it refuses: reworded in the next pull request.
 - **Not checked.** The `.appx` itself, built on the Windows PC
   (`node scripts/store.mjs`). Installing it there before the upload needs
   it signed by a certificate whose subject is that publisher: the Store
