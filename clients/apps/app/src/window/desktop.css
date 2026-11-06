@@ -103,3 +103,57 @@
 :root[data-desktop] .media-close {
   right: calc(8px + var(--title-bar-right));
 }
+
+/* MARK: Sharp text on Windows (ClearType) */
+
+/* 7 November 2026, the founder, the Windows app beside another chat app:     */
+/* "how light our design seem". Measured: Chrome drew the whole chat's words  */
+/* in grey anti-aliasing, not Windows' ClearType, while any blurred glass was */
+/* in the window (the head's veil, the message field, the round buttons, a    */
+/* menu): 0 of 10,160 text pixels of an agent's bubble in colour, 8,904 of    */
+/* 10,567 with no blur anywhere (any one blur alone kept them grey). So the   */
+/* app draws no blur: each glass surface is solid in its colour, the head     */
+/* fades the messages out under it without blurring them.                     */
+:root[data-desktop] {
+  --glass: #ffffff;
+  /* The sidebar a grey of its own, as the other app's: solid, no glass behind it. */
+  --sidebar-paint: #f5f5f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-desktop] {
+    --glass: #1e1e1e;
+    --sidebar-paint: #0c0c0c;
+  }
+}
+
+:root[data-desktop] *,
+:root[data-desktop] *::before,
+:root[data-desktop] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root[data-desktop] .chat-header .veil {
+  background: var(--ground);
+}
+
+/* MARK: The messages' words on Windows */
+
+/* The same chat at 16 on 22 (14 on 20, 21 for the person's, as the Mac's): */
+/* measured from the other app, its capitals 11 high to our 10, "computer" */
+/* 68 wide to our 57. Its gaps are ours (10 between blocks, 4 between list */
+/* items), so only the words grow; a bubble's padding stays the Mac's.    */
+:root[data-desktop] .bubble {
+  font-size: 16px;
+}
+
+:root[data-desktop] .bubble.theirs,
+:root[data-desktop] .bubble.yours {
+  line-height: 22px;
+}
+
+:root[data-desktop] .bubble .message-heading.h3 {
+  font-size: 16px;
+  line-height: 22px;
+}
