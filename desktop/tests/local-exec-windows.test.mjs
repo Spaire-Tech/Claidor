@@ -116,6 +116,8 @@ test("the agent is told to write PowerShell and Windows paths on a Windows PC, a
     assert.match(section, /ExternalShell there runs Windows PowerShell 5\.1 \(or PowerShell 7\): write PowerShell and Windows paths/);
     assert.match(section, /This one is PowerShell 7\.5\.4\./);
     assert.match(section, /C:\\Users\\<name>\\Documents\\report\.pdf/);
+    // Asking the person to do it themselves (a refused ~\.ssh): their PC and PowerShell, not a Mac's Terminal and `cat` (6 November 2026).
+    assert.match(section, /call it their PC, never their Mac, and give PowerShell for them to run \(`Get-Content \$env:USERPROFILE\\\.ssh\\id_ed25519\.pub`\), never Terminal, bash or `cat`\./);
     assert.match(module.userComputerSection({ platform: "win32", shell: "powershell", shellVersion: "5.1.22621.4391" }), /This one is Windows PowerShell 5\.1\.22621\.4391\./);
     assert.equal(module.userComputerSection({}), null, "a Mac's hello says nothing: nothing new");
     assert.equal(module.userComputerSection(undefined), null);

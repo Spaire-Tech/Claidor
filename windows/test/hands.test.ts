@@ -207,10 +207,10 @@ describe('the places that hold keys (testPlacesThatHoldKeys)', () => {
   it('refuse with the Mac’s words, saying this PC', () => {
     expect(sensitiveRefusal('send-input', 'cat ~/.ssh/id_rsa', windows)).toBeUndefined()
     expect(sensitiveRefusal('read-file', '~/.ssh/x', windows)).toBe(
-      'Simeon does not read, write or run anything under ~\\.ssh on this PC: it holds keys or sign-ins. Ask the person to do that part themselves.',
+      'Simeon does not read, write or run anything under ~\\.ssh on this PC: it holds keys or sign-ins. Ask the person to do that part themselves on their PC, in PowerShell (for example `Get-Content`), not in a Mac\'s Terminal.',
     )
     expect(sensitiveRefusal('run-command', 'dir C:\\Windows\\System32\\config', windows)).toBe(
-      'Simeon does not read, write or run anything under %SystemRoot%\\System32\\config on this PC: it holds keys or sign-ins. Ask the person to do that part themselves.',
+      'Simeon does not read, write or run anything under %SystemRoot%\\System32\\config on this PC: it holds keys or sign-ins. Ask the person to do that part themselves on their PC, in PowerShell (for example `Get-Content`), not in a Mac\'s Terminal.',
     )
   })
 

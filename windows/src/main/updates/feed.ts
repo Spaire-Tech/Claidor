@@ -54,10 +54,10 @@ export function updaterCacheRoot(
   return env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache')
 }
 
-/** The cache's own name: electron-builder writes the package's name and "-updater" into a release's app-update.yml (release.mjs checks it). */
-export const releaseCacheName = 'simeon-windows-updater'
-/** The stand-in feed's (feedSettings). */
-export const checksCacheName = 'simeon-updater'
+/** The cache's own name: electron-builder writes the app's name in the build (electron-builder.yml's `extraMetadata.name`, "Simeon"), in lower case, and "-updater" into a release's app-update.yml (release.mjs checks it). No release was published under the earlier `simeon-windows-updater`, so nothing reads it. */
+export const releaseCacheName = 'simeon-updater'
+/** The stand-in feed's (feedSettings): a folder of its own, so a check never meets a release's download. */
+export const checksCacheName = 'simeon-checks-updater'
 
 function loopback(host: string): boolean {
   return host === '127.0.0.1' || host === '[::1]'

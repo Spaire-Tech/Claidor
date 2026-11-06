@@ -18,7 +18,7 @@ import {
 } from '../scripts/lib/signature.mjs'
 
 const signer = 'CN="Example Signer, Inc.", O="Example Signer, Inc.", L=Wilmington, S=Delaware, C=US'
-const file = 'C:\\Users\\Jane\\AppData\\Local\\simeon-windows-updater\\pending\\Simeon-Setup-0.2.0.exe'
+const file = 'C:\\Users\\Jane\\AppData\\Local\\simeon-updater\\pending\\Simeon-Setup-0.2.0.exe'
 const said = (value: unknown) => ({ stdout: JSON.stringify(value), stderr: '' })
 const valid = { Status: 0, Path: file, Subject: signer }
 

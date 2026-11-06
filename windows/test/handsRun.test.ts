@@ -227,7 +227,7 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     for (const command of ['Get-Content ~/.ssh/id_rsa', `Get-Content "${path.join(home, '.SSH', 'id_rsa')}"`, 'Get-Content $HOME/.ssh/id_rsa']) {
       const frames = await run(command)
       expect(thrownOf(frames), command).toBe(
-        'Simeon does not read, write or run anything under ~\\.ssh on this PC: it holds keys or sign-ins. Ask the person to do that part themselves.',
+        'Simeon does not read, write or run anything under ~\\.ssh on this PC: it holds keys or sign-ins. Ask the person to do that part themselves on their PC, in PowerShell (for example `Get-Content`), not in a Mac\'s Terminal.',
       )
       expect(shellEvents(frames), command).toEqual([])
     }

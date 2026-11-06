@@ -827,6 +827,45 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 6 November 2026: the first install's two findings
+
+The first run on a real Windows PC (the founder's Dell, a developer's
+installer, by another session) found two things; the founder: "yes fix
+both".
+
+- **Done.**
+  - **The install folder is `Simeon`**, not `simeon-windows`: a one-click
+    install goes to `%LOCALAPPDATA%\Programs\Simeon`. electron-builder names
+    that folder after the package (`simeon-windows`), so the build names
+    the app "Simeon" (`extraMetadata.name`, `windows/electron-builder.yml`).
+    The updater's own folder follows it: `%LOCALAPPDATA%\simeon-updater`
+    (`releaseCacheName`, `release.mjs`'s check), and a check's stand-in feed
+    has its own, `simeon-checks-updater`. No release was published under
+    the earlier names, so nothing reads them. The data folder stays
+    `%APPDATA%\Simeon` (the product's name). An install already in
+    `simeon-windows` (the Dell's) is updated in place by the next
+    installer, which reads its folder from the registry: uninstall it
+    first to move it.
+  - **The `.ssh` refusal in the PC's words.** The PC's own refusal already
+    said "on this PC"; the agent's answer said "your Mac" and `cat` in
+    Terminal. The refusal now asks the person to do it on their PC, in
+    PowerShell (for example `Get-Content`), not in a Mac's Terminal
+    (`refusalWords`, `windows/src/main/hands/sensitivePaths.ts`), and the
+    engine's section on a Windows PC tells the agent to call it their PC
+    and give PowerShell whenever it asks the person to do something
+    themselves (`userComputerSection`,
+    `desktop/source/host/extensions/local-exec/local-exec-platform.ts`).
+- **Checked.** The installer built here under Wine (`npm run package`):
+  its script's `APP_FILENAME` is `Simeon`, its `app-update.yml` names
+  `simeon-updater`, the app inside is named Simeon. `windows`: `npm test`
+  (214), `npm run typecheck`, `npm run smoke` (all checks). `desktop`:
+  `npm test` 971 passed, 1 failed, the packaging audit that needs the
+  Mac's `npm run bootstrap` (as before).
+- **Not checked.** The install on a Windows PC; the agent's own words
+  after a refusal (they follow the engine, which reaches the computers only
+  when it is published from a Mac: `npm run package && npm run
+  publish:host-bundle`).
+
 ### 6 November 2026: the Windows app's small things left from step 7
 
 The founder: "ok fix all the small things in the windows app."

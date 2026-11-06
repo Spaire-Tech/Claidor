@@ -554,14 +554,14 @@ describe('which builds update themselves, and from where', () => {
       provider: 'generic',
       url: 'http://127.0.0.1:1/f',
       useMultipleRangeRequest: false,
-      updaterCacheDirName: 'simeon-updater',
+      updaterCacheDirName: 'simeon-checks-updater',
     })
   })
 })
 
 describe('the installer waiting on disk', () => {
   it('is only the one in the updater’s own pending folder, by its own name', () => {
-    const cache = path.resolve('/cache/simeon-windows-updater')
+    const cache = path.resolve('/cache/simeon-updater')
     expect(inPending(path.join(cache, 'pending', 'Simeon-Setup-0.2.0.exe'), '0.2.0', cache)).toBe(true)
     expect(inPending(path.join(cache, 'pending', 'Simeon-Setup-0.3.0.exe'), '0.2.0', cache)).toBe(false)
     expect(inPending(path.join(cache, 'pending', '..', 'Simeon-Setup-0.2.0.exe'), '0.2.0', cache)).toBe(false)
