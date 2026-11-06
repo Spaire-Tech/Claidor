@@ -9,6 +9,7 @@
 // every 1.2 s and said once the line is quiet, and at the end the call's
 // record goes to the agent, which writes its line in the chat.
 
+import { desktop } from '../desktop/desktop'
 import { SimeonAPIError } from './api'
 import type { AgentBackend } from './backend'
 import {
@@ -525,16 +526,21 @@ export const VoiceCallText = {
     switch (tool) {
       case 'Shell':
         return detail != null ? t`Editing ${detail}…` : t('Running a command…')
+      // The person's own computer: their PC in the Windows app, where the agent's hands are (step 7f); else their Mac.
       case 'ExternalShell':
         return detail != null
           ? t`Editing ${detail}…`
-          : t('Running a command on your Mac…')
+          : desktop() != null
+            ? t('Running a command on your PC…')
+            : t('Running a command on your Mac…')
       case 'Read':
         return detail != null ? t`Reading ${detail}…` : t('Reading a file…')
       case 'ExternalRead':
         return detail != null
           ? t`Reading ${detail}…`
-          : t('Reading a file on your Mac…')
+          : desktop() != null
+            ? t('Reading a file on your PC…')
+            : t('Reading a file on your Mac…')
       case 'AwaitShell':
       case 'ExternalAwaitShell':
         return t('Waiting on a command…')

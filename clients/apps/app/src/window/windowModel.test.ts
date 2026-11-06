@@ -5,6 +5,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FlightOffer } from '../core/flightCards'
+import { FakeDesktop } from '../desktop/testing'
 import { WindowModel, paneFits } from './windowModel'
 
 function sidebar(collapsed = false) {
@@ -190,6 +191,54 @@ describe('the agent’s pane', () => {
   it('fits beside the sidebar and the chat’s 424', () => {
     expect(paneFits(992, 88, 480)).toBe(true)
     expect(paneFits(991, 88, 480)).toBe(false)
+  })
+
+  it('grows the Windows app’s window for it, and gives it back once it has slid shut', () => {
+    const app = new FakeDesktop()
+      .answer('growWindow', () => {})
+      .answer('shrinkWindow', () => {})
+    const putBack = app.install()
+    try {
+      const model = new WindowModel('iris')
+      const side = sidebar(false)
+      model.setLayout(side.layout)
+      // Not drawn (the window too narrow, or closed): the rail, the chat's 424 and the pane.
+      model.openPane()
+      expect(app.calls).toEqual([
+        { name: 'growWindow', args: [88 + 424 + 480, true] },
+      ])
+      // Drawn: opening another page asks nothing more.
+      model.setPaneVisible(true)
+      model.openPane('routines')
+      expect(app.calls).toHaveLength(1)
+      // ⌘B opening the sidebar beside it: room for the sidebar too, not given back.
+      model.makeRoomForSidebar(260)
+      expect(app.calls.at(-1)).toEqual({
+        name: 'growWindow',
+        args: [260 + 424 + 480, false],
+      })
+      model.closePane()
+      expect(app.calls.map((call) => call.name)).not.toContain('shrinkWindow')
+      vi.advanceTimersByTime(240)
+      expect(app.calls.at(-1)).toEqual({ name: 'shrinkWindow', args: [] })
+    } finally {
+      putBack()
+    }
+  })
+
+  it('never grows the window in a browser, nor for a flight', () => {
+    const model = new WindowModel('iris')
+    model.openPane()
+    model.closePane()
+    vi.advanceTimersByTime(240)
+    const app = new FakeDesktop().answer('growWindow', () => {})
+    const putBack = app.install()
+    try {
+      model.toggleFlight('f1', offer, 'iris')
+      expect(app.calls).toEqual([])
+    } finally {
+      putBack()
+    }
   })
 })
 

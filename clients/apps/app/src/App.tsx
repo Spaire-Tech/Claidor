@@ -155,6 +155,7 @@ function keepInAddress(agentId: string | undefined): void {
 function useWindowKeys(
   model: WindowModel,
   resize: (change: (now: SidebarSize) => SidebarSize) => void,
+  sizeNow: { readonly current: SidebarSize },
 ) {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -170,7 +171,11 @@ function useWindowKeys(
       // ⌘B, from a field too, over Settings or Connectors too.
       if (!shift && !alt && letter === 'b') {
         event.preventDefault()
-        if (!overSlot()) resize(toggled)
+        if (!overSlot()) {
+          // Opening the sidebar beside the pane: the Windows app's window grows to hold them both (`makeRoomForSidebar`).
+          model.makeRoomForSidebar(sizeNow.current.expandedWidth)
+          resize(toggled)
+        }
         return
       }
       // ⌘K: search, open or closed, over Settings or Connectors too (its own panel takes the rest of its keys).
@@ -211,7 +216,7 @@ function useWindowKeys(
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
-  }, [model, resize])
+  }, [model, resize, sizeNow])
 }
 
 function MainWindow({ session }: { session: WebSession }) {
@@ -310,7 +315,11 @@ function MainWindow({ session }: { session: WebSession }) {
   useLayoutEffect(() => model.setPaneVisible(pane > 0), [model, pane])
   const rail = showsRail(size, windowWidth - pane)
   const width = sidebarWidth(size, windowWidth - pane)
-  useWindowKeys(model, resize)
+  const sizeNow = useRef(size)
+  useLayoutEffect(() => {
+    sizeNow.current = size
+  }, [size])
+  useWindowKeys(model, resize, sizeNow)
   // The Windows app: Control-Tab's walk (the Mac's), the tray's and the notifications' asks (step 7c).
   const cycling = useControlTab(store, model, shown)
   useDesktopWindow(store, model, shown)

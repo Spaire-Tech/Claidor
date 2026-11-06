@@ -43,8 +43,9 @@ export function desktopSessionOptions(desktop: Desktop): SessionOptions {
 }
 
 /**
- * What the Windows app adds around the session once it is made: the call's
- * steps and the screens' connections written to the app's two logs (the
+ * What the Windows app adds around the session once it is made: Disk Saver
+ * set to work by the app itself when the disk runs low, as on the Mac; the
+ * call's steps and the screens' connections written to the app's two logs (the
  * Mac's `voice-call.log`, `computer-stream.log`); the chats kept when the
  * window goes behind and before the app quits (the Mac's
  * `applicationWillTerminate`, StoreSaved.swift's `isForeground`).
@@ -55,6 +56,8 @@ export function startDesktopSession(
 ): () => void {
   if (isCallWindow(desktop)) return () => {}
   const store = session.store
+  // The disk running low sets Disk Saver to work by itself, as the Mac app does (the store's `startsDiskSaver`; a browser's tab never does).
+  store.startsDiskSaver = true
   const write = (
     name: 'voice-call.log' | 'computer-stream.log',
     line: string,

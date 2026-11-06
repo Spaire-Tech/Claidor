@@ -34,6 +34,7 @@ import {
 import { type Agent, chiefOfStaff, makeAgent } from '../core/models'
 import { plainProblem } from '../core/plainWords'
 import type { AppStore } from '../core/store'
+import { chooseInApp } from '../desktop/native'
 import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import './AvatarEditor.css'
@@ -1130,7 +1131,8 @@ function GenerateTab({
 /**
  * Upload: a dashed drop zone ("Drag, drop, or paste an image", "or",
  * Browse files), blue while a file is over it; the browser's own file
- * chooser for Browse files, pictures only; then the crop.
+ * chooser for Browse files, pictures only (in the Windows app, Windows' own
+ * dialog with the Mac's title); then the crop.
  */
 function UploadTab({
   model,
@@ -1181,7 +1183,21 @@ function UploadTab({
         title={avatarEditorWords.browse()}
         primary={false}
         wide={false}
-        onClick={() => chooser.current?.click()}
+        onClick={() => {
+          // The Windows app: Windows' own dialog with the Mac's title ("Choose an avatar image"); else the page's chooser.
+          const chosen = chooseInApp({
+            title: avatarEditorWords.pickerTitle(),
+            filterName: t('Picture'),
+            extensions: [...avatarEditorWords.pickerTypes],
+            multiple: false,
+            max: 1,
+          })
+          if (!chosen) chooser.current?.click()
+          else
+            void chosen.then((files) => {
+              if (files[0]) void model.take(files[0], false)
+            })
+        }}
       />
       <input
         ref={chooser}

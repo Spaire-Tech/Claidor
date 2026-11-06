@@ -34,12 +34,13 @@ import { relaunchArguments } from './session/relaunch'
 import { appLinkScheme, linksIn } from './links'
 import { navigatesOnItsOwn } from './navigation'
 import * as handsPart from './parts/hands'
+import * as nativePart from './parts/native'
 import * as outsidePart from './parts/outside'
 import * as sessionPart from './parts/session'
 import * as surfacesPart from './parts/surfaces'
 import * as updatesPart from './parts/updates'
 import { allowsPermission, contentSecurityPolicy, opensOutside } from './policy'
-import { applyLook, makeMainWindow, readLook } from './window'
+import { applyLook, makeMainWindow, readLook, windowGrowth } from './window'
 
 /** The app's id: its notifications, its taskbar button and its installer (the Mac's bundle id). */
 export const appId = 'com.simeonlabs.simeon'
@@ -219,6 +220,17 @@ function start(): void {
     if (asked && mainWindow && from === mainWindow.webContents)
       applyLook(mainWindow, asked)
   })
+  // The window growing for the agent's pane, and giving it back as it closes (AgentPane.swift).
+  const growth = windowGrowth()
+  handle('growWindow', (from, width, remember) => {
+    if (typeof width !== 'number' || !Number.isFinite(width) || width <= 0 || width > 20_000)
+      throw new Error('A width was expected.')
+    if (typeof remember !== 'boolean') throw new Error('Whether to remember was expected.')
+    if (mainWindow && from === mainWindow.webContents) growth.grow(mainWindow, width, remember)
+  })
+  handle('shrinkWindow', (from) => {
+    if (mainWindow && from === mainWindow.webContents) growth.shrink(mainWindow)
+  })
 
   // Relaunch: once, after the quit; by the updater's installer when it runs (parts/updates.ts), else below.
   let relaunch: 'no' | 'asked' | 'taken' = 'no'
@@ -246,7 +258,7 @@ function start(): void {
       quitTasks.push(task)
     },
   }
-  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart])
+  for (const part of [sessionPart, surfacesPart, outsidePart, updatesPart, handsPart, nativePart])
     part.register(context)
   // After every part's own `quit` (the updater's first, which may take the relaunch over): a new instance with no link, as the Mac's (the one Windows started this one with is not handed over again).
   app.on('quit', (_event, exitCode) => {

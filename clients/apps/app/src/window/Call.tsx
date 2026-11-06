@@ -1231,6 +1231,8 @@ function CallChatView({
           })}
         </div>
       </div>
+      {/* The head's top 52 moves the Windows app's window, as the chat's does under it (window/desktop.css). */}
+      <div className="window-drag" aria-hidden="true" />
       {head}
       <ReadOnlyNotice close={close} />
       {menu && <CopyMenuView menu={menu} close={() => setMenu(undefined)} />}

@@ -12,6 +12,7 @@ import type {
 } from '../../../clients/apps/app/src/desktop/contract'
 import { appStart } from './appProtocol'
 import { factsArgument } from './facts'
+import { type Grew, grownBounds, shrunkBounds } from './growth'
 
 export const firstSize = { width: 1040, height: 760 }
 export const smallestSize = { width: 512, height: 520 }
@@ -138,6 +139,39 @@ export function makeMainWindow(options: {
 
   void window.loadURL(appStart)
   return window
+}
+
+// MARK: Growing for the agent's pane (AgentPane.swift's `growWindowIfNeeded`, `makeRoomForSidebar`, `shrinkWindowIfGrown`)
+
+/**
+ * The main window's growing and giving back: `width` is the page's own
+ * pixels, so its zoom is applied; never while the window is full screen,
+ * maximised or minimised. The page asks it (contract.ts's `growWindow`,
+ * `shrinkWindow`).
+ */
+export function windowGrowth() {
+  let grew: (Grew & { window: BrowserWindow }) | undefined
+  return {
+    grow(window: BrowserWindow, width: number, remember: boolean): void {
+      if (window.isFullScreen() || window.isMaximized() || window.isMinimized()) return
+      const content = window.getContentBounds().width
+      const missing = width * window.webContents.getZoomFactor() - content
+      const bounds = window.getBounds()
+      const area = screen.getDisplayMatching(bounds).workArea
+      const next = grownBounds(bounds, area, missing)
+      if (!next) return
+      window.setBounds(next)
+      if (remember) grew = { by: next.width - bounds.width, widthAfter: next.width, window }
+    },
+    shrink(window: BrowserWindow): void {
+      const kept = grew
+      grew = undefined
+      if (!kept || kept.window !== window || window.isDestroyed()) return
+      if (window.isFullScreen() || window.isMaximized() || window.isMinimized()) return
+      const next = shrunkBounds(window.getBounds(), kept)
+      if (next) window.setBounds(next)
+    },
+  }
 }
 
 /** The page's look: Windows' buttons in its colours, Windows' own parts (menus, dialogs) in its theme. */

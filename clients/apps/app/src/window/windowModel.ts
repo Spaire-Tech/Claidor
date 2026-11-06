@@ -16,7 +16,8 @@ import {
   stepHelper,
 } from '../core/cloudComputer'
 import type { OpenFlight } from '../core/flightCards'
-import { chatMinimum } from './sidebarLayout'
+import { desktop } from '../desktop/desktop'
+import { chatMinimum, railWidth } from './sidebarLayout'
 import { setTheme } from './theme'
 
 export type { OpenFlight }
@@ -429,7 +430,7 @@ export class WindowModel {
     this.changed()
   }
 
-  /** Opens on `section` (the openers' `I` and `A`): an open sidebar folds. A browser can't grow its window for it. */
+  /** Opens on `section` (the openers' `I` and `A`): an open sidebar folds; in the Windows app the window grows if the pane would not fit beside the rail (a browser can't grow its window). */
   openPane(section: PaneSection = 'profile'): void {
     this.cancelLinger()
     // A closed pane forgot its flight; an open one keeps showing it while the page under it changes.
@@ -438,8 +439,29 @@ export class WindowModel {
     if (section !== 'routines') this.routineEditor = undefined
     this.contentAlive = true
     this.orgChart = false
+    // Kept open but without room (a narrow window): the window grows for it all the same.
+    if (!this.paneVisible) this.growWindowForPane()
     if (!this.paneOpen) this.show()
     this.changed()
+  }
+
+  /** Beside the rail and the chat's 424 the pane does not fit: the Windows app's window grows by what is missing, within its screen, and gives it back as the pane closes (`growWindowIfNeeded`). */
+  private growWindowForPane(): void {
+    const app = desktop()
+    if (app?.facts.window !== 'main') return
+    void app
+      .call('growWindow', railWidth + chatMinimum + this.paneWidth, true)
+      .catch(() => {})
+  }
+
+  /** ⌘B opening the sidebar beside the shown pane: the Windows app's window grows by what the sidebar, the chat's 424 and the pane need (`makeRoomForSidebar`); not given back. */
+  makeRoomForSidebar(expandedWidth: number): void {
+    const app = desktop()
+    if (app?.facts.window !== 'main') return
+    if (!this.paneVisible || !this.layout?.isCollapsed()) return
+    void app
+      .call('growWindow', expandedWidth + chatMinimum + this.paneWidth, false)
+      .catch(() => {})
   }
 
   /** Open (`setInfoPaneOpen(true)`): an open sidebar folds to its rail, and closing will open it again. */
@@ -469,6 +491,10 @@ export class WindowModel {
     this.lingering = setTimeout(() => {
       this.lingering = undefined
       if (this.paneOpen) return
+      // The pane slid shut first: the Windows app's window gives back what it grew for it, if its width wasn't changed since.
+      const app = desktop()
+      if (app?.facts.window === 'main')
+        void app.call('shrinkWindow').catch(() => {})
       this.contentAlive = false
       this.section = 'profile'
       this.routineEditor = undefined

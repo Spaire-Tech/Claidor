@@ -75019,6 +75019,66 @@
         }
       }
     },
+    "Reading a file on your PC…" : {
+      "comment" : "The Windows app's line in a call while the agent works on the person's PC (clients/apps/app/src/core/voiceCall.ts); the Mac and the iPhone say the Mac one.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liest eine Datei auf deinem PC…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyendo un archivo en tu PC…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lit un fichier sur ton PC…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sta leggendo un file sul tuo PC…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leest een bestand op je pc…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czyta plik na twoim komputerze…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lendo um arquivo no seu PC…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läser en fil på din dator…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayarında bir dosya okuyor…"
+          }
+        }
+      }
+    },
     "Reading a file…" : {
       "localizations" : {
         "de" : {
@@ -80033,6 +80093,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mac’inde bir komut çalıştırıyor…"
+          }
+        }
+      }
+    },
+    "Running a command on your PC…" : {
+      "comment" : "The Windows app's line in a call while the agent works on the person's PC (clients/apps/app/src/core/voiceCall.ts); the Mac and the iPhone say the Mac one.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Führt einen Befehl auf deinem PC aus…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ejecutando un comando en tu PC…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exécute une commande sur ton PC…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sta eseguendo un comando sul tuo PC…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voert een opdracht uit op je pc…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchamia polecenie na twoim komputerze…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Executando um comando no seu PC…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kör ett kommando på din dator…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayarında bir komut çalıştırıyor…"
           }
         }
       }

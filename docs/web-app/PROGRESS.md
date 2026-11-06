@@ -247,6 +247,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 3 November 2026 | The Windows app is released through the Microsoft Store: a company account is free (since May 2026) and Microsoft signs the Store's package, so no certificate is bought. Microsoft's Artifact Signing (about $10 a month) takes only companies with three years of tax history, and the legal company (CLAUDE.md) is under one | The founder: "we'll use the microsoft store, it's free. plus [the legal company] is not even 1" |
 | 3 November 2026 | The Store's package (MSIX, electron-builder's `appx` target) is built on Windows only: measured here, electron-builder 26.18.0 on Linux stops with "AppX is supported only on Windows 10". So it is built on GitHub's Windows machines (`.github/workflows/windows.yml`, once Actions runs) or on the Windows PC that tests it. The Store's app updates through the Store: its build leaves the app's own updater (step 7e) off | The session |
 | 5 November 2026 | The Help Center is the website's docs (`https://www.simeonlabs.com/docs`): the Mac's "Simeon Help Center" row and the iPhone's "Help Center" open them. The web app's row can come back pointing there (done 6 November 2026, below) | The founder |
+| 6 November 2026 | The Windows app reads pictures from other sites in its main process (an airline's logo, a saved login's touch icon) and keeps them on the PC a week, as the Mac's caches. Only `https:` on port 443, public hosts only, the host's addresses looked up before each request and each redirect (stricter than the Mac's, which checks the name only), 2 MB a picture, 512 KB a page's head, eight seconds a request; a picture must be one by its first bytes | The session |
+| 6 November 2026 | The window doesn't grow for a flight's details in the Windows app, as on the Mac (`PaneState.toggleFlight` never grows it); it grows for the agent's pane and for ⌘B beside it | The session, from the Mac's code |
+| 6 November 2026 | "…on your PC…" for the call's two lines is added to the core's String Catalog by hand (`extractionState: manual`), since only the Windows app says it | The session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
 
 ## For Windows
@@ -343,8 +346,10 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   The airline logos can be fetched by the main process (no CORS) and kept
   on disk, as the Mac keeps them. Chromium's autofill offers the person's
   saved name, email and phone. Step 7: the pane's top bar moves the window
-  (7a, `window/desktop.css`). Not built yet: the window growing for them,
-  the logos fetched and kept by the main process.
+  (7a, `window/desktop.css`). 6 November 2026: the logos read by the main process and kept on the PC a week
+  (`remotePicture`, `windows/src/main/native/pictures.ts`), so each is cut
+  and lightened; the window does not grow for a flight's details, as on
+  the Mac (`toggleFlight` never grows it).
 - **Pictures from other sites.** The shops' pictures and the airline logos
   need `img-src https:` in the policy Electron sets. Step 7: done (7a,
   `policy.ts`).
@@ -362,13 +367,16 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   The routine editor's top bar and the org chart's head move the window
   on the Mac (`WindowDragArea`): `-webkit-app-region: drag` there, their
   buttons not. Step 7: the drag places done (7a, `window/desktop.css`);
-  the window growing for the pane not built yet.
+  the window growing for the pane done 6 November 2026 (`growWindow`,
+  `shrinkWindow`: `window/windowModel.ts`, `windows/src/main/growth.ts`;
+  ⌘B beside the pane makes room too).
 - **A picture of one's own (4b).** Electron can open Windows' own file
   dialog, with the Mac's title ("Choose an avatar image", on the web only
   the hidden chooser's name for a screen reader). No beep on a refused
   Create on the web; Electron's `shell.beep()` could, as the Mac's. Step 7:
-  not built yet (the page's own chooser, which Chromium opens as Windows'
-  dialog without the Mac's title; no beep).
+  6 November 2026, Windows' own dialog with the Mac's title
+  (`chooseFiles`), and Windows' alert sound where the Mac beeps (`beep`: a
+  refused Create, a traveller's problem, a login's).
 - **Sound from other sites (4b).** The voices' samples are ElevenLabs' own
   links, whose host varies: the policy Electron sets needs
   `media-src … https:`, as the website's now has, beside `img-src https:`.
@@ -416,8 +424,8 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   stream is a fetch with a body, which Electron's Chromium sends as the
   browser does. The access notice's page opens in the default browser.
   Step 7: the access notice's pages through 7d's `window/outside.ts`
-  (Stripe's in the app's own window). Not built yet: Disk Saver set to
-  work by the app itself.
+  (Stripe's in the app's own window). Disk Saver set to work by the app itself, done 6 November 2026
+  (`startsDiskSaver`, `src/desktop/session.ts`).
 - **Calls (5d).** The call's banner can have its own always-on-top window,
   as the Mac's and as the Electron banner had: frameless, at the top right
   of the work area under the pointer, shown without taking the keys, on
@@ -436,7 +444,7 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   no app menu) and a call hung up before quitting (7c); the policy, the
   microphone and `SIMEON_VOICE_CALLS` (7a); `voice-call.log` in the app's
   data folder (7b); the exchange's head moves the window (7a,
-  `window/desktop.css`), the call's lines' head not yet.
+  `window/desktop.css`), the call's lines' head too (6 November 2026).
 - **The frame and the theme (6a).** Settings, Connectors, About and the
   sheets are drawn in the page, so the same in Electron. The theme chosen
   and the language are in the page's storage (`simeon.theme`,
@@ -514,8 +522,10 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   the clipboard through the app's (7d). "Your Computer" is back (7f,
   `window/SettingsYourComputer.tsx`): Execution on Local Computer under
   the team's ceiling, Commands Allowed Once with Forget; the security keys
-  left out: nothing to port (Decisions). Not built yet: the screenshots'
-  dialog with the Mac's title, `nativeImage`'s shrinking.
+  left out: nothing to port (Decisions). 6 November 2026: the screenshots' dialog with the Mac's words
+  (`chooseFiles`); the shrinking stays the page's (a canvas makes each a
+  JPEG of at most 1,600, as the Mac's ImageIO), so `nativeImage` isn't
+  needed.
 - **Usage and billing (6f).** Stripe's pages in a child window that comes
   back on the app's own link, as the Mac's sheet (`back: "simeon"` once the
   scheme is registered on Windows, `/desktop/billing/back`); then the
@@ -532,8 +542,8 @@ yet. Nothing of it has run on a Windows PC (Open questions).
   the masked text field is the same there (Chromium masks it). A login's
   icon: the main process can read the site's page for its touch icon (no
   CORS) and keep it on disk a week, as the Mac's `SiteIcons`. Step 7: Hello
-  done (7d, `window/presence.ts`). Not built yet: the touch icon read by
-  the main process.
+  done (7d, `window/presence.ts`). The touch icon read by the main process and kept on the PC a week, done
+  6 November 2026 (`siteIcon`, `native/pictures.ts`).
 - **The account menu and About (6f).** Electron's `Menu.popup` could draw
   Windows' own menu, but it has no badge or figure rows, so the page's menu
   may stay; decided at step 7. About's facts from Electron
@@ -796,12 +806,10 @@ For the founder, each to be answered before the step that needs it:
   failing since #502 moved the body into `feedback.py`, would have stopped
   it, and is fixed (3 November 2026). The packaging audit's test needs the
   Mac's `npm run bootstrap` and was not run here.
-- **The call's words on a PC.** The Windows app's call labels are the
-  page's (`clients/apps/app/src/core/voiceCall.ts`) and still say
-  "Running a command on your Mac…" and "Reading a file on your Mac…".
-  "…on your PC…" needs entries in the Mac's String Catalog, with their
-  translations, before the page can say them (the engine's own banner
-  words already do). Add them?
+- **The call's words on a PC.** Done 6 November 2026: "Running a command
+  on your PC…" and "Reading a file on your PC…" are in the core's String
+  Catalog with their nine translations, and the Windows app says them
+  (`core/voiceCall.ts`); the Mac and the iPhone keep "…on your Mac…".
 - **What another program of the same Windows person can still do.** The
   agent's hands refuse the places that hold keys and sign the setting and
   the commands allowed once, but a program already running as the person
@@ -818,6 +826,61 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 6 November 2026: the Windows app's small things left from step 7
+
+The founder: "ok fix all the small things in the windows app."
+
+- **Done.**
+  - **The window grows for the agent's pane** when it would not fit beside
+    the rail and the chat's 424, within its screen, and gives it back once
+    the pane has slid shut if its width wasn't changed since; ⌘B opening
+    the sidebar beside the pane makes room too (AgentPane.swift). Not for a
+    flight's details, as on the Mac. `growWindow`, `shrinkWindow`
+    (`window/windowModel.ts`, `App.tsx`; `windows/src/main/growth.ts`,
+    `window.ts`, `main.ts`).
+  - **Airline logos and saved logins' icons read and kept by the app**:
+    the main process reads them (no site's leave needed), keeps them in
+    `%APPDATA%\Simeon\pictures` a week, and the page gets a `data:`
+    address, so every logo is cut and lightened for the dark disc, and a
+    login shows its site's touch icon (its page's, else its icon, else
+    /favicon.ico) as on the Mac. `remotePicture`, `siteIcon`
+    (`windows/src/main/native/`, `src/desktop/native.ts`, `FlightCards.tsx`,
+    `SettingsCredentials.tsx`). On the web nothing changes.
+  - **Windows' own file dialog with the Mac's words**: the avatar's Browse
+    files ("Choose an avatar image") and the screenshots' Add ("Choose
+    screenshots to add"), only the kinds asked for read back, 25 MB each.
+    `chooseFiles` (`windows/src/main/parts/native.ts`, `AvatarEditor.tsx`,
+    `Feedback.tsx`). The screenshots' shrinking stays the page's canvas.
+  - **Windows' alert sound** where the Mac beeps: a refused Create in New
+    Agent, a traveller's problem, a login's problem or refused save.
+    `beep`.
+  - **Disk Saver set to work by the app itself** when the disk runs low,
+    as the Mac (`startsDiskSaver`, `src/desktop/session.ts`); a browser's
+    tab still never does.
+  - **The call's lines' head moves the window**, as the chat's head under
+    it (`Call.tsx`, `window/desktop.css`).
+  - **"…on your PC…"** in a call while the agent works on the PC
+    (`core/voiceCall.ts`, the core's String Catalog, nine translations).
+- **Checked.**
+  - `clients/apps/app`: `pnpm typecheck`, `pnpm test` (1202), `pnpm lint`,
+    the build committed and `check:built`.
+  - `windows`: `npm test` (214, 21 skipped; new: the window's frames, the
+    addresses refused, a touch icon found after a redirect, a redirect
+    inside the network never followed, a name pointing inside the network
+    never read, pictures kept a week and read once, the file dialog's
+    words and kinds) and `npm run typecheck`.
+  - `npm run smoke` under `xvfb-run` (the app itself, Electron 44, against
+    the stand-in): the window grows for the pane through Control-Shift-,
+    (900 → 992) and gives it back (900); no picture read from `localhost`,
+    the stand-in or `127.0.0.1`; the beep answers. Its first run stopped at
+    its first check (the page's address read as empty before it loaded),
+    the next runs passed every check; `main` passed it too.
+  - `check_translations.py`, `check_names.py`, the inventory run again.
+- **Not checked.** Nothing on a Windows PC: Windows' dialog and its title,
+  the beep's sound, the window growing on a real screen, a logo or a site
+  icon read from the real sites (the checks never reach one). The call's
+  lines' head was not dragged.
 
 ### 6 November 2026: clearer words, and the Help Center row
 

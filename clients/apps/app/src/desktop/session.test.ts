@@ -163,6 +163,7 @@ describe('the Windows app’s session', () => {
     stop()
     // No log written, no file asked for: the call's window answers nothing of the session's.
     expect(fake.calls).toEqual([])
+    expect(web.store.startsDiskSaver).toBe(false)
   })
 
   it('lets the buttons work again when the sign-in can’t even start', async () => {
@@ -453,7 +454,10 @@ describe('the Windows app’s session', () => {
     const backend = new FakeBackend()
     backend.agents = [makeAgent({ id: 'theo', name: 'Theo' })]
     const web = session(host, { http: new ScriptedHTTP([profile]), backend })
+    expect(web.store.startsDiskSaver).toBe(false)
     undo.push(startDesktopSession(host, web))
+    // The app sets Disk Saver to work when the disk runs low, as the Mac does (a browser's tab never does).
+    expect(web.store.startsDiskSaver).toBe(true)
     await web.start()
     await eventually(() => web.store.account != null)
     web.store.callLog('call started')

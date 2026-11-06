@@ -68,6 +68,7 @@ import {
 } from '../core/flightCards'
 import { displayLocale } from '../core/listTime'
 import type { AppStore } from '../core/store'
+import { beep, keptLogo } from '../desktop/native'
 import { t, tk } from '../l10n'
 import { type CardProps, StatusPill } from './Cards'
 import { classes } from './classes'
@@ -301,7 +302,11 @@ function loaded(url: string, readable: boolean): Promise<HTMLImageElement> {
 }
 
 /** The logo drawn at 240 on its long side and cut to what is drawn on it (alpha above 12 of 255); none when nothing is. */
-async function lightPicture(url: string): Promise<Picture | undefined> {
+async function lightPicture(asked: string): Promise<Picture | undefined> {
+  // In the Windows app the logo comes read by the app and kept on the PC a week (`RemoteLogos`): always readable, so always cut and lightened.
+  const kept = await keptLogo(asked)
+  if (kept === null) return undefined
+  const url = kept ?? asked
   let image: HTMLImageElement
   try {
     image = await loaded(url, true)
@@ -1029,6 +1034,8 @@ function TravellersSheet({
       )
       if (found) {
         setProblem({ index, message: found.message })
+        // Windows' alert sound in the Windows app, where the Mac beeps.
+        beep()
         return
       }
     }

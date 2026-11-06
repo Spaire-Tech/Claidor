@@ -25,6 +25,7 @@ import {
 import { AgentDraft, base64Of } from '../core/agentDraft'
 import { faceURL } from '../core/faces'
 import type { AppStore } from '../core/store'
+import { beep } from '../desktop/native'
 import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
 import { AvatarEditorCard, AvatarEditorModel } from './AvatarEditor'
@@ -152,7 +153,8 @@ function NewAgentSheet({
       close()
       created(id)
     } else {
-      // The Mac beeps too; a page has no system alert sound.
+      // The Mac beeps too: Windows' alert sound in the Windows app (a browser's page has none).
+      beep()
       setFailed(true)
     }
   }
