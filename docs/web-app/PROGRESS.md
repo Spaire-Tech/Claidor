@@ -835,6 +835,55 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 6 November 2026: the test copy's signature failed on the Dell
+
+The Dell (Windows 10.0.26200) ran `node scripts/store.mjs --test`. The
+certificate was made and trusted, the package was packed, and Simeon.exe
+was signed. Signing the `.appx` then failed, so the test copy was not
+installed. The artifact left behind
+(`out/store-test/Simeon-Store-0.1.0-test.appx`) is not a signed package.
+
+- **Cause.** The failing command was electron-builder's cached
+  `winCodeSign-2.6.0\windows-10\x64\signtool.exe` (product version
+  10.0.17763.1, the Windows 10 SDK of 2018) with `/sha1` of the test
+  certificate, `/s My` and `/fd sha256`. That signtool signs a program:
+  Simeon.exe was signed. An `.appx` is signed through the AppxSip.dll
+  shipped beside that signtool, the same 10.0.17763.1, and on this Windows
+  SignTool stops with its own error, "A required function is not present."
+  The Dell has no Windows Kits signtool under Program Files, and
+  electron-builder does not search there unless `SIGNTOOL_PATH` is set, so
+  the cache was the only signer. electron-builder 26.18.0 can instead
+  download Windows Kits 10.0.26100 (`toolsets.winCodeSign` `"1.1.0"`,
+  `windows-kits-bundle-10_0_26100_0.zip`). That bundle's signtool is
+  10.0.26100.7175 with a matching AppxSip, and the zip's SHA-256 is the
+  checksum electron-builder 26.18.0 already pins. Both archives were
+  downloaded here and those versions and the checksums were read off the
+  files. `ELECTRON_BUILDER_OFFLINE` is read only to skip the timestamp
+  server; it does not stop the kits download. The 7-Zip notes about darwin
+  links come from unpacking the old bundle and are not this failure.
+- **Done.** `--test` tells electron-builder to use toolset `1.1.0`, still
+  signing with the test certificate's thumbprint and still installing
+  after. `SIGNTOOL_PATH` and `ELECTRON_BUILDER_WINDOWS_KITS_PATH` are
+  cleared first, with the release-certificate variables, so a path in the
+  shell cannot put the 2018 signtool back. The upload command is
+  unchanged: unsigned, the default tools, and no signer written into the
+  package, so the app's own updater stays off. The test copy is packed
+  with the same kits as its signtool (makeappx 10.0.26100). The upload is
+  still packed with the default tools.
+- **Checked.** The two bundles' checksums and the signtool, AppxSip and
+  makeappx file versions, on this machine. `test/store.test.ts`.
+  `npm test` and `npm run typecheck` in `windows/`. `check_names.py` and
+  `check_translations.py`.
+- **Not checked.** Anything on Windows. The Dell has not run this change:
+  no new package was built there, and nothing was installed. This is not
+  done until that PC builds the test copy, installs it, and opens it.
+
+**Next:** on the Dell, from this branch, in `windows/`, with the network
+up once so the kits bundle can download: uninstall the developer's
+Simeon, then `node scripts/store.mjs --test`, and answer Yes when Windows
+asks to trust the certificate. Do not submit the package, and do not run
+`node scripts/release.mjs --publish`.
+
 ### 6 November 2026: a test copy of the Store's package for the Dell
 
 The founder chose to try the package before the upload: "ok lets test

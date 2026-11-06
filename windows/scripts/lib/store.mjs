@@ -52,6 +52,44 @@ export function readStoreIdentity(text) {
 /** The test certificate's name in the PC's certificates. */
 export const TEST_CERTIFICATE_NAME = 'Simeon Store test (this PC only)'
 
+/**
+ * electron-builder's toolset `1.1.0`: Windows Kits 10.0.26100, whose
+ * signtool (10.0.26100) signs an .appx. The default is winCodeSign 2.6.0,
+ * signtool 10.0.17763.1, which signs the .exe and then, on the package,
+ * reports that a required function is not present.
+ */
+export const TEST_SIGN_TOOLSET = '1.1.0'
+
+/** Dropped before the build, so a release certificate or another signtool cannot replace this script's own. */
+export const CLEARED_STORE_ENV = [
+  'CSC_LINK',
+  'CSC_KEY_PASSWORD',
+  'CSC_NAME',
+  'WIN_CSC_LINK',
+  'WIN_CSC_KEY_PASSWORD',
+  'SIGNTOOL_PATH',
+  'ELECTRON_BUILDER_WINDOWS_KITS_PATH',
+]
+
+/**
+ * What electron-builder is told. The test copy is signed with this PC's
+ * certificate and packed with the kits above. The upload is unsigned, stays
+ * on the default tools, and names no signer, so the app's own updater stays off.
+ */
+export function storeBuilderConfig({ test, identity, thumbprint, output, build }) {
+  return {
+    directories: { output },
+    appx: test ? { ...identity, artifactName: 'Simeon-Store-${version}-test.${ext}' } : identity,
+    ...(test
+      ? {
+          toolsets: { winCodeSign: TEST_SIGN_TOOLSET },
+          win: { signtoolOptions: { certificateSha1: thumbprint } },
+        }
+      : {}),
+    extraMetadata: { simeonBuild: build, description: 'Simeon' },
+  }
+}
+
 /** A PowerShell string, as written: single quotes, a quote doubled. */
 export function psQuote(text) {
   return `'${String(text).replace(/'/g, "''")}'`

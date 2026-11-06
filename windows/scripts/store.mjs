@@ -21,9 +21,12 @@
 // is signed with a certificate made on this PC for the Store's publisher,
 // "Simeon Store test (this PC only)" in this person's certificates, which this
 // PC is told to trust (Windows asks once, Yes), and then installed: Simeon in
-// the Start menu, as the Store's will be. Uninstall the developer's Simeon
-// (the installer's) first, so the two don't share `simeon://`; uninstall
-// the test copy before installing the Store's.
+// the Start menu, as the Store's will be. The signature is Windows Kits
+// 10.0.26100's signtool (electron-builder toolset 1.1.0, downloaded and
+// checksum-checked): the default one signs the program and cannot sign the
+// package. Uninstall the developer's Simeon (the installer's) first, so the
+// two don't share `simeon://`; uninstall the test copy before installing the
+// Store's.
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync, rmSync } from 'node:fs'
@@ -32,10 +35,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  CLEARED_STORE_ENV,
   encodeScript,
   identityFields,
   installScript,
   readStoreIdentity,
+  storeBuilderConfig,
   testCertificateScript,
   trustScript,
   trustedScript,
@@ -85,8 +90,8 @@ if (process.platform !== 'win32')
   fail('The Store’s package is made on Windows: it needs Windows’ own packaging tools (makeappx). Run this on the Windows PC.')
 if (!existsSync(path.join(root, 'clients/apps/web/public/app-next/index.html')))
   fail('The web app’s committed build is missing (clients/apps/web/public/app-next): build it in clients/apps/app (pnpm build) and commit it.')
-// The Store signs the package: no certificate of this PC's is used (but the test copy's own).
-for (const name of ['CSC_LINK', 'CSC_KEY_PASSWORD', 'CSC_NAME', 'WIN_CSC_LINK', 'WIN_CSC_KEY_PASSWORD']) delete process.env[name]
+// The Store signs the upload. The test copy uses its own certificate and the kits signtool, never a release certificate or a signtool named in the shell.
+for (const name of CLEARED_STORE_ENV) delete process.env[name]
 
 let thumbprint = null
 if (test) {
@@ -101,7 +106,8 @@ if (test) {
       fail('This PC does not trust the test certificate yet (was Windows’ question answered No?). Run this again and click Yes.')
   }
   console.log('  Trusted by this PC')
-  // A test copy needs no timestamp from the internet (electron-builder's only use of it).
+  // No timestamp server. electron-builder 26.18 reads this only to skip that;
+  // the kits bundle is still downloaded.
   process.env.ELECTRON_BUILDER_OFFLINE = 'true'
 }
 
@@ -122,15 +128,13 @@ try {
     projectDir: windows,
     targets: builder.Platform.WINDOWS.createTarget(['appx'], builder.Arch.x64),
     publish: 'never',
-    config: {
-      directories: { output: test ? 'out/store-test' : 'out/store' },
-      appx: test ? { ...identity, artifactName: 'Simeon-Store-${version}-test.${ext}' } : identity,
-      // The test copy, signed from this person's certificates; the Store's, not at all.
-      ...(test ? { win: { signtoolOptions: { certificateSha1: thumbprint } } } : {}),
-      // The build number for About; no signers, so the app's own updater stays off (and `process.windowsStore` keeps it off).
-      // The manifest's Description is package.json's, which is written for us: the package says only its name.
-      extraMetadata: { simeonBuild: build, description: 'Simeon' },
-    },
+    config: storeBuilderConfig({
+      test,
+      identity,
+      thumbprint,
+      output: test ? 'out/store-test' : 'out/store',
+      build,
+    }),
   })
 } catch (error) {
   fail(`The Store's package was not built: ${error instanceof Error ? error.message : String(error)}`)

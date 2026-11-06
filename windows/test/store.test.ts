@@ -7,11 +7,14 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { decodePNG } from '../scripts/lib/icon.mjs'
 import {
+  CLEARED_STORE_ENV,
   encodeScript,
   installScript,
   psQuote,
   readStoreIdentity,
+  storeBuilderConfig,
   TEST_CERTIFICATE_NAME,
+  TEST_SIGN_TOOLSET,
   testCertificateScript,
   trustedScript,
   trustScript,
@@ -89,6 +92,50 @@ describe('the test copy for this PC (--test)', () => {
     expect(installScript('C:\\x\\Simeon-Store-0.1.0-test.appx')).toContain(
       "Add-AppxPackage -Path 'C:\\x\\Simeon-Store-0.1.0-test.appx' -ForceApplicationShutdown -ForceUpdateFromAnyVersion",
     )
+  })
+
+  it('signs the package with this PC’s certificate and Windows Kits’ signtool, and leaves the upload unsigned', () => {
+    const identity = {
+      identityName: 'ExampleCo.Simeon',
+      publisher,
+      publisherDisplayName: 'Example Co.',
+    }
+    const signed = storeBuilderConfig({
+      test: true,
+      identity,
+      thumbprint,
+      output: 'out/store-test',
+      build: '12',
+    })
+    expect(TEST_SIGN_TOOLSET).toBe('1.1.0')
+    expect(signed).toEqual({
+      directories: { output: 'out/store-test' },
+      appx: { ...identity, artifactName: 'Simeon-Store-${version}-test.${ext}' },
+      toolsets: { winCodeSign: '1.1.0' },
+      win: { signtoolOptions: { certificateSha1: thumbprint } },
+      extraMetadata: { simeonBuild: '12', description: 'Simeon' },
+    })
+    const uploaded = storeBuilderConfig({
+      test: false,
+      identity,
+      thumbprint: null,
+      output: 'out/store',
+      build: '12',
+    })
+    expect(uploaded).toEqual({
+      directories: { output: 'out/store' },
+      appx: identity,
+      extraMetadata: { simeonBuild: '12', description: 'Simeon' },
+    })
+    expect(CLEARED_STORE_ENV).toEqual([
+      'CSC_LINK',
+      'CSC_KEY_PASSWORD',
+      'CSC_NAME',
+      'WIN_CSC_LINK',
+      'WIN_CSC_KEY_PASSWORD',
+      'SIGNTOOL_PATH',
+      'ELECTRON_BUILDER_WINDOWS_KITS_PATH',
+    ])
   })
 })
 
