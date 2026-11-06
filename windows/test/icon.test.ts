@@ -1,5 +1,8 @@
-// The Windows icon (scripts/make-icon.mjs) is the Mac's: its own pictures in
-// the sizes it has, the others averaged down, in a file Windows reads.
+// The Windows icon (scripts/make-icon.mjs), drawn for Windows since 6
+// November 2026: a white tile that fills the picture with Simeon's mark
+// across 78% of it (scripts/lib/tile.mjs), each size drawn at its own size,
+// in a file Windows reads. The PNG reader and the averaging below stay for
+// reading the Mac's pictures.
 
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -12,6 +15,7 @@ import {
   iconFile,
   readIconFile,
 } from '../scripts/lib/icon.mjs'
+import { markBoxFor, roundedSquare, tile } from '../scripts/lib/tile.mjs'
 
 const windows = path.resolve(__dirname, '..')
 const macIcons = path.resolve(windows, '../mac/Simeon/Assets.xcassets/MacIcon.appiconset')
@@ -55,17 +59,48 @@ describe('the icon', () => {
     expect(readIconFile(file)).toMatchObject([{ size: 2, bitCount: 32, png: false }])
   })
 
-  it('in the repository is what the script makes from the Mac’s icon', () => {
+  it('in the repository is what the script draws for Windows', () => {
     const entries = readIconFile(readFileSync(path.join(windows, 'resources/icon.ico')))
     expect(entries.map((e) => e.size)).toEqual([16, 24, 32, 48, 64, 128, 256])
     const big = entries.at(-1)
     expect(big?.png).toBe(true)
-    expect(big?.body.equals(readFileSync(path.join(macIcons, 'icon_256x256.png')))).toBe(true)
-    // The Mac's own 16, pixel for pixel.
-    const sixteen = decodePNG(readFileSync(path.join(macIcons, 'icon_16x16.png')))
-    expect(entries[0]?.body.equals(bitmapEntry(sixteen))).toBe(true)
+    expect(big?.body.equals(readFileSync(path.join(windows, 'resources/icon.png')))).toBe(true)
     execFileSync(process.execPath, [path.join(windows, 'scripts/make-icon.mjs'), '--check'], {
       stdio: 'pipe',
     })
+  })
+
+  it('fills the picture with the tile, the mark big inside it', () => {
+    const image = decodePNG(readFileSync(path.join(windows, 'resources/icon.png')))
+    const at = (x: number, y: number) => Array.from(image.rgba.slice((y * 256 + x) * 4, (y * 256 + x) * 4 + 4))
+    // The corner clear, the edge's middle opaque (no macOS room for a shadow), the middle white.
+    expect(at(0, 0)[3]).toBe(0)
+    expect(at(8, 128)[3]).toBe(255)
+    expect(at(128, 8)[3]).toBe(255)
+    // The mark's ink spans about 78% of the tile (the Mac's icon: 68% of a smaller tile).
+    let left = 256
+    let right = -1
+    for (let y = 0; y < 256; y += 1)
+      for (let x = 0; x < 256; x += 1) {
+        const [r, g, b, a] = at(x, y)
+        if (a! > 200 && r! < 60 && g! < 60 && b! < 60) {
+          left = Math.min(left, x)
+          right = Math.max(right, x)
+        }
+      }
+    const tileSide = 256 * (1 - 2 * tile.margin)
+    expect((right - left + 1) / tileSide).toBeGreaterThan(0.74)
+    expect((right - left + 1) / tileSide).toBeLessThan(0.8)
+  })
+
+  it('draws a rounded square with smooth edges', () => {
+    const square = roundedSquare(20, 2, 4)
+    expect(square[0]).toBe(0)
+    expect(square[10 * 20 + 10]).toBe(1)
+    // The edge pixel half covered, the corner cut round.
+    expect(square[10 * 20 + 2]).toBeGreaterThan(0.9)
+    expect(square[2 * 20 + 2]).toBeLessThan(0.5)
+    const box = markBoxFor(256, 240)
+    expect(box.x + box.size / 2).toBeCloseTo(200)
   })
 })

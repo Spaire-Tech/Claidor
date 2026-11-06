@@ -827,6 +827,27 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 6 November 2026: the Windows icon drawn for Windows
+
+The founder: "we need to fix the window simeon icon as well … it's using
+the iphone, which seems weird. the window should have a bigger logo …
+inside the white background."
+
+- **Done.** The icon was the Mac's as it is: a tile in macOS's grid, with
+  room around it for its shadow and the mark 60% of the picture, small on
+  Windows. It is now drawn for Windows (`windows/scripts/lib/tile.mjs`,
+  `make-icon.mjs`): the white tile fills the picture (2% room each side,
+  corners 22% of its side, white to the Mac tile's soft grey, a hair of
+  grey at its edge so it shows on a white taskbar), and Simeon's mark, the
+  outline the tray draws (`src/main/surfaces/picture.ts`), spans 78% of
+  the tile. Each of the seven sizes (16 to 256) is drawn at its own size.
+  `resources/icon.ico` and `icon.png` are the new ones; `make-icon.mjs
+  --check` and `test/icon.test.ts` hold them to the script.
+- **Checked.** The sizes compared before and after on a light and a dark
+  background in Chromium; `npm test`, `npm run typecheck`.
+- **Not checked.** On a Windows PC (the taskbar, the Start menu, the
+  installer). The Store's own tiles come with the Store's build.
+
 ### 6 November 2026: the first install's two findings
 
 The first run on a real Windows PC (the founder's Dell, a developer's
