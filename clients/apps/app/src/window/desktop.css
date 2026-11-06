@@ -28,7 +28,7 @@
   app-region: drag;
 }
 
-/* A strip of its own where the Mac moves the window by a place the web draws nothing in: the chat's head (its top 52, not the 116 the head's veil covers), the window with no chat open, the first run. */
+/* A strip of its own where the Mac moves the window by a place the web draws nothing in: the chat's head (its top 52, not the 116 the head's veil covers) and the same head over a call's lines, the window with no chat open, the first run. */
 .window-drag {
   display: none;
 }

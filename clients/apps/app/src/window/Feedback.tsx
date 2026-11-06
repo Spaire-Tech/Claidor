@@ -53,6 +53,7 @@ import { recentActivity } from '../core/recentActivity'
 import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
 import { desktopDeviceFacts, desktopLogs } from '../desktop/facts'
+import { chooseInApp } from '../desktop/native'
 import { t, tk } from '../l10n'
 import { clientVersion } from '../session'
 import { classes } from './classes'
@@ -583,7 +584,8 @@ function AgentGroup({
  * Screenshots: each added one (96 × 64, round 10, with an × to take it
  * out), then Add while there is room (four at most): a dashed tile the size
  * of a screenshot, the blue + over the word. Add opens the browser's file
- * chooser, pictures only; pictures dropped on the row are added too.
+ * chooser, pictures only (in the Windows app, Windows' own dialog with the
+ * Mac's words); pictures dropped on the row are added too.
  */
 function Screenshots({
   shots,
@@ -645,7 +647,18 @@ function Screenshots({
             className="feedback-add"
             title={t('Add screenshots')}
             aria-label={t('Add screenshots')}
-            onClick={() => chooser.current?.click()}
+            onClick={() => {
+              // The Windows app: Windows' own dialog with the Mac's words ("Choose screenshots to add"); else the page's chooser.
+              const chosen = chooseInApp({
+                title: t('Choose screenshots to add'),
+                filterName: t('Screenshots'),
+                extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'],
+                multiple: true,
+                max: room,
+              })
+              if (!chosen) chooser.current?.click()
+              else void chosen.then(add)
+            }}
           >
             <FeedbackSymbol name="plus.circle.fill" size={18} />
             <span>{t('Add')}</span>

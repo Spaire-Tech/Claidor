@@ -31,6 +31,10 @@ Windows' own parts around it. The plan and the record are
   down with a release waiting. The switches, the last checks and the release
   waiting are kept in `%APPDATA%\Simeon\updates.json`; what the updater did
   is in `updates.log` beside it.
+- **Pictures from other sites** (an airline's logo, a saved login's touch
+  icon) are read by the main process, public `https:` addresses only, and
+  kept a week in `%APPDATA%\Simeon\pictures` (`src/main/native/`, the Mac's
+  `RemoteLogos` and `SiteIcons`).
 - **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
 

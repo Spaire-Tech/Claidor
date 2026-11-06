@@ -188,6 +188,44 @@ export interface DesktopCalls {
   handsAllowOnce(approval: HandsApproval): void
   /** The commands allowed once forgotten: a message sent, or Settings' Forget. */
   handsForgetOnce(): void
+
+  // MARK: After step 7 (6 November 2026): the window growing, Windows' file dialog and beep, pictures kept on this PC
+
+  /**
+   * The main window at least `width` wide, in the page's own pixels (its
+   * zoom applied), within its screen; never while it is full screen or
+   * maximised (AgentPane.swift's `growWindowIfNeeded`, `makeRoomForSidebar`).
+   * With `remember`, what it grew by is kept for `shrinkWindow`.
+   */
+  growWindow(width: number, remember: boolean): void
+  /** The pane closed: back by what `growWindow` kept, if the window's width is still within 2 of what the growing left (`shrinkWindowIfGrown`). The record goes either way. */
+  shrinkWindow(): void
+  /** Windows' own file dialog over the main window, with the Mac's words (the avatar's Browse files, the screenshots' Add): the files chosen, read here; none when it is cancelled. */
+  chooseFiles(ask: FileAsk): ChosenFile[]
+  /** Windows' own alert sound (the Mac's `NSSound.beep`): a refused Create, a form's problem. */
+  beep(): void
+  /** An airline's logo (https), read by the app (no site's leave needed to read it) and kept on this PC a week (the Mac's `RemoteLogos`): a `data:` address, or null when there is none to show. */
+  remotePicture(url: string): string | null
+  /** A saved login's site icon: its page's touch icon, else its icon, else /favicon.ico, read by the app and kept on this PC a week (the core's `SiteIcons`): a `data:` address, or null when it has none. */
+  siteIcon(site: string): string | null
+}
+
+// MARK: After step 7's shapes
+
+/** What Windows' file dialog asks for: its title, the kind of file it lists (a name and the extensions, without dots), one file or several, and at most how many are taken. */
+export interface FileAsk {
+  title: string
+  filterName: string
+  extensions: string[]
+  multiple: boolean
+  max: number
+}
+
+/** A file chosen in Windows' dialog: its name, its type as its extension says, and its bytes. */
+export interface ChosenFile {
+  name: string
+  type: string
+  bytes: Uint8Array
 }
 
 // MARK: 7f's shapes, for its calls above

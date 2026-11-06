@@ -8,7 +8,8 @@
 // The web's own ways (decisions of 2 November 2026): a site's icon is its
 // own /favicon.ico, loaded by the browser from the site as the app draws
 // site icons elsewhere (the Mac reads the site's page for its touch icon,
-// which a web page may not); the eye shows a saved password only after the
+// which a web page may not; the Windows app does, in its main process, and
+// keeps it on the PC a week, 6 November 2026); the eye shows a saved password only after the
 // window's alert with the words the Mac's Touch ID shows (as 1Password's
 // Fill), then `GET credentials/{id}`; in the Windows app Windows Hello asks
 // with those words first, the alert only where Hello can't (presence.ts).
@@ -43,6 +44,7 @@ import {
   newDraft,
 } from '../core/credentialsStore'
 import type { AppStore } from '../core/store'
+import { beep, useKeptSiteIcon } from '../desktop/native'
 import { t } from '../l10n'
 import { classes } from './classes'
 import { AppLogoTile } from './ConnectCards'
@@ -246,22 +248,45 @@ function SiteIconTile({
   side?: number
 }) {
   const [state, settle] = useSiteIcon(site ?? '')
-  const shown = site !== undefined && state === 'shown'
+  // In the Windows app: the site's touch icon, read by the app and kept on the PC a week (the Mac's `SiteIcons`); none while it reads it.
+  const kept = useKeptSiteIcon(site ?? '')
+  const [keptLoad, setKeptLoad] = useState<{ src: string; shown: boolean }>()
+  const inApp = kept !== undefined
+  const src =
+    site === undefined
+      ? undefined
+      : !inApp
+        ? `https://${site}/favicon.ico`
+        : kept === null || kept === 'waiting'
+          ? undefined
+          : kept
+  const now = !inApp
+    ? state
+    : keptLoad?.src === src
+      ? keptLoad?.shown
+        ? 'shown'
+        : 'none'
+      : undefined
+  const shown = src !== undefined && now === 'shown'
+  const settleShown = (loaded: boolean) => {
+    if (!inApp) settle(loaded)
+    else if (src !== undefined) setKeptLoad({ src, shown: loaded })
+  }
   return (
     <span
       className={classes('site-tile', shown && 'with-icon')}
       style={{ width: side, height: side, borderRadius: side * 0.2237 }}
       aria-hidden="true"
     >
-      {site !== undefined && state !== 'none' && (
+      {src !== undefined && now !== 'none' && (
         <img
           className={shown ? undefined : 'coming'}
-          src={`https://${site}/favicon.ico`}
+          src={src}
           alt=""
           referrerPolicy="no-referrer"
           style={{ padding: side * 0.12 }}
-          onLoad={(event) => settle(event.currentTarget.naturalWidth > 0)}
-          onError={() => settle(false)}
+          onLoad={(event) => settleShown(event.currentTarget.naturalWidth > 0)}
+          onError={() => settleShown(false)}
         />
       )}
       {!shown &&
@@ -493,6 +518,8 @@ function CredentialSheet({
     const found = draftProblem(now)
     if (found !== undefined) {
       setProblem(found)
+      // Windows' alert sound in the Windows app, where the Mac beeps.
+      beep()
       return
     }
     setSaving(true)
@@ -507,6 +534,7 @@ function CredentialSheet({
     setSaving(false)
     if (!saved) {
       setProblem(model.problem)
+      beep()
       return
     }
     leave()

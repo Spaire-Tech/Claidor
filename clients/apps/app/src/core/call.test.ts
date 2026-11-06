@@ -8,6 +8,7 @@
 // call (Demo.swift's `demoVoice` and its server) is `callComputer` here.
 
 import { describe, expect, it } from 'vitest'
+import { FakeDesktop } from '../desktop/testing'
 import { SimeonAPIError } from './api'
 import {
   CallBanner,
@@ -336,6 +337,21 @@ describe("the call's flow (CallFlowTests)", () => {
     expect(say('tool', 'Read', 'a'.repeat(50))).toBe(
       `Reading ${'a'.repeat(39)}……`,
     )
+    // The person's own computer: their Mac, or their PC in the Windows app.
+    expect(say('tool', 'ExternalShell', undefined)).toBe(
+      'Running a command on your Mac…',
+    )
+    expect(say('tool', 'ExternalRead', '')).toBe('Reading a file on your Mac…')
+    const putBack = new FakeDesktop().install()
+    try {
+      expect(say('tool', 'ExternalShell', undefined)).toBe(
+        'Running a command on your PC…',
+      )
+      expect(say('tool', 'ExternalRead', '')).toBe('Reading a file on your PC…')
+      expect(say('tool', 'ExternalRead', 'notes.md')).toBe('Reading notes.md…')
+    } finally {
+      putBack()
+    }
   })
 
   it("draws the chat's call line", () => {
