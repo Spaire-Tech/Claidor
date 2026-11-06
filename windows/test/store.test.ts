@@ -6,7 +6,16 @@ import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { decodePNG } from '../scripts/lib/icon.mjs'
-import { readStoreIdentity } from '../scripts/lib/store.mjs'
+import {
+  encodeScript,
+  installScript,
+  psQuote,
+  readStoreIdentity,
+  TEST_CERTIFICATE_NAME,
+  testCertificateScript,
+  trustedScript,
+  trustScript,
+} from '../scripts/lib/store.mjs'
 
 const windows = path.resolve(__dirname, '..')
 
@@ -44,6 +53,42 @@ describe('the Store’s identity', () => {
     })
     expect(readStoreIdentity(text)).toEqual({ missing: [], wrong: ['identityName', 'publisher'] })
     expect(readStoreIdentity('not json')).toEqual({ missing: [], wrong: ['store.json is not JSON'] })
+  })
+})
+
+describe('the test copy for this PC (--test)', () => {
+  const publisher = 'CN=95811681-55B1-49D5-8542-DCC11BB21E65'
+  const thumbprint = 'A'.repeat(40)
+  const decode = (base64: string) => Buffer.from(base64, 'base64').toString('utf16le')
+
+  it('quotes for PowerShell, and encodes a script whole', () => {
+    expect(psQuote("C:\\Users\\O'Neil\\x.cer")).toBe("'C:\\Users\\O''Neil\\x.cer'")
+    const script = "Write-Output 'a b'\nWrite-Output \"c\""
+    expect(decode(encodeScript(script))).toBe(script)
+  })
+
+  it('makes the certificate once, for the Store’s publisher exactly, for code signing only', () => {
+    const script = testCertificateScript(publisher)
+    expect(script).toContain(`$subject = '${publisher}'`)
+    expect(script).toContain(`-FriendlyName '${TEST_CERTIFICATE_NAME}'`)
+    expect(script).toContain("Get-ChildItem 'Cert:\\CurrentUser\\My'")
+    expect(script).toContain("-TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')")
+    expect(script).toMatch(/\$_\.HasPrivateKey/)
+    expect(script.split('\n').at(-1)).toBe('Write-Output $cert.Thumbprint')
+  })
+
+  it('trusts it on this PC only after Windows asks, and installs over an earlier test copy', () => {
+    expect(trustedScript(thumbprint)).toBe(`Test-Path 'Cert:\\LocalMachine\\TrustedPeople\\${thumbprint}'`)
+    const trust = trustScript(thumbprint, 'C:\\Users\\Staff\\AppData\\Local\\Temp\\simeon-store-test.cer')
+    expect(trust).toContain(`Export-Certificate -Cert 'Cert:\\CurrentUser\\My\\${thumbprint}'`)
+    const encoded = trust.match(/-EncodedCommand ([A-Za-z0-9+/=]+)'/)?.[1] ?? ''
+    expect(trust).toContain("Start-Process -FilePath 'powershell.exe' -Verb RunAs -Wait")
+    expect(decode(encoded)).toContain(
+      "Import-Certificate -FilePath 'C:\\Users\\Staff\\AppData\\Local\\Temp\\simeon-store-test.cer' -CertStoreLocation 'Cert:\\LocalMachine\\TrustedPeople'",
+    )
+    expect(installScript('C:\\x\\Simeon-Store-0.1.0-test.appx')).toContain(
+      "Add-AppxPackage -Path 'C:\\x\\Simeon-Store-0.1.0-test.appx' -ForceApplicationShutdown -ForceUpdateFromAnyVersion",
+    )
   })
 })
 
