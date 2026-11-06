@@ -49,7 +49,7 @@ body {
     'Segoe UI',
     system-ui,
     sans-serif;
-  -webkit-font-smoothing: antialiased;
+  /* The system's own text smoothing, as the window's (index.css, 6 November 2026). */
 }
 
 /* The card: at most 360 wide, padded 36 and 40, 18 round, a hairline and a soft shadow on light. */

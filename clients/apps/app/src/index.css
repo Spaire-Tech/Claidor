@@ -184,7 +184,9 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', Inter,
     system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  /* No `-webkit-font-smoothing: antialiased`: on a Mac it drops the system's own text smoothing, and the words
+     came out thinner and paler than the Mac app's (the founder, 6 November 2026: "seems like its fading").
+     Left alone, Chrome and Electron draw text as macOS draws the Mac app's; Windows uses ClearType either way. */
 }
 
 button {
