@@ -35,8 +35,10 @@ Windows' own parts around it. The plan and the record are
   icon) are read by the main process, public `https:` addresses only, and
   kept a week in `%APPDATA%\Simeon\pictures` (`src/main/native/`, the Mac's
   `RemoteLogos` and `SiteIcons`).
-- **The icon** is the Mac's (`resources/icon.ico`, `icon.png`, made by
-  `scripts/make-icon.mjs` from `mac/Simeon/Assets.xcassets/MacIcon.appiconset`).
+- **The icon** is drawn for Windows (`resources/icon.ico`, `icon.png`, made by
+  `scripts/make-icon.mjs`): a white tile that fills the picture with Simeon's
+  mark across 78% of it, the mark the tray draws (`scripts/lib/tile.mjs`,
+  `src/main/surfaces/picture.ts`).
 
 ## Commands
 
@@ -52,7 +54,7 @@ npm run smoke              # the app run for real against a stand-in (Linux: xvf
 npm run package            # a developer's installer in out/ (on Linux: needs Wine)
 node scripts/release.mjs   # a release in out/release/<version>/ (signed with WIN_CSC_LINK, WIN_CSC_KEY_PASSWORD, for lib/release.mjs's signers)
 node scripts/release.mjs --publish   # and on the website (on Windows, signed and checked only; the aws command line signed in)
-node scripts/make-icon.mjs # the icon again, from the Mac's
+node scripts/make-icon.mjs # the icon drawn again
 ```
 
 `SIMEON_UPDATES_FEED=http://127.0.0.1:<port>/<path>` gives a build that
