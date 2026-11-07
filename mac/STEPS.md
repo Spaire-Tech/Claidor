@@ -2800,3 +2800,21 @@ was counted from the row's corner, so a second copy sat 64 right and 10 down
 behind the first. It is hung once now.
 
 Not yet built or run on a Mac (Linux here: the files parse).
+
+### The chat in a column (7 November 2026)
+
+The founder, after the Windows app's column the same day: "we should do it on
+mac too". The chat's messages ran from the sidebar to the window's edge, and
+the message field with them. Now they keep to a column 960 wide at the most,
+centred in the chat, as in the other app the founder measured against
+(`ChatColumn`, ChatPane.swift): the chat's rows and a thread's, the message
+field (the new chat's too) and ⌄ over the field's right. Narrower than 992,
+the chat is as before, 16 in from each side. A bubble's own limit stays 640.
+The head, find's bar, the low-disk line and the field's soft edge keep the
+chat's whole width. A drag beside the column still chooses words, as the room
+beside a bubble does. The column moves at once when the chat's width changes,
+as the rows rewrap. An exchange's and a call's lines are not in it, as on
+Windows.
+
+Not yet built or run on a Mac: no Swift here, so the change was read, not
+compiled.
