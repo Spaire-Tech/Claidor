@@ -150,6 +150,24 @@ struct ChatPane: View {
   }
 }
 
+/**
+ * The chat's column (the founder, 7 November 2026, after the Windows app's
+ * the same day: the other app's chat "has a width max. we don't. our
+ * composer, and chats go far even in a big screen"; then "we should do it
+ * on mac too"). Measured in the other app: its messages and message field
+ * keep to a column 960 wide, centred in the chat. Here the same: the
+ * messages' rows (the chat's and a thread's), the message field and ⌄ over
+ * its right keep to 960 at the most, centred, and 16 in from the chat's
+ * sides at the least, as before. A bubble's own limit stays 640. The head,
+ * find's bar and the low-disk line keep their places.
+ */
+enum ChatColumn {
+  static let widest: CGFloat = 960
+
+  /** How far in from each side of a chat this wide the column starts. */
+  static func side(_ width: CGFloat) -> CGFloat { max(16, (width - widest) / 2) }
+}
+
 // MARK: The head
 
 /**
@@ -342,7 +360,8 @@ private struct Transcript: View {
     // The rows as drawn, for ⌘C to copy the messages a choice runs through (in view or not).
     let _ = (selection.rows = rows)
     GeometryReader { box in
-      let width = max(0, box.size.width - 32)
+      let side = ChatColumn.side(box.size.width)
+      let width = max(0, box.size.width - 2 * side)
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
           ForEach(rows) { row in
@@ -368,9 +387,12 @@ private struct Transcript: View {
         // chat stood empty for a moment (16 October 2026).
         .animation(nil, value: width)
         .scrollTargetLayout()
+        // The chat's column (`ChatColumn`), its sides moved at once as the rows rewrap.
+        .padding(.horizontal, side)
+        .animation(nil, value: side)
         // A drag over the chat chooses words across its messages, and a click lets them go, as on a page (the founder,
         // 5 November 2026: "you should be able to select all"; `TranscriptSelection`). The whole width takes it, the
-        // room beside a bubble too; a click still reaches what is under it.
+        // room beside a bubble and beside the column too; a click still reaches what is under it.
         .contentShape(Rectangle())
         .simultaneousGesture(
           DragGesture(minimumDistance: 3, coordinateSpace: .named(TranscriptSelection.space))
@@ -379,7 +401,6 @@ private struct Transcript: View {
         .simultaneousGesture(SpatialTapGesture().onEnded { _ in selection.clear() })
         .coordinateSpace(.named(TranscriptSelection.space))
         .environment(selection)
-        .padding(.horizontal, 16)
         .padding(.top, (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight))
         // Over the message field: its frame and 28 (the working line's 40 is in the slot).
         .padding(.bottom, control.composerHeight + 28)
@@ -442,7 +463,8 @@ private struct Transcript: View {
       .overlay(alignment: .bottomTrailing) {
         if !pinned {
           ToEndButton(count: unseen, look: look) { toNewest() }
-            .padding(.trailing, 16)
+            // Over the field's right, in the chat's column.
+            .padding(.trailing, side)
             // 10 over the field's top (its height, and its 16 under it).
             .padding(.bottom, control.composerHeight + 26)
             .transition(.scale(scale: 0.6).combined(with: .opacity))

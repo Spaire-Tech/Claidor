@@ -46,6 +46,8 @@ struct Composer: View {
   /** The composer's width and height, measured: the lists keep inside the chat, and the messages end over it. */
   @State private var width: CGFloat = 0
   @State private var height: CGFloat = 40
+  /** The chat's width under the field, for the chat's column (`ChatColumn`). */
+  @State private var room: CGFloat = 0
   /** The lists over the field (step 2e). */
   @State private var picks = ComposerPicks()
   @State private var handle = FieldHandle()
@@ -143,8 +145,11 @@ struct Composer: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { noticeHeight = $0 }
       }
     }
-    .padding(.horizontal, 16)
+    // In the chat's column, as its messages (`ChatColumn`); the soft edge under it stays the chat's whole width.
+    .padding(.horizontal, ChatColumn.side(room))
+    .animation(nil, value: room)
     .padding(.bottom, 16)
+    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { room = $0 }
     .background(alignment: .bottom) { softEdge }
     .onAppear {
       text = store.drafts[agentId] ?? ""
