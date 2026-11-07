@@ -68,7 +68,8 @@ describe('the icon', () => {
     execFileSync(process.execPath, [path.join(windows, 'scripts/make-icon.mjs'), '--check'], {
       stdio: 'pipe',
     })
-  })
+    // Every icon and Store picture drawn again: 5.3 s on the Dell.
+  }, 60_000)
 
   it('fills the picture with the tile, the mark big inside it', () => {
     const image = decodePNG(readFileSync(path.join(windows, 'resources/icon.png')))
