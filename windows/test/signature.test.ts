@@ -126,7 +126,8 @@ describe('asked for real (Windows’ check itself can’t run here)', () => {
       expect(await checkSignature(file, [signer], asking), asking.program).not.toBeNull()
       expect(checkSignatureNow(file, [signer], asking), asking.program).not.toBeNull()
     }
-  })
+    // Node started six times: 7.4 s on the Dell.
+  }, 30_000)
 
   it('off Windows, the real ask refuses (no Windows PowerShell here)', async () => {
     if (process.platform === 'win32') return

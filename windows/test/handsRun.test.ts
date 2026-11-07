@@ -14,7 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { LocalToolApprovals } from '../src/main/hands/approvals'
 import { Hands, placesFrom } from '../src/main/hands/hands'
 import { findPowerShell } from '../src/main/hands/powershell'
-import { HandsProvider, type StreamEnd } from '../src/main/hands/provider'
+import { HandsProvider, type StreamEnd, shellName, systemVersion } from '../src/main/hands/provider'
 import { LocalExec, type Permission } from '../src/main/hands/rules'
 import { launch } from '../src/main/hands/shell'
 import { fetchTransport } from '../src/main/hands/transport'
@@ -138,7 +138,8 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     const hello = await standIn.gateway.waitFor(() =>
       standIn.gateway.state.frames.find((frame) => frame.kind === 'hello' && frame.shellVersion),
     )
-    expect(hello).toMatchObject({ platform: process.platform, shell: 'pwsh', osVersion: `${os.type()} ${os.release()}` })
+    // The system as the app names it (on Windows "Windows 11 Pro 10.0.26200"), and whichever PowerShell is here.
+    expect(hello).toMatchObject({ platform: process.platform, shell: shellName(shell!), osVersion: systemVersion(process.platform) })
     expect(String(hello.shellVersion)).toMatch(/^\d+\.\d+/)
   }, 20_000)
 
@@ -206,8 +207,8 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
 
   it('refuses a command whose folder leads to a place that holds keys through a link (S1)', async () => {
     permission = 'always'
-    // `k` in the root leads to the stand-in home's `.ssh` (a junction would on Windows).
-    symlinkSync(path.join(home, '.ssh'), path.join(root, 'k'))
+    // `k` in the root leads to the stand-in home's `.ssh`: a junction on Windows, which needs no administrator (a symbolic link does).
+    symlinkSync(path.join(home, '.ssh'), path.join(root, 'k'), process.platform === 'win32' ? 'junction' : undefined)
     const asked = await run('Get-Content id_rsa', { workingDirectory: 'k' })
     expect(thrownOf(asked)).toContain('~\\.ssh')
     expect(shellEvents(asked)).toEqual([])
@@ -333,7 +334,8 @@ describe.skipIf(!shell)('the hands run for real in PowerShell', () => {
     expect(bad.error).toBe('The upload was not valid base64.')
   }, 40_000)
 
-  it('reads a file for the computer without holding up the app (S6)', async () => {
+  // A FIFO (a file a read waits on) is Unix's: Windows has no `mkfifo` and no such file in a folder.
+  it.skipIf(process.platform === 'win32')('reads a file for the computer without holding up the app (S6)', async () => {
     const fifo = path.join(root, 'slow.pipe')
     execFileSync('mkfifo', [fifo])
     // Another program writes it a second from now; until then a read waits.
@@ -477,7 +479,9 @@ describe.skipIf(!shell)('a stop on Windows when taskkill does not stop it (S4)',
   }, 20_000)
 })
 
-describe('a stop that nothing ends (S4)', () => {
+// Played with /bin/sh and a trap that lets the stop go by: Windows has neither, and a forced stop
+// there always ends a program. On Windows the test before this one stops a real PowerShell.
+describe.skipIf(process.platform === 'win32')('a stop that nothing ends (S4)', () => {
   it('is told ended all the same, so a cancel never hangs', async () => {
     const folder = mkdtempSync(path.join(os.tmpdir(), 'simeon-hands-stuck-'))
     const logs: string[] = []

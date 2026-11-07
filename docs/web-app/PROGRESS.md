@@ -839,6 +839,43 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 7 November 2026: the Windows app's tests on the Dell
+
+The Dell ran `npm test` in `windows/` for the first time, on `2db7c33`:
+6 failed and 2 test files did not load. The founder asked what they were.
+
+- **Measured** (the Dell's log, then each reproduced or read here):
+  - **2 files not loaded** (`bridge`, `frame`): Vite read the web app's
+    `tsconfig.json` for its files the tests import (the contract, the
+    saved chats), and that file extends `@simeon/typescript-config`, there
+    only after `pnpm install` in `clients/`, which the Dell hadn't run.
+    Reproduced here by hiding that package: the same `TSConfckParseError`.
+  - **2 timed out at 5 s**: the icon check (every icon drawn again, 5.3 s
+    there) and the signature check (Node started six times, 7.4 s).
+  - **The hello**: the test wanted Linux's names (`Windows_NT …`, `pwsh`);
+    the app says what it should on Windows ("Windows 11 Pro 10.0.26200",
+    `systemVersion`) and names the PowerShell it found (the Dell has
+    Windows PowerShell, `powershell`, `shellName`). The app was right.
+  - **S1**: a symbolic link, which Windows lets only an administrator make
+    (`EPERM`); the test's own comment said a junction would be used there.
+  - **S6**: `mkfifo`, Unix's; **S4's stand-in**: `/bin/sh` with a trap
+    (exit 127, not found). Neither exists on Windows.
+- **Done** (tests and their settings only, no app code):
+  `vitest.config.ts` gives Vite the compile settings itself (the Windows
+  app's target, the web app's JSX) so no tsconfig is read; the hello
+  expects `systemVersion` and `shellName`; S1 makes a junction on Windows;
+  S6 and S4's stand-in run off Windows only (a FIFO is Unix's; a forced
+  stop on Windows always ends a program, and the test before S4's stops a
+  real PowerShell there); the icon check 60 s, the signature check 30 s.
+- **Checked here.** `npm test` 225 passed, 21 skipped; the same with the
+  web app's settings package hidden, as on the Dell (before: 2 files not
+  loaded); `test/handsRun.test.ts` with PowerShell 7 on the path, 25 of
+  25; `npm run typecheck`.
+- **Not checked.** On the Dell: the junction, the time limits, and the
+  hands' tests under Windows PowerShell 5.1.
+
+**Next:** `npm test` again on the Dell.
+
 ### 7 November 2026: the chat's column and the sidebar's words on Windows
 
 The founder, the Windows app (with the sharp words) beside the other app
