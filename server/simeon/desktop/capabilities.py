@@ -34,6 +34,7 @@ from fastapi.responses import JSONResponse, Response
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
+from . import own_models
 from .auth import ProxyCaller, get_proxy_caller
 from .pricing import (
     IMAGE_EDIT_MODEL,
@@ -300,6 +301,12 @@ async def web_search(
             f"That is longer than {WEB_SEARCH_MAX_QUERY_CHARACTERS} characters.",
             400,
         )
+    # On the person's own ChatGPT account when they chose it (`own_models`).
+    own = await own_models.web_search(
+        request, caller, session, query.strip(), WEB_SEARCH_INSTRUCTIONS
+    )
+    if own is not None:
+        return own
     refused = await _gate(session, caller, "search", DesktopProvider.anthropic)
     if refused is not None:
         return refused
@@ -502,6 +509,18 @@ async def images_generations(
     references = _reference_images(payload.get("reference_images"))
     if isinstance(references, JSONResponse):
         return references
+    # On the person's own ChatGPT account when they chose it (`own_models`).
+    own = await own_models.draw(
+        request,
+        caller,
+        session,
+        prompt=prompt.strip(),
+        size=size,
+        quality=quality,
+        references=references,
+    )
+    if own is not None:
+        return own
     refused = await _gate(session, caller, "image")
     if refused is not None:
         return refused

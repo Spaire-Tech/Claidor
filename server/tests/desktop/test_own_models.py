@@ -651,3 +651,301 @@ class TestNothingMingles:
                 json=_engine_request(stream=False),
             )
         assert answer.json()["output"] == [item]
+
+
+def _searched(text: str = "Paris is the capital of France.") -> bytes:
+    response = {
+        "id": "resp_search",
+        "status": "completed",
+        "output": [
+            {
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {
+                    "type": "search",
+                    "query": "capital of France",
+                    "sources": [
+                        {"type": "url", "url": "https://example.org/france"},
+                        {"type": "url", "url": "https://example.org/paris"},
+                    ],
+                },
+            },
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "output_text",
+                        "text": text,
+                        "annotations": [
+                            {
+                                "type": "url_citation",
+                                "url": "https://example.org/paris",
+                                "title": "Paris",
+                                "start_index": 0,
+                                "end_index": 5,
+                            }
+                        ],
+                    }
+                ],
+            },
+        ],
+        "usage": {"input_tokens": 900, "output_tokens": 30},
+    }
+    return _sse({"type": "response.completed", "response": response})
+
+
+ANTHROPIC = "https://api.anthropic.test"
+
+
+@pytest.mark.asyncio
+class TestSearchAndPicturesOnTheAccount:
+    async def test_a_search_runs_on_the_account_as_codex_runs_it(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(RESPONSES).mock(return_value=_stream(_searched()))
+            claude = mock.post(f"{ANTHROPIC}/v1/messages")
+            answer = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": " capital of France "},
+            )
+        assert answer.status_code == 200, answer.text
+        assert not claude.called
+        sent = json.loads(route.calls[0].request.content)
+        assert sent["model"] == "gpt-6-luna"
+        assert sent["stream"] is True
+        assert sent["store"] is False
+        assert sent["tools"] == [{"type": "web_search", "external_web_access": True}]
+        assert sent["input"][1] == {"role": "user", "content": "capital of France"}
+        assert answer.json() == {
+            "answer": "Paris is the capital of France.",
+            "documents": [
+                {"url": "https://example.org/paris", "title": "Paris", "text": "Paris"},
+                {"url": "https://example.org/france", "title": "", "text": ""},
+            ],
+            "searches": 1,
+        }
+        [row] = await _usage(session, user)
+        assert row.model == "own:chatgpt:gpt-6-luna"
+        assert row.provider == "chatgpt"
+        assert row.credits == 0
+        assert row.reason == "search"
+
+    async def test_nothing_chosen_searches_on_simeons_as_before(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        with respx.mock(assert_all_called=False) as mock:
+            chatgpt = mock.post(RESPONSES)
+            claude = mock.post(f"{ANTHROPIC}/v1/messages").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "content": [{"type": "text", "text": "From Claude."}],
+                        "usage": {"input_tokens": 100, "output_tokens": 10},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+        assert answer.json()["answer"] == "From Claude."
+        assert claude.called
+        assert not chatgpt.called
+        rows = await _usage(session, user)
+        assert {row.provider for row in rows} == {"anthropic"}
+        assert sum(row.credits for row in rows) > 0
+
+    async def test_a_search_chatgpt_cant_run_now_runs_on_simeons(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(return_value=httpx.Response(503))
+            mock.post(f"{ANTHROPIC}/v1/messages").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "content": [{"type": "text", "text": "From Claude."}],
+                        "usage": {"input_tokens": 100, "output_tokens": 10},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+        assert answer.json()["answer"] == "From Claude."
+
+    async def test_a_search_chatgpt_refuses_is_handed_back(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.post(RESPONSES).mock(
+                return_value=httpx.Response(
+                    400, json={"error": {"message": "web_search is not allowed"}}
+                )
+            )
+            claude = mock.post(f"{ANTHROPIC}/v1/messages")
+            answer = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+        assert answer.status_code == 400
+        assert not claude.called
+        assert await _usage(session, user) == []
+
+    async def test_a_picture_is_drawn_on_the_account(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(f"{CODEX}/images/generations").mock(
+                return_value=httpx.Response(
+                    200, json={"created": 1, "data": [{"b64_json": "aGk="}]}
+                )
+            )
+            simeon = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/images/generations"
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={"prompt": " a red stool ", "size": "1024x1024"},
+            )
+        assert answer.status_code == 200, answer.text
+        assert not simeon.called
+        sent = route.calls[0].request
+        assert sent.headers["chatgpt-account-id"] == "acct_one"
+        assert json.loads(sent.content) == {
+            "prompt": "a red stool",
+            "model": "gpt-image-2",
+            "quality": "auto",
+            "size": "1024x1024",
+        }
+        assert answer.json() == {
+            "data": [{"b64_json": "aGk=", "mime_type": "image/png"}],
+            "usage": None,
+        }
+        [row] = await _usage(session, user)
+        assert row.model == "own:chatgpt:gpt-image-2"
+        assert row.provider == "chatgpt"
+        assert row.credits == 0
+
+    async def test_a_picture_from_pictures_is_an_edit_with_the_pictures_inline(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(f"{CODEX}/images/edits").mock(
+                return_value=httpx.Response(200, json={"data": [{"b64_json": "aGk="}]})
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={
+                    "prompt": "the same stool in blue",
+                    "reference_images": [
+                        {"data": "aGVsbG8=", "mime_type": "image/png"}
+                    ],
+                },
+            )
+        assert answer.status_code == 200
+        sent = json.loads(route.calls[0].request.content)
+        assert sent["images"] == [{"image_url": "data:image/png;base64,aGVsbG8="}]
+
+    async def test_nothing_chosen_draws_on_simeons_as_before(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        with respx.mock(assert_all_called=False) as mock:
+            chatgpt = mock.post(f"{CODEX}/images/generations")
+            simeon = mock.post(
+                f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/images/generations"
+            ).mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "data": [{"b64_json": "aGk="}],
+                        "usage": {"input_tokens": 10, "output_tokens": 1000},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={"prompt": "a red stool"},
+            )
+        assert answer.status_code == 200
+        assert simeon.calls[0].request.headers["authorization"] == (
+            "Bearer sk-simeon-openai"
+        )
+        assert not chatgpt.called
+        [row] = await _usage(session, user)
+        assert row.provider == "openai"
+        assert row.credits > 0
+
+    async def test_no_plan_no_search_or_picture_on_the_account(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        mocker.patch.object(
+            desktop, "allowance", return_value=allowance_module._none(utc_now())
+        )
+        with respx.mock(assert_all_called=False) as mock:
+            chatgpt = mock.post(RESPONSES)
+            images = mock.post(f"{CODEX}/images/generations")
+            searched = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+            drawn = await client.post(
+                "/desktop/api/proxy/v1/images/generations",
+                headers=headers,
+                json={"prompt": "a red stool"},
+            )
+        assert not chatgpt.called
+        assert not images.called
+        assert "40200" in searched.text
+        assert "40200" in drawn.text

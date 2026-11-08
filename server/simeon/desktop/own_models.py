@@ -16,7 +16,10 @@ starts with "o" or "gpt-5" as a reasoning model, and only then sends the
 agent's reasoning effort and its brief as a `developer` message. So no
 engine release is needed.
 
-**Which calls.** `/desktop/api/models/available` names the chosen model for
+**Which calls.** The agents' model calls, their web search and their
+pictures (below, "web search and pictures on the account"). Voice calls,
+dictation and video stay on Simeon's. `/desktop/api/models/available` names
+the chosen model for
 the agents' `primary` and `computer` roles, and the account's cheap model
 (GPT-6 Luna) for `cheap` (`rows`). The engine follows the roles within five
 minutes. Nothing changes until the person chooses
@@ -63,6 +66,7 @@ refused is not taken on by Simeon's model.
 
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
@@ -305,14 +309,20 @@ def codex_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
     return body
 
 
-def _codex_headers(grant: model_accounts.AccessGrant) -> dict[str, str]:
+def _codex_headers(
+    grant: model_accounts.AccessGrant, accept: str = "text/event-stream"
+) -> dict[str, str]:
     return {
         "authorization": f"Bearer {grant.access_token}",
         "chatgpt-account-id": grant.account_key,
         "originator": settings.CHATGPT_ORIGINATOR,
         "content-type": "application/json",
-        "accept": "text/event-stream",
+        "accept": accept,
     }
+
+
+def _codex_base() -> str:
+    return settings.CHATGPT_CODEX_BASE_URL.rstrip("/")
 
 
 def _codex_url() -> str:
@@ -688,6 +698,362 @@ async def _mark_limited(
         "desktop.models.limited",
         user_id=str(user_id),
         until=until.isoformat(),
+    )
+
+
+# --- web search and pictures on the account ------------------------------------
+#
+# The founder, 8 November 2026: "it's ok to keep video, dictation and voice
+# calls. the rest goes to chat". With ChatGPT chosen, the agent's web search
+# and pictures run on the person's account too, the way Codex runs them:
+# search as the Responses API's own `web_search` tool on the account's cheap
+# model, pictures on `/images/generations` and `/images/edits` with
+# `gpt-image-2` (openai/codex, `core/src/tools/hosted_spec.rs`,
+# `ext/image-generation`). Same rules as the chat: no plan, refused; nothing
+# chosen, Simeon's; the next account when one can't answer for now; Simeon's
+# search or picture, on credits, when none can; ChatGPT's refusal of the
+# request itself handed back as it came. Voice calls, dictation and video
+# stay on Simeon's.
+
+#: The picture model, as Codex's image tool names it.
+CHATGPT_IMAGE = OwnModel(_CHATGPT, "gpt-image-2", "GPT Image 2", 0)
+
+
+async def _helper(session: AsyncSession, user: User, chosen: OwnModel) -> OwnModel:
+    """The account's cheap model where its plan has it, else the chosen."""
+    cheap = own_model(_CHEAP.get(chosen.provider, ""))
+    plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
+    if cheap is not None and any(cheap.on_plan(plan) for plan in plans):
+        return cheap
+    return chosen
+
+
+async def _own_gate(
+    session: AsyncSession, user: User
+) -> tuple[OwnModel | None, JSONResponse | None]:
+    """The chosen model, or a refusal: None and None when the person's
+    agents are on Simeon's models (the caller goes on as before)."""
+    chosen = chosen_model(user)
+    if chosen is None:
+        return None, None
+    allowance = await desktop.allowance(session, user)
+    if allowance.none:
+        return None, quota_exhausted_response(allowance)
+    return chosen, None
+
+
+async def _call(
+    request: Request,
+    session: AsyncSession,
+    user_id: Any,
+    account_id: Any,
+    url: str,
+    body: dict[str, Any],
+    *,
+    stream: bool,
+) -> dict[str, Any]:
+    """One search or picture on one account: the answer, or `_Refused`.
+    A stream (the Responses API, which ChatGPT serves only as one) is read
+    to its last response."""
+    grant = await _grant(request, session, user_id, account_id)
+    refreshed = False
+    async with httpx.AsyncClient(timeout=_timeout()) as client:
+        while True:
+            headers = _codex_headers(
+                grant, "text/event-stream" if stream else "application/json"
+            )
+            try:
+                if stream:
+                    async with client.stream(
+                        "POST", url, headers=headers, json=body
+                    ) as upstream:
+                        status = upstream.status_code
+                        if status == 200:
+                            tally = _ResponseTally()
+                            async for chunk in upstream.aiter_bytes():
+                                tally.feed(chunk)
+                            tally.finish()
+                            answer = tally.answer()
+                            if answer is None:
+                                raise _Refused(502, b"no response")
+                            return answer
+                        refusal = await upstream.aread()
+                else:
+                    upstream = await client.post(url, headers=headers, json=body)
+                    status = upstream.status_code
+                    if status == 200:
+                        try:
+                            parsed = upstream.json()
+                        except ValueError as error:
+                            raise _Refused(502, b"not JSON") from error
+                        if not isinstance(parsed, dict):
+                            raise _Refused(502, b"not an object")
+                        return parsed
+                    refusal = upstream.content
+            except httpx.HTTPError as error:
+                raise _Refused(None, type(error).__name__.encode()) from error
+            if status == 401 and not refreshed:
+                refreshed = True
+                grant = await _grant(
+                    request, session, user_id, account_id, force_refresh=True
+                )
+                continue
+            try:
+                said = json.loads(refusal)
+            except ValueError:
+                said = None
+            until = limit_end(said, utc_now())
+            if until is not None:
+                await _mark_limited(request, session, user_id, account_id, until)
+            raise _Refused(status, refusal)
+
+
+async def _on_accounts(
+    request: Request,
+    session: AsyncSession,
+    user: User,
+    model: OwnModel,
+    what: str,
+    url: str,
+    body: dict[str, Any],
+    *,
+    stream: bool,
+) -> tuple[dict[str, Any] | None, JSONResponse | None]:
+    """The answer of the first account that gives one; else ChatGPT's
+    refusal of the request itself; else neither (Simeon's takes it on)."""
+    now = utc_now()
+    accounts = [
+        one
+        for one in await _usable(session, user.id, model.provider)
+        if (one.limited_until is None or one.limited_until <= now)
+        and model.on_plan(one.plan)
+    ]
+    refused_request: _Refused | None = None
+    for account in accounts:
+        try:
+            answer = await _call(
+                request, session, user.id, account.id, url, body, stream=stream
+            )
+        except _Refused as refused:
+            log.warning(
+                "desktop.models.relay_refused",
+                user_id=str(user.id),
+                provider=model.provider,
+                model=model.slug,
+                what=what,
+                status=refused.status,
+                preview=_preview(refused.body),
+            )
+            if refused.refuses_the_request:
+                refused_request = refused
+            continue
+        return answer, None
+    if refused_request is not None:
+        return None, refused_request.answer()
+    log.info(
+        "desktop.models.on_simeon",
+        user_id=str(user.id),
+        provider=model.provider,
+        what=what,
+        why="no_account_answered",
+    )
+    return None, None
+
+
+async def _record_own(
+    request: Request,
+    session: AsyncSession,
+    caller: ProxyCaller,
+    model: OwnModel,
+    usage: Usage,
+    reason: str,
+) -> None:
+    try:
+        await _in_own_session(
+            request,
+            session,
+            lambda one: desktop.record_usage(
+                one,
+                user_id=caller.user.id,
+                session_id=caller.session_id,
+                model=model.desktop_model(),
+                usage=usage,
+                stream=False,
+                upstream_status=200,
+                reason=reason,
+                billed_by=model.provider,
+            ),
+        )
+    except Exception:  # a lost usage row must not swallow the answer
+        log.exception(f"desktop.{reason}.usage_not_recorded")
+
+
+def search_result(response: dict[str, Any]) -> dict[str, Any]:
+    """What the agent's `web_search` tool wants (`capabilities.web_search`'s
+    shape), read out of a Responses answer that ran the `web_search` tool:
+    the text, the pages it cites (`url_citation`, each with the words it
+    cites), then the other pages the searches returned, and how many
+    searches ran."""
+    parts: list[str] = []
+    documents: list[dict[str, str]] = []
+    seen: set[str] = set()
+    returned: list[tuple[str, str]] = []
+    searches = 0
+    output = response.get("output")
+    for item in output if isinstance(output, list) else []:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") == "web_search_call":
+            searches += 1
+            action = item.get("action")
+            sources = action.get("sources") if isinstance(action, dict) else None
+            for source in sources if isinstance(sources, list) else []:
+                url = source.get("url") if isinstance(source, dict) else None
+                if isinstance(url, str) and url:
+                    title = source.get("title")
+                    returned.append((url, title if isinstance(title, str) else ""))
+        elif item.get("type") == "message":
+            content = item.get("content")
+            for part in content if isinstance(content, list) else []:
+                if not isinstance(part, dict) or part.get("type") != "output_text":
+                    continue
+                text = part.get("text")
+                if not isinstance(text, str):
+                    continue
+                parts.append(text)
+                for note in part.get("annotations") or []:
+                    if not isinstance(note, dict) or note.get("type") != "url_citation":
+                        continue
+                    url = note.get("url")
+                    if not isinstance(url, str) or not url or url in seen:
+                        continue
+                    seen.add(url)
+                    start, end = note.get("start_index"), note.get("end_index")
+                    cited = (
+                        text[start:end]
+                        if isinstance(start, int) and isinstance(end, int)
+                        else ""
+                    )
+                    title = note.get("title")
+                    documents.append(
+                        {
+                            "url": url,
+                            "title": title if isinstance(title, str) else "",
+                            "text": cited.strip(),
+                        }
+                    )
+    for url, title in returned:
+        if url not in seen:
+            seen.add(url)
+            documents.append({"url": url, "title": title, "text": ""})
+    return {
+        "answer": "".join(parts).strip(),
+        "documents": documents,
+        "searches": searches,
+    }
+
+
+async def web_search(
+    request: Request,
+    caller: ProxyCaller,
+    session: AsyncSession,
+    query: str,
+    instructions: str,
+) -> JSONResponse | None:
+    """The agent's web search on the person's account, or None for
+    Simeon's (`capabilities.web_search` goes on as before)."""
+    user = caller.user
+    chosen, refused = await _own_gate(session, user)
+    if refused is not None or chosen is None:
+        return refused
+    model = await _helper(session, user, chosen)
+    body: dict[str, Any] = {
+        "model": model.slug,
+        "stream": True,
+        "input": [
+            {"role": "developer", "content": instructions},
+            {"role": "user", "content": query},
+        ],
+        "tools": [{"type": "web_search", "external_web_access": True}],
+        "tool_choice": "auto",
+        "parallel_tool_calls": False,
+        "reasoning": {"effort": "low"},
+        "store": False,
+    }
+    answer, refusal = await _on_accounts(
+        request, session, user, model, "search", _codex_url(), body, stream=True
+    )
+    if refusal is not None:
+        return refusal
+    if answer is None:
+        return None
+    await _record_own(
+        request,
+        session,
+        caller,
+        model,
+        Usage.from_openai_responses_payload(answer.get("usage")),
+        "search",
+    )
+    return JSONResponse(search_result(answer), headers={"cache-control": "no-store"})
+
+
+async def draw(
+    request: Request,
+    caller: ProxyCaller,
+    session: AsyncSession,
+    *,
+    prompt: str,
+    size: str,
+    quality: str,
+    references: Sequence[tuple[bytes, str]],
+) -> JSONResponse | None:
+    """One picture on the person's account, or None for Simeon's
+    (`capabilities.images_generations` goes on as before). The answer is
+    that route's shape: `{data: [{b64_json, mime_type}], usage}`."""
+    user = caller.user
+    chosen, refused = await _own_gate(session, user)
+    if refused is not None or chosen is None:
+        return refused
+    body: dict[str, Any] = {
+        "prompt": prompt,
+        "model": CHATGPT_IMAGE.slug,
+        "quality": quality,
+        "size": size,
+    }
+    path = "/images/generations"
+    if references:
+        path = "/images/edits"
+        body["images"] = [
+            {"image_url": f"data:{mime};base64,{base64.b64encode(raw).decode()}"}
+            for raw, mime in references
+        ]
+    answer, refusal = await _on_accounts(
+        request,
+        session,
+        user,
+        CHATGPT_IMAGE,
+        "images",
+        f"{_codex_base()}{path}",
+        body,
+        stream=False,
+    )
+    if refusal is not None:
+        return refusal
+    if answer is None:
+        return None
+    data = answer.get("data")
+    pictures = [
+        {"b64_json": one["b64_json"], "mime_type": "image/png"}
+        for one in (data if isinstance(data, list) else [])
+        if isinstance(one, dict) and isinstance(one.get("b64_json"), str)
+    ]
+    if not pictures:
+        log.warning("desktop.models.no_picture", user_id=str(user.id))
+        return _error("api_error", "The image service returned no picture.", 502)
+    await _record_own(request, session, caller, CHATGPT_IMAGE, Usage(), "images")
+    return JSONResponse(
+        {"data": pictures, "usage": None}, headers={"cache-control": "no-store"}
     )
 
 
