@@ -35,19 +35,30 @@ it with the changes Codex makes and OpenAI's Sign in with ChatGPT documents
 A request the engine sent without a stream is answered with the stream's
 last response, as one JSON answer.
 
+**Who may.** A person with no plan is refused, as on Simeon's models: the
+computer the agents run on is Simeon's, whoever pays for the model
+(`box_broker.require_a_plan`). A person back on Simeon's models (no choice)
+has an `own:` call answered by Simeon's model, never on their account, while
+the engine catches up. Only the models the account's plan includes are
+offered and used (`OwnModel.not_on_plans`).
+
 **When the account can't answer.** The person's other accounts for the same
 provider are tried in the order they were connected. ChatGPT's plan limit
 (429 `usage_limit_reached`) marks the account limited until the time ChatGPT
 names (`limited_until`), and its calls skip it until then. When no account
-answers, the call goes to Simeon's own OpenAI model under the person's
-allowance, as Reason does. Each refusal is logged with ChatGPT's own words
-(`desktop.models.relay_refused`).
+can answer for the moment (a limit, a 5xx, ChatGPT unreachable, the sign-in
+gone), the call goes to Simeon's own OpenAI model under the person's
+allowance and costs credits, as Reason does. When ChatGPT refuses the
+request itself (another 4xx), its refusal goes back to the engine as it
+came: Simeon's model doesn't take it on in silence. Each refusal is logged
+with ChatGPT's own words (`desktop.models.relay_refused`).
 
 **Not verified against chatgpt.com.** For models it marks
 `use_responses_lite`, Codex sends the tools inside `input`
 (`additional_tools`), not in `tools`. This relay sends the standard
 `tools`, as OpenAI's public Responses API takes them. If ChatGPT refuses
-that, the log line says so and the calls go to Simeon's model meanwhile.
+that, the log line says so and the agent gets ChatGPT's refusal: a request
+refused is not taken on by Simeon's model.
 """
 
 from __future__ import annotations
@@ -83,6 +94,7 @@ from .pricing import (
     Usage,
 )
 from .proxy_common import error_response as _error
+from .proxy_common import quota_exhausted_response
 from .proxy_common import upstream_timeout as _timeout
 from .service import desktop, offered_models
 
@@ -112,6 +124,13 @@ class OwnModel:
     slug: str
     name: str
     context_window: int
+    #: The provider's plans that don't include it (from Codex's list).
+    not_on_plans: frozenset[str] = frozenset()
+
+    def on_plan(self, plan: str | None) -> bool:
+        """Whether an account on `plan` may use it; an account whose plan
+        the provider didn't name may try."""
+        return plan is None or plan not in self.not_on_plans
 
     @property
     def model_id(self) -> str:
@@ -145,14 +164,33 @@ _PROVIDER_NAMES = {model_accounts.PROVIDER_CHATGPT: "ChatGPT"}
 #: ChatGPT's models for Codex, as Codex's own list names them (openai/codex,
 #: `codex-rs/models-manager/models.json`, the ones it shows, 8 November
 #: 2026), best first. To be read from the account itself later.
+_CHATGPT = model_accounts.PROVIDER_CHATGPT
 CHATGPT_MODELS: tuple[OwnModel, ...] = (
-    OwnModel(model_accounts.PROVIDER_CHATGPT, "gpt-6.1-sol", "GPT-6.1 Sol", 272_000),
-    OwnModel(model_accounts.PROVIDER_CHATGPT, "gpt-6-astra", "GPT-6 Astra", 272_000),
     OwnModel(
-        model_accounts.PROVIDER_CHATGPT, "gpt-6.1-terra", "GPT-6.1 Terra", 500_000
+        _CHATGPT, "gpt-6.1-sol", "GPT-6.1 Sol", 272_000, frozenset({"hc_consumption"})
     ),
-    OwnModel(model_accounts.PROVIDER_CHATGPT, "gpt-6-sol", "GPT-6 Sol", 272_000),
-    OwnModel(model_accounts.PROVIDER_CHATGPT, "gpt-6-luna", "GPT-6 Luna", 272_000),
+    OwnModel(
+        _CHATGPT,
+        "gpt-6-astra",
+        "GPT-6 Astra",
+        272_000,
+        frozenset({"hc_consumption", "law"}),
+    ),
+    OwnModel(_CHATGPT, "gpt-6.1-terra", "GPT-6.1 Terra", 500_000),
+    OwnModel(
+        _CHATGPT,
+        "gpt-6-sol",
+        "GPT-6 Sol",
+        272_000,
+        frozenset({"hc_consumption", "law", "promax"}),
+    ),
+    OwnModel(
+        _CHATGPT,
+        "gpt-6-luna",
+        "GPT-6 Luna",
+        272_000,
+        frozenset({"hc_consumption", "law", "promax"}),
+    ),
 )
 #: The model for the agents' machinery (titles, summaries, memory).
 CHATGPT_CHEAP = "gpt-6-luna"
@@ -195,9 +233,15 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     before Simeon's: the engine takes the first row of each role. None
     while nothing is chosen or no account of that provider is signed in."""
     chosen = chosen_model(user)
-    if chosen is None or not await _usable(session, user.id, chosen.provider):
+    if chosen is None:
         return []
-    cheap = own_model(_CHEAP.get(chosen.provider, "")) or chosen
+    plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
+    if not any(chosen.on_plan(plan) for plan in plans):
+        return []
+    cheap = own_model(_CHEAP.get(chosen.provider, ""))
+    if cheap is None or not any(cheap.on_plan(plan) for plan in plans):
+        # The machinery on the chosen model, where the plan has no cheap one.
+        cheap = chosen
     return [
         chosen.desktop_model(ModelRole.primary).available(),
         cheap.desktop_model(ModelRole.cheap).available(),
@@ -219,6 +263,9 @@ _CODEX_FIELDS = (
     "include",
     "prompt_cache_key",
 )
+
+
+_NO_EFFORT = frozenset({"none", "minimal"})
 
 
 def codex_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
@@ -249,6 +296,11 @@ def codex_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
             },
         )
     body["input"] = items
+    reasoning = body.get("reasoning")
+    if isinstance(reasoning, dict) and reasoning.get("effort") in _NO_EFFORT:
+        # ChatGPT's models start at low (Codex's list); the engine can ask
+        # for none.
+        body["reasoning"] = {**reasoning, "effort": "low"}
     body["store"] = False
     return body
 
@@ -292,13 +344,26 @@ class _ResponseTally(OpenAIResponsesUsageTally):
     request sent without a stream, and a limit reached mid-stream."""
 
     response: dict[str, Any] | None = field(default=None)
+    items: list[Any] = field(default_factory=list)
 
     def _event(self, event: dict[str, Any]) -> None:
         super()._event(event)
-        if event.get("type") in self.TERMINAL and isinstance(
+        if event.get("type") == "response.output_item.done":
+            self.items.append(event.get("item"))
+        elif event.get("type") in self.TERMINAL and isinstance(
             event.get("response"), dict
         ):
             self.response = event["response"]
+
+    def answer(self) -> dict[str, Any] | None:
+        """The last response, its output filled from the items streamed
+        before it when it carries none: Codex reads the items as they come
+        and never the output of the last event."""
+        if self.response is None:
+            return None
+        if self.response.get("output") or not self.items:
+            return self.response
+        return {**self.response, "output": [one for one in self.items if one]}
 
 
 # --- the relay ------------------------------------------------------------------
@@ -311,6 +376,24 @@ class _Refused(Exception):
         super().__init__(f"{status}")
         self.status = status
         self.body = body
+
+    @property
+    def refuses_the_request(self) -> bool:
+        """A refusal of the request itself (its shape, a model the plan
+        lacks, an account not allowed to), not of the moment: a 4xx but
+        the sign-in (401), a timeout (408), a conflict (409) and a limit
+        (429)."""
+        return (
+            self.status is not None
+            and 400 <= self.status < 500
+            and self.status not in (401, 408, 409, 429)
+        )
+
+    def answer(self) -> JSONResponse:
+        try:
+            return JSONResponse(json.loads(self.body), status_code=self.status or 502)
+        except ValueError:
+            return _error("api_error", _preview(self.body), self.status or 502)
 
 
 async def _in_own_session[T](
@@ -355,14 +438,25 @@ async def relay(
             "This model is not offered by the desktop app.",
             400,
         )
+    allowance = await desktop.allowance(session, user)
+    if allowance.none:
+        # No plan, no agents: the computer they run on is Simeon's, whoever
+        # pays for the model (`box_broker.require_a_plan`).
+        return quota_exhausted_response(allowance)
+    if chosen_model(user) is None:
+        # Back on Simeon's models: an engine that hasn't caught up yet is
+        # answered by Simeon's, never on the person's account.
+        return await _on_simeon(own, payload, user, simeon)
     wants_stream = payload.get("stream") is True
     body = json.dumps(codex_body(payload, own.slug)).encode()
     now = utc_now()
     accounts = [
         one
         for one in await _usable(session, user.id, own.provider)
-        if one.limited_until is None or one.limited_until <= now
+        if (one.limited_until is None or one.limited_until <= now)
+        and own.on_plan(one.plan)
     ]
+    refused_request: _Refused | None = None
     for account in accounts:
         account_id = account.id
         try:
@@ -378,7 +472,13 @@ async def relay(
                 status=refused.status,
                 preview=_preview(refused.body),
             )
-            continue
+            if refused.refuses_the_request:
+                refused_request = refused
+    if refused_request is not None:
+        # ChatGPT refused the request itself, not for the moment: said as
+        # it said it. Simeon's model doesn't take it on in silence, on the
+        # person's credits.
+        return refused_request.answer()
     return await _on_simeon(own, payload, user, simeon)
 
 
@@ -391,6 +491,7 @@ async def _on_simeon(
     """No account of the person's answered: Simeon's own OpenAI model takes
     the call, under the person's allowance."""
     stand_in = _simeon_stand_in(own, offered_models(user))
+    why = "not_chosen" if chosen_model(user) is None else "no_account_answered"
     if stand_in is None:
         return _error(
             "api_error",
@@ -400,6 +501,7 @@ async def _on_simeon(
     log.info(
         "desktop.models.on_simeon",
         user_id=str(user.id),
+        why=why,
         provider=own.provider,
         model=own.slug,
         to=stand_in.model_id,
@@ -516,6 +618,7 @@ async def _on_account(
                 stream=wants_stream,
                 upstream_status=200,
                 reason=reason,
+                billed_by=own.provider,
             ),
         )
 
@@ -537,13 +640,14 @@ async def _on_account(
         usage = tally.finish()
         await record(usage)
         await after(tally)
-        if tally.response is None:
+        answer = tally.answer()
+        if answer is None:
             return _error(
                 "api_error",
                 "The model service answered with no response.",
                 502,
             )
-        return JSONResponse(tally.response)
+        return JSONResponse(answer)
 
     async def stream() -> AsyncIterator[bytes]:
         tally = _ResponseTally()
@@ -598,12 +702,17 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
     """The models the person may choose: those of each provider they have an
     account for, signed in."""
     accounts = await ModelAccountRepository.from_session(session).for_user(user.id)
-    providers = {
-        one.provider
-        for one in accounts
-        if one.status != model_accounts.STATUS_SIGNED_OUT
-    }
-    return [one for one in CHATGPT_MODELS if one.provider in providers]
+    signed_in = [
+        one for one in accounts if one.status != model_accounts.STATUS_SIGNED_OUT
+    ]
+    return [
+        model
+        for model in CHATGPT_MODELS
+        if any(
+            one.provider == model.provider and model.on_plan(one.plan)
+            for one in signed_in
+        )
+    ]
 
 
 async def _choice_json(session: AsyncSession, user: User) -> dict[str, Any]:

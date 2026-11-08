@@ -1302,7 +1302,11 @@ class DesktopService:
         stream: bool,
         upstream_status: int,
         reason: str | None = None,
+        billed_by: str | None = None,
     ) -> DesktopUsage:
+        """One model call's usage row. `billed_by` names who was paid when
+        it isn't the model's provider on Simeon's key: `chatgpt` for a call
+        on the person's own account (`own_models`), at no credits."""
         credits = credits_for(model, usage) if upstream_status == 200 else 0
         extra = await self._draw_extra_credits(session, user_id, credits)
         row = DesktopUsage(
@@ -1313,7 +1317,7 @@ class DesktopService:
             # a stored credit figure cannot be traced back to the list
             # that produced it, and two providers' figures stop being
             # comparable the first time either list moves.
-            provider=model.provider.value,
+            provider=billed_by or model.provider.value,
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
             cache_creation_tokens=usage.cache_creation_tokens,
