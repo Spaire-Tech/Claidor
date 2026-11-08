@@ -383,6 +383,18 @@
     {
       "kind": "record",
       "names": [
+        "grok",
+        "xai",
+        "spacex"
+      ],
+      "paths": [
+        "docs/your-own-models.md"
+      ],
+      "reason": "The plan for people's own AI models names xAI's Grok, its sign-in on accounts.x.ai and SpaceXAI as model providers people can connect, as Reason lists them (the founder, 8 November 2026): there they are providers, not earlier names of ours."
+    },
+    {
+      "kind": "record",
+      "names": [
         "spaire"
       ],
       "paths": [
