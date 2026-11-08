@@ -754,23 +754,72 @@ keeps a token that is still valid, and otherwise raises `ChatGptUnavailable`.
   sends its own: `store: false`, `stream: true`, the brief as `developer`, no
   `max_output_tokens`, `temperature` or `metadata`. A call sent without a
   stream gets the stream's last response as one answer.
-- The usage row names the model and costs **0 credits**. The allowance
-  isn't checked for these calls.
+- The usage row names the model, says `chatgpt` as who was paid, and costs
+  **0 credits**. Stripe is sent only rows with credits, so it never sees
+  them. The week's credits and the hourly brake aren't checked for these
+  calls, since they cost Simeon nothing.
+- **A person with no plan is refused** (402, code 40200), as on Simeon's
+  models: the computer is Simeon's, whoever pays for the model.
+- **A person back on Simeon's models** (nothing chosen) has an `own:` call
+  answered by Simeon's model, on credits, and never on their account. This
+  covers an engine that hasn't read the new roles yet.
+- Only the models the account's plan includes are offered and used (from
+  Codex's list: GPT-6 Sol and Luna aren't on `promax`). Without Luna, the
+  helpers run on the chosen model.
 - ChatGPT's plan limit (429 `usage_limit_reached`, or a stream that fails
   with `subscription_sharing_usage_limit_exceeded`) marks the account
   `limited` until the time ChatGPT names (an hour when it names none). Its
   calls skip it until then.
-- When the person's other accounts don't answer either, the call goes to
-  Simeon's own OpenAI model under the person's allowance (GPT-6 Sol under the
-  Claude policies), and costs credits.
+- When no account can answer for the moment (a limit, a 5xx, ChatGPT
+  unreachable, the sign-in gone), the call goes to Simeon's own OpenAI model
+  under the person's allowance (GPT-6 Sol under the Claude policies), and
+  costs credits.
+- When ChatGPT refuses the request itself (any other 4xx: its shape, a model
+  the plan lacks), its refusal goes back to the agent as it came. Simeon's
+  model doesn't take it on silently on the person's credits.
 - A 401 is answered once more with a refreshed token.
+- An effort ChatGPT's models lack (`none`) is sent as `low`.
+- A call sent without a stream (the cloud runner's) gets the last response,
+  its output filled from the items streamed before it when it carries none.
+
+**The logic check (the founder, 8 November 2026: "think of everything").**
+What each path does, each one a test in `test_own_models.py`:
+
+| The person | A call naming | Goes to | Credits |
+|---|---|---|---|
+| Nothing chosen | Simeon's model | Simeon's model, exactly as before: under `claude-haiku`, Haiku answers and does the helper work, Sonnet drives the computer, GPT-6 Sol stands by | yes |
+| Nothing chosen | `own:` (an engine not caught up) | Simeon's model | yes |
+| ChatGPT chosen | `own:` | their ChatGPT account; then their next account; then Simeon's model | none on ChatGPT, yes on Simeon's |
+| ChatGPT chosen | Simeon's model (an engine not caught up) | Simeon's model | yes |
+| No plan | anything | refused, 40200 | none |
+| Any | `own:` on the Claude or Chat Completions wire | refused, 400 | none |
+
+The roles the engine is given with ChatGPT chosen: the chosen model for
+`primary` and `computer`, GPT-6 Luna for `cheap`, and Simeon's own for
+`fallback` and `video`, which never moves to ChatGPT. The engine
+summarises a conversation at 120,000 tokens, inside ChatGPT's 272,000.
+Nothing on the computer pins a model (`SAND_SIMEON_MODEL` and the rest are
+set nowhere).
+
+What stays on Simeon's credits with ChatGPT chosen: web search, pictures,
+transcription, speech, voice calls and video. With the week's credits spent,
+those are refused while the agent itself still answers on ChatGPT.
+
+Still open:
+
+- No line in the chat yet when a call moves to Simeon's model (Reason
+  says so); it comes with the apps.
+- A shared agent's work runs on its owner's account.
+- The computer itself still costs nothing (`simeon_box_seconds` is
+  metered, not charged).
 
 **Not verified against chatgpt.com.** Codex sends the tools inside `input`
 (`additional_tools`, "Responses Lite") for the models it marks
 `use_responses_lite`, which is most of them. The relay sends the standard
 `tools`, as OpenAI's public Responses API takes them. If ChatGPT refuses
 that, `desktop.models.relay_refused` says so in ChatGPT's own words, and the
-calls go to Simeon's model meanwhile.
+agent shows ChatGPT's refusal (it is a request refused, so Simeon's model
+doesn't take it on). The founder's first call on their own account shows which.
 
 Settings (none needed on Render; the defaults are OpenAI's):
 

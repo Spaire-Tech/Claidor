@@ -17,6 +17,7 @@ from sqlalchemy import select
 from structlog.testing import capture_logs
 
 from simeon.config import settings
+from simeon.desktop import allowance as allowance_module
 from simeon.desktop import model_accounts as accounts
 from simeon.desktop import own_models
 from simeon.desktop.pricing import ModelPolicy
@@ -60,16 +61,22 @@ async def _account(
     key: str = "acct_one",
     access: str | None = None,
     refresh: str = "rt_one",
+    plan: str = "plus",
+    choose: str | None = SOL,
 ) -> DesktopModelAccount:
+    """A ChatGPT account connected, and (`choose`) its model chosen."""
     account = await accounts.keep_sign_in(
         session,
         user.id,
         accounts.ChatGptTokens(
-            id_token=_id_token(key, f"{key}@example.com"),
+            id_token=_id_token(key, f"{key}@example.com", plan),
             access_token=access or _access(key),
             refresh_token=refresh,
         ),
     )
+    if choose is not None:
+        user.meta = {**(user.meta or {}), own_models.CHOICE_KEY: choose}
+        session.add(user)
     await session.commit()
     return account
 
@@ -168,6 +175,15 @@ class TestTheRequest:
         ]
         assert body["input"][0]["content"][0]["text"] == "Brief."
 
+    async def test_an_effort_chatgpt_lacks_is_sent_as_low(self) -> None:
+        for effort in ("none", "minimal"):
+            body = own_models.codex_body(
+                {**_engine_request(), "reasoning": {"effort": effort}}, "gpt-6-luna"
+            )
+            assert body["reasoning"] == {"effort": "low"}
+        kept = own_models.codex_body(_engine_request(), "gpt-6-luna")
+        assert kept["reasoning"] == {"effort": "medium"}
+
     async def test_a_limit_says_until_when(self) -> None:
         now = utc_now()
         at = int((now + timedelta(hours=3)).timestamp())
@@ -211,7 +227,18 @@ class TestTheChoice:
         assert not any(
             row["modelId"].startswith("own:") for row in before.json()["data"]
         )
-        await _account(session, user)
+        # Nothing chosen, Simeon's own roles exactly: Haiku answers and does
+        # the machinery, Sonnet drives the desktop, GPT-6 Sol stands by.
+        simeon_roles: dict[str, str] = {}
+        for row in before.json()["data"]:
+            simeon_roles.setdefault(row["role"], row["modelId"])
+        assert simeon_roles == {
+            "primary": "claude-haiku-5-5",
+            "computer": "claude-sonnet-5-5",
+            "fallback": "gpt-6-sol",
+            "cheap": "claude-haiku-5-5",
+        }
+        await _account(session, user, choose=None)
         chosen = await _choose(client, headers)
         assert chosen.status_code == 200, chosen.text
         assert chosen.json()["model"] == SOL
@@ -282,6 +309,7 @@ class TestTheRelay:
         assert "max_output_tokens" not in body
         [row] = await _usage(session, user)
         assert row.model == SOL
+        assert row.provider == "chatgpt"
         assert row.credits == 0
         assert row.input_tokens == 40
         assert row.reason == "chat"
@@ -364,7 +392,7 @@ class TestTheRelay:
         await _account(session, user)
         with respx.mock(assert_all_called=True) as mock:
             mock.post(RESPONSES).mock(
-                return_value=httpx.Response(400, json={"error": {"message": "no"}})
+                return_value=httpx.Response(503, json={"error": {"message": "busy"}})
             )
             simeon = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/responses").mock(
                 return_value=httpx.Response(
@@ -495,3 +523,131 @@ class TestNothingSecretIsLogged:
         text = json.dumps(logs, default=str)
         assert access not in text
         assert "rt_secret_relay" not in text
+
+
+@pytest.mark.asyncio
+class TestNothingMingles:
+    async def test_no_plan_no_calls_on_the_account_either(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        mocker.patch.object(
+            desktop, "allowance", return_value=allowance_module._none(utc_now())
+        )
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(RESPONSES).mock(return_value=_stream())
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(),
+            )
+        assert not route.called
+        assert answer.status_code != 200
+        assert "40200" in answer.text
+        assert await _usage(session, user) == []
+
+    async def test_back_on_simeons_models_the_account_is_never_called(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        with respx.mock(assert_all_called=False) as mock:
+            chatgpt = mock.post(RESPONSES).mock(return_value=_stream())
+            simeon = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/responses").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={"output": [], "usage": {"input_tokens": 100}},
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(stream=False),
+            )
+        assert answer.status_code == 200
+        assert not chatgpt.called
+        assert json.loads(simeon.calls[0].request.content)["model"] == "gpt-6-sol"
+        [row] = await _usage(session, user)
+        assert row.model == "gpt-6-sol"
+        assert row.provider == "openai"
+        assert row.credits > 0
+
+    async def test_a_request_chatgpt_refuses_is_not_paid_for_by_simeon(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=False) as mock:
+            mock.post(RESPONSES).mock(
+                return_value=httpx.Response(
+                    400, json={"error": {"message": "Unsupported parameter: tools"}}
+                )
+            )
+            simeon = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/responses")
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(),
+            )
+        assert answer.status_code == 400
+        assert answer.json() == {"error": {"message": "Unsupported parameter: tools"}}
+        assert not simeon.called
+        assert await _usage(session, user) == []
+
+    async def test_a_plan_without_the_cheap_model_does_its_machinery_on_the_chosen(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, plan="promax", choose=None)
+        listed = await client.get("/desktop/api/models/own", headers=headers)
+        offered = [one["modelId"] for one in listed.json()["models"]]
+        assert SOL in offered
+        assert "own:chatgpt:gpt-6-luna" not in offered
+        assert "own:chatgpt:gpt-6-sol" not in offered
+        refused = await _choose(client, headers, "own:chatgpt:gpt-6-sol")
+        assert refused.status_code == 400
+        await _choose(client, headers)
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        first: dict[str, str] = {}
+        for row in rows:
+            first.setdefault(row["role"], row["modelId"])
+        assert first["primary"] == SOL
+        assert first["cheap"] == SOL
+
+    async def test_an_answer_without_a_stream_is_built_from_the_items(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        item = {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "From the items"}],
+        }
+        streamed = _sse(
+            {"type": "response.output_item.done", "item": item},
+            {
+                "type": "response.completed",
+                "response": {
+                    "id": "resp_2",
+                    "status": "completed",
+                    "output": [],
+                    "usage": {"input_tokens": 3, "output_tokens": 2},
+                },
+            },
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(return_value=_stream(streamed))
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(stream=False),
+            )
+        assert answer.json()["output"] == [item]
