@@ -442,6 +442,20 @@ async def access_for(
     return AccessGrant(tokens.access_token, account.account_key, account.expires_at)
 
 
+async def mark_limited(
+    session: AsyncSession, user_id: UUID, account_id: UUID, until: datetime
+) -> None:
+    """The account's plan limit reached: its calls go elsewhere until
+    `until` (`own_models.relay`)."""
+    account = await ModelAccountRepository.from_session(session).one_for_user(
+        user_id, account_id
+    )
+    if account is None:
+        return
+    account.limited_until = until
+    await session.flush()
+
+
 async def disconnect(
     session: AsyncSession, user_id: UUID, account_id: UUID
 ) -> dict[str, bool]:

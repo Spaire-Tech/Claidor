@@ -738,6 +738,10 @@ class Settings(BaseSettings):
     CHATGPT_CLIENT_ID: str = "app_EMoamEEZ73f0CkXaXp7hrann"
     CHATGPT_AUTH_BASE_URL: str = "https://auth.openai.com"
     CHATGPT_CODEX_BASE_URL: str = "https://chatgpt.com/backend-api/codex"
+    # The `originator` header the calls carry, as Codex's own do
+    # (`codex_cli_rs`, openai/codex `default_client.rs`): the client id
+    # above is Codex's too.
+    CHATGPT_ORIGINATOR: str = "codex_cli_rs"
 
     # Plans bought in the iPhone app with Apple's in-app purchase
     # (`simeon.plans.app_store`, docs/services-billing.md). The iPhone app's
