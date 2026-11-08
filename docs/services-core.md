@@ -791,6 +791,7 @@ What each path does, each one a test in `test_own_models.py`:
 | Nothing chosen | `own:` (an engine not caught up) | Simeon's model | yes |
 | ChatGPT chosen | `own:` | their ChatGPT account; then their next account; then Simeon's model | none on ChatGPT, yes on Simeon's |
 | ChatGPT chosen | Simeon's model (an engine not caught up) | Simeon's model | yes |
+| ChatGPT chosen | a web search or a picture | their ChatGPT account; then their next account; then Simeon's search or picture | none on ChatGPT, yes on Simeon's |
 | No plan | anything | refused, 40200 | none |
 | Any | `own:` on the Claude or Chat Completions wire | refused, 400 | none |
 
@@ -801,9 +802,30 @@ summarises a conversation at 120,000 tokens, inside ChatGPT's 272,000.
 Nothing on the computer pins a model (`SAND_SIMEON_MODEL` and the rest are
 set nowhere).
 
-What stays on Simeon's credits with ChatGPT chosen: web search, pictures,
-transcription, speech, voice calls and video. With the week's credits spent,
-those are refused while the agent itself still answers on ChatGPT.
+**Web search and pictures go to ChatGPT too** (the founder, 8 November 2026:
+"it's ok to keep video, dictation and voice calls. the rest goes to chat").
+With ChatGPT chosen:
+
+- `/desktop/api/proxy/v1/web/search` runs on the account, as Codex runs it:
+  the Responses API's own `web_search` tool (`external_web_access: true`) on
+  GPT-6 Luna (the chosen model where the plan has no Luna). The answer keeps
+  the route's shape: the text, the cited pages with the words they cite,
+  then the other pages found, and how many searches ran.
+- `/desktop/api/proxy/v1/images/generations` draws on the account with
+  `gpt-image-2`: `/images/generations`, or `/images/edits` with the
+  reference pictures inline when there are any (Codex's image tool).
+- Both cost 0 credits (usage rows `own:chatgpt:gpt-6-luna` and
+  `own:chatgpt:gpt-image-2`, paid by `chatgpt`). They follow the same rules
+  as the chat: no plan, refused; nothing chosen, Simeon's search (Claude
+  Haiku) and pictures (GPT Image) as before; can't answer for now, the
+  next account, then Simeon's on credits; a request ChatGPT refuses,
+  handed back. The log lines are the chat's, with `what=search` or
+  `what=images`.
+
+What stays on Simeon's credits with ChatGPT chosen: dictation
+(transcription), speech, voice calls (ElevenLabs) and video (Gemini). With
+the week's credits spent, those are refused while the agent itself still
+answers, searches and draws on ChatGPT.
 
 Still open:
 

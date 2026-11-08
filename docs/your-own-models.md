@@ -109,8 +109,10 @@ and forwards it. So the change sits mostly on the server, in one place.
    metered to Stripe, but charges nothing today (`services-billing.md`,
    section 5). With your own model, the week's credits pay for:
    - the computer's time, at a price per hour still to set (section 8);
-   - what stays on Simeon: web search, pictures, voice, transcription, video,
-     and the helpers' cheap model unless the person's provider has one.
+   - what stays on Simeon: voice calls, dictation and video (the founder, 8
+     November 2026: "it's ok to keep video, dictation and voice calls. the
+     rest goes to chat"). Web search and pictures run on the person's
+     ChatGPT account, as the helpers' cheap model does.
 
 **In the engine**
 
