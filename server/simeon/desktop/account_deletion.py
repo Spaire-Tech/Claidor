@@ -12,9 +12,11 @@ in this order:
    the apps' credentials the computer held, the browser's sign-ins), and
    their backups in the backup bucket (`simeon/sand/box_store.py`).
 3. The apps signed in through our apps provider are disconnected there,
-   Link's grant is revoked at Link (`link_wallet.disconnect`), each voice call's transcript is deleted at the voice provider, and a
-   Sign in with Apple is revoked at Apple (Apple asks this of every app
-   that offers it, 12 October 2026).
+   Link's grant is revoked at Link (`link_wallet.disconnect`), each AI
+   account the person connected (ChatGPT) is signed out at its provider
+   (`model_accounts.disconnect_all`), each voice call's transcript is
+   deleted at the voice provider, and a Sign in with Apple is revoked at
+   Apple (Apple asks this of every app that offers it, 12 October 2026).
 4. The rows: memory, the copy of the agents and their chats, call records,
    routines, listeners, sharing, cloud agents, the person's own skills (and
    their archives in file storage), the computers' rows, and every session,
@@ -64,7 +66,7 @@ from simeon.sand.skill_registry_service import delete_tarball
 from simeon.user.service import user as user_service
 
 from . import apps as apps_module
-from . import link_wallet
+from . import link_wallet, model_accounts
 from . import voice as voice_module
 from .account_repository import AccountDeletionRepository
 from .auth import get_desktop_session
@@ -225,6 +227,22 @@ async def _disconnect_link(
         report.incomplete.append("Link (not revoked at Link)")
 
 
+async def _disconnect_model_accounts(
+    session: AsyncSession, user: User, report: DeletionReport
+) -> None:
+    """The AI accounts the person connected (`model_accounts.disconnect_all`):
+    each sign-in ended at its provider and its tokens forgotten."""
+    try:
+        result = await model_accounts.disconnect_all(session, user.id)
+    except Exception as error:
+        report.incomplete.append(f"AI accounts ({error})")
+        return
+    if result["not_revoked"]:
+        report.incomplete.append(
+            f"AI accounts ({result['not_revoked']} not revoked at the provider)"
+        )
+
+
 async def _delete_transcripts(
     repository: AccountDeletionRepository, user: User, report: DeletionReport
 ) -> None:
@@ -301,6 +319,7 @@ async def delete_account(session: AsyncSession, user: User) -> DeletionReport:
     await _delete_backups(user, report)
     await _disconnect_apps(user, report)
     await _disconnect_link(session, user, report)
+    await _disconnect_model_accounts(session, user, report)
     await _delete_transcripts(repository, user, report)
     await _revoke_apple(repository, user, report)
     for key in await repository.personal_skill_archives(user.id):

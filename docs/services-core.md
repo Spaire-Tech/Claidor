@@ -263,7 +263,9 @@ The Electron app and the web app have no button yet. In order:
    (`box_store.delete_user`; a failure there is reported, not blocking).
 3. The apps signed in through the apps provider are disconnected there,
    Link's grant is revoked at Link and its tokens forgotten
-   (`link_wallet.disconnect`, docs/services-agents.md §7d), and each call's
+   (`link_wallet.disconnect`, docs/services-agents.md §7d), each AI account
+   the person connected is signed out at its provider and forgotten
+   (`model_accounts.disconnect_all`, section 2 below), and each call's
    transcript is deleted at the voice provider.
 4. The person's rows go (`account_repository.py`: memory, call records, the
    Link connection,
@@ -690,6 +692,71 @@ it asks the box whether any routine is enabled. If none is, it stops the box.
 If one is, it keeps the box running. `SAND_STOP_BOX_ON_QUIT=1` always stops the
 box and `SAND_KEEP_BOX_RUNNING_ON_QUIT=1` always keeps it running
 (`desktop/source/electron-main/box/local-docker-host-connector.ts`).
+
+### The person's own AI accounts (8 November 2026)
+
+The founder: "allow people to bring their own subscriptions and charge only
+for the computer", then "use codex sign in. everybody does. even reason"
+(the plan: `docs/your-own-models.md`). The first piece is on the server: a
+person connects their ChatGPT account and Simeon keeps its sign-in, sealed
+(`server/simeon/desktop/model_accounts.py`, table `desktop_model_accounts`).
+**The relay doesn't use it yet, and no app shows it yet**: those are the next
+pieces.
+
+The sign-in is OpenAI's device code, with Codex's client id until OpenAI
+approves Simeon for Sign in with ChatGPT (then only
+`SIMEON_CHATGPT_CLIENT_ID` changes). The steps are Codex's own
+(openai/codex, `codex-rs/login`): a code from
+`auth.openai.com/api/accounts/deviceauth/usercode`, which the person enters at
+`auth.openai.com/codex/device`; the server asks
+`/api/accounts/deviceauth/token` until they approve, then trades the
+authorization code at `/oauth/token` for ID, access and refresh tokens. The ID
+token names the ChatGPT account (`chatgpt_account_id`), its e-mail and its
+plan. Signing in to the same ChatGPT account again replaces its row and keeps
+the name the person gave it.
+
+Routes (signed-in app, `get_desktop_session`):
+
+| Route | What |
+|---|---|
+| `GET /desktop/api/models/accounts` | The person's accounts: id, provider, kind, name, plan, `status` (`available`, `limited` with `limitedUntil`, `signed_out`). Never a token. |
+| `POST /desktop/api/models/accounts/chatgpt/start` | `{connectId, userCode, verificationUrl, interval, expiresIn}`; the sign-in waits 15 minutes (Codex's own). `502 {error: device_code_off}` when OpenAI answers 404 (device code off for that client), `502 {error: provider_unavailable}` otherwise. |
+| `POST /desktop/api/models/accounts/chatgpt/poll` | `{connectId}` in, every `interval` seconds: `waiting`, `connected` with the account, `expired` (over, already used, or someone else's), or `502 failed` with OpenAI's code. |
+| `PATCH /desktop/api/models/accounts/{id}` | `{label}`: renamed. |
+| `DELETE /desktop/api/models/accounts/{id}` | Revoked at OpenAI (`/oauth/revoke`), then forgotten, even when OpenAI can't be reached: `{disconnected, revoked}`. |
+
+For a model call (the relay, next), `model_accounts.access_for` gives a live
+access token and the account id for Codex's `chatgpt-account-id` header. It
+holds the row (`with_for_update`) and refreshes a token with less than five
+minutes left; OpenAI rotates the refresh token, so the new one is written at
+once. `refresh_token_expired`, `_reused`, `_invalidated` or `invalid_grant`
+mark the account `signed_out` (the person connects again); OpenAI unreachable
+keeps a token that is still valid, and otherwise raises `ChatGptUnavailable`.
+
+Settings (none needed on Render; the defaults are OpenAI's):
+
+- `SIMEON_CHATGPT_CLIENT_ID`: Codex's `app_EMoamEEZ73f0CkXaXp7hrann` until
+  OpenAI gives Simeon its own.
+- `SIMEON_CHATGPT_AUTH_BASE_URL`: `https://auth.openai.com`.
+- `SIMEON_CHATGPT_CODEX_BASE_URL`: `https://chatgpt.com/backend-api/codex`,
+  where the relay will send the calls.
+
+When it misbehaves (nothing here logs a token, a code or a verifier):
+
+- `desktop.models.start_failed status=… error=…`: OpenAI refused a code. A
+  404 means device-code sign-in is off for the client id.
+- `desktop.models.poll_failed`: the exchange was refused; the app starts
+  again.
+- `desktop.models.signed_out`: OpenAI ended the sign-in at a refresh.
+- `desktop.models.refresh_failed`: OpenAI didn't refresh; the account stays.
+- `desktop.models.revoke_failed`: the sign-in wasn't ended at OpenAI; the
+  row is gone all the same.
+- `desktop.models.unreadable`: sealed under another `SIMEON_SECRET`; marked
+  signed out.
+
+**Verified:** `server/tests/desktop/test_model_accounts.py` (25 tests, OpenAI
+stood in by respx) and the migration up and down on PostgreSQL. **Not
+verified:** a real sign-in at auth.openai.com (no app calls it yet).
 
 ### Settings on Render
 
