@@ -465,11 +465,8 @@ struct ChatMessages: View {
           }
           return
         }
-        let theirs = added.filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
-        // An agent's message come in: Messages' "received", once for what came together (`Sounds`).
-        if theirs > 0 { Sounds.received() }
         guard !atBottom else { return }
-        unseen += theirs
+        unseen += added.filter { row in if case .bubble(let b) = row { return !b.fromPerson }; return false }.count
       }
       .overlay(alignment: .top) {
         let waiting = Self.unreadCount(all)
@@ -1220,7 +1217,6 @@ struct ChatComposer: View {
     let inThread = thread != nil
     #if os(iOS)
     Haptics.tap()
-    Sounds.sent()
     #endif
     Task { await store.send(text, to: agentId, attachments: files.map { ($0.name, $0.data) }, replyTo: answering, inThread: inThread, richText: rich, id: id) }
   }

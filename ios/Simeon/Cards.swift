@@ -2240,8 +2240,6 @@ struct PurchaseCardView: View {
             let reason = PurchaseApproval.reason(for: shown)
             Task {
               guard let confirmed = await PurchaseApproval.confirm(reason: reason) else { return }
-              // Approved: Apple Pay's chime, as the App Store's after Face ID (`Sounds`).
-              Sounds.paid()
               await store.answerPurchase(entryId, allow: true, confirmed: confirmed, in: agentId)
             }
           }

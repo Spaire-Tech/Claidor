@@ -245,17 +245,6 @@ profile, not from the configuration.
   sign in on the phone with a sandbox Apple account (Settings › App Store ›
   Sandbox Account) and buy from a TestFlight or Xcode build.
 
-## Sounds
-
-The phone's own sounds where Apple's apps make them (`Simeon/Sounds.swift`,
-7 November 2026, from the founder's recordings of each): Apple Pay's chime
-when a purchase is allowed with Face ID, the keyboard's click on a styled
-button (a card's Allow, Deny, Connect, Save, the call's discs), Messages'
-"sent" when a message goes and "received" when an agent's message comes
-into the chat on screen. iOS plays them (system sounds), so nothing is
-copied into the app, the ring/silent switch silences them, and none plays
-during a call. Not yet heard on an iPhone: nothing here builds iOS.
-
 ## What has and has not been checked
 
 - `SimeonCore`'s tests (344 on 12 October 2026) pass on Linux: the chat's rows for every card,
