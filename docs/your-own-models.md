@@ -10,10 +10,12 @@ codex sign in. everybody does. even reason. i'm going to request the chat
 gpt."). Until OpenAI approves Simeon for Sign in with ChatGPT, the person
 signs in with OpenAI's device code under Codex's client id, and their agents'
 calls go where Codex sends its own (`chatgpt.com/backend-api/codex`). When
-OpenAI approves, only the client id changes. Built so far: the model
-accounts and the ChatGPT sign-in on the server (`services-core.md`, section
-2, "The person's own AI accounts"). Next: the relay on the person's account,
-then the apps.
+OpenAI approves, only the client id changes. Built so far, on the server
+(`services-core.md`, section 2, "The person's own AI accounts"): the model
+accounts, the ChatGPT sign-in, the person's choice of model, and the relay
+on their account. A limit moves the call to their next account, then to
+Simeon's model. Next: the apps. The model is chosen per person for now; per
+agent comes later.
 
 ## 1. What Reason does (read from its app and docs, 8 November 2026)
 

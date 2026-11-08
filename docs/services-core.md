@@ -700,8 +700,9 @@ for the computer", then "use codex sign in. everybody does. even reason"
 (the plan: `docs/your-own-models.md`). The first piece is on the server: a
 person connects their ChatGPT account and Simeon keeps its sign-in, sealed
 (`server/simeon/desktop/model_accounts.py`, table `desktop_model_accounts`).
-**The relay doesn't use it yet, and no app shows it yet**: those are the next
-pieces.
+Once the person chooses one of its models, their agents' calls go to ChatGPT
+on that account (`server/simeon/desktop/own_models.py`, below). **No app
+shows any of it yet**: that is the next piece.
 
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
@@ -733,13 +734,53 @@ once. `refresh_token_expired`, `_reused`, `_invalidated` or `invalid_grant`
 mark the account `signed_out` (the person connects again); OpenAI unreachable
 keeps a token that is still valid, and otherwise raises `ChatGptUnavailable`.
 
+**The agents' calls on the account** (`own_models.py`):
+
+- The person's models are named `own:chatgpt:<model>` (GPT-6.1 Sol, GPT-6
+  Astra, GPT-6.1 Terra, GPT-6 Sol, GPT-6 Luna, from Codex's own list). The
+  prefix keeps them apart from Simeon's GPT-6 Sol and Luna. It starts with an
+  "o" because the engine's AI SDK sends a model named that way as a reasoning
+  model, with its effort and its brief as a `developer` message. So no
+  engine release is needed.
+- `GET /desktop/api/models/own` gives the models the person may choose and
+  the one chosen. `PUT` with `{model}` chooses one, kept in `users.meta`
+  (`own_model`); `{model: null}` goes back to Simeon's.
+- With a choice and an account signed in, `/desktop/api/models/available`
+  puts the chosen model first for `primary` and `computer`, and GPT-6 Luna
+  for `cheap`. The engine follows within five minutes.
+- `/desktop/api/proxy/v1/responses` sends such a call to
+  `{SIMEON_CHATGPT_CODEX_BASE_URL}/responses` with the account's token,
+  `chatgpt-account-id` and `originator`. The body is changed the way Codex
+  sends its own: `store: false`, `stream: true`, the brief as `developer`, no
+  `max_output_tokens`, `temperature` or `metadata`. A call sent without a
+  stream gets the stream's last response as one answer.
+- The usage row names the model and costs **0 credits**. The allowance
+  isn't checked for these calls.
+- ChatGPT's plan limit (429 `usage_limit_reached`, or a stream that fails
+  with `subscription_sharing_usage_limit_exceeded`) marks the account
+  `limited` until the time ChatGPT names (an hour when it names none). Its
+  calls skip it until then.
+- When the person's other accounts don't answer either, the call goes to
+  Simeon's own OpenAI model under the person's allowance (GPT-6 Sol under the
+  Claude policies), and costs credits.
+- A 401 is answered once more with a refreshed token.
+
+**Not verified against chatgpt.com.** Codex sends the tools inside `input`
+(`additional_tools`, "Responses Lite") for the models it marks
+`use_responses_lite`, which is most of them. The relay sends the standard
+`tools`, as OpenAI's public Responses API takes them. If ChatGPT refuses
+that, `desktop.models.relay_refused` says so in ChatGPT's own words, and the
+calls go to Simeon's model meanwhile.
+
 Settings (none needed on Render; the defaults are OpenAI's):
 
 - `SIMEON_CHATGPT_CLIENT_ID`: Codex's `app_EMoamEEZ73f0CkXaXp7hrann` until
   OpenAI gives Simeon its own.
 - `SIMEON_CHATGPT_AUTH_BASE_URL`: `https://auth.openai.com`.
 - `SIMEON_CHATGPT_CODEX_BASE_URL`: `https://chatgpt.com/backend-api/codex`,
-  where the relay will send the calls.
+  where the relay sends the calls.
+- `SIMEON_CHATGPT_ORIGINATOR`: the `originator` header, Codex's own
+  `codex_cli_rs`.
 
 When it misbehaves (nothing here logs a token, a code or a verifier):
 
@@ -753,10 +794,17 @@ When it misbehaves (nothing here logs a token, a code or a verifier):
   row is gone all the same.
 - `desktop.models.unreadable`: sealed under another `SIMEON_SECRET`; marked
   signed out.
+- `desktop.models.chosen model=…`: the person chose a model (none: Simeon's).
+- `desktop.models.relay_refused status=… preview=…`: one account didn't
+  answer a call, with ChatGPT's words. Read this first.
+- `desktop.models.limited until=…`: the account's plan limit was reached.
+- `desktop.models.on_simeon to=…`: no account answered; Simeon's model took
+  the call, on credits.
 
-**Verified:** `server/tests/desktop/test_model_accounts.py` (25 tests, OpenAI
-stood in by respx) and the migration up and down on PostgreSQL. **Not
-verified:** a real sign-in at auth.openai.com (no app calls it yet).
+**Verified:** `server/tests/desktop/test_model_accounts.py` and
+`test_own_models.py` (38 tests, ChatGPT and OpenAI stood in by respx), and
+the migration up and down on PostgreSQL. **Not verified:** a real sign-in at
+auth.openai.com and a real call at chatgpt.com (no app calls them yet).
 
 ### Settings on Render
 

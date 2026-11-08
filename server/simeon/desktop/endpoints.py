@@ -63,6 +63,7 @@ from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
+from . import own_models
 from .account_deletion import router as account_deletion_router
 from .app_store_endpoints import router as app_store_router
 from .apps import router as apps_router
@@ -759,6 +760,7 @@ async def memory_list(
 @router.get("/api/models/available", name="desktop:models")
 async def models_available(
     desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
+    session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """The menu. A provider Simeon holds no key for is not on it: a
     missing key reads as « not available here », never as an error at the
@@ -767,8 +769,12 @@ async def models_available(
     The box's credential reads it too (13 October 2026): the engine on the
     person's cloud computer follows the roles here (`ModelPolicy`), and the
     menu says nothing the model proxy the credential already reaches would
-    not."""
-    return _ok(available_rows(desktop_session.user))
+    not.
+
+    The person's own model, when they chose one (`own_models.rows`), comes
+    first: the engine takes the first row of each role."""
+    user = desktop_session.user
+    return _ok([*await own_models.rows(session, user), *available_rows(user)])
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")
@@ -1360,6 +1366,52 @@ async def _proxy(
         return _error("invalid_request_error", "The body is not JSON.", 400)
     if not isinstance(payload, dict):
         return _error("invalid_request_error", "The body must be an object.", 400)
+    requested = model_id if model_id is not None else str(payload.get("model", ""))
+    if spoken is SpokenApi.openai_responses and own_models.is_own(requested):
+        # The person's own account (`own_models.py`), and Simeon's model
+        # through the relay below when none of theirs answers.
+        async def on_simeon(
+            changed: dict[str, Any],
+        ) -> JSONResponse | StreamingResponse:
+            return await _relay(
+                request, caller, session, spoken, changed, json.dumps(changed).encode()
+            )
+
+        return await own_models.relay(
+            request,
+            caller,
+            session,
+            payload,
+            reason=call_reason(request),
+            simeon=on_simeon,
+        )
+    return await _relay(
+        request,
+        caller,
+        session,
+        spoken,
+        payload,
+        raw,
+        model_id=model_id,
+        upstream_path=upstream_path,
+        stream=stream,
+    )
+
+
+async def _relay(
+    request: Request,
+    caller: ProxyCaller,
+    session: AsyncSession,
+    spoken: SpokenApi,
+    payload: dict[str, Any],
+    raw: bytes,
+    *,
+    model_id: str | None = None,
+    upstream_path: str | None = None,
+    stream: bool | None = None,
+) -> JSONResponse | StreamingResponse:
+    """The metered relay for a parsed request: Simeon's model, on Simeon's
+    key, under the person's allowance."""
     user = caller.user
     model = served_model(
         model_id if model_id is not None else str(payload.get("model", "")),
@@ -1805,6 +1857,8 @@ router.include_router(link_wallet_router)
 # People's own AI accounts (`model_accounts.py`, docs/your-own-models.md):
 # ChatGPT signed in with OpenAI's device code, the tokens kept here.
 router.include_router(model_accounts_router)
+# The models of those accounts, and the one the person's agents use.
+router.include_router(own_models.router)
 router.include_router(flights_router)
 router.include_router(flight_booking_router)
 router.include_router(releases_router)
