@@ -51,6 +51,8 @@ struct CallHaptics: ViewModifier {
 
   func body(content: Content) -> some View {
     content.onChange(of: store.call?.phase) { old, new in
+      // No click, chime or message sound over a call's ring or voice (`Sounds`).
+      Sounds.inCall = new == .ringing || new == .live
       if new == .live && old != .live {
         Haptics.success()
       } else if new == .ended && old != .ended {
@@ -68,6 +70,9 @@ struct CallHaptics: ViewModifier {
  * now taps as its action runs, never on the touch alone, so a scroll that
  * starts on a button stays still; Settings › Haptics turns it off with the
  * rest. Each style keeps its own look: `Tactile(look:)` only adds the tap.
+ * These styled buttons (a card's Allow, Deny, Connect, Save, the call's
+ * discs) click as well (the founder, 7 November 2026: "the clicks";
+ * `Sounds`); the plain ones (rows, icons, Send, which has its own sound) do not.
  */
 struct Tactile<Look: ButtonStyle>: PrimitiveButtonStyle {
   let look: Look
@@ -75,6 +80,7 @@ struct Tactile<Look: ButtonStyle>: PrimitiveButtonStyle {
   func makeBody(configuration: Configuration) -> some View {
     Button(role: configuration.role) {
       Haptics.tap()
+      Sounds.click()
       configuration.trigger()
     } label: {
       configuration.label
