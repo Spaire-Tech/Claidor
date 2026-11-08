@@ -729,6 +729,16 @@ class Settings(BaseSettings):
     LINK_CLIENT_SECRET: str = ""
     LINK_PUBLISHABLE_KEY: str = ""
 
+    # ChatGPT plans a person connects for their agents
+    # (`simeon.desktop.model_accounts`, docs/your-own-models.md): the sign-in
+    # is OpenAI's device code, under Codex's own client id until OpenAI
+    # approves Simeon for Sign in with ChatGPT (the founder, 8 November 2026:
+    # "use codex sign in"); then its client id goes here. The addresses are
+    # settings so the tests can point them at a stand-in.
+    CHATGPT_CLIENT_ID: str = "app_EMoamEEZ73f0CkXaXp7hrann"
+    CHATGPT_AUTH_BASE_URL: str = "https://auth.openai.com"
+    CHATGPT_CODEX_BASE_URL: str = "https://chatgpt.com/backend-api/codex"
+
     # Plans bought in the iPhone app with Apple's in-app purchase
     # (`simeon.plans.app_store`, docs/services-billing.md). The iPhone app's
     # bundle id; the app's Apple ID from App Store Connect (App Information,

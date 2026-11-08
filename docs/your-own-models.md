@@ -3,7 +3,17 @@
 The founder, 8 November 2026, after trying Reason (reasonmachines.com):
 "allow people to bring their own subscriptions and charge only for the
 computer", then "we first plan this and do it exactly like Reason. then the
-api keys". This is the plan. Nothing in it is built yet.
+api keys". This is the plan.
+
+**ChatGPT first, with Codex's sign-in** (the founder, 8 November 2026: "use
+codex sign in. everybody does. even reason. i'm going to request the chat
+gpt."). Until OpenAI approves Simeon for Sign in with ChatGPT, the person
+signs in with OpenAI's device code under Codex's client id, and their agents'
+calls go where Codex sends its own (`chatgpt.com/backend-api/codex`). When
+OpenAI approves, only the client id changes. Built so far: the model
+accounts and the ChatGPT sign-in on the server (`services-core.md`, section
+2, "The person's own AI accounts"). Next: the relay on the person's account,
+then the apps.
 
 ## 1. What Reason does (read from its app and docs, 8 November 2026)
 
