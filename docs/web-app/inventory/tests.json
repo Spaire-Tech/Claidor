@@ -1,5 +1,9 @@
 [
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/AIModelsTests.swift",
+  "tests": 7
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/AccessTests.swift",
   "tests": 2
  },

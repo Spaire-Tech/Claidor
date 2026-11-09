@@ -1115,7 +1115,7 @@ async def own_models_choose(
     else:
         wanted = own_model(body.model)
         if wanted is None or wanted not in await _choices(session, user):
-            return JSONResponse({"error": "not_offered"}, status_code=400)
+            return model_accounts.refusal("not_offered", 400)
         meta[CHOICE_KEY] = wanted.model_id
     user.meta = meta
     session.add(user)

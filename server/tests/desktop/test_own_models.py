@@ -217,7 +217,7 @@ class TestTheChoice:
         assert listed.json() == {"model": None, "models": []}
         refused = await _choose(client, headers)
         assert refused.status_code == 400
-        assert refused.json() == {"error": "not_offered"}
+        assert refused.json()["error"]["code"] == "not_offered"
 
     async def test_the_choice_puts_the_accounts_models_first_for_the_engine(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

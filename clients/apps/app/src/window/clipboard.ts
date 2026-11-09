@@ -1,8 +1,9 @@
 // This computer's clipboard (the Mac's `NSPasteboard`), in one place for
-// the window's seven writers and the computer's screen.
+// the window's eight writers and the computer's screen.
 //
 // - Copy (an agent's id, a message, a code block, a call's line, the
-//   e-mail, the version's facts, the computer's copy): in a browser its own
+//   e-mail, the version's facts, the computer's copy, ChatGPT's sign-in
+//   code): in a browser its own
 //   clipboard, which writes only while the page has the focus; in the
 //   Windows app through the app, as the Mac writes, whether or not the
 //   window is in front.

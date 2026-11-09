@@ -326,7 +326,7 @@ class TestConnect:
                 for _ in range(3)
             ]
         assert [a.status_code for a in answers] == [502, 502, 502]
-        assert [a.json()["error"] for a in answers] == [
+        assert [a.json()["error"]["code"] for a in answers] == [
             "device_code_off",
             "provider_unavailable",
             "provider_unavailable",
@@ -349,8 +349,8 @@ class TestConnect:
             failed = await client.post(
                 "/desktop/api/models/accounts/chatgpt/poll", headers=headers, json=poll
             )
-        assert failed.status_code == 502
-        assert failed.json() == {"status": "failed", "error": "invalid_grant"}
+        assert failed.status_code == 200
+        assert failed.json() == {"status": "failed", "reason": "invalid_grant"}
         again = await client.post(
             "/desktop/api/models/accounts/chatgpt/poll", headers=headers, json=poll
         )

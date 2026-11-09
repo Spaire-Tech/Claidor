@@ -25,6 +25,7 @@ import './Settings.css'
 export type SettingsSymbolName =
   | 'gearshape'
   | 'chartBar'
+  | 'cpu'
   | 'wallet'
   | 'key'
   | 'handRaised'
@@ -51,6 +52,14 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
     </>
   ),
   chartBar: <path d="M2.5 8.5h3v5h-3ZM6.5 3h3v10.5h-3ZM10.5 6h3v7.5h-3Z" />,
+  // `cpu`: the chip, its square inside, its pins on each side.
+  cpu: (
+    <>
+      <rect x="3.5" y="3.5" width="9" height="9" rx="1.6" />
+      <rect x="6" y="6" width="4" height="4" rx="0.6" />
+      <path d="M6 1.6v1.9M10 1.6v1.9M6 12.5v1.9M10 12.5v1.9M1.6 6h1.9M1.6 10h1.9M12.5 6h1.9M12.5 10h1.9" />
+    </>
+  ),
   wallet: (
     <path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h9A1.5 1.5 0 0 1 14 5.5v6a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5ZM14 7.3h-2.6a1.2 1.2 0 0 0 0 2.4H14M3.4 4.1l7.3-1.9a1 1 0 0 1 1.3 1V4" />
   ),
