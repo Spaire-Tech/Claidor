@@ -19,6 +19,8 @@
  * or token of Simeon's ever reaches it.
  */
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
+import { claudeCodeInstallDir, ensureClaudeCode, installedClaudeCodeBinary, isClaudeCodeInstalled } from "./claude-code-install.js";
 
 /** Where Claude Code keeps its settings and sign-in on the computer (`CLAUDE_CONFIG_DIR`). */
 export const CLAUDE_CODE_CONFIG_DIR = "/home/box/.claude";
@@ -57,9 +59,23 @@ export function claudeCodeEnv(base: NodeJS.ProcessEnv, options: ClaudeCodeEnvOpt
   return env;
 }
 
-/** The program's name or path: `claude` from the image (`npm install -g`), or a stand-in in tests. */
+/**
+ * The program's path: a stand-in in tests (`SIMEON_CLAUDE_CODE_BIN`); the one
+ * the engine installed (`claude-code-install.ts`); else `claude` on the PATH.
+ */
 export function claudeCodeBinary(base: NodeJS.ProcessEnv = process.env): string {
-  return base.SIMEON_CLAUDE_CODE_BIN?.trim() || "claude";
+  const standIn = base.SIMEON_CLAUDE_CODE_BIN?.trim();
+  if (standIn) return standIn;
+  const dir = claudeCodeInstallDir(base);
+  return isClaudeCodeInstalled(dir) ? installedClaudeCodeBinary(dir) : "claude";
+}
+
+/** How long Connect waits for a first install before saying "try again in a moment" (the install goes on). */
+const INSTALL_WAIT_MS = 90_000;
+
+/** Claude Code's install lines in the host log. */
+export function logClaudeCode(line: string): void {
+  logHostLine(`${HOST_LOG_PREFIX} ${line}`);
 }
 
 /** Words without the terminal's colours, cursor moves and links' markers. */
@@ -191,6 +207,10 @@ export class ClaudeCodeSignIn {
   async start(): Promise<{ url: string }> {
     this.cancel();
     const base = this.options.env ?? process.env;
+    // Installed on first use; the first Connect may wait for it, or be told to try again in a moment.
+    const ready = await ensureClaudeCode({ env: base, waitMs: INSTALL_WAIT_MS, log: logClaudeCode });
+    if (ready === "installing") throw new Error("Claude Code is still being set up on this computer. Try again in a moment.");
+    if (ready === "failed") throw new Error("Claude Code couldn't be installed on this computer.");
     const env = { ...claudeCodeEnv(base, { configDir: this.options.configDir }), SIMEON_CLAUDE_CODE_BIN: claudeCodeBinary(base) };
     // `script` gives Claude Code a terminal; `-e` returns its exit code, `-q` keeps script's own lines out.
     const child = spawn("script", ["-q", "-e", "-c", '"$SIMEON_CLAUDE_CODE_BIN" auth login --claudeai', "/dev/null"], { env, stdio: ["pipe", "pipe", "pipe"] });
