@@ -290,6 +290,12 @@ export function appIconURL(id: string): string | undefined {
   return appIconById.get(id)
 }
 
+/** ChatGPT's and Claude's app icons, from the App Store (the Mac's `Providers/<provider>`), by the provider's slug. */
+const providerIcons: Record<string, string> = {
+  chatgpt: new URL('../assets/providers/chatgpt.png', import.meta.url).href,
+  claude: new URL('../assets/providers/claude.png', import.meta.url).href,
+}
+
 export type AppLogo =
   | { kind: 'icon'; url: string }
   /** `mono`: a one-colour logo, which the Mac draws as a template, in the words' colour. */
@@ -306,7 +312,7 @@ export type AppLogo =
 export function appLogo(name: string, id?: string): AppLogo {
   const key =
     (id != null ? connectorIconId(id) : undefined) ?? connectorIconId(name)
-  const icon = key != null ? appIconURL(key) : undefined
+  const icon = key != null ? appIconURL(key) : providerIcons[slug(name)]
   if (icon) return { kind: 'icon', url: icon }
   const lower = name.toLowerCase()
   const brand = brandMentions.find((one) => one.name.toLowerCase() === lower)

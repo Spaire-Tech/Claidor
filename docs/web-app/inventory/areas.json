@@ -220,7 +220,7 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 3937,
+  "mac_lines": 3939,
   "core_lines": 1671,
   "views": 59,
   "files_needing_a_mac": 3,
@@ -395,11 +395,11 @@
    "mac/Simeon/PluginsModel.swift",
    "mac/Simeon/PluginsWindow.swift"
   ],
-  "mac_lines": 3252,
-  "core_lines": 3841,
+  "mac_lines": 3257,
+  "core_lines": 3865,
   "views": 50,
   "files_needing_a_mac": 3,
-  "strings": 1415,
+  "strings": 1422,
   "strings_in_old_web_app": 131,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
@@ -441,11 +441,11 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 4049,
+  "mac_lines": 4048,
   "core_lines": 2600,
   "views": 61,
   "files_needing_a_mac": 9,
-  "strings": 355,
+  "strings": 353,
   "strings_in_old_web_app": 150,
   "box_commands": [
    "claudeCodeSignInCancel",

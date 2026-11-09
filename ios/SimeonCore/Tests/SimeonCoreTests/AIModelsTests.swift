@@ -170,6 +170,15 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(account.kindName, "Subscription", "no plan, no usage under its name")
   }
 
+  /** Connecting a plan reads as connecting an app (9 November 2026): the same page, its words for a plan. */
+  func testAPlansConsentIsTheAppsPage() {
+    let consent = ConnectConsent(modelProvider: AIModels.claude)
+    XCTAssertEqual(consent.title, "Claude")
+    XCTAssertEqual(consent.points.map(\.title), ["Put Claude to work", "You stay in charge", "When your plan runs out"])
+    XCTAssertEqual(consent.smallPrint.first, "You'll sign in on Claude's own page. Simeon never sees your password.")
+    XCTAssertNil(consent.note)
+  }
+
   @MainActor
   func testARefusedSignInSaysWhyInThePersonsWords() async {
     let model = AIModelsModel(call: { path, _, _ in
@@ -265,7 +274,7 @@ final class AIModelsTests: XCTestCase {
     )
     let none = await model.startClaude()
     XCTAssertNil(none)
-    XCTAssertEqual(model.problem, "Your computer needs an update before it can run Claude Code.")
+    XCTAssertEqual(model.problem, "Simeon's computer needs an update first.")
     XCTAssertNil(ClaudeSignIn(json: ["url": "https://evil.example/oauth/authorize"]), "only Anthropic's own page")
     XCTAssertNil(ClaudeSignIn(json: ["url": "http://claude.com/oauth/authorize"]))
   }

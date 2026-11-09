@@ -47,6 +47,11 @@ final class MacConnector {
     asking = Ask(consent: ConnectConsent(app: store?.catalogApp(named: name), name: name), go: go)
   }
 
+  /** A consent of its own (ChatGPT's and Claude's plans, `ConnectConsent(modelProvider:)`), then `go` on Connect. */
+  func ask(consent: ConnectConsent, then go: @escaping @MainActor () async -> Void) {
+    asking = Ask(consent: consent, go: go)
+  }
+
   func cancel() { asking = nil }
 
   func confirm() {

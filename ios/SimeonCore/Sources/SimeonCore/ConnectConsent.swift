@@ -70,6 +70,30 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     note = Self.notes[key] ?? (Self.money.contains(key) ? L10n.text("Anything that moves money in \(title) is real. Ask your agents to check with you before they move any.") : nil)
   }
 
+  /**
+   * The consent for one of the person's own AI plans, ChatGPT's or Claude's
+   * (9 November 2026, the founder: "have it like when you connect an app"):
+   * the same page, its words for a plan. Connect then runs the plan's own
+   * sign-in.
+   */
+  public init(modelProvider provider: String) {
+    let title = AIModels.providerName(provider)
+    id = "model:\(provider)"
+    self.title = title
+    summary = L10n.text("Your \(title) plan, for your agents.")
+    route = .unknown
+    points = [
+      Point(symbol: "square.stack.3d.up", title: L10n.text("Put \(title) to work"), body: L10n.text("Your agents work on your \(title) plan, not on your Simeon credits.")),
+      Point(symbol: "hand.raised", title: L10n.text("You stay in charge"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
+      Point(symbol: "checkmark.circle", title: L10n.text("When your plan runs out"), body: L10n.text("Your agents use Simeon's models until it resets.")),
+    ]
+    smallPrint = [
+      Self.signInLine(.unknown, title: title),
+      L10n.text("Voice calls, dictation and video still use your Simeon credits."),
+    ]
+    note = nil
+  }
+
   /** Who handles the sign-in, by the app's route. */
   static func signInLine(_ route: Route, title: String) -> String {
     switch route {

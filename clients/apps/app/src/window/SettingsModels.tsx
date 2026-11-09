@@ -42,11 +42,13 @@ import {
   statusWords,
   usable,
 } from '../core/aiModels'
+import { modelConsent } from '../core/connectConsent'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { copyText } from './clipboard'
 import { AppLogoTile } from './ConnectCards'
 import './ConnectCards.css'
+import { useConnector } from './connector'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import { Alert, Sheet } from './Dialogs'
 import './SettingsModels.css'
@@ -61,6 +63,7 @@ import { useWatched } from './useStore'
 export function SettingsModelsPage({ store }: { store: AppStore }) {
   const model = store.aiModels
   useWatched(model)
+  const connector = useConnector()
   const [connectingChatGPT, setConnectingChatGPT] = useState(false)
   const [connectingClaude, setConnectingClaude] = useState(false)
   const [renaming, setRenaming] = useState<ModelAccount>()
@@ -128,11 +131,19 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                 >
                   <SettingsPill
                     title={t('Connect')}
-                    onClick={() =>
-                      provider === claude
-                        ? setConnectingClaude(true)
-                        : setConnectingChatGPT(true)
-                    }
+                    onClick={() => {
+                      const open = async () =>
+                        provider === claude
+                          ? setConnectingClaude(true)
+                          : setConnectingChatGPT(true)
+                      // The consent an app's Connect shows, then the sign-in (9 November 2026, the founder: "have it like when you connect an app").
+                      if (connector)
+                        connector.ask(providerName(provider), open, {
+                          signIn: false,
+                          consent: modelConsent(provider),
+                        })
+                      else void open()
+                    }}
                   />
                 </ProviderLine>
               ))}
@@ -278,17 +289,11 @@ function ModelAccountLine({
   )
 }
 
-/** The providers' app icons, from the App Store, as the Mac's `Providers/<provider>`. */
-const providerIcons: Record<string, string> = {
-  [chatGPT]: new URL('../assets/providers/chatgpt.png', import.meta.url).href,
-  [claude]: new URL('../assets/providers/claude.png', import.meta.url).href,
-}
-
 /**
  * A provider's app icon, whole, as Wallet draws Link's and Shop's
  * (`MacProviderIcon`, the `.app-icon` of the connect cards; the founder, 9
  * November 2026: "how link and shop have their full logo, not inside a
- * box").
+ * box"): ChatGPT's and Claude's own, from the App Store (`appLogo`).
  */
 export function ProviderIcon({
   provider,
@@ -297,18 +302,7 @@ export function ProviderIcon({
   provider: string
   side: number
 }) {
-  const icon = providerIcons[provider]
-  if (icon === undefined)
-    return <AppLogoTile name={providerName(provider)} side={side} />
-  return (
-    <span
-      className="app-icon"
-      style={{ width: side, height: side, borderRadius: side * 0.2237 }}
-      aria-hidden="true"
-    >
-      <img src={icon} alt="" />
-    </span>
-  )
+  return <AppLogoTile name={providerName(provider)} side={side} />
 }
 
 /** A provider not yet connected, under Subscriptions (`MacProviderLine`): its app's icon, its name, and Connect. */
@@ -435,11 +429,10 @@ function openPage(url: string): void {
 /**
  * Connect ChatGPT (`MacChatGPTConnectSheet`; Reason's sheet: "Copy this
  * code", "Enter it on … and approve", "Waiting for you to approve…"): the
- * code, big, with Copy; the page to enter it on, with Open; a line saying
- * OpenAI's page names Codex (the sign-in Simeon uses for ChatGPT until
- * OpenAI approves its own); the wait. Connected, it says which model the
- * agents now use. The code lasts 15 minutes; closing the sheet stops the
- * asking.
+ * code, big, with Copy; the page to enter it on, with Open; the wait, and
+ * nothing more (9 November 2026, the founder: "all the many explanation…
+ * needs gone"). Connected, it says which model the agents now use. The code
+ * lasts 15 minutes; closing the sheet stops the asking.
  */
 function ChatGPTConnectSheet({
   model,
@@ -539,11 +532,10 @@ function ChatGPTConnectSheet({
 
 /**
  * Connect Claude (`MacClaudeConnectSheet`; the founder's screenshot of
- * Reason's: Claude Code's own sign-in): the computer starts Claude Code's
- * sign-in; 1, Claude's page, with Open; 2, the code Claude shows, pasted and
- * sent to Claude Code on the computer; a line saying the sign-in stays there.
- * Connected, it says which model the agents now use. Closed before the code,
- * the computer's sign-in ends.
+ * Reason's: Claude Code's own sign-in): a spinner while the computer starts
+ * it; 1, Claude's page, with Open; 2, the code Claude shows, pasted and sent
+ * to the computer; nothing more. Connected, it says which model the agents
+ * now use. Closed before the code, the computer's sign-in ends.
  */
 function ClaudeConnectSheet({
   model,
@@ -650,11 +642,6 @@ function ClaudeConnectSheet({
               )}
             </span>
           </ConnectStep>
-          <p className="models-note">
-            {t(
-              'Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it.',
-            )}
-          </p>
         </form>
       )
     if (model.problem !== undefined)
@@ -668,8 +655,7 @@ function ClaudeConnectSheet({
       )
     return (
       <div className="models-waiting">
-        <span className="settings-spinner" aria-hidden="true" />
-        {t('Starting Claude Code on your computer…')}
+        <span className="settings-spinner" role="progressbar" />
       </div>
     )
   }
@@ -718,7 +704,7 @@ function ConnectedEnd({ model, close }: { model: Model; close: () => void }) {
   )
 }
 
-/** The steps (`steps`): 1, the code with Copy; 2, the page with Open; the line about Codex; the wait. */
+/** The steps (`steps`): 1, the code with Copy; 2, the page with Open; the wait. */
 function ConnectSteps({
   signIn,
   copied,
@@ -748,11 +734,6 @@ function ConnectSteps({
           onClick={() => openPage(signIn.verificationURL)}
         />
       </ConnectStep>
-      <p className="models-note">
-        {t(
-          "OpenAI's page names Codex: it's the sign-in Simeon uses for ChatGPT.",
-        )}
-      </p>
       <div className="models-waiting">
         <span className="settings-spinner" aria-hidden="true" />
         {t('Waiting for you to approve…')}

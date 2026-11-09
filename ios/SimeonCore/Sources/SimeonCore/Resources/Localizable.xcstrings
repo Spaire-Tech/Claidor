@@ -31582,64 +31582,6 @@
         }
       }
     },
-    "Couldn't start Claude Code on your computer. Try again in a moment." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code konnte auf deinem Computer nicht gestartet werden. Versuch es gleich noch mal."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se pudo iniciar Claude Code en tu computadora. Vuelve a intentarlo en un momento."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de lancer Claude Code sur ton ordinateur. Réessaie dans un instant."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossibile avviare Claude Code sul tuo computer. Riprova tra un attimo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kan Claude Code niet starten op je computer. Probeer het zo opnieuw."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie udało się uruchomić Claude Code na twoim komputerze. Spróbuj ponownie za chwilę."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível iniciar o Claude Code no seu computador. Tente de novo em instantes."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Det gick inte att starta Claude Code på din dator. Försök igen om en stund."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code bilgisayarında başlatılamadı. Birazdan tekrar dene."
-          }
-        }
-      }
-    },
     "Couldn't start sign-in: %@" : {
       "localizations" : {
         "de" : {
@@ -135626,64 +135568,6 @@
         }
       }
     },
-    "Your computer needs an update before it can run Claude Code." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Computer braucht ein Update, bevor er Claude Code ausführen kann."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu computadora necesita una actualización antes de poder ejecutar Claude Code."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ton ordinateur doit être mis à jour avant de pouvoir lancer Claude Code."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo computer deve essere aggiornato prima di poter eseguire Claude Code."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je computer heeft een update nodig voordat hij Claude Code kan draaien."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twój komputer wymaga aktualizacji, zanim będzie mógł uruchomić Claude Code."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seu computador precisa de uma atualização antes de rodar o Claude Code."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Din dator behöver uppdateras innan den kan köra Claude Code."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bilgisayarının Claude Code’u çalıştırabilmesi için güncellenmesi gerekiyor."
-          }
-        }
-      }
-    },
     "your datasets and tables" : {
       "localizations" : {
         "de" : {
@@ -142296,6 +142180,470 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "{1 anahtar}"
+          }
+        }
+      }
+    },
+    "Your %@ plan, for your agents." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein %@-Tarif, für deine Agenten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu plan de %@, para tus agentes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton forfait %@, pour tes agents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo piano %@, per i tuoi agenti."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je %@-abonnement, voor je agenten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój plan %@ dla twoich agentów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu plano do %@, para seus agentes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ditt %@-abonnemang, för dina agenter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ planın, ajanların için."
+          }
+        }
+      }
+    },
+    "Your agents work on your %@ plan, not on your Simeon credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten arbeiten mit deinem %@-Tarif, nicht mit deinen Simeon-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes trabajan con tu plan de %@, no con tus créditos de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents travaillent avec ton forfait %@, et non avec tes crédits Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti lavorano con il tuo piano %@, non con i tuoi crediti Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten werken met je %@-abonnement, niet met je Simeon-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci pracują na twoim planie %@, a nie na twoich kredytach Simeon."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes trabalham com seu plano do %@, não com seus créditos do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter arbetar med ditt %@-abonnemang, inte med dina Simeon-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların Simeon kredilerinle değil, %@ planınla çalışır."
+          }
+        }
+      }
+    },
+    "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle das Modell im Nachrichtenfeld oder wechsle jederzeit zurück zu Simeons Modellen. Trennen unter Einstellungen → KI-Modelle."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige el modelo en el campo de mensaje o vuelve a los de Simeon cuando quieras. Desconéctalo en Ajustes → Modelos de IA."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis le modèle dans le champ de message, ou reviens à ceux de Simeon quand tu veux. Déconnecte-le dans Réglages → Modèles d’IA."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli il modello nel campo del messaggio o torna a quelli di Simeon quando vuoi. Scollegalo in Impostazioni → Modelli IA."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies het model in het berichtveld, of ga wanneer je wilt terug naar die van Simeon. Ontkoppel in Instellingen → AI-modellen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz model w polu wiadomości albo wróć do modeli Simeona w dowolnej chwili. Odłącz w Ustawienia → Modele AI."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha o modelo no campo de mensagem ou volte para os do Simeon quando quiser. Desconecte em Ajustes → Modelos de IA."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj modell i meddelandefältet, eller gå tillbaka till Simeons när du vill. Koppla från under Inställningar → AI-modeller."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modeli mesaj alanından seç ya da istediğin zaman Simeon’un modellerine dön. Bağlantıyı Ayarlar → Yapay zekâ modelleri bölümünden kes."
+          }
+        }
+      }
+    },
+    "When your plan runs out" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn dein Tarif aufgebraucht ist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuando se agote tu plan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quand ton forfait est épuisé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando il piano si esaurisce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je abonnement op is"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gdy plan się wyczerpie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quando seu plano acabar"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När ditt abonnemang tar slut"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Planın dolduğunda"
+          }
+        }
+      }
+    },
+    "Your agents use Simeon's models until it resets." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten nutzen Simeons Modelle, bis er zurückgesetzt wird."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes usan los modelos de Simeon hasta que se restablezca."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents utilisent les modèles de Simeon jusqu’à sa réinitialisation."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi agenti usano i modelli di Simeon finché non si azzera."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten gebruiken de modellen van Simeon tot het wordt gereset."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci używają modeli Simeona, dopóki się nie odnowi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes usam os modelos do Simeon até ele ser renovado."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter använder Simeons modeller tills det återställs."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların, yenilenene kadar Simeon’un modellerini kullanır."
+          }
+        }
+      }
+    },
+    "Voice calls, dictation and video still use your Simeon credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprachanrufe, Diktat und Video nutzen weiterhin deine Simeon-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las llamadas de voz, el dictado y el video siguen usando tus créditos de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les appels vocaux, la dictée et la vidéo utilisent toujours tes crédits Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiamate vocali, dettatura e video usano ancora i tuoi crediti Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spraakoproepen, dicteren en video gebruiken nog steeds je Simeon-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połączenia głosowe, dyktowanie i wideo nadal korzystają z twoich kredytów Simeon."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chamadas de voz, ditado e vídeo continuam usando seus créditos do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Röstsamtal, diktering och video använder fortfarande dina Simeon-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesli aramalar, dikte ve video hâlâ Simeon kredilerini kullanır."
+          }
+        }
+      }
+    },
+    "Couldn't reach Claude. Try again in a moment." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude ist nicht erreichbar. Versuch es gleich noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conectar con Claude. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre Claude. Réessaie dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile raggiungere Claude. Riprova tra un attimo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude is niet bereikbaar. Probeer het zo opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się połączyć z Claude. Spróbuj ponownie za chwilę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível falar com o Claude. Tente de novo em instantes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att nå Claude. Försök igen om en stund."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude’a ulaşılamadı. Birazdan tekrar dene."
+          }
+        }
+      }
+    },
+    "Simeon's computer needs an update first." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeons Computer braucht zuerst ein Update."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La computadora de Simeon necesita una actualización primero."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’ordinateur de Simeon doit d’abord être mis à jour."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il computer di Simeon deve prima essere aggiornato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De computer van Simeon heeft eerst een update nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Komputer Simeona wymaga najpierw aktualizacji."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O computador do Simeon precisa ser atualizado primeiro."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeons dator behöver uppdateras först."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon’un bilgisayarının önce güncellenmesi gerekiyor."
           }
         }
       }

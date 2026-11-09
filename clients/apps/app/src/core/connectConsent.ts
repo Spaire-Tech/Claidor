@@ -13,6 +13,7 @@
 // Each app's part is the Swift's tables as they are (the test compares them
 // with ConnectConsent.swift), every sentence in the core's catalogue.
 
+import { providerName } from './aiModels'
 import { type CatalogApp, slug } from './connectCards'
 import { t } from './l10n'
 
@@ -107,6 +108,44 @@ export function connectConsent(
     points,
     smallPrint,
     note,
+  }
+}
+
+/**
+ * The consent for one of the person's own AI plans, ChatGPT's or Claude's
+ * (`ConnectConsent(modelProvider:)`; 9 November 2026, the founder: "have it
+ * like when you connect an app"): the same page, its words for a plan.
+ */
+export function modelConsent(provider: string): ConnectConsent {
+  const title = providerName(provider)
+  return {
+    id: `model:${provider}`,
+    title,
+    summary: t`Your ${title} plan, for your agents.`,
+    route: { kind: 'unknown' },
+    points: [
+      {
+        symbol: 'square.stack.3d.up',
+        title: t`Put ${title} to work`,
+        body: t`Your agents work on your ${title} plan, not on your Simeon credits.`,
+      },
+      {
+        symbol: 'hand.raised',
+        title: t('You stay in charge'),
+        body: t(
+          "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.",
+        ),
+      },
+      {
+        symbol: 'checkmark.circle',
+        title: t('When your plan runs out'),
+        body: t("Your agents use Simeon's models until it resets."),
+      },
+    ],
+    smallPrint: [
+      signInLine({ kind: 'unknown' }, title),
+      t('Voice calls, dictation and video still use your Simeon credits.'),
+    ],
   }
 }
 

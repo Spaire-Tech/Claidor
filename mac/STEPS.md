@@ -2868,3 +2868,27 @@ Not yet built or run on a Mac or an iPhone: no Swift here, so the code was
 read, not compiled, and the core's two new tests did not run. The web app's
 translation ran in Chromium against a stand-in server and computer. No real
 Claude Code sign-in has run: no engine with it is published yet.
+
+### Connect ChatGPT and Claude like an app (9 November 2026)
+
+The founder: "lets stay true to our design and have it like when you connect
+an app", and "all the many explanation like open ai page names codex etc. and
+the absolute awful wording of starting claude code on your computer needs
+gone". Connect under Subscriptions first shows the consent an app's Connect
+shows (`ConnectConsentLayer`, over the window): the provider's App Store icon
+(`AppLogoTile.appIcon` falls back to `Providers/<slug>`), its name, "Your
+ChatGPT plan, for your agents.", three points (Put ChatGPT to work, You stay
+in charge, When your plan runs out), the small print (sign-in on the
+provider's own page; voice calls, dictation and video still on the credits)
+and Connect, which then opens the sign-in sheet
+(`ConnectConsent(modelProvider:)` in the shared core, the same on the iPhone
+and the web). Add Another and Connect Again go straight to the sheet. The
+ChatGPT sheet lost the line about Codex; the Claude sheet shows only a
+spinner while the computer starts the sign-in, and lost the line about where
+the sign-in stays. A computer that can't yet run it says "Simeon's computer
+needs an update first."; any other failure, "Couldn't reach Claude. Try
+again in a moment."
+
+Not yet built or run on a Mac or an iPhone: no Xcode here. The core's
+`AIModelsTests` ran on Linux; the web app's translation ran in Chromium
+against a stand-in server.

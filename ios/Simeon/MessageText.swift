@@ -131,9 +131,11 @@ enum MentionArt {
     return nil
   }
 
-  /** A connector's own app icon (`AppIcons/<id>`, the logo filling the tile, 14 October 2026), by its id or any of its names; nil for an app that is not a connector. */
+  /** A connector's own app icon (`AppIcons/<id>`, the logo filling the tile, 14 October 2026), by its id or any of its names; ChatGPT's and Claude's from `Providers/`; nil for any other app that is not a connector. */
   static func appIcon(id: String? = nil, name: String) -> UIImage? {
-    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else { return nil }
+    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else {
+      return UIImage(named: "Providers/\(CatalogApp.slug(name))")
+    }
     return UIImage(named: "AppIcons/\(key)")
   }
 
