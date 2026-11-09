@@ -12,9 +12,11 @@
  * its own. A part of the loop a tool reaches for and this doesn't give is
  * named once in the host log.
  *
- * The tools Claude Code has its own of (files, the shell, web search and
- * fetch, its to-do list) are not offered, so the agent never has two of
- * one.
+ * The tools Claude Code has its own of (files, web search and fetch, its
+ * to-do list) are not offered, so the agent never has two of one. The shell
+ * is the other way round: Claude Code's own (`Bash`) is turned off for the
+ * turn and the engine's `Shell` is offered, because it carries the person's
+ * safety review (C4 part 4).
  */
 import { randomUUID } from "node:crypto";
 import type { BridgeContent, BridgeResult, BridgeTool } from "./simeon-mcp-server.js";
@@ -22,9 +24,14 @@ import type { BridgeContent, BridgeResult, BridgeTool } from "./simeon-mcp-serve
 /** The engine's tool identifiers Claude Code has its own tool for. */
 export const CLAUDE_CODE_HAS_ITS_OWN: ReadonlySet<string> = new Set([
   "READ", "WRITE", "EDIT", "STR_REPLACE", "MULTI_EDIT", "DELETE", "LS", "GLOB", "GREP", "SEMANTIC_SEARCH",
-  "SHELL", "RUN_TERMINAL_COMMAND", "AWAIT_SHELL",
   "WEB_SEARCH", "WEB_FETCH", "TODO_WRITE",
 ]);
+
+/**
+ * Claude Code's own tools turned off for a turn: its shell, so every command
+ * goes through the engine's `Shell` and the person's safety review.
+ */
+export const CLAUDE_CODE_TOOLS_OFF: readonly string[] = ["Bash", "BashOutput", "KillShell", "KillBash"];
 
 /** A tool as the engine builds it (`createZodAgentTool`). */
 export interface EngineTool {
