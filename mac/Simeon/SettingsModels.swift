@@ -53,7 +53,7 @@ struct SettingsModelsPage: View {
                 account: account,
                 divided: index > 0,
                 look: look,
-                rename: { newName = account.label; renaming = account },
+                rename: { newName = account.shownName; renaming = account },
                 addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
                 connectAgain: { connect(account.provider) },
                 disconnect: { askToDisconnect(account, model: model) }
@@ -100,7 +100,7 @@ struct SettingsModelsPage: View {
   private func askToDisconnect(_ account: ModelAccount, model: AIModelsModel) {
     let alert = NSAlert()
     alert.alertStyle = .warning
-    alert.messageText = String(localized: "Disconnect \(account.label)?")
+    alert.messageText = String(localized: "Disconnect \(account.shownName)?")
     alert.informativeText = String(localized: "Your agents stop using this account. You can connect it again anytime.")
     alert.addButton(withTitle: String(localized: "Disconnect"))
     alert.addButton(withTitle: String(localized: "Cancel")).keyEquivalent = "\u{1b}"
@@ -155,7 +155,7 @@ struct MacProviderIcon: View {
   }
 }
 
-/** A connected account: its app's icon, its name over "Subscription" (and how it stands, only when it can't be used), and `⋯`. */
+/** A connected account: its app's icon, its name ("ChatGPT", never the e-mail) over "Subscription", how it stands beside `⋯` (a dot and its words: "Usage available" in green, "Signed out" in red), and `⋯`. */
 private struct MacModelAccountLine: View {
   let account: ModelAccount
   let divided: Bool
@@ -170,18 +170,17 @@ private struct MacModelAccountLine: View {
     HStack(spacing: 12) {
       MacProviderIcon(provider: account.provider, look: look, side: 28)
       VStack(alignment: .leading, spacing: 2) {
-        Text(account.label).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
-        HStack(spacing: 0) {
-          Text(account.kindName).foregroundStyle(look.inkSecondary)
-          if !account.usable() {
-            Text(verbatim: " · ").foregroundStyle(look.inkSecondary)
-            Text(account.statusWords()).foregroundStyle(account.status == .signedOut ? look.danger : look.inkSecondary)
-          }
-        }
-        .font(PanelType.detail)
-        .lineLimit(1)
+        Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+        Text(account.kindName).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
+      // How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯").
+      let tint = account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary
+      HStack(spacing: 6) {
+        Circle().fill(tint).frame(width: 7, height: 7)
+        Text(account.statusWords()).font(PanelType.row).foregroundStyle(tint).lineLimit(1)
+      }
+      .fixedSize()
       Menu {
         if let addAnother {
           Button("Add Another", action: addAnother)

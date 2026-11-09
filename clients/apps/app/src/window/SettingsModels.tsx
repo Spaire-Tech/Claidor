@@ -8,8 +8,9 @@
 // yet connected, each its app's icon, its name and Connect. 9 November, the
 // founder: "do not duplicate the subscription", "just have subscription
 // there", the icons whole as Wallet's Link and Shop, and the model chosen on
-// the composer (`ComposerModelMenu`), not here. One model for the window
-// (`store.aiModels`).
+// the composer (`ComposerModelMenu`), not here; each account by its
+// provider's name, never the e-mail, how it stands beside its `⋯` (a dot and
+// its words). One model for the window (`store.aiModels`).
 //
 // The web's own ways: the code is copied with the window's clipboard
 // (clipboard.ts: the browser's, or the Windows app's); OpenAI's page opens
@@ -37,6 +38,7 @@ import {
   kindName,
   providerName,
   shownAddress,
+  shownName,
   statusWords,
   usable,
 } from '../core/aiModels'
@@ -167,7 +169,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
       )}
       {disconnecting && (
         <Alert
-          title={t`Disconnect ${disconnecting.label}?`}
+          title={t`Disconnect ${shownName(disconnecting)}?`}
           message={t(
             'Your agents stop using this account. You can connect it again anytime.',
           )}
@@ -229,24 +231,21 @@ function ModelAccountLine({
     <div className={divided ? 'models-line divided' : 'models-line'}>
       <ProviderIcon provider={account.provider} side={28} />
       <span className="models-words">
-        <span className="models-title">{account.label}</span>
-        <span className="models-subtitle">
-          {kindName(account)}
-          {!usable(account) && (
-            <>
-              {' · '}
-              <span
-                className={
-                  account.status === 'signed_out'
-                    ? 'models-status signed-out'
-                    : 'models-status'
-                }
-              >
-                {statusWords(account)}
-              </span>
-            </>
-          )}
-        </span>
+        <span className="models-title">{shownName(account)}</span>
+        <span className="models-subtitle">{kindName(account)}</span>
+      </span>
+      {/* How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯"). */}
+      <span
+        className={
+          usable(account)
+            ? 'models-status usable'
+            : account.status === 'signed_out'
+              ? 'models-status signed-out'
+              : 'models-status'
+        }
+      >
+        <span className="models-status-dot" aria-hidden="true" />
+        {statusWords(account)}
       </span>
       <button
         ref={button}
@@ -272,7 +271,7 @@ function ModelAccountLine({
           items={items}
           at={menu}
           close={() => setMenu(undefined)}
-          label={account.label}
+          label={shownName(account)}
         />
       )}
     </div>
@@ -349,7 +348,7 @@ function RenameAccountAlert({
   rename: (name: string) => void
   cancel: () => void
 }) {
-  const [name, setName] = useState(account.label)
+  const [name, setName] = useState(shownName(account))
   const field = useRef<HTMLInputElement>(null)
   const latest = useRef(cancel)
   useEffect(() => {

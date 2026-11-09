@@ -68,6 +68,12 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
   /** "ChatGPT". */
   public var providerName: String { AIModels.providerName(provider) }
 
+  /** Its name on the page: the provider's ("ChatGPT"), never the e-mail (the founder, 9 November 2026: "dont put emails"); the person's own once they renamed it. */
+  public var shownName: String {
+    let named = label.trimmingCharacters(in: .whitespacesAndNewlines)
+    return named.isEmpty || named.contains("@") ? providerName : named
+  }
+
   /** The line under its name: "Subscription · Plus". */
   public var detail: String {
     guard let plan, !plan.isEmpty else { return kindName }
@@ -83,7 +89,7 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
   public func statusWords(now: Date = Date(), timeZone: TimeZone = .current) -> String {
     switch status {
     case .available: return L10n.text("Usage available")
-    case .signedOut: return L10n.text("Signed out. Connect again.")
+    case .signedOut: return L10n.text("Signed out")
     case .limited:
       guard let limitedUntil, limitedUntil > now else { return L10n.text("Usage available") }
       return L10n.text("Limit reached until \(AIModels.time(limitedUntil, now: now, timeZone: timeZone))")

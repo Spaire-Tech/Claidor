@@ -109,6 +109,14 @@ export function accountDetail(account: ModelAccount): string {
   return account.plan ? `${kind} · ${planName(account.plan)}` : kind
 }
 
+/** Its name on the page (`ModelAccount.shownName`): the provider's ("ChatGPT"), never the e-mail (the founder, 9 November 2026: "dont put emails"); the person's own once they renamed it. */
+export function shownName(account: ModelAccount): string {
+  const named = account.label.trim()
+  return named === '' || named.includes('@')
+    ? providerName(account.provider)
+    : named
+}
+
 /** What it is, the only words under its name while it works (`ModelAccount.kindName`; the founder, 9 November 2026: "just have subscription there"). */
 export function kindName(account: ModelAccount): string {
   return account.kind === 'api_key' ? t('API key') : t('Subscription')
@@ -137,7 +145,7 @@ export function limitTime(
   }).format(date)
 }
 
-/** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out. Connect again." */
+/** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out". */
 export function statusWords(
   account: ModelAccount,
   options: { now?: Date; locale?: string; timeZone?: string } = {},
@@ -147,7 +155,7 @@ export function statusWords(
     case 'available':
       return t('Usage available')
     case 'signed_out':
-      return t('Signed out. Connect again.')
+      return t('Signed out')
     case 'limited':
       if (account.limitedUntil === undefined || account.limitedUntil <= +now)
         return t('Usage available')

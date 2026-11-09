@@ -14,7 +14,9 @@ final class AIModelsTests: XCTestCase {
     let gone = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "label": "Work", "status": "signed_out"]))
     XCTAssertEqual(gone.status, .signedOut)
     XCTAssertEqual(gone.detail, "Subscription", "no plan named, none shown")
-    XCTAssertEqual(gone.statusWords(), "Signed out. Connect again.")
+    XCTAssertEqual(gone.statusWords(), "Signed out")
+    XCTAssertEqual(gone.shownName, "Work", "a name the person gave is kept")
+    XCTAssertEqual(plus.shownName, "ChatGPT", "never the e-mail")
     XCTAssertFalse(gone.usable())
 
     XCTAssertNil(ModelAccount(json: ["provider": "chatgpt"]), "an account has an id")

@@ -57,9 +57,10 @@ came: Simeon's model doesn't take it on in silence. Each refusal is logged
 with ChatGPT's own words (`desktop.models.relay_refused`).
 
 **Claude** (9 November 2026; docs/your-own-models.md, section 6). A person
-who signed in to Claude Code on their computer may choose Claude Opus or
-Claude Sonnet (`own:claude:opus`, `own:claude:sonnet`, Claude Code's own
-names). Anthropic doesn't let Simeon make calls on a person's Claude plan,
+who signed in to Claude Code on their computer may choose Claude Opus 5.5,
+Sonnet 5.5, Haiku 5.5, Fable 5.1 or Fable 5 (`own:claude:claude-opus-5-5`…,
+Claude Code's own names; the first `own:claude:opus` and `…:sonnet` are
+still read as Opus and Sonnet 5.5). Anthropic doesn't let Simeon make calls on a person's Claude plan,
 so this server never does: `rows` names the choice as the agents' primary
 model on a wire of its own, `claude-code`, which an engine that knows it
 runs the agent's turn in Claude Code with, and one that doesn't skips (the
@@ -213,14 +214,28 @@ CHATGPT_MODELS: tuple[OwnModel, ...] = (
 #: The model for the agents' machinery (titles, summaries, memory).
 CHATGPT_CHEAP = "gpt-6-luna"
 
-#: Claude through Claude Code on the person's computer, as Claude Code names
-#: its models (`--model opus`, `--model sonnet`); the plan decides which it
-#: may use, and Claude Code says so itself.
+#: Claude through Claude Code on the person's computer, each model by its
+#: version (9 November 2026, the founder, from Reason's menu: "Claude Opus
+#: 5.5"…), its slug the name Claude Code takes (`--model claude-opus-5-5`;
+#: all five are in Claude Code 2.1.311, the version the computers install).
+#: Opus first: the one chosen when the person connects. The plan decides
+#: which it may use, and Claude Code says so itself (the turn then falls
+#: back to Simeon's, with the chat's line).
 _CLAUDE = model_accounts.PROVIDER_CLAUDE
 CLAUDE_MODELS: tuple[OwnModel, ...] = (
-    OwnModel(_CLAUDE, "opus", "Claude Opus", 200_000),
-    OwnModel(_CLAUDE, "sonnet", "Claude Sonnet", 200_000),
+    OwnModel(_CLAUDE, "claude-opus-5-5", "Claude Opus 5.5", 200_000),
+    OwnModel(_CLAUDE, "claude-sonnet-5-5", "Claude Sonnet 5.5", 200_000),
+    OwnModel(_CLAUDE, "claude-haiku-5-5", "Claude Haiku 5.5", 200_000),
+    OwnModel(_CLAUDE, "claude-fable-5-1", "Claude Fable 5.1", 200_000),
+    OwnModel(_CLAUDE, "claude-fable-5", "Claude Fable 5", 200_000),
 )
+#: The first Claude choices (9 November 2026), Claude Code's aliases, still
+#: read as the versions they meant: a person who chose one keeps it, and an
+#: app that still sends one is understood.
+_FORMER_IDS = {
+    f"{OWN_PREFIX}claude:opus": f"{OWN_PREFIX}claude:claude-opus-5-5",
+    f"{OWN_PREFIX}claude:sonnet": f"{OWN_PREFIX}claude:claude-sonnet-5-5",
+}
 #: The wire the engine runs a Claude Code turn on (`transportApi`).
 CLAUDE_CODE_TRANSPORT = "claude-code"
 
@@ -237,7 +252,8 @@ def is_own(model_id: str) -> bool:
 
 
 def own_model(model_id: str) -> OwnModel | None:
-    return _MODELS.get(model_id.strip())
+    wanted = model_id.strip()
+    return _MODELS.get(_FORMER_IDS.get(wanted, wanted))
 
 
 def chosen_model(user: User) -> OwnModel | None:

@@ -94,6 +94,24 @@
   flex: none;
 }
 
+/* How an account stands, beside its `⋯`: a dot (7) and its words (13), 6 apart, in grey, green while usable, red when signed out. */
+.models-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.models-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
 .models-status.usable {
   color: var(--settings-green);
 }

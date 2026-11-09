@@ -839,6 +839,40 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Claude's models by version; accounts by name, how they stand beside `⋯`
+
+The founder: Claude's models with their versions, as Reason's menu ("this
+is common sense"); on Connected, "dont put emails. keep the name of chat
+gpt and claude"; how an account stands "next to the three dots" (the
+reference: "● Usage available ⋯"), and only "Signed out", not "Connect
+again". The Mac and the iPhone change in the same pull request; the server
+too.
+
+- **Done:**
+  - The server offers Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1 and
+    Fable 5 (`own:claude:claude-opus-5-5`…; all five are in Claude Code
+    2.1.311, read from its program), Opus first, the one chosen on
+    connecting. The first `own:claude:opus` and `…:sonnet` still read as
+    Opus 5.5 and Sonnet 5.5. The engine needs nothing: it passes the name
+    to `--model`.
+  - `SettingsModels.tsx`: each account by its provider's name ("ChatGPT",
+    `shownName`), never the e-mail, or the person's own once renamed; under
+    it "Subscription"; beside `⋯` a dot and how it stands ("Usage
+    available" in green, "Signed out" in red, a limit in grey). Rename's
+    field and Disconnect's question use the shown name.
+  - The core's "Signed out. Connect again." is now "Signed out", in the
+    nine languages.
+- **Checked:** the server's AI Models tests (58, with one for the first
+  ids); `pnpm test` (1217), `pnpm typecheck`, `pnpm lint`; in Chromium
+  against the stand-ins, light, dark and French: the composer's Claude
+  submenu with the five versions, "Claude Opus 5.5" on the composer,
+  picking Sonnet 5.5; the page with "ChatGPT" and "Claude" over
+  "Subscription", "● Usage available" and "● Signed out" beside `⋯`. The
+  core's Swift tests on Linux (10 pass).
+- **Not checked:** the Mac and iPhone screens built; a real Claude Code
+  turn on each version (which a plan allows is Claude Code's to say).
+- **Next:** the founder's Mac build.
+
 ### 9 November 2026: the model on the composer; AI Models without duplicates
 
 The founder, on the AI Models page: "the model chosen is on the composer.

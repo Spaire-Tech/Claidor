@@ -951,7 +951,7 @@ class TestSearchAndPicturesOnTheAccount:
         assert "40200" in drawn.text
 
 
-CLAUDE_OPUS = "own:claude:opus"
+CLAUDE_OPUS = "own:claude:claude-opus-5-5"
 
 
 async def _claude(
@@ -1015,9 +1015,14 @@ class TestClaudeThroughClaudeCode:
         headers = await _headers(client, session, user)
         await _claude(client, headers)
         listed = await client.get("/desktop/api/models/own", headers=headers)
-        assert [one["modelId"] for one in listed.json()["models"]] == [
-            CLAUDE_OPUS,
-            "own:claude:sonnet",
+        assert [
+            (one["modelId"], one["modelName"]) for one in listed.json()["models"]
+        ] == [
+            (CLAUDE_OPUS, "Claude Opus 5.5"),
+            ("own:claude:claude-sonnet-5-5", "Claude Sonnet 5.5"),
+            ("own:claude:claude-haiku-5-5", "Claude Haiku 5.5"),
+            ("own:claude:claude-fable-5-1", "Claude Fable 5.1"),
+            ("own:claude:claude-fable-5", "Claude Fable 5"),
         ]
         chosen = await _choose(client, headers, CLAUDE_OPUS)
         assert chosen.status_code == 200, chosen.text
@@ -1029,7 +1034,7 @@ class TestClaudeThroughClaudeCode:
         assert first["modelId"] == CLAUDE_OPUS
         assert first["role"] == "primary"
         assert first["transportApi"] == "claude-code"
-        assert first["claudeCodeModel"] == "opus"
+        assert first["claudeCodeModel"] == "claude-opus-5-5"
         assert first["costMultiplier"] == 0
         # An engine that doesn't know the wire takes the next primary row,
         # Simeon's; the machinery and the desktop stay on Simeon's.
@@ -1040,6 +1045,26 @@ class TestClaudeThroughClaudeCode:
         assert roles["primary"] == "claude-haiku-5-5"
         assert roles["cheap"] == "claude-haiku-5-5"
         assert roles["computer"] == "claude-sonnet-5-5"
+
+    async def test_the_first_claude_choices_still_read_as_their_versions(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        # Chosen before the versions (Claude Code's alias), kept as it was stored.
+        user.meta = {**(user.meta or {}), own_models.CHOICE_KEY: "own:claude:opus"}
+        session.add(user)
+        await session.flush()
+        listed = await client.get("/desktop/api/models/own", headers=headers)
+        assert listed.json()["model"] == CLAUDE_OPUS
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert rows[0]["claudeCodeModel"] == "claude-opus-5-5"
+        # An app that still sends the alias is understood.
+        chosen = await _choose(client, headers, "own:claude:sonnet")
+        assert chosen.status_code == 200, chosen.text
+        assert chosen.json()["model"] == "own:claude:claude-sonnet-5-5"
 
     async def test_a_call_naming_claude_is_answered_by_simeons_never_on_the_plan(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

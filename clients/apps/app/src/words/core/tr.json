@@ -1375,7 +1375,7 @@
  "Sign out": "Çıkış yap",
  "Sign out?": "Çıkış yapılsın mı?",
  "Sign-in didn't finish. Try again.": "Giriş tamamlanmadı. Tekrar dene.",
- "Signed out. Connect again.": "Oturum kapandı. Yeniden bağla.",
+ "Signed out": "Oturum kapandı",
  "Signing in to %@…": "%@ hesabına giriş yapıyor…",
  "Signing in to an app…": "Bir uygulamaya giriş yapıyor…",
  "Simeon can run commands on your computer this time.": "Simeon bu sefer bilgisayarında komut çalıştırabilir.",
