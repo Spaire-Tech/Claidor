@@ -1097,7 +1097,9 @@ public enum Chat {
       return .bubble(Bubble(id: entry.id, text: text, fromPerson: fromPerson, author: fromPerson ? nil : entry.author, showsName: false, showsAvatar: false, reactions: reactions, isStreaming: entry.isStreaming, replyTo: entry["replyTo"]?.text, timestampMs: entry.timestampMs, sentOfflineAtMs: fromPerson ? entry["sentWhileOfflineAtMs"]?.double : nil, loneLink: link, myReactions: mine, channel: channel))
     case "notice":
       guard let text = entry["text"]?.text ?? entry.content, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-      // A notice the computer wrote in its own terms reads plainly (PlainWords).
+      // One the engine wrote for the person (`forPerson`: Claude's, in their language) is shown as it is;
+      // one the computer wrote in its own terms reads plainly (PlainWords), which hides any line naming Claude.
+      if entry["forPerson"]?.bool == true { return .notice(id: entry.id, text: text) }
       return .notice(id: entry.id, text: PlainWords.error(text, fallback: L10n.text("Something didn’t work here. Try again in a little while.")))
     case "user-attachment":
       let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? entry["file_path"]?.text.map(fileName(ofURL:)) ?? entry["filePath"]?.text.map(fileName(ofURL:)) ?? L10n.text("Attachment")

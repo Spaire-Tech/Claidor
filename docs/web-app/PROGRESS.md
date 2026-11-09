@@ -839,6 +839,41 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Claude stays signed in across engine updates; Claude's line shown; what Claude said kept
+
+The founder, after publishing the engine: an agent's reply opened "Sorry, a
+few of your messages got dropped on my end", Tessa's chat said "Something
+didn't work here", and the log said `outcome=signed_out`. "but why does it
+sign out is my question ... we cant have people always having to sign back
+in"; then "go". Each engine published gave every person a new computer,
+which got back only its backup, and Claude Code's sign-in is never in it.
+
+- **Done:**
+  - The server (not the web app): a new engine goes onto the same E2B
+    computer, its disk kept (`docs/services-core.md`, "A new engine on the
+    same computer"); a swap that fails replaces the computer as before.
+  - The engine: what Claude said (its messages and reactions, its last
+    words) goes into the model's history; Claude found signed out is told to
+    the server, which shows the account signed out and offers Claude to the
+    agents no more; the chat's line about Claude is marked `forPerson`.
+  - `core/chat.ts`: a notice marked `forPerson` is shown as it is; the check
+    for a machine's words hid Claude's line, as it names Claude. The same in
+    the Mac's and iPhone's core (`Chat.swift`).
+- **Checked:** the server's computer tests (238, six new: the swap's files
+  and script, a failed swap replacing the computer, a busy computer waiting,
+  a sleeping one woken and updated, the next opening changing nothing, a new
+  template still replacing) and its AI Models tests (37, two new); the swap
+  script run here against a stand-in supervisor and engine (the swap in 1.6
+  seconds, a host ignoring TERM killed, nothing running, nothing staged,
+  nothing restarting); the engine's Claude tests (21) and its typecheck; the
+  core's notice test in `chat.test.ts`, and in Swift on Linux; `pnpm test`,
+  `pnpm typecheck`, `pnpm lint`.
+- **Not checked:** the swap on a real computer (box2's own supervisor
+  restarting the engine is what it relies on; a swap that does not come back
+  replaces the computer); a real Claude turn falling back after this; the Mac
+  and iPhone built (no Xcode here).
+- **Next:** what the founder asks.
+
 ### 9 November 2026: Claude's own words reach the person; the model on the composer in proportion; how hard it thinks
 
 The founder, after his first real turns on his Claude plan: the agents

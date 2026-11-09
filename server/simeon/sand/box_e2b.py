@@ -38,6 +38,7 @@ from __future__ import annotations
 import asyncio
 import random
 import secrets
+import shlex
 import time
 from collections.abc import Mapping
 from datetime import timedelta
@@ -104,6 +105,62 @@ TMP_ON_DISK = (
     f"mount --bind {DISK_TMP} /tmp; then echo tmp=moved; "
     "else echo tmp=kept; fi"
 )
+
+#: A new engine on a running computer (9 November 2026, the founder: "we
+#: cant have people always having to sign back in"). Replacing the computer
+#: for each engine published lost everything kept outside the backup, Claude
+#: Code's sign-in first (docs/your-own-models.md, section 6). Instead the
+#: server writes each new file beside the old one (`<path>.next`), then this
+#: script, run as root on the computer, moves each in, stops the engine and
+#: the exec daemon (TERM, then KILL after 15 seconds) and waits up to a
+#: minute for the image's supervisor to start them again, as it does when
+#: either exits. It always exits 0; its last line says how it went:
+#: `engine=restarted`, or why not (`not-running`, `not-staged`, `not-moved`,
+#: `not-restarted`, `no-pgrep`), and the server then replaces the computer
+#: as before. Run from a file, so its own command line names no engine file
+#: for `pgrep -f` to find.
+ENGINE_UPDATE_SCRIPT = "/run/simeon/update-engine.sh"
+ENGINE_NEXT_SUFFIX = ".next"
+ENGINE_UPDATE_TIMEOUT_S = 120
+
+
+def engine_update_script(paths: list[str]) -> str:
+    """The script that puts the new engine's files (written beside each of
+    `paths` with `ENGINE_NEXT_SUFFIX`) in place and restarts the engine."""
+    files = " ".join(shlex.quote(path) for path in paths)
+    return f"""#!/usr/bin/env bash
+# The engine swapped on this running computer (server/simeon/sand/box_e2b.py,
+# ENGINE_UPDATE_SCRIPT). Its last line says how it went.
+set -u
+HOST_RE='host-main\\.cjs'
+DAEMON_RE='box-exec-daemon/main\\.cjs'
+say() {{ echo "engine=$1"; exit 0; }}
+command -v pgrep >/dev/null 2>&1 || say no-pgrep
+old_host=$(pgrep -f "$HOST_RE" | tr '\\n' ' ')
+old_daemon=$(pgrep -f "$DAEMON_RE" | tr '\\n' ' ')
+[ -n "${{old_host// /}}" ] || say not-running
+for f in {files}; do [ -f "$f{ENGINE_NEXT_SUFFIX}" ] || say not-staged; done
+for f in {files}; do mv -f "$f{ENGINE_NEXT_SUFFIX}" "$f" || say not-moved; done
+old="$old_host $old_daemon"
+kill -TERM $old 2>/dev/null
+for _ in $(seq 60); do
+  alive=
+  for p in $old; do kill -0 "$p" 2>/dev/null && alive=1; done
+  [ -n "$alive" ] || break
+  sleep 0.25
+done
+for p in $old; do kill -KILL "$p" 2>/dev/null; done
+is_old() {{ for p in $old; do [ "$p" = "$1" ] && return 0; done; return 1; }}
+fresh() {{ for p in $(pgrep -f "$1"); do is_old "$p" || return 0; done; return 1; }}
+for _ in $(seq 120); do
+  if fresh "$HOST_RE" && {{ [ -z "${{old_daemon// /}}" ] || fresh "$DAEMON_RE"; }}; then
+    say restarted
+  fi
+  sleep 0.5
+done
+say not-restarted
+"""
+
 
 #: How long a box stays awake if the sleeper stops pushing its timeout out
 #: (the worker is down): then it pauses. An hour is also the most E2B's
@@ -290,10 +347,12 @@ class E2BBoxHost:
             sandbox.traffic_access_token,
         )
 
-    async def _boot(self, sandbox: Any, spec: BoxSpec) -> dict[str, str]:
-        """Writes the person's settings and the host, then starts the stack.
-        Answers, for the log, where the host's workers come from ("image" or
-        "bundle") and where /tmp is (`TMP_ON_DISK`)."""
+    async def _engine_files(self, sandbox: Any) -> tuple[str, dict[str, bytes]]:
+        """The engine's files this computer gets, by where they go: what
+        Docker mounts (host-main.cjs over the image's own, and the exec
+        daemon), and the host's workers when the image has none. Answers,
+        for the log, where the workers come from ("image" or "bundle"). The
+        folders are made first."""
         assert self.bundle is not None
         # box2's image (the template since 16 October 2026) holds the host's
         # folder already, as on Docker, where only host-main.cjs is mounted
@@ -328,19 +387,24 @@ class E2BBoxHost:
             await sandbox.commands.run(
                 f"mkdir -p {' '.join(folders)}", user="root", timeout=30
             )
+        files = {HOST_MAIN: self.bundle.host_main}
+        for companion, data in sorted(companions.items()):
+            files[f"{HOST_DIR}/{companion}"] = data
+        files[EXEC_DAEMON_MAIN] = self.bundle.box_exec_daemon
+        return workers, files
+
+    async def _boot(self, sandbox: Any, spec: BoxSpec) -> dict[str, str]:
+        """Writes the person's settings and the host, then starts the stack.
+        Answers, for the log, where the host's workers come from ("image" or
+        "bundle") and where /tmp is (`TMP_ON_DISK`)."""
+        workers, engine = await self._engine_files(sandbox)
         await sandbox.files.write(ENV_FILE, env_file(spec.environment()), user="root")
         await sandbox.files.write(SEED_FILE, secrets.token_bytes(64), user="root")
         await sandbox.files.write(
             "/etc/machine-id", machine_id_of(spec.name) + "\n", user="root"
         )
-        # What Docker mounts: host-main.cjs over the image's own, and the
-        # exec daemon's folder.
-        await sandbox.files.write(HOST_MAIN, self.bundle.host_main, user="root")
-        for companion, data in sorted(companions.items()):
-            await sandbox.files.write(f"{HOST_DIR}/{companion}", data, user="root")
-        await sandbox.files.write(
-            EXEC_DAEMON_MAIN, self.bundle.box_exec_daemon, user="root"
-        )
+        for path, data in engine.items():
+            await sandbox.files.write(path, data, user="root")
         moved = await sandbox.commands.run(TMP_ON_DISK, user="root", timeout=30)
         tmp = str(getattr(moved, "stdout", "")).strip().removeprefix("tmp=")
         if tmp == "kept":
@@ -402,6 +466,48 @@ class E2BBoxHost:
             log.warning(
                 "sand.box.e2b.clock_not_set", sandbox=provider_box_id, error=str(error)
             )
+
+    async def update_in_place(self, provider_box_id: str) -> dict[str, str]:
+        """The published engine on this running computer, its disk kept
+        (`ENGINE_UPDATE_SCRIPT`): the same files a new computer gets, each
+        written beside the old one, then moved in and the engine restarted.
+        Raises `BoxHostError` when the engine did not come back new; the
+        caller then replaces the computer. Answers, for the log, where the
+        host's workers come from."""
+        if self.bundle is None:
+            raise BoxHostUnavailable(
+                "Simeon's cloud computer on E2B needs the host bundle; set "
+                "SIMEON_BOX_HOST_BUNDLE_URL."
+            )
+        try:
+            sandbox = await self.sdk.connect(
+                provider_box_id, timeout=TIMEOUT_S, **self._api()
+            )
+            workers, engine = await self._engine_files(sandbox)
+            for path, data in engine.items():
+                await sandbox.files.write(
+                    f"{path}{ENGINE_NEXT_SUFFIX}", data, user="root"
+                )
+            await sandbox.files.write(
+                ENGINE_UPDATE_SCRIPT, engine_update_script(list(engine)), user="root"
+            )
+            done = await sandbox.commands.run(
+                f"bash {ENGINE_UPDATE_SCRIPT}",
+                user="root",
+                timeout=ENGINE_UPDATE_TIMEOUT_S,
+            )
+        except BoxHostError:
+            raise
+        except Exception as error:
+            raise _host_error("update its engine", error) from error
+        lines = str(getattr(done, "stdout", "")).strip().splitlines()
+        outcome = lines[-1].removeprefix("engine=") if lines else "no answer"
+        if outcome != "restarted":
+            raise BoxHostError(
+                "Simeon's cloud computer on E2B could not update its engine "
+                f"in place: {outcome}"
+            )
+        return {"workers": workers}
 
     async def stop(self, provider_box_id: str) -> None:
         try:

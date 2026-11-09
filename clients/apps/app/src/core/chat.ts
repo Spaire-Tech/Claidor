@@ -1248,7 +1248,12 @@ export function rowFor(entry: Entry): ChatRow | undefined {
     case 'notice': {
       const words = text(entry.get('text')) ?? entry.content
       if (words == null || words.trim() === '') return undefined
-      // A notice the computer wrote in its own terms reads plainly (PlainWords).
+      // One the engine wrote for the person (`forPerson`: Claude's, in their
+      // language) is shown as it is; one the computer wrote in its own terms
+      // reads plainly (PlainWords), which hides any line naming Claude.
+      if (bool(entry.get('forPerson')) === true) {
+        return { kind: 'notice', id: entry.id, text: words }
+      }
       return {
         kind: 'notice',
         id: entry.id,

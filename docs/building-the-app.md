@@ -268,7 +268,10 @@ changes under `source/`, `scripts/` or `package.json` are refused
 
 The folder must be readable over plain HTTPS without credentials. The server's
 `SIMEON_BOX_HOST_BUNDLE_URL` names it; the server reads the pointer at most
-every ten minutes and moves each box to the new version when it is idle.
+every ten minutes and moves each box to the new version when it is idle. On
+E2B the new engine goes onto the same computer, its disk kept, so nothing the
+backup leaves out is lost, Claude's sign-in among it (`docs/services-core.md`,
+"A new engine on the same computer").
 
 ## Other commands
 

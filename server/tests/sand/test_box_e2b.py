@@ -29,7 +29,14 @@ from simeon.models import User
 from simeon.postgres import AsyncSession
 from simeon.redis import Redis
 from simeon.sand import box_e2b, box_hosts, box_proxy, box_service
-from simeon.sand.box_e2b import TMP_ON_DISK, E2BBoxHost, env_file, machine_id_of
+from simeon.sand.box_e2b import (
+    ENGINE_UPDATE_SCRIPT,
+    TMP_ON_DISK,
+    E2BBoxHost,
+    engine_update_script,
+    env_file,
+    machine_id_of,
+)
 from simeon.sand.box_hosts import (
     HOST_COMPANIONS,
     BoxBlocked,
@@ -40,7 +47,7 @@ from simeon.sand.box_hosts import (
     box_host_entries,
 )
 from simeon.sand.box_repository import SandBoxRepository
-from simeon.sand.box_service import broker, dial_headers
+from simeon.sand.box_service import BoxHealth, broker, dial_headers
 from tests.desktop.test_endpoints import _signed_in
 from tests.sand.test_box_broker import FakeBoxHost, _ensure, backups
 from tests.sand.test_box_sleep import _box_of, health
@@ -49,6 +56,8 @@ __all__ = ["backups", "health"]
 
 WORKERS = {name: f"// {name}".encode() for name in HOST_COMPANIONS}
 BUNDLE = HostBundle(b"// host", b"// exec daemon", WORKERS)
+#: The next engine published.
+NEXT_BUNDLE = HostBundle(b"// host 2", b"// exec daemon 2", WORKERS)
 #: One published before 16 October 2026: host-main.cjs and the exec daemon.
 OLD_BUNDLE = HostBundle(b"// host", b"// exec daemon")
 
@@ -68,6 +77,8 @@ class FakeE2B:
         self.busy_connects = 0
         self.create_error: BaseException | None = None
         self.api: list[dict[str, Any]] = []
+        #: What the engine's swap on a running computer says (`ENGINE_UPDATE_SCRIPT`).
+        self.update_answer = "engine=restarted"
 
     def _box(self, sandbox_id: str) -> dict[str, Any]:
         box = self.boxes.get(sandbox_id)
@@ -98,6 +109,10 @@ class FakeE2B:
                 if cmd == TMP_ON_DISK:
                     return SimpleNamespace(
                         exit_code=0, stdout=f"{fake.tmp_answer}\n", stderr=""
+                    )
+                if cmd == f"bash {ENGINE_UPDATE_SCRIPT}":
+                    return SimpleNamespace(
+                        exit_code=0, stdout=f"{fake.update_answer}\n", stderr=""
                     )
                 return SimpleNamespace(exit_code=0, stdout="", stderr="")
 
@@ -339,6 +354,72 @@ class TestE2BHost:
         assert changed.host_sha256 == BUNDLE.host_sha256
         assert changed.folder_sha256 != BUNDLE.folder_sha256
         assert _host(FakeE2B()).expected_host_sha256 == BUNDLE.folder_sha256
+
+    async def test_a_new_engine_goes_onto_the_running_computer(self) -> None:
+        """9 November 2026: the engine published is written beside the old
+        one on the same computer, then the script moves it in and restarts
+        the engine; nothing else of the computer is touched."""
+        for image_workers in (False, True):
+            sdk = FakeE2B()
+            sdk.image_workers = image_workers
+            made = await _host(sdk).create(_spec())
+            box = sdk.boxes[made.provider_box_id]
+            before = dict(box["files"])
+            box["commands"].clear()
+
+            facts = await E2BBoxHost(
+                name="e2b-1", template="simeon-box", bundle=NEXT_BUNDLE, sdk=sdk
+            ).update_in_place(made.provider_box_id)
+
+            assert facts == {"workers": "image" if image_workers else "bundle"}
+            assert len(sdk.created) == 1
+            assert ("kill", "sbx1") not in sdk.calls
+            written = {
+                path: data for path, data in box["files"].items() if path not in before
+            }
+            engine = ["/home/box/sand-host/host-main.cjs"]
+            if not image_workers:
+                engine += [f"/home/box/sand-host/{name}" for name in HOST_COMPANIONS]
+            engine.append("/home/box/box-exec-daemon/main.cjs")
+            assert written[f"{engine[0]}.next"] == (b"// host 2", "root")
+            assert written[f"{engine[-1]}.next"] == (b"// exec daemon 2", "root")
+            assert sorted(written) == sorted(
+                [f"{path}.next" for path in engine] + [ENGINE_UPDATE_SCRIPT]
+            )
+            # The settings, the machine id and the old files stay as they were.
+            assert {k: box["files"][k] for k in before} == before
+            assert written[ENGINE_UPDATE_SCRIPT] == (
+                engine_update_script(engine),
+                "root",
+            )
+            assert box["commands"][-1] == (f"bash {ENGINE_UPDATE_SCRIPT}", "root")
+            assert not any("start-simeon-vm" in cmd for cmd, _ in box["commands"])
+
+    async def test_an_engine_that_did_not_come_back_is_an_error(self) -> None:
+        for answer in ("engine=not-restarted", "engine=not-running", ""):
+            sdk = FakeE2B()
+            made = await _host(sdk).create(_spec())
+            sdk.update_answer = answer
+            with pytest.raises(BoxHostError, match="could not update its engine"):
+                await _host(sdk).update_in_place(made.provider_box_id)
+
+    def test_the_swap_script_names_each_file_and_waits_for_new_processes(
+        self,
+    ) -> None:
+        script = engine_update_script(
+            ["/home/box/sand-host/host-main.cjs", "/home/box/box-exec-daemon/main.cjs"]
+        )
+        assert (
+            "for f in /home/box/sand-host/host-main.cjs "
+            '/home/box/box-exec-daemon/main.cjs; do mv -f "$f.next" "$f"'
+        ) in script
+        assert "kill -TERM $old" in script
+        assert "say restarted" in script
+        assert "say not-restarted" in script
+        # The script's own command line names no engine file.
+        assert ENGINE_UPDATE_SCRIPT.endswith(".sh")
+        bash = subprocess.run(["bash", "-n"], input=script, text=True, check=False)
+        assert bash.returncode == 0
 
     async def test_sleep_wake_state_remove_and_keep_alive(self) -> None:
         sdk = FakeE2B()
@@ -846,6 +927,107 @@ class TestOnE2B:
         assert replaced.host_meta["traffic_token"] == "traffic-sbx2"
         env = e2b.boxes["sbx2"]["files"]["/run/simeon/box.env"][0]
         assert "export SIMEON_BOX_STORE_RESTORE='always'" in env
+
+    async def test_a_new_engine_keeps_the_same_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+    ) -> None:
+        """9 November 2026: an engine published used to replace every
+        computer, which kept only its backup, and Claude Code's sign-in is
+        never in it. The new engine now goes onto the same computer, asleep
+        or awake, its backup brought up to date first."""
+        _, cloud = fleet
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        box = await _box_of(session, user)
+        await broker.hibernate(session, cloud, box, force=True)
+
+        cloud.bundle = NEXT_BUNDLE
+        assert (await _ensure(client, access)).status_code == 200
+        assert list(e2b.boxes) == ["sbx1"]
+        assert len(e2b.created) == 1
+        assert ("connect", "sbx1") in e2b.calls
+        assert backups.flushes
+        files = e2b.boxes["sbx1"]["files"]
+        assert files["/home/box/sand-host/host-main.cjs.next"][0] == b"// host 2"
+        session.expunge_all()
+        box = await _box_of(session, user)
+        assert box.provider_box_id == "sbx1"
+        assert box.host_meta == {
+            "kind": "e2b",
+            "traffic_token": "traffic-sbx1",
+            "host_sha256": NEXT_BUNDLE.folder_sha256,
+        }
+
+        # Up to date now: the next opening changes nothing.
+        commands = list(e2b.boxes["sbx1"]["commands"])
+        assert (await _ensure(client, access)).status_code == 200
+        assert e2b.boxes["sbx1"]["commands"] == commands
+        session.expunge_all()
+        assert (await _box_of(session, user)).host_meta["host_sha256"] == (
+            NEXT_BUNDLE.folder_sha256
+        )
+
+        # A new template still means a new computer, which starts from the
+        # record E2B keeps of it.
+        cloud.template = "simeon-box-v2"
+        assert (await _ensure(client, access)).status_code == 200
+        assert list(e2b.boxes) == ["sbx2"]
+        session.expunge_all()
+        assert "host_sha256" not in (await _box_of(session, user)).host_meta
+
+    async def test_an_engine_that_does_not_come_back_gets_a_new_computer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+    ) -> None:
+        _, cloud = fleet
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        cloud.bundle = NEXT_BUNDLE
+        e2b.update_answer = "engine=not-restarted"
+        assert (await _ensure(client, access)).status_code == 200
+        # As before this change: the backup first, then a new computer from it.
+        assert list(e2b.boxes) == ["sbx2"]
+        assert e2b.created[-1]["metadata"]["host_sha256"] == NEXT_BUNDLE.folder_sha256
+        env = e2b.boxes["sbx2"]["files"]["/run/simeon/box.env"][0]
+        assert "export SIMEON_BOX_STORE_RESTORE='always'" in env
+
+    async def test_a_busy_computer_keeps_its_engine_until_it_is_idle(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        fleet: tuple[FakeBoxHost, E2BBoxHost],
+        e2b: FakeE2B,
+        dials: list[tuple[str, dict[str, str]]],
+        backups: Any,
+        health: Any,
+    ) -> None:
+        _, cloud = fleet
+        access, _ = await _signed_in(client, session, user)
+        assert (await _ensure(client, access)).status_code == 200
+        cloud.bundle = NEXT_BUNDLE
+        health["now"] = BoxHealth(reachable=True, is_busy=True)
+        assert (await _ensure(client, access)).status_code == 200
+        assert (
+            "/home/box/sand-host/host-main.cjs.next" not in (e2b.boxes["sbx1"]["files"])
+        )
+        health["now"] = BoxHealth(reachable=True)
+        assert (await _ensure(client, access)).status_code == 200
+        assert "/home/box/sand-host/host-main.cjs.next" in e2b.boxes["sbx1"]["files"]
+        assert list(e2b.boxes) == ["sbx1"]
 
     async def test_an_old_computer_whose_backup_fails_is_kept(
         self,

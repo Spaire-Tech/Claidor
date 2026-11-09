@@ -2909,3 +2909,16 @@ and chevron, its menu gaining Thinking effort with the five.
 
 Not yet built or run on a Mac or an iPhone: no Xcode here. The web app's
 translation ran in Chromium.
+
+### Claude's line in the chat shown as written (9 November 2026)
+
+When Claude is signed out on the computer, the chat gets one line saying so
+and where to connect again. The core's check for a machine's words
+(`PlainWords`) hid it, because it names Claude, and the Mac showed
+"Something didn't work here". The engine now marks that line `forPerson`, and
+`Chat.rows` shows such a line as it is. The account also shows signed out in
+AI Models, with Connect Again, once the engine finds Claude signed out.
+Claude's sign-in now survives an engine published (the server swaps the
+engine on the same computer: `docs/services-core.md`).
+
+The core's test ran in Swift on Linux. Not yet built or run on a Mac.

@@ -243,8 +243,28 @@ approve, paste the code back) is Claude Code's own sign-in.
   status`), never the sign-in.
 - **Not in the backup.** The computer's backup goes to Simeon's own store
   (`box-store-sync`), so Claude Code's credentials file is left out of it. The
-  sign-in lasts while the computer sleeps and wakes; when a computer is
-  replaced (a new image or engine), the person signs in to Claude again.
+  sign-in lasts while the computer sleeps and wakes, and (since 9 November
+  2026) across an engine published: the new engine goes onto the same
+  computer, its disk kept (`docs/services-core.md`, "Simeon's cloud computer
+  on E2B"). Until then every engine published gave each person a new
+  computer, which got back only its backup, and Claude was signed out on all
+  of them (the founder: "we cant have people always having to sign back
+  in"). A new computer image, a move to another server, or a swap that fails
+  still makes a new computer, and the person connects Claude again.
+- **Signed out, said.** When a turn finds Claude Code signed out, the engine
+  tells the server (`POST /desktop/api/models/accounts/claude/signed-out`,
+  log line `desktop.models.signed_out`): the account shows signed out in AI
+  Models (red, with Connect Again), Claude is offered to the agents no more,
+  and the engine reads its roles again, so turns go to Simeon's models
+  without trying Claude first. Connecting again brings back the model chosen.
+  The chat's line saying so is written for the person (`forPerson`) and
+  shown as it is; the apps' check for a machine's words hid it, because it
+  names Claude.
+- **What Claude said, in the history.** Each message and reaction Claude
+  sends, and its last words, go into the model's history as the loop's own
+  turns do (`claudeCodeHistory`). Simeon's model, answering a later turn,
+  sees each message answered; with only the person's messages there, it told
+  them "a few of your messages got dropped on my end" and did the work again.
 - **The agents on Claude.** With Claude chosen in the model menu, an agent's
   turn is run by Claude Code on the computer (`claude -p`, its session resumed
   per agent), in place of the engine's own loop. Simeon's tools (messages to

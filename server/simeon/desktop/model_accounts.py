@@ -749,6 +749,46 @@ async def model_accounts_claude(
     return JSONResponse({"account": account_json(account)})
 
 
+async def claude_signed_out(
+    session: AsyncSession, user_id: UUID
+) -> DesktopModelAccount | None:
+    """Claude Code on the person's computer is no longer signed in: their
+    Claude account shows so (red, with Connect Again) and is offered to the
+    agents no more, until the person connects it again (`keep_claude`). The
+    model they chose is kept for then."""
+    repository = ModelAccountRepository.from_session(session)
+    account = await repository.by_key(user_id, PROVIDER_CLAUDE, CLAUDE_ACCOUNT_KEY)
+    if account is None or account.status == STATUS_SIGNED_OUT:
+        return account
+    account.status = STATUS_SIGNED_OUT
+    await session.flush()
+    return account
+
+
+@router.post(
+    "/api/models/accounts/claude/signed-out",
+    name="desktop:model_accounts_claude_signed_out",
+)
+async def model_accounts_claude_signed_out(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The engine found Claude Code signed out on the computer (9 November
+    2026: the app went on showing Claude as usable, and the agents tried it
+    at every turn, while each turn fell back to Simeon's models)."""
+    account = await claude_signed_out(session, desktop_session.user_id)
+    if account is not None:
+        log.info(
+            "desktop.models.signed_out",
+            user_id=str(desktop_session.user_id),
+            provider=PROVIDER_CLAUDE,
+            by="computer" if desktop_session.is_box_credential else "app",
+        )
+    return JSONResponse(
+        {"account": account_json(account) if account is not None else None}
+    )
+
+
 @router.patch("/api/models/accounts/{account_id}", name="desktop:model_accounts_rename")
 async def model_accounts_rename(
     account_id: UUID,

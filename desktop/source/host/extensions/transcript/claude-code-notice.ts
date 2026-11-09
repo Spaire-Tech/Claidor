@@ -29,6 +29,10 @@ export async function appendClaudeCodeNotice(tm: any, agentId: string, why: Clau
     kind: "notice",
     id: `notice-claude-${randomUUID()}`,
     text: claudeCodeNoticeText(tm.userLanguage?.(), why),
+    // Written for the person, in their language: the apps show it as it is. Their check for a
+    // machine's words hides any line naming Claude, and showed "Something didn't work here" in
+    // place of "Connect Claude again in Settings › AI Models" (9 November 2026).
+    forPerson: true,
     timestampMs: Date.now(),
   };
   const sessions = tm.sessions;

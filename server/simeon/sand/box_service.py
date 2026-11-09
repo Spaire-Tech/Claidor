@@ -923,10 +923,50 @@ class BoxBrokerService:
                 box_store.enabled() and current.box_store != box_store.LABEL_VALUE
             )
         expected_host = getattr(host, "expected_host_sha256", None)
+        # An engine updated in place (`_update_in_place`) is noted on the
+        # row; the computer's own record keeps the one it was made with.
+        running_host = (box.host_meta or {}).get("host_sha256") or (
+            current.host_sha256 if current is not None else None
+        )
         stale_host = expected_host is not None and (
-            current is None or current.host_sha256 != expected_host
+            current is None or running_host != expected_host
         )
         return current, OutOfDate(host=stale_host, image=stale_image, store=stale_store)
+
+    async def _update_in_place(self, host: BoxHost, box: SandBox) -> bool:
+        """A running computer whose engine alone is out of date gets the new
+        one in place, its disk kept (9 November 2026, the founder: "we cant
+        have people always having to sign back in"): replaced, it kept only
+        what its backup holds, and lost Claude Code's sign-in, which the
+        backup never holds (docs/your-own-models.md, section 6). True once
+        the new engine answers; False leaves the computer to be replaced as
+        before. Only hosts that can (`update_in_place`: E2B) are asked; a
+        Docker computer is replaced on the same volumes."""
+        update = getattr(host, "update_in_place", None)
+        expected = getattr(host, "expected_host_sha256", None)
+        if update is None or expected is None:
+            return False
+        started = time.monotonic()
+        try:
+            facts = await update(box.provider_box_id)
+        except BoxHostError as error:
+            log.warning(
+                "sand.box.update_in_place_failed", box=str(box.id), error=str(error)
+            )
+            return False
+        if not await self.wait_ready(box):
+            log.warning(
+                "sand.box.update_in_place_failed", box=str(box.id), error="not ready"
+            )
+            return False
+        box.host_meta = {**(box.host_meta or {}), "host_sha256": expected}
+        log.info(
+            "sand.box.updated_in_place",
+            box=str(box.id),
+            ms=_ms_since(started),
+            **(facts or {}),
+        )
+        return True
 
     async def _token_rejected(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -1077,6 +1117,16 @@ class BoxBrokerService:
                     log.warning(
                         "sand.box.update_deferred", box=str(box.id), reason="backup"
                     )
+                    mark_running(box)
+                elif (
+                    stale_host
+                    and not (stale_image or stale_store)
+                    and state == "running"
+                    and credential_live
+                    and await self._update_in_place(host, box)
+                ):
+                    # Only its engine was out of date, and the new one now
+                    # runs on the same computer: nothing is replaced.
                     mark_running(box)
                 else:
                     if state is not None:
