@@ -2,11 +2,12 @@ import { AgentMode } from "../../../proto/generated/agent/v1/agent_pb.js";
 import { fromRedactedRequestContext } from "../../../redacted-protos/generated/agent/v1/request_context_exec_redacted.js";
 import { fromRedactedUserMessage as fromRedactedUserMessage2 } from "../../../redacted-protos/generated/agent/v1/agent_redacted.js";
 import { PrivacyCapability } from "../../../redaction/classification.js";
-import { fromRedactedCoreMessage, toRedactedCoreMessages } from "../../../redaction/core-message.js";
+import { fromRedactedCoreMessage, fromRedactedCoreMessages, toRedactedCoreMessages } from "../../../redaction/core-message.js";
 import { createLogger } from "../../../context/logger.js";
 import { createSpan } from "../../../context/otel.js";
 import { createHistogram } from "../../../metrics/index.js";
 import { RedactedUpdates } from "../../../agent-core/redacted-interaction-updates.js";
+import { toUnredactedInteractionListener } from "../../../agent-core/redacted-interaction-listener.js";
 import { FileOperationLockManager } from "../../tools/core/file-operation-lock-manager.js";
 import { extractToolInfo } from "../../prompts/system.js";
 import { getBrowserToolNames } from "../../common.js";
@@ -82,6 +83,23 @@ function requiredToolName(allTools: Any, toolId: string): string {
 
 function getRequestContextCompletenessAny(requestContext: Any): Any {
   return getRequestContextCompleteness(requestContext);
+}
+
+/** The host's Claude Code turn (`desktop/source/host/claude-code/claude-code-agent-turn.ts`), in the agent's config as `claudeCodeTurn`. */
+export interface ClaudeCodeTurnHook {
+  /** The person chose Claude for this agent's turns. */
+  chosen(conversationId: string): boolean;
+  run(input: {
+    readonly ctx: unknown;
+    readonly conversationId: string;
+    readonly brief: string;
+    readonly context?: string;
+    readonly text: string;
+    readonly tools: readonly unknown[];
+    readonly listener: unknown;
+    readonly stateHandler: unknown;
+    readonly signal: AbortSignal;
+  }): Promise<{ readonly ran: true; readonly text: string } | { readonly ran: false }>;
 }
 
 export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
@@ -333,8 +351,68 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     const convInitStart = performance.now();
     const { turn, mergedMcpTools, requestContext } = await this.initializeConversation(ctx, { action, rootPromptExecutor, stateHandler, mcpTools, maxPrependedUserMessages: options.maxPrependedUserMessages ?? 5, forcePrependedUserMessages: options.forcePrependedUserMessages ?? false, onStateUpdate });
     conversationInitDuration.histogram(ctx, performance.now() - convInitStart);
+    // The person's own Claude plan (9 November 2026, docs/your-own-models.md, section 6): Claude Code on the
+    // computer runs the turn. When it can't (the plan's limit, the sign-in gone, not installed), the loop below
+    // answers on Simeon's model, as before.
+    const claudeCode = configAny.claudeCodeTurn as ClaudeCodeTurnHook | undefined;
+    if (claudeCode !== undefined && claudeCode.chosen(String(configAny.conversationId ?? "")) && await this.runOnClaudeCode(ctx, claudeCode, rootPromptExecutor, stateHandler, turn, mergedMcpTools, requestContext)) {
+      return await stateHandler.computeNewStructure(ctx);
+    }
     await this.runTurnLoop(ctx, rootPromptExecutor, stateHandler, turn, configAny.toolsGenerator, mergedMcpTools, requestContext.repositoryInfo, requestContext, onStateUpdate);
     return await stateHandler.computeNewStructure(ctx);
+  }
+
+  /**
+   * One turn run by Claude Code (`ClaudeCodeTurnHook`, the host's): this turn's own tools, built as the loop
+   * builds them; the brief and the context the loop would send; the person's words. Claude Code keeps its own
+   * history, so its last words are kept here as the turn's text. True when Claude Code ran the turn to its
+   * end; false leaves the turn to the loop.
+   */
+  private async runOnClaudeCode(ctx: Any, hook: ClaudeCodeTurnHook, rootPromptExecutor: Any, stateHandler: Any, turn: Any, mcpTools: Any, requestContext: Any): Promise<boolean> {
+    const configAny: Any = this.config;
+    let tools: readonly unknown[];
+    try {
+      const toolSetHandle = configAny.toolsGenerator({
+        resourceAccessor: this.resourceAccessor,
+        stateHandler,
+        agentSessionId: configAny.agentSessionId,
+        mcpTools,
+        repositoryInfos: requestContext.repositoryInfo,
+        blobStore: stateHandler.getBlobStore(),
+        mode: stateHandler.mode,
+        loggingContext: ctx,
+        requestContext,
+        fileOperationLockManager: new FileOperationLockManager(),
+        smartModeClassifierMode: configAny.smartModeClassifierMode,
+        smartModeClassifierShadowMode: configAny.smartModeClassifierShadowMode,
+        autoRejectFirstAskQuestion: configAny.autoRejectFirstAskQuestion,
+      });
+      tools = toolSetHandle.getAllTools();
+    } catch (error) {
+      logger70.warn(ctx, "claude-code tools not built; the turn runs on Simeon's model", { error });
+      return false;
+    }
+    const messages = fromRedactedCoreMessages(rootPromptExecutor.getMessages(), PrivacyCapability.UNSAFE_ALWAYS_ALLOWED) as Any[];
+    const textOf = (message: Any): string => typeof message?.content === "string"
+      ? message.content
+      : Array.isArray(message?.content) ? message.content.filter((part: Any) => part?.type === "text" && typeof part.text === "string").map((part: Any) => part.text).join("\n") : "";
+    const brief = messages.filter((message) => message.role === "system").map(textOf).filter((text) => text !== "").join("\n\n");
+    const userInfo = messages.find((message) => message.role === "user" && message.providerOptions?.simeon?.requestContextCompleteness !== undefined);
+    const userMessage = await turn.userMessage.get(ctx);
+    const outcome = await hook.run({
+      ctx,
+      conversationId: String(configAny.conversationId ?? ""),
+      brief,
+      ...(userInfo === undefined ? {} : { context: textOf(userInfo) }),
+      text: typeof userMessage?.text === "string" ? userMessage.text : "",
+      tools,
+      listener: toUnredactedInteractionListener(this.interactionListener, stateHandler.getPrivacyMode()),
+      stateHandler,
+      signal: ctx.signal,
+    });
+    if (!outcome.ran) return false;
+    if (outcome.text.trim() !== "") await turn.recordText(ctx, outcome.text);
+    return true;
   }
 
   async initAndMeasure(ctx: Any, action: Any, rootPromptExecutor: Any, stateHandler: Any, mcpTools: Any, options: Any, onStateUpdate: Any): Promise<Any> {
