@@ -36,6 +36,8 @@ import {
   CredentialsStoreModel,
   type DraftField,
   type StoredCredential,
+  addressLine,
+  cardBrand,
   credentialSubtitle,
   credentialTitle,
   draftOf,
@@ -47,7 +49,6 @@ import type { AppStore } from '../core/store'
 import { beep, useKeptSiteIcon } from '../desktop/native'
 import { t } from '../l10n'
 import { classes } from './classes'
-import { AppLogoTile } from './ConnectCards'
 import countries from './countries.json'
 import { Alert } from './Dialogs'
 import { useSiteIcon } from './MessageText'
@@ -62,8 +63,8 @@ import {
   SettingsPill,
   SettingsSymbol,
 } from './SettingsParts'
+import { PaymentMark } from './ShopCards'
 import { useWatched } from './useStore'
-import { useWindowModel } from './windowModel'
 
 /** What the sheet opens on: a new login or contact info, or a saved entry. */
 type CredentialEdit = { kind: CredentialKind } | { entry: StoredCredential }
@@ -73,7 +74,6 @@ export function SettingsCredentialsPage({ store }: { store: AppStore }) {
     () => new CredentialsStoreModel(store.credentialsCall),
   )
   useWatched(model)
-  const settings = useWindowModel()
   const [editing, setEditing] = useState<CredentialEdit>()
   useEffect(() => {
     void model.load()
@@ -82,7 +82,7 @@ export function SettingsCredentialsPage({ store }: { store: AppStore }) {
     <div className="credentials-page">
       <p className="credentials-lead">
         {t(
-          'Logins and details your agents use to sign in and sign up for you.',
+          'Logins, cards and details your agents use to sign in, sign up and pay for you.',
         )}
       </p>
       {!model.loaded ? (
@@ -120,13 +120,22 @@ export function SettingsCredentialsPage({ store }: { store: AppStore }) {
           <SettingsGroup
             title={t('Cards')}
             footer={t(
-              "Your cards stay with Link. Simeon pays with a one-time card and never sees a card's number or security code.",
+              'Your agents pay with a card only after you approve. They never see its number or security code.',
             )}
           >
-            <StoreLine onClick={() => settings.showSettingsPage('wallet')}>
-              <AppLogoTile name="Link" side={28} id="link" />
-              <span className="credentials-title">Link by Stripe</span>
-            </StoreLine>
+            {model.cards.map((entry, index) => (
+              <CredentialLine
+                key={entry.id}
+                entry={entry}
+                divided={index > 0}
+                open={() => setEditing({ entry })}
+              />
+            ))}
+            <StoreAddRow
+              title={t('Add Card')}
+              divided={model.cards.length > 0}
+              onClick={() => setEditing({ kind: 'card' })}
+            />
           </SettingsGroup>
           <SettingsGroup
             title={t('Contact info')}
@@ -207,11 +216,17 @@ function CredentialLine({
       label={subtitle === '' ? title : `${title}, ${subtitle}`}
       onClick={open}
     >
-      <SiteIconTile
-        site={iconSite(entry)}
-        title={title}
-        contact={entry.kind === 'contact'}
-      />
+      {entry.kind === 'card' ? (
+        <span className="credentials-card-mark">
+          <PaymentMark brand={entry.brand} />
+        </span>
+      ) : (
+        <SiteIconTile
+          site={iconSite(entry)}
+          title={title}
+          contact={entry.kind === 'contact'}
+        />
+      )}
       <span className="credentials-words">
         <span className="credentials-title">{title}</span>
         {subtitle !== '' && (
@@ -344,6 +359,11 @@ type Fields = Record<Exclude<DraftField, 'password'>, string>
 
 function fieldsOf(draft: CredentialDraft): Fields {
   return {
+    cardholder: draft.cardholder,
+    number: draft.number,
+    expiry: draft.expiry,
+    securityCode: draft.securityCode,
+    billingId: draft.billingId,
     name: draft.name,
     website: draft.website,
     username: draft.username,
@@ -420,7 +440,8 @@ function CredentialSheet({
   const kind: CredentialKind =
     entry?.kind ?? ('kind' in edit ? edit.kind : 'login')
   const isLogin = kind === 'login'
-  const [opened] = useState<Fields>(() =>
+  const isCard = kind === 'card'
+  const [opened, setOpened] = useState<Fields>(() =>
     fieldsOf(entry ? draftOf(entry) : newDraft(kind)),
   )
   const [fields, setFields] = useState<Fields>(opened)
@@ -506,6 +527,7 @@ function CredentialSheet({
     kind,
     ...fields,
     password: password.current?.value ?? '',
+    hasSavedNumber: entry?.kind === 'card',
   })
 
   const passwordTyped = () => {
@@ -529,7 +551,12 @@ function CredentialSheet({
       now,
       entry && {
         entry,
-        opened: { kind, ...opened, password: openedPassword.current },
+        opened: {
+          kind,
+          ...opened,
+          password: openedPassword.current,
+          hasSavedNumber: entry.kind === 'card',
+        },
         passwordRead,
       },
     )
@@ -549,13 +576,17 @@ function CredentialSheet({
       setShowsPassword(false)
       return
     }
-    if (!entry || !entry.hasPassword || passwordRead) {
+    if (!entry || (!isCard && !entry.hasPassword) || passwordRead) {
       setShowsPassword(true)
       return
     }
     // Windows Hello first, with the Mac's Touch ID words; cancelled, nothing is read; where it can't ask, the window's alert.
     helloAsking.current = true
-    void confirmPresence(t`Show the password for ${credentialTitle(entry)}`)
+    void confirmPresence(
+      isCard
+        ? t`Show the card ${credentialTitle(entry)}`
+        : t`Show the password for ${credentialTitle(entry)}`,
+    )
       .then((said) => {
         if (said === 'confirmed') void reveal()
         else if (said === 'alert') setAsking('reveal')
@@ -570,6 +601,20 @@ function CredentialSheet({
     // One read at a time: the eye waits while it goes.
     setRevealing(true)
     try {
+      if (isCard) {
+        // What was typed before it was read is kept; the rest is the saved card.
+        const card = await model.cardSecrets(entry)
+        setOpened((now) => ({ ...now, ...card }))
+        setFields((now) => ({
+          ...now,
+          number: now.number === '' ? card.number : now.number,
+          securityCode:
+            now.securityCode === '' ? card.securityCode : now.securityCode,
+        }))
+        setPasswordRead(true)
+        setShowsPassword(true)
+        return
+      }
       const read = await model.password(entry)
       const field = password.current
       // What was typed before it was read is kept; the rest is the saved password.
@@ -605,7 +650,13 @@ function CredentialSheet({
     ? credentialTitle(entry)
     : isLogin
       ? t('New Login')
-      : t('New Contact Info')
+      : isCard
+        ? t('New Card')
+        : t('New Contact Info')
+  const brand =
+    fields.number === '' ? (entry?.brand ?? '') : cardBrand(fields.number)
+  const codeHidden = entry?.hasSecurityCode === true && !passwordRead
+  const codeShape = secretFieldShape(showsPassword, masks)
   const hidden = entry?.hasPassword === true && !passwordRead
 
   const row = (
@@ -642,7 +693,7 @@ function CredentialSheet({
     >
       <div
         ref={sheet}
-        className={classes('credential-sheet', isLogin ? 'login' : 'contact')}
+        className={classes('credential-sheet', kind)}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -718,6 +769,101 @@ function CredentialSheet({
                 </span>
               </SettingsLine>
             </SettingsGroup>
+          ) : isCard ? (
+            <>
+              <SettingsGroup>
+                <SettingsLine label={t('Card number')} divided={false}>
+                  <span className="credential-password">
+                    <input
+                      className="credentials-field password card-number"
+                      value={fields.number}
+                      placeholder={
+                        entry?.last4
+                          ? `•••• ${entry.last4}`
+                          : '1234 5678 9012 3456'
+                      }
+                      aria-label={t('Card number')}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      spellCheck={false}
+                      {...notTheirs}
+                      onChange={(event) => set('number')(event.target.value)}
+                      onKeyDown={onReturn}
+                    />
+                    {brand !== '' && (
+                      <span className="credential-brand">
+                        <PaymentMark brand={brand} />
+                      </span>
+                    )}
+                    {entry && (
+                      <button
+                        type="button"
+                        className="credential-eye"
+                        title={showsPassword ? t('Hide Card') : t('Show Card')}
+                        aria-label={
+                          showsPassword ? t('Hide Card') : t('Show Card')
+                        }
+                        disabled={revealing || deleting}
+                        onClick={togglePassword}
+                      >
+                        <EyeSymbol slashed={showsPassword} />
+                      </button>
+                    )}
+                  </span>
+                </SettingsLine>
+                {row('expiry', t('Expiry'), 'MM/YY', { mine: true })}
+                <SettingsLine label={t('Security code')} divided>
+                  <input
+                    className={classes(
+                      'credentials-field',
+                      codeShape.masked && 'masked',
+                    )}
+                    type={codeShape.type}
+                    value={fields.securityCode}
+                    placeholder={codeHidden ? '•••' : '123'}
+                    aria-label={t('Security code')}
+                    inputMode="numeric"
+                    autoComplete={codeShape.autoComplete}
+                    spellCheck={false}
+                    {...notTheirs}
+                    onChange={(event) =>
+                      set('securityCode')(event.target.value)
+                    }
+                    onKeyDown={onReturn}
+                  />
+                </SettingsLine>
+                {row('cardholder', t('Name on card'), undefined, {
+                  mine: true,
+                })}
+              </SettingsGroup>
+              <SettingsGroup>
+                <SettingsMenu
+                  label={t('Billing address')}
+                  options={[
+                    { value: '', label: t('None') },
+                    ...model.contacts
+                      .filter((contact) => addressLine(contact) !== '')
+                      .map((contact) => ({
+                        value: contact.id,
+                        label: `${credentialTitle(contact)} · ${addressLine(contact)}`,
+                      })),
+                  ]}
+                  value={fields.billingId}
+                  shown={
+                    model.contacts.find(
+                      (contact) => contact.id === fields.billingId,
+                    ) === undefined
+                      ? t('None')
+                      : credentialTitle(
+                          model.contacts.find(
+                            (contact) => contact.id === fields.billingId,
+                          ) as StoredCredential,
+                        )
+                  }
+                  pick={set('billingId')}
+                />
+              </SettingsGroup>
+            </>
           ) : (
             <>
               <SettingsGroup>
@@ -786,7 +932,13 @@ function CredentialSheet({
           {entry && (
             <SettingsGroup>
               <SettingsActionRow
-                title={isLogin ? t('Delete Login') : t('Delete Contact Info')}
+                title={
+                  isLogin
+                    ? t('Delete Login')
+                    : isCard
+                      ? t('Delete Card')
+                      : t('Delete Contact Info')
+                }
                 destructive
                 busy={deleting}
                 disabled={saving}
@@ -809,7 +961,11 @@ function CredentialSheet({
       </div>
       {asking === 'reveal' && entry && (
         <Alert
-          title={t`Show the password for ${credentialTitle(entry)}`}
+          title={
+            isCard
+              ? t`Show the card ${credentialTitle(entry)}`
+              : t`Show the password for ${credentialTitle(entry)}`
+          }
           message=""
           action={t('Show')}
           cancel={t('Cancel')}
@@ -823,7 +979,11 @@ function CredentialSheet({
       {asking === 'delete' && (
         <Alert
           title={
-            isLogin ? t('Delete this login?') : t('Delete this contact info?')
+            isLogin
+              ? t('Delete this login?')
+              : isCard
+                ? t('Delete this card?')
+                : t('Delete this contact info?')
           }
           message={t("Your agents won't be able to use it anymore.")}
           action={t('Delete')}

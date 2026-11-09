@@ -16,8 +16,46 @@ final class CredentialsStoreTests: XCTestCase {
     XCTAssertEqual(contact.title, "theo@example.com")
     XCTAssertEqual(contact.subtitle, "theo@example.com")
     XCTAssertNil(contact.iconSite)
-    XCTAssertNil(StoredCredential(json: ["id": "x", "kind": "card"]), "cards are never kept here")
+    XCTAssertNil(StoredCredential(json: ["id": "x", "kind": "note"]), "a kind it does not know is left out")
     XCTAssertNil(StoredCredential(json: ["kind": "login"]))
+  }
+
+  func testACardAsTheServerListsItAndAsTheEditorSavesIt() throws {
+    let card = try XCTUnwrap(StoredCredential(json: ["id": "k1", "kind": "card", "name": "", "cardholder": "Theo Martin", "brand": "visa", "last4": "4242", "expiry": "08/28", "hasSecurityCode": true, "billingId": "c1"]))
+    XCTAssertEqual(card.title, "Visa", "a card without a name is its network")
+    XCTAssertEqual(card.subtitle, "•••• 4242 · 08/28")
+    XCTAssertNil(card.iconSite)
+    XCTAssertEqual(CardNumber.brand("5555 5555 5555 4444"), "mastercard")
+    XCTAssertEqual(CardNumber.brand("3782 822463 10005"), "amex")
+    XCTAssertTrue(CardNumber.isValid("4242 4242-4242 4242"))
+    XCTAssertFalse(CardNumber.isValid("4242 4242 4242 4241"), "the check digit")
+    XCTAssertEqual(CardNumber.expiry("8/2028"), "08/28")
+    XCTAssertEqual(CardNumber.expiry("0828"), "08/28")
+    XCTAssertNil(CardNumber.expiry("13/28"))
+
+    var draft = CredentialDraft(kind: .card)
+    draft.number = "4242 4242 4242 4241"
+    draft.expiry = "08/28"
+    XCTAssertEqual(draft.problem, "Check the card number.")
+    draft.number = "4242 4242 4242 4242"
+    draft.expiry = "2028"
+    XCTAssertEqual(draft.problem, "Write the expiry like 08/28.")
+    draft.expiry = "8/28"
+    draft.securityCode = "12"
+    XCTAssertEqual(draft.problem, "The security code is 3 or 4 digits.")
+    draft.securityCode = "123"
+    XCTAssertNil(draft.problem)
+    XCTAssertEqual(draft.body["expiry"]?.string, "08/28")
+    XCTAssertEqual(draft.body["number"]?.string, "4242 4242 4242 4242")
+
+    // A saved card, opened without Face ID: its number and code stay unless typed again.
+    let opened = CredentialDraft(card)
+    XCTAssertNil(opened.problem, "the saved number is kept")
+    var changed = opened
+    changed.name = "Travel"
+    XCTAssertEqual(changed.changes(from: opened, passwordRead: false), ["name": "Travel"])
+    changed.securityCode = "999"
+    XCTAssertEqual(changed.changes(from: opened, passwordRead: false)["securityCode"]?.string, "999")
   }
 
   func testTheSiteIsAHostWithoutWww() {

@@ -2040,7 +2040,7 @@ struct PurchaseCardView: View {
 }
 
 /** The card's network on a small white card: Visa's word, Mastercard's circles, Amex's blue, else a card. */
-private struct MacPaymentMark: View {
+struct MacPaymentMark: View {
   let brand: String?
   let edge: Color
 

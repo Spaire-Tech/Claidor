@@ -3,7 +3,10 @@
 // with. Simeon Labs' server holds them, sealed for this person
 // (server/simeon/desktop/credentials.py), so they are changed here while the
 // agents' computer sleeps; the agents see each login and the contact info,
-// and type them in; cards stay with Link (Wallet). The entries as the server
+// and type them in. Cards (9 November 2026, the founder: "actual cards there
+// that the agent can use to make payments"): the agents see a card's brand,
+// last four digits and expiry; the computer types the rest into a checkout
+// the person approved. The entries as the server
 // lists them (no password), read when the page opens; a login's password
 // read only when asked for; a save, a change and a delete each said to the
 // server and reflected at once. Shared with Settings' page
@@ -21,7 +24,7 @@ import {
 import { t } from './l10n'
 import { credentialSite } from './linkIcons'
 
-export type CredentialKind = 'login' | 'contact'
+export type CredentialKind = 'login' | 'contact' | 'card'
 
 /** One entry as the server lists it (`StoredCredential`): never its password. */
 export interface StoredCredential {
@@ -45,6 +48,16 @@ export interface StoredCredential {
   region: string
   postalCode: string
   country: string
+  /** A card's name on the card. */
+  cardholder: string
+  /** A card's network, as the server read it from the number (`visa`, `mastercard`, `amex`…). */
+  brand: string
+  last4: string
+  /** "08/28". */
+  expiry: string
+  hasSecurityCode: boolean
+  /** The contact info whose address bills the card, when one was chosen. */
+  billingId: string
 }
 
 export function storedCredential(
@@ -52,7 +65,10 @@ export function storedCredential(
 ): StoredCredential | undefined {
   const id = text(field(json, 'id'))
   const kind = str(field(json, 'kind'))
-  if (id === undefined || (kind !== 'login' && kind !== 'contact'))
+  if (
+    id === undefined ||
+    (kind !== 'login' && kind !== 'contact' && kind !== 'card')
+  )
     return undefined
   const words = (key: string) => str(field(json, key)) ?? ''
   const website = words('website')
@@ -75,7 +91,95 @@ export function storedCredential(
     region: words('region'),
     postalCode: words('postalCode'),
     country: words('country'),
+    cardholder: words('cardholder'),
+    brand: words('brand'),
+    last4: words('last4'),
+    expiry: words('expiry'),
+    hasSecurityCode: bool(field(json, 'hasSecurityCode')) ?? false,
+    billingId: words('billingId'),
   }
+}
+
+// MARK: A card's number (`CardNumber`)
+
+/** The digits alone, spaces and dashes gone. */
+export function cardDigits(text: string): string {
+  return text.replace(/[^0-9]/g, '')
+}
+
+/** The network from the first digits, as the server reads it (`card_brand`). */
+export function cardBrand(text: string): string {
+  const number = cardDigits(text)
+  const prefix = (count: number) => Number(number.slice(0, count) || -1)
+  if (number.startsWith('4')) return 'visa'
+  if (
+    (prefix(2) >= 51 && prefix(2) <= 55) ||
+    (prefix(4) >= 2221 && prefix(4) <= 2720)
+  )
+    return 'mastercard'
+  if (prefix(2) === 34 || prefix(2) === 37) return 'amex'
+  if (
+    number.startsWith('6011') ||
+    number.startsWith('65') ||
+    (prefix(3) >= 644 && prefix(3) <= 649)
+  )
+    return 'discover'
+  if (prefix(4) >= 3528 && prefix(4) <= 3589) return 'jcb'
+  if (
+    prefix(2) === 36 ||
+    prefix(2) === 38 ||
+    (prefix(3) >= 300 && prefix(3) <= 305)
+  )
+    return 'diners'
+  if (number.startsWith('62')) return 'unionpay'
+  return ''
+}
+
+/** The network's name as people know it. */
+export function cardBrandName(brand: string): string | undefined {
+  return (
+    {
+      visa: 'Visa',
+      mastercard: 'Mastercard',
+      amex: 'American Express',
+      discover: 'Discover',
+      jcb: 'JCB',
+      diners: 'Diners Club',
+      unionpay: 'UnionPay',
+    } as Record<string, string>
+  )[brand]
+}
+
+/** 12 to 19 digits that pass the check every card number passes (Luhn). */
+export function cardNumberValid(text: string): boolean {
+  const number = cardDigits(text)
+  if (number.length < 12 || number.length > 19) return false
+  if (text.replace(/[\s-]/g, '') !== number) return false
+  let total = 0
+  ;[...number].reverse().forEach((digit, index) => {
+    let value = Number(digit)
+    if (index % 2 === 1) value = value > 4 ? value * 2 - 9 : value * 2
+    total += value
+  })
+  return total % 10 === 0
+}
+
+/** "08/28" from "8/28", "08/2028" or "0828"; none when it isn't a month and a year. */
+export function cardExpiry(text: string): string | undefined {
+  let value = text.trim()
+  if (/^\d{4}$/.test(value)) value = `${value.slice(0, 2)}/${value.slice(2)}`
+  const match = /^(\d{1,2})\s*\/\s*(\d{2}|\d{4})$/.exec(value)
+  if (!match) return undefined
+  const month = Number(match[1])
+  if (month < 1 || month > 12) return undefined
+  return `${String(month).padStart(2, '0')}/${(match[2] ?? '').slice(-2)}`
+}
+
+/** A contact's address on one line, as a card's billing address is chosen by it. */
+export function addressLine(entry: StoredCredential): string {
+  return [entry.addressLine1, entry.city, entry.postalCode, entry.country]
+    .filter((one) => one !== '')
+    .join(', ')
 }
 
 /** The row's name: the person's own for it, else the site (a login) or the name on it (contact info). */
@@ -84,6 +188,7 @@ export function credentialTitle(entry: StoredCredential): string {
   if (own !== '') return own
   if (entry.kind === 'login')
     return entry.site === '' ? entry.website : entry.site
+  if (entry.kind === 'card') return cardBrandName(entry.brand) ?? t('Card')
   return (
     [entry.fullName, entry.email, entry.phone].find((one) => one !== '') ??
     t('Contact info')
@@ -93,6 +198,10 @@ export function credentialTitle(entry: StoredCredential): string {
 /** The line under it: the username, or the first of the email, the phone and the city. */
 export function credentialSubtitle(entry: StoredCredential): string {
   if (entry.kind === 'login') return entry.username
+  if (entry.kind === 'card')
+    return [entry.last4 === '' ? '' : `•••• ${entry.last4}`, entry.expiry]
+      .filter((one) => one !== '')
+      .join(' · ')
   return [entry.email, entry.phone, entry.city].find((one) => one !== '') ?? ''
 }
 
@@ -120,7 +229,18 @@ export interface CredentialDraft {
   region: string
   postalCode: string
   country: string
+  cardholder: string
+  /** A card's number as typed; empty for a saved card until it is read or typed again. */
+  number: string
+  expiry: string
+  securityCode: string
+  billingId: string
+  /** A saved card's number stays as it is unless another is typed. */
+  hasSavedNumber: boolean
 }
+
+/** The fields only the whole entry gives (read once the person allowed it), sent only when changed. */
+const SECRETS = new Set(['password', 'number', 'securityCode'])
 
 export function newDraft(kind: CredentialKind): CredentialDraft {
   return {
@@ -139,13 +259,20 @@ export function newDraft(kind: CredentialKind): CredentialDraft {
     region: '',
     postalCode: '',
     country: '',
+    cardholder: '',
+    number: '',
+    expiry: '',
+    securityCode: '',
+    billingId: '',
+    hasSavedNumber: false,
   }
 }
 
-/** An entry as saved, its password as read (empty when it wasn't). */
+/** An entry as saved, its password (and a card's number and code) as read (empty when they weren't). */
 export function draftOf(
   entry: StoredCredential,
   password = '',
+  card: { number?: string; securityCode?: string } = {},
 ): CredentialDraft {
   return {
     kind: entry.kind,
@@ -163,13 +290,32 @@ export function draftOf(
     region: entry.region,
     postalCode: entry.postalCode,
     country: entry.country,
+    cardholder: entry.cardholder,
+    number: card.number ?? '',
+    expiry: entry.expiry,
+    securityCode: card.securityCode ?? '',
+    billingId: entry.billingId,
+    hasSavedNumber: entry.kind === 'card',
   }
 }
 
-export type DraftField = Exclude<keyof CredentialDraft, 'kind'>
+export type DraftField = Exclude<
+  keyof CredentialDraft,
+  'kind' | 'hasSavedNumber'
+>
 
 /** The fields of its kind, as the server names them, in its order. */
 export function draftFields(kind: CredentialKind): DraftField[] {
+  if (kind === 'card')
+    return [
+      'name',
+      'cardholder',
+      'number',
+      'expiry',
+      'securityCode',
+      'billingId',
+      'hints',
+    ]
   return kind === 'login'
     ? ['name', 'website', 'username', 'password', 'hints']
     : [
@@ -203,6 +349,19 @@ export function draftProblem(draft: CredentialDraft): string | undefined {
       return t('Add the username or the password.')
     return undefined
   }
+  if (draft.kind === 'card') {
+    if (
+      !(draft.hasSavedNumber && draft.number.trim() === '') &&
+      !cardNumberValid(draft.number)
+    )
+      return t('Check the card number.')
+    if (cardExpiry(draft.expiry) === undefined)
+      return t('Write the expiry like 08/28.')
+    const code = draft.securityCode.trim()
+    if (code !== '' && !/^\d{3,4}$/.test(code))
+      return t('The security code is 3 or 4 digits.')
+    return undefined
+  }
   const details = draftFields('contact').filter(
     (key) => key !== 'name' && key !== 'hints',
   )
@@ -215,7 +374,12 @@ export function draftProblem(draft: CredentialDraft): string | undefined {
 export function draftBody(draft: CredentialDraft): JSONObject {
   const body: JSONObject = { kind: draft.kind }
   for (const key of draftFields(draft.kind))
-    body[key] = key === 'password' ? draft.password : draft[key].trim()
+    body[key] =
+      key === 'password'
+        ? draft.password
+        : key === 'expiry'
+          ? (cardExpiry(draft.expiry) ?? draft.expiry.trim())
+          : draft[key].trim()
   return body
 }
 
@@ -232,12 +396,14 @@ export function draftChanges(
   const body: JSONObject = {}
   for (const key of draftFields(draft.kind)) {
     const value = draft[key]
-    if (key === 'password') {
-      if (passwordRead ? value !== original.password : value !== '')
-        body[key] = value
+    if (SECRETS.has(key)) {
+      if (passwordRead ? value !== original[key] : value !== '')
+        body[key] = key === 'password' ? value : value.trim()
       continue
     }
-    if (value.trim() !== original[key].trim()) body[key] = value.trim()
+    if (value.trim() !== original[key].trim())
+      body[key] =
+        key === 'expiry' ? (cardExpiry(value) ?? value.trim()) : value.trim()
   }
   return body
 }
@@ -257,7 +423,8 @@ function said(error: unknown): string {
 }
 
 function sorted(list: StoredCredential[]): StoredCredential[] {
-  const order = (entry: StoredCredential) => (entry.kind === 'login' ? 0 : 1)
+  const order = (entry: StoredCredential) =>
+    entry.kind === 'login' ? 0 : entry.kind === 'card' ? 1 : 2
   return [...list].sort((a, b) => {
     if (order(a) !== order(b)) return order(a) - order(b)
     const x = credentialTitle(a).toLowerCase()
@@ -297,6 +464,10 @@ export class CredentialsStoreModel {
     return this.entries.filter((entry) => entry.kind === 'contact')
   }
 
+  get cards(): StoredCredential[] {
+    return this.entries.filter((entry) => entry.kind === 'card')
+  }
+
   async load(): Promise<void> {
     if (this.loading) return
     this.loading = true
@@ -322,6 +493,18 @@ export class CredentialsStoreModel {
   async password(entry: StoredCredential): Promise<string> {
     const answer = await this.call(`credentials/${entry.id}`)
     return str(field(field(answer, 'entry'), 'password')) ?? ''
+  }
+
+  /** A card's number and security code, for the editor, once the person allowed it; kept nowhere here. */
+  async cardSecrets(
+    entry: StoredCredential,
+  ): Promise<{ number: string; securityCode: string }> {
+    const answer = await this.call(`credentials/${entry.id}`)
+    const whole = field(answer, 'entry')
+    return {
+      number: str(field(whole, 'number')) ?? '',
+      securityCode: str(field(whole, 'securityCode')) ?? '',
+    }
   }
 
   /** A new entry, or a change to `editing`; the entry as saved, or none (and `problem`) when it couldn't be. */

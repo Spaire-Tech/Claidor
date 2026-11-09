@@ -8,12 +8,15 @@ import Observation
  * vault keeps them. Simeon Labs' server holds them, sealed for this person
  * (`server/simeon/desktop/credentials.py`), so they are changed here while the
  * agents' computer sleeps. The agents see each login and the contact info,
- * and type them in; cards stay with Link (Wallet). Shared by the iPhone
+ * and type them in. Cards (9 November 2026, the founder: "actual cards
+ * there that the agent can use to make payments"): the agents see a card's
+ * brand, last four digits and expiry; the computer types the rest into a
+ * checkout the person approved. Shared by the iPhone
  * (ios/Simeon/CredentialsStore.swift) and the Mac
  * (mac/Simeon/SettingsCredentials.swift).
  */
 public struct StoredCredential: Equatable, Identifiable, Sendable {
-  public enum Kind: String, Sendable { case login, contact }
+  public enum Kind: String, Sendable { case login, contact, card }
 
   public let id: String
   public let kind: Kind
@@ -35,6 +38,16 @@ public struct StoredCredential: Equatable, Identifiable, Sendable {
   public var region: String
   public var postalCode: String
   public var country: String
+  /** A card's name on the card. */
+  public var cardholder: String
+  /** A card's network, as the server read it from the number (`visa`, `mastercard`, `amex`…). */
+  public var brand: String
+  public var last4: String
+  /** "08/28". */
+  public var expiry: String
+  public var hasSecurityCode: Bool
+  /** The contact info whose address bills the card, when one was chosen. */
+  public var billingId: String
 
   public init?(json: JSON?) {
     guard let json, let id = json["id"]?.text, let kind = json["kind"]?.string.flatMap(Kind.init(rawValue:)) else { return nil }
@@ -57,6 +70,12 @@ public struct StoredCredential: Equatable, Identifiable, Sendable {
     region = text("region")
     postalCode = text("postalCode")
     country = text("country")
+    cardholder = text("cardholder")
+    brand = text("brand")
+    last4 = text("last4")
+    expiry = text("expiry")
+    hasSecurityCode = json["hasSecurityCode"]?.bool ?? false
+    billingId = text("billingId")
   }
 
   /** The row's name: the person's own for it, else the site (a login) or the name on it (contact info). */
@@ -66,15 +85,22 @@ public struct StoredCredential: Equatable, Identifiable, Sendable {
     switch kind {
     case .login: return site.isEmpty ? website : site
     case .contact: return [fullName, email, phone].first { !$0.isEmpty } ?? L10n.text("Contact info")
+    case .card: return CardNumber.brandName(brand) ?? L10n.text("Card")
     }
   }
 
-  /** The line under it: the username, or the first of the email, the phone and the city. */
+  /** The line under it: the username; the first of the email, the phone and the city; a card's "•••• 4242 · 08/28". */
   public var subtitle: String {
     switch kind {
     case .login: return username
     case .contact: return [email, phone, city].first { !$0.isEmpty } ?? ""
+    case .card: return ["•••• \(last4)", expiry].filter { !$0.isEmpty && $0 != "•••• " }.joined(separator: " · ")
     }
+  }
+
+  /** A contact's address on one line, as a card's billing address is chosen by it. */
+  public var addressLine: String {
+    [addressLine1, city, postalCode, country].filter { !$0.isEmpty }.joined(separator: ", ")
   }
 
   /** The address its icon is read from (the site's own page), for a login with a site. */
@@ -95,6 +121,63 @@ public enum CredentialSite {
   }
 }
 
+/** A card's number as the person types it: its network, its check digit, its groups of four. */
+public enum CardNumber {
+  /** The digits alone, spaces and dashes gone. */
+  public static func digits(_ text: String) -> String { text.filter { $0.isASCII && $0.isNumber } }
+
+  /** The network from the first digits, as the server reads it (`card_brand`): `visa`, `mastercard`, `amex`, `discover`, `jcb`, `diners`, `unionpay`, or empty. */
+  public static func brand(_ text: String) -> String {
+    let number = digits(text)
+    func prefix(_ count: Int) -> Int { Int(number.prefix(count)) ?? -1 }
+    if number.hasPrefix("4") { return "visa" }
+    if (51...55).contains(prefix(2)) || (2221...2720).contains(prefix(4)) { return "mastercard" }
+    if [34, 37].contains(prefix(2)) { return "amex" }
+    if number.hasPrefix("6011") || number.hasPrefix("65") || (644...649).contains(prefix(3)) { return "discover" }
+    if (3528...3589).contains(prefix(4)) { return "jcb" }
+    if [36, 38].contains(prefix(2)) || (300...305).contains(prefix(3)) { return "diners" }
+    if number.hasPrefix("62") { return "unionpay" }
+    return ""
+  }
+
+  /** The network's name as people know it. */
+  public static func brandName(_ brand: String) -> String? {
+    switch brand {
+    case "visa": return "Visa"
+    case "mastercard": return "Mastercard"
+    case "amex": return "American Express"
+    case "discover": return "Discover"
+    case "jcb": return "JCB"
+    case "diners": return "Diners Club"
+    case "unionpay": return "UnionPay"
+    default: return nil
+    }
+  }
+
+  /** 12 to 19 digits that pass the check every card number passes (Luhn). */
+  public static func isValid(_ text: String) -> Bool {
+    let number = digits(text)
+    guard (12...19).contains(number.count), digits(text).count == text.filter({ !$0.isWhitespace && $0 != "-" }).count else { return false }
+    var total = 0
+    for (index, character) in number.reversed().enumerated() {
+      var value = Int(String(character)) ?? 0
+      if index % 2 == 1 { value = value > 4 ? value * 2 - 9 : value * 2 }
+      total += value
+    }
+    return total % 10 == 0
+  }
+
+  /** "08/28" from "8/28", "08/2028" or "0828"; nil when it isn't a month and a year. */
+  public static func expiry(_ text: String) -> String? {
+    var value = text.trimmingCharacters(in: .whitespaces)
+    if value.count == 4, value.allSatisfy(\.isNumber) { value = "\(value.prefix(2))/\(value.suffix(2))" }
+    let parts = value.split(separator: "/", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) }
+    guard parts.count == 2, let month = Int(parts[0]), (1...12).contains(month), parts[0].count <= 2,
+          parts[1].allSatisfy(\.isNumber), parts[1].count == 2 || parts[1].count == 4 else { return nil }
+    return String(format: "%02d/%@", month, String(parts[1].suffix(2)))
+  }
+}
+
 /** What the editor holds while it is open: every field as typed. */
 public struct CredentialDraft: Equatable, Sendable {
   public var kind: StoredCredential.Kind
@@ -112,11 +195,22 @@ public struct CredentialDraft: Equatable, Sendable {
   public var region = ""
   public var postalCode = ""
   public var country = ""
+  public var cardholder = ""
+  /** A card's number as typed; empty for a saved card until it is read or typed again. */
+  public var number = ""
+  public var expiry = ""
+  public var securityCode = ""
+  public var billingId = ""
+  /** A saved card's number stays as it is unless another is typed. */
+  public var hasSavedNumber = false
 
   public init(kind: StoredCredential.Kind) { self.kind = kind }
 
-  /** An entry as saved, its password as read (empty when it wasn't). */
-  public init(_ entry: StoredCredential, password: String = "") {
+  /** The fields only the whole entry gives (read after Face ID or Touch ID), sent only when changed. */
+  public static let secrets: Set<String> = ["password", "number", "securityCode"]
+
+  /** An entry as saved, its password (and a card's number and code) as read (empty when they weren't). */
+  public init(_ entry: StoredCredential, password: String = "", number: String = "", securityCode: String = "") {
     kind = entry.kind
     name = entry.name
     website = entry.website
@@ -132,6 +226,12 @@ public struct CredentialDraft: Equatable, Sendable {
     region = entry.region
     postalCode = entry.postalCode
     country = entry.country
+    cardholder = entry.cardholder
+    self.number = number
+    expiry = entry.expiry
+    self.securityCode = securityCode
+    billingId = entry.billingId
+    hasSavedNumber = entry.kind == .card
   }
 
   /** The fields of its kind, as the server names them. */
@@ -142,6 +242,8 @@ public struct CredentialDraft: Equatable, Sendable {
     case .contact:
       return [("name", name), ("fullName", fullName), ("email", email), ("phone", phone), ("addressLine1", addressLine1), ("addressLine2", addressLine2),
               ("city", city), ("region", region), ("postalCode", postalCode), ("country", country), ("hints", hints)]
+    case .card:
+      return [("name", name), ("cardholder", cardholder), ("number", number), ("expiry", expiry), ("securityCode", securityCode), ("billingId", billingId), ("hints", hints)]
     }
   }
 
@@ -160,6 +262,11 @@ public struct CredentialDraft: Equatable, Sendable {
     case .contact:
       let details = fields.filter { $0.key != "name" && $0.key != "hints" }
       if details.allSatisfy({ trimmed($0.value).isEmpty }) { return L10n.text("Add at least one detail.") }
+    case .card:
+      if !(hasSavedNumber && trimmed(number).isEmpty) && !CardNumber.isValid(number) { return L10n.text("Check the card number.") }
+      if CardNumber.expiry(expiry) == nil { return L10n.text("Write the expiry like 08/28.") }
+      let code = trimmed(securityCode)
+      if !code.isEmpty && !(code.allSatisfy(\.isNumber) && (3...4).contains(code.count)) { return L10n.text("The security code is 3 or 4 digits.") }
     }
     return nil
   }
@@ -167,7 +274,7 @@ public struct CredentialDraft: Equatable, Sendable {
   /** A new entry's body: every field of its kind. */
   public var body: JSON {
     var object: [String: JSON] = ["kind": .string(kind.rawValue)]
-    for (key, value) in fields { object[key] = .string(key == "password" ? value : trimmed(value)) }
+    for (key, value) in fields { object[key] = .string(key == "password" ? value : key == "expiry" ? CardNumber.expiry(value) ?? trimmed(value) : trimmed(value)) }
     return .object(object)
   }
 
@@ -180,11 +287,13 @@ public struct CredentialDraft: Equatable, Sendable {
     var object: [String: JSON] = [:]
     let before = Dictionary(original.fields.map { ($0.key, $0.value) }, uniquingKeysWith: { first, _ in first })
     for (key, value) in fields {
-      if key == "password" {
-        if passwordRead ? value != original.password : !value.isEmpty { object[key] = .string(value) }
+      if Self.secrets.contains(key) {
+        let was = before[key] ?? ""
+        if passwordRead ? value != was : !value.isEmpty { object[key] = .string(key == "password" ? value : trimmed(value)) }
         continue
       }
-      if trimmed(value) != trimmed(before[key] ?? "") { object[key] = .string(trimmed(value)) }
+      let shown = key == "expiry" ? CardNumber.expiry(value) ?? trimmed(value) : trimmed(value)
+      if trimmed(value) != trimmed(before[key] ?? "") { object[key] = .string(shown) }
     }
     return .object(object)
   }
@@ -220,9 +329,18 @@ public final class CredentialsStoreModel {
 
   public var logins: [StoredCredential] { entries.filter { $0.kind == .login } }
   public var contacts: [StoredCredential] { entries.filter { $0.kind == .contact } }
+  public var cards: [StoredCredential] { entries.filter { $0.kind == .card } }
+
+  private static func order(_ kind: StoredCredential.Kind) -> Int {
+    switch kind {
+    case .login: 0
+    case .card: 1
+    case .contact: 2
+    }
+  }
 
   private func sorted(_ list: [StoredCredential]) -> [StoredCredential] {
-    list.sorted { ($0.kind == .login ? 0 : 1, $0.title.lowercased()) < ($1.kind == .login ? 0 : 1, $1.title.lowercased()) }
+    list.sorted { (Self.order($0.kind), $0.title.lowercased()) < (Self.order($1.kind), $1.title.lowercased()) }
   }
 
   public func load() async {
@@ -243,6 +361,12 @@ public final class CredentialsStoreModel {
   public func password(of entry: StoredCredential) async throws -> String {
     let answer = try await call("credentials/\(entry.id)", nil, nil)
     return answer["entry"]?["password"]?.string ?? ""
+  }
+
+  /** A card's number and security code, for the editor (after Face ID or Touch ID). */
+  public func cardSecrets(of entry: StoredCredential) async throws -> (number: String, securityCode: String) {
+    let answer = try await call("credentials/\(entry.id)", nil, nil)
+    return (answer["entry"]?["number"]?.string ?? "", answer["entry"]?["securityCode"]?.string ?? "")
   }
 
   /** A new entry, or a change to `editing`; the entry as saved, or nil (and `problem`) when it couldn't be. */

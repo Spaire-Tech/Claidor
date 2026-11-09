@@ -695,7 +695,7 @@ function MiddleCut({ words, className }: { words: string; className: string }) {
 }
 
 /** The card's network on a small white card (40 by 27, 6 round): Visa's word, Mastercard's circles, Amex's blue, Discover's, else a card. */
-function PaymentMark({ brand }: { brand?: string }) {
+export function PaymentMark({ brand }: { brand?: string }) {
   const name = (brand ?? '').toLowerCase()
   let mark: ReactNode
   switch (name) {

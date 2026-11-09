@@ -6,15 +6,16 @@ import SwiftUI
  * able to see logins … use our existing design and for whatever saved, have
  * the favicon be there"; 29 October: "name it Credentials Store"):
  * as plain as Wallet. Logins, each its site's icon, its name and its
- * username; Cards, which Link keeps (Wallet); Contact info. + adds a login,
- * a card (Wallet) or contact info, as the upstream app's vault does. A row
- * opens its page; a password shows only after Face ID.
+ * username; Cards (9 November 2026, the founder: "actual cards there that
+ * the agent can use to make payments"), each its network's mark, its name
+ * and "•••• 4242 · 08/28"; Contact info. + adds a login, a card or contact
+ * info, as the upstream app's vault does. A row opens its page; a password,
+ * a card's number and code show only after Face ID.
  */
 struct CredentialsStorePage: View {
   @Environment(SimeonCore.AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var adding: StoredCredential.Kind?
-  @State private var showsWallet = false
 
   var body: some View {
     Form {
@@ -39,17 +40,14 @@ struct CredentialsStorePage: View {
           }
           .listRowBackground(Ink.groupedRow)
           Section {
-            NavigationLink { WalletPage() } label: {
-              HStack(spacing: 14) {
-                ConnectorTile(name: "Link", size: 30, logo: ConnectorLogo.fill, id: "link")
-                Text(verbatim: "Link by Stripe").font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-              }
-              .padding(.vertical, 2)
+            ForEach(model.cards) { entry in
+              NavigationLink { CredentialEditor(model: model, entry: entry) } label: { CredentialRow(entry: entry) }
             }
+            CredentialAddRow(title: String(localized: "Add Card")) { adding = .card }
           } header: {
             Text("Cards")
           } footer: {
-            Text("Your cards stay with Link. Simeon pays with a one-time card and never sees a card's number or security code.")
+            Text("Your agents pay with a card only after you approve. They never see its number or security code.")
           }
           .listRowBackground(Ink.groupedRow)
           Section {
@@ -73,7 +71,7 @@ struct CredentialsStorePage: View {
       ToolbarItem(placement: .primaryAction) {
         Menu {
           Button { adding = .login } label: { Label("Login", systemImage: "key") }
-          Button { showsWallet = true } label: { Label("Card", systemImage: "creditcard") }
+          Button { adding = .card } label: { Label("Card", systemImage: "creditcard") }
           Button { adding = .contact } label: { Label("Contact info", systemImage: "person.text.rectangle") }
         } label: {
           Image(systemName: "plus")
@@ -81,7 +79,6 @@ struct CredentialsStorePage: View {
         .accessibilityLabel("Add")
       }
     }
-    .navigationDestination(isPresented: $showsWallet) { WalletPage() }
     .sheet(item: Binding(get: { adding.map(AddingKind.init) }, set: { adding = $0?.kind })) { item in
       if let model {
         NavigationStack { CredentialEditor(model: model, newKind: item.kind) }
@@ -106,7 +103,11 @@ struct CredentialRow: View {
 
   var body: some View {
     HStack(spacing: 14) {
-      SiteIconTile(site: entry.iconSite, title: entry.title, contact: entry.kind == .contact, size: 30)
+      if entry.kind == .card {
+        PaymentMark(brand: entry.brand).scaleEffect(30 / 44).frame(width: 30, height: 30)
+      } else {
+        SiteIconTile(site: entry.iconSite, title: entry.title, contact: entry.kind == .contact, size: 30)
+      }
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
         if !entry.subtitle.isEmpty {
@@ -207,7 +208,16 @@ struct CredentialEditor: View {
   }
 
   private var isLogin: Bool { draft.kind == .login }
+  private var isCard: Bool { draft.kind == .card }
   private var changed: Bool { draft != opened }
+
+  private var newTitle: String {
+    switch draft.kind {
+    case .login: String(localized: "New Login")
+    case .contact: String(localized: "New Contact Info")
+    case .card: String(localized: "New Card")
+    }
+  }
 
   var body: some View {
     Form {
@@ -219,6 +229,11 @@ struct CredentialEditor: View {
           CredentialField(label: String(localized: "Username or email"), text: $draft.username, prompt: String(localized: "Required"))
             .textContentType(.username).keyboardType(.emailAddress).typedAsIs().autocorrectionDisabled()
           passwordRow
+        } else if isCard {
+          cardNumberRow
+          CredentialField(label: String(localized: "Expiry"), text: $draft.expiry, prompt: "MM/YY").keyboardType(.numbersAndPunctuation)
+          securityCodeRow
+          CredentialField(label: String(localized: "Name on card"), text: $draft.cardholder, prompt: String(localized: "Optional")).textContentType(.name)
         } else {
           CredentialField(label: String(localized: "Full name"), text: $draft.fullName, prompt: String(localized: "Optional")).textContentType(.name)
           CredentialField(label: String(localized: "Email"), text: $draft.email, prompt: String(localized: "Optional"))
@@ -227,7 +242,18 @@ struct CredentialEditor: View {
         }
       }
       .listRowBackground(Ink.groupedRow)
-      if !isLogin {
+      if isCard {
+        // The billing address: one of the person's contact info, by its address.
+        let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
+        Section {
+          Picker("Billing address", selection: $draft.billingId) {
+            Text("None").tag("")
+            ForEach(addresses) { contact in Text("\(contact.title) · \(contact.addressLine)").tag(contact.id) }
+          }
+        }
+        .listRowBackground(Ink.groupedRow)
+      }
+      if !isLogin && !isCard {
         Section {
           CredentialField(label: String(localized: "Address"), text: $draft.addressLine1, prompt: String(localized: "Optional")).textContentType(.streetAddressLine1)
           CredentialField(label: String(localized: "Address line 2"), text: $draft.addressLine2, prompt: String(localized: "Optional")).textContentType(.streetAddressLine2)
@@ -261,7 +287,7 @@ struct CredentialEditor: View {
           Button(role: .destructive) { askingDelete = true } label: {
             HStack(spacing: 10) {
               Image(systemName: "trash")
-              Text(isLogin ? String(localized: "Delete Login") : String(localized: "Delete Contact Info"))
+              Text(isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"))
             }
             .foregroundStyle(Ink.danger)
           }
@@ -271,7 +297,7 @@ struct CredentialEditor: View {
     }
     .groupedGround()
     .scrollDismissesKeyboard(.interactively)
-    .navigationTitle(entry?.title ?? (isLogin ? String(localized: "New Login") : String(localized: "New Contact Info")))
+    .navigationTitle(entry?.title ?? newTitle)
     .inlineBarTitle()
     .toolbar {
       if entry == nil {
@@ -287,7 +313,7 @@ struct CredentialEditor: View {
       }
     }
     .interactiveDismissDisabled(saving || (entry == nil && !draft.isEmpty))
-    .alert(isLogin ? String(localized: "Delete this login?") : String(localized: "Delete this contact info?"), isPresented: $askingDelete) {
+    .alert(isLogin ? String(localized: "Delete this login?") : isCard ? String(localized: "Delete this card?") : String(localized: "Delete this contact info?"), isPresented: $askingDelete) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
         Task {
@@ -324,6 +350,63 @@ struct CredentialEditor: View {
     }
   }
 
+  /** A card's number, its network's mark at its end; a saved one shows its last four until the eye is pressed and Face ID allows it, which shows the number and the code. */
+  private var cardNumberRow: some View {
+    LabeledContent("Card number") {
+      HStack(spacing: 10) {
+        let saved = entry?.last4 ?? ""
+        TextField("Card number", text: $draft.number, prompt: Text(saved.isEmpty ? String(localized: "Required") : "•••• \(saved)"))
+          .multilineTextAlignment(.trailing)
+          .keyboardType(.numberPad)
+          .textContentType(.creditCardNumber)
+          .monospacedDigit()
+        let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+        if !brand.isEmpty { PaymentMark(brand: brand).scaleEffect(0.66).frame(width: 29, height: 20) }
+        if entry != nil {
+          Button { Task { await revealCard() } } label: {
+            Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 15)).foregroundStyle(Ink.secondary)
+          }
+          .buttonStyle(.borderless)
+          .accessibilityLabel(showsPassword ? "Hide Card" : "Show Card")
+        }
+      }
+    }
+  }
+
+  /** The security code: dots until shown, as the password's. */
+  private var securityCodeRow: some View {
+    LabeledContent("Security code") {
+      Group {
+        let hidden = entry?.hasSecurityCode == true && !passwordRead
+        if showsPassword {
+          TextField("Security code", text: $draft.securityCode, prompt: Text("123"))
+        } else {
+          SecureField("Security code", text: $draft.securityCode, prompt: Text(hidden ? "•••" : "123"))
+        }
+      }
+      .multilineTextAlignment(.trailing)
+      .keyboardType(.numberPad)
+      .monospacedDigit()
+    }
+  }
+
+  private func revealCard() async {
+    if showsPassword { showsPassword = false; return }
+    guard let entry, !passwordRead else { showsPassword = true; return }
+    guard await PurchaseApproval.confirm(reason: String(localized: "Show the card \(entry.title)")) != nil else { return }
+    do {
+      let secrets = try await model.cardSecrets(of: entry)
+      if draft.number.isEmpty { draft.number = secrets.number }
+      if draft.securityCode.isEmpty { draft.securityCode = secrets.securityCode }
+      opened.number = secrets.number
+      opened.securityCode = secrets.securityCode
+      passwordRead = true
+      showsPassword = true
+    } catch {
+      problem = error.localizedDescription
+    }
+  }
+
   private func togglePassword() async {
     if showsPassword { showsPassword = false; return }
     guard let entry, entry.hasPassword, !passwordRead else { showsPassword = true; return }
@@ -353,11 +436,12 @@ struct CredentialEditor: View {
       // Stays open on the entry as saved, as Settings' pages do; a password just typed is known now.
       let typed = draft.password
       let known = passwordRead || !typed.isEmpty
-      let now = CredentialDraft(saved, password: known ? typed : "")
+      let cardKnown = passwordRead || !draft.number.isEmpty
+      let now = CredentialDraft(saved, password: known ? typed : "", number: cardKnown ? draft.number : "", securityCode: cardKnown ? draft.securityCode : "")
       entry = saved
       draft = now
       opened = now
-      passwordRead = known
+      passwordRead = isCard ? cardKnown : known
       problem = nil
     }
   }
