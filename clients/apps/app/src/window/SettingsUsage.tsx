@@ -37,6 +37,7 @@ import {
 } from '../core/usage'
 import { t } from '../l10n'
 import { Alert } from './Dialogs'
+import { SubscriptionsGroup } from './SettingsModels'
 import {
   SettingsActionRow,
   SettingsGroup,
@@ -105,6 +106,7 @@ export function SettingsUsagePage({ store }: { store: AppStore }) {
             opened={opened}
           />
           <ManagePlanGroup store={store} summary={summary} opened={opened} />
+          <SubscriptionsGroup store={store} />
         </>
       ) : store.usage.kind === 'failed' ? (
         <SettingsGroup>

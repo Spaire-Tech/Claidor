@@ -68,6 +68,13 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
     )
   }
 
+  /** The line under its name in Usage & Billing's Subscriptions: "5-hour limit 42% · Weekly limit 18%", or, before its first use, "Subscription · Max". */
+  public func usageLine(now: Date = Date(), timeZone: TimeZone = .current) -> String {
+    let lines = usage?.lines(now: now, timeZone: timeZone) ?? []
+    guard !lines.isEmpty else { return detail }
+    return lines.map { "\($0.title) \($0.meter.valueLabel)" }.joined(separator: " · ")
+  }
+
   /** The provider's own page for the plan's usage and the plan (9 November 2026): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
   public var planPage: URL? {
     switch provider {

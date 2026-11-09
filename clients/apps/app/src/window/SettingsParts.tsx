@@ -25,7 +25,7 @@ import './Settings.css'
 export type SettingsSymbolName =
   | 'gearshape'
   | 'chartBar'
-  | 'cpu'
+  | 'brain'
   | 'wallet'
   | 'key'
   | 'handRaised'
@@ -52,12 +52,12 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
     </>
   ),
   chartBar: <path d="M2.5 8.5h3v5h-3ZM6.5 3h3v10.5h-3ZM10.5 6h3v7.5h-3Z" />,
-  // `cpu`: the chip, its square inside, its pins on each side.
-  cpu: (
+  // `brain` (AI Models; the founder, 9 November 2026: "can the icon be a brain"): its two halves, scalloped, the line between them and a fold in each.
+  brain: (
     <>
-      <rect x="3.5" y="3.5" width="9" height="9" rx="1.6" />
-      <rect x="6" y="6" width="4" height="4" rx="0.6" />
-      <path d="M6 1.6v1.9M10 1.6v1.9M6 12.5v1.9M10 12.5v1.9M1.6 6h1.9M1.6 10h1.9M12.5 6h1.9M12.5 10h1.9" />
+      <path d="M8 2A2.4 2.4 0 0 0 4.8 3.2 2.4 2.4 0 0 0 2.9 6.2 2.4 2.4 0 0 0 2.9 9.8 2.4 2.4 0 0 0 4.8 12.8 2.4 2.4 0 0 0 8 14" />
+      <path d="M8 2A2.4 2.4 0 0 1 11.2 3.2 2.4 2.4 0 0 1 13.1 6.2 2.4 2.4 0 0 1 13.1 9.8 2.4 2.4 0 0 1 11.2 12.8 2.4 2.4 0 0 1 8 14" />
+      <path d="M8 2v12M5.5 4.6c-.9.5-.9 1.5 0 2s.9 1.5 0 2-.9 1.5 0 2M10.5 4.6c.9.5.9 1.5 0 2s-.9 1.5 0 2 .9 1.5 0 2" />
     </>
   ),
   wallet: (

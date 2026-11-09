@@ -54,7 +54,7 @@ const pages: Record<
 > = {
   general: { title: () => t('General'), symbol: 'gearshape' },
   usage: { title: () => t('Usage & Billing'), symbol: 'chartBar' },
-  models: { title: () => t('AI Models'), symbol: 'cpu' },
+  models: { title: () => t('AI Models'), symbol: 'brain' },
   wallet: { title: () => t('Wallet'), symbol: 'wallet' },
   credentials: { title: () => t('Credentials Store'), symbol: 'key' },
   permissions: { title: () => t('Permissions'), symbol: 'handRaised' },
@@ -63,13 +63,13 @@ const pages: Record<
   help: { title: () => t('Help & support'), symbol: 'questionmarkCircle' },
   legal: { title: () => t('Legal'), symbol: 'checkmarkShield' },
   account: { title: () => t('Account'), symbol: 'personCropCircle' },
-  modelAccount: { title: () => t('AI Models'), symbol: 'cpu' },
+  modelAccount: { title: () => t('Usage & Billing'), symbol: 'chartBar' },
 }
 
-/** The page it sits under, with Back to it: the account under General (its first row), an AI account under AI Models. */
+/** The page it sits under, with Back to it: the account under General (its first row), an AI account under Usage & Billing (its Subscriptions). */
 function parentOf(page: SettingsPage): SettingsPage | undefined {
   if (page === 'account') return 'general'
-  if (page === 'modelAccount') return 'models'
+  if (page === 'modelAccount') return 'usage'
   return undefined
 }
 

@@ -29,6 +29,7 @@ struct SettingsUsagePage: View {
           UsageGroup(summary: summary, now: context.date, look: look)
         }
         ManagePlanGroup(look: look)
+        SubscriptionsGroup(look: look)
       } else if store.usage.isFailed {
         SettingsGroup(look: look) {
           SettingsLine(label: String(localized: "Couldn’t load usage."), look: look) {
@@ -42,6 +43,8 @@ struct SettingsUsagePage: View {
       }
     }
     .task { await store.loadUsage() }
+    // The person's own ChatGPT and Claude, for Subscriptions.
+    .task { await store.aiModels.load() }
   }
 }
 

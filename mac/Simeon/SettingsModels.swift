@@ -21,7 +21,6 @@ import SimeonCore
 struct SettingsModelsPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
-  @Environment(SettingsState.self) private var settings
   @State private var connectingChatGPT = false
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
@@ -54,7 +53,6 @@ struct SettingsModelsPage: View {
                 account: account,
                 divided: index > 0,
                 look: look,
-                open: { settings.openModelAccount(account.id) },
                 rename: { newName = account.shownName; renaming = account },
                 addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
                 connectAgain: { connect(account.provider) },
@@ -166,18 +164,11 @@ struct MacProviderIcon: View {
   }
 }
 
-/**
- * A connected account: its app's icon, its name ("ChatGPT", never the
- * e-mail) over "Subscription", how it stands beside `⋯` (a dot and its
- * words: "Usage available" in green, "Signed out" in red), `⋯`, and `›`:
- * a click opens its page, its plan's usage (9 November 2026, the founder:
- * "you can click on chatgpt and claude, like with connectors").
- */
+/** A connected account: its app's icon, its name ("ChatGPT", never the e-mail) over "Subscription", how it stands beside `⋯` (a dot and its words: "Usage available" in green, "Signed out" in red), and `⋯`. Its plan's usage is in Usage & Billing (`SubscriptionsGroup`). */
 private struct MacModelAccountLine: View {
   let account: ModelAccount
   let divided: Bool
   let look: Look
-  let open: () -> Void
   let rename: () -> Void
   /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
   let addAnother: (() -> Void)?
@@ -186,27 +177,19 @@ private struct MacModelAccountLine: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      // The row opens the account's page; `⋯` keeps its own menu (outside the button, so its click stays its own).
-      Button(action: open) {
-        HStack(spacing: 12) {
-          MacProviderIcon(provider: account.provider, look: look, side: 28)
-          VStack(alignment: .leading, spacing: 2) {
-            Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
-            Text(account.kindName).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
-          }
-          .frame(maxWidth: .infinity, alignment: .leading)
-          // How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯").
-          let tint = account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary
-          HStack(spacing: 6) {
-            Circle().fill(tint).frame(width: 7, height: 7)
-            Text(account.statusWords()).font(PanelType.row).foregroundStyle(tint).lineLimit(1)
-          }
-          .fixedSize()
-        }
-        .contentShape(Rectangle())
+      MacProviderIcon(provider: account.provider, look: look, side: 28)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+        Text(account.kindName).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
       }
-      .buttonStyle(.hand)
-      .accessibilityLabel(account.shownName)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      // How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯").
+      let tint = account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary
+      HStack(spacing: 6) {
+        Circle().fill(tint).frame(width: 7, height: 7)
+        Text(account.statusWords()).font(PanelType.row).foregroundStyle(tint).lineLimit(1)
+      }
+      .fixedSize()
       Menu {
         if let addAnother {
           Button("Add Another", action: addAnother)
@@ -230,36 +213,92 @@ private struct MacModelAccountLine: View {
       .fixedSize()
       .handCursor()
       .accessibilityLabel(String(localized: "More"))
-      Button(action: open) {
-        Image(systemName: "chevron.right")
-          .font(.system(size: 10, weight: .medium))
-          .foregroundStyle(look.inkTertiary)
-          .frame(width: 12, height: 28)
-          .contentShape(Rectangle())
-      }
-      .buttonStyle(.hand)
-      .accessibilityHidden(true)
     }
     .padding(.horizontal, SettingsRowSize.inset)
     .padding(.vertical, 10)
     .frame(minHeight: SettingsRowSize.minHeight)
-    .background(hovering ? look.groupedRowHover : Color.clear)
-    .onHover { hovering = $0 }
     .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
-
-  @State private var hovering = false
 }
 
 /**
- * A connected AI account's page (9 November 2026, the founder: "it should
- * look like usage and billing ... then a way to go to their plan in claude
- * or chat website"): "Usage", the plan's 5-hour and weekly limits drawn as
- * Usage & Billing's meters (`UsageMeterLine`), each what is used, when it
- * resets and its bar, with when the provider last said it under; then
- * "Plan", the plan and Manage Plan ↗, the provider's own page (Codex's
- * usage on chatgpt.com, claude.ai's). Back goes to AI Models; an account
- * disconnected meanwhile goes back there too.
+ * Usage & Billing's "Subscriptions" (9 November 2026, the founder: "if one
+ * is connected, have Simeon usage, and below a tab Subscriptions, with
+ * claude or chat gpt usage and we can click on it and it takes us to the
+ * page"): each connected account, its app's icon, its name over how much of
+ * its plan is used ("5-hour limit 42% · Weekly limit 18%"; its plan before
+ * its first use; "Signed out" in red), and `›` to its page. None while
+ * nothing is connected, so Usage & Billing stays as it was.
+ */
+struct SubscriptionsGroup: View {
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(SettingsState.self) private var settings
+
+  var body: some View {
+    let accounts = store.aiModels.accounts
+    if !accounts.isEmpty {
+      TimelineView(.periodic(from: .now, by: 30)) { context in
+        SettingsGroup(title: String(localized: "Subscriptions"), look: look) {
+          ForEach(Array(accounts.enumerated()), id: \.element.id) { index, account in
+            MacSubscriptionLine(account: account, now: context.date, divided: index > 0, look: look) {
+              settings.openModelAccount(account.id)
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/** One account under Subscriptions: as a link row, its whole width opens its page. */
+private struct MacSubscriptionLine: View {
+  let account: ModelAccount
+  let now: Date
+  let divided: Bool
+  let look: Look
+  let open: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    let signedOut = account.status == .signedOut
+    Button(action: open) {
+      HStack(spacing: 12) {
+        MacProviderIcon(provider: account.provider, look: look, side: 28)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+          Text(signedOut ? account.statusWords(now: now) : account.usageLine(now: now))
+            .font(PanelType.detail)
+            .foregroundStyle(signedOut ? look.danger : look.inkSecondary)
+            .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        Image(systemName: "chevron.right")
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(look.inkTertiary)
+      }
+      .padding(.horizontal, SettingsRowSize.inset)
+      .padding(.vertical, 10)
+      .frame(minHeight: SettingsRowSize.minHeight)
+      .background(hovering ? look.groupedRowHover : Color.clear)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .onHover { hovering = $0 }
+    .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
+  }
+}
+
+/**
+ * A connected AI account's page, from Usage & Billing's Subscriptions (9
+ * November 2026, the founder: "it should look like usage and billing ...
+ * then a way to go to their plan in claude or chat website"): "Usage", the
+ * plan's 5-hour and weekly limits drawn as Usage & Billing's meters
+ * (`UsageMeterLine`), each what is used, when it resets and its bar, with
+ * when the provider last said it under; then "Plan", the plan and Manage
+ * Plan ↗, the provider's own page (Codex's usage on chatgpt.com,
+ * claude.ai's). Back goes to Usage & Billing; an account disconnected
+ * meanwhile goes back there too.
  */
 struct SettingsModelAccountPage: View {
   let look: Look
@@ -279,7 +318,7 @@ struct SettingsModelAccountPage: View {
     }
     .task { await model.load() }
     .onChange(of: account == nil) { _, gone in
-      if gone && model.loaded { settings.page = .models }
+      if gone && model.loaded { settings.page = .usage }
     }
   }
 

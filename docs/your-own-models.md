@@ -360,8 +360,14 @@ The founder: "we need the usage for both claude and chat gpt ... it should
 look like usage and billing ... then a way to go to their plan in claude or
 chat website ... you can click on chatgpt and claude, like with connectors".
 
-- **In the apps.** In Settings › AI Models each connected account opens its
-  page (`›`): "Usage", the plan's 5-hour limit and weekly limit drawn as
+- **In the apps.** In Settings › Usage & Billing, once ChatGPT or Claude is
+  connected, "Subscriptions" lists each account under Simeon's own usage
+  and plan: its icon, its name over "5-hour limit 42% · Weekly limit 18%"
+  (its plan before its first use), and `›` to its page (the founder: "it's
+  okay to keep simeon as it is. if one is connected, have Simeon usage, and
+  below a tab Subscriptions ... no need to have it in AI models"). With
+  nothing connected, Usage & Billing is as it was. The page: "Usage", the
+  plan's 5-hour limit and weekly limit drawn as
   Usage & Billing draws its meters (what is used, when it resets, the bar,
   red past 90%), with when the provider last said it under; then "Plan",
   the plan and Manage Plan ↗, the provider's own page

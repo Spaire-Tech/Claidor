@@ -668,10 +668,14 @@ checked in the reference window. Pushed:
   Password says Set Password or Change Password at its end; its form has
   Cancel and Save.
 - **Each AI account's page, its plan's usage like Usage & Billing** (the
-  founder, 9 November 2026: "you can click on chatgpt and claude, like with
-  connectors, and it shows you your usage"). In AI Models a connected
-  account's row (and its `›`) opens its page under AI Models, named after
-  it, Back to AI Models; `⋯` keeps its menu. "Usage": the 5-hour limit and
+  founder, 9 November 2026: "you can click on chatgpt and claude ... and it
+  shows you your usage", then "these should be in usage and billing ... no
+  need to have it in AI models"). Usage & Billing's "Subscriptions"
+  (`SubscriptionsGroup`), under Simeon's usage and plan and only while one
+  is connected, lists each account (its icon, its name over "5-hour limit
+  42% · Weekly limit 18%", `›`); a row opens its page under Usage & Billing,
+  named after it, Back to Usage & Billing. AI Models' rows don't open it;
+  AI Models' symbol is `brain`. "Usage": the 5-hour limit and
   the weekly limit drawn by Usage & Billing's `UsageMeterLine` (what is
   used, when it resets, the bar), "Updated …" under; one line before the
   account's first use. "Plan": the plan and Manage Plan ↗, the provider's
