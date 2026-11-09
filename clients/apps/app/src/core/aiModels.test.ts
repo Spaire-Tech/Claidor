@@ -8,14 +8,17 @@ import {
   AIModelsModel,
   accountDetail,
   chatGPTSignIn,
+  claudeSignIn,
   modelAccount,
   planName,
+  providerName,
   shownAddress,
   startProblem,
   statusWords,
   usable,
 } from './aiModels'
 import { SimeonAPIError } from './api'
+import { GatewayError } from './gatewayConnection'
 import { type JSONObject, type JSONValue, field, text } from './json'
 
 describe('an account as the server lists it', () => {
@@ -329,5 +332,126 @@ describe('the page’s model', () => {
     })
     expect(outcome.kind).toBe('expired')
     expect(asked).toBe(2)
+  })
+})
+
+describe('Claude in Claude Code on the computer', () => {
+  it('signs in on the computer and tells the server only the account', async () => {
+    const commands: string[] = []
+    const typed: string[] = []
+    const told: JSONValue[] = []
+    let accounts: JSONObject[] = []
+    let chosen: string | null = null
+    const claudeModels: JSONObject[] = [
+      {
+        modelId: 'own:claude:opus',
+        modelName: 'Claude Opus',
+        provider: 'claude',
+      },
+      {
+        modelId: 'own:claude:sonnet',
+        modelName: 'Claude Sonnet',
+        provider: 'claude',
+      },
+    ]
+    const own = (): JSONObject => ({
+      model: chosen,
+      models: accounts.length === 0 ? [] : claudeModels,
+    })
+    const model = new AIModelsModel(
+      async (path, method, body): Promise<JSONValue> => {
+        const how = method ?? 'GET'
+        if (how === 'GET' && path === 'models/accounts') return { accounts }
+        if (how === 'GET' && path === 'models/own') return own()
+        if (how === 'PUT' && path === 'models/own') {
+          chosen = text(field(body, 'model')) ?? null
+          return own()
+        }
+        if (how === 'POST' && path === 'models/accounts/claude') {
+          told.push(body ?? null)
+          const account: JSONObject = {
+            id: 'c1',
+            provider: 'claude',
+            kind: 'subscription',
+            label: field(body, 'label') ?? null,
+            plan: field(body, 'plan') ?? null,
+            status: 'available',
+          }
+          accounts = [account]
+          return { account }
+        }
+        if (how === 'DELETE' && path === 'models/accounts/c1') {
+          accounts = []
+          chosen = null
+          return { disconnected: true, revoked: false }
+        }
+        throw new SimeonAPIError('not found', 404)
+      },
+      noWait,
+      async (method, args): Promise<JSONValue> => {
+        commands.push(method)
+        if (method === 'claudeCodeSignInStart')
+          return {
+            url: 'https://claude.com/cai/oauth/authorize?code=true&state=s1',
+          }
+        if (method === 'claudeCodeSignInFinish') {
+          const code = text(field(args, 'code')) ?? ''
+          typed.push(code)
+          return code === 'good#s1'
+            ? {
+                status: 'connected',
+                account: {
+                  signedIn: true,
+                  email: 'ada@example.com',
+                  plan: 'max',
+                },
+              }
+            : { status: 'failed', reason: 'refused' }
+        }
+        return { ok: true }
+      },
+    )
+    const signIn = await model.startClaude()
+    expect(signIn?.url).toBe(
+      'https://claude.com/cai/oauth/authorize?code=true&state=s1',
+    )
+    expect((await model.finishClaude('nope')).kind).toBe('refused')
+    const done = await model.finishClaude('  good#s1 ')
+    if (done.kind !== 'connected') throw new Error(done.kind)
+    expect(providerName(done.account.provider)).toBe('Claude')
+    expect(accountDetail(done.account)).toBe('Subscription · Max')
+    expect(typed).toEqual(['nope', 'good#s1'])
+    expect(told).toEqual([{ label: 'ada@example.com', plan: 'max' }])
+    expect(model.chosen).toBe('own:claude:opus')
+    expect(model.connected('claude')).toBe(true)
+
+    expect(await model.disconnect(done.account)).toBe(true)
+    expect(commands).toContain('claudeCodeSignOut')
+    expect(model.chosen).toBeUndefined()
+  })
+
+  it('a computer without Claude Code says it needs an update', async () => {
+    const model = new AIModelsModel(
+      async () => ({}),
+      noWait,
+      async (method) => {
+        throw new GatewayError(
+          `unknown gateway method: ${method}`,
+          true,
+          404,
+          method,
+        )
+      },
+    )
+    expect(await model.startClaude()).toBeUndefined()
+    expect(model.problem).toBe(
+      'Your computer needs an update before it can run Claude Code.',
+    )
+    expect(
+      claudeSignIn({ url: 'https://evil.example/oauth/authorize' }),
+    ).toBeUndefined()
+    expect(
+      claudeSignIn({ url: 'http://claude.com/oauth/authorize' }),
+    ).toBeUndefined()
   })
 })

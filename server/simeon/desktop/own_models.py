@@ -56,6 +56,17 @@ request itself (another 4xx), its refusal goes back to the engine as it
 came: Simeon's model doesn't take it on in silence. Each refusal is logged
 with ChatGPT's own words (`desktop.models.relay_refused`).
 
+**Claude** (9 November 2026; docs/your-own-models.md, section 6). A person
+who signed in to Claude Code on their computer may choose Claude Opus or
+Claude Sonnet (`own:claude:opus`, `own:claude:sonnet`, Claude Code's own
+names). Anthropic doesn't let Simeon make calls on a person's Claude plan,
+so this server never does: `rows` names the choice as the agents' primary
+model on a wire of its own, `claude-code`, which an engine that knows it
+runs the agent's turn in Claude Code with, and one that doesn't skips (the
+next primary row, Simeon's, answers, as before). A call that still names a
+Claude model is answered by Simeon's; web search and pictures stay on
+Simeon's for a person on Claude.
+
 **Not verified against chatgpt.com.** For models it marks
 `use_responses_lite`, Codex sends the tools inside `input`
 (`additional_tools`), not in `tools`. This relay sends the standard
@@ -163,7 +174,10 @@ class OwnModel:
         }
 
 
-_PROVIDER_NAMES = {model_accounts.PROVIDER_CHATGPT: "ChatGPT"}
+_PROVIDER_NAMES = {
+    model_accounts.PROVIDER_CHATGPT: "ChatGPT",
+    model_accounts.PROVIDER_CLAUDE: "Claude",
+}
 
 #: ChatGPT's models for Codex, as Codex's own list names them (openai/codex,
 #: `codex-rs/models-manager/models.json`, the ones it shows, 8 November
@@ -199,7 +213,20 @@ CHATGPT_MODELS: tuple[OwnModel, ...] = (
 #: The model for the agents' machinery (titles, summaries, memory).
 CHATGPT_CHEAP = "gpt-6-luna"
 
-_MODELS: dict[str, OwnModel] = {one.model_id: one for one in CHATGPT_MODELS}
+#: Claude through Claude Code on the person's computer, as Claude Code names
+#: its models (`--model opus`, `--model sonnet`); the plan decides which it
+#: may use, and Claude Code says so itself.
+_CLAUDE = model_accounts.PROVIDER_CLAUDE
+CLAUDE_MODELS: tuple[OwnModel, ...] = (
+    OwnModel(_CLAUDE, "opus", "Claude Opus", 200_000),
+    OwnModel(_CLAUDE, "sonnet", "Claude Sonnet", 200_000),
+)
+#: The wire the engine runs a Claude Code turn on (`transportApi`).
+CLAUDE_CODE_TRANSPORT = "claude-code"
+
+_MODELS: dict[str, OwnModel] = {
+    one.model_id: one for one in (*CHATGPT_MODELS, *CLAUDE_MODELS)
+}
 _CHEAP: dict[str, str] = {
     model_accounts.PROVIDER_CHATGPT: f"{OWN_PREFIX}chatgpt:{CHATGPT_CHEAP}"
 }
@@ -239,6 +266,10 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     chosen = chosen_model(user)
     if chosen is None:
         return []
+    if chosen.provider == model_accounts.PROVIDER_CLAUDE:
+        if not await _usable(session, user.id, chosen.provider):
+            return []
+        return [claude_code_row(chosen)]
     plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
     if not any(chosen.on_plan(plan) for plan in plans):
         return []
@@ -251,6 +282,30 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
         cheap.desktop_model(ModelRole.cheap).available(),
         chosen.desktop_model(ModelRole.computer).available(),
     ]
+
+
+def claude_code_row(model: OwnModel) -> dict[str, Any]:
+    """The agents' primary model when the person chose Claude: a row on the
+    `claude-code` wire, which only an engine that runs turns in Claude Code
+    follows. No cheap or computer row: the engine's machinery stays on
+    Simeon's models."""
+    return {
+        "modelId": model.model_id,
+        "modelName": model.name,
+        "provider": "anthropic",
+        "apiFormat": CLAUDE_CODE_TRANSPORT,
+        "description": f"{model.name} in Claude Code, on your Claude plan",
+        "costMultiplier": 0.0,
+        "accessible": True,
+        "supportsImage": True,
+        "supportsVideo": False,
+        "supportsThinking": True,
+        "supportsToolCalling": True,
+        "agenticReady": True,
+        "role": ModelRole.primary.value,
+        "transportApi": CLAUDE_CODE_TRANSPORT,
+        "claudeCodeModel": model.slug,
+    }
 
 
 # --- the request ChatGPT is sent ------------------------------------------------
@@ -453,9 +508,10 @@ async def relay(
         # No plan, no agents: the computer they run on is Simeon's, whoever
         # pays for the model (`box_broker.require_a_plan`).
         return quota_exhausted_response(allowance)
-    if chosen_model(user) is None:
+    if chosen_model(user) is None or own.provider == model_accounts.PROVIDER_CLAUDE:
         # Back on Simeon's models: an engine that hasn't caught up yet is
-        # answered by Simeon's, never on the person's account.
+        # answered by Simeon's, never on the person's account. Claude is
+        # never called from here: Claude Code on the computer calls it.
         return await _on_simeon(own, payload, user, simeon)
     wants_stream = payload.get("stream") is True
     body = json.dumps(codex_body(payload, own.slug)).encode()
@@ -734,7 +790,8 @@ async def _own_gate(
     """The chosen model, or a refusal: None and None when the person's
     agents are on Simeon's models (the caller goes on as before)."""
     chosen = chosen_model(user)
-    if chosen is None:
+    if chosen is None or chosen.provider != model_accounts.PROVIDER_CHATGPT:
+        # Claude Code searches the web itself; Simeon's answers the rest.
         return None, None
     allowance = await desktop.allowance(session, user)
     if allowance.none:
@@ -1073,7 +1130,7 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
     ]
     return [
         model
-        for model in CHATGPT_MODELS
+        for model in (*CHATGPT_MODELS, *CLAUDE_MODELS)
         if any(
             one.provider == model.provider and model.on_plan(one.plan)
             for one in signed_in

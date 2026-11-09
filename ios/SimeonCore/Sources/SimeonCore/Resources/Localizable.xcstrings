@@ -25492,6 +25492,64 @@
         }
       }
     },
+    "Claude Code didn't finish signing in. Try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code hat die Anmeldung nicht abgeschlossen. Versuch es noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code no terminó de iniciar sesión. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code n’a pas terminé la connexion. Réessaie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code non ha completato l’accesso. Riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code heeft het inloggen niet afgerond. Probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code nie dokończył logowania. Spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Claude Code não terminou de entrar. Tente de novo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code slutförde inte inloggningen. Försök igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code girişi tamamlamadı. Tekrar dene."
+          }
+        }
+      }
+    },
     "Cleaning up" : {
       "localizations" : {
         "de" : {
@@ -31520,6 +31578,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hesabına giriş yapılamadı: %@"
+          }
+        }
+      }
+    },
+    "Couldn't start Claude Code on your computer. Try again in a moment." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code konnte auf deinem Computer nicht gestartet werden. Versuch es gleich noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo iniciar Claude Code en tu computadora. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de lancer Claude Code sur ton ordinateur. Réessaie dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile avviare Claude Code sul tuo computer. Riprova tra un attimo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kan Claude Code niet starten op je computer. Probeer het zo opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się uruchomić Claude Code na twoim komputerze. Spróbuj ponownie za chwilę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível iniciar o Claude Code no seu computador. Tente de novo em instantes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att starta Claude Code på din dator. Försök igen om en stund."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code bilgisayarında başlatılamadı. Birazdan tekrar dene."
           }
         }
       }
@@ -135506,6 +135622,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bilgisayarın bağlı değil."
+          }
+        }
+      }
+    },
+    "Your computer needs an update before it can run Claude Code." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Computer braucht ein Update, bevor er Claude Code ausführen kann."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu computadora necesita una actualización antes de poder ejecutar Claude Code."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ton ordinateur doit être mis à jour avant de pouvoir lancer Claude Code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo computer deve essere aggiornato prima di poter eseguire Claude Code."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je computer heeft een update nodig voordat hij Claude Code kan draaien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twój komputer wymaga aktualizacji, zanim będzie mógł uruchomić Claude Code."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu computador precisa de uma atualização antes de rodar o Claude Code."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din dator behöver uppdateras innan den kan köra Claude Code."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayarının Claude Code’u çalıştırabilmesi için güncellenmesi gerekiyor."
           }
         }
       }

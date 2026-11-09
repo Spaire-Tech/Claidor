@@ -2845,3 +2845,26 @@ read, not compiled, and the core's new tests (`AIModelsTests`) did not run.
 The web app's translation of the same model and page ran in Chromium against
 a stand-in server. The tile is the letter C: there is no ChatGPT logo in the
 repository yet.
+
+### Connect Claude in AI Models (9 November 2026)
+
+The founder: "do it like Reason. Claude code.", then "ok go"
+(`docs/your-own-models.md`, section 6). Subscriptions has Claude under
+ChatGPT ("Use your Claude plan"), with Connect until it is connected (one
+Claude per computer, so no Add Another). Connect opens the Connect Claude
+sheet (`MacClaudeConnectSheet`): "Starting Claude Code on your computer…"
+while the computer starts Claude Code's own sign-in; 1, "Open Claude's page
+and approve" with Open (the default browser); 2, "Paste the code Claude
+shows", the field and Connect, sent to Claude Code on the computer; the line
+that the sign-in stays on the computer and Simeon never sees it. Connected,
+it says which model the agents now use (Claude Opus, chosen when none was).
+A refused code says so, with Try Again; a computer whose engine predates
+Claude Code says it needs an update. Closing the sheet before the code ends
+the computer's sign-in; Disconnect signs Claude Code out on the computer,
+then forgets the row. The footer of "Your agents use" names any plan. The
+iPhone's page (`ClaudeConnectSheet`, a form) and the web app's say the same.
+
+Not yet built or run on a Mac or an iPhone: no Swift here, so the code was
+read, not compiled, and the core's two new tests did not run. The web app's
+translation ran in Chromium against a stand-in server and computer. No real
+Claude Code sign-in has run: no engine with it is published yet.

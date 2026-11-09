@@ -839,6 +839,63 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Connect Claude in AI Models
+
+The founder: "do it like Reason. Claude code.", then "ok go"
+(`docs/your-own-models.md`, section 6, step C3). The Mac
+(`SettingsModels.swift`) and the iPhone (`ios/Simeon/AIModels.swift`) have
+it in the same pull request, with the shared core's model; the web app's is
+their translation.
+
+- **Done:**
+  - `src/core/aiModels.ts`: the core's Claude part translated: the link
+    Claude Code gives (only an https page of claude.com, claude.ai,
+    platform.claude.com or console.anthropic.com is kept), `startClaude`,
+    `finishClaude` (the code to the computer; signed in, the e-mail and plan
+    to the server, the page read again, Claude Opus chosen when nothing
+    was), `cancelClaude`, and Disconnect signing Claude Code out on the
+    computer first. Its commands go to the computer through
+    `store.modelsCommand` (waking it if it rests). A computer whose engine
+    predates Claude Code answers 404 through the gateway (`GatewayError`),
+    and the sheet says it needs an update. Two tests of its own.
+  - `src/window/SettingsModels.tsx`: Claude under Subscriptions ("Use your
+    Claude plan", Connect until it is connected; one Claude per computer, so
+    no Add Another); the Connect Claude sheet: "Starting Claude Code on your
+    computer…"; 1, "Open Claude's page and approve" with Open; 2, "Paste the
+    code Claude shows", the field and Connect (Return sends it, greyed while
+    empty, a spinner while Claude Code finishes); the line that the sign-in
+    stays on the computer; Connected with the model now used; a refused code
+    with Try Again; closing the sheet before the code ends the sign-in on
+    the computer. The footer of "Your agents use" now names any plan.
+    Connected's end is shared by the two sheets (`ConnectedEnd`).
+- **Decisions (the session):**
+  - Claude's page opens as OpenAI's does: a new tab without `opener` or the
+    referrer (in the Windows app, the default browser).
+  - The pasted code is trimmed and sent once; the field is emptied either
+    way, so a refused code is never sent twice.
+- **Checked:**
+  - `pnpm test` (1216 tests, the words, the brands, the connector pages,
+    the build), `pnpm typecheck`, `pnpm lint`;
+  - in Chromium, the built app against a stand-in server and a stand-in
+    computer answering `claudeCodeSignIn…` (nothing real reached; Claude's
+    page answered by a stub, the only address outside), light, dark and
+    French: ChatGPT and Claude under Subscriptions; Connect, the two steps,
+    Connect greyed while empty; Open (Claude's address, no opener, no
+    referrer); a wrong code (the spinner, "That code didn't work", Try
+    Again starting afresh with the field empty); the right code, Connected,
+    Claude Opus chosen (`POST models/accounts/claude` with the e-mail and
+    plan, then `PUT models/own`); Claude's Connect gone once connected;
+    Disconnect (`claudeCodeSignOut` once, then the row deleted, back to
+    Subscriptions); Escape and the close disc each ending the computer's
+    sign-in (`claudeCodeSignInCancel`); an old computer (404) saying it
+    needs an update; ChatGPT and Claude both connected, the model menu
+    offering GPT-6.1 Sol, GPT-6 Luna, Claude Opus and Claude Sonnet.
+- **Not checked:** a real Claude Code sign-in on a computer (no engine with
+  C2 is published); the Windows app. The tiles are the letter C for both
+  ChatGPT and Claude: no logo for either yet, so two connected accounts
+  differ only by their plan.
+- **Next:** C4, the engine running an agent's turn through Claude Code.
+
 ### 9 November 2026: Settings › AI Models
 
 The founder: "go ahead with the app screens" (the person's own ChatGPT

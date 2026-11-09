@@ -3014,6 +3014,64 @@
         }
       }
     },
+    "1. Open Claude's page and approve" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Öffne die Seite von Claude und bestätige"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Abre la página de Claude y aprueba"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Ouvre la page de Claude et approuve"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Apri la pagina di Claude e approva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Open de pagina van Claude en keur goed"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Otwórz stronę Claude i zatwierdź"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Abra a página do Claude e aprove"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Öppna Claudes sida och godkänn"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1. Claude’un sayfasını aç ve onayla"
+          }
+        }
+      }
+    },
     "2. Enter it on %@ and approve" : {
       "localizations" : {
         "de" : {
@@ -3068,6 +3126,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "2. %@ adresine gir ve onayla"
+          }
+        }
+      }
+    },
+    "2. Paste the code Claude shows" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Füge den Code ein, den Claude anzeigt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Pega el código que muestra Claude"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Colle le code que Claude affiche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Incolla il codice che mostra Claude"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Plak de code die Claude toont"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Wklej kod, który pokazuje Claude"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Cole o código que o Claude mostra"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Klistra in koden som Claude visar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2. Claude’un gösterdiği kodu yapıştır"
           }
         }
       }
@@ -8421,6 +8537,64 @@
         }
       }
     },
+    "Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code läuft auf deinem Computer und behält diese Anmeldung dort. Simeon sieht sie nie."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code se ejecuta en tu computadora y guarda allí este inicio de sesión. Simeon nunca lo ve."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code tourne sur ton ordinateur et y garde cette connexion. Simeon ne la voit jamais."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code gira sul tuo computer e conserva lì questo accesso. Simeon non lo vede mai."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code draait op je computer en bewaart deze inlog daar. Simeon ziet hem nooit."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code działa na twoim komputerze i tam przechowuje to logowanie. Simeon nigdy go nie widzi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Claude Code roda no seu computador e guarda esse login lá. O Simeon nunca o vê."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code körs på din dator och sparar inloggningen där. Simeon ser den aldrig."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code bilgisayarında çalışır ve bu girişi orada tutar. Simeon onu asla görmez."
+          }
+        }
+      }
+    },
     "Clear" : {
       "localizations" : {
         "de" : {
@@ -9867,6 +10041,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ChatGPT’yi bağla"
+          }
+        }
+      }
+    },
+    "Connect Claude" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude verbinden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar Claude"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecter Claude"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega Claude"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude koppelen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz Claude"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectar o Claude"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut Claude"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude’u bağla"
           }
         }
       }
@@ -34268,6 +34500,64 @@
         }
       }
     },
+    "Starting Claude Code on your computer…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code wird auf deinem Computer gestartet…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciando Claude Code en tu computadora…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lancement de Claude Code sur ton ordinateur…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvio di Claude Code sul tuo computer…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code starten op je computer…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchamiam Claude Code na twoim komputerze…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iniciando o Claude Code no seu computador…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Startar Claude Code på din dator…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code bilgisayarında başlatılıyor…"
+          }
+        }
+      }
+    },
     "Starting the computer…" : {
       "localizations" : {
         "de" : {
@@ -36062,6 +36352,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Teşekkürler. İnceleyeceğiz."
+          }
+        }
+      }
+    },
+    "That code didn't work. Try again." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Code hat nicht funktioniert. Versuch es noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese código no funcionó. Vuelve a intentarlo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce code n’a pas fonctionné. Réessaie."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quel codice non ha funzionato. Riprova."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die code werkte niet. Probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten kod nie zadziałał. Spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esse código não funcionou. Tente de novo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den koden fungerade inte. Försök igen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu kod işe yaramadı. Tekrar dene."
           }
         }
       }
@@ -39436,6 +39784,64 @@
         }
       }
     },
+    "Use your Claude plan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze deinen Claude-Tarif"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa tu plan de Claude"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilise ton forfait Claude"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa il tuo piano Claude"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik je Claude-abonnement"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj swojego planu Claude"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use seu plano do Claude"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd ditt Claude-abonnemang"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude planını kullan"
+          }
+        }
+      }
+    },
     "User allowlist" : {
       "localizations" : {
         "de" : {
@@ -41237,60 +41643,60 @@
         }
       }
     },
-    "When your ChatGPT limit is reached, your agents use Simeon's models until it resets." : {
+    "When your plan's limit is reached, your agents use Simeon's models until it resets." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wenn dein ChatGPT-Limit erreicht ist, nutzen deine Agenten Simeons Modelle, bis es zurückgesetzt wird."
+            "value" : "Wenn das Limit deines Tarifs erreicht ist, nutzen deine Agenten Simeons Modelle, bis es zurückgesetzt wird."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cuando alcanzas tu límite de ChatGPT, tus agentes usan los modelos de Simeon hasta que se restablezca."
+            "value" : "Cuando alcanzas el límite de tu plan, tus agentes usan los modelos de Simeon hasta que se restablezca."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quand ta limite ChatGPT est atteinte, tes agents utilisent les modèles de Simeon jusqu’à sa réinitialisation."
+            "value" : "Quand la limite de ton forfait est atteinte, tes agents utilisent les modèles de Simeon jusqu’à sa réinitialisation."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quando raggiungi il limite di ChatGPT, i tuoi agenti usano i modelli di Simeon finché non si azzera."
+            "value" : "Quando raggiungi il limite del tuo piano, i tuoi agenti usano i modelli di Simeon finché non si azzera."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als je ChatGPT-limiet is bereikt, gebruiken je agenten de modellen van Simeon tot die wordt gereset."
+            "value" : "Als de limiet van je abonnement is bereikt, gebruiken je agenten de modellen van Simeon tot die wordt gereset."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gdy wyczerpiesz limit ChatGPT, twoi agenci używają modeli Simeona, dopóki się nie odnowi."
+            "value" : "Gdy wyczerpiesz limit swojego planu, twoi agenci używają modeli Simeona, dopóki się nie odnowi."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quando o seu limite do ChatGPT acaba, seus agentes usam os modelos do Simeon até ele ser renovado."
+            "value" : "Quando o limite do seu plano acaba, seus agentes usam os modelos do Simeon até ele ser renovado."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "När din ChatGPT-gräns är nådd använder dina agenter Simeons modeller tills den återställs."
+            "value" : "När ditt abonnemangs gräns är nådd använder dina agenter Simeons modeller tills den återställs."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ChatGPT limitin dolduğunda ajanların, limit yenilenene kadar Simeon’un modellerini kullanır."
+            "value" : "Planının limiti dolduğunda ajanların, limit yenilenene kadar Simeon’un modellerini kullanır."
           }
         }
       }

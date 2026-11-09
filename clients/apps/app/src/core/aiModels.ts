@@ -11,15 +11,31 @@
 // The sign-in is OpenAI's device code, under Codex's own sign-in until
 // OpenAI approves Simeon's: the app shows a code, the person enters it on
 // OpenAI's page (which names Codex) and approves, and the app asks the
-// server every few seconds until it says connected. Shared with Settings'
-// page (src/window/SettingsModels.tsx).
+// server every few seconds until it says connected.
+//
+// Claude (9 November 2026; docs/your-own-models.md, section 6) is signed in
+// to in Claude Code on the person's own computer, never on Simeon's server:
+// the computer starts Claude Code's sign-in and gives its link, the person
+// approves on claude.ai and pastes the code Claude shows, which goes straight
+// to Claude Code (the computer's `claudeCodeSignIn…` commands); the server
+// then keeps only that Claude is connected, its e-mail and plan. Shared with
+// Settings' page (src/window/SettingsModels.tsx).
 
 import { SimeonAPIError } from './api'
+import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, field, int, num, str, text } from './json'
 import { t } from './l10n'
 import { displayLocale } from './listTime'
 
 export const chatGPT = 'chatgpt'
+export const claude = 'claude'
+/** Where Claude Code's sign-in link may point (claude.ai's own pages). */
+const claudeHosts = new Set([
+  'claude.com',
+  'claude.ai',
+  'platform.claude.com',
+  'console.anthropic.com',
+])
 
 export type ModelAccountStatus = 'available' | 'limited' | 'signed_out'
 
@@ -61,6 +77,7 @@ export function modelAccount(
 /** A provider's name as people know it. */
 export function providerName(provider: string): string {
   if (provider === chatGPT) return 'ChatGPT'
+  if (provider === claude) return 'Claude'
   return provider.slice(0, 1).toUpperCase() + provider.slice(1)
 }
 
@@ -221,6 +238,42 @@ export function startProblem(code: string | undefined): string {
     : t("Couldn't reach ChatGPT. Try again in a moment.")
 }
 
+/** Claude's sign-in started in Claude Code on the computer: Anthropic's page to approve on (`ClaudeSignIn`). */
+export interface ClaudeSignIn {
+  url: string
+}
+
+export function claudeSignIn(
+  json: JSONValue | undefined,
+): ClaudeSignIn | undefined {
+  const url = text(field(json, 'url'))
+  if (url === undefined) return undefined
+  try {
+    const parsed = new URL(url)
+    // Only Anthropic's own page over https is ever opened.
+    if (parsed.protocol !== 'https:' || !claudeHosts.has(parsed.hostname))
+      return undefined
+    return { url: parsed.href }
+  } catch {
+    return undefined
+  }
+}
+
+/** How the code the person pasted went (`ClaudeConnect`). */
+export type ClaudeConnect =
+  | { kind: 'connected'; account: ModelAccount }
+  /** Claude didn't take the code: the person starts again. */
+  | { kind: 'refused' }
+  /** Claude Code couldn't finish (`problem` says why). */
+  | { kind: 'failed' }
+
+/** Why Claude Code's sign-in didn't start: a computer whose engine predates it answers 404. */
+export function claudeStartProblem(status: number | undefined): string {
+  return status === 404
+    ? t('Your computer needs an update before it can run Claude Code.')
+    : t("Couldn't start Claude Code on your computer. Try again in a moment.")
+}
+
 /** The menu's first choice: the agents on Simeon's own models. */
 export function simeonsModels(): string {
   return t("Simeon's models")
@@ -234,6 +287,15 @@ export type AIModelsCall = (
   method?: string,
   body?: JSONValue,
 ) => Promise<JSONValue>
+
+/** One command to the person's computer (Claude Code's sign-in there), waking it if it rests. */
+export type AIModelsCommand = (
+  method: string,
+  args?: JSONValue,
+) => Promise<JSONValue>
+
+const noComputer: AIModelsCommand = () =>
+  Promise.reject(new SimeonAPIError(t('Sign in to Simeon first.'), 401))
 
 /** Waits `seconds`, or ends early (rejects) when `signal` aborts. */
 export type Sleep = (seconds: number, signal?: AbortSignal) => Promise<void>
@@ -275,6 +337,7 @@ export class AIModelsModel {
   constructor(
     private readonly call: AIModelsCall,
     private readonly sleep: Sleep = realSleep,
+    private readonly command: AIModelsCommand = noComputer,
   ) {}
 
   subscribe(listener: () => void): () => void {
@@ -417,6 +480,87 @@ export class AIModelsModel {
     return { kind: 'expired' }
   }
 
+  // MARK: Claude, in Claude Code on the computer
+
+  /** Claude Code's sign-in started on the computer: its link; none (and `problem`) when it couldn't start. */
+  async startClaude(): Promise<ClaudeSignIn | undefined> {
+    try {
+      const signIn = claudeSignIn(
+        await this.command('claudeCodeSignInStart', {}),
+      )
+      this.problem = signIn ? undefined : claudeStartProblem(undefined)
+      return signIn
+    } catch (error) {
+      // The computer answers through the gateway (`GatewayError`); a stand-in may answer as the server does.
+      this.problem = claudeStartProblem(
+        error instanceof GatewayError || error instanceof SimeonAPIError
+          ? error.status
+          : undefined,
+      )
+      return undefined
+    } finally {
+      this.changed()
+    }
+  }
+
+  /**
+   * The code the person pasted, typed at Claude Code's prompt on the
+   * computer. Signed in, the server is told (the e-mail and plan Claude Code
+   * named, never the sign-in), the page read again and Claude's best model
+   * chosen when the person had none.
+   */
+  async finishClaude(code: string): Promise<ClaudeConnect> {
+    const typed = code.trim()
+    if (typed === '') return { kind: 'refused' }
+    let answer: JSONValue
+    try {
+      answer = await this.command('claudeCodeSignInFinish', { code: typed })
+    } catch {
+      this.problem = t("Claude Code didn't finish signing in. Try again.")
+      this.changed()
+      return { kind: 'failed' }
+    }
+    if (str(field(answer, 'status')) !== 'connected') {
+      const reason = str(field(answer, 'reason'))
+      if (reason === 'bad_code' || reason === 'refused')
+        return { kind: 'refused' }
+      this.problem =
+        reason === 'not_installed'
+          ? claudeStartProblem(404)
+          : t("Claude Code didn't finish signing in. Try again.")
+      this.changed()
+      return { kind: 'failed' }
+    }
+    const claudeAccount = field(answer, 'account')
+    try {
+      const kept = await this.call('models/accounts/claude', 'POST', {
+        label: text(field(claudeAccount, 'email')) ?? null,
+        plan: text(field(claudeAccount, 'plan')) ?? null,
+      })
+      const account = modelAccount(field(kept, 'account'))
+      if (!account) throw new Error(t("That didn't work."))
+      await this.load()
+      const best = this.models.find((one) => one.provider === claude)
+      if (this.chosen === undefined && best) await this.choose(best.id)
+      this.problem = undefined
+      return { kind: 'connected', account }
+    } catch (error) {
+      this.problem = t`Couldn't change the model: ${said(error)}`
+      return { kind: 'failed' }
+    } finally {
+      this.changed()
+    }
+  }
+
+  /** The sheet closed before the code: Claude Code's sign-in on the computer ends. */
+  async cancelClaude(): Promise<void> {
+    try {
+      await this.command('claudeCodeSignInCancel', {})
+    } catch {
+      // The computer forgets an unfinished sign-in on its own.
+    }
+  }
+
   /** The person's own name for an account; an empty one is not sent. */
   async rename(account: ModelAccount, name: string): Promise<void> {
     const next = name.trim().split(/\s+/).join(' ')
@@ -440,6 +584,14 @@ export class AIModelsModel {
 
   /** Signed out at the provider and forgotten; the choice falls back to Simeon's when it was this provider's last account. */
   async disconnect(account: ModelAccount): Promise<boolean> {
+    if (account.provider === claude) {
+      // Claude Code signs itself out on the computer; the server forgets the row either way.
+      try {
+        await this.command('claudeCodeSignOut', {})
+      } catch {
+        // Signed out at the next sign-in, or with the computer made afresh.
+      }
+    }
     try {
       await this.call(`models/accounts/${account.id}`, 'DELETE')
       this.accounts = this.accounts.filter((one) => one.id !== account.id)

@@ -242,9 +242,16 @@ approve, paste the code back) is Claude Code's own sign-in.
 |---|---|---|
 | C1 | This plan | done |
 | C2 | The image installs Claude Code (2.1.311, its stable release); the credentials file kept out of the backup; the engine's commands `claudeCodeStatus`, `claudeCodeSignInStart` (the link), `claudeCodeSignInFinish` (`{code}`), `claudeCodeSignInCancel`, `claudeCodeSignOut` (`desktop/source/host/claude-code/claude-code-account.ts`) | done 9 November 2026, tested against a stand-in `claude`; not yet on any computer |
-| C3 | The server's Claude row (no token), Connect Claude on the Mac, the iPhone and the web, Claude in the model menu, the ten languages | 2 to 3 days |
+| C3 | The server's Claude row (no token, `POST /desktop/api/models/accounts/claude`), Connect Claude on the Mac, the iPhone and the web (the shared cores' `startClaude`, `finishClaude`, `cancelClaude`), Claude Opus and Sonnet in the model menu, the ten languages | done 9 November 2026: server tests, web tests and a Chromium check against a stand-in server and computer; the Swift not compiled (no Swift here) |
 | C4 | The engine runs a Claude turn through Claude Code with Simeon's tools over MCP, the safety review, the fallback | 5 to 6 days |
 | C5 | Docs, Privacy Policy and Terms, checks | 1 day |
+
+Until C4, choosing Claude moves nothing: the engine skips the `claude-code`
+row it doesn't know and the server answers a call named `own:claude:…` with
+Simeon's model, on credits. C2 and C4 go out in one engine release, so
+Connect Claude never works on a computer that can't yet run a turn on it (on
+today's computers its start answers 404 and the sheet says the computer needs
+an update).
 
 C2 and C4 reach people only with a new computer image (the E2B template,
 built by hand from `.github/workflows/e2b_template.yml`) and a new engine
