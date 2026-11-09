@@ -87287,60 +87287,60 @@
         }
       }
     },
-    "Signed out. Connect again." : {
+    "Signed out" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abgemeldet. Verbinde ihn erneut."
+            "value" : "Abgemeldet"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sesión cerrada. Vuelve a conectarla."
+            "value" : "Sesión cerrada"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Déconnecté. Reconnecte-le."
+            "value" : "Déconnecté"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Disconnesso. Ricollegalo."
+            "value" : "Disconnesso"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afgemeld. Koppel opnieuw."
+            "value" : "Afgemeld"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wylogowano. Połącz ponownie."
+            "value" : "Wylogowano"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sessão encerrada. Conecte de novo."
+            "value" : "Sessão encerrada"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Utloggad. Anslut igen."
+            "value" : "Utloggad"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oturum kapandı. Yeniden bağla."
+            "value" : "Oturum kapandı"
           }
         }
       }

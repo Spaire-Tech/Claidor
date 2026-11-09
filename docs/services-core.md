@@ -843,11 +843,15 @@ Claude sign-in or make calls on it, so the server's part is small:
   app posts the e-mail and plan Claude Code named to
   `/desktop/api/models/accounts/claude`. The row holds no token
   (`access_token` empty); `access_for` gives nothing for it.
-- The models are `own:claude:opus` (Claude Opus) and `own:claude:sonnet`
-  (Claude Sonnet), offered once the row is there, chosen as ChatGPT's are.
+- The models are Claude Opus 5.5, Sonnet 5.5, Haiku 5.5, Fable 5.1 and
+  Fable 5 (`own:claude:claude-opus-5-5`…, the slug Claude Code's own model
+  name), offered once the row is there, chosen as ChatGPT's are. The first
+  choices, `own:claude:opus` and `own:claude:sonnet` (9 November 2026),
+  still read as Opus 5.5 and Sonnet 5.5. The plan decides which Claude Code
+  runs; one it refuses falls back to Simeon's with the chat's line.
 - With one chosen, `/desktop/api/models/available` gives one row for
   `primary`: `transportApi` and `apiFormat` `claude-code`, `claudeCodeModel`
-  `opus` or `sonnet`, `costMultiplier` 0. The other roles stay Simeon's. An
+  the model's name (`claude-opus-5-5`), `costMultiplier` 0. The other roles stay Simeon's. An
   engine that doesn't know `claude-code` skips the row and keeps Simeon's
   model (today's engines); the engine that runs a turn through Claude Code
   is the plan's step C4.

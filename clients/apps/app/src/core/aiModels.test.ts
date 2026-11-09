@@ -14,6 +14,7 @@ import {
   planName,
   providerName,
   shownAddress,
+  shownName,
   startProblem,
   statusWords,
   usable,
@@ -49,7 +50,9 @@ describe('an account as the server lists it', () => {
     if (!gone) throw new Error('read')
     expect(gone.status).toBe('signed_out')
     expect(accountDetail(gone)).toBe('Subscription')
-    expect(statusWords(gone)).toBe('Signed out. Connect again.')
+    expect(statusWords(gone)).toBe('Signed out')
+    expect(shownName(gone)).toBe('Work')
+    expect(shownName(plus)).toBe('ChatGPT')
     expect(usable(gone)).toBe(false)
 
     expect(modelAccount({ provider: 'chatgpt' })).toBeUndefined()

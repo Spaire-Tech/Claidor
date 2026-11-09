@@ -441,8 +441,8 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 4050,
-  "core_lines": 2594,
+  "mac_lines": 4049,
+  "core_lines": 2600,
   "views": 61,
   "files_needing_a_mac": 9,
   "strings": 355,
