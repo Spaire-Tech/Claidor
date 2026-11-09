@@ -348,6 +348,8 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     using span = createSpan(parentCtx.withName("UserMessageActionHandler.handle"));
     const ctx = span.ctx;
     if (options.isSyntheticWakeup !== true) await reactivatePausedGoalOnUserMessage(ctx, stateHandler, onStateUpdate);
+    // The host's own step before a turn (the model and effort the person chose, read again when old).
+    try { await (configAny.beforeTurn as (() => Promise<void>) | undefined)?.(); } catch { /* the turn goes on what it has */ }
     const convInitStart = performance.now();
     const { turn, mergedMcpTools, requestContext } = await this.initializeConversation(ctx, { action, rootPromptExecutor, stateHandler, mcpTools, maxPrependedUserMessages: options.maxPrependedUserMessages ?? 5, forcePrependedUserMessages: options.forcePrependedUserMessages ?? false, onStateUpdate });
     conversationInitDuration.histogram(ctx, performance.now() - convInitStart);

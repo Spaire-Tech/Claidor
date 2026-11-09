@@ -1,13 +1,15 @@
 /*
- * The model on the composer (ComposerModelMenu.tsx): its mark (14), its name
- * (13, the ink) and a chevron (the grey) in a 36 target before the
- * microphone, 6 apart, padded 0 6, a step darker under the pointer.
+ * The model on the composer (ComposerModelMenu.tsx): its mark (13) and its
+ * name (13), both in the grey, and a chevron, in a 36 target before the
+ * microphone, centred on it, 5 apart, padded 0 6, a step darker under the
+ * pointer; then the effort ("High ⌄"): 13 in the ink on the wash, 24 high,
+ * round, padded 0 9.
  */
 .model-button {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   height: 36px;
   margin: 0 0 2px;
   padding: 0 6px;
@@ -30,8 +32,39 @@
 }
 
 .model-name {
-  color: var(--ink);
+  color: var(--ink-secondary);
   white-space: nowrap;
+}
+
+.effort-button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  margin: 0 2px 8px 0;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(119 119 119 / 0.063);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.effort-button svg {
+  color: var(--ink-secondary);
+}
+
+.effort-button:hover:not(:disabled) {
+  background: rgb(119 119 119 / 0.12);
+}
+
+.effort-button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .model-mark {
@@ -40,7 +73,7 @@
   object-fit: contain;
 }
 
-/* ChatGPT's and Simeon's marks in the ink, so white on dark. */
+/* ChatGPT's and Simeon's marks in the ink, so white on dark; on the composer's button, in its grey. */
 .model-mark-ink {
   background-color: var(--ink);
   mask-size: contain;
@@ -49,4 +82,14 @@
   -webkit-mask-size: contain;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
+}
+
+.model-button .model-mark-ink {
+  background-color: var(--ink-secondary);
+}
+
+@media (prefers-color-scheme: dark) {
+  .effort-button {
+    background: rgb(119 119 119 / 0.14);
+  }
 }

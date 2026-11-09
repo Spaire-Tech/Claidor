@@ -171,6 +171,38 @@ final class AIModelsTests: XCTestCase {
   }
 
   /** Connecting a plan reads as connecting an app (9 November 2026): the same page, its words for a plan. */
+  @MainActor
+  func testTheEffortBesideTheModel() async {
+    final class Server { var effort = "high"; var puts: [JSON] = [] }
+    let server = Server()
+    let model = AIModelsModel(call: { path, method, body in
+      if method == "PUT" {
+        server.puts.append(body ?? .null)
+        if let effort = body?["effort"]?.text { server.effort = effort }
+      }
+      if path == "models/accounts" { return ["accounts": .array([])] }
+      return [
+        "model": "own:claude:claude-opus-5-5",
+        "models": .array([["modelId": "own:claude:claude-opus-5-5", "modelName": "Claude Opus 5.5", "provider": "claude"]]),
+        "effort": .string(server.effort),
+        "efforts": .array(["low", "medium", "high", "xhigh", "max"].map(JSON.string)),
+      ]
+    })
+    await model.load()
+    XCTAssertEqual(model.effort, "high")
+    XCTAssertEqual(model.effortName, "High")
+    XCTAssertEqual(model.efforts.map(AIModels.effortName), ["Light", "Medium", "High", "Extra High", "Max"])
+    await model.chooseEffort("xhigh")
+    XCTAssertEqual(model.effortName, "Extra High")
+    XCTAssertEqual(server.puts.count, 1)
+    XCTAssertEqual(server.puts.first?["effort"]?.text, "xhigh")
+    XCTAssertNil(server.puts.first?["model"], "the model is left as it was")
+    // One its provider doesn't take, or the one in use: nothing asked.
+    await model.chooseEffort("extreme")
+    await model.chooseEffort("xhigh")
+    XCTAssertEqual(server.puts.count, 1)
+  }
+
   func testAPlansConsentIsTheAppsPage() {
     let consent = ConnectConsent(modelProvider: AIModels.claude)
     XCTAssertEqual(consent.title, "Claude")

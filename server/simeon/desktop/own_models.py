@@ -123,6 +123,19 @@ _Answer = JSONResponse | StreamingResponse
 OWN_PREFIX = "own:"
 #: The person's choice, kept with their other settings (`users.meta`).
 CHOICE_KEY = "own_model"
+#: How hard the chosen model thinks, chosen beside it on the composer (9
+#: November 2026, the founder: "we should have a thinking effort"; Light,
+#: Medium, High, Extra High, Max as Reason's).
+EFFORT_KEY = "own_model_effort"
+#: The efforts each provider's models take: Claude Code's `--effort` (2.1.311);
+#: ChatGPT's reasoning effort, only the three every Codex model takes.
+EFFORTS: dict[str, tuple[str, ...]] = {
+    "claude": ("low", "medium", "high", "xhigh", "max"),
+    "chatgpt": ("low", "medium", "high"),
+}
+#: Each provider's effort until the person chooses one (Claude Code's own and
+#: Codex's).
+DEFAULT_EFFORT = {"claude": "high", "chatgpt": "medium"}
 #: A limit ChatGPT reports without saying until when.
 LIMIT_WITHOUT_END = timedelta(hours=1)
 #: ChatGPT's words for a plan's limit reached (Codex's
@@ -262,6 +275,18 @@ def chosen_model(user: User) -> OwnModel | None:
     return own_model(value) if isinstance(value, str) else None
 
 
+def chosen_effort(user: User) -> str | None:
+    """How hard the chosen model thinks: the person's choice when that
+    model's provider takes it, else the provider's own; None for Simeon's."""
+    chosen = chosen_model(user)
+    if chosen is None:
+        return None
+    value = (user.meta or {}).get(EFFORT_KEY)
+    if isinstance(value, str) and value in EFFORTS.get(chosen.provider, ()):
+        return value
+    return DEFAULT_EFFORT.get(chosen.provider)
+
+
 async def _usable(
     session: AsyncSession, user_id: Any, provider: str
 ) -> list[DesktopModelAccount]:
@@ -285,7 +310,7 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     if chosen.provider == model_accounts.PROVIDER_CLAUDE:
         if not await _usable(session, user.id, chosen.provider):
             return []
-        return [claude_code_row(chosen)]
+        return [claude_code_row(chosen, chosen_effort(user))]
     plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
     if not any(chosen.on_plan(plan) for plan in plans):
         return []
@@ -300,11 +325,11 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     ]
 
 
-def claude_code_row(model: OwnModel) -> dict[str, Any]:
+def claude_code_row(model: OwnModel, effort: str | None = None) -> dict[str, Any]:
     """The agents' primary model when the person chose Claude: a row on the
     `claude-code` wire, which only an engine that runs turns in Claude Code
-    follows. No cheap or computer row: the engine's machinery stays on
-    Simeon's models."""
+    follows, with the effort Claude Code is given (`--effort`). No cheap or
+    computer row: the engine's machinery stays on Simeon's models."""
     return {
         "modelId": model.model_id,
         "modelName": model.name,
@@ -321,6 +346,7 @@ def claude_code_row(model: OwnModel) -> dict[str, Any]:
         "role": ModelRole.primary.value,
         "transportApi": CLAUDE_CODE_TRANSPORT,
         "claudeCodeModel": model.slug,
+        **({} if effort is None else {"claudeCodeEffort": effort}),
     }
 
 
@@ -343,8 +369,12 @@ _CODEX_FIELDS = (
 _NO_EFFORT = frozenset({"none", "minimal"})
 
 
-def codex_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
-    """The engine's Responses request as ChatGPT takes it."""
+def codex_body(
+    payload: dict[str, Any], slug: str, effort: str | None = None
+) -> dict[str, Any]:
+    """The engine's Responses request as ChatGPT takes it; `effort`, the one
+    the person chose, in place of the engine's own on its real thinking (not
+    on the machinery it asks to think little)."""
     body: dict[str, Any] = {"model": slug, "stream": True}
     for key in _CODEX_FIELDS:
         if payload.get(key) is not None:
@@ -376,6 +406,13 @@ def codex_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
         # ChatGPT's models start at low (Codex's list); the engine can ask
         # for none.
         body["reasoning"] = {**reasoning, "effort": "low"}
+    reasoning = body.get("reasoning")
+    if (
+        effort is not None
+        and isinstance(reasoning, dict)
+        and reasoning.get("effort") not in {"low"}
+    ):
+        body["reasoning"] = {**reasoning, "effort": effort}
     body["store"] = False
     return body
 
@@ -530,7 +567,9 @@ async def relay(
         # never called from here: Claude Code on the computer calls it.
         return await _on_simeon(own, payload, user, simeon)
     wants_stream = payload.get("stream") is True
-    body = json.dumps(codex_body(payload, own.slug)).encode()
+    chosen = chosen_model(user)
+    effort = chosen_effort(user) if chosen is not None and chosen == own else None
+    body = json.dumps(codex_body(payload, own.slug, effort)).encode()
     now = utc_now()
     accounts = [
         one
@@ -1135,6 +1174,8 @@ async def draw(
 
 class _ChoiceBody(BaseModel):
     model: str | None = None
+    #: How hard it thinks; left as it was when the request doesn't name it.
+    effort: str | None = None
 
 
 async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
@@ -1157,9 +1198,15 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
 async def _choice_json(session: AsyncSession, user: User) -> dict[str, Any]:
     chosen = chosen_model(user)
     choices = await _choices(session, user)
+    offered = chosen is not None and chosen in choices
     return {
-        "model": chosen.model_id if chosen is not None and chosen in choices else None,
+        "model": chosen.model_id if chosen is not None and offered else None,
         "models": [one.json() for one in choices],
+        # How hard it thinks, and the efforts its provider takes (none for Simeon's).
+        "effort": chosen_effort(user) if offered else None,
+        "efforts": list(EFFORTS.get(chosen.provider, ()))
+        if chosen is not None and offered
+        else [],
     }
 
 
@@ -1180,21 +1227,30 @@ async def own_models_choose(
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """The person's choice: one of their accounts' models, or None to go
-    back to Simeon's. The agents follow within five minutes."""
+    back to Simeon's, and how hard it thinks (`effort`, when named). The
+    agents follow at their next turn."""
     user = desktop_session.user
     meta = dict(user.meta or {})
-    if body.model is None:
-        meta.pop(CHOICE_KEY, None)
-    else:
-        wanted = own_model(body.model)
-        if wanted is None or wanted not in await _choices(session, user):
+    if "model" in body.model_fields_set:
+        if body.model is None:
+            meta.pop(CHOICE_KEY, None)
+        else:
+            wanted = own_model(body.model)
+            if wanted is None or wanted not in await _choices(session, user):
+                return model_accounts.refusal("not_offered", 400)
+            meta[CHOICE_KEY] = wanted.model_id
+    if "effort" in body.model_fields_set:
+        value = meta.get(CHOICE_KEY)
+        model = own_model(value) if isinstance(value, str) else None
+        if model is None or body.effort not in EFFORTS.get(model.provider, ()):
             return model_accounts.refusal("not_offered", 400)
-        meta[CHOICE_KEY] = wanted.model_id
+        meta[EFFORT_KEY] = body.effort
     user.meta = meta
     session.add(user)
     log.info(
         "desktop.models.chosen",
         user_id=str(user.id),
         model=meta.get(CHOICE_KEY),
+        effort=meta.get(EFFORT_KEY),
     )
     return JSONResponse(await _choice_json(session, user))

@@ -269,6 +269,10 @@ public final class AIModelsModel {
   public private(set) var models: [OwnModelChoice] = []
   /** The model their agents use; nil for Simeon's. */
   public private(set) var chosen: String?
+  /** How hard it thinks (`low`, `medium`, `high`, `xhigh`, `max`); nil on Simeon's. */
+  public private(set) var effort: String?
+  /** The efforts the chosen model's provider takes, in order; none on Simeon's. */
+  public private(set) var efforts: [String] = []
   public private(set) var loaded = false
   public private(set) var loading = false
   /** A change to the choice on its way. */
@@ -362,7 +366,12 @@ public final class AIModelsModel {
   private func read(_ own: JSON) {
     models = (own["models"]?.array ?? []).compactMap(OwnModelChoice.init(json:))
     chosen = own["model"]?.text
+    effort = own["effort"]?.text
+    efforts = (own["efforts"]?.array ?? []).compactMap(\.text)
   }
+
+  /** The effort's name on the composer ("High"); nil on Simeon's. */
+  public var effortName: String? { effort.map(AIModels.effortName) }
 
   /** A ChatGPT sign-in started: the code to show; nil (and `problem`) when none could be had. */
   public func startChatGPT() async -> ChatGPTSignIn? {
@@ -541,9 +550,39 @@ public final class AIModelsModel {
       problem = L10n.text("Couldn't change the model: \(error.localizedDescription)")
     }
   }
+
+  /**
+   * How hard the chosen model thinks (9 November 2026, the founder: "we
+   * should have a thinking effort"), one of `efforts`; the agents follow at
+   * their next message.
+   */
+  public func chooseEffort(_ value: String) async {
+    guard value != effort, efforts.contains(value) else { return }
+    choosing = true
+    defer { choosing = false }
+    do {
+      let answer = try await call("models/own", "PUT", ["effort": .string(value)])
+      read(answer)
+      problem = nil
+    } catch {
+      problem = L10n.text("Couldn't change the effort: \(error.localizedDescription)")
+    }
+  }
 }
 
 extension AIModels {
   /** The menu's first choice: the agents on Simeon's own models. */
   public static var simeonsModels: String { L10n.text("Simeon's models") }
+
+  /** An effort as the composer names it (Reason's words): Light, Medium, High, Extra High, Max. */
+  public static func effortName(_ level: String) -> String {
+    switch level {
+    case "low": L10n.text("Light")
+    case "medium": L10n.text("Medium")
+    case "high": L10n.text("High")
+    case "xhigh": L10n.text("Extra High")
+    case "max": L10n.text("Max")
+    default: level
+    }
+  }
 }

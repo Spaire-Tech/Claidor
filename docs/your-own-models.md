@@ -258,6 +258,33 @@ approve, paste the code back) is Claude Code's own sign-in.
 - **When it can't.** A plan limit, an expired sign-in or Claude Code failing
   to start: the turn runs on Simeon's model instead, on credits, and the chat
   says why once (as ChatGPT's limit does).
+- **Its own words are its answer** (9 November 2026, after the founder's
+  first real turns: "TAKING FOREVER TO ANSWER", every reply opening with
+  "Sorry, I missed your last message"). Claude Code often answers in its own
+  words rather than through SendMessage; those words reached no one, and the
+  engine poked Claude three more times in hidden turns ("they received
+  nothing and are still waiting"), the person's next message waiting behind
+  them. After a turn the person started, Claude's last words are now sent as
+  its reply when nothing else reached them, or when it worked on after its
+  last message ("On it", then the result in its own words); no hidden turn
+  pokes it, and the closing nudge, which reads the engine's own history that
+  Claude Code doesn't write, is not asked (`claudeCodeReplyToSend`,
+  `turn-runtime.ts`). The brief tells Claude so. The host log's own lines
+  showed every turn `outcome=done`: Claude was answering.
+- **How hard it thinks.** Beside the model on the composer, on the person's
+  own plan: Light, Medium, High, Extra High, Max (Reason's words). Claude's
+  are Claude Code's `--effort` (`low` to `max`, read from `claude --help` of
+  2.1.311; High until one is chosen); ChatGPT's are Light, Medium and High
+  only, the three every Codex model takes, and replace the engine's own
+  effort on the agent's turns, not on its machinery (Medium until chosen).
+  Kept with the choice (`users.meta.own_model_effort`, `PUT models/own`
+  `{effort}`); the engine reads it with the roles (`claudeCodeEffort`).
+- **A choice applies to the next message.** The engine read the roles every
+  five minutes, so a model or an effort chosen on the composer reached the
+  agents up to five minutes later (the founder connected Claude at 22:44 and
+  his next two messages were answered on Simeon's model). Before each agent
+  turn, the roles are now read again when the last read is more than fifteen
+  seconds old, the turn waiting at most three seconds for it.
 
 **The steps:**
 

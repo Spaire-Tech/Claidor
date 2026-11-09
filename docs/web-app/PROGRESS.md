@@ -839,6 +839,48 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Claude's own words reach the person; the model on the composer in proportion; how hard it thinks
+
+The founder, after his first real turns on his Claude plan: the agents
+"TAKING FOREVER TO ANSWER", each reply opening "Sorry, I missed your last
+message"; the model on the composer "unpropotionate"; "just say you're now
+connected to claude"; "we should have a thinking effort" (Reason's Light,
+Medium, High, Extra High, Max). The engine, the server, the Mac and the
+iPhone change in the same pull request.
+
+- **Done:**
+  - The engine (not the web app): after a turn the person started that
+    Claude Code ran, Claude's own last words are sent as the reply when
+    nothing else reached them, or when it worked on after its last message;
+    no hidden turns poke it. A model or effort chosen applies to the next
+    message (the roles read again before a turn when older than fifteen
+    seconds). Claude Code gets `--effort`. `docs/your-own-models.md`,
+    section 6.
+  - The server keeps the effort with the choice (`PUT models/own`
+    `{effort}`), answers `effort` and `efforts` with `GET models/own`, names
+    it on Claude's row for the engine (`claudeCodeEffort`), and puts it in
+    ChatGPT's requests on the agent's turns.
+  - `core/aiModels.ts`: `effort`, `efforts`, `effortName`, `chooseEffort`;
+    the words Light, Medium, High, Extra High, Max in the core's table.
+  - `ComposerModelMenu.tsx`: the mark and the name in the field's grey at
+    13, centred on the microphone; on the person's own plan, the effort
+    ("High ⌄") in a soft pill with its own menu, the model's chevron then
+    left out. Simeon's: the mark, "Simeon" and the chevron, no effort.
+  - The connect sheets end "You're now connected to Claude." (or ChatGPT).
+- **Checked:** the engine's Claude tests (13, six new: the words sent, no
+  pokes, the effort read and passed, the read before a turn) and the whole
+  engine suite (1002 pass; the one failure is the renderer asset not built
+  in this container, as before); the server's AI Models tests (60, two new);
+  `pnpm test` (1218), `pnpm typecheck`, `pnpm lint`; the core's Swift tests
+  on Linux (12, one new); in Chromium against the stand-ins, light, dark and
+  French: "Simeon ⌄"; "Claude Opus 5.5" and "High ⌄", both 13 and centred
+  with the field's words; the effort menu (Léger … Max in French); Max
+  chosen, one `PUT models/own {"effort":"max"}`; no console errors.
+- **Not checked:** the Mac and iPhone screens built (no Xcode here); a real
+  turn with the new engine (it needs publishing); a real ChatGPT turn at a
+  chosen effort.
+- **Next:** what the founder asks.
+
 ### 9 November 2026: Connect ChatGPT and Claude like an app
 
 The founder: "lets stay true to our design and have it like when you

@@ -274,3 +274,58 @@ test("the engine reads the server's claude-code row, keeps it with the roles, an
     await dispose();
   }
 });
+
+test("the effort the person chose: read from Claude's row, kept, and given to Claude Code as --effort", async () => {
+  const { module: roles, dispose } = await load("source/host/extensions/inference/simeon-model-roles.ts", "simeon-model-roles");
+  const { module: turn, dispose: disposeTurn } = await load("source/host/claude-code/claude-code-turn.ts", "claude-code-turn");
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-effort-"));
+  try {
+    const row = (effort) => ({ modelId: "own:claude:claude-opus-5-5", role: "primary", transportApi: "claude-code", claudeCodeModel: "claude-opus-5-5", ...(effort === undefined ? {} : { claudeCodeEffort: effort }) });
+    assert.deepEqual(roles.parseSimeonModelRoles({ data: [row("xhigh")] }), { claudeCode: "claude-opus-5-5", claudeCodeEffort: "xhigh" });
+    // An effort Claude Code doesn't take, or none: Claude Code's own.
+    for (const bad of ["extreme", "high; rm -rf /", 3, undefined]) assert.equal(roles.parseSimeonModelRoles({ data: [row(bad)] }).claudeCodeEffort, undefined, String(bad));
+    const file = path.join(dir, "model-roles.json");
+    await writeFile(file, JSON.stringify({ claudeCode: "claude-opus-5-5", claudeCodeEffort: "max" }));
+    roles.setSimeonModelRolesForTest({});
+    assert.deepEqual(roles.recallSimeonModelRoles(file), { claudeCode: "claude-opus-5-5", claudeCodeEffort: "max" });
+
+    const args = turn.claudeCodeTurnArgs({ prompt: "Hi", model: "claude-opus-5-5", effort: "high" }, {}, undefined);
+    assert.equal(args[args.indexOf("--effort") + 1], "high");
+    assert.equal(turn.claudeCodeTurnArgs({ prompt: "Hi", model: "claude-opus-5-5" }, {}, undefined).includes("--effort"), false);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await dispose();
+    await disposeTurn();
+  }
+});
+
+test("before a turn, the roles are read again when the last read is old, and a slow read doesn't hold the turn", async () => {
+  const { module: roles, dispose } = await load("source/host/extensions/inference/simeon-model-roles.ts", "simeon-model-roles");
+  try {
+    let reads = 0;
+    let answer = { data: [{ modelId: "own:claude:claude-opus-5-5", role: "primary", transportApi: "claude-code", claudeCodeModel: "claude-opus-5-5", claudeCodeEffort: "low" }] };
+    const source = { getAccessToken: async () => "simeon_da_stand_in", backendUrl: "https://simeon.example", fetch: async () => { reads += 1; return Response.json(answer); } };
+    roles.setSimeonModelRolesForTest({});
+    // Just read: nothing more.
+    roles.setSimeonModelRolesSourceForTest(source, Date.now());
+    await roles.refreshSimeonModelRolesBeforeTurn();
+    assert.equal(reads, 0);
+    // Older than fifteen seconds: read now, and the turn sees the new choice.
+    roles.setSimeonModelRolesSourceForTest(source, Date.now() - 16_000);
+    await roles.refreshSimeonModelRolesBeforeTurn();
+    assert.equal(reads, 1);
+    assert.equal(roles.simeonModelRoles().claudeCodeEffort, "low");
+    // A read that hangs: the turn goes on after three seconds with what it has.
+    answer = { data: [] };
+    const hanging = { ...source, fetch: () => new Promise(() => {}) };
+    roles.setSimeonModelRolesSourceForTest(hanging, 0);
+    const started = Date.now();
+    await roles.refreshSimeonModelRolesBeforeTurn();
+    const waited = Date.now() - started;
+    assert.ok(waited >= 2_900 && waited < 4_500, String(waited));
+    assert.equal(roles.simeonModelRoles().claudeCodeEffort, "low");
+  } finally {
+    roles.setSimeonModelRolesSourceForTest(undefined);
+    await dispose();
+  }
+});

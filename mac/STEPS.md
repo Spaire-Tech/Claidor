@@ -2892,3 +2892,20 @@ again in a moment."
 Not yet built or run on a Mac or an iPhone: no Xcode here. The core's
 `AIModelsTests` ran on Linux; the web app's translation ran in Chromium
 against a stand-in server.
+
+### The model on the composer in proportion; how hard it thinks (9 November 2026)
+
+The founder, with a screenshot of the composer: "Look at how unpropotionate
+it is", Reason's "Opus 5.5 High ⌄" beside it; "where is the thinking
+effort?"; "just say you're now connected to claude". The model's button is
+now a plain button (`ComposerModelMenu`) opening Apple's menu upward from
+itself, as Attach does (`ComposerModelMenus`): its mark (13) and its name
+(13) in the field's grey, 28 high in a 36 row centred on the microphone.
+On the person's own plan the effort follows ("High ⌄", 13 in the ink on the
+wash, 24 high, round), its menu Light, Medium, High, Extra High, Max, the
+one in use ticked (`AIModelsModel.chooseEffort`). The connect sheets end
+"You're now connected to Claude." (or ChatGPT). The iPhone keeps its mark
+and chevron, its menu gaining Thinking effort with the five.
+
+Not yet built or run on a Mac or an iPhone: no Xcode here. The web app's
+translation ran in Chromium.

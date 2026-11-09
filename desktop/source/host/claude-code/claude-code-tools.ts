@@ -56,6 +56,8 @@ export interface BridgeOptions {
   /** Tools left out besides `CLAUDE_CODE_HAS_ITS_OWN`. */
   readonly skip?: ((tool: EngineTool) => boolean) | undefined;
   readonly log?: ((line: string) => void) | undefined;
+  /** Each call Claude Code makes, by the tool's name, as it starts: the turn knows what it said and did after. */
+  readonly onCall?: ((name: string) => void) | undefined;
 }
 
 /** MCP tool names: letters, digits, `_` and `-`, at most 64. */
@@ -125,6 +127,7 @@ export function bridgeEngineTools(tools: readonly EngineTool[], options: BridgeO
       description,
       inputSchema,
       async call(args, signal) {
+        options.onCall?.(tool.name);
         const linked = AbortSignal.any([options.signal, signal]);
         const handler = claudeCodeInteractionHandler({ signal: linked, listener: options.listener, log: options.log }, missing);
         const meta: Record<string, unknown> = { toolCallId: `cc_${randomUUID()}`, ...(options.stateHandler === undefined ? {} : { stateHandler: options.stateHandler }) };

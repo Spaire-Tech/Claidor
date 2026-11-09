@@ -296,6 +296,24 @@ export function simeonsModels(): string {
   return t("Simeon's models")
 }
 
+/** An effort as the composer names it (Reason's words): Light, Medium, High, Extra High, Max (`AIModels.effortName`). */
+export function effortName(level: string): string {
+  switch (level) {
+    case 'low':
+      return t('Light')
+    case 'medium':
+      return t('Medium')
+    case 'high':
+      return t('High')
+    case 'xhigh':
+      return t('Extra High')
+    case 'max':
+      return t('Max')
+    default:
+      return level
+  }
+}
+
 // MARK: The page's model (`AIModelsModel`)
 
 /** One call to Simeon Labs' server: the path under `/desktop/api/`, its method and body. */
@@ -342,6 +360,10 @@ export class AIModelsModel {
   models: OwnModelChoice[] = []
   /** The model their agents use; none for Simeon's. */
   chosen?: string
+  /** How hard it thinks (`low`, `medium`, `high`, `xhigh`, `max`); none on Simeon's. */
+  effort?: string
+  /** The efforts the chosen model's provider takes, in order; none on Simeon's. */
+  efforts: string[] = []
   loaded = false
   loading = false
   /** A change to the choice on its way. */
@@ -451,6 +473,15 @@ export class AIModelsModel {
       .map(ownModelChoice)
       .filter((one): one is OwnModelChoice => one !== undefined)
     this.chosen = text(field(own, 'model'))
+    this.effort = text(field(own, 'effort'))
+    this.efforts = (arr(field(own, 'efforts')) ?? [])
+      .map((one) => text(one))
+      .filter((one): one is string => one !== undefined)
+  }
+
+  /** The effort's name on the composer ("High"); none on Simeon's. */
+  get effortName(): string | undefined {
+    return this.effort === undefined ? undefined : effortName(this.effort)
   }
 
   /** A ChatGPT sign-in started: the code to show; none (and `problem`) when none could be had. */
@@ -671,6 +702,22 @@ export class AIModelsModel {
       this.problem = undefined
     } catch (error) {
       this.problem = t`Couldn't change the model: ${said(error)}`
+    } finally {
+      this.choosing = false
+      this.changed()
+    }
+  }
+
+  /** How hard the chosen model thinks (9 November 2026, the founder: "we should have a thinking effort"), one of `efforts`; the agents follow at their next message. */
+  async chooseEffort(value: string): Promise<void> {
+    if (value === this.effort || !this.efforts.includes(value)) return
+    this.choosing = true
+    this.changed()
+    try {
+      this.read(await this.call('models/own', 'PUT', { effort: value }))
+      this.problem = undefined
+    } catch (error) {
+      this.problem = t`Couldn't change the effort: ${said(error)}`
     } finally {
       this.choosing = false
       this.changed()

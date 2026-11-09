@@ -42,6 +42,7 @@ import type {
 } from "./transcript-hub.js";
 import { getTranscript, updateEntry } from "./transcript-store.js";
 import type { LiveTranscriptSession } from "./session-runtime.js";
+import { claudeCodeEndingSince, claudeCodeReplyToSend } from "../../claude-code/claude-code-agent-turn.js";
 
 // Three nudges when a turn the person started ends without a reply, as the
 // upstream app does. Cut to one on 2 October 2026 to save the hidden turns;
@@ -155,6 +156,13 @@ export interface TurnResult {
 
 export interface AgentRunner {
   run(prompt: string, options: Record<string, unknown>): Promise<TurnResult>;
+  /** A message to the person outside the model's own calls (the runner's, as `announceJoined` sends one). */
+  emitUpdate?(update: {
+    readonly type: "send-message";
+    readonly message: { readonly type: "text"; readonly content: string };
+    readonly timestampMs: number;
+    readonly ackToken?: string;
+  }): void;
   wouldRecoverViaPrepend?(
     recent: readonly unknown[],
     latestMessageId: string,
@@ -458,6 +466,7 @@ export class TurnRuntime {
             turnCtx,
             turnTrace,
             turn,
+            startedAtMs,
           );
           settledResult = settled.result;
           if (
@@ -552,12 +561,39 @@ export class TurnRuntime {
     traceCtx: unknown,
     turnTrace: HostTrace | undefined,
     turn?: Record<string, any>,
+    startedAtMs?: number,
   ): Promise<{
     result: TurnResult;
     replyNudgeAttempts: number;
     deliveryOwed: boolean;
     streamOutputProduced: boolean;
   }> {
+    // A turn Claude Code ran (the person's own Claude plan, 9 November 2026): its own words are its answer. They
+    // go to the person when nothing else did, or when it worked on after its last message; no hidden turn pokes
+    // it ("they received nothing and are still waiting", which made every reply open with an apology), and the
+    // closing nudge, which reads the engine's own history Claude Code doesn't write, is not asked.
+    const claude = startedAtMs === undefined ? undefined : claudeCodeEndingSince(session.id, startedAtMs);
+    if (claude !== undefined && runner.emitUpdate !== undefined) {
+      const owed = isDeliveryOwed(result);
+      const words = claudeCodeReplyToSend(claude, owed);
+      if (words !== undefined) {
+        runner.emitUpdate({
+          type: "send-message",
+          message: { type: "text", content: words },
+          timestampMs: Date.now(),
+          ...(ackToken === undefined ? {} : { ackToken }),
+        });
+        setTurnTraceAttributes(turnTrace, { "sand.claude_code_words_sent": true });
+      }
+      if (words !== undefined || !owed) {
+        return {
+          result: owed ? { ...result, sentMessageCount: 1 } : result,
+          replyNudgeAttempts: 0,
+          deliveryOwed: false,
+          streamOutputProduced: result.streamOutputProduced === true,
+        };
+      }
+    }
     let latest = result;
     let attempts = 0;
     let delivered = !isDeliveryOwed(result);
