@@ -30,6 +30,8 @@ export interface MenuEntry {
   checked?: boolean
   /** Words at its end, before a submenu's chevron (`NSMenuItemBadge`: Weekly usage's "38%"). */
   badge?: string
+  /** A tick at its end, before a submenu's chevron: the one in use, its logo kept before it (the composer's model menu, as Reason's). */
+  endCheck?: boolean
   /** No symbols' column: the words start at the item's edge (a menu without symbols, Apple's way). */
   bare?: boolean
 }
@@ -250,6 +252,11 @@ function MenuPanel({
               <span className="menu-label">{item.label}</span>
               {item.badge !== undefined && (
                 <span className="menu-badge">{item.badge}</span>
+              )}
+              {item.endCheck && (
+                <span className="menu-end-check">
+                  <Glyph name="check" />
+                </span>
               )}
               {item.submenu && <Glyph name="chevron" />}
             </button>

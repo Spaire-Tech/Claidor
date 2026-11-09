@@ -1,14 +1,15 @@
 // Settings' AI Models (mac/Simeon/SettingsModels.swift, the core's
 // AIModels.swift; 8 November 2026, the founder: "allow people to bring
 // their own subscriptions and charge only for the computer", "do it exactly
-// like Reason", then "use codex sign in"): what it is for in a line (9
-// November: "Connect providers and choose the models your agents use"); the
-// model the agents use (Simeon's, or one of the person's own); the accounts
-// connected, each its name, its kind and plan, how it stands and a `⋯`
-// (Rename, Connect Again, Disconnect); then Subscriptions, each provider with
-// its own logo and nothing under its name: ChatGPT's Connect, which opens the
-// code sheet, and Claude's (9 November 2026), which signs in to Claude Code
-// on the person's computer.
+// like Reason", then "use codex sign in"): what it is for in a line; the
+// accounts connected, each its app's icon, its name and "Subscription" (how
+// it stands only when it can't be used) and a `⋯` (Add Another for ChatGPT,
+// Connect Again, Rename, Disconnect); then Subscriptions, the providers not
+// yet connected, each its app's icon, its name and Connect. 9 November, the
+// founder: "do not duplicate the subscription", "just have subscription
+// there", the icons whole as Wallet's Link and Shop, and the model chosen on
+// the composer (`ComposerModelMenu`), not here. One model for the window
+// (`store.aiModels`).
 //
 // The web's own ways: the code is copied with the window's clipboard
 // (clipboard.ts: the browser's, or the Windows app's); OpenAI's page opens
@@ -25,25 +26,25 @@ import {
   useState,
 } from 'react'
 import {
-  AIModelsModel,
   type ChatGPTPoll,
   type ChatGPTSignIn,
   type ClaudeConnect,
   type ClaudeSignIn,
   type AIModelsModel as Model,
   type ModelAccount,
-  accountDetail,
   chatGPT,
   claude,
+  kindName,
   providerName,
   shownAddress,
-  simeonsModels,
   statusWords,
   usable,
 } from '../core/aiModels'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { copyText } from './clipboard'
+import { AppLogoTile } from './ConnectCards'
+import './ConnectCards.css'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import { Alert, Sheet } from './Dialogs'
 import './SettingsModels.css'
@@ -51,15 +52,12 @@ import {
   PanelDisc,
   SettingsGroup,
   SettingsLine,
-  SettingsMenu,
   SettingsPill,
 } from './SettingsParts'
 import { useWatched } from './useStore'
 
 export function SettingsModelsPage({ store }: { store: AppStore }) {
-  const [model] = useState(
-    () => new AIModelsModel(store.modelsCall, undefined, store.modelsCommand),
-  )
+  const model = store.aiModels
   useWatched(model)
   const [connectingChatGPT, setConnectingChatGPT] = useState(false)
   const [connectingClaude, setConnectingClaude] = useState(false)
@@ -90,36 +88,24 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
         )
       ) : (
         <>
-          {model.models.length > 0 && (
-            <SettingsGroup
-              title={t('Your agents use')}
-              footer={t(
-                "When your plan's limit is reached, your agents use Simeon's models until it resets.",
-              )}
-            >
-              <SettingsMenu<string | undefined>
-                label={t('Model')}
-                options={[
-                  { value: undefined, label: simeonsModels() },
-                  ...model.models.map((one) => ({
-                    value: one.id,
-                    label: one.name,
-                  })),
-                ]}
-                value={model.chosen}
-                pending={model.choosing}
-                pick={(picked) => void model.choose(picked)}
-              />
-            </SettingsGroup>
-          )}
           {model.accounts.length > 0 && (
-            <SettingsGroup title={t('Connected')}>
+            <SettingsGroup
+              title={t('Connected')}
+              footer={
+                model.unconnected.length === 0 ? voiceFooter() : undefined
+              }
+            >
               {model.accounts.map((account, index) => (
                 <ModelAccountLine
                   key={account.id}
                   account={account}
                   divided={index > 0}
                   rename={() => setRenaming(account)}
+                  addAnother={
+                    account.provider === chatGPT
+                      ? () => setConnectingChatGPT(true)
+                      : undefined
+                  }
                   connectAgain={() =>
                     account.provider === claude
                       ? setConnectingClaude(true)
@@ -130,30 +116,26 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
               ))}
             </SettingsGroup>
           )}
-          <SettingsGroup
-            title={t('Subscriptions')}
-            footer={t(
-              'Voice calls, dictation and video still use your Simeon credits.',
-            )}
-          >
-            <ProviderLine provider={chatGPT}>
-              <SettingsPill
-                title={
-                  model.connected(chatGPT) ? t('Add Another') : t('Connect')
-                }
-                onClick={() => setConnectingChatGPT(true)}
-              />
-            </ProviderLine>
-            {/* Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6). */}
-            <ProviderLine provider={claude} divided>
-              {!model.connected(claude) && (
-                <SettingsPill
-                  title={t('Connect')}
-                  onClick={() => setConnectingClaude(true)}
-                />
-              )}
-            </ProviderLine>
-          </SettingsGroup>
+          {model.unconnected.length > 0 && (
+            <SettingsGroup title={t('Subscriptions')} footer={voiceFooter()}>
+              {model.unconnected.map((provider, index) => (
+                <ProviderLine
+                  key={provider}
+                  provider={provider}
+                  divided={index > 0}
+                >
+                  <SettingsPill
+                    title={t('Connect')}
+                    onClick={() =>
+                      provider === claude
+                        ? setConnectingClaude(true)
+                        : setConnectingChatGPT(true)
+                    }
+                  />
+                </ProviderLine>
+              ))}
+            </SettingsGroup>
+          )}
           {model.problem !== undefined && (
             <p className="models-problem" role="alert">
               {model.problem}
@@ -203,27 +185,38 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   )
 }
 
-/** One account (`MacModelAccountLine`): the provider's tile, its name over its kind and plan and how it stands (green while usable), and `⋯`. */
+/** The line under the groups: what still uses Simeon's credits. */
+function voiceFooter(): string {
+  return t('Voice calls, dictation and video still use your Simeon credits.')
+}
+
+/** One account (`MacModelAccountLine`): its app's icon, its name over "Subscription" (and how it stands, only when it can't be used), and `⋯`. */
 function ModelAccountLine({
   account,
   divided,
   rename,
+  addAnother,
   connectAgain,
   disconnect,
 }: {
   account: ModelAccount
   divided: boolean
   rename: () => void
+  /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
+  addAnother?: () => void
   connectAgain: () => void
   disconnect: () => void
 }) {
   const [menu, setMenu] = useState<{ x: number; y: number }>()
   const button = useRef<HTMLButtonElement>(null)
   const items: MenuLine[] = [
-    { label: t('Rename'), bare: true, action: rename },
+    ...(addAnother
+      ? [{ label: t('Add Another'), bare: true, action: addAnother }]
+      : []),
     ...(account.status === 'signed_out'
       ? [{ label: t('Connect Again'), bare: true, action: connectAgain }]
       : []),
+    { label: t('Rename'), bare: true, action: rename },
     'separator',
     {
       label: t('Disconnect'),
@@ -232,21 +225,27 @@ function ModelAccountLine({
       action: disconnect,
     },
   ]
-  const tint = usable(account)
-    ? 'usable'
-    : account.status === 'signed_out'
-      ? 'signed-out'
-      : undefined
   return (
     <div className={divided ? 'models-line divided' : 'models-line'}>
-      <ProviderTile provider={account.provider} side={28} />
+      <ProviderIcon provider={account.provider} side={28} />
       <span className="models-words">
         <span className="models-title">{account.label}</span>
         <span className="models-subtitle">
-          {`${accountDetail(account)} · `}
-          <span className={tint ? `models-status ${tint}` : 'models-status'}>
-            {statusWords(account)}
-          </span>
+          {kindName(account)}
+          {!usable(account) && (
+            <>
+              {' · '}
+              <span
+                className={
+                  account.status === 'signed_out'
+                    ? 'models-status signed-out'
+                    : 'models-status'
+                }
+              >
+                {statusWords(account)}
+              </span>
+            </>
+          )}
         </span>
       </span>
       <button
@@ -280,40 +279,40 @@ function ModelAccountLine({
   )
 }
 
-/** The providers' logos (the founder's files, 9 November 2026), as the Mac's `Providers/<provider>`. */
-const providerLogos: Record<string, string> = {
+/** The providers' app icons, from the App Store, as the Mac's `Providers/<provider>`. */
+const providerIcons: Record<string, string> = {
   [chatGPT]: new URL('../assets/providers/chatgpt.png', import.meta.url).href,
   [claude]: new URL('../assets/providers/claude.png', import.meta.url).href,
 }
 
 /**
- * A provider's logo on the grey tile (`MacProviderTile`): ChatGPT's knot in
- * the ink, so white on dark; Claude's mark in its own orange.
+ * A provider's app icon, whole, as Wallet draws Link's and Shop's
+ * (`MacProviderIcon`, the `.app-icon` of the connect cards; the founder, 9
+ * November 2026: "how link and shop have their full logo, not inside a
+ * box").
  */
-function ProviderTile({ provider, side }: { provider: string; side: number }) {
-  const logo = providerLogos[provider]
+export function ProviderIcon({
+  provider,
+  side,
+}: {
+  provider: string
+  side: number
+}) {
+  const icon = providerIcons[provider]
+  if (icon === undefined)
+    return <AppLogoTile name={providerName(provider)} side={side} />
   return (
     <span
-      className="models-provider-tile"
-      style={{ width: side, height: side, borderRadius: (side * 11) / 40 }}
+      className="app-icon"
+      style={{ width: side, height: side, borderRadius: side * 0.2237 }}
       aria-hidden="true"
     >
-      {logo === undefined ? null : provider === chatGPT ? (
-        <span
-          className="models-provider-mask"
-          style={{
-            maskImage: `url("${logo}")`,
-            WebkitMaskImage: `url("${logo}")`,
-          }}
-        />
-      ) : (
-        <img src={logo} alt="" />
-      )}
+      <img src={icon} alt="" />
     </span>
   )
 }
 
-/** A provider's row under Subscriptions (`MacProviderLine`): its logo, its name, and its Connect. */
+/** A provider not yet connected, under Subscriptions (`MacProviderLine`): its app's icon, its name, and Connect. */
 function ProviderLine({
   provider,
   divided,
@@ -325,7 +324,7 @@ function ProviderLine({
 }) {
   return (
     <div className={divided ? 'models-line divided' : 'models-line'}>
-      <ProviderTile provider={provider} side={28} />
+      <ProviderIcon provider={provider} side={28} />
       <span className="models-words">
         <span className="models-title">{providerName(provider)}</span>
       </span>
@@ -530,7 +529,7 @@ function ChatGPTConnectSheet({
   return (
     <Sheet label={t('Connect ChatGPT')} close={close} className="models-sheet">
       <div className="models-sheet-head">
-        <ProviderTile provider={chatGPT} side={36} />
+        <ProviderIcon provider={chatGPT} side={36} />
         <h2 className="models-sheet-title">{t('Connect ChatGPT')}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
       </div>
@@ -679,7 +678,7 @@ function ClaudeConnectSheet({
   return (
     <Sheet label={t('Connect Claude')} close={shut} className="models-sheet">
       <div className="models-sheet-head">
-        <ProviderTile provider={claude} side={36} />
+        <ProviderIcon provider={claude} side={36} />
         <h2 className="models-sheet-title">{t('Connect Claude')}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={shut} />
       </div>

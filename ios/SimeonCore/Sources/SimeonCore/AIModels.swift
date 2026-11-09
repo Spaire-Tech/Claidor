@@ -70,9 +70,13 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
 
   /** The line under its name: "Subscription · Plus". */
   public var detail: String {
-    let kindWords = kind == "api_key" ? L10n.text("API key") : L10n.text("Subscription")
-    guard let plan, !plan.isEmpty else { return kindWords }
-    return "\(kindWords) · \(AIModels.planName(plan))"
+    guard let plan, !plan.isEmpty else { return kindName }
+    return "\(kindName) · \(AIModels.planName(plan))"
+  }
+
+  /** What it is, the only words under its name while it works (the founder, 9 November 2026: "just have subscription there"): "Subscription". */
+  public var kindName: String {
+    kind == "api_key" ? L10n.text("API key") : L10n.text("Subscription")
   }
 
   /** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out". */
@@ -110,6 +114,17 @@ public struct OwnModelChoice: Identifiable, Equatable, Sendable {
   init?(json: JSON) {
     guard let id = json["modelId"]?.text else { return nil }
     self.init(id: id, name: json["modelName"]?.text ?? id, provider: json["provider"]?.text ?? "")
+  }
+}
+
+/** A provider and the models it offers the person, as the composer's menu lists them. */
+public struct ProviderModels: Identifiable, Equatable, Sendable {
+  public let provider: String
+  public let models: [OwnModelChoice]
+  public var id: String { provider }
+
+  public init(provider: String, models: [OwnModelChoice]) {
+    self.provider = provider; self.models = models
   }
 }
 
@@ -182,6 +197,10 @@ public enum ClaudeConnect: Equatable, Sendable {
 public enum AIModels {
   public static let chatGPT = "chatgpt"
   public static let claude = "claude"
+  /** The providers a person can connect, in the order the apps list them. */
+  public static let providers = [chatGPT, claude]
+  /** The name on the composer while the agents use Simeon's models (the founder's "⌘ Simeon"). */
+  public static let simeon = "Simeon"
   /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
   static let claudeHosts: Set<String> = ["claude.com", "claude.ai", "platform.claude.com", "console.anthropic.com"]
 
@@ -284,6 +303,34 @@ public final class AIModelsModel {
     guard let chosen else { return AIModels.simeonsModels }
     return models.first { $0.id == chosen }?.name ?? AIModels.simeonsModels
   }
+
+  /** Whether an account of this provider is listed, signed in or not. */
+  public func hasAccount(_ provider: String) -> Bool {
+    accounts.contains { $0.provider == provider }
+  }
+
+  /** The providers under Subscriptions: those with no account yet, a connected one being only under Connected (the founder: "do not duplicate the subscription"). */
+  public var unconnected: [String] {
+    AIModels.providers.filter { !hasAccount($0) }
+  }
+
+  /** The providers with models to choose, in the apps' order, each with its models: the composer's menu. */
+  public var choices: [ProviderModels] {
+    let known = AIModels.providers + Set(models.map(\.provider)).subtracting(AIModels.providers).sorted()
+    return known.compactMap { provider in
+      let offered = models.filter { $0.provider == provider }
+      return offered.isEmpty ? nil : ProviderModels(provider: provider, models: offered)
+    }
+  }
+
+  /** The chosen model as the person may choose it; nil on Simeon's (or a model no longer offered). */
+  public var chosenChoice: OwnModelChoice? {
+    guard let chosen else { return nil }
+    return models.first { $0.id == chosen }
+  }
+
+  /** The name on the composer: the chosen model's, "Simeon" on Simeon's. */
+  public var composerName: String { chosenChoice?.name ?? AIModels.simeon }
 
   /** Whether an account of this provider is connected and signed in. */
   public func connected(_ provider: String) -> Bool {

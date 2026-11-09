@@ -29,6 +29,10 @@ import { displayLocale } from './listTime'
 
 export const chatGPT = 'chatgpt'
 export const claude = 'claude'
+/** The providers a person can connect, in the order the apps list them (`AIModels.providers`). */
+export const providers = [chatGPT, claude] as const
+/** The name on the composer while the agents use Simeon's models (`AIModels.simeon`, the founder's "⌘ Simeon"). */
+export const simeon = 'Simeon'
 /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
 const claudeHosts = new Set([
   'claude.com',
@@ -101,8 +105,13 @@ export function planName(plan: string): string {
 
 /** The line under its name: "Subscription · Plus". */
 export function accountDetail(account: ModelAccount): string {
-  const kind = account.kind === 'api_key' ? t('API key') : t('Subscription')
+  const kind = kindName(account)
   return account.plan ? `${kind} · ${planName(account.plan)}` : kind
+}
+
+/** What it is, the only words under its name while it works (`ModelAccount.kindName`; the founder, 9 November 2026: "just have subscription there"). */
+export function kindName(account: ModelAccount): string {
+  return account.kind === 'api_key' ? t('API key') : t('Subscription')
 }
 
 /** "4:00 PM" today, else "Thu 4:00 PM", in the app's language (`AIModels.time`). */
@@ -358,6 +367,40 @@ export class AIModelsModel {
     return (
       this.models.find((one) => one.id === this.chosen)?.name ?? simeonsModels()
     )
+  }
+
+  /** Whether an account of this provider is listed, signed in or not. */
+  hasAccount(provider: string): boolean {
+    return this.accounts.some((one) => one.provider === provider)
+  }
+
+  /** The providers under Subscriptions: those with no account yet, a connected one being only under Connected (the founder: "do not duplicate the subscription"). */
+  get unconnected(): string[] {
+    return providers.filter((provider) => !this.hasAccount(provider))
+  }
+
+  /** The providers with models to choose, in the apps' order, each with its models: the composer's menu. */
+  get choices(): { provider: string; models: OwnModelChoice[] }[] {
+    const others = [...new Set(this.models.map((one) => one.provider))]
+      .filter(
+        (provider) => !(providers as readonly string[]).includes(provider),
+      )
+      .sort()
+    return [...providers, ...others].flatMap((provider) => {
+      const offered = this.models.filter((one) => one.provider === provider)
+      return offered.length === 0 ? [] : [{ provider, models: offered }]
+    })
+  }
+
+  /** The chosen model as the person may choose it; none on Simeon's (or a model no longer offered). */
+  get chosenChoice(): OwnModelChoice | undefined {
+    if (this.chosen === undefined) return undefined
+    return this.models.find((one) => one.id === this.chosen)
+  }
+
+  /** The name on the composer: the chosen model's, "Simeon" on Simeon's. */
+  get composerName(): string {
+    return this.chosenChoice?.name ?? simeon
   }
 
   /** Whether an account of this provider is connected and signed in. */

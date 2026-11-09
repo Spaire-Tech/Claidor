@@ -37,6 +37,7 @@ import {
   voiceChoicesFrom,
   voicePlan,
 } from './agentVoices'
+import { AIModelsModel } from './aiModels'
 import { SimeonAPIError } from './api'
 import {
   type AppAccount,
@@ -5934,8 +5935,21 @@ export class AppStore {
     return backend.command(method, args ?? {})
   }
 
+  private ownModels?: AIModelsModel
+  /** The person's own AI accounts and the model their agents use (`AppStore.aiModels`): one for the window, so Settings › AI Models and the composer's model show the same (9 November 2026). */
+  get aiModels(): AIModelsModel {
+    this.ownModels ??= new AIModelsModel(
+      this.modelsCall,
+      undefined,
+      this.modelsCommand,
+    )
+    return this.ownModels
+  }
+
   /** 6f's state back to nothing (signed out). */
   private resetUsageAndBilling(): void {
+    // Another account's own models are not this one's.
+    this.ownModels = undefined
     this.usage = emptyUsage
     this.usageReadAt = undefined
     this.usageReading = undefined

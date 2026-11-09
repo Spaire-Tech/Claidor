@@ -56,6 +56,7 @@ import {
   type Staging,
   pastedFiles,
 } from './Attachments'
+import { ComposerModelMenu } from './ComposerModelMenu'
 import {
   type ListKey,
   PickList,
@@ -546,6 +547,8 @@ export function Composer({
               }}
             />
           </div>
+          {/* The model the agents use, before the microphone (9 November 2026, the founder: "the model chosen is on the composer"). */}
+          {dictation.phase === 'idle' && <ComposerModelMenu store={store} />}
           {dictation.isListening ? (
             <RecordingChip
               meter={dictation.meter}

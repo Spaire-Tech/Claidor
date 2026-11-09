@@ -136,6 +136,38 @@ final class AIModelsTests: XCTestCase {
     XCTAssertTrue(model.models.isEmpty)
   }
 
+  /** The page and the composer (9 November 2026, the founder: "do not duplicate the subscription", "the model chosen is on the composer"): a connected provider only under Connected, the composer's menu by provider, its name and the words under an account. */
+  @MainActor
+  func testAConnectedProviderLeavesSubscriptionsAndTheComposerNamesTheModel() async throws {
+    var chosen: String? = nil
+    let model = AIModelsModel(call: { path, method, body in
+      switch (method ?? "GET", path) {
+      case ("GET", "models/accounts"):
+        return ["accounts": [["id": "c1", "provider": "claude", "kind": "subscription", "label": "ada@example.com", "plan": "max", "status": "available"]]]
+      case ("PUT", "models/own"):
+        chosen = body?["model"]?.text
+        fallthrough
+      default:
+        return ["model": chosen.map(JSON.string) ?? .null, "models": [
+          ["modelId": "own:claude:sonnet", "modelName": "Claude Sonnet", "provider": "claude"],
+          ["modelId": "own:claude:opus", "modelName": "Claude Opus", "provider": "claude"],
+        ]]
+      }
+    }, sleep: { _ in })
+    await model.load()
+    XCTAssertEqual(model.unconnected, ["chatgpt"], "Claude only under Connected")
+    XCTAssertTrue(model.hasAccount("claude"))
+    XCTAssertEqual(model.choices.map(\.provider), ["claude"])
+    XCTAssertEqual(model.choices.first?.models.map(\.name), ["Claude Sonnet", "Claude Opus"], "the server's order")
+    XCTAssertEqual(model.composerName, "Simeon")
+    XCTAssertNil(model.chosenChoice)
+    await model.choose("own:claude:opus")
+    XCTAssertEqual(model.composerName, "Claude Opus")
+    XCTAssertEqual(model.chosenChoice?.provider, "claude")
+    let account = try XCTUnwrap(model.accounts.first)
+    XCTAssertEqual(account.kindName, "Subscription", "no plan, no usage under its name")
+  }
+
   @MainActor
   func testARefusedSignInSaysWhyInThePersonsWords() async {
     let model = AIModelsModel(call: { path, _, _ in

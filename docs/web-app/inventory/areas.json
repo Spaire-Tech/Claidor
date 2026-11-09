@@ -191,7 +191,7 @@
    "mac/Simeon/Tapback.swift",
    "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 7629,
+  "mac_lines": 7635,
   "core_lines": 4784,
   "views": 61,
   "files_needing_a_mac": 15,
@@ -441,11 +441,11 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 3984,
-  "core_lines": 2547,
-  "views": 59,
+  "mac_lines": 4050,
+  "core_lines": 2594,
+  "views": 61,
   "files_needing_a_mac": 9,
-  "strings": 356,
+  "strings": 355,
   "strings_in_old_web_app": 150,
   "box_commands": [
    "claudeCodeSignInCancel",
@@ -503,7 +503,7 @@
    "ios/SimeonCore/Sources/SimeonCore/StoreSaved.swift"
   ],
   "mac_lines": 0,
-  "core_lines": 5682,
+  "core_lines": 5684,
   "views": 0,
   "files_needing_a_mac": 0,
   "strings": 91,
