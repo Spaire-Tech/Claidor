@@ -839,6 +839,26 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: a chat opens at its newest (checked here; the fix is the Mac's)
+
+The founder, with a recording of the Mac app: clicking Iris showed her
+chat at its first message, then mid-chat, then dropped to the newest. "it
+must open at the bottom ... if we have the same issue in windows/web, fix
+that too."
+
+- **Done:** nothing in the web app; it already opens at the newest. The Mac's
+  chat is fixed (`mac/STEPS.md`, "A chat opens at its newest"). The
+  inventory was run again for it.
+- **Checked:** in Chromium, the built app against a stand-in server and
+  computer: chats of 80, 60 and 6 messages opened one after another, with
+  the computer answering at once and after 0.2 s. Every painted frame from
+  the click was measured (`requestAnimationFrame`), and every one that drew
+  the chat's rows stood at the newest (0 from the bottom). The app sets the
+  newest before the first paint (`useLayoutEffect`) and holds it while the
+  rows grow (`ResizeObserver`).
+- **Not checked:** the Windows app itself, which loads the same build.
+- **Next:** what the founder asks.
+
 ### 9 November 2026: Claude stays signed in across engine updates; Claude's line shown; what Claude said kept
 
 The founder, after publishing the engine: an agent's reply opened "Sorry, a
