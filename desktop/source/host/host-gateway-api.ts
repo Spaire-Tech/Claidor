@@ -12,6 +12,7 @@ import { executeRoutedAgentTool as runRoutedAgentTool } from "./extensions/trans
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { say } from "../shared/say.js";
 import { currentUserLanguage } from "../shared/user-language.js";
+import { claudeCodeSignIn, claudeCodeSignOut, claudeCodeStatus } from "./claude-code/claude-code-account.js";
 
 export const HOST_CAPABILITIES = [
   "orderedReplicasV1",
@@ -886,6 +887,19 @@ export function createHostGatewayApi(
     setBoxSecrets: ({ secrets }: any) =>
       method(deps.extensions.api("secrets"), "set")({ secrets }),
     getBoxSecretsStatus: () =>
-      method(deps.extensions.api("secrets"), "getStatus")()
+      method(deps.extensions.api("secrets"), "getStatus")(),
+    // Claude Code on this computer (9 November 2026; docs/your-own-models.md,
+    // section 6): who is signed in, its own sign-in (the link, then the code
+    // the person pastes, typed at its prompt), signing out. The sign-in stays
+    // Claude Code's, in its own file; nothing here keeps it.
+    claudeCodeStatus: () => claudeCodeStatus(),
+    claudeCodeSignInStart: () => claudeCodeSignIn.start(),
+    claudeCodeSignInFinish: ({ code }: any) =>
+      claudeCodeSignIn.finish(typeof code === "string" ? code : ""),
+    claudeCodeSignInCancel: () => {
+      claudeCodeSignIn.cancel();
+      return { ok: true };
+    },
+    claudeCodeSignOut: () => claudeCodeSignOut()
   };
 }

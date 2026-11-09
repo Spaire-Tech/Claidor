@@ -47,6 +47,7 @@ ARG PLAYWRIGHT_CORE_VERSION=1.59.1
 ARG BUN_VERSION=1.4.2
 ARG UV_VERSION=0.12.23
 ARG LINK_CLI_VERSION=0.27.1
+ARG CLAUDE_CODE_VERSION=2.1.311
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DISPLAY=:1 \
@@ -116,6 +117,19 @@ RUN set -eux \
 RUN set -eux \
     && npm install -g --ignore-scripts "@stripe/link-cli@${LINK_CLI_VERSION}" \
     && NO_UPDATE_NOTIFIER=1 link-cli --version | grep -qx "${LINK_CLI_VERSION}" \
+    && npm cache clean --force
+# Claude Code (9 November 2026; docs/your-own-models.md, section 6): the
+# person signs in to it with their own Claude plan (AI Models › Claude), and
+# their agents run their turns in it. Installed as Anthropic publishes it,
+# never changed: Anthropic's terms for a platform running it
+# (code.claude.com/docs/en/legal-and-compliance). Its "stable" release; its
+# updater is turned off where the host runs it (DISABLE_AUTOUPDATER), so a new
+# version comes with a new image. Its sign-in lives in /home/box/.claude,
+# left out of Simeon's backup (box-store-sync).
+RUN set -eux \
+    && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+    && DISABLE_AUTOUPDATER=1 claude --version | grep -q "^${CLAUDE_CODE_VERSION} " \
+    && mkdir -p /home/box/.claude && chown box:box /home/box/.claude && chmod 700 /home/box/.claude \
     && npm cache clean --force
 RUN set -eux \
     && python3 -m venv /opt/uv && /opt/uv/bin/pip install --no-cache-dir "uv==${UV_VERSION}" \

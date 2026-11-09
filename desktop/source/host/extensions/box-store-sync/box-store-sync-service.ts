@@ -23,7 +23,15 @@ export const BOX_HOME_DIR = "/home/box";
 export const BOX_HOME_REL_PREFIX = "home/box";
 export const BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES = [`${BOX_HOME_REL_PREFIX}/cli-config`, `${BOX_HOME_REL_PREFIX}/chrome-profile*`, `${BOX_HOME_REL_PREFIX}/sand-data`, `${BOX_HOME_REL_PREFIX}/sand-host`, `${BOX_HOME_REL_PREFIX}/deps`] as const;
 export const BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS = ["/cli-config/", "/chrome-profile*/", "/sand-data/", "/sand-host/", "/deps/", ".cache/", "/.npm/", "/.nvm/", "/.rustup/", "/.cargo/registry/", "/.cargo/git/", "/.local/share/pnpm/", "/.local/share/Trash/", "/.local/state/", "/.docker/buildx/", "/.gradle/caches/", "/.gradle/daemon/", "/.gradle/wrapper/", "/.m2/repository/", "/.vnc/", "/.dbus/", "/.Xauthority", "*.sock"] as const;
-export function buildBoxHomeCategory(absRoot: string): BoxStoreCategory { return { name: BOX_HOME_CATEGORY_NAME, absRoot, relPrefix: BOX_HOME_REL_PREFIX, excludes: BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, ignore: () => compileWorkspaceIgnore(BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS) }; }
+/**
+ * Claude Code's sign-in on this computer (9 November 2026,
+ * docs/your-own-models.md, section 6): Anthropic doesn't let Simeon keep a
+ * person's Claude sign-in, so its file is never copied into Simeon's store.
+ * It lasts while the computer sleeps and wakes; a computer made afresh signs
+ * in to Claude again.
+ */
+export const BOX_HOME_CLAUDE_CODE_CREDENTIALS = `${BOX_HOME_REL_PREFIX}/.claude/.credentials.json`;
+export function buildBoxHomeCategory(absRoot: string): BoxStoreCategory { return { name: BOX_HOME_CATEGORY_NAME, absRoot, relPrefix: BOX_HOME_REL_PREFIX, excludes: [...BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_CLAUDE_CODE_CREDENTIALS], ignore: () => compileWorkspaceIgnore(BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS) }; }
 export const BOX_STORE_SYNC_INTERVAL_MS = 2 * 60_000;
 export const BOX_STORE_CHROME_INTERVAL_MS = 15 * 60_000;
 export const BOX_STORE_DB_DEBOUNCE_MS = 5_000;
