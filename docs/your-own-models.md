@@ -271,6 +271,16 @@ approve, paste the code back) is Claude Code's own sign-in.
   Claude Code doesn't write, is not asked (`claudeCodeReplyToSend`,
   `turn-runtime.ts`). The brief tells Claude so. The host log's own lines
   showed every turn `outcome=done`: Claude was answering.
+- **Who it is, first.** Claude Code's own instructions, which the agent's
+  brief is added to, make it a coding assistant: it looked around the
+  computer with a command or two before answering (each first command waits
+  on the safety review, 7 to 8 seconds) and answered tersely. The brief now
+  opens with who it is: not a coding assistant, one of the person's agents
+  in Simeon, in its own voice; answer first, and look at files or run
+  commands only when the request needs it (`claudeCodeBriefLead`, 9
+  November 2026). Claude Code's own instructions stay: replacing them
+  (`--system-prompt-file`) is not tried until a real turn on a Claude plan
+  shows it is accepted.
 - **How hard it thinks.** Beside the model on the composer, on the person's
   own plan: Light, Medium, High, Extra High, Max (Reason's words). Claude's
   are Claude Code's `--effort` (`low` to `max`, read from `claude --help` of
