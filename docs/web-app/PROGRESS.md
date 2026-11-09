@@ -839,6 +839,39 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: AI Models with the providers' logos, fewer words
+
+The founder, looking at the Mac app's page: "put the real logos", "remove
+the 'use your chat gpt plan' and use your claude plan", and the line on top
+"only said Connect providers and choose the models your agents use". The
+Mac (`SettingsModels.swift`) and the iPhone (`ios/Simeon/AIModels.swift`)
+change in the same pull request.
+
+- **Done:**
+  - The founder's two logos (ChatGPT's knot, Claude's mark) as
+    `src/assets/providers/{chatgpt,claude}.png`, and as `Providers/…` in the
+    Mac's and the iPhone's asset catalogues. `ProviderTile` draws them on
+    the grey tile at 60% of its side: ChatGPT's in the ink (white on dark),
+    Claude's in its orange. They replace the letter C on the accounts, both
+    sheets and, new, before each provider's name under Subscriptions
+    (`ProviderLine`).
+  - Under Subscriptions, nothing under ChatGPT or Claude any more ("Use
+    your ChatGPT plan" and "Use your Claude plan" gone from the catalogues).
+  - The page's line: "Connect providers and choose the models your agents
+    use.", in the nine languages; `pnpm words` and `pnpm build` run.
+- **Decisions (the session):** the logos are the providers' own, kept apart
+  from the connectors' marks and the chat's brands (`Providers/`), so
+  "ChatGPT" and "Claude" in a message aren't coloured by this.
+- **Checked:** `pnpm test` (1216 tests, the words, the brands, the connector
+  pages, the build), `pnpm typecheck`; in Chromium against the stand-ins,
+  light, dark and French: the new line, both logos loaded under
+  Subscriptions, on both connected accounts and in the Connect Claude
+  sheet, Claude's Connect gone once connected. `check_translations.py`,
+  `check_names.py`.
+- **Not checked:** the Mac and iPhone pages built (no Xcode here); the
+  Windows app.
+- **Next:** the founder's Mac build.
+
 ### 9 November 2026: Connect Claude in AI Models
 
 The founder: "do it like Reason. Claude code.", then "ok go"
@@ -893,7 +926,8 @@ their translation.
 - **Not checked:** a real Claude Code sign-in on a computer (no engine with
   C2 is published); the Windows app. The tiles are the letter C for both
   ChatGPT and Claude: no logo for either yet, so two connected accounts
-  differ only by their plan.
+  differ only by their plan (the logos came the same day, in the entry
+  above).
 - **Next:** C4, the engine running an agent's turn through Claude Code.
 
 ### 9 November 2026: Settings › AI Models

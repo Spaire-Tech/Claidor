@@ -5,12 +5,14 @@ import UIKit
 /**
  * AI Models (8 November 2026; the founder: "allow people to bring their own
  * subscriptions and charge only for the computer", "do it exactly like
- * Reason", then "use codex sign in"), as plain as Wallet: what it is for;
+ * Reason", then "use codex sign in"), as plain as Wallet: what it is for
+ * (9 November: "Connect providers and choose the models your agents use");
  * the model the agents use (Simeon's, or one of the person's own); the
  * accounts connected, each its name, its kind and plan and how it stands,
- * with `⋯` (Rename, Connect Again, Disconnect); Subscriptions, ChatGPT's
- * Connect opening the code sheet, Claude's (9 November 2026) signing in to
- * Claude Code on the person's computer. The Mac's page (mac/Simeon/SettingsModels.swift)
+ * with `⋯` (Rename, Connect Again, Disconnect); Subscriptions, each
+ * provider with its own logo and nothing under its name, ChatGPT's Connect
+ * opening the code sheet, Claude's (9 November 2026) signing in to Claude
+ * Code on the person's computer. The Mac's page (mac/Simeon/SettingsModels.swift)
  * and the web app's say the same; the model is the shared core's.
  */
 struct AIModelsPage: View {
@@ -25,7 +27,7 @@ struct AIModelsPage: View {
   var body: some View {
     Form {
       Section {
-        Text("Connect your own AI subscription. Your agents then think, search and draw on it, not on your Simeon credits.")
+        Text("Connect providers and choose the models your agents use.")
           .font(.system(size: 15))
           .foregroundStyle(Ink.secondary)
       }
@@ -76,11 +78,8 @@ struct AIModelsPage: View {
           }
           Section {
             HStack(spacing: 14) {
-              ConnectorTile(name: AIModels.providerName(AIModels.chatGPT), size: 30)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: AIModels.providerName(AIModels.chatGPT)).font(.system(size: 17)).foregroundStyle(Ink.primary)
-                Text("Use your ChatGPT plan").font(.system(size: 15)).foregroundStyle(Ink.secondary)
-              }
+              ProviderTile(provider: AIModels.chatGPT, size: 30)
+              Text(verbatim: AIModels.providerName(AIModels.chatGPT)).font(.system(size: 17)).foregroundStyle(Ink.primary)
               Spacer(minLength: 8)
               Button(model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect")) { connectingChatGPT = true }
                 .foregroundStyle(Ink.link)
@@ -89,11 +88,8 @@ struct AIModelsPage: View {
             .padding(.vertical, 2)
             // Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6).
             HStack(spacing: 14) {
-              ConnectorTile(name: AIModels.providerName(AIModels.claude), size: 30)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: AIModels.providerName(AIModels.claude)).font(.system(size: 17)).foregroundStyle(Ink.primary)
-                Text("Use your Claude plan").font(.system(size: 15)).foregroundStyle(Ink.secondary)
-              }
+              ProviderTile(provider: AIModels.claude, size: 30)
+              Text(verbatim: AIModels.providerName(AIModels.claude)).font(.system(size: 17)).foregroundStyle(Ink.primary)
               Spacer(minLength: 8)
               if !model.connected(AIModels.claude) {
                 Button(String(localized: "Connect")) { connectingClaude = true }
@@ -155,6 +151,32 @@ struct AIModelsPage: View {
   }
 }
 
+/**
+ * A provider's logo on the app tile (`Providers/<provider>`, the founder's
+ * files, 9 November 2026), as `ConnectorTile` draws a mark: ChatGPT's knot in
+ * the ink, so white in dark mode; Claude's mark in its own orange.
+ */
+struct ProviderTile: View {
+  let provider: String
+  var size: CGFloat = 30
+
+  var body: some View {
+    let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
+    ZStack {
+      shape.fill(Ink.tile)
+      Image("Providers/\(provider)")
+        .renderingMode(provider == AIModels.chatGPT ? .template : .original)
+        .resizable()
+        .scaledToFit()
+        .foregroundStyle(Ink.primary)
+        .frame(width: size * 0.6, height: size * 0.6)
+    }
+    .frame(width: size, height: size)
+    .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
+    .accessibilityHidden(true)
+  }
+}
+
 /** One account: the provider's tile, its name over its kind, plan and how it stands (green while usable), and `⋯`. */
 private struct ModelAccountRow: View {
   let account: ModelAccount
@@ -164,7 +186,7 @@ private struct ModelAccountRow: View {
 
   var body: some View {
     HStack(spacing: 14) {
-      ConnectorTile(name: account.providerName, size: 30)
+      ProviderTile(provider: account.provider, size: 30)
       VStack(alignment: .leading, spacing: 2) {
         Text(account.label).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
         Text(account.detail).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
