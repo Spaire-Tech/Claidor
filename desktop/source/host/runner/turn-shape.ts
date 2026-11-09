@@ -208,6 +208,8 @@ const WAITING_CARDS: ReadonlyMap<string, RegExp> = new Map([
   // The 1Password cards (28 October 2026, `onepassword-tools.ts`); a fill the person already allowed shows no card.
   ["request_credential_fill", /^The 1Password card for ".+" is in the chat/s],
   ["request_1password_connect", /^The 1Password connect card is in the chat/],
+  // The Credentials Store's ask (9 November 2026, `storeRequestShownNote`); a login already saved shows no card.
+  ["RequestStoreEntry", /^The Credentials Store card for ".+" is in the chat/s],
 ]);
 
 /**

@@ -533,3 +533,16 @@
       0 0 0 3px color-mix(in srgb, var(--unread) 45%, transparent);
   }
 }
+
+/* The Credentials Store's card: the site's icon (28) or the card's mark, then the head, 10 apart, centred. */
+.store-ask-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.store-ask-head > .ask-head {
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}

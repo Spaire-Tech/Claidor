@@ -567,7 +567,7 @@ export interface TurnToolFactories {
   drafts?(): readonly TurnTool[];
   userForm?(): TurnTool;
   onePassword?(): readonly TurnTool[];
-  credentialsStore?(): readonly TurnTool[];
+  credentialsStore?(options: { readonly browser: boolean }): readonly TurnTool[];
   purchases?(): readonly TurnTool[];
   flights?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
@@ -1041,8 +1041,8 @@ export interface TurnCredentialsStoreToolFactoryInput {
 
 export function createTurnCredentialsStoreToolFactory(
   input: TurnCredentialsStoreToolFactoryInput,
-): () => readonly TurnTool[] {
-  return () => createCredentialsStoreTools(input.dependencies).map((tool) => asTurnTool(tool));
+): (options: { readonly browser: boolean }) => readonly TurnTool[] {
+  return (options) => createCredentialsStoreTools(input.dependencies, options).map((tool) => asTurnTool(tool));
 }
 
 export interface TurnPurchaseToolFactoryInput {
@@ -1688,15 +1688,21 @@ export function buildTurnTools(
     // The in-chat form types into the browser on the box, as the handoff hands it over.
     const userForm = factories.userForm?.();
     if (userForm !== undefined) tools.push(userForm);
-    // The Credentials Store: the person's own logins and contact info, typed into the same browser.
-    const credentialsStore = factories.credentialsStore?.();
-    if (credentialsStore !== undefined) tools.push(...credentialsStore);
     // 1Password's logins typed into the same browser, with the person's allowance.
     const onePassword = factories.onePassword?.();
     if (onePassword !== undefined) tools.push(...onePassword);
     // The checkout card needs the browser on the box: the checkout is open there.
     const purchases = factories.purchases?.();
     if (purchases !== undefined) tools.push(...purchases);
+  }
+
+  // The Credentials Store (9 November 2026): the person's logins, cards and
+  // contact info in every turn of their own chats, so the agent knows it and
+  // offers to keep what a task needed; the logins typed into the browser on
+  // the box only while it is up.
+  if (!host.isSubagentRunner) {
+    const credentialsStore = factories.credentialsStore?.({ browser: host.remoteBoxHasDesktop && host.getRemoteBoxAvailable() });
+    if (credentialsStore !== undefined) tools.push(...credentialsStore);
   }
 
   // The immutable builder only offers the MCP discovery/call pair when the

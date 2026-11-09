@@ -1167,6 +1167,7 @@ const cardCaps: Record<CardKind, number> = {
   form: 520,
   credential: 520,
   onePasswordConnect: 520,
+  storeEntry: 460,
   connectors: 640,
   listenerConnect: 520,
   cloudAgent: 640,
@@ -1239,6 +1240,7 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
     case 'form':
     case 'credential':
     case 'onePasswordConnect':
+    case 'storeEntry':
       return requestCardView(kind, card)
     // 3c: apps to connect, Slack or GitHub for a routine, the cloud agent, a new teammate (ConnectCards.tsx).
     case 'connectors':

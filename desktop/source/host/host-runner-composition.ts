@@ -2454,7 +2454,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
             }),
             // The Credentials Store's tools (28 October 2026): a login typed into the agent's
             // own Chrome first, else a tab on the site in another window; never for a channel's message.
-            createCredentialsStoreToolInputs: () => {
+            // Its card in the chat (9 November 2026, credentials-store/store-cards.ts) is answered
+            // through the gateway (transcript/store-cards.ts).
+            createCredentialsStoreToolInputs: turn => {
               const ports = (): number[] => {
                 const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, session.id) ?? 1);
                 return [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)];
@@ -2467,6 +2469,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
                   agentName: () => resolveAgentDisplayName(session.id) ?? undefined,
                   log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
+                  emitCard: (message, timestampMs) => {
+                    const update = { type: "send-message" as const, message: message as unknown as Record<string, unknown>, timestampMs, ...(turn.ackToken === undefined ? {} : { ackToken: turn.ackToken }) };
+                    if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
+                    else turn.emitUpdate(update);
+                    return hooks.transport.lastSentMessageId?.();
+                  },
                 },
               };
             },

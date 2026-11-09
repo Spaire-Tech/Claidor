@@ -28,6 +28,7 @@ import { DraftCards } from "./draft-cards.js";
 import { FlightBookings } from "./flight-bookings.js";
 import { UserForms } from "./user-forms.js";
 import { OnePasswordCards } from "./onepassword-cards.js";
+import { StoreCards } from "./store-cards.js";
 import { PurchaseCards } from "./purchase-cards.js";
 import { SandChannelDeliveryUnregisteredError } from "./channel-delivery-unregistered-error.js";
 import { GroupChatGlue } from "./group-chat-glue.js";
@@ -166,6 +167,7 @@ export class TranscriptManager {
   readonly flightBookings = new FlightBookings(this);
   readonly userForms = new UserForms(this);
   readonly onePasswordCards = new OnePasswordCards(this);
+  readonly storeCards = new StoreCards(this);
   readonly pendingWakes = new PendingWakeRearm(this);
   readonly ackObligations = new AckObligations(this);
   readonly upgradeResume = new UpgradeRecreateResume(this);
@@ -664,6 +666,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["connectOnePassword", "onePasswordCards"],
   ["dismissOnePasswordConnect", "onePasswordCards"],
   ["fillAllowedCredential", "onePasswordCards"],
+  ["answerStoreEntry", "storeCards"],
   ["activeRequestSource", "turnRuntime"],
 ];
 

@@ -1708,6 +1708,11 @@ public final class AppStore {
     await command("dismissOnePasswordConnect", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: L10n.text("Couldn't dismiss the card"))
   }
 
+  /** The Credentials Store's card (`answerStoreEntry`): saved in the store's form it opened, or its X, a no. */
+  public func answerStoreEntry(_ entryId: String, in agentId: String, saved: Bool) async {
+    await command("answerStoreEntry", ["agentId": .string(agentId), "entryId": .string(entryId), "saved": .bool(saved)], failure: L10n.text("Couldn't dismiss the card"))
+  }
+
   /** The in-chat form's X (`dismissUserForm`): a decline. */
   public func dismissUserForm(_ entryId: String, in agentId: String) async {
     await command("dismissUserForm", ["agentId": .string(agentId), "entryId": .string(entryId)], failure: L10n.text("Couldn't dismiss the form"))

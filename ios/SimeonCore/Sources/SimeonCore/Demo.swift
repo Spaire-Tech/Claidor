@@ -443,6 +443,9 @@ public final class DemoBackend: AgentBackend, @unchecked Sendable {
       return ["ok": true, "vaultName": "Shared with Simeon"]
     case "dismissOnePasswordConnect":
       stamp(agentId, entryId) { $0.setting("connectState", "dismissed") }
+    case "answerStoreEntry":
+      stamp(agentId, entryId) { $0.setting("storeState", args["saved"]?.bool == true ? "saved" : "dismissed") }
+      return ["accepted": true]
     case "startFlightBooking":
       // As the box would: the traveller form for that flight, in the chat (the one already open, if any).
       let open = lock.withLock { transcripts[agentId]?.first { $0["message"]?["type"]?.text == "flight-passengers" && ($0["passengersState"]?.text ?? "open") == "open" }?.id }

@@ -11,12 +11,23 @@
  * them for this. A login is typed or read only for the site it is saved for,
  * and nothing here is used for a message that came through a channel, where
  * others can write to the agent.
+ *
+ * The agent knows the store (9 November 2026, the founder: "the agent is
+ * just not aware of the credential store... the agent needs to know. and
+ * recommend it when needed. it also needs to have a card for everything in
+ * the store"): ListStoredCredentials, RequestStoreEntry and SaveStoredLogin
+ * are in every turn of the person's own chats, the browser up or not; the
+ * list names the cards by their network and last four; RequestStoreEntry
+ * puts the store's card in the chat (`store-cards.ts`), whose button opens
+ * the store's form for a login, a card or contact info; a saved login used
+ * or saved at a sign-up says so once, in a small card.
  */
 import { z } from "zod";
 import { defineCommunicateTool } from "./communicate-tool.js";
 import { loginIsForSite, siteOf } from "../../../shared/node/onepassword/onepassword.js";
 import { credentialOutcomeLine, loginFieldSpecs, type CredentialOutcome } from "../../../shared/node/onepassword/onepassword-cards.js";
-import { loginTitle, makeStrongPassword, signUpSite, type CredentialsStore, type StoredContact, type StoredLogin } from "../../../shared/node/credentials-store/credentials-store.js";
+import { cardTitle, loginTitle, makeStrongPassword, signUpSite, type CredentialsStore, type StoredCard, type StoredContact, type StoredEntry, type StoredLogin } from "../../../shared/node/credentials-store/credentials-store.js";
+import { STORE_ENTRY_MESSAGE_TYPE, storeRequestShownNote, type StoreEntryMessage } from "../../../shared/node/credentials-store/store-cards.js";
 import type { NewPasswordFill, UserFormFieldSpec, UserFormFill } from "../../../shared/node/user-form/form-fill.js";
 
 export interface CredentialsStoreToolDependencies {
@@ -29,6 +40,9 @@ export interface CredentialsStoreToolDependencies {
   agentName(): string | undefined;
   log?(line: string): void;
   makePassword?(): string;
+  /** Puts the store's card in the chat (`store-entry`); its entry id, when it was shown. */
+  emitCard?(message: StoreEntryMessage, timestampMs: number): string | undefined;
+  now?(): number;
 }
 
 // A channel's messages can come from anyone in it: the person's logins and details are never used for one.
@@ -46,6 +60,23 @@ function loginLine(login: StoredLogin): string {
   return parts.join("; ");
 }
 
+function contactTitle(contact: StoredContact): string {
+  return contact.name || contact.fullName || "Contact info";
+}
+
+function cardLine(card: StoredCard, entries: readonly StoredEntry[]): string {
+  const title = cardTitle(card);
+  const network = cardTitle({ name: "", brand: card.brand });
+  const number = [card.name.trim() && card.brand ? network : "", card.last4 ? `\u2022\u2022\u2022\u2022 ${card.last4}` : ""].filter((part) => part.length > 0).join(" ");
+  const parts = [`- entry_id ${card.id}: "${title}"${number ? ` (${number})` : ""}`];
+  if (card.expiry) parts.push(`expires ${card.expiry}`);
+  if (card.cardholder) parts.push(`name on card ${card.cardholder}`);
+  const billing = entries.find((entry): entry is StoredContact => entry.kind === "contact" && entry.id === card.billingId);
+  if (billing) parts.push(`billing address from "${contactTitle(billing)}"`);
+  if (card.hints) parts.push(`hints: ${card.hints}`);
+  return parts.join("; ");
+}
+
 function contactLine(contact: StoredContact): string {
   const address = [contact.addressLine1, contact.addressLine2, contact.city, contact.region, contact.postalCode, contact.country].filter((part) => part.length > 0).join(", ");
   const parts = [
@@ -55,7 +86,7 @@ function contactLine(contact: StoredContact): string {
     address ? `address ${address}` : "",
     contact.hints ? `hints: ${contact.hints}` : "",
   ].filter((part) => part.length > 0);
-  return `- entry_id ${contact.id}: "${contact.name || contact.fullName || "Contact info"}": ${parts.join("; ")}`;
+  return `- entry_id ${contact.id}: "${contactTitle(contact)}": ${parts.join("; ")}`;
 }
 
 export const listStoredCredentialsParameters = z.object({
@@ -87,14 +118,33 @@ export const saveStoredLoginParameters = z.object({
   hints: z.string().trim().optional().describe("When to use it, in the user's words, when they said."),
 });
 
-export function createCredentialsStoreTools(deps: CredentialsStoreToolDependencies) {
+export const requestStoreEntryParameters = z.object({
+  kind: z.enum(["login", "card", "contact"]).describe("What to save: a login (a site's username and password), a card, or their contact info (name, email, phone, address)."),
+  title: z.string().trim().min(1).max(80).describe("What it's for, as the user would say it: the site's or service's name (\"Amazon\"), \"Home\" or \"Work\" for contact info, a card's name (\"Travel card\")."),
+  website: z.string().trim().optional().describe("For a login: the site's address or domain (\"amazon.com\"); it's written into the form."),
+  reason: z.string().trim().max(140).optional().describe("One short line on why it helps, shown on the card (\"So I can sign in to Amazon for you next time\")."),
+});
+
+/** Every tool; without the browser on the agent's computer (`browser: false`), only those that need no page: the list, the ask and the save. */
+export function createCredentialsStoreTools(deps: CredentialsStoreToolDependencies, options: { readonly browser?: boolean } = {}) {
   const log = (line: string): void => deps.log?.(`[credentials] ${line}`);
   const who = (): string => deps.agentName() ?? "an agent";
+  /** The notes already shown this turn: a sign-in's second step says nothing new. */
+  const noted = new Set<string>();
+  const note = (resolved: CredentialsStoreToolDependencies, mode: "used" | "saved", login: StoredLogin, site: string): boolean => {
+    const key = `${mode}\u0000${login.id}`;
+    if (resolved.emitCard == null) return false;
+    if (noted.has(key)) return true;
+    const message: StoreEntryMessage = { type: STORE_ENTRY_MESSAGE_TYPE, store: { mode, kind: "login", title: loginTitle(login), website: login.site || site } };
+    const shown = resolved.emitCard(message, (resolved.now ?? Date.now)()) != null;
+    if (shown) noted.add(key);
+    return shown;
+  };
 
   const list = defineCommunicateTool(deps, {
     id: "LIST_STORED_CREDENTIALS",
     name: "ListStoredCredentials",
-    description: "The user's Credentials Store (Settings → Credentials Store): the logins and the contact info they keep for you to sign in and sign up with. At any sign-in or sign-up, call it first, before asking the user for anything. With site, it lists the logins saved for that site; it always lists their contact info. Each entry's hints say when to use it: follow them. A login: sign in with FillStoredLogin. A sign-up: fill the form with their contact info (the browser helper types it) and make the password with FillNewPassword. Cards are never here: pay with Link (RequestPurchase).",
+    description: "The user's Credentials Store (Settings → Credentials Store): the logins, cards and contact info they keep for you to sign in, sign up and pay with. Call it before asking the user for a login or a detail of their own: at any sign-in or sign-up, for a form that needs their name, email, phone or address, and when they ask what's saved. With site, it lists the logins saved for that site; it always lists their cards and contact info. Each entry's hints say when to use it: follow them. A login: sign in with FillStoredLogin. A sign-up: fill the form with their contact info (the browser helper types it) and make the password with FillNewPassword. A card: you never see its number or security code, and you pay only through RequestPurchase. When what the task needs isn't saved, offer to keep it with RequestStoreEntry.",
     parameters: listStoredCredentialsParameters,
     describeActivity: () => ({ detail: "Looking in the Credentials Store" }),
     execute: async (_ctx, args: z.infer<typeof listStoredCredentialsParameters>, resolved) => {
@@ -105,16 +155,21 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       if (args.site != null && args.site.length > 0 && wanted.length === 0) return "Give the page's address or its domain, or leave site out.";
       const logins = listed.entries.filter((entry): entry is StoredLogin => entry.kind === "login").filter((login) => wanted.length === 0 || (login.site.length > 0 && loginIsForSite(login.site, wanted)));
       const contacts = listed.entries.filter((entry): entry is StoredContact => entry.kind === "contact");
+      const cards = listed.entries.filter((entry): entry is StoredCard => entry.kind === "card");
       const lines = ["The user's Credentials Store:"];
       lines.push(wanted.length > 0 ? `Logins for ${wanted}:` : "Logins:");
       if (logins.length === 0) lines.push(wanted.length > 0 ? `- none saved for ${wanted}` : "- none saved");
       lines.push(...logins.slice(0, LIST_MAX).map(loginLine));
       if (logins.length > LIST_MAX) lines.push(`- and ${logins.length - LIST_MAX} more: give site to see a site's own.`);
+      lines.push("Cards:");
+      if (cards.length === 0) lines.push("- none saved");
+      lines.push(...cards.map((card) => cardLine(card, listed.entries)));
       lines.push("Contact info:");
       if (contacts.length === 0) lines.push("- none saved");
       lines.push(...contacts.map(contactLine));
-      lines.push("Sign in with FillStoredLogin (it types the username and password into the page). For a sign-up, the contact info fills the form and FillNewPassword makes the password and saves the login. Follow each entry's hints. You see a password only with ReadStoredPassword, which you rarely need.");
-      if (logins.length === 0 && wanted.length > 0) lines.push(`With no login for ${wanted}: for a sign-in, ask with request_user_form or hand the user the screen (request_box_help); if they gave you a login in the chat and asked you to keep it, SaveStoredLogin.`);
+      lines.push("Sign in with FillStoredLogin (it types the username and password into the page). For a sign-up, the contact info fills the form and FillNewPassword makes the password and saves the login. Follow each entry's hints. You see a password only with ReadStoredPassword, which you rarely need. You never see a card's number or security code; you pay only through RequestPurchase.");
+      if (logins.length === 0 && wanted.length > 0) lines.push(`With no login for ${wanted}: for a sign-in, ask with request_user_form or hand the user the screen (request_box_help); if they gave you a login in the chat and asked you to keep it, SaveStoredLogin. To have it next time, offer RequestStoreEntry (kind login) once they're signed in.`);
+      if (contacts.length === 0) lines.push("With no contact info saved, offer RequestStoreEntry (kind contact) when a form needs their name, email, phone or address, rather than asking for each in the chat.");
       return lines.join("\n");
     },
   });
@@ -146,7 +201,10 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       const line = credentialOutcomeLine(outcomes);
       if (!Object.values(outcomes).includes("filled")) return `No sign-in field on the page on ${site} could be filled (${line}). Have the browser helper open the sign-in step (the email or password field on screen), then call this again.`;
       log(`${who()} filled a login on ${site}: ${line}`);
-      return `Filled "${title}" on ${site}: ${line}. Have the browser helper take a fresh snapshot and press the site's own button (Sign in, Next). If the next page asks for the password, call FillStoredLogin again there. Never take a screenshot to check a password field. In your reply, tell the user in a few words that you signed in with their saved login "${title}".`;
+      const told = note(resolved, "used", login, site)
+        ? `The chat shows the user a small card saying you used their saved login "${title}": don't repeat it.`
+        : `In your reply, tell the user in a few words that you signed in with their saved login "${title}".`;
+      return `Filled "${title}" on ${site}: ${line}. Have the browser helper take a fresh snapshot and press the site's own button (Sign in, Next). If the next page asks for the password, call FillStoredLogin again there. Never take a screenshot to check a password field. ${told}`;
     },
   });
 
@@ -194,7 +252,11 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       }
       log(`${who()} made a password on ${site} and saved the login (${fields})`);
       const failed = typed.failed > 0 ? ` (${typed.failed} more couldn't be typed into)` : "";
-      return `Made a strong password and typed it into ${fields} on ${site}${failed}; saved as a login for ${saved.login.site || site} with username ${args.username} in the user's Credentials Store (entry_id ${saved.login.id}). Have the browser helper press the site's own button to finish the sign-up. If the site refuses the password, call FillNewPassword again with replace_entry_id ${saved.login.id}. In your reply, tell the user the login is saved in their Credentials Store.`;
+      // A replaced password is the same login: its card is already in the chat.
+      const told = args.replace_entry_id || note(resolved, "saved", saved.login, site)
+        ? "The chat shows the user a small card saying the login is saved in their Credentials Store: don't repeat it."
+        : "In your reply, tell the user the login is saved in their Credentials Store.";
+      return `Made a strong password and typed it into ${fields} on ${site}${failed}; saved as a login for ${saved.login.site || site} with username ${args.username} in the user's Credentials Store (entry_id ${saved.login.id}). Have the browser helper press the site's own button to finish the sign-up. If the site refuses the password, call FillNewPassword again with replace_entry_id ${saved.login.id}. ${told}`;
     },
   });
 
@@ -212,9 +274,37 @@ export function createCredentialsStoreTools(deps: CredentialsStoreToolDependenci
       const saved = await resolved.store.saveLogin({ website: site, username: args.username, password: args.password, ...(args.name ? { name: args.name } : {}), ...(args.hints ? { hints: args.hints } : {}), ...(agent ? { savedBy: agent } : {}) });
       if (!saved.ok) return `It couldn't be saved: ${saved.message}`;
       log(`${who()} saved a login for ${site}`);
-      return `Saved "${loginTitle(saved.login)}" (${site}) in the user's Credentials Store (entry_id ${saved.login.id}). They see it in Settings → Credentials Store.`;
+      const told = note(resolved, "saved", saved.login, site) ? " The chat shows them a small card saying so." : "";
+      return `Saved "${loginTitle(saved.login)}" (${site}) in the user's Credentials Store (entry_id ${saved.login.id}). They see it in Settings → Credentials Store.${told}`;
     },
   });
 
-  return [list, fill, reveal, make, save];
+  const request = defineCommunicateTool(deps, {
+    id: "REQUEST_STORE_ENTRY",
+    name: "RequestStoreEntry",
+    description: "Offers to keep a login, a card or the user's contact info in their Credentials Store: a card in the chat whose button opens the store's form for it, the website or name already written; they type it there, never in the chat. Use it when a task needs something that isn't saved (ListStoredCredentials first) and they'd want it kept: a site they had to sign in to by hand, a form that needs their name, email, phone or address, a card they want you to pay with. Never ask for a password, a card number or a security code in the chat. Ask once for each thing; after a dismissal, don't ask again. Your turn ends once the card is shown: you're woken when they save it or dismiss it.",
+    parameters: requestStoreEntryParameters,
+    describeActivity: () => ({ detail: "Asking to save it in the Credentials Store" }),
+    execute: async (_ctx, args: z.infer<typeof requestStoreEntryParameters>, resolved) => {
+      if (fromChannel(resolved)) return NOT_HERE;
+      if (resolved.emitCard == null) return "The Credentials Store's card can't be shown here. Tell the user they can add it in Settings → Credentials Store.";
+      let website: string | undefined;
+      if (args.kind === "login") {
+        // A site's own address ("amazon.com"), from the website or else a title written as one.
+        const site = [siteOf(args.website ?? ""), siteOf(args.title)].find((one) => one.includes(".")) ?? "";
+        if (site.length === 0) return "Give the login's website (\"amazon.com\").";
+        const listed = await resolved.store.list();
+        const already = listed.ok ? listed.entries.find((entry): entry is StoredLogin => entry.kind === "login" && entry.site.length > 0 && loginIsForSite(entry.site, site)) : undefined;
+        if (already != null) return `A login for ${site} is already saved: entry_id ${already.id} ("${loginTitle(already)}"). Use it with FillStoredLogin. If it's wrong, the user can change it in Settings → Credentials Store.`;
+        website = site;
+      }
+      const message: StoreEntryMessage = { type: STORE_ENTRY_MESSAGE_TYPE, store: { mode: "request", kind: args.kind, title: args.title, ...(website ? { website } : {}), ...(args.reason ? { reason: args.reason } : {}) } };
+      const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
+      if (entryId == null) return "The card couldn't be shown. Tell the user they can add it in Settings → Credentials Store.";
+      log(`${who()} asked to save a ${args.kind}${website ? ` for ${website}` : ""} (${entryId})`);
+      return storeRequestShownNote(args.title);
+    },
+  });
+
+  return options.browser === false ? [list, request, save] : [list, fill, reveal, make, save, request];
 }

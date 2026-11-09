@@ -15,6 +15,13 @@
    "old_web_app": false
   },
   {
+   "command": "answerStoreEntry",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
    "command": "appendSendMessage",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
@@ -554,6 +561,7 @@
   "addOwnAgentToSharedRoom",
   "answerCredentialRequest",
   "answerPurchase",
+  "answerStoreEntry",
   "appendConnectorCard",
   "appendSendMessage",
   "autoUpdateBoxNow",

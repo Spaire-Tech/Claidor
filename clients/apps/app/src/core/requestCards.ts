@@ -6,6 +6,11 @@
 // cards (OnePasswordCards.swift's `CredentialRequestCard`,
 // `OnePasswordConnectCard`), with the words each card says.
 
+import {
+  type CredentialDraft,
+  type CredentialKind,
+  newDraft,
+} from './credentialsStore'
 import type { Entry } from './entry'
 import {
   type JSONObject,
@@ -18,6 +23,7 @@ import {
   text,
 } from './json'
 import { t, tk } from './l10n'
+import { credentialSite } from './linkIcons'
 
 /** A value of `record` that is its own, never one of every object's (`constructor`, `__proto__`). */
 function own<Value>(
@@ -544,4 +550,105 @@ export function connectStatusLine(
     case 'dismissed':
       return t('Dismissed')
   }
+}
+
+// MARK: The Credentials Store's card
+
+export type StoreEntryMode = 'request' | 'used' | 'saved'
+export type StoreEntryState = 'open' | 'saved' | 'dismissed'
+
+/**
+ * `store-entry` (9 November 2026, CredentialsStore.swift's
+ * `StoreEntryCard`): the ask (`request`), where the agent offers to keep a
+ * login, a card or contact info and the button opens the store's form for
+ * it, already filled; once saved it says Saved and the agent carries on
+ * (`answerStoreEntry` with `saved`); the X is a no. The notes (`used`,
+ * `saved`): a saved login the agent signed in with, or one it saved at a
+ * sign-up.
+ */
+export interface StoreEntryCard {
+  mode: StoreEntryMode
+  kind: CredentialKind
+  /** What it's for: "Amazon", "Home", a card's name. */
+  title: string
+  /** A login's site ("amazon.com"). */
+  website?: string
+  reason?: string
+  state: StoreEntryState
+}
+
+const storeModes: readonly StoreEntryMode[] = ['request', 'used', 'saved']
+const storeStates: readonly StoreEntryState[] = ['open', 'saved', 'dismissed']
+const storeKinds: readonly CredentialKind[] = ['login', 'card', 'contact']
+
+/** The card, or none without what it's for (the chat then says it can't be shown). */
+export function storeEntryCard(
+  message: JSONValue | undefined,
+  storeState?: JSONValue,
+): StoreEntryCard | undefined {
+  const store = field(message, 'store')
+  const mode = trimmed(field(store, 'mode')) as StoreEntryMode
+  const kind = trimmed(field(store, 'kind')) as CredentialKind
+  const title = trimmed(field(store, 'title'))
+  if (!storeModes.includes(mode) || !storeKinds.includes(kind) || title === '')
+    return undefined
+  const website = trimmed(field(store, 'website'))
+  const reason = trimmed(field(store, 'reason'))
+  const state = trimmed(storeState) as StoreEntryState
+  return {
+    mode,
+    kind,
+    title,
+    website: website === '' ? undefined : website,
+    reason: reason === '' ? undefined : reason,
+    state: storeStates.includes(state) ? state : 'open',
+  }
+}
+
+/** The card's first line. */
+export function storeHeadline(card: StoreEntryCard): string {
+  if (card.mode === 'used') return t('Signed in with your saved login')
+  if (card.mode === 'saved') return t('Login saved')
+  if (card.kind === 'card') return t('Add a card')
+  if (card.kind === 'contact') return t('Add your contact info')
+  return t`Save your ${card.title} login`
+}
+
+/** The line under it: the site, or what the agent said it's for. */
+export function storeDetail(card: StoreEntryCard): string | undefined {
+  if (card.mode !== 'request') return card.website ?? card.title
+  return card.reason ?? (card.kind === 'login' ? card.website : undefined)
+}
+
+/** The ask's button. */
+export function storeActionTitle(card: StoreEntryCard): string {
+  if (card.kind === 'card') return t('Add Card')
+  if (card.kind === 'contact') return t('Add Contact Info')
+  return t('Save Login')
+}
+
+export function storeStatusLine(card: StoreEntryCard): string | undefined {
+  if (card.state === 'saved') return t('Saved')
+  if (card.state === 'dismissed') return t('Dismissed')
+  return undefined
+}
+
+/** A login's site icon. */
+export function storeIconSite(card: StoreEntryCard): string | undefined {
+  if (card.kind !== 'login') return undefined
+  const site = credentialSite(card.website ?? '')
+  return site === '' ? undefined : site
+}
+
+/** The store's form the button opens, already filled with what the agent knows. */
+export function storeDraft(card: StoreEntryCard): CredentialDraft {
+  const draft = newDraft(card.kind)
+  if (card.kind === 'login') {
+    draft.website = card.website ?? ''
+    if (credentialSite(card.title) !== credentialSite(draft.website))
+      draft.name = card.title
+  } else {
+    draft.name = card.title
+  }
+  return draft
 }

@@ -66,8 +66,11 @@ import {
 import { PaymentMark } from './ShopCards'
 import { useWatched } from './useStore'
 
-/** What the sheet opens on: a new login or contact info, or a saved entry. */
-type CredentialEdit = { kind: CredentialKind } | { entry: StoredCredential }
+/** What the sheet opens on: a new login, card or contact info (empty, or filled by the chat's store card), or a saved entry. */
+type CredentialEdit =
+  | { kind: CredentialKind }
+  | { filled: CredentialDraft }
+  | { entry: StoredCredential }
 
 export function SettingsCredentialsPage({ store }: { store: AppStore }) {
   const [model] = useState(
@@ -251,7 +254,7 @@ function firstLetter(words: string): string {
  * site's own /favicon.ico on white once it has come; until then, or when it
  * has none, the name's first letter on the tile. Contact info shows a person.
  */
-function SiteIconTile({
+export function SiteIconTile({
   site,
   title,
   contact,
@@ -427,22 +430,26 @@ const notTheirs = {
  * wide button in the blue. A click outside closes it only while nothing was
  * changed; Escape closes it; Return in a field saves.
  */
-function CredentialSheet({
+export function CredentialSheet({
   model,
   edit,
   close,
+  onSaved,
 }: {
   model: CredentialsStoreModel
   edit: CredentialEdit
   close: () => void
+  /** Told once a new entry is saved (the chat's store card says Saved). */
+  onSaved?: (saved: StoredCredential) => void
 }) {
   const entry = 'entry' in edit ? edit.entry : undefined
+  const filled = 'filled' in edit ? edit.filled : undefined
   const kind: CredentialKind =
-    entry?.kind ?? ('kind' in edit ? edit.kind : 'login')
+    entry?.kind ?? filled?.kind ?? ('kind' in edit ? edit.kind : 'login')
   const isLogin = kind === 'login'
   const isCard = kind === 'card'
   const [opened, setOpened] = useState<Fields>(() =>
-    fieldsOf(entry ? draftOf(entry) : newDraft(kind)),
+    fieldsOf(entry ? draftOf(entry) : (filled ?? newDraft(kind))),
   )
   const [fields, setFields] = useState<Fields>(opened)
   // The password: only whether its field is blank and whether it differs from the one opened; never what it is.
@@ -566,6 +573,7 @@ function CredentialSheet({
       beep()
       return
     }
+    if (entry === undefined) onSaved?.(saved)
     leave()
   }
 

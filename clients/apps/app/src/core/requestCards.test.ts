@@ -24,6 +24,13 @@ import {
   onePasswordConnectCard,
   pendingHandoff,
   secretCard,
+  storeActionTitle,
+  storeDetail,
+  storeDraft,
+  storeEntryCard,
+  storeHeadline,
+  storeIconSite,
+  storeStatusLine,
   userFormCard,
 } from './requestCards'
 import { loadWords } from './words'
@@ -460,6 +467,85 @@ describe('1Password’s cards', () => {
     expect(dismissed.reason).toBeUndefined()
     expect(connectStatusLine(dismissed)).toBe('Dismissed')
     expect(cardText(message)).toBe('Connect 1Password')
+  })
+})
+
+describe('the Credentials Store’s card (CredentialsStoreTests)', () => {
+  const read = (store: JSONObject, fields: JSONObject = {}) => {
+    const made = line('s1', { type: 'store-entry', store }, fields)
+    expect(kindOf(made)).toBe('storeEntry')
+    return storeEntryCard(made.message, made.get('storeState'))
+  }
+
+  it('asks for what is missing and opens the form filled', () => {
+    const login = read({
+      mode: 'request',
+      kind: 'login',
+      title: 'Amazon',
+      website: 'amazon.com',
+      reason: 'So I can sign in for you next time',
+    })
+    if (!login) throw new Error('read')
+    expect(storeHeadline(login)).toBe('Save your Amazon login')
+    expect(storeDetail(login)).toBe('So I can sign in for you next time')
+    expect(storeActionTitle(login)).toBe('Save Login')
+    expect(storeIconSite(login)).toBe('amazon.com')
+    expect(storeStatusLine(login)).toBeUndefined()
+    expect(storeDraft(login)).toMatchObject({
+      kind: 'login',
+      website: 'amazon.com',
+      name: 'Amazon',
+    })
+    const bySite = read({
+      mode: 'request',
+      kind: 'login',
+      title: 'amazon.com',
+      website: 'amazon.com',
+    })
+    if (!bySite) throw new Error('read')
+    expect(storeDraft(bySite).name).toBe('')
+    const saved = read(
+      {
+        mode: 'request',
+        kind: 'login',
+        title: 'Amazon',
+        website: 'amazon.com',
+      },
+      { storeState: 'saved' },
+    )
+    if (!saved) throw new Error('read')
+    expect(storeStatusLine(saved)).toBe('Saved')
+    const contact = read(
+      { mode: 'request', kind: 'contact', title: 'Home' },
+      { storeState: 'dismissed' },
+    )
+    if (!contact) throw new Error('read')
+    expect(storeHeadline(contact)).toBe('Add your contact info')
+    expect(storeActionTitle(contact)).toBe('Add Contact Info')
+    expect(storeStatusLine(contact)).toBe('Dismissed')
+    expect(storeDraft(contact).name).toBe('Home')
+    const card = read({ mode: 'request', kind: 'card', title: 'Travel card' })
+    expect(card && storeDraft(card).kind).toBe('card')
+  })
+
+  it('says once what was used or saved, and is no card without what it’s for', () => {
+    const used = read({
+      mode: 'used',
+      kind: 'login',
+      title: 'Acme',
+      website: 'acme.example',
+    })
+    if (!used) throw new Error('read')
+    expect(storeHeadline(used)).toBe('Signed in with your saved login')
+    expect(storeDetail(used)).toBe('acme.example')
+    expect(
+      cardText({
+        type: 'store-entry',
+        store: { mode: 'saved', kind: 'login', title: 'shop.example' },
+      }),
+    ).toBe('Login saved')
+    expect(read({ mode: 'request', kind: 'login' })).toBeUndefined()
+    expect(read({ mode: 'later', kind: 'login', title: 'A' })).toBeUndefined()
   })
 })
 

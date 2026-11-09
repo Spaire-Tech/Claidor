@@ -199,6 +199,8 @@ public enum RequestCard: Hashable, Sendable {
   case credential(CredentialRequestCard)
   /** `onepassword-connect`: connect 1Password from the Mac (`connectOnePassword`), or the X (`dismissOnePasswordConnect`). */
   case onePasswordConnect(OnePasswordConnectCard)
+  /** `store-entry`: keep a login, a card or contact info in the Credentials Store (`answerStoreEntry`), or a note of one used or saved. */
+  case storeEntry(StoreEntryCard)
 }
 
 /** The call a chat line stands for: how long, and what was said. */
@@ -699,6 +701,7 @@ public enum Chat {
     case "user-form": return message["form"]?["title"]?.string ?? ""
     case "credential-request": return message["credential"]?["title"]?.string ?? ""
     case "onepassword-connect": return L10n.text("Connect 1Password")
+    case "store-entry": return StoreEntryCard(message: message, entry: nil)?.headline ?? ""
     case "email-draft":
       let subject = message["draft"]?["subject"]?.string ?? ""
       return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
@@ -1161,6 +1164,9 @@ public enum Chat {
         return .notice(id: entry.id, text: notShown)
       case "onepassword-connect":
         return .request(id: entry.id, card: .onePasswordConnect(OnePasswordConnectCard(message: message, entry: entry)))
+      case "store-entry":
+        if let card = StoreEntryCard(message: message, entry: entry) { return .request(id: entry.id, card: .storeEntry(card)) }
+        return .notice(id: entry.id, text: notShown)
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)

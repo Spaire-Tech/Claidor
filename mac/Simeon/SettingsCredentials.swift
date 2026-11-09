@@ -70,14 +70,16 @@ struct SettingsCredentialsPage: View {
   }
 }
 
-/** What the sheet opens on: a new login or contact info, or a saved entry. */
+/** What the sheet opens on: a new login, card or contact info (empty, or filled by the chat's store card), or a saved entry. */
 enum MacCredentialEdit: Identifiable {
   case new(StoredCredential.Kind)
+  case filled(CredentialDraft)
   case entry(StoredCredential)
 
   var id: String {
     switch self {
     case .new(let kind): "new-\(kind.rawValue)"
+    case .filled(let draft): "filled-\(draft.kind.rawValue)"
     case .entry(let entry): entry.id
     }
   }
@@ -215,6 +217,8 @@ struct MacSiteIconTile: View {
  */
 struct MacCredentialSheet: View {
   let model: CredentialsStoreModel
+  /** Told once it's saved (the chat's store card says Saved). */
+  var onSaved: ((StoredCredential) -> Void)?
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
   @State private var entry: StoredCredential?
@@ -229,11 +233,13 @@ struct MacCredentialSheet: View {
   private var isLogin: Bool { draft.kind == .login }
   private var isCard: Bool { draft.kind == .card }
 
-  init(model: CredentialsStoreModel, edit: MacCredentialEdit) {
+  init(model: CredentialsStoreModel, edit: MacCredentialEdit, onSaved: ((StoredCredential) -> Void)? = nil) {
     self.model = model
+    self.onSaved = onSaved
     switch edit {
-    case .new(let kind):
-      let start = CredentialDraft(kind: kind)
+    case .new, .filled:
+      let start: CredentialDraft
+      if case .filled(let filled) = edit { start = filled } else if case .new(let kind) = edit { start = CredentialDraft(kind: kind) } else { start = CredentialDraft(kind: .login) }
       _entry = State(initialValue: nil)
       _draft = State(initialValue: start)
       _opened = State(initialValue: start)
@@ -492,7 +498,8 @@ struct MacCredentialSheet: View {
     saving = true
     let saved = await model.save(draft, editing: entry.map { (entry: $0, opened: opened, passwordRead: passwordRead) })
     saving = false
-    guard saved != nil else { problem = model.problem; NSSound.beep(); return }
+    guard let saved else { problem = model.problem; NSSound.beep(); return }
+    onSaved?(saved)
     dismiss()
   }
 

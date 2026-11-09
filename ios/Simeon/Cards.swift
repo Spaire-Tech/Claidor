@@ -1475,6 +1475,8 @@ struct RequestCardView: View {
         CredentialCardView(entryId: entryId, agentId: agentId, card: credential)
       case .onePasswordConnect(let connect):
         OnePasswordConnectCardView(entryId: entryId, agentId: agentId, card: connect)
+      case .storeEntry(let entry):
+        StoreEntryCardView(entryId: entryId, agentId: agentId, card: entry)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
