@@ -24,7 +24,7 @@ APP = os.path.abspath(sys.argv[1])
 shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(f"{OUT}/logos")
 shutil.copytree(f"{HERE}/img", f"{OUT}/img")
-# The films the page plays (the spokesperson agent's, before Pricing).
+# The films the page plays (the launch film, wide and the reel's tall cut for phones, before Pricing).
 shutil.copytree(f"{HERE}/video", f"{OUT}/video")
 # The agents' clay faces, the apps' own catalogue (faces.py says who wears which).
 os.makedirs(f"{OUT}/faces")

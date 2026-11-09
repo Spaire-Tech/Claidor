@@ -919,16 +919,22 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .duo p{margin-top:14px;max-width:34ch;font-size:17px;line-height:1.47;color:rgba(255,255,255,.78)}
 @media (max-width:734px){.duo{grid-template-columns:1fr;gap:14px}}
 
-/* The film: Iris, the spokesperson agent, explains Simeon; a rounded card that plays on a press (the founder, 1 November 2026). */
+/* The film: Simeon's launch film (the founder, 9 November 2026: the YouTube cut in place of Iris's, under its
+   YouTube thumbnail), a rounded card that plays on a press. The thumbnail is near white, so the card has a hairline
+   edge and the press is a dark pill at its foot, under the agents. On a phone the card is the same, and the press
+   opens the reel's cut (9:16) full screen in the phone's own player; leaving full screen stops it. */
 .film{padding:clamp(72px,6.2*var(--vw,1vw),118px) 0 clamp(32px,3*var(--vw,1vw),56px)}
 .film h2{margin:0 auto clamp(28px,3.4*var(--vw,1vw),56px);text-align:center;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:balance}
-.film-box{position:relative;width:85%;margin-inline:auto;aspect-ratio:16/9;border-radius:clamp(18px,2.2*var(--vw,1vw),32px);overflow:hidden;background:#e9e7e3;isolation:isolate}
+.film-box{position:relative;width:85%;margin-inline:auto;aspect-ratio:16/9;border-radius:clamp(18px,2.2*var(--vw,1vw),32px);overflow:hidden;background:#fbfbfb;isolation:isolate}
 .film-box video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.film-box::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(18deg,rgba(0,0,0,.42),rgba(0,0,0,0) 48%);transition:opacity .3s}
-.film-play{position:absolute;left:clamp(20px,4.6%,72px);bottom:clamp(18px,8%,84px);z-index:1;display:flex;align-items:center;gap:.3em;padding:0;border:0;background:none;color:#fff;font:inherit;font-size:clamp(28px,4*var(--vw,1vw),60px);font-weight:500;letter-spacing:-.02em;cursor:pointer;text-shadow:0 1px 20px rgba(0,0,0,.25);transition:opacity .3s}
-.film-play svg{width:.46em;height:.52em;flex:none}
-.film-play:focus-visible{outline:2px solid #fff;outline-offset:6px;border-radius:8px}
-.film-box.on::after,.film-box.on .film-play{opacity:0;pointer-events:none}
+.film-box::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
+.film-play{position:absolute;left:50%;bottom:clamp(14px,5.2%,44px);z-index:2;display:flex;align-items:center;gap:.5em;height:2.75em;padding:0 1.25em 0 1.05em;border:0;border-radius:999px;background:#1d1d1f;color:#fff;font:inherit;font-size:clamp(14px,1.25*var(--vw,1vw),17px);font-weight:600;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transform:translateX(-50%);box-shadow:0 10px 28px -12px rgba(0,0,0,.45);transition:opacity .3s,background .2s,transform .2s}
+.film-play:hover{background:#000;transform:translateX(-50%) scale(1.03)}
+.film-play svg{width:.72em;height:.8em;flex:none}
+.film-play:focus-visible{outline:2px solid #1d1d1f;outline-offset:4px}
+.film-box.on .film-play{opacity:0;pointer-events:none}
+/* on a phone, a round press in the gap between Leo and Zoe (their row sits at 78% of the picture) */
+@media (max-width:734px){.film-play{width:40px;height:40px;padding:0;justify-content:center;bottom:calc(22% - 20px);font-size:14px}.film-play span{display:none}.film-play svg{margin-left:3px}}
 /* The film's own controls, as Apple's film players draw them (the founder, 1 November 2026: "more Apple like", not the
    browser's): one dark glass pill floating over the foot of the film, with play or pause, the time gone, a thin
    scrubber, the time left, sound and full screen. It shows when the film starts, on a move or a tap, and while paused;
@@ -1150,12 +1156,12 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
   </div>
 </section>
 
-<section class="film" id="film" aria-label="Hear it from our spokesperson agent">
+<section class="film" id="film" aria-label="A new kind of intelligence">
   <div class="wrap">
-    <h2>Hear it from our spokesperson agent</h2>
+    <h2>A new kind of intelligence</h2>
     <div class="film-box">
-      <video preload="none" playsinline poster="img/film-poster.webp?v=798727ca" src="video/what-is-simeon.mp4?v=d8dcc452"></video>
-      <button type="button" class="film-play" aria-label="Play the film"><svg viewBox="0 0 10 11" aria-hidden="true"><path d="M0 0v11l10-5.5z" fill="currentColor"/></svg>Play</button>
+      <video preload="none" playsinline poster="img/launch-poster.webp?v=b514b446" src="video/simeon-launch.mp4?v=2e7e1888" data-wide="video/simeon-launch.mp4?v=2e7e1888" data-tall="video/simeon-launch-tall.mp4?v=acd24c82"></video>
+      <button type="button" class="film-play" aria-label="Watch the film"><svg viewBox="0 0 10 11" aria-hidden="true"><path d="M0 0v11l10-5.5z" fill="currentColor"/></svg><span>Watch the film</span></button>
       <div class="film-bar" role="group" aria-label="Film controls">
         <button type="button" class="fpp" data-icon="pause" aria-label="Pause"><svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.6-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg></button>
         <span class="ftime fnow">0:00</span>
@@ -1181,8 +1187,22 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
         now.textContent = clock(v.currentTime); left.textContent = '-' + clock(d - v.currentTime);
       };
       const toggle = () => v.paused ? v.play() : v.pause();
-      b.addEventListener('click', () => { box.classList.add('on'); v.play(); wake(); });
-      v.addEventListener('click', () => { toggle(); wake(); });
+      // on a phone: the reel's cut, full screen in the phone's own player; leaving full screen stops it
+      const phone = matchMedia('(max-width:734px)');
+      const solo = () => {
+        box.classList.add('solo'); v.src = v.dataset.tall; v.removeAttribute('playsinline'); v.controls = true;
+        v.play().catch(() => {});
+        if (v.requestFullscreen) v.requestFullscreen().catch(() => {});
+        else if (v.webkitEnterFullscreen) try { v.webkitEnterFullscreen(); } catch (e) {}
+      };
+      const unsolo = () => {
+        if (!box.classList.contains('solo')) return;
+        box.classList.remove('solo'); v.pause(); v.controls = false; v.setAttribute('playsinline', ''); v.src = v.dataset.wide; v.load();
+      };
+      v.addEventListener('webkitendfullscreen', unsolo);
+      document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) unsolo(); });
+      b.addEventListener('click', () => { if (phone.matches) return solo(); box.classList.add('on'); v.play(); wake(); });
+      v.addEventListener('click', () => { if (box.classList.contains('solo')) return; toggle(); wake(); });
       pp.addEventListener('click', () => { toggle(); wake(); });
       v.addEventListener('play', () => { pp.dataset.icon = 'pause'; pp.setAttribute('aria-label', 'Pause'); wake(); });
       v.addEventListener('pause', () => { pp.dataset.icon = 'play'; pp.setAttribute('aria-label', 'Play'); wake(); });
@@ -1209,7 +1229,10 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
         else return;
         wake();
       });
-      v.addEventListener('ended', () => { if (document.fullscreenElement) document.exitFullscreen(); box.classList.remove('on', 'idle'); v.load(); });
+      v.addEventListener('ended', () => {
+        if (box.classList.contains('solo')) { if (document.fullscreenElement) document.exitFullscreen(); else if (v.webkitExitFullscreen) try { v.webkitExitFullscreen(); } catch (e) {} unsolo(); return; }
+        if (document.fullscreenElement) document.exitFullscreen(); box.classList.remove('on', 'idle'); v.load();
+      });
     }
   </script>
 </section>
