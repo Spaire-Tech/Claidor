@@ -16,8 +16,9 @@ accounts, the ChatGPT sign-in, the person's choice of model, and the relay
 on their account. A limit moves the call to their next account, then to
 Simeon's model. In the apps (9 November 2026): Settings › AI Models on the
 Mac, the iPhone and the web and Windows app (step 7 below; "make default" is
-the model menu, since the choice is the person's). Next: the pill in the
-message field (step 8), and the Privacy Policy and Terms (step 10). The model
+the model menu, since the choice is the person's). Next: Claude through
+Claude Code on the person's computer (section 6), the pill in the message
+field (step 8), and the Privacy Policy and Terms (step 10). The model
 is chosen per person for now; per agent comes later.
 
 ## 1. What Reason does (read from its app and docs, 8 November 2026)
@@ -63,7 +64,7 @@ in the conversation.
 | Provider | Allowed for Simeon? | Source |
 |---|---|---|
 | **ChatGPT** | **Yes, officially, once OpenAI approves Simeon.** Commercial apps join a waitlist with OpenAI's interest form. Plus and Pro (and Go) users let an app use their plan, with a weekly cap per app they set themselves. The app gets an access token (1 hour) and a refresh token (30 days) and calls the Responses API: `store: false`, `stream: true`, no `temperature` or `max_output_tokens`. A capped app gets `subscription_sharing_usage_limit_exceeded` (a 429, or `response.failed` mid-stream). | developers.openai.com/siwc (quickstart, request-client-id), help.openai.com article 20001542 |
-| **Claude** | **Not without Anthropic's approval.** Anthropic: "Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users … developers may not collect, store, or intermediate Claude.ai credentials." The Agent SDK page: "Unless previously approved". Reason's screen is Claude Code's sign-in, and whether Reason has that approval isn't public. **Simeon won't sign in as Claude Code**: it would present Simeon to Anthropic as Claude Code, against those terms. The allowed routes are below (section 6). | code.claude.com/docs/en/legal-and-compliance, /agent-sdk/overview, support.claude.com article 13189465 |
+| **Claude** | **Yes, through the real Claude Code only.** Not from Simeon's server: Anthropic: "Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users … developers may not collect, store, or intermediate Claude.ai credentials." The Agent SDK page: "Unless previously approved". **But the real Claude Code may run on a platform's computers, each person signing in to it with their own plan** (read 9 November 2026). Reason's screen is that sign-in. Simeon's server won't sign in as Claude Code; Claude Code itself runs on the person's computer (section 6). | code.claude.com/docs/en/legal-and-compliance, /agent-sdk/overview, support.claude.com article 13189465 |
 | **Grok** | **To check with xAI.** xAI publishes no programme for other apps. Kilo Code and Hermes Agent use the same device-code sign-in with SuperGrok plans. | hermes-agent docs (xai-grok-oauth), kilo.ai docs (xai) |
 | **GitHub Copilot** | **To check with GitHub.** Not read yet. | |
 | **Kimi Code** | **To check with Moonshot.** Not read yet. | |
@@ -177,16 +178,82 @@ then in the app on a Mac and an iPhone with the founder's own accounts.
 > unmodified Claude Code on each user's cloud computer, signed in by the user
 > with their own plan, for the work they give it?
 
-## 6. Claude meanwhile
+## 6. Claude through Claude Code (the founder, 9 November 2026: "do it like Reason. Claude code.")
 
-Until Anthropic answers, Claude stays available in Simeon:
+**What Anthropic allows** (code.claude.com/docs/en/legal-and-compliance, read
+9 November 2026). A product may preinstall or run Claude Code "in hosted
+sandboxes or other agent infrastructure" under Anthropic's Commercial Terms,
+if:
 
-- **Simeon's own credits.** As today, on Bedrock or Anthropic's API.
-- **The person's own Anthropic or Bedrock key** (section 7).
-- **The real Claude Code on the agent's computer** is allowed by Anthropic's
-  terms for a platform that hosts it: unmodified, the person signing in with
-  their own plan. It would be a separate project: a worker the agent hands
-  jobs to, not the agent's own voice.
+- "The Claude Code binary must not be modified", and none of its sign-in
+  methods is removed or restricted;
+- "Each end user must authenticate with their own … Claude subscription plan
+  credentials", billed to them; the product doesn't pay for, resell or
+  intermediate their use.
+
+The same page forbids the other way: "Anthropic does not permit third-party
+developers to offer Claude.ai login into their own applications, or to route
+requests through Free, Pro, Max, or Ultra plan credentials on behalf of their
+users. Moreover, developers may not collect, store, or intermediate Claude.ai
+credentials or session tokens — sign-in to a Claude account must complete
+through Anthropic's own flow", adding that this doesn't prevent "an end user
+from signing in to the unmodified Claude Code binary with their own Claude
+subscription, including where a platform hosts Claude Code". So the ChatGPT
+way (the server keeps the sign-in and makes the calls) is not open for Claude;
+Claude Code on the person's computer is. Reason's screen (the founder's
+screenshot: "Claude Code would like to connect to your Claude chat account",
+approve, paste the code back) is Claude Code's own sign-in.
+
+**What Simeon does:**
+
+- **Where it runs.** The person's cloud computer, the E2B virtual machine made
+  from `box/Dockerfile`, where their agents' engine already runs (the agents
+  on the server were taken out in #581). Claude Code is installed in the image
+  as Anthropic publishes it.
+- **The sign-in.** AI Models › Subscriptions › Claude › Connect wakes the
+  computer, which runs `claude auth login`. The sheet shows the link Claude
+  Code prints; the person approves on claude.ai and pastes the code Claude
+  shows; the app hands it to Claude Code on the computer, which finishes its
+  own sign-in. Claude Code keeps the sign-in in its own file on the computer
+  (`~/.claude/.credentials.json`). Simeon's server keeps only that Claude is
+  connected, with the e-mail and plan Claude Code reports (`claude auth
+  status`), never the sign-in.
+- **Not in the backup.** The computer's backup goes to Simeon's own store
+  (`box-store-sync`), so Claude Code's credentials file is left out of it. The
+  sign-in lasts while the computer sleeps and wakes; when a computer is
+  replaced (a new image or engine), the person signs in to Claude again.
+- **The agents on Claude.** With Claude chosen in the model menu, an agent's
+  turn is run by Claude Code on the computer (`claude -p`, its session resumed
+  per agent), in place of the engine's own loop. Simeon's tools (messages to
+  the person, reactions, cards and forms, the browser and the screen, the
+  person's connected apps, other agents) are given to it as an MCP server the
+  engine runs on the computer; Claude Code's own tools (shell, files, web
+  search) are its own. Its permission prompts go to the engine's safety review
+  (`--permission-prompt-tool`), so auto-review still decides. The model
+  calls are Claude Code's, on the person's plan: no Simeon credits, no
+  usage row.
+- **When it can't.** A plan limit, an expired sign-in or Claude Code failing
+  to start: the turn runs on Simeon's model instead, on credits, and the chat
+  says why once (as ChatGPT's limit does).
+
+**The steps:**
+
+| Step | What | About |
+|---|---|---|
+| C1 | This plan | done |
+| C2 | The image installs Claude Code; the credentials file kept out of the backup; the engine's commands to start the sign-in, hand over the code, read the status, sign out | 1 to 2 days |
+| C3 | The server's Claude row (no token), Connect Claude on the Mac, the iPhone and the web, Claude in the model menu, the ten languages | 2 to 3 days |
+| C4 | The engine runs a Claude turn through Claude Code with Simeon's tools over MCP, the safety review, the fallback | 5 to 6 days |
+| C5 | Docs, Privacy Policy and Terms, checks | 1 day |
+
+C2 and C4 reach people only with a new computer image (the E2B template,
+built by hand from `.github/workflows/e2b_template.yml`) and a new engine
+(`npm run publish:host-bundle` on a Mac). Both wait for the founder's go.
+Tests use a stand-in `claude` program; nothing reaches claude.ai or
+Anthropic in a test.
+
+**Still true:** Simeon's own Claude models on credits stay as they are, and a
+person's own Anthropic API key (section 7) comes later.
 
 ## 7. Then: API keys
 
