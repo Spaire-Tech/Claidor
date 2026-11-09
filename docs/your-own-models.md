@@ -260,6 +260,18 @@ approve, paste the code back) is Claude Code's own sign-in.
   The chat's line saying so is written for the person (`forPerson`) and
   shown as it is; the apps' check for a machine's words hid it, because it
   names Claude.
+- **The person's words reach Claude.** The handler read the turn's message
+  as a plain string, which the engine never keeps it as (it is a wrapped
+  `RedactedString`), so every turn Claude ran was given none of the person's
+  words, only the line for an empty turn ("The person sent nothing to read").
+  Claude answered "I'm here whenever you need me" to "archive anything not
+  important" (the founder's screenshot, 9 November 2026), and before the
+  lead line it went looking around the computer instead. Fixed the same day
+  (`claude-code-turn-words.ts`): the message's own words, and before them
+  any earlier messages the turn took in, sent while the agent was busy. The
+  tests had passed plain strings to the hook, never the turn's real message;
+  one now reads the engine's own wrapped message. Pictures and files
+  attached to a message don't reach Claude yet.
 - **What Claude said, in the history.** Each message and reaction Claude
   sends, and its last words, go into the model's history as the loop's own
   turns do (`claudeCodeHistory`). Simeon's model, answering a later turn,

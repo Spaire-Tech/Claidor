@@ -309,3 +309,22 @@ test("what Claude said goes into the model's history, so Simeon's model sees eac
     await dispose();
   }
 });
+
+test("Claude reads the person's own words: the turn keeps them wrapped, never as a plain string", async () => {
+  const { module: bridge, dispose } = await load();
+  try {
+    // The turn's message as the engine keeps it (9 November 2026: read as a plain string, it was always
+    // empty, and Claude answered "I'm here whenever you need me" to "archive anything not important").
+    const kept = bridge.toRedactedUserMessage(new bridge.UserMessage({ text: "can you archive anything not important" }), bridge.PrivacyMode.NO_TRAINING);
+    assert.notEqual(typeof kept.text, "string");
+    assert.equal(bridge.claudeCodeTurnWords(kept.text), "can you archive anything not important");
+    // Messages sent while the agent was busy, taken into this turn, come first, each as written.
+    assert.equal(bridge.claudeCodeTurnWords(kept.text, ["can you archive anything important", "  "]), "can you archive anything important\n\ncan you archive anything not important");
+    assert.equal(bridge.claudeCodeTurnWords("plain words"), "plain words");
+    assert.equal(bridge.claudeCodeTurnWords(undefined), "");
+    // What Claude Code is then given: the words, never the line for an empty turn.
+    assert.equal(bridge.claudeCodePrompt(bridge.claudeCodeTurnWords(kept.text), undefined, false), "can you archive anything not important");
+  } finally {
+    await dispose();
+  }
+});

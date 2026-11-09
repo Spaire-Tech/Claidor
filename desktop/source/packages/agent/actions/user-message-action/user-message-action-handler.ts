@@ -2,6 +2,7 @@ import { AgentMode } from "../../../proto/generated/agent/v1/agent_pb.js";
 import { fromRedactedRequestContext } from "../../../redacted-protos/generated/agent/v1/request_context_exec_redacted.js";
 import { fromRedactedUserMessage as fromRedactedUserMessage2 } from "../../../redacted-protos/generated/agent/v1/agent_redacted.js";
 import { PrivacyCapability } from "../../../redaction/classification.js";
+import { claudeCodeTurnWords } from "./claude-code-turn-words.js";
 import { fromRedactedCoreMessage, fromRedactedCoreMessages, toRedactedCoreMessages } from "../../../redaction/core-message.js";
 import { createLogger } from "../../../context/logger.js";
 import { createSpan } from "../../../context/otel.js";
@@ -162,6 +163,8 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     const isProjectKickoffBeforePrepends = userMessage.projectDetails !== undefined && userMessage.projectDetails.sideChat === undefined && stateHandler.turns.length === 0;
     const prependedMessagesStart = performance.now();
     let prependedCount = 0;
+    // The earlier messages this turn takes in, as written, for a turn Claude Code runs (`claudeCodeTurnWords`).
+    const prependedTexts: string[] = [];
     if (configAny.enablePrependedUserActions || forcePrependedUserMessages) {
       const allPrepended = action.prependUserMessages ?? [];
       const droppedCount = Math.max(0, allPrepended.length - maxPrependedUserMessages);
@@ -180,6 +183,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
           continue;
         }
         if (sendToInteractionListener) await this.interactionListener.sendUpdate(ctx, RedactedUpdates.userMessageAppended(prependedMessage));
+        prependedTexts.push(prependedUserMessage.text);
         await stateHandler.createAgentTurn(ctx, prependedUserMessage, requestContext, configAny, this.resourceAccessor, {
           additionalUserTurnSystemReminder: prependedNamedAgentUserTurnReminder,
           ...dynamicToolTurnOptions,
@@ -343,7 +347,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
       }
     }
     postTurnStateDuration.histogram(ctx, performance.now() - postTurnStateStart);
-    return { turn, mergedMcpTools, requestContext, requestContextProvenance };
+    return { turn, mergedMcpTools, requestContext, requestContextProvenance, prependedTexts };
   }
 
   async handle(parentCtx: Any, action: Any, rootPromptExecutor: Any, stateHandler: Any, mcpTools: Any, onStateUpdate: Any, options: Any = {}): Promise<Any> {
@@ -354,13 +358,13 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     // The host's own step before a turn (the model and effort the person chose, read again when old).
     try { await (configAny.beforeTurn as (() => Promise<void>) | undefined)?.(); } catch { /* the turn goes on what it has */ }
     const convInitStart = performance.now();
-    const { turn, mergedMcpTools, requestContext } = await this.initializeConversation(ctx, { action, rootPromptExecutor, stateHandler, mcpTools, maxPrependedUserMessages: options.maxPrependedUserMessages ?? 5, forcePrependedUserMessages: options.forcePrependedUserMessages ?? false, onStateUpdate });
+    const { turn, mergedMcpTools, requestContext, prependedTexts } = await this.initializeConversation(ctx, { action, rootPromptExecutor, stateHandler, mcpTools, maxPrependedUserMessages: options.maxPrependedUserMessages ?? 5, forcePrependedUserMessages: options.forcePrependedUserMessages ?? false, onStateUpdate });
     conversationInitDuration.histogram(ctx, performance.now() - convInitStart);
     // The person's own Claude plan (9 November 2026, docs/your-own-models.md, section 6): Claude Code on the
     // computer runs the turn. When it can't (the plan's limit, the sign-in gone, not installed), the loop below
     // answers on Simeon's model, as before.
     const claudeCode = configAny.claudeCodeTurn as ClaudeCodeTurnHook | undefined;
-    if (claudeCode !== undefined && claudeCode.chosen(String(configAny.conversationId ?? "")) && await this.runOnClaudeCode(ctx, claudeCode, rootPromptExecutor, stateHandler, turn, mergedMcpTools, requestContext)) {
+    if (claudeCode !== undefined && claudeCode.chosen(String(configAny.conversationId ?? "")) && await this.runOnClaudeCode(ctx, claudeCode, rootPromptExecutor, stateHandler, turn, mergedMcpTools, requestContext, prependedTexts ?? [])) {
       return await stateHandler.computeNewStructure(ctx);
     }
     await this.runTurnLoop(ctx, rootPromptExecutor, stateHandler, turn, configAny.toolsGenerator, mergedMcpTools, requestContext.repositoryInfo, requestContext, onStateUpdate);
@@ -376,7 +380,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
    * messages there, it told them "a few of your messages got dropped" and did the work again). True when
    * Claude Code ran the turn to its end; false leaves the turn to the loop.
    */
-  private async runOnClaudeCode(ctx: Any, hook: ClaudeCodeTurnHook, rootPromptExecutor: Any, stateHandler: Any, turn: Any, mcpTools: Any, requestContext: Any): Promise<boolean> {
+  private async runOnClaudeCode(ctx: Any, hook: ClaudeCodeTurnHook, rootPromptExecutor: Any, stateHandler: Any, turn: Any, mcpTools: Any, requestContext: Any, prependedTexts: readonly string[] = []): Promise<boolean> {
     const configAny: Any = this.config;
     let tools: readonly unknown[];
     try {
@@ -412,7 +416,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
       conversationId: String(configAny.conversationId ?? ""),
       brief,
       ...(userInfo === undefined ? {} : { context: textOf(userInfo) }),
-      text: typeof userMessage?.text === "string" ? userMessage.text : "",
+      text: claudeCodeTurnWords(userMessage?.text, prependedTexts),
       tools,
       listener: toUnredactedInteractionListener(this.interactionListener, stateHandler.getPrivacyMode()),
       stateHandler,
