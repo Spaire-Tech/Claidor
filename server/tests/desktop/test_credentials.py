@@ -194,6 +194,110 @@ class TestCredentials:
         assert "hasPassword" not in contact
         assert "site" not in contact
 
+    async def test_a_card_is_kept_sealed_listed_by_its_last_digits_and_read_whole(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """9 November 2026: cards the agents pay with, the security code kept.
+        The list never carries the number or the code; one entry read whole
+        does, for the apps' editor and the computer's checkout."""
+        app, box = await _signed_in_with_box(client, session, user)
+        home = await _add(
+            client, app, kind="contact", name="Home", addressLine1="1 Pike St"
+        )
+        added = await _add(
+            client,
+            app,
+            kind="card",
+            name="Travel",
+            cardholder="Theo Martin",
+            number="4242 4242-4242 4242",
+            expiry="8/2028",
+            securityCode="123",
+            billingId=home["id"],
+            hints="Flights and hotels",
+        )
+        assert added["brand"] == "visa"
+        assert added["last4"] == "4242"
+        assert added["expiry"] == "08/28"
+        assert added["hasSecurityCode"] is True
+        assert added["billingId"] == home["id"]
+        assert "number" not in added
+        assert "securityCode" not in added
+
+        rows = await DesktopCredentialRepository.from_session(session).list_by_user(
+            user.id
+        )
+        card_row = next(row for row in rows if row.kind == "card")
+        assert "4242424242424242" not in card_row.sealed, "kept sealed"
+
+        for headers in (app, box):
+            listed = _data(await client.get(STORE, headers=headers))["entries"]
+            assert [entry["kind"] for entry in listed] == ["contact", "card"]
+            card = listed[1]
+            assert card["last4"] == "4242"
+            assert "number" not in card
+            assert "securityCode" not in card
+            entry = _data(await client.get(f"{STORE}/{added['id']}", headers=headers))[
+                "entry"
+            ]
+            assert entry["number"] == "4242424242424242"
+            assert entry["securityCode"] == "123"
+            assert entry["cardholder"] == "Theo Martin"
+
+        # Only the person adds a card; the computer can't.
+        code, message = _refused(
+            await client.post(
+                STORE,
+                json={"kind": "card", "number": "4242424242424242", "expiry": "08/28"},
+                headers=box,
+            )
+        )
+        assert code == 403
+        assert "Settings" in message
+        # The app changes it, the code cleared when sent empty.
+        changed = _data(
+            await client.patch(
+                f"{STORE}/{added['id']}",
+                json={"expiry": "09/30", "securityCode": ""},
+                headers=app,
+            )
+        )["entry"]
+        assert changed["expiry"] == "09/30"
+        assert changed["hasSecurityCode"] is False
+        assert changed["last4"] == "4242"
+
+    async def test_a_card_that_cannot_be_kept_is_refused_with_a_sentence(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        app, _ = await _signed_in_with_box(client, session, user)
+        good = {"kind": "card", "number": "5555555555554444", "expiry": "12/29"}
+        for entry in (
+            {**good, "number": "4242424242424241"},
+            {**good, "number": "4242"},
+            {**good, "expiry": "13/29"},
+            {**good, "expiry": ""},
+            {**good, "securityCode": "12"},
+            {**good, "securityCode": "12a"},
+            {**good, "billingId": "home"},
+        ):
+            code, message = _refused(await client.post(STORE, json=entry, headers=app))
+            assert code == 422, entry
+            assert message
+        assert _data(await client.get(STORE, headers=app))["entries"] == []
+        amex = await _add(
+            client,
+            app,
+            kind="card",
+            number="378282246310005",
+            expiry="0127",
+            securityCode="1234",
+        )
+        assert (amex["brand"], amex["last4"], amex["expiry"]) == (
+            "amex",
+            "0005",
+            "01/27",
+        )
+
     async def test_an_entry_that_cannot_be_kept_is_refused_with_a_sentence(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

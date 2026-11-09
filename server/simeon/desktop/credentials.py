@@ -1,6 +1,6 @@
 """The person's Credentials Store (28 October 2026; the founder, 29 October:
 "name it Credentials Store"): the logins and the contact info the agents
-sign in and sign up with. Kept here, not on the agents' computer, so the apps
+sign in and sign up with, and (9 November 2026) the cards they pay with. Kept here, not on the agents' computer, so the apps
 change them while the computer sleeps and the agents use them while the Mac
 is closed.
 
@@ -18,8 +18,14 @@ is closed.
   again). What the person saved, an agent never changes.
 - `DELETE /desktop/api/credentials/{id}` — the apps only.
 
-Cards are not kept: Link holds them, and an agent pays with a one-time card.
-Each entry is sealed for its person (`simeon.kit.sealed`, purpose
+Cards (9 November 2026, the founder: "actual cards there that the agent can
+use to make payments", the security code kept: "otherwise its useless"): the
+number, expiry, security code, name on the card, the billing address (a
+contact entry's id), a nickname and hints. Only the apps add or change one.
+The list gives the brand, the last four digits and the expiry, never the
+number or the code; one entry read whole gives them, to the apps' editor and
+to the computer, which types them into a checkout the person approved (the
+agent itself never sees them). Each entry is sealed for its person (`simeon.kit.sealed`, purpose
 `credentials:<user id>`): a copy of the database alone opens none, and one
 person's entry can't be read as another's. Nothing here logs a value.
 Delete Account removes them (`account_repository.py`).
@@ -28,6 +34,7 @@ Delete Account removes them (`account_repository.py`).
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlsplit
@@ -52,7 +59,7 @@ log = structlog.get_logger()
 # Mounted under the desktop router (`/desktop`).
 router = APIRouter(include_in_schema=False)
 
-KINDS = ("login", "contact")
+KINDS = ("login", "contact", "card")
 #: What each kind holds, in the order the apps show it.
 FIELDS: dict[str, tuple[str, ...]] = {
     "login": ("name", "website", "username", "password", "hints"),
@@ -69,7 +76,20 @@ FIELDS: dict[str, tuple[str, ...]] = {
         "country",
         "hints",
     ),
+    "card": (
+        "name",
+        "cardholder",
+        "number",
+        "expiry",
+        "securityCode",
+        "billingId",
+        "hints",
+    ),
 }
+#: The fields only one entry read whole gives (`with_secrets`): the list says
+#: whether they are there (a password, a code) or what shows of them (a
+#: card's brand and last four digits).
+SECRETS = ("password", "number", "securityCode")
 #: The longest each field may be; any other field, `FIELD_MAX`.
 LIMITS = {
     "name": 200,
@@ -77,6 +97,11 @@ LIMITS = {
     "username": 512,
     "password": 1024,
     "hints": 2000,
+    "cardholder": 200,
+    "number": 19,
+    "expiry": 5,
+    "securityCode": 4,
+    "billingId": 36,
 }
 FIELD_MAX = 300
 SAVED_BY_MAX = 100
@@ -120,9 +145,61 @@ def _fail(code: int, key: str) -> JSONResponse:
     return JSONResponse({"code": code, "message": say(key)})
 
 
+def card_brand(number: str) -> str:
+    """The card's network from its first digits: `visa`, `mastercard`,
+    `amex`, `discover`, `jcb`, `diners`, `unionpay`, or empty."""
+    if not number.isdigit():
+        return ""
+    two, four = int(number[:2] or 0), int(number[:4] or 0)
+    if number.startswith("4"):
+        return "visa"
+    if 51 <= two <= 55 or 2221 <= four <= 2720:
+        return "mastercard"
+    if two in (34, 37):
+        return "amex"
+    if number.startswith(("6011", "65")) or 644 <= int(number[:3] or 0) <= 649:
+        return "discover"
+    if 3528 <= four <= 3589:
+        return "jcb"
+    if two in (36, 38) or 300 <= int(number[:3] or 0) <= 305:
+        return "diners"
+    if number.startswith("62"):
+        return "unionpay"
+    return ""
+
+
+def card_number_ok(number: str) -> bool:
+    """12 to 19 digits that pass the Luhn check every card number does."""
+    if not number.isdigit() or not 12 <= len(number) <= 19:
+        return False
+    total = 0
+    for index, digit in enumerate(reversed(number)):
+        value = int(digit)
+        if index % 2 == 1:
+            value = value * 2 - 9 if value > 4 else value * 2
+        total += value
+    return total % 10 == 0
+
+
+_EXPIRY = re.compile(r"^(\d{1,2})\s*/?\s*(\d{2}|\d{4})$")
+_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def card_expiry(raw: str) -> str:
+    """ "MM/YY" from "8/28", "08/2028" or "0828"; empty when it isn't one."""
+    text = raw.strip()
+    if re.fullmatch(r"\d{4}", text):
+        text = f"{text[:2]}/{text[2:]}"
+    match = _EXPIRY.match(text)
+    if match is None:
+        return ""
+    month, year = int(match.group(1)), match.group(2)[-2:]
+    return f"{month:02d}/{year}" if 1 <= month <= 12 else ""
+
+
 class EntryBody(BaseModel):
     model_config = ConfigDict(extra="ignore")
-    kind: Literal["login", "contact"] | None = None
+    kind: Literal["login", "contact", "card"] | None = None
     name: str | None = None
     website: str | None = None
     username: str | None = None
@@ -137,14 +214,29 @@ class EntryBody(BaseModel):
     region: str | None = None
     postalCode: str | None = None
     country: str | None = None
+    cardholder: str | None = None
+    number: str | None = None
+    expiry: str | None = None
+    securityCode: str | None = None
+    billingId: str | None = None
     #: The agent that saved it, when the computer saves it.
     savedBy: str | None = None
 
 
 def _value(field: str, raw: str | None) -> str:
-    """A field as kept: trimmed, but a password exactly as written."""
+    """A field as kept: trimmed, but a password exactly as written; a card's
+    number without its spaces and dashes, its expiry as "MM/YY" (left as
+    written when it isn't one, to be refused)."""
     text = raw or ""
-    return text if field == "password" else text.strip()
+    if field == "password":
+        return text
+    if field == "number":
+        return re.sub(r"[\s-]", "", text)
+    if field == "expiry":
+        return card_expiry(text) or text.strip()
+    if field == "billingId":
+        return text.strip().lower()
+    return text.strip()
 
 
 def _problem(kind: str, values: dict[str, str]) -> str | None:
@@ -161,6 +253,18 @@ def _problem(kind: str, values: dict[str, str]) -> str | None:
             return "credentials.login_needs_site"
         if not values.get("username") and not values.get("password"):
             return "credentials.login_needs_sign_in"
+        return None
+    if kind == "card":
+        if not card_number_ok(values.get("number", "")):
+            return "credentials.card_number"
+        if not card_expiry(values.get("expiry", "")):
+            return "credentials.card_expiry"
+        code = values.get("securityCode", "")
+        if code and not (code.isdigit() and 3 <= len(code) <= 4):
+            return "credentials.card_code"
+        billing = values.get("billingId", "")
+        if billing and not _UUID.match(billing):
+            return "credentials.card_billing"
         return None
     if not any(
         values.get(field)
@@ -195,10 +299,17 @@ def _entry(
 ) -> dict[str, Any]:
     entry: dict[str, Any] = {"id": str(row.id), "kind": row.kind}
     for field in FIELDS[row.kind]:
-        if field == "password":
-            entry["hasPassword"] = bool(values.get("password"))
+        if field in SECRETS:
+            secret = values.get(field, "")
+            if field == "password":
+                entry["hasPassword"] = bool(secret)
+            elif field == "number":
+                entry["brand"] = card_brand(secret)
+                entry["last4"] = secret[-4:]
+            else:
+                entry["hasSecurityCode"] = bool(secret)
             if with_password:
-                entry["password"] = values.get("password", "")
+                entry[field] = secret
             continue
         entry[field] = values.get(field, "")
     if row.kind == "login":
@@ -211,7 +322,7 @@ def _entry(
 
 
 def _title(entry: dict[str, Any]) -> str:
-    for field in ("name", "site", "fullName", "email"):
+    for field in ("name", "site", "fullName", "email", "brand"):
         if entry.get(field):
             return str(entry[field])
     return ""
@@ -280,6 +391,9 @@ async def credentials_create(
     if body.kind is None:
         return _fail(422, "credentials.kind")
     kind = body.kind
+    if kind == "card" and desktop_session.is_box_credential:
+        # Only the person adds a card, in the apps.
+        return _fail(403, "credentials.card_by_person")
     values = {field: _value(field, getattr(body, field)) for field in FIELDS[kind]}
     problem = _problem(kind, values)
     if problem is not None:
