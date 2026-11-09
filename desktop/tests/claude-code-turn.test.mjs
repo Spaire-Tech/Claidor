@@ -59,6 +59,8 @@ process.stdin.on("end", () => {
   out({ type: "system", subtype: "init", model: flag("--model"), tools: ["Bash", "mcp__simeon__SendMessage"], mcp_servers: [{ name: "simeon", status: "connected" }] });
   if (mode === "limit") { out({ type: "result", subtype: "success", is_error: true, result: "Claude AI usage limit reached|1794150000", num_turns: 1 }); process.exit(1); }
   if (mode === "expired") { out({ type: "result", subtype: "success", is_error: true, result: "OAuth token has expired. Please run /login", num_turns: 1 }); process.exit(1); }
+  if (mode === "limit-event") { out({ type: "rate_limit_event", rate_limit_info: { status: "rejected", resetsAt: 1794150000, rateLimitType: "five_hour" } }); setInterval(() => {}, 1000); return; }
+  if (mode === "limit-api-error") { out({ type: "assistant", is_api_error_message: true, api_error_code: "usage_limit_reached", api_error_params: { rate_limit_info: { status: "rejected", resetsAt: 1794153600 } }, message: { role: "assistant", content: [{ type: "text", text: "You've hit your limit" }] } }); setInterval(() => {}, 1000); return; }
   if (mode === "crash") { process.stdout.write("not json\\n"); process.stderr.write("something broke\\n"); process.exit(3); }
   out({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "Sending it." }, { type: "tool_use", id: "toolu_1", name: "mcp__simeon__SendMessage", input: { type: "text", content: "Done" } }] } });
   out({ type: "user", message: { role: "user", content: [{ type: "tool_result", tool_use_id: "toolu_1", content: "sent" }] } });
@@ -175,6 +177,20 @@ test("the endings: the plan's limit, the sign-in gone, a crash, not installed, s
     assert.equal(limited.until, 1_794_150_000_000);
     assert.match(limited.sessionId, UUID);
 
+    // Claude Code 2.1.311's own limit events (read from the program): the turn stops at once, not at the reset.
+    await box.mode("limit-event");
+    let started = Date.now();
+    const evented = await turn.runClaudeCodeTurn(base);
+    assert.equal(evented.kind, "limited");
+    assert.equal(evented.until, 1_794_150_000_000);
+    assert.ok(Date.now() - started < 4_000);
+    await box.mode("limit-api-error");
+    const apiError = await turn.runClaudeCodeTurn(base);
+    assert.equal(apiError.kind, "limited");
+    assert.equal(apiError.until, 1_794_153_600_000);
+    // An allowed-with-warning event is not a limit.
+    assert.equal(turn.limitFromEvent({ type: "rate_limit_event", rate_limit_info: { status: "allowed_warning", resetsAt: 1 } }), undefined);
+
     await box.mode("expired");
     assert.deepEqual(await turn.runClaudeCodeTurn(base), { kind: "signed_out", said: "OAuth token has expired. Please run /login" });
 
@@ -189,7 +205,7 @@ test("the endings: the plan's limit, the sign-in gone, a crash, not installed, s
     await box.mode("hang");
     const stop = new AbortController();
     setTimeout(() => stop.abort(), 300);
-    const started = Date.now();
+    started = Date.now();
     const stopped = await turn.runClaudeCodeTurn({ ...base, signal: stop.signal });
     assert.equal(stopped.kind, "aborted");
     assert.ok(Date.now() - started < 5_000);

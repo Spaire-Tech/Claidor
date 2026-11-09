@@ -22,7 +22,8 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { claudeCodeBinary, claudeCodeEnv } from "./claude-code-account.js";
+import { claudeCodeBinary, claudeCodeEnv, logClaudeCode } from "./claude-code-account.js";
+import { ensureClaudeCode } from "./claude-code-install.js";
 
 /** The MCP server name Simeon's tools are offered under: Claude Code calls them `mcp__simeon__<Tool>`. */
 export const SIMEON_MCP_SERVER = "simeon";
@@ -112,6 +113,25 @@ export function limitEnds(words: string): number | undefined {
   return epoch[1].length === 13 ? value : value * 1000;
 }
 
+/** The plan's limit as Claude Code's stream says it (2.1.311, read from the program): a `rate_limit_event` rejected, or an API error coded `usage_limit_reached`; its reset in seconds since 1970. */
+export function limitFromEvent(event: ClaudeCodeEvent): { readonly until?: number | undefined } | undefined {
+  const reset = (info: unknown): number | undefined => {
+    const at = (info as { resetsAt?: unknown } | undefined)?.resetsAt;
+    return typeof at === "number" && at > 0 ? (at < 1e12 ? at * 1000 : at) : undefined;
+  };
+  if (event.type === "rate_limit_event") {
+    const info = event.rate_limit_info as { status?: unknown } | undefined;
+    return info?.status === "rejected" ? { until: reset(info) } : undefined;
+  }
+  const message = event.message as Record<string, unknown> | undefined;
+  for (const holder of [event as Record<string, unknown>, message ?? {}]) {
+    if (holder.is_api_error_message === true && holder.api_error_code === "usage_limit_reached") {
+      return { until: reset((holder.api_error_params as { rate_limit_info?: unknown } | undefined)?.rate_limit_info) };
+    }
+  }
+  return undefined;
+}
+
 /** What Claude Code's error words mean for the engine. */
 export function classifyClaudeCodeError(words: string): "limited" | "signed_out" | "no_session" | "failed" {
   if (/no conversation found with session id/i.test(words)) return "no_session";
@@ -152,6 +172,8 @@ export class StreamJsonLines {
 /** Runs one turn to its end; never throws. */
 export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<ClaudeCodeOutcome> {
   if (input.signal?.aborted === true) return { kind: "aborted" };
+  // Installed at Connect; a computer made afresh since installs it again here (the turn waits up to two minutes).
+  if (await ensureClaudeCode({ env: input.env ?? process.env, waitMs: 120_000, log: logClaudeCode }) !== "ready") return { kind: "not_installed" };
   const newSession = input.resume === undefined ? randomUUID() : undefined;
   const folder = mkdtempSync(path.join(os.tmpdir(), "simeon-claude-turn-"));
   const files: { brief?: string; mcp?: string } = {};
@@ -172,6 +194,8 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
       let result: ClaudeCodeEvent | undefined;
       let lastText = "";
       let stderr = "";
+      // The plan's limit, as soon as Claude Code says it: the turn stops rather than wait for the reset.
+      let limited: { until?: number | undefined } | undefined;
       let settled = false;
       const finish = (outcome: ClaudeCodeOutcome): void => {
         if (settled) return;
@@ -190,6 +214,12 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
           }
         }
         if (event.type === "result") result = event;
+        const limit = limited === undefined ? limitFromEvent(event) : undefined;
+        if (limit !== undefined) {
+          limited = limit;
+          child.kill("SIGTERM");
+          setTimeout(() => child.kill("SIGKILL"), 5_000).unref();
+        }
         try { input.onEvent?.(event); } catch { /* the caller's own trouble */ }
       });
       let child: ReturnType<typeof spawn>;
@@ -220,6 +250,7 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
       child.on("close", (code) => {
         lines.end();
         if (input.signal?.aborted === true) { finish({ kind: "aborted", sessionId }); return; }
+        if (limited !== undefined) { finish({ kind: "limited", sessionId, until: limited.until, said: "usage limit reached" }); return; }
         const words = said(result?.result) || said(stderr);
         const failed = result === undefined || result.is_error === true || (result.subtype !== undefined && result.subtype !== "success");
         if (!failed && sessionId !== undefined) {
