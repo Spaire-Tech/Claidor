@@ -502,9 +502,7 @@ describe('Claude in Claude Code on the computer', () => {
       },
     )
     expect(await model.startClaude()).toBeUndefined()
-    expect(model.problem).toBe(
-      'Your computer needs an update before it can run Claude Code.',
-    )
+    expect(model.problem).toBe("Simeon's computer needs an update first.")
     expect(
       claudeSignIn({ url: 'https://evil.example/oauth/authorize' }),
     ).toBeUndefined()

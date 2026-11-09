@@ -65,7 +65,7 @@ struct SettingsModelsPage: View {
           SettingsGroup(title: String(localized: "Subscriptions"), footer: footer, look: look) {
             ForEach(Array(open.enumerated()), id: \.element) { index, provider in
               MacProviderLine(provider: provider, divided: index > 0, look: look) {
-                SettingsPill(title: String(localized: "Connect"), look: look) { connect(provider) }
+                SettingsPill(title: String(localized: "Connect"), look: look) { ask(provider) }
               }
             }
           }
@@ -92,7 +92,16 @@ struct SettingsModelsPage: View {
     .task { await model.load() }
   }
 
-  /** A provider's sign-in: ChatGPT's code sheet, or Claude's (Claude Code on the computer). */
+  /**
+   * A provider's first Connect: the consent an app's Connect shows (9
+   * November 2026, the founder: "have it like when you connect an app"),
+   * then its sign-in.
+   */
+  private func ask(_ provider: String) {
+    MacConnector.shared.ask(consent: ConnectConsent(modelProvider: provider)) { connect(provider) }
+  }
+
+  /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
   private func connect(_ provider: String) {
     if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
   }
@@ -215,10 +224,10 @@ private struct MacModelAccountLine: View {
 /**
  * Connect ChatGPT (Reason's sheet: "Copy this code", "Enter it on … and
  * approve", "Waiting for you to approve…"): the code, big, with Copy; the
- * page to enter it on, with Open; a line saying OpenAI's page names Codex
- * (the sign-in Simeon uses for ChatGPT until OpenAI approves its own); the
- * wait. Connected, it says which model the agents now use. The code lasts
- * 15 minutes; closing the sheet stops the asking.
+ * page to enter it on, with Open; the wait, and nothing more (9 November
+ * 2026, the founder: "all the many explanation… needs gone"). Connected, it
+ * says which model the agents now use. The code lasts 15 minutes; closing
+ * the sheet stops the asking.
  */
 struct MacChatGPTConnectSheet: View {
   let model: AIModelsModel
@@ -309,10 +318,6 @@ struct MacChatGPTConnectSheet: View {
       MacConnectStep(number: 2, title: String(localized: "Enter it on \(signIn.shownAddress) and approve"), look: look) {
         SettingsPill(title: String(localized: "Open"), look: look) { NSWorkspace.shared.open(signIn.verificationURL) }
       }
-      Text("OpenAI's page names Codex: it's the sign-in Simeon uses for ChatGPT.")
-        .font(PanelType.detail)
-        .foregroundStyle(look.inkSecondary)
-        .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 10) {
         ProgressView().controlSize(.small)
         Text("Waiting for you to approve…").font(PanelType.row).foregroundStyle(look.inkSecondary)
@@ -360,10 +365,11 @@ struct MacChatGPTConnectSheet: View {
 
 /**
  * Connect Claude (9 November 2026; the founder's screenshot of Reason's:
- * Claude Code's own sign-in): the computer starts Claude Code's sign-in; 1,
+ * Claude Code's own sign-in): a spinner while the computer starts it; 1,
  * Claude's page, with Open (the default browser); 2, the code Claude shows,
- * pasted and sent to Claude Code on the computer; a line saying the sign-in
- * stays there. Connected, it says which model the agents now use. Closed
+ * pasted and sent to the computer; nothing more (the founder, the same day:
+ * "the absolute awful wording of starting claude code on your computer
+ * needs gone"). Connected, it says which model the agents now use. Closed
  * before the code, the computer's sign-in ends.
  */
 struct MacClaudeConnectSheet: View {
@@ -440,10 +446,7 @@ struct MacClaudeConnectSheet: View {
           .fixedSize(horizontal: false, vertical: true)
         tryAgain(look)
       } else {
-        HStack(spacing: 10) {
-          ProgressView().controlSize(.small)
-          Text("Starting Claude Code on your computer…").font(PanelType.row).foregroundStyle(look.inkSecondary)
-        }
+        ProgressView().controlSize(.small)
       }
     }
   }
@@ -470,10 +473,6 @@ struct MacClaudeConnectSheet: View {
           }
         }
       }
-      Text("Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it.")
-        .font(PanelType.detail)
-        .foregroundStyle(look.inkSecondary)
-        .fixedSize(horizontal: false, vertical: true)
     }
   }
 

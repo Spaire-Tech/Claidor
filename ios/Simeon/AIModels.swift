@@ -23,6 +23,10 @@ struct AIModelsPage: View {
   @State private var renaming: ModelAccount?
   @State private var newName = ""
   @State private var disconnecting: ModelAccount?
+  /** The consent an app's Connect shows, before a provider's first sign-in; Connect on it marks `confirmed`. */
+  @State private var asking: ConnectConsent?
+  @State private var pending: String?
+  @State private var confirmed = false
 
   var body: some View {
     let model = store.aiModels
@@ -69,7 +73,7 @@ struct AIModelsPage: View {
                 ProviderIcon(provider: provider, size: 30)
                 Text(verbatim: AIModels.providerName(provider)).font(.system(size: 17)).foregroundStyle(Ink.primary)
                 Spacer(minLength: 8)
-                Button(String(localized: "Connect")) { connect(provider) }
+                Button(String(localized: "Connect")) { ask(provider) }
                   .foregroundStyle(Ink.link)
                   .buttonStyle(.borderless)
               }
@@ -91,6 +95,15 @@ struct AIModelsPage: View {
     .groupedGround()
     .navigationTitle("AI Models")
     .inlineBarTitle()
+    // The sign-in opens once the consent has gone, as an app's Connect does.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed, let provider = pending else { return }
+      confirmed = false
+      pending = nil
+      connect(provider)
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
     .sheet(isPresented: $connectingChatGPT) {
       NavigationStack { ChatGPTConnectSheet(model: model) }
     }
@@ -120,7 +133,18 @@ struct AIModelsPage: View {
     .task { await model.load() }
   }
 
-  /** A provider's sign-in: ChatGPT's code sheet, or Claude's (Claude Code on the computer). */
+  /**
+   * A provider's first Connect: the consent an app's Connect shows (9
+   * November 2026, the founder: "have it like when you connect an app"),
+   * then its sign-in.
+   */
+  private func ask(_ provider: String) {
+    confirmed = false
+    pending = provider
+    asking = ConnectConsent(modelProvider: provider)
+  }
+
+  /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
   private func connect(_ provider: String) {
     if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
   }
@@ -270,8 +294,8 @@ private struct ModelAccountRow: View {
 
 /**
  * Connect ChatGPT, as the Mac's sheet: "Copy this code", the code with
- * Copy; "Enter it on … and approve" with Open (Safari); OpenAI's page names
- * Codex; "Waiting for you to approve…" while the server is asked every few
+ * Copy; "Enter it on … and approve" with Open (Safari); "Waiting for you
+ * to approve…", nothing more, while the server is asked every few
  * seconds (on coming back from Safari too). Connected, it says which model
  * the agents use. Closing the sheet stops the asking.
  */
@@ -332,8 +356,6 @@ struct ChatGPTConnectSheet: View {
             }
           } header: {
             Text("2. Enter it on \(signIn.shownAddress) and approve")
-          } footer: {
-            Text("OpenAI's page names Codex: it's the sign-in Simeon uses for ChatGPT.")
           }
           .listRowBackground(Ink.groupedRow)
           Section {
@@ -397,8 +419,8 @@ struct ChatGPTConnectSheet: View {
 /**
  * Connect Claude (9 November 2026), as the Mac's sheet: the computer starts
  * Claude Code's sign-in; "1. Open Claude's page and approve" (Safari); "2.
- * Paste the code Claude shows", sent to Claude Code on the computer; the
- * line that the sign-in stays there. Connected, it says which model the
+ * Paste the code Claude shows", sent to the computer; nothing more (the
+ * founder: "all the many explanation… needs gone"). Connected, it says which model the
  * agents use. Cancelled before the code, the computer's sign-in ends.
  */
 struct ClaudeConnectSheet: View {
@@ -462,8 +484,6 @@ struct ClaudeConnectSheet: View {
             }
           } header: {
             Text("2. Paste the code Claude shows")
-          } footer: {
-            Text("Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it.")
           }
           .listRowBackground(Ink.groupedRow)
         } else if let problem = model.problem {
@@ -474,10 +494,7 @@ struct ClaudeConnectSheet: View {
           .listRowBackground(Ink.groupedRow)
         } else {
           Section {
-            HStack(spacing: 10) {
-              ProgressView()
-              Text("Starting Claude Code on your computer…").foregroundStyle(Ink.secondary)
-            }
+            HStack { Spacer(); ProgressView(); Spacer() }
           }
           .listRowBackground(Color.clear)
         }

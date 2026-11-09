@@ -9532,64 +9532,6 @@
         }
       }
     },
-    "Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code läuft auf deinem Computer und behält diese Anmeldung dort. Simeon sieht sie nie."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code se ejecuta en tu computadora y guarda allí este inicio de sesión. Simeon nunca lo ve."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code tourne sur ton ordinateur et y garde cette connexion. Simeon ne la voit jamais."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code gira sul tuo computer e conserva lì questo accesso. Simeon non lo vede mai."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code draait op je computer en bewaart deze inlog daar. Simeon ziet hem nooit."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code działa na twoim komputerze i tam przechowuje to logowanie. Simeon nigdy go nie widzi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Claude Code roda no seu computador e guarda esse login lá. O Simeon nunca o vê."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code körs på din dator och sparar inloggningen där. Simeon ser den aldrig."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code bilgisayarında çalışır ve bu girişi orada tutar. Simeon onu asla görmez."
-          }
-        }
-      }
-    },
     "Clear search" : {
       "localizations" : {
         "de" : {
@@ -29971,64 +29913,6 @@
         }
       }
     },
-    "OpenAI's page names Codex: it's the sign-in Simeon uses for ChatGPT." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auf der Seite von OpenAI steht Codex: Das ist die Anmeldung, die Simeon für ChatGPT nutzt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La página de OpenAI menciona Codex: es el inicio de sesión que Simeon usa para ChatGPT."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La page d’OpenAI mentionne Codex : c’est la connexion que Simeon utilise pour ChatGPT."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La pagina di OpenAI cita Codex: è l’accesso che Simeon usa per ChatGPT."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De pagina van OpenAI noemt Codex: dat is de inlog die Simeon voor ChatGPT gebruikt."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Strona OpenAI wspomina o Codex: to logowanie, którego Simeon używa dla ChatGPT."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A página da OpenAI fala em Codex: é o login que o Simeon usa para o ChatGPT."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OpenAI:s sida nämner Codex: det är inloggningen Simeon använder för ChatGPT."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OpenAI’ın sayfasında Codex yazar: Simeon’un ChatGPT için kullandığı giriş budur."
-          }
-        }
-      }
-    },
     "Opening…" : {
       "localizations" : {
         "de" : {
@@ -40536,64 +40420,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Başlangıç ekibi"
-          }
-        }
-      }
-    },
-    "Starting Claude Code on your computer…" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code wird auf deinem Computer gestartet…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciando Claude Code en tu computadora…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lancement de Claude Code sur ton ordinateur…"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvio di Claude Code sul tuo computer…"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code starten op je computer…"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uruchamiam Claude Code na twoim komputerze…"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciando o Claude Code no seu computador…"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Startar Claude Code på din dator…"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code bilgisayarında başlatılıyor…"
           }
         }
       }

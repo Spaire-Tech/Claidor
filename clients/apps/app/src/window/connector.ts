@@ -297,16 +297,18 @@ export class Connector {
    * `go` on Connect (`ask(_:store:then:)`), given the tab Connect's click
    * opened, to hand to its sign-in (`signIn(url, name, done, { tab })`).
    * `signIn: false` when Connect goes on to no sign-in page (a form of
-   * values first): no tab is opened, and `go` is given none.
+   * values first): no tab is opened, and `go` is given none. `consent`, a
+   * consent of its own (ChatGPT's and Claude's plans, `modelConsent`).
    */
   ask(
     name: string,
     go: (tab: HeldTab | undefined) => Promise<void>,
-    options: { signIn?: boolean } = {},
+    options: { signIn?: boolean; consent?: ConnectConsent } = {},
   ): void {
     this.asking = {
       name,
-      consent: connectConsent(this.store.catalogApp(name), name),
+      consent:
+        options.consent ?? connectConsent(this.store.catalogApp(name), name),
       go,
       opensSignIn: options.signIn ?? true,
     }

@@ -586,9 +586,11 @@ struct AppLogoTile: View {
     }
   }
 
-  /** The app's own icon (`AppIcons/<id>`, from ios/scripts/app_icons.py), by the catalogue's id or any of the app's names (`ConnectorIcons`). */
+  /** The app's own icon (`AppIcons/<id>`, from ios/scripts/app_icons.py), by the catalogue's id or any of the app's names (`ConnectorIcons`); ChatGPT's and Claude's from `Providers/`. */
   static func appIcon(id: String? = nil, name: String) -> NSImage? {
-    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else { return nil }
+    guard let key = id.flatMap(ConnectorIcons.id(for:)) ?? ConnectorIcons.id(for: name) else {
+      return NSImage(named: "Providers/\(CatalogApp.slug(name))")
+    }
     return NSImage(named: "AppIcons/\(key)")
   }
 

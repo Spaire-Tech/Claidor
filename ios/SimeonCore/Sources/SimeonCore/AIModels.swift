@@ -252,8 +252,8 @@ public enum AIModels {
   /** Why Claude Code's sign-in didn't start: a computer whose engine predates it answers 404. */
   public static func claudeStartProblem(status: Int?) -> String {
     status == 404
-      ? L10n.text("Your computer needs an update before it can run Claude Code.")
-      : L10n.text("Couldn't start Claude Code on your computer. Try again in a moment.")
+      ? L10n.text("Simeon's computer needs an update first.")
+      : L10n.text("Couldn't reach Claude. Try again in a moment.")
   }
 }
 

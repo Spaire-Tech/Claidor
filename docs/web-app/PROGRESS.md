@@ -839,6 +839,41 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Connect ChatGPT and Claude like an app
+
+The founder: "lets stay true to our design and have it like when you
+connect an app" (the reference: an app's consent, its icon, name, summary,
+three points, small print and Connect), and "all the many explanation like
+open ai page names codex etc. and the absolute awful wording of starting
+claude code on your computer needs gone". The Mac and the iPhone change in
+the same pull request.
+
+- **Done:**
+  - `core/connectConsent.ts`: `modelConsent(provider)`, the shared core's
+    `ConnectConsent(modelProvider:)`: "Your ChatGPT plan, for your agents.";
+    Put ChatGPT to work, You stay in charge, When your plan runs out; the
+    small print (sign-in on the provider's own page; voice calls, dictation
+    and video still on the credits). Nine languages.
+  - Subscriptions' Connect shows it in the window's consent
+    (`connector.ask(…, { consent })`), then opens the sign-in sheet. Add
+    Another and Connect Again go straight to the sheet.
+  - `appLogo` draws ChatGPT's and Claude's App Store icons, so the consent
+    has the whole icon; `ProviderIcon` is now the same tile.
+  - The ChatGPT sheet lost the line about Codex; the Claude sheet shows a
+    spinner alone while the computer starts the sign-in, and lost the line
+    about where the sign-in stays. Its failures: "Simeon's computer needs an
+    update first." and "Couldn't reach Claude. Try again in a moment."
+- **Checked:** the affected tests, then `pnpm test` (1217), `pnpm
+  typecheck`, `pnpm lint`; in Chromium against the stand-ins, light, dark
+  and French: Connect opens the consent with the icon and the words above;
+  Escape cancels it and Settings stays; Connect then opens the ChatGPT code
+  sheet and the Claude sheet, neither with the removed lines; no console
+  errors. The core's Swift tests on Linux (11 pass, one new for the
+  consent).
+- **Not checked:** the Mac and iPhone screens built (no Xcode here); a real
+  sign-in with either provider.
+- **Next:** what the founder asks.
+
 ### 9 November 2026: Claude's models by version; accounts by name, how they stand beside `⋯`
 
 The founder: Claude's models with their versions, as Reason's menu ("this

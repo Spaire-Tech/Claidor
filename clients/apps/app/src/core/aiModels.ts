@@ -287,8 +287,8 @@ export type ClaudeConnect =
 /** Why Claude Code's sign-in didn't start: a computer whose engine predates it answers 404. */
 export function claudeStartProblem(status: number | undefined): string {
   return status === 404
-    ? t('Your computer needs an update before it can run Claude Code.')
-    : t("Couldn't start Claude Code on your computer. Try again in a moment.")
+    ? t("Simeon's computer needs an update first.")
+    : t("Couldn't reach Claude. Try again in a moment.")
 }
 
 /** The menu's first choice: the agents on Simeon's own models. */
