@@ -5924,6 +5924,16 @@ export class AppStore {
     body?: JSONValue,
   ): Promise<JSONValue> => this.credentialsCall(path, method, body)
 
+  /** AI Models' commands to the person's computer (Claude Code's sign-in there), waking it if it rests. */
+  modelsCommand = (method: string, args?: JSONValue): Promise<JSONValue> => {
+    const backend = this.backend
+    if (!backend)
+      return Promise.reject(
+        new SimeonAPIError(t('Sign in to Simeon first.'), 401),
+      )
+    return backend.command(method, args ?? {})
+  }
+
   /** 6f's state back to nothing (signed out). */
   private resetUsageAndBilling(): void {
     this.usage = emptyUsage

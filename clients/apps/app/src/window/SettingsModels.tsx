@@ -5,13 +5,15 @@
 // model the agents use (Simeon's, or one of the person's own); the accounts
 // connected, each its name, its kind and plan, how it stands and a `⋯`
 // (Rename, Connect Again, Disconnect); then Subscriptions, ChatGPT's
-// Connect, which opens the code sheet.
+// Connect, which opens the code sheet, and Claude's (9 November 2026), which
+// signs in to Claude Code on the person's computer.
 //
 // The web's own ways: the code is copied with the window's clipboard
 // (clipboard.ts: the browser's, or the Windows app's); OpenAI's page opens
 // in a new tab (in the Windows app, the default browser); the sheet asks
 // the server every few seconds while it is open, and closing it stops the
-// asking.
+// asking. Claude's sheet sends the pasted code to the computer's Claude
+// Code; closing it before the code ends the sign-in there.
 
 import {
   type FormEvent,
@@ -24,10 +26,13 @@ import {
   AIModelsModel,
   type ChatGPTPoll,
   type ChatGPTSignIn,
+  type ClaudeConnect,
+  type ClaudeSignIn,
   type AIModelsModel as Model,
   type ModelAccount,
   accountDetail,
   chatGPT,
+  claude,
   providerName,
   shownAddress,
   simeonsModels,
@@ -51,9 +56,12 @@ import {
 import { useWatched } from './useStore'
 
 export function SettingsModelsPage({ store }: { store: AppStore }) {
-  const [model] = useState(() => new AIModelsModel(store.modelsCall))
+  const [model] = useState(
+    () => new AIModelsModel(store.modelsCall, undefined, store.modelsCommand),
+  )
   useWatched(model)
-  const [connecting, setConnecting] = useState(false)
+  const [connectingChatGPT, setConnectingChatGPT] = useState(false)
+  const [connectingClaude, setConnectingClaude] = useState(false)
   const [renaming, setRenaming] = useState<ModelAccount>()
   const [disconnecting, setDisconnecting] = useState<ModelAccount>()
   useEffect(() => {
@@ -87,7 +95,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
             <SettingsGroup
               title={t('Your agents use')}
               footer={t(
-                "When your ChatGPT limit is reached, your agents use Simeon's models until it resets.",
+                "When your plan's limit is reached, your agents use Simeon's models until it resets.",
               )}
             >
               <SettingsMenu<string | undefined>
@@ -113,7 +121,11 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                   account={account}
                   divided={index > 0}
                   rename={() => setRenaming(account)}
-                  connectAgain={() => setConnecting(true)}
+                  connectAgain={() =>
+                    account.provider === claude
+                      ? setConnectingClaude(true)
+                      : setConnectingChatGPT(true)
+                  }
                   disconnect={() => setDisconnecting(account)}
                 />
               ))}
@@ -133,8 +145,21 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                 title={
                   model.connected(chatGPT) ? t('Add Another') : t('Connect')
                 }
-                onClick={() => setConnecting(true)}
+                onClick={() => setConnectingChatGPT(true)}
               />
+            </SettingsLine>
+            {/* Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6). */}
+            <SettingsLine
+              label={providerName(claude)}
+              detail={t('Use your Claude plan')}
+              divided
+            >
+              {!model.connected(claude) && (
+                <SettingsPill
+                  title={t('Connect')}
+                  onClick={() => setConnectingClaude(true)}
+                />
+              )}
             </SettingsLine>
           </SettingsGroup>
           {model.problem !== undefined && (
@@ -144,8 +169,17 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
           )}
         </>
       )}
-      {connecting && (
-        <ChatGPTConnectSheet model={model} close={() => setConnecting(false)} />
+      {connectingChatGPT && (
+        <ChatGPTConnectSheet
+          model={model}
+          close={() => setConnectingChatGPT(false)}
+        />
+      )}
+      {connectingClaude && (
+        <ClaudeConnectSheet
+          model={model}
+          close={() => setConnectingClaude(false)}
+        />
       )}
       {renaming && (
         <RenameAccountAlert
@@ -403,39 +437,7 @@ function ChatGPTConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return (
-        <>
-          <div className="models-connected">
-            <span className="models-connected-title">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="8" fill="currentColor" />
-                <path
-                  d="M4.6 8.3l2.2 2.2 4.6-4.8"
-                  fill="none"
-                  stroke="var(--grouped-ground)"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {t('Connected')}
-            </span>
-            <span className="models-sheet-words">
-              {t`Your agents now use ${model.chosenName}.`}
-            </span>
-          </div>
-          <div className="models-sheet-end">
-            <button type="button" className="models-done" onClick={close}>
-              {t('Done')}
-            </button>
-          </div>
-        </>
-      )
+      return <ConnectedEnd model={model} close={close} />
     if (outcome?.kind === 'expired' || outcome?.kind === 'failed')
       return (
         <>
@@ -486,6 +488,187 @@ function ChatGPTConnectSheet({
       </div>
       {body()}
     </Sheet>
+  )
+}
+
+/**
+ * Connect Claude (`MacClaudeConnectSheet`; the founder's screenshot of
+ * Reason's: Claude Code's own sign-in): the computer starts Claude Code's
+ * sign-in; 1, Claude's page, with Open; 2, the code Claude shows, pasted and
+ * sent to Claude Code on the computer; a line saying the sign-in stays there.
+ * Connected, it says which model the agents now use. Closed before the code,
+ * the computer's sign-in ends.
+ */
+function ClaudeConnectSheet({
+  model,
+  close,
+}: {
+  model: Model
+  close: () => void
+}) {
+  const [signIn, setSignIn] = useState<ClaudeSignIn>()
+  const [code, setCode] = useState('')
+  const [finishing, setFinishing] = useState(false)
+  const [outcome, setOutcome] = useState<ClaudeConnect>()
+  const [attempt, setAttempt] = useState(0)
+
+  // Claude Code's sign-in started afresh on the computer; a new attempt starts again.
+  useEffect(() => {
+    let ended = false
+    model.clearProblem()
+    void (async () => {
+      const started = await model.startClaude()
+      if (!ended) setSignIn(started)
+    })()
+    return () => {
+      ended = true
+    }
+  }, [model, attempt])
+
+  const again = () => {
+    setSignIn(undefined)
+    setOutcome(undefined)
+    setCode('')
+    setFinishing(false)
+    setAttempt((now) => now + 1)
+  }
+
+  const finish = async (event?: FormEvent) => {
+    event?.preventDefault()
+    const typed = code.trim()
+    if (typed === '' || finishing) return
+    setFinishing(true)
+    const answer = await model.finishClaude(typed)
+    setCode('')
+    setFinishing(false)
+    setOutcome(answer)
+  }
+
+  // Closed while Claude Code waits for its code: the sign-in ends on the computer.
+  const shut = () => {
+    if (signIn !== undefined && outcome === undefined) void model.cancelClaude()
+    close()
+  }
+
+  const tryAgain = (
+    <div className="models-sheet-end">
+      <SettingsPill title={t('Try Again')} onClick={again} />
+    </div>
+  )
+
+  const body = () => {
+    if (outcome?.kind === 'connected')
+      return <ConnectedEnd model={model} close={close} />
+    if (outcome)
+      return (
+        <>
+          <p className="models-sheet-problem" role="alert">
+            {outcome.kind === 'refused'
+              ? t("That code didn't work. Try again.")
+              : (model.problem ?? t("That code didn't work. Try again."))}
+          </p>
+          {tryAgain}
+        </>
+      )
+    if (signIn)
+      return (
+        <form className="models-steps" onSubmit={(event) => void finish(event)}>
+          <ConnectStep number={1} title={t("Open Claude's page and approve")}>
+            <SettingsPill
+              title={t('Open')}
+              onClick={() => openPage(signIn.url)}
+            />
+          </ConnectStep>
+          <ConnectStep number={2} title={t('Paste the code Claude shows')}>
+            <span className="models-code-row">
+              <input
+                className="models-code-field"
+                value={code}
+                placeholder={t('Code')}
+                aria-label={t('Code')}
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                disabled={finishing}
+                onChange={(event) => setCode(event.target.value)}
+              />
+              {finishing ? (
+                <span className="settings-spinner" role="progressbar" />
+              ) : (
+                <SettingsPill
+                  title={t('Connect')}
+                  disabled={code.trim() === ''}
+                  onClick={() => void finish()}
+                />
+              )}
+            </span>
+          </ConnectStep>
+          <p className="models-note">
+            {t(
+              'Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it.',
+            )}
+          </p>
+        </form>
+      )
+    if (model.problem !== undefined)
+      return (
+        <>
+          <p className="models-sheet-problem" role="alert">
+            {model.problem}
+          </p>
+          {tryAgain}
+        </>
+      )
+    return (
+      <div className="models-waiting">
+        <span className="settings-spinner" aria-hidden="true" />
+        {t('Starting Claude Code on your computer…')}
+      </div>
+    )
+  }
+
+  return (
+    <Sheet label={t('Connect Claude')} close={shut} className="models-sheet">
+      <div className="models-sheet-head">
+        <AppLogoTile name={providerName(claude)} side={36} />
+        <h2 className="models-sheet-title">{t('Connect Claude')}</h2>
+        <PanelDisc symbol="xmark" label={t('Close')} onClick={shut} />
+      </div>
+      {body()}
+    </Sheet>
+  )
+}
+
+/** Connected (both sheets): the green tick and "Connected", which model the agents now use, and Done. */
+function ConnectedEnd({ model, close }: { model: Model; close: () => void }) {
+  return (
+    <>
+      <div className="models-connected">
+        <span className="models-connected-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="8" fill="currentColor" />
+            <path
+              d="M4.6 8.3l2.2 2.2 4.6-4.8"
+              fill="none"
+              stroke="var(--grouped-ground)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t('Connected')}
+        </span>
+        <span className="models-sheet-words">
+          {t`Your agents now use ${model.chosenName}.`}
+        </span>
+      </div>
+      <div className="models-sheet-end">
+        <button type="button" className="models-done" onClick={close}>
+          {t('Done')}
+        </button>
+      </div>
+    </>
   )
 }
 

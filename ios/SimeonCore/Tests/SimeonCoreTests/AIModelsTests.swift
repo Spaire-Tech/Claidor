@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimeonCore
 
-/** AI Models (AIModels.swift): accounts as the server lists them, their words, the code sign-in, and the page's model against a stand-in server. */
+/** AI Models (AIModels.swift): accounts as the server lists them, their words, the code sign-in, Claude through Claude Code on the computer, and the page's model against a stand-in server. */
 final class AIModelsTests: XCTestCase {
   func testAnAccountAsTheServerListsIt() throws {
     let plus = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "chatgpt", "kind": "subscription", "label": "ada@example.com", "plan": "plus", "status": "available", "limitedUntil": .null, "createdAt": 1_700_000_000_000]))
@@ -150,6 +150,88 @@ final class AIModelsTests: XCTestCase {
     let signIn = ChatGPTSignIn(connectId: "c1", userCode: "X", verificationURL: URL(string: "https://auth.openai.com/codex/device")!, interval: 1, expiresIn: 60)
     let outcome = await model.waitForApproval(signIn)
     XCTAssertEqual(outcome, .failed)
+  }
+
+  /** Claude in Claude Code on the computer (9 November 2026): the link from the computer, the code typed there, the server told only the account. */
+  @MainActor
+  func testClaudeSignsInOnTheComputerAndTheServerKeepsOnlyTheAccount() async throws {
+    var commands: [String] = []
+    var typed: [String] = []
+    var told: [JSON] = []
+    var accounts: [JSON] = []
+    var chosen: String?
+    let claudeModels: [JSON] = [
+      ["modelId": "own:claude:opus", "modelName": "Claude Opus", "provider": "claude"],
+      ["modelId": "own:claude:sonnet", "modelName": "Claude Sonnet", "provider": "claude"],
+    ]
+    let model = AIModelsModel(
+      call: { path, method, body in
+        switch (method ?? "GET", path) {
+        case ("GET", "models/accounts"): return ["accounts": .array(accounts)]
+        case ("GET", "models/own"): return ["model": chosen.map(JSON.string) ?? .null, "models": .array(accounts.isEmpty ? [] : claudeModels)]
+        case ("PUT", "models/own"):
+          chosen = body?["model"]?.text
+          return ["model": chosen.map(JSON.string) ?? .null, "models": .array(claudeModels)]
+        case ("POST", "models/accounts/claude"):
+          told.append(body ?? .null)
+          let account: JSON = ["id": "c1", "provider": "claude", "kind": "subscription", "label": body?["label"] ?? .null, "plan": body?["plan"] ?? .null, "status": "available"]
+          accounts = [account]
+          return ["account": account]
+        case ("DELETE", "models/accounts/c1"):
+          accounts = []
+          chosen = nil
+          return ["disconnected": true, "revoked": false]
+        default: throw SimeonAPIError(message: "not found", status: 404)
+        }
+      },
+      command: { method, args in
+        commands.append(method)
+        switch method {
+        case "claudeCodeSignInStart": return ["url": "https://claude.com/cai/oauth/authorize?code=true&state=s1"]
+        case "claudeCodeSignInFinish":
+          let code = args["code"]?.text ?? ""
+          typed.append(code)
+          return code == "good#s1"
+            ? ["status": "connected", "account": ["signedIn": true, "email": "ada@example.com", "plan": "max"]]
+            : ["status": "failed", "reason": "refused"]
+        default: return ["ok": true]
+        }
+      },
+      sleep: { _ in }
+    )
+    let signIn = try XCTUnwrap(await model.startClaude())
+    XCTAssertEqual(signIn.shownAddress, "claude.com")
+    let wrong = await model.finishClaude(code: "nope")
+    XCTAssertEqual(wrong, .refused)
+    let done = await model.finishClaude(code: "  good#s1 ")
+    guard case .connected(let account) = done else { return XCTFail("connected, not \(done)") }
+    XCTAssertEqual(account.providerName, "Claude")
+    XCTAssertEqual(account.detail, "Subscription · Max")
+    XCTAssertEqual(typed, ["nope", "good#s1"], "the code goes to the computer, trimmed")
+    XCTAssertEqual(told.count, 1)
+    XCTAssertEqual(told.first?["label"]?.text, "ada@example.com")
+    XCTAssertNil(told.first?["code"], "the server never gets the code")
+    XCTAssertEqual(model.chosen, "own:claude:opus", "connecting is using: Claude's best model chosen")
+    XCTAssertTrue(model.connected(AIModels.claude))
+
+    let gone = await model.disconnect(account)
+    XCTAssertTrue(gone)
+    XCTAssertTrue(commands.contains("claudeCodeSignOut"), "Claude Code signs out on the computer")
+    XCTAssertNil(model.chosen)
+  }
+
+  @MainActor
+  func testAComputerWithoutClaudeCodeSaysItNeedsAnUpdate() async {
+    let model = AIModelsModel(
+      call: { _, _, _ in [:] },
+      command: { method, _ in throw GatewayError(message: "unknown gateway method: \(method)", refused: true, status: 404, method: method) },
+      sleep: { _ in }
+    )
+    let none = await model.startClaude()
+    XCTAssertNil(none)
+    XCTAssertEqual(model.problem, "Your computer needs an update before it can run Claude Code.")
+    XCTAssertNil(ClaudeSignIn(json: ["url": "https://evil.example/oauth/authorize"]), "only Anthropic's own page")
+    XCTAssertNil(ClaudeSignIn(json: ["url": "http://claude.com/oauth/authorize"]))
   }
 
   @MainActor

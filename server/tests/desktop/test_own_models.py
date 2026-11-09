@@ -949,3 +949,170 @@ class TestSearchAndPicturesOnTheAccount:
         assert not images.called
         assert "40200" in searched.text
         assert "40200" in drawn.text
+
+
+CLAUDE_OPUS = "own:claude:opus"
+
+
+async def _claude(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    *,
+    label: str | None = "ada@example.com",
+    plan: str | None = "max",
+) -> httpx.Response:
+    """The app saying the computer signed in to Claude Code."""
+    return await client.post(
+        "/desktop/api/models/accounts/claude",
+        headers=headers,
+        json={"label": label, "plan": plan},
+    )
+
+
+@pytest.mark.asyncio
+class TestClaudeThroughClaudeCode:
+    """Claude through Claude Code on the person's computer (9 November 2026,
+    docs/your-own-models.md, section 6): a row with no token, its models
+    offered, the engine told on a wire of its own, and this server never
+    calling Claude on the person's plan."""
+
+    async def test_claude_is_a_row_with_no_token_and_its_name_kept(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        made = await _claude(client, headers)
+        assert made.status_code == 200, made.text
+        account = made.json()["account"]
+        assert account["provider"] == "claude"
+        assert account["kind"] == "subscription"
+        assert account["label"] == "ada@example.com"
+        assert account["plan"] == "max"
+        assert account["status"] == "available"
+        [row] = (
+            await session.execute(
+                select(DesktopModelAccount).where(
+                    DesktopModelAccount.user_id == user.id
+                )
+            )
+        ).scalars()
+        assert row.access_token == ""
+        assert row.refresh_token is None
+        renamed = await client.patch(
+            f"/desktop/api/models/accounts/{account['id']}",
+            headers=headers,
+            json={"label": "Work Claude"},
+        )
+        assert renamed.status_code == 200
+        again = await _claude(client, headers, plan="pro")
+        assert again.json()["account"]["id"] == account["id"], "one Claude row"
+        assert again.json()["account"]["label"] == "Work Claude", "its name kept"
+        assert again.json()["account"]["plan"] == "pro"
+        assert await accounts.access_for(session, user.id, row.id) is None
+
+    async def test_choosing_claude_tells_the_engine_on_the_claude_code_wire(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        listed = await client.get("/desktop/api/models/own", headers=headers)
+        assert [one["modelId"] for one in listed.json()["models"]] == [
+            CLAUDE_OPUS,
+            "own:claude:sonnet",
+        ]
+        chosen = await _choose(client, headers, CLAUDE_OPUS)
+        assert chosen.status_code == 200, chosen.text
+        assert chosen.json()["model"] == CLAUDE_OPUS
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        first = rows[0]
+        assert first["modelId"] == CLAUDE_OPUS
+        assert first["role"] == "primary"
+        assert first["transportApi"] == "claude-code"
+        assert first["claudeCodeModel"] == "opus"
+        assert first["costMultiplier"] == 0
+        # An engine that doesn't know the wire takes the next primary row,
+        # Simeon's; the machinery and the desktop stay on Simeon's.
+        roles: dict[str, str] = {}
+        for row in rows:
+            if row.get("transportApi") != "claude-code":
+                roles.setdefault(row["role"], row["modelId"])
+        assert roles["primary"] == "claude-haiku-5-5"
+        assert roles["cheap"] == "claude-haiku-5-5"
+        assert roles["computer"] == "claude-sonnet-5-5"
+
+    async def test_a_call_naming_claude_is_answered_by_simeons_never_on_the_plan(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        await _choose(client, headers, CLAUDE_OPUS)
+        with respx.mock(assert_all_called=True) as mock:
+            simeon = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/responses").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "resp_s",
+                        "output": [],
+                        "usage": {"input_tokens": 100, "output_tokens": 10},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json={**_engine_request(stream=False), "model": CLAUDE_OPUS},
+            )
+        assert answer.status_code == 200, answer.text
+        assert json.loads(simeon.calls[0].request.content)["model"] == "gpt-6-sol"
+
+    async def test_search_stays_on_simeons_for_a_person_on_claude(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        await _choose(client, headers, CLAUDE_OPUS)
+        with respx.mock(assert_all_called=False) as mock:
+            chatgpt = mock.post(RESPONSES)
+            claude = mock.post(f"{ANTHROPIC}/v1/messages").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "content": [{"type": "text", "text": "From Claude."}],
+                        "usage": {"input_tokens": 100, "output_tokens": 10},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/web/search",
+                headers=headers,
+                json={"query": "anything"},
+            )
+        assert answer.json()["answer"] == "From Claude."
+        assert claude.called
+        assert not chatgpt.called
+
+    async def test_disconnecting_claude_forgets_it_and_goes_back_to_simeons(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        account = (await _claude(client, headers)).json()["account"]
+        await _choose(client, headers, CLAUDE_OPUS)
+        with respx.mock(assert_all_called=False) as mock:
+            revoke = mock.post(f"{AUTH}/oauth/revoke")
+            gone = await client.delete(
+                f"/desktop/api/models/accounts/{account['id']}", headers=headers
+            )
+        assert gone.status_code == 200
+        assert not revoke.called, "nothing to revoke: Claude Code signs out itself"
+        listed = await client.get("/desktop/api/models/own", headers=headers)
+        assert listed.json() == {"model": None, "models": []}
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert not any(row["modelId"].startswith("own:") for row in rows)

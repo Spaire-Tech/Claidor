@@ -727,9 +727,10 @@ Routes (signed-in app, `get_desktop_session`):
 |---|---|
 | `GET /desktop/api/models/accounts` | The person's accounts: id, provider, kind, name, plan, `status` (`available`, `limited` with `limitedUntil`, `signed_out`). Never a token. |
 | `POST /desktop/api/models/accounts/chatgpt/start` | `{connectId, userCode, verificationUrl, interval, expiresIn}`; the sign-in waits 15 minutes (Codex's own). `502 {error: {code: device_code_off, message}}` when OpenAI answers 404 (device code off for that client), `502 {error: {code: provider_unavailable, message}}` otherwise. |
+| `POST /desktop/api/models/accounts/claude` | `{label, plan}` (9 November 2026): the person's computer finished Claude Code's own sign-in (below). One row per person (`account_key` `claude-code`), no token: the e-mail Claude Code named as its name, and its plan. Signing in again keeps the name the person gave it. `{account}`. |
 | `POST /desktop/api/models/accounts/chatgpt/poll` | `{connectId}` in, every `interval` seconds: `{status}` `waiting`, `connected` with the account, `expired` (over, already used, or someone else's), or `failed` with OpenAI's code as `reason`. |
 | `PATCH /desktop/api/models/accounts/{id}` | `{label}`: renamed (`400 {error: {code: empty_label}}` for an empty one; `404 {error: {code: not_found}}` for another person's or a gone account, as for `DELETE`). |
-| `DELETE /desktop/api/models/accounts/{id}` | Revoked at OpenAI (`/oauth/revoke`), then forgotten, even when OpenAI can't be reached: `{disconnected, revoked}`. |
+| `DELETE /desktop/api/models/accounts/{id}` | Revoked at OpenAI (`/oauth/revoke`), then forgotten, even when OpenAI can't be reached: `{disconnected, revoked}`. A Claude row has nothing to revoke (`revoked: false`); the apps sign Claude Code out on the computer first (`claudeCodeSignOut`). |
 
 For a model call (the relay, next), `model_accounts.access_for` gives a live
 access token and the account id for Codex's `chatgpt-account-id` header. It
@@ -828,6 +829,30 @@ With ChatGPT chosen:
   next account, then Simeon's on credits; a request ChatGPT refuses,
   handed back. The log lines are the chat's, with `what=search` or
   `what=images`.
+
+**Claude, through Claude Code on the computer** (the founder, 9 November
+2026: "do it like Reason. Claude code."; the plan:
+`docs/your-own-models.md`, section 6). Anthropic doesn't let Simeon keep a
+Claude sign-in or make calls on it, so the server's part is small:
+
+- AI Models › Claude › Connect runs Claude Code's own sign-in on the
+  person's computer (the engine's `claudeCodeSignInStart`, then
+  `claudeCodeSignInFinish` with the code the person pastes). Signed in, the
+  app posts the e-mail and plan Claude Code named to
+  `/desktop/api/models/accounts/claude`. The row holds no token
+  (`access_token` empty); `access_for` gives nothing for it.
+- The models are `own:claude:opus` (Claude Opus) and `own:claude:sonnet`
+  (Claude Sonnet), offered once the row is there, chosen as ChatGPT's are.
+- With one chosen, `/desktop/api/models/available` gives one row for
+  `primary`: `transportApi` and `apiFormat` `claude-code`, `claudeCodeModel`
+  `opus` or `sonnet`, `costMultiplier` 0. The other roles stay Simeon's. An
+  engine that doesn't know `claude-code` skips the row and keeps Simeon's
+  model (today's engines); the engine that runs a turn through Claude Code
+  is the plan's step C4.
+- The relay never calls Anthropic for it: a call named `own:claude:…`, and
+  any search or picture with Claude chosen, is answered on Simeon's own, on
+  credits.
+- Log line: `desktop.models.connected provider=claude plan=…`.
 
 What stays on Simeon's credits with ChatGPT chosen: dictation
 (transcription), speech, voice calls (ElevenLabs) and video (Gemini). With

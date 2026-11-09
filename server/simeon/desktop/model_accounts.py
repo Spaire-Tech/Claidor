@@ -34,6 +34,13 @@ The apps' routes:
 - `PATCH /desktop/api/models/accounts/{id}` `{label}`: renamed.
 - `DELETE /desktop/api/models/accounts/{id}`: revoked at the provider, then
   forgotten here. Account deletion does the same for every one.
+- `POST /desktop/api/models/accounts/claude` `{label, plan}` (9 November
+  2026): Claude, signed in to in Claude Code on the person's computer
+  (docs/your-own-models.md, section 6). The app says so once the computer
+  reports the sign-in done; the row keeps only the e-mail and plan Claude
+  Code named. Anthropic doesn't let Simeon keep a Claude sign-in, so there
+  is no token here (`access_token` is empty) and nothing to revoke: the
+  computer signs Claude Code out itself.
 
 The tokens never leave the server. Nothing here logs a token, a code or a
 verifier.
@@ -71,6 +78,10 @@ log = structlog.get_logger()
 router = APIRouter(include_in_schema=False)
 
 PROVIDER_CHATGPT = "chatgpt"
+#: Claude through Claude Code on the person's computer: a row with no token.
+PROVIDER_CLAUDE = "claude"
+#: The one Claude row a person has: Claude Code on their one computer.
+CLAUDE_ACCOUNT_KEY = "claude-code"
 KIND_SUBSCRIPTION = "subscription"
 STATUS_AVAILABLE = "available"
 STATUS_SIGNED_OUT = "signed_out"
@@ -372,6 +383,40 @@ async def keep_sign_in(
     return account
 
 
+async def keep_claude(
+    session: AsyncSession, user_id: UUID, label: str | None, plan: str | None
+) -> DesktopModelAccount:
+    """Claude, signed in to in Claude Code on the person's computer: one row,
+    no token. Signing in again keeps the name the person gave it."""
+    shown = (label or "").strip()[:200] or "Claude"
+    named_plan = (plan or "").strip().lower()[:40] or None
+    repository = ModelAccountRepository.from_session(session)
+    account = await repository.by_key(user_id, PROVIDER_CLAUDE, CLAUDE_ACCOUNT_KEY)
+    if account is None:
+        account = DesktopModelAccount(
+            user_id=user_id,
+            provider=PROVIDER_CLAUDE,
+            kind=KIND_SUBSCRIPTION,
+            account_key=CLAUDE_ACCOUNT_KEY,
+            label=shown,
+            plan=named_plan,
+            access_token="",
+            refresh_token=None,
+            expires_at=None,
+            status=STATUS_AVAILABLE,
+            limited_until=None,
+        )
+        await repository.create(account, flush=True)
+        return account
+    account.status = STATUS_AVAILABLE
+    account.plan = named_plan or account.plan
+    account.limited_until = None
+    if not account.label:
+        account.label = shown
+    await session.flush()
+    return account
+
+
 async def access_for(
     session: AsyncSession,
     user_id: UUID,
@@ -383,7 +428,12 @@ async def access_for(
     account is gone or signed out (the person connects again)."""
     repository = ModelAccountRepository.from_session(session)
     account = await repository.one_for_user(user_id, account_id, lock=True)
-    if account is None or account.status == STATUS_SIGNED_OUT:
+    if (
+        account is None
+        or account.status == STATUS_SIGNED_OUT
+        or account.provider != PROVIDER_CHATGPT
+    ):
+        # Claude's row holds no token: Claude Code on the computer makes its calls.
         return None
     access = unseal(account.access_token, purpose=_SEALED)
     refresh = (
@@ -568,6 +618,11 @@ class _RenameBody(BaseModel):
     label: str
 
 
+class _ClaudeBody(BaseModel):
+    label: str | None = None
+    plan: str | None = None
+
+
 #: What each refusal of these routes says, in English: the apps show their
 #: own words for the code (`AIModels.startProblem`), these where they have
 #: none.
@@ -674,6 +729,24 @@ async def model_accounts_chatgpt_poll(
         plan=account.plan,
     )
     return JSONResponse({"status": "connected", "account": account_json(account)})
+
+
+@router.post("/api/models/accounts/claude", name="desktop:model_accounts_claude")
+async def model_accounts_claude(
+    body: _ClaudeBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The person's computer signed in to Claude Code: the app says so with
+    the e-mail and plan Claude Code named."""
+    account = await keep_claude(session, desktop_session.user_id, body.label, body.plan)
+    log.info(
+        "desktop.models.connected",
+        user_id=str(desktop_session.user_id),
+        provider=account.provider,
+        plan=account.plan,
+    )
+    return JSONResponse({"account": account_json(account)})
 
 
 @router.patch("/api/models/accounts/{account_id}", name="desktop:model_accounts_rename")

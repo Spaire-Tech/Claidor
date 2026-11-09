@@ -29,6 +29,34 @@
    "old_web_app": false
   },
   {
+   "command": "claudeCodeSignInCancel",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/AIModels.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "claudeCodeSignInFinish",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/AIModels.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "claudeCodeSignInStart",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/AIModels.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "claudeCodeSignOut",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/AIModels.swift"
+   ],
+   "old_web_app": false
+  },
+  {
    "command": "clearTrays",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
@@ -531,6 +559,11 @@
   "autoUpdateBoxNow",
   "broadcastToAgents",
   "buyProduct",
+  "claudeCodeSignInCancel",
+  "claudeCodeSignInFinish",
+  "claudeCodeSignInStart",
+  "claudeCodeSignOut",
+  "claudeCodeStatus",
   "clearAgentMemories",
   "clearBoxStoreNow",
   "clearTrays",

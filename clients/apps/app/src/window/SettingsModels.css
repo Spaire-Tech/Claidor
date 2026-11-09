@@ -2,8 +2,8 @@
  * AI Models (SettingsModels.tsx, mac/Simeon/SettingsModels.swift): its line
  * and groups 22 apart; an account's tile, its name over its kind, plan and
  * how it stands (green while usable, red when signed out), and `⋯`; the
- * rename's field; the Connect ChatGPT sheet, 460 wide on the grouped
- * ground, padded 28, its parts 20 apart.
+ * rename's field; the Connect ChatGPT and Connect Claude sheets, 460 wide
+ * on the grouped ground, padded 28, its parts 20 apart.
  */
 :root {
   /* The rename's field (`TextField` in an alert): white with a faint ring, the row's grey on dark. */
@@ -292,4 +292,29 @@
 .models-done:focus-visible {
   outline: 2px solid var(--unread);
   outline-offset: 2px;
+}
+
+/* Claude's code field: 240 wide, 28 high, monospaced 13, the alert field's white and ring; the blue edge with the keys. */
+.models-code-field {
+  box-sizing: border-box;
+  width: 240px;
+  max-width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--models-field);
+  box-shadow: inset 0 0 0 0.5px var(--models-field-ring);
+  color: var(--ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  outline: none;
+}
+
+.models-code-field:focus {
+  box-shadow: inset 0 0 0 1px var(--unread);
+}
+
+.models-code-field:disabled {
+  opacity: 0.6;
 }

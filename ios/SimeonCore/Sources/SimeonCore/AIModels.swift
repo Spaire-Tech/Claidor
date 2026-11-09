@@ -14,7 +14,14 @@ import Observation
  * The sign-in is OpenAI's device code, under Codex's own sign-in until
  * OpenAI approves Simeon's: the app shows a code, the person enters it on
  * OpenAI's page (which names Codex) and approves, and the app asks the
- * server every few seconds until it says connected. Shared by the Mac
+ * server every few seconds until it says connected.
+ *
+ * Claude (9 November 2026; docs/your-own-models.md, section 6) is signed in
+ * to in Claude Code on the person's own computer, never on Simeon's server:
+ * the computer starts Claude Code's sign-in and gives its link, the person
+ * approves on claude.ai and pastes the code Claude shows, which goes straight
+ * to Claude Code (the computer's `claudeCodeSignIn…` commands). The server
+ * then keeps only that Claude is connected, its e-mail and plan. Shared by the Mac
  * (mac/Simeon/SettingsModels.swift), the iPhone (ios/Simeon/AIModels.swift)
  * and, translated, the web and Windows app
  * (clients/apps/app/src/core/aiModels.ts).
@@ -146,13 +153,43 @@ public enum ChatGPTPoll: Equatable, Sendable {
   case failed
 }
 
+/** Claude's sign-in started in Claude Code on the computer: Anthropic's page to approve on. */
+public struct ClaudeSignIn: Equatable, Sendable {
+  public let url: URL
+
+  public init(url: URL) { self.url = url }
+
+  /** Only Anthropic's own page over https is ever opened. */
+  init?(json: JSON) {
+    guard let text = json["url"]?.text, let url = URL(string: text), url.scheme == "https",
+          let host = url.host?.lowercased(), AIModels.claudeHosts.contains(host) else { return nil }
+    self.url = url
+  }
+
+  /** "claude.com", as the sheet names it. */
+  public var shownAddress: String { url.host ?? url.absoluteString }
+}
+
+/** How the code the person pasted went. */
+public enum ClaudeConnect: Equatable, Sendable {
+  case connected(ModelAccount)
+  /** Claude didn't take the code: the person starts again. */
+  case refused
+  /** Claude Code couldn't finish (`problem` says why). */
+  case failed
+}
+
 public enum AIModels {
   public static let chatGPT = "chatgpt"
+  public static let claude = "claude"
+  /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
+  static let claudeHosts: Set<String> = ["claude.com", "claude.ai", "platform.claude.com", "console.anthropic.com"]
 
   /** A provider's name as people know it. */
   public static func providerName(_ provider: String) -> String {
     switch provider {
     case chatGPT: return "ChatGPT"
+    case claude: return "Claude"
     default: return provider.prefix(1).uppercased() + provider.dropFirst()
     }
   }
@@ -186,12 +223,21 @@ public enum AIModels {
     default: return L10n.text("Couldn't reach ChatGPT. Try again in a moment.")
     }
   }
+
+  /** Why Claude Code's sign-in didn't start: a computer whose engine predates it answers 404. */
+  public static func claudeStartProblem(status: Int?) -> String {
+    status == 404
+      ? L10n.text("Your computer needs an update before it can run Claude Code.")
+      : L10n.text("Couldn't start Claude Code on your computer. Try again in a moment.")
+  }
 }
 
 @MainActor
 @Observable
 public final class AIModelsModel {
   public typealias Call = @MainActor (String, String?, JSON?) async throws -> JSON
+  /** One command to the person's computer (Claude Code's sign-in there), waking it if it rests. */
+  public typealias Command = @MainActor (String, JSON) async throws -> JSON
 
   public private(set) var accounts: [ModelAccount] = []
   /** The models the person may choose (their accounts' signed-in providers'). */
@@ -206,18 +252,30 @@ public final class AIModelsModel {
   public var problem: String?
 
   @ObservationIgnored private let call: Call
+  @ObservationIgnored private let command: Command
   @ObservationIgnored private let sleep: @Sendable (Int) async throws -> Void
 
-  public init(call: @escaping Call, sleep: @escaping @Sendable (Int) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0) * 1_000_000_000) }) {
+  public init(
+    call: @escaping Call,
+    command: @escaping Command = { _, _ in throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) },
+    sleep: @escaping @Sendable (Int) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0) * 1_000_000_000) }
+  ) {
     self.call = call
+    self.command = command
     self.sleep = sleep
   }
 
   public convenience init(store: AppStore) {
-    self.init { [weak store] path, method, body in
-      guard let backend = store?.backend else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
-      return try await backend.server(path, method: method, body: body)
-    }
+    self.init(
+      call: { [weak store] path, method, body in
+        guard let backend = store?.backend else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
+        return try await backend.server(path, method: method, body: body)
+      },
+      command: { [weak store] method, args in
+        guard let backend = store?.backend else { throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
+        return try await backend.command(method, args)
+      }
+    )
   }
 
   /** The chosen model's name, "Simeon's models" when none is. */
@@ -312,6 +370,76 @@ public final class AIModelsModel {
     return .expired
   }
 
+  // MARK: Claude, in Claude Code on the computer
+
+  /** Claude Code's sign-in started on the computer: its link; nil (and `problem`) when it couldn't start. */
+  public func startClaude() async -> ClaudeSignIn? {
+    do {
+      let answer = try await command("claudeCodeSignInStart", [:])
+      guard let signIn = ClaudeSignIn(json: answer) else { throw SimeonAPIError(message: "", status: 0) }
+      problem = nil
+      return signIn
+    } catch let error as GatewayError {
+      // The computer answers through the gateway; an engine older than Claude Code answers 404.
+      problem = AIModels.claudeStartProblem(status: error.status)
+      return nil
+    } catch let error as SimeonAPIError {
+      problem = AIModels.claudeStartProblem(status: error.status)
+      return nil
+    } catch {
+      problem = AIModels.claudeStartProblem(status: nil)
+      return nil
+    }
+  }
+
+  /**
+   * The code the person pasted, typed at Claude Code's prompt on the
+   * computer. Signed in, the server is told (the e-mail and plan Claude Code
+   * named, never the sign-in), the page read again and Claude's best model
+   * chosen when the person had none.
+   */
+  public func finishClaude(code: String) async -> ClaudeConnect {
+    let typed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !typed.isEmpty else { return .refused }
+    let answer: JSON
+    do {
+      answer = try await command("claudeCodeSignInFinish", ["code": .string(typed)])
+    } catch {
+      problem = L10n.text("Claude Code didn't finish signing in. Try again.")
+      return .failed
+    }
+    guard answer["status"]?.string == "connected" else {
+      switch answer["reason"]?.string {
+      case "bad_code", "refused": return .refused
+      case "not_installed": problem = AIModels.claudeStartProblem(status: 404)
+      default: problem = L10n.text("Claude Code didn't finish signing in. Try again.")
+      }
+      return .failed
+    }
+    let claudeAccount = answer["account"]
+    do {
+      let kept = try await call("models/accounts/claude", "POST", [
+        "label": claudeAccount?["email"]?.text.map(JSON.string) ?? .null,
+        "plan": claudeAccount?["plan"]?.text.map(JSON.string) ?? .null,
+      ])
+      guard let account = ModelAccount(json: kept["account"]) else { throw SimeonAPIError(message: "", status: 0) }
+      await load()
+      if chosen == nil, let best = models.first(where: { $0.provider == AIModels.claude }) {
+        await choose(best.id)
+      }
+      problem = nil
+      return .connected(account)
+    } catch {
+      problem = L10n.text("Couldn't change the model: \(error.localizedDescription)")
+      return .failed
+    }
+  }
+
+  /** The sheet closed before the code: Claude Code's sign-in on the computer ends. */
+  public func cancelClaude() async {
+    _ = try? await command("claudeCodeSignInCancel", [:])
+  }
+
   /** The person's own name for an account; an empty one is not sent. */
   public func rename(_ account: ModelAccount, to name: String) async {
     let next = name.split(whereSeparator: \.isWhitespace).joined(separator: " ")
@@ -330,6 +458,10 @@ public final class AIModelsModel {
   /** Signed out at the provider and forgotten; the choice falls back to Simeon's when it was this provider's last account. */
   @discardableResult
   public func disconnect(_ account: ModelAccount) async -> Bool {
+    if account.provider == AIModels.claude {
+      // Claude Code signs itself out on the computer; the server forgets the row either way.
+      _ = try? await command("claudeCodeSignOut", [:])
+    }
     do {
       _ = try await call("models/accounts/\(account.id)", "DELETE", nil)
       accounts.removeAll { $0.id == account.id }

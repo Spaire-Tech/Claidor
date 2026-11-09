@@ -11,14 +11,17 @@ import SimeonCore
  * the agents use (Simeon's, or one of the person's own); the accounts
  * connected, each its name, its kind and plan, how it stands and a `⋯`
  * (Rename, Connect Again, Disconnect); then Subscriptions, ChatGPT's
- * Connect, which opens the code sheet. The model (`AIModelsModel`) is the
- * shared core's, as the iPhone's page and the web app's are.
+ * Connect, which opens the code sheet, and Claude's (9 November 2026), which
+ * signs in to Claude Code on the person's computer. The model
+ * (`AIModelsModel`) is the shared core's, as the iPhone's page and the web
+ * app's are.
  */
 struct SettingsModelsPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var model: AIModelsModel?
-  @State private var connecting = false
+  @State private var connectingChatGPT = false
+  @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
   @State private var newName = ""
 
@@ -41,7 +44,7 @@ struct SettingsModelsPage: View {
           }
         } else {
           if !model.models.isEmpty {
-            SettingsGroup(title: String(localized: "Your agents use"), footer: String(localized: "When your ChatGPT limit is reached, your agents use Simeon's models until it resets."), look: look) {
+            SettingsGroup(title: String(localized: "Your agents use"), footer: String(localized: "When your plan's limit is reached, your agents use Simeon's models until it resets."), look: look) {
               SettingsMenu(
                 label: String(localized: "Model"),
                 options: [(value: String?.none, label: AIModels.simeonsModels)] + model.models.map { (value: Optional($0.id), label: $0.name) },
@@ -59,7 +62,9 @@ struct SettingsModelsPage: View {
                   divided: index > 0,
                   look: look,
                   rename: { newName = account.label; renaming = account },
-                  connectAgain: { connecting = true },
+                  connectAgain: {
+                    if account.provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
+                  },
                   disconnect: { askToDisconnect(account, model: model) }
                 )
               }
@@ -67,7 +72,13 @@ struct SettingsModelsPage: View {
           }
           SettingsGroup(title: String(localized: "Subscriptions"), footer: String(localized: "Voice calls, dictation and video still use your Simeon credits."), look: look) {
             SettingsLine(label: AIModels.providerName(AIModels.chatGPT), detail: String(localized: "Use your ChatGPT plan"), look: look) {
-              SettingsPill(title: model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect"), look: look) { connecting = true }
+              SettingsPill(title: model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect"), look: look) { connectingChatGPT = true }
+            }
+            // Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6).
+            SettingsLine(label: AIModels.providerName(AIModels.claude), detail: String(localized: "Use your Claude plan"), divided: true, look: look) {
+              if !model.connected(AIModels.claude) {
+                SettingsPill(title: String(localized: "Connect"), look: look) { connectingClaude = true }
+              }
             }
           }
           if let problem = model.problem {
@@ -80,8 +91,11 @@ struct SettingsModelsPage: View {
         }
       }
     }
-    .sheet(isPresented: $connecting) {
+    .sheet(isPresented: $connectingChatGPT) {
       if let model { MacChatGPTConnectSheet(model: model) }
+    }
+    .sheet(isPresented: $connectingClaude) {
+      if let model { MacClaudeConnectSheet(model: model) }
     }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
@@ -304,6 +318,160 @@ struct MacChatGPTConnectSheet: View {
     let answer = await model.waitForApproval(started)
     guard !Task.isCancelled, answer != .waiting else { return }
     outcome = answer
+  }
+}
+
+/**
+ * Connect Claude (9 November 2026; the founder's screenshot of Reason's:
+ * Claude Code's own sign-in): the computer starts Claude Code's sign-in; 1,
+ * Claude's page, with Open (the default browser); 2, the code Claude shows,
+ * pasted and sent to Claude Code on the computer; a line saying the sign-in
+ * stays there. Connected, it says which model the agents now use. Closed
+ * before the code, the computer's sign-in ends.
+ */
+struct MacClaudeConnectSheet: View {
+  let model: AIModelsModel
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
+  @State private var signIn: ClaudeSignIn?
+  @State private var code = ""
+  @State private var finishing = false
+  @State private var outcome: ClaudeConnect?
+  @State private var attempt = 0
+
+  var body: some View {
+    let look = Look(scheme)
+    VStack(alignment: .leading, spacing: 20) {
+      HStack(spacing: 12) {
+        AppLogoTile(name: AIModels.providerName(AIModels.claude), look: look, side: 36)
+        Text("Connect Claude")
+          .font(PanelType.title)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 0)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { close() }
+          .keyboardShortcut(.cancelAction)
+      }
+      content(look)
+    }
+    .padding(28)
+    .frame(width: 460)
+    .background(look.groupedGround)
+    .task(id: attempt) { await start() }
+  }
+
+  @ViewBuilder
+  private func content(_ look: Look) -> some View {
+    switch outcome {
+    case .some(.connected):
+      VStack(alignment: .leading, spacing: 10) {
+        Label("Connected", systemImage: "checkmark.circle.fill")
+          .font(PanelType.row)
+          .foregroundStyle(look.settingsGreen)
+        Text("Your agents now use \(model.chosenName).")
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      HStack {
+        Spacer()
+        Button { dismiss() } label: {
+          Text("Done")
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .frame(minWidth: 96)
+            .frame(height: 32)
+        }
+        .prominentGlassButton()
+        .tint(look.yours)
+        .keyboardShortcut(.defaultAction)
+        .handCursor()
+      }
+    case .some(.refused), .some(.failed):
+      Text(outcome == .refused ? String(localized: "That code didn't work. Try again.") : (model.problem ?? String(localized: "That code didn't work. Try again.")))
+        .font(PanelType.row)
+        .foregroundStyle(look.danger)
+        .fixedSize(horizontal: false, vertical: true)
+      tryAgain(look)
+    default:
+      if let signIn {
+        steps(signIn, look: look)
+      } else if let problem = model.problem {
+        Text(problem)
+          .font(PanelType.row)
+          .foregroundStyle(look.danger)
+          .fixedSize(horizontal: false, vertical: true)
+        tryAgain(look)
+      } else {
+        HStack(spacing: 10) {
+          ProgressView().controlSize(.small)
+          Text("Starting Claude Code on your computer…").font(PanelType.row).foregroundStyle(look.inkSecondary)
+        }
+      }
+    }
+  }
+
+  private func steps(_ signIn: ClaudeSignIn, look: Look) -> some View {
+    VStack(alignment: .leading, spacing: 18) {
+      MacConnectStep(number: 1, title: String(localized: "Open Claude's page and approve"), look: look) {
+        SettingsPill(title: String(localized: "Open"), look: look) { NSWorkspace.shared.open(signIn.url) }
+      }
+      MacConnectStep(number: 2, title: String(localized: "Paste the code Claude shows"), look: look) {
+        HStack(spacing: 12) {
+          TextField(String(localized: "Code"), text: $code)
+            .textFieldStyle(.roundedBorder)
+            .font(.system(size: 13, design: .monospaced))
+            .frame(width: 240)
+            .disabled(finishing)
+            .onSubmit { Task { await finish() } }
+          if finishing {
+            ProgressView().controlSize(.small)
+          } else {
+            SettingsPill(title: String(localized: "Connect"), disabled: code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, look: look) {
+              Task { await finish() }
+            }
+          }
+        }
+      }
+      Text("Claude Code runs on your computer and keeps this sign-in there. Simeon never sees it.")
+        .font(PanelType.detail)
+        .foregroundStyle(look.inkSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private func tryAgain(_ look: Look) -> some View {
+    HStack {
+      Spacer()
+      SettingsPill(title: String(localized: "Try Again"), look: look) { attempt += 1 }
+    }
+  }
+
+  /** Claude Code's sign-in started afresh on the computer. */
+  private func start() async {
+    signIn = nil
+    outcome = nil
+    code = ""
+    finishing = false
+    model.problem = nil
+    signIn = await model.startClaude()
+  }
+
+  /** The code sent to Claude Code on the computer; the field emptied either way. */
+  private func finish() async {
+    let typed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !typed.isEmpty, !finishing else { return }
+    finishing = true
+    let answer = await model.finishClaude(code: typed)
+    code = ""
+    finishing = false
+    outcome = answer
+  }
+
+  /** Closed: a sign-in still waiting for its code ends on the computer. */
+  private func close() {
+    if signIn != nil, outcome == nil { Task { await model.cancelClaude() } }
+    dismiss()
   }
 }
 
