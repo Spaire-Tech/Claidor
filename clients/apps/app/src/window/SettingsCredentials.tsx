@@ -50,14 +50,15 @@ import { classes } from './classes'
 import { AppLogoTile } from './ConnectCards'
 import countries from './countries.json'
 import { Alert } from './Dialogs'
-import { FormButton, FormField, FormSelect } from './FormParts'
 import { useSiteIcon } from './MessageText'
 import { confirmPresence } from './presence'
 import './SettingsCredentials.css'
 import {
   PanelDisc,
+  SettingsActionRow,
   SettingsGroup,
   SettingsLine,
+  SettingsMenu,
   SettingsPill,
   SettingsSymbol,
 } from './SettingsParts'
@@ -396,16 +397,15 @@ const notTheirs = {
 } as const
 
 /**
- * A login or contact info on a sheet (`MacCredentialSheet`; the founder, 9
- * November 2026: the Settings rows with "Optional" on the right were "very
- * confusing"; another app's form, "how grok bot does it", is "what makes
- * sense"): its kind's symbol and its name at the top, the glass disc that
- * closes it at the right; each field's name over its box, two to a line
- * where they pair (City and State, Postal code and Country, Name and
- * Hints); a saved password as dots until the eye is pressed and the person
- * allows it; at the foot Delete (a saved one) on the left, Cancel and Save
- * on the right. A click outside closes it only while nothing was changed;
- * Escape closes it; Return in a field saves.
+ * A login or contact info on a sheet, in the app's own parts
+ * (`MacCredentialSheet`): the glass disc that closes it and its name at
+ * the top; its fields as Settings' rows, the label on the left and its box
+ * on the right (the Account page's Name box: where to type is plain without
+ * "Optional" in every row; the founder, 9 November 2026); the person's
+ * details first, the entry's Name and Hints last; a saved password as dots until the eye is pressed and
+ * the person allows it; Hints; Delete for a saved one; Save the sheet's one
+ * wide button in the blue. A click outside closes it only while nothing was
+ * changed; Escape closes it; Return in a field saves.
  */
 function CredentialSheet({
   model,
@@ -441,6 +441,8 @@ function CredentialSheet({
   const sheet = useRef<HTMLDivElement>(null)
   const [masks] = useState(masksText)
   const shape = secretFieldShape(showsPassword, masks)
+  /** The Country menu was open as this press began (its own listener closes it first): the press is the menu's. */
+  const menuAtPress = useRef(false)
 
   const unchanged = sameFields(fields, opened) && !passwordChanged
   const empty =
@@ -455,6 +457,16 @@ function CredentialSheet({
     close()
   }
 
+  // Before any listener of the page sees a press: whether the Country menu is open.
+  useEffect(() => {
+    const press = () => {
+      menuAtPress.current =
+        sheet.current?.querySelector('.context-menus') != null
+    }
+    window.addEventListener('mousedown', press, true)
+    return () => window.removeEventListener('mousedown', press, true)
+  }, [])
+
   // The keys come to the sheet as it opens, and go back to what had them as it closes.
   useEffect(() => {
     const before =
@@ -467,7 +479,7 @@ function CredentialSheet({
     }
   }, [])
 
-  // Escape closes it (the × is its `cancelAction`), not while it saves or an alert is over it.
+  // Escape closes it (the × is its `cancelAction`), not while it saves, an alert is over it or its Country menu is open.
   const latest = useRef({ close: leave, saving, asking })
   useEffect(() => {
     latest.current = { close: leave, saving, asking }
@@ -477,6 +489,7 @@ function CredentialSheet({
       if (event.key !== 'Escape' || event.isComposing) return
       const now = latest.current
       if (now.asking !== undefined) return
+      if (sheet.current?.querySelector('.context-menus')) return
       event.preventDefault()
       event.stopPropagation()
       if (!now.saving) now.close()
@@ -595,31 +608,35 @@ function CredentialSheet({
       : t('New Contact Info')
   const hidden = entry?.hasPassword === true && !passwordRead
 
-  const field = (
+  const row = (
     key: keyof Fields,
     label: string,
-    options: { autoComplete?: string; mine?: boolean; prompt?: string } = {},
+    prompt: string | undefined,
+    options: { divided?: boolean; autoComplete?: string; mine?: boolean } = {},
   ) => (
-    <FormField label={label}>
+    <SettingsLine label={label} divided={options.divided ?? true}>
       <input
+        className="credentials-field"
         value={fields[key]}
-        placeholder={options.prompt}
+        placeholder={prompt}
+        aria-label={label}
         autoComplete={options.autoComplete ?? 'off'}
         spellCheck={false}
         {...(options.mine ? notTheirs : {})}
         onChange={(event) => set(key)(event.target.value)}
         onKeyDown={onReturn}
       />
-    </FormField>
+    </SettingsLine>
   )
 
   return createPortal(
     <div
       className="sheet-scrim"
       onMouseDown={(event) => {
-        // A click outside closes it only while nothing was changed.
+        // A click outside closes it only while nothing was changed; with the Country menu open, it closes only the menu.
         if (event.target !== event.currentTarget || event.defaultPrevented)
           return
+        if (menuAtPress.current) return
         if (!saving && unchanged && asking === undefined) leave()
       }}
     >
@@ -632,150 +649,162 @@ function CredentialSheet({
         tabIndex={-1}
       >
         <div className="credential-head">
-          <span className="credential-kind" aria-hidden="true">
-            <SettingsSymbol
-              name={isLogin ? 'key' : 'personCropCircle'}
-              size={14}
+          <span className="credential-close">
+            <PanelDisc
+              symbol="xmark"
+              label={t('Close')}
+              disabled={saving}
+              onClick={leave}
             />
           </span>
           <h2 className="credential-title">{title}</h2>
-          <PanelDisc
-            symbol="xmark"
-            label={t('Close')}
-            disabled={saving}
-            onClick={leave}
-          />
         </div>
-        <div className="credential-body form-fields">
+        <div className="credential-body">
           {isLogin ? (
-            <>
-              {field('website', t('Website'), {
+            <SettingsGroup>
+              {row('website', t('Website'), 'acme.com', {
+                divided: false,
+                autoComplete: 'off',
                 mine: true,
-                prompt: 'acme.com',
               })}
-              {field('username', t('Username or email'), { mine: true })}
-              <FormField label={t('Password')}>
-                <input
-                  ref={password}
-                  className={classes(
-                    'credential-secret',
-                    shape.masked && 'masked',
-                  )}
-                  type={shape.type}
-                  defaultValue=""
-                  placeholder={hidden ? '••••••••' : undefined}
-                  autoComplete={shape.autoComplete}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  {...notTheirs}
-                  onChange={passwordTyped}
-                  onKeyDown={onReturn}
-                  // Masked, its words can't be copied, cut or dragged out, as a password field's.
-                  onCopy={(event) => {
-                    if (shape.masked) event.preventDefault()
-                  }}
-                  onCut={(event) => {
-                    if (shape.masked) event.preventDefault()
-                  }}
-                  onDragStart={(event) => {
-                    if (shape.masked) event.preventDefault()
-                  }}
-                />
-                <button
-                  type="button"
-                  className="credential-eye"
-                  title={
-                    showsPassword ? t('Hide Password') : t('Show Password')
-                  }
-                  aria-label={
-                    showsPassword ? t('Hide Password') : t('Show Password')
-                  }
-                  disabled={revealing || deleting}
-                  onClick={togglePassword}
-                >
-                  <EyeSymbol slashed={showsPassword} />
-                </button>
-              </FormField>
-            </>
+              {row('username', t('Username or email'), undefined, {
+                autoComplete: 'off',
+                mine: true,
+              })}
+              <SettingsLine label={t('Password')} divided>
+                <span className="credential-password">
+                  <input
+                    ref={password}
+                    className={classes(
+                      'credentials-field password',
+                      shape.masked && 'masked',
+                    )}
+                    type={shape.type}
+                    defaultValue=""
+                    placeholder={hidden ? '••••••••' : undefined}
+                    aria-label={t('Password')}
+                    autoComplete={shape.autoComplete}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    {...notTheirs}
+                    onChange={passwordTyped}
+                    onKeyDown={onReturn}
+                    // Masked, its words can't be copied, cut or dragged out, as a password field's.
+                    onCopy={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                    onCut={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                    onDragStart={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="credential-eye"
+                    title={
+                      showsPassword ? t('Hide Password') : t('Show Password')
+                    }
+                    aria-label={
+                      showsPassword ? t('Hide Password') : t('Show Password')
+                    }
+                    disabled={revealing || deleting}
+                    onClick={togglePassword}
+                  >
+                    <EyeSymbol slashed={showsPassword} />
+                  </button>
+                </span>
+              </SettingsLine>
+            </SettingsGroup>
           ) : (
             <>
-              {field('fullName', t('Full name'), { autoComplete: 'name' })}
-              {field('addressLine1', t('Address'), {
-                autoComplete: 'address-line1',
-              })}
-              {field('addressLine2', t('Address line 2'), {
-                autoComplete: 'address-line2',
-              })}
-              <div className="form-pair">
-                {field('city', t('City'), { autoComplete: 'address-level2' })}
-                {field('region', t('State or region'), {
+              <SettingsGroup>
+                {row('fullName', t('Full name'), undefined, {
+                  divided: false,
+                  autoComplete: 'name',
+                })}
+                {row('email', t('Email'), undefined, { autoComplete: 'email' })}
+                {row('phone', t('Phone'), undefined, { autoComplete: 'tel' })}
+              </SettingsGroup>
+              <SettingsGroup title={t('Address')}>
+                {row('addressLine1', t('Address'), undefined, {
+                  divided: false,
+                  autoComplete: 'address-line1',
+                })}
+                {row('addressLine2', t('Address line 2'), undefined, {
+                  autoComplete: 'address-line2',
+                })}
+                {row('city', t('City'), undefined, {
+                  autoComplete: 'address-level2',
+                })}
+                {row('region', t('State or region'), undefined, {
                   autoComplete: 'address-level1',
                 })}
-              </div>
-              <div className="form-pair">
-                {field('postalCode', t('Postal code'), {
+                {row('postalCode', t('Postal code'), undefined, {
                   autoComplete: 'postal-code',
                 })}
-                <FormSelect
+                <SettingsMenu
                   label={t('Country')}
+                  divided
                   options={(countries as [string, string][]).map(
                     ([code, name]) => ({ value: code, label: name }),
                   )}
                   value={fields.country}
-                  placeholder={t('Choose')}
+                  shown={fields.country === '' ? t('Choose') : undefined}
                   pick={set('country')}
                 />
-              </div>
-              {field('phone', t('Phone'), { autoComplete: 'tel' })}
-              {field('email', t('Email'), { autoComplete: 'email' })}
+              </SettingsGroup>
             </>
           )}
-          <div className="form-pair">
-            {field('name', t('Name'))}
-            <FormField
-              label={t('Hints')}
-              note={t('Tell Simeon when to use this entry')}
-            >
+          {/* What the entry is called and when to use it, last (the founder, 9 November 2026). */}
+          <SettingsGroup
+            footer={
+              entry?.savedBy !== undefined
+                ? t`Saved by ${entry.savedBy} at a sign-up.`
+                : undefined
+            }
+          >
+            {row('name', t('Name'), undefined, { divided: false })}
+            <SettingsLine label={t('Hints')} divided>
               <textarea
+                className="credentials-field credential-hints"
                 value={fields.hints}
                 rows={1}
+                placeholder={t('Tell Simeon when to use this entry')}
+                aria-label={t('Hints')}
                 onChange={(event) => set('hints')(event.target.value)}
               />
-            </FormField>
-          </div>
-          {entry?.savedBy !== undefined && (
-            <p className="form-note">{t`Saved by ${entry.savedBy} at a sign-up.`}</p>
-          )}
+            </SettingsLine>
+          </SettingsGroup>
           {problem !== undefined && (
             <p className="credential-problem" role="alert">
               {problem}
             </p>
           )}
-        </div>
-        <div className="credential-foot form-buttons">
           {entry && (
-            <FormButton
-              kind="destructive"
-              busy={deleting}
-              disabled={saving}
-              onClick={() => setAsking('delete')}
-            >
-              {t('Delete')}
-            </FormButton>
+            <SettingsGroup>
+              <SettingsActionRow
+                title={isLogin ? t('Delete Login') : t('Delete Contact Info')}
+                destructive
+                busy={deleting}
+                disabled={saving}
+                onClick={() => setAsking('delete')}
+              />
+            </SettingsGroup>
           )}
-          <span className="form-buttons-spacer" />
-          <FormButton disabled={saving} onClick={leave}>
-            {t('Cancel')}
-          </FormButton>
-          <FormButton
-            kind="primary"
-            busy={saving}
+        </div>
+        <div className="credential-foot">
+          <button
+            type="button"
+            className="credential-save"
             disabled={!canSave}
             onClick={() => void save()}
           >
+            {saving && <span className="credential-wheel" aria-hidden="true" />}
             {t('Save')}
-          </FormButton>
+          </button>
         </div>
       </div>
       {asking === 'reveal' && entry && (

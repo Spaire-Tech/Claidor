@@ -201,15 +201,12 @@ struct MacSiteIconTile: View {
 }
 
 /**
- * A login or contact info on a sheet (the founder, 9 November 2026: the
- * Settings rows with "Optional" on the right were "very confusing"; another
- * app's form, "how grok bot does it", is "what makes sense"): its kind's
- * symbol and its name at the top, the glass disc that closes it at the
- * right; each field's name over its box, two to a line where they pair
- * (City and State, Postal code and Country, Name and Hints); a saved
- * password as dots until the eye is pressed and Touch ID allows it; at the
- * foot Delete (a saved one) on the left, Cancel and Save on the right. A
- * click outside closes it only while nothing was changed.
+ * A login or contact info on a sheet, in the app's own parts (the travellers'
+ * sheet): the glass disc that closes it and its name at the top; its fields
+ * as Settings' rows, the label on the left and what is typed on the right; a
+ * saved password as dots until the eye is pressed and Touch ID allows it;
+ * Hints; Delete for a saved one; Save the sheet's one wide button in the
+ * blue. A click outside closes it only while nothing was changed.
  */
 struct MacCredentialSheet: View {
   let model: CredentialsStoreModel
@@ -222,7 +219,6 @@ struct MacCredentialSheet: View {
   @State private var showsPassword: Bool
   @State private var saving = false
   @State private var problem: String?
-  @FocusState private var passwordFocused: Bool
 
   private var look: Look { Look(scheme) }
   private var isLogin: Bool { draft.kind == .login }
@@ -254,100 +250,108 @@ struct MacCredentialSheet: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      HStack(spacing: 10) {
-        Image(systemName: isLogin ? "key" : "person")
-          .font(.system(size: 13))
-          .foregroundStyle(look.inkSecondary)
-          .frame(width: 28, height: 28)
-          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedRow))
+      ZStack {
         Text(title)
           .font(PanelType.title)
           .foregroundStyle(look.ink)
           .lineLimit(1)
+          .padding(.horizontal, 56)
           .accessibilityAddTraits(.isHeader)
-        Spacer(minLength: 8)
-        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
-          .keyboardShortcut(.cancelAction)
-          .disabled(saving)
+        HStack {
+          GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+            .keyboardShortcut(.cancelAction)
+            .disabled(saving)
+          Spacer(minLength: 0)
+        }
       }
-      .padding(.horizontal, 24)
-      .padding(.top, 20)
-      .padding(.bottom, 12)
+      .padding(.horizontal, 16)
+      .padding(.top, 16)
+      .padding(.bottom, 8)
       ScrollView {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 24) {
           if isLogin {
-            FormTextField(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, look: look, submit: submit)
-            FormTextField(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look, submit: submit)
-            passwordField
-          } else {
-            FormTextField(label: String(localized: "Full name"), text: $draft.fullName, content: .name, look: look, submit: submit)
-            FormTextField(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, look: look, submit: submit)
-            FormTextField(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look, submit: submit)
-            HStack(alignment: .top, spacing: 16) {
-              FormTextField(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look, submit: submit)
-              FormTextField(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look, submit: submit)
+            SettingsGroup(look: look) {
+              MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look)
+              passwordRow
             }
-            HStack(alignment: .top, spacing: 16) {
-              FormTextField(label: String(localized: "Postal code"), text: $draft.postalCode, content: .postalCode, look: look, submit: submit)
-              FormMenuField(
+          } else {
+            SettingsGroup(look: look) {
+              MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, content: .name, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, content: .emailAddress, look: look)
+              MacStoreTextRow(label: String(localized: "Phone"), text: $draft.phone, content: .telephoneNumber, look: look)
+            }
+            SettingsGroup(title: String(localized: "Address"), look: look) {
+              MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look)
+              MacStoreTextRow(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look)
+              MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look)
+              MacStoreTextRow(label: String(localized: "Postal code"), text: $draft.postalCode, content: .postalCode, look: look)
+              SettingsMenu(
                 label: String(localized: "Country"),
+                divided: true,
                 options: MacCountryName.all.map { (value: $0.code, label: $0.name) },
                 value: draft.country,
-                placeholder: String(localized: "Choose"),
+                shown: draft.country.isEmpty ? String(localized: "Choose") : nil,
                 look: look
               ) { draft.country = $0 }
             }
-            FormTextField(label: String(localized: "Phone"), text: $draft.phone, content: .telephoneNumber, look: look, submit: submit)
-            FormTextField(label: String(localized: "Email"), text: $draft.email, content: .emailAddress, look: look, submit: submit)
           }
-          HStack(alignment: .top, spacing: 16) {
-            FormTextField(label: String(localized: "Name"), text: $draft.name, look: look, submit: submit)
-            FormTextField(label: String(localized: "Hints"), text: $draft.hints, note: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
-          }
-          if let by = entry?.savedBy {
-            Text("Saved by \(by) at a sign-up.")
-              .font(PanelType.detail)
-              .foregroundStyle(look.inkSecondary)
+          // What the entry is called and when to use it, last (the founder, 9 November 2026).
+          SettingsGroup(footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
+            MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, divided: false, look: look)
+            MacStoreTextRow(label: String(localized: "Hints"), text: $draft.hints, prompt: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
           }
           if let problem {
             Text(problem)
               .font(PanelType.detail)
               .foregroundStyle(look.danger)
               .fixedSize(horizontal: false, vertical: true)
+              .padding(.horizontal, 8)
+          }
+          if entry != nil {
+            SettingsGroup(look: look) {
+              SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
+            }
           }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 4)
-        .padding(.bottom, 20)
+        .padding(.horizontal, 32)
+        .padding(.top, 8)
+        .padding(.bottom, 24)
       }
-      HStack(spacing: 10) {
-        if entry != nil {
-          FormButton(title: String(localized: "Delete"), kind: .destructive, disabled: saving, look: look) { askToDelete() }
+      VStack(spacing: 0) {
+        Button {
+          Task { await save() }
+        } label: {
+          HStack(spacing: 8) {
+            if saving { ProgressView().controlSize(.small).tint(.white) }
+            Text("Save")
+          }
+          .font(.system(size: 14, weight: .semibold))
+          .foregroundStyle(Color.white)
+          .frame(maxWidth: .infinity)
+          .frame(height: 36)
         }
-        Spacer(minLength: 0)
-        FormButton(title: String(localized: "Cancel"), disabled: saving, look: look) { dismiss() }
-        FormButton(title: String(localized: "Save"), kind: .primary, busy: saving, disabled: draft.isEmpty || (entry != nil && draft == opened), look: look) { submit() }
-          .keyboardShortcut(.defaultAction)
+        .prominentGlassButton()
+        .controlSize(.large)
+        .tint(look.yours)
+        .keyboardShortcut(.defaultAction)
+        .handCursor()
+        .disabled(saving || draft.isEmpty || (entry != nil && draft == opened))
       }
-      .padding(.horizontal, 24)
+      .padding(.horizontal, 32)
       .padding(.top, 12)
-      .padding(.bottom, 20)
+      .padding(.bottom, 24)
     }
-    .frame(width: 560, height: isLogin ? 500 : 760)
+    .frame(width: 560, height: isLogin ? 560 : 720)
     .background(look.groupedGround)
     .interactiveDismissDisabled(saving)
     .closesOnClickOutside { if !saving && draft == opened { dismiss() } }
   }
 
-  /** Return in a field, or Save: saves when there is something new to save. */
-  private func submit() {
-    guard !saving, !draft.isEmpty, entry == nil || draft != opened else { return }
-    Task { await save() }
-  }
-
-  /** The password: dots, or the words once shown; a saved one is read only after Touch ID. */
-  private var passwordField: some View {
-    FormField(label: String(localized: "Password"), focused: passwordFocused, look: look) {
+  /** The password: dots, or the words once shown, in the rows' box; a saved one is read only after Touch ID. */
+  private var passwordRow: some View {
+    SettingsLine(label: String(localized: "Password"), divided: true, look: look) {
       HStack(spacing: 8) {
         Group {
           let hidden = entry?.hasPassword == true && !passwordRead
@@ -359,17 +363,16 @@ struct MacCredentialSheet: View {
         }
         .textFieldStyle(.plain)
         .labelsHidden()
-        .font(.system(size: 14))
+        .font(PanelType.row)
         .foregroundStyle(look.ink)
         .textContentType(.password)
-        .focused($passwordFocused)
-        .onSubmit(submit)
         Button { Task { await togglePassword() } } label: {
           Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
         }
         .buttonStyle(.hand)
         .help(showsPassword ? String(localized: "Hide Password") : String(localized: "Show Password"))
       }
+      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
     }
   }
 
@@ -412,5 +415,56 @@ struct MacCredentialSheet: View {
         if await model.delete(entry) { dismiss() } else { problem = model.problem }
       }
     }
+  }
+}
+
+/**
+ * A row with a field: the label on the left, its box on the right (the
+ * Account page's Name box: the page's ground, 8 round, a line of the ink at
+ * 10%, 25% while it has the keys), so where to type is plain without
+ * "Optional" in every row (the founder, 9 November 2026: "very confusing").
+ */
+private struct MacStoreTextRow: View {
+  static let width: CGFloat = 280
+
+  let label: String
+  @Binding var text: String
+  var prompt: String? = nil
+  var content: NSTextContentType? = nil
+  var grows = false
+  var divided = true
+  let look: Look
+  @FocusState private var focused: Bool
+
+  var body: some View {
+    SettingsLine(label: label, divided: divided, look: look) {
+      Group {
+        if grows {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) }, axis: .vertical)
+            .lineLimit(1...5)
+        } else {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) })
+        }
+      }
+      .textFieldStyle(.plain)
+      .labelsHidden()
+      .font(PanelType.row)
+      .foregroundStyle(look.ink)
+      .textContentType(content)
+      .focused($focused)
+      .storeBox(width: Self.width, focused: focused, look: look)
+    }
+  }
+}
+
+private extension View {
+  /** The rows' box, as the Account page's Name field. */
+  func storeBox(width: CGFloat, focused: Bool, look: Look) -> some View {
+    padding(.horizontal, 10)
+      .padding(.vertical, 6)
+      .frame(width: width, alignment: .leading)
+      .frame(minHeight: 30)
+      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
+      .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(focused ? 0.25 : 0.1), lineWidth: 1))
   }
 }

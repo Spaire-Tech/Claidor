@@ -22,6 +22,7 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -64,7 +65,6 @@ import { classes } from './classes'
 import { copyText } from './clipboard'
 import { ContextMenu, Glyph } from './ContextMenu'
 import { markStyle } from './FirstRun'
-import { FormButton, FormField } from './FormParts'
 import { useDismiss } from './MessageActions'
 import './SettingsGeneral.css'
 import {
@@ -492,12 +492,10 @@ function ZoneMenu({
 // MARK: Account
 
 /**
- * The account, under General (`SettingsAccountPage`; the founder, 9
- * November 2026: the page in Settings' cards was "weak design and very
- * confusing"): its face (44) beside its name and email; then, as a form,
- * each name over its box: Name (Save beside it once it changed, or
- * Return), Email (copied with its button) and Password (Set Password, or
- * Change Password once there is one). At most 520 wide. Log out is at the
+ * The account, under General (`SettingsAccountPage`): its face (44) beside
+ * its name and email; Name, written in place (what the agents call the
+ * person), then Email (copied with a click) and Password (set or changed
+ * here, typed twice; Change Password at its row's end). Log out is at the
  * foot of the list of pages.
  */
 export function SettingsAccountPage({ store }: { store: AppStore }) {
@@ -517,6 +515,9 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
       live = false
     }
   }, [store])
+  // Why the name was not saved, under its card in red.
+  const [nameProblem, setNameProblem] = useState<string>()
+  const hint = useId()
   useEffect(() => {
     if (!copied) return
     const timer = setTimeout(() => setCopied(false), 1_200)
@@ -528,8 +529,9 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
       () => {},
     )
   }
+  const at = mail.lastIndexOf('@')
   return (
-    <div className="settings-page general-page account-form">
+    <div className="settings-page general-page">
       <div className="account-head">
         <SettingsAccountFace size={44} store={store} />
         <div className="account-head-words">
@@ -539,60 +541,86 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
           )}
         </div>
       </div>
-      <NameField store={store} />
-      {mail !== '' && (
-        <FormField label={t('Email')}>
-          <span className="account-email-value">{mail}</span>
+      <SettingsGroup
+        footer={nameProblem ?? t('Your agents call you by this name.')}
+        footerTint={nameProblem ? 'var(--danger)' : undefined}
+      >
+        <NameLine store={store} problem={setNameProblem} />
+      </SettingsGroup>
+      <SettingsGroup>
+        {mail !== '' && (
           <button
             type="button"
-            className="account-copy"
-            title={t('Copies the email')}
-            aria-label={t('Copies the email')}
+            className="account-email"
+            aria-describedby={hint}
             onClick={copy}
           >
-            <OwnSymbol name={copied ? 'checkmark' : 'docOnDoc'} size={12} />
+            <SettingsLine label={t('Email')}>
+              <span className="account-email-end">
+                {/* Cut in its middle, as the Mac's: what is before the @ gives way, the domain stays. */}
+                <span className="account-email-value">
+                  <span className="account-email-local">
+                    {at > 0 ? mail.slice(0, at) : mail}
+                  </span>
+                  {at > 0 && (
+                    <span className="account-email-domain">
+                      {mail.slice(at)}
+                    </span>
+                  )}
+                </span>
+                <OwnSymbol name={copied ? 'checkmark' : 'docOnDoc'} size={12} />
+              </span>
+            </SettingsLine>
+            <span id={hint} hidden>
+              {t('Copies the email')}
+            </span>
           </button>
-        </FormField>
-      )}
-      <div className="form-field">
-        {/* Open, its boxes say what they are ("New password"). */}
-        {!changingPassword && (
-          <span className="form-label">{t('Password')}</span>
         )}
-        {changingPassword ? (
+        {/* Password, and what can be done about it in words at its end (the founder, 9 November 2026: the chevron
+            that unfolded the form was confusing); the form opens under it in the card. */}
+        <SettingsLine label={t('Password')} divided={mail !== ''}>
+          {!changingPassword && (
+            <SettingsPill
+              title={
+                hasPassword === true ? t('Change Password') : t('Set Password')
+              }
+              onClick={() => setChangingPassword(true)}
+            />
+          )}
+        </SettingsLine>
+        {changingPassword && (
           <PasswordForm
             store={store}
             email={mail}
-            hasPassword={hasPassword === true}
             done={(saved) => {
               setChangingPassword(false)
               if (saved) setHasPassword(true)
             }}
           />
-        ) : (
-          <span>
-            <FormButton onClick={() => setChangingPassword(true)}>
-              {hasPassword === true ? t('Change Password') : t('Set Password')}
-            </FormButton>
-          </span>
         )}
-      </div>
+      </SettingsGroup>
     </div>
   )
 }
 
 /**
- * Name (`NameField`; the founder, 22 October 2026: "theres name there, but
- * uneditable"): its box, and Save beside it once what is typed differs from
- * the name; Return saves too (`AppStore.changeName`). Refused, the name
- * comes back and why is said under it in red.
+ * Name, written in its row (`NameLine`; the founder, 22 October 2026:
+ * "theres name there, but uneditable"): a field at the row's end, saved on
+ * Return or when it lets go of the keys, when it changed
+ * (`AppStore.changeName`); a spinner while it goes. Refused, the name comes
+ * back and why is said under the card.
  */
-function NameField({ store }: { store: AppStore }) {
+function NameLine({
+  store,
+  problem,
+}: {
+  store: AppStore
+  problem: (why: string | undefined) => void
+}) {
   const saved = store.account?.name ?? ''
   const [text, setText] = useState(saved)
   const [saving, setSaving] = useState(false)
   const [focused, setFocused] = useState(false)
-  const [problem, setProblem] = useState<string>()
   const busy = useRef(false)
   // The account's name changed elsewhere: the field follows it, unless it is being written in or saved.
   const [seen, setSeen] = useState(saved)
@@ -600,82 +628,68 @@ function NameField({ store }: { store: AppStore }) {
     setSeen(saved)
     if (!focused && !saving) setText(saved)
   }
-  const typed = normalizedName(text)
-  const changed = typed !== '' && typed !== saved
   const save = async () => {
     if (busy.current) return
+    const typed = normalizedName(text)
     // Nothing new, or nothing at all: the name stays as it was.
-    if (!changed) {
+    if (typed === '' || typed === saved) {
       setText(saved)
       return
     }
     busy.current = true
     setSaving(true)
-    setProblem(undefined)
+    problem(undefined)
     const refused = await store.changeName(typed)
     busy.current = false
     setSaving(false)
     setText(store.account?.name ?? saved)
-    setProblem(refused)
+    problem(refused)
   }
   return (
-    <div className="form-field">
-      <label className="form-label" htmlFor="account-name">
-        {t('Name')}
-      </label>
-      <div className="account-name-line">
-        <span className="form-box">
-          <input
-            id="account-name"
-            value={text}
-            autoComplete="name"
-            spellCheck={false}
-            disabled={saving}
-            onChange={(event) => setText(event.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
-              event.preventDefault()
-              void save()
-            }}
-          />
-        </span>
-        {(changed || saving) && (
-          <FormButton kind="primary" busy={saving} onClick={() => void save()}>
-            {t('Save')}
-          </FormButton>
-        )}
-      </div>
-      <p
-        className={classes('form-note', problem !== undefined && 'refused')}
-        role={problem !== undefined ? 'alert' : undefined}
-      >
-        {problem ?? t('Your agents call you by this name.')}
-      </p>
-    </div>
+    <SettingsLine label={t('Name')}>
+      <span className="account-name-end">
+        {saving && <span className="settings-spinner" aria-hidden="true" />}
+        <input
+          className="account-field account-name-field"
+          value={text}
+          aria-label={t('Name')}
+          autoComplete="name"
+          spellCheck={false}
+          disabled={saving}
+          onChange={(event) => setText(event.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false)
+            void save()
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+            event.preventDefault()
+            void save()
+          }}
+        />
+      </span>
+    </SettingsLine>
   )
 }
 
 /**
- * The password (`PasswordForm`, the iPhone's Password page): typed twice,
- * at least eight characters, each in its box; under them what it takes (or
- * why not, in red); Cancel, and Set Password (or Change Password once there
- * is one). What is typed stays in the browser's own masked fields: looked at
- * only to say whether the two match and are long enough, read once as it is
- * sent, emptied once saved, never kept by the page.
+ * The password (`PasswordForm`, the iPhone's Password page, in its row):
+ * typed twice, at least eight characters; Cancel, and Save. A refusal or a mismatch in red under the fields. What
+ * is typed stays in the browser's own masked fields: looked at only to say
+ * whether the two match and are long enough, read once as it is sent,
+ * emptied once saved, never kept by the page.
  */
 function PasswordForm({
   store,
   email,
-  hasPassword,
   done,
 }: {
   store: AppStore
   email: string
-  hasPassword: boolean
   done: (saved: boolean) => void
 }) {
+  const [hasPassword, setHasPassword] = useState<boolean>()
   const first = useRef<HTMLInputElement>(null)
   const again = useRef<HTMLInputElement>(null)
   const [typed, setTyped] = useState({
@@ -694,6 +708,15 @@ function PasswordForm({
       shown.current = false
     }
   }, [])
+  useEffect(() => {
+    let live = true
+    void store.hasPassword().then((has) => {
+      if (live) setHasPassword(has)
+    })
+    return () => {
+      live = false
+    }
+  }, [store])
   const look = () => {
     const one = first.current?.value ?? ''
     const two = again.current?.value ?? ''
@@ -727,47 +750,47 @@ function PasswordForm({
     (mismatch
       ? t("The two don't match.")
       : t`At least ${minimumPassword} characters. You'll sign in with ${email || 'your email'} and this password.`)
-  const field = (ref: RefObject<HTMLInputElement | null>, label: string) => (
-    <FormField label={label}>
-      <input
-        ref={ref}
-        type="password"
-        autoComplete="new-password"
-        onInput={look}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
-          event.preventDefault()
-          void save()
-        }}
-      />
-    </FormField>
+  const field = (ref: RefObject<HTMLInputElement | null>, prompt: string) => (
+    <input
+      ref={ref}
+      type="password"
+      className="account-field password-field"
+      placeholder={prompt}
+      aria-label={prompt}
+      autoComplete="new-password"
+      onInput={look}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+        event.preventDefault()
+        void save()
+      }}
+    />
   )
   return (
-    <div className="password-form form-fields">
-      {field(first, t('New password'))}
+    <div className="password-form">
+      {field(first, hasPassword === true ? t('New password') : t('Password'))}
       {field(again, t('Type it again'))}
       <p
         className={classes(
-          'form-note',
+          'password-line',
           (problem !== undefined || mismatch) && 'refused',
         )}
         role={problem !== undefined ? 'alert' : undefined}
       >
         {line}
       </p>
-      <div className="form-buttons">
-        <span className="form-buttons-spacer" />
-        <FormButton disabled={saving} onClick={() => done(false)}>
-          {t('Cancel')}
-        </FormButton>
-        <FormButton
-          kind="primary"
-          busy={saving}
-          disabled={!ready}
+      <div className="password-actions">
+        {saving && <span className="settings-spinner" aria-hidden="true" />}
+        <SettingsPill
+          title={t('Cancel')}
+          disabled={saving}
+          onClick={() => done(false)}
+        />
+        <SettingsPill
+          title={t('Save')}
+          disabled={!ready || saving}
           onClick={() => void save()}
-        >
-          {hasPassword ? t('Change Password') : t('Set Password')}
-        </FormButton>
+        />
       </div>
     </div>
   )
@@ -811,7 +834,7 @@ export function SettingsPermissionsPage({ store }: { store: AppStore }) {
       {/* The lists once the computer's are read: never the page's empty ones in their place. */}
       {model.loaded &&
         model.rules.isEnabled &&
-        ruleBehaviors.map((behavior) => (
+        (['ask', 'allow'] as const).map((behavior) => (
           <RuleList key={behavior} behavior={behavior} model={model} />
         ))}
     </div>
@@ -819,10 +842,11 @@ export function SettingsPermissionsPage({ store }: { store: AppStore }) {
 }
 
 /**
- * One list (Allow automatically, Ask first; the founder, 9 November 2026:
- * "whats with the + signs. i click on them all the time. i dont understand
- * this ui"): its name and what it means, its rules in a card (none, no
- * card), then a box to type a new one with Add beside it.
+ * One list (`RuleList`; Ask first, Allow automatically; the founder, 9
+ * November 2026: "whats with the + signs ... just have it like this. in our
+ * design"): its name over what it means, Add Rule at the right; Add Rule
+ * opens a card to type the rule in, with Cancel and Add Rule; the list's
+ * rules in a card under it (none, no card).
  */
 function RuleList({
   behavior,
@@ -834,18 +858,37 @@ function RuleList({
   const listed = reviewRules(model.rules).filter(
     (rule) => rule.behavior === behavior,
   )
+  const full = isFullList(ruleList(model.rules, behavior))
   return (
     <section className="rule-list">
       <div className="rule-list-head">
-        <h3 className="rule-list-name">{ruleListLabel(behavior)}</h3>
-        <p className="rule-list-means">
-          {behavior === 'allow'
-            ? t('Simeon does these without asking you.')
-            : t(
-                'Simeon asks you before doing these. When two rules disagree, it asks.',
-              )}
-        </p>
+        <div className="rule-list-words">
+          <h3 className="settings-group-title">{ruleListLabel(behavior)}</h3>
+          <p className="rule-list-means">
+            {behavior === 'allow'
+              ? t('Simeon does these without asking you.')
+              : t(
+                  'Simeon asks you before doing these. When two rules disagree, it asks.',
+                )}
+          </p>
+        </div>
+        {full ? (
+          <span className="rule-list-full">{ruleLimitNote()}</span>
+        ) : (
+          model.adding !== behavior && (
+            <SettingsPill
+              title={t('Add Rule')}
+              disabled={model.editing !== undefined || model.rulesPending}
+              onClick={() => model.openAdding(behavior)}
+            />
+          )
+        )}
       </div>
+      {model.adding === behavior && !full && (
+        <SettingsGroup>
+          <NewRuleLine behavior={behavior} model={model} />
+        </SettingsGroup>
+      )}
       {listed.length > 0 && (
         <SettingsGroup>
           {listed.map((rule, index) => (
@@ -858,7 +901,6 @@ function RuleList({
           ))}
         </SettingsGroup>
       )}
-      <NewRuleLine behavior={behavior} model={model} />
     </section>
   )
 }
@@ -932,7 +974,7 @@ function RuleLine({
   )
 }
 
-/** A new rule (`NewRuleLine`): a box to type it in ("e.g. read my calendar"), a line growing to four, and Add beside it (or Return); a full list says so instead. */
+/** A new rule, in its card (`NewRuleLine`, as a rule edited in its row): its words in the field, then Cancel and Add Rule (or Return). */
 function NewRuleLine({
   behavior,
   model,
@@ -940,33 +982,37 @@ function NewRuleLine({
   behavior: RuleBehavior
   model: GeneralSettingsModel
 }) {
-  const full = isFullList(ruleList(model.rules, behavior))
   const draft = model.drafts[behavior] ?? ''
-  if (full) return <p className="form-note">{ruleLimitNote()}</p>
   return (
-    <div className="rule-new">
-      <span className="form-box">
-        <RuleText
-          className="rule-new-field"
-          value={draft}
-          placeholder={
-            behavior === 'allow'
-              ? t('e.g. read my calendar')
-              : t('e.g. reply to emails for me')
-          }
-          label={t('Add Rule')}
-          onChange={(words) => model.setDraft(behavior, words)}
-          onSubmit={() => void model.add(behavior)}
+    <div className="rule-editor">
+      <RuleText
+        className="rule-field"
+        value={draft}
+        placeholder={
+          behavior === 'allow'
+            ? t('e.g. read my calendar')
+            : t('e.g. reply to emails for me')
+        }
+        label={t('Add Rule')}
+        focus
+        onChange={(words) => model.setDraft(behavior, words)}
+        onSubmit={() => void model.add(behavior)}
+      />
+      <div className="rule-editor-bar">
+        <span className="rule-editor-spacer" />
+        {model.rulesPending && draft !== '' && (
+          <span className="settings-spinner" aria-hidden="true" />
+        )}
+        <SettingsPill
+          title={t('Cancel')}
+          onClick={() => model.cancelAdding()}
         />
-      </span>
-      <FormButton
-        kind="primary"
-        busy={model.rulesPending && draft !== ''}
-        disabled={!model.canAdd(behavior)}
-        onClick={() => void model.add(behavior)}
-      >
-        {t('Add')}
-      </FormButton>
+        <SettingsPill
+          title={t('Add Rule')}
+          disabled={!model.canAdd(behavior)}
+          onClick={() => void model.add(behavior)}
+        />
+      </div>
     </div>
   )
 }

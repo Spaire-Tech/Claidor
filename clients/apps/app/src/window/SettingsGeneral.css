@@ -10,6 +10,7 @@
 }
 
 /* The line between two rows of this file's own, inset 18 at both ends (`SettingsDivider`). */
+.password-form::before,
 .rule-editor.divided::before {
   content: '';
   position: absolute;
@@ -149,63 +150,123 @@
   font-size: 12px;
 }
 
-/* The page as a form (`SettingsAccountPage`): 520 wide at the most. */
-.settings-page.account-form {
-  max-width: 520px;
+/* A field on the page's ground: 30 high, padded 10, 8 round, a line of the ink at 10% (25% while the name is written). */
+.account-field {
+  height: 30px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 8px;
+  outline: none;
+  background: var(--grouped-ground);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
 }
 
-/* Name's box with Save beside it, 10 apart. */
-.account-name-line {
+.account-field::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
+}
+
+.account-name-field {
+  width: 240px;
+}
+
+.account-name-field:focus {
+  border-color: color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.account-name-field:disabled {
+  color: var(--ink-secondary);
+}
+
+.account-name-end {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.account-name-line .form-box {
-  flex: 1;
-}
-
-.form-note.refused {
-  color: var(--danger);
-}
-
-/* The e-mail in grey, cut at its end, and Copy at the box's end. */
-.form-box .account-email-value {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink-secondary);
-  font-size: 14px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  user-select: text;
-}
-
-.account-copy {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 24px;
-  height: 24px;
+/* Email: the whole row copies it; the address in grey and the copy symbol (a tick for 1.2 s), 8 apart. */
+.account-email {
+  display: block;
+  width: 100%;
   padding: 0;
   border: 0;
-  border-radius: 6px;
   background: transparent;
-  color: var(--ink-secondary);
+  color: inherit;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.account-copy:hover {
-  color: var(--ink);
-}
-
-.account-copy:focus-visible {
+.account-email:focus-visible {
   outline: 2px solid var(--unread);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
+.account-email .settings-line-end {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.account-email-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink-secondary);
+}
+
+.account-email-end svg {
+  flex: none;
+}
+
+.account-email-value {
+  display: flex;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.account-email-local {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-email-domain {
+  flex: none;
+}
+
+/* The password's form in its row: the two fields, the line under them, the action at the right; 10 apart, padded 18 and 14, a line above. */
 .password-form {
-  gap: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px;
+}
+
+.password-field {
+  width: 100%;
+}
+
+.password-line {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.password-line.refused {
+  color: var(--danger);
+}
+
+.password-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* MARK: Permissions */
@@ -289,8 +350,7 @@
   overflow-y: auto;
 }
 
-.rule-field::placeholder,
-.rule-new-field::placeholder {
+.rule-field::placeholder {
   color: var(--ink-tertiary);
   opacity: 1;
 }
@@ -311,57 +371,34 @@
   font-size: 11px;
 }
 
-/* A list (`RuleList`): its name (13, medium) over what it means (12, grey), then its rules' card, then the new rule's box; 10 apart. */
+/* A list (`RuleList`): its name (the groups' title) over what it means (12, the tertiary grey), Add Rule at the right; then the new rule's card and the rules' card, 8 apart. */
 .rule-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .rule-list-head {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
 }
 
-.rule-list-name {
-  margin: 0;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
+.rule-list-words {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .rule-list-means {
   margin: 0;
-  color: var(--ink-secondary);
+  color: var(--ink-tertiary);
   font-size: 12px;
 }
 
-/* A new rule: its box, and Add beside it, 10 apart. */
-.rule-new {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.rule-new .form-box {
-  flex: 1;
-}
-
-.rule-new .form-box .rule-new-field {
-  flex: 1;
-  min-width: 0;
-  max-height: 96px;
-  padding: 9px 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  line-height: 18px;
-  resize: none;
-  overflow-y: auto;
-  field-sizing: fixed;
-  box-sizing: border-box;
+.rule-list-full {
+  color: var(--ink-secondary);
+  font-size: 12px;
 }

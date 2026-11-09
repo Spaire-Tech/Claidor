@@ -839,6 +839,37 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: + opens the files at once; Settings' forms simple, in our own parts
+
+The founder: the + should open the computer's files directly ("leave
+[Photo or Video] to iphone"); the Account page, the Credentials Store's
+form and Permissions were "weak design and very confusing", with another
+app's pages as examples of structure. A first try copied that app's look
+(black buttons, outlined boxes) and was stopped: "make it simple in OUR
+STYLE ... same font, same button style, same size, same colors".
+
+- **Done (web and Mac, the same):**
+  - `Attachments.tsx`: + opens the file chooser, no menu.
+  - Permissions: each list's name over what it means, Add Rule (the blue
+    words) at its right, Ask first first; Add Rule opens a card with the
+    rule's field, Cancel and Add Rule (`GeneralSettingsModel.adding`,
+    `openAdding`, `cancelAdding`); the rules' card under it; no plus rows.
+  - The Credentials Store's sheet: each row's field in the Account page's
+    Name box (no "Optional"), the person's details first, Name and Hints
+    last.
+  - Account: Password with Set Password or Change Password at its end; its
+    form with Cancel and Save.
+- **Checked:** in Chromium, the built app against a stand-in server (+
+  opened the chooser with no menu; Permissions, Add Rule's card, Account
+  with the password form, a contact, a new login; light and dark,
+  screenshots sent to the founder); the sheet's and the model's tests (24),
+  typecheck, lint, the build's check, `check_names.py`,
+  `check_translations.py` (no new words). The Mac's Swift checked for syntax
+  only.
+- **Not checked:** the Mac app built and run (no Xcode here); the Windows
+  app itself.
+- **Next:** what the founder says of the screenshots.
+
 ### 9 November 2026: a chat opens at its newest (checked here; the fix is the Mac's)
 
 The founder, with a recording of the Mac app: clicking Iris showed her

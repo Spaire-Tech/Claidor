@@ -502,6 +502,8 @@ export class GeneralSettingsModel {
   rulesPending = false
   /** The rule being written at the foot of each list. */
   drafts: Partial<Record<RuleBehavior, string>> = {}
+  /** The list whose Add Rule card is open, if one is (`adding`). */
+  adding?: RuleBehavior
   editing?: RuleEditing
 
   private readonly listeners = new Set<() => void>()
@@ -644,7 +646,25 @@ export class GeneralSettingsModel {
       const drafts = { ...this.drafts }
       delete drafts[behavior]
       this.drafts = drafts
+      if (this.adding === behavior) this.adding = undefined
     })
+  }
+
+  /** Add Rule pressed: its card opens (`adding`). */
+  openAdding(behavior: RuleBehavior): void {
+    this.adding = behavior
+    this.changed()
+  }
+
+  /** Add Rule's card closed, what was typed in it let go (`cancelAdding`). */
+  cancelAdding(): void {
+    if (this.adding !== undefined) {
+      const drafts = { ...this.drafts }
+      delete drafts[this.adding]
+      this.drafts = drafts
+    }
+    this.adding = undefined
+    this.changed()
   }
 
   delete(rule: ReviewRule): Promise<void> {
