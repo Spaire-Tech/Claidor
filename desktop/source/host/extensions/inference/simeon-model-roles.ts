@@ -280,6 +280,52 @@ export async function reportClaudeCodeSignedOut(): Promise<boolean> {
   }
 }
 
+/** Where the engine says how much of the Claude plan is used. */
+export const CLAUDE_USAGE_PATH = "models/accounts/claude/usage";
+/** The same usage is told again only after this long. */
+export const CLAUDE_USAGE_AGAIN_MS = 15 * 60_000;
+let lastUsage: { readonly said: string; readonly at: number } | undefined;
+
+/**
+ * How much of the Claude plan is used, as Claude Code said it in a turn (9
+ * November 2026, the founder: "we need the usage for both claude and chat
+ * gpt"): the server keeps it on the person's Claude account, and the apps
+ * show it in AI Models like Usage & Billing. Told when it changes (each
+ * window to the whole percent), else at most every fifteen minutes. True
+ * when the server took it.
+ */
+export async function reportClaudeCodeUsage(
+  windows: readonly { readonly kind: string; readonly usedPercent: number; readonly resetsAt?: number | undefined }[],
+  now: number = Date.now(),
+): Promise<boolean> {
+  const source = liveSource;
+  if (source === undefined || windows.length === 0) return false;
+  const said = windows.map((one) => `${one.kind}=${Math.round(one.usedPercent)}`).join(",");
+  if (lastUsage !== undefined && lastUsage.said === said && now - lastUsage.at < CLAUDE_USAGE_AGAIN_MS) return false;
+  lastUsage = { said, at: now };
+  try {
+    const token = await source.getAccessToken();
+    const response = await (source.fetch ?? fetch)(simeonApiUrl(CLAUDE_USAGE_PATH, source.backendUrl), {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify({ windows: windows.map((one) => ({ kind: one.kind, usedPercent: one.usedPercent, resetsAt: one.resetsAt ?? null })) }),
+      signal: AbortSignal.timeout(SIMEON_MODEL_ROLES_TIMEOUT_MS),
+    });
+    note(`${HOST_LOG_PREFIX} claude-code usage reported ${said} status=${response.status}`);
+    if (!response.ok) lastUsage = undefined;
+    return response.ok;
+  } catch (error) {
+    lastUsage = undefined;
+    note(`${HOST_LOG_PREFIX} claude-code usage unreported reason=${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
+}
+
+/** Forgets the last usage told (tests). */
+export function resetClaudeCodeUsageForTest(): void {
+  lastUsage = undefined;
+}
+
 // A line when something changes, not every five minutes.
 function note(line: string): void {
   if (line === lastLogged) return;

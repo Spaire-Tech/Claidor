@@ -29,10 +29,10 @@
  */
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
-import { reportClaudeCodeSignedOut, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
+import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
 import { getSandRootDir } from "../host-paths.js";
 import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
-import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, type ClaudeCodeOutcome } from "./claude-code-turn.js";
+import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
 
 /** The hook's input, as the agent's handler gives it (`ClaudeCodeTurnHook` in user-message-action-handler.ts). */
@@ -135,6 +135,8 @@ export interface ClaudeCodeAgentTurnOptions {
   readonly review?: ((toolName: string, input: Readonly<Record<string, unknown>>, signal: AbortSignal) => Promise<{ allow: boolean; reason?: string }>) | undefined;
   /** Claude didn't answer this turn: the chat says why, once. */
   readonly onFallback?: ((conversationId: string, why: ClaudeCodeFallback, until?: number) => void) | undefined;
+  /** How much of the plan is used, as Claude Code last said it in the turn (its `rate_limit_event`). */
+  readonly onUsage?: ((windows: readonly ClaudeCodePlanWindow[]) => void) | undefined;
   readonly log?: ((line: string) => void) | undefined;
   readonly env?: NodeJS.ProcessEnv | undefined;
   readonly configDir?: string | undefined;
@@ -215,6 +217,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       // What still asks (a file written, a page fetched) is the agent's own computer, as the engine's own tools there; the shell goes through Shell's review.
       const review = options.review ?? (async () => ({ allow: true }));
       let outcome: ClaudeCodeOutcome;
+      let usage: readonly ClaudeCodePlanWindow[] | undefined;
       const server = await startSimeonMcpServer({ tools: () => [...tools, permissionBridgeTool(review)], signal: input.signal, log: options.log });
       try {
         outcome = await runAgentClaudeCodeTurn(input.conversationId, options.sessions, {
@@ -229,9 +232,13 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
           signal: input.signal,
           env: options.env,
           configDir: options.configDir,
+          onEvent: (event) => { usage = usageFromEvent(event) ?? usage; },
         });
       } finally {
         await server.close();
+      }
+      if (usage !== undefined) {
+        try { options.onUsage?.(usage); } catch { /* never in the way of the turn */ }
       }
       options.log?.(`claude-code turn agent=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
       // What it said, whatever the outcome: a turn that moves to Simeon's model after Claude spoke keeps it too.
@@ -288,6 +295,8 @@ export function claudeCodeTurnHook(): ClaudeCodeTurnHook {
       if (why === "signed_out") void reportClaudeCodeSignedOut();
       if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, why)) fallbackNotice(agentId, why);
     },
+    // How much of the plan is used: the apps show it in AI Models, like Usage & Billing.
+    onUsage: (windows) => void reportClaudeCodeUsage(windows),
   });
   return engineHook;
 }

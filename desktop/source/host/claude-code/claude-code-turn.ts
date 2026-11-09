@@ -135,6 +135,39 @@ export function limitFromEvent(event: ClaudeCodeEvent): { readonly until?: numbe
   return undefined;
 }
 
+/** How much of the plan is used, one window: 0 to 100 (past 100 when the plan lets usage run on), and its reset in milliseconds. */
+export interface ClaudeCodePlanWindow {
+  readonly kind: "five_hour" | "weekly";
+  readonly usedPercent: number;
+  readonly resetsAt?: number | undefined;
+}
+
+/**
+ * How much of the plan is used, as Claude Code's stream says it (9 November
+ * 2026; 2.1.311, read from the program): its `rate_limit_event`, sent when
+ * the plan's limits change, carries `unifiedWindows` with `five_hour` and
+ * `seven_day`, each a `utilization` (1 is the whole window) and `resetsAt`
+ * (seconds since 1970). Older ones carry the one window in `rateLimitType`
+ * and `utilization`. None when the event says nothing of it.
+ */
+export function usageFromEvent(event: ClaudeCodeEvent): readonly ClaudeCodePlanWindow[] | undefined {
+  if (event.type !== "rate_limit_event") return undefined;
+  const info = event.rate_limit_info as Record<string, unknown> | undefined;
+  if (info === undefined || info === null || typeof info !== "object") return undefined;
+  const window = (kind: ClaudeCodePlanWindow["kind"], part: unknown): ClaudeCodePlanWindow | undefined => {
+    const { utilization, resetsAt } = (part ?? {}) as { utilization?: unknown; resetsAt?: unknown };
+    if (typeof utilization !== "number" || !Number.isFinite(utilization) || utilization < 0) return undefined;
+    const reset = typeof resetsAt === "number" && resetsAt > 0 ? (resetsAt < 1e12 ? resetsAt * 1000 : resetsAt) : undefined;
+    return { kind, usedPercent: Math.min(Math.round(utilization * 1000) / 10, 1000), ...(reset === undefined ? {} : { resetsAt: reset }) };
+  };
+  const unified = info.unifiedWindows as Record<string, unknown> | undefined;
+  const windows = unified !== undefined && unified !== null && typeof unified === "object"
+    ? [window("five_hour", unified.five_hour), window("weekly", unified.seven_day)]
+    : [info.rateLimitType === "five_hour" ? window("five_hour", info) : info.rateLimitType === "seven_day" ? window("weekly", info) : undefined];
+  const said = windows.filter((one): one is ClaudeCodePlanWindow => one !== undefined);
+  return said.length > 0 ? said : undefined;
+}
+
 /** What Claude Code's error words mean for the engine. */
 export function classifyClaudeCodeError(words: string): "limited" | "signed_out" | "no_session" | "failed" {
   if (/no conversation found with session id/i.test(words)) return "no_session";

@@ -49,6 +49,12 @@ process.stdin.on("end", async () => {
   if (mode === "limit") { out({ type: "result", subtype: "success", is_error: true, result: "Claude AI usage limit reached|1794150000" }); process.exit(1); }
   if (mode === "expired") { out({ type: "result", subtype: "success", is_error: true, result: "Invalid API key · Please run /login" }); process.exit(1); }
   if (mode === "words") { out({ type: "result", subtype: "success", is_error: false, result: "Tuesday at 10 is booked.", num_turns: 1 }); return; }
+  if (mode === "usage") {
+    out({ type: "rate_limit_event", rate_limit_info: { status: "allowed", unifiedWindows: { five_hour: { utilization: 0.2, resetsAt: 1794150000 }, seven_day: { utilization: 0.05, resetsAt: 1794500000 } } } });
+    out({ type: "rate_limit_event", rate_limit_info: { status: "allowed_warning", unifiedWindows: { five_hour: { utilization: 0.81, resetsAt: 1794150000 }, seven_day: { utilization: 0.06, resetsAt: 1794500000 } } } });
+    out({ type: "result", subtype: "success", is_error: false, result: "Done.", num_turns: 1 });
+    return;
+  }
   const url = JSON.parse(fs.readFileSync(flag("--mcp-config"), "utf8")).mcpServers.simeon.url;
   const rpc = async (id, method, params) => (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, method, params }) })).json();
   await rpc(1, "initialize", { protocolVersion: "2025-06-18" });
@@ -67,6 +73,7 @@ async function setUp(bridge) {
   await mkdir(config);
   const sent = [];
   const fallbacks = [];
+  const usage = [];
   const lines = [];
   let clock = 1_794_140_000_000;
   const sessions = new bridge.ClaudeCodeSessions(path.join(dir, "data", "claude-code-sessions.json"));
@@ -76,13 +83,14 @@ async function setUp(bridge) {
     env: { PATH: process.env.PATH, HOME: dir, SIMEON_CLAUDE_CODE_BIN: bin },
     configDir: config,
     onFallback: (agent, why, until) => fallbacks.push({ agent, why, until }),
+    onUsage: (windows) => usage.push(windows),
     log: (line) => lines.push(line),
     now: () => clock,
   });
   const tool = bridge.createSendMessageTool({ getIngestAttachment: () => undefined, onSendMessage: (message) => { sent.push(message); return "t1s1"; } });
   const input = (text, signal = new AbortController().signal) => ({ ctx: bridge.createContext(), conversationId: "nora", brief: "You are Nora.", context: "<user_info>Bass, Paris, 9 November</user_info>", text, tools: [tool], listener: undefined, stateHandler: undefined, signal });
   return {
-    dir, hook, sent, fallbacks, lines, sessions, input,
+    dir, hook, sent, fallbacks, usage, lines, sessions, input,
     mode: (value) => writeFile(path.join(config, "mode"), value),
     seen: async () => JSON.parse(await readFile(path.join(config, "seen.json"), "utf8")),
     advance: (ms) => { clock += ms; },
@@ -120,6 +128,26 @@ test("Claude Code runs the agent's turn: the brief with the tools' note, the con
     assert.deepEqual(box.lines.filter((line) => line.startsWith("claude-code tools offered=")), ["claude-code tools offered=SendMessage"]);
     assert.ok(box.lines.some((line) => /^claude-code turn agent=nora model=opus outcome=done tools=1 ms=\d+$/.test(line)), box.lines.join("\n"));
     assert.deepEqual(box.fallbacks, []);
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("how much of the plan is used, as Claude Code last said it in the turn, is passed on once", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    await box.mode("words");
+    await box.hook.run(box.input("Anything?"));
+    assert.deepEqual(box.usage, [], "a turn that said nothing of it tells nothing");
+    await box.mode("usage");
+    const done = await box.hook.run(box.input("Anything else?"));
+    assert.equal(done.ran, true);
+    assert.deepEqual(box.usage, [[
+      { kind: "five_hour", usedPercent: 81, resetsAt: 1_794_150_000_000 },
+      { kind: "weekly", usedPercent: 6, resetsAt: 1_794_500_000_000 },
+    ]]);
   } finally {
     await box.dispose();
     await dispose();
