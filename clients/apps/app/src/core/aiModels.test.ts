@@ -22,6 +22,7 @@ import {
   startProblem,
   statusWords,
   usable,
+  usageLine,
 } from './aiModels'
 import { SimeonAPIError } from './api'
 import { GatewayError } from './gatewayConnection'
@@ -140,9 +141,14 @@ describe('an account as the server lists it', () => {
       }),
     ).toBe('Updated 2:00 PM')
     expect(planPage(account)).toBe('https://claude.ai/settings/usage')
+    // Usage & Billing's Subscriptions: both windows in a line; the plan before the first use.
+    expect(usageLine(account, options)).toBe(
+      '5-hour limit 93% · Weekly limit 12%',
+    )
     const chatgpt = modelAccount({ id: 'a1', provider: 'chatgpt' })
     if (!chatgpt) throw new Error('read')
     expect(chatgpt.usage).toBeUndefined()
+    expect(usageLine({ ...chatgpt, plan: 'plus' })).toBe('Subscription · Plus')
     expect(planPage(chatgpt)).toBe('https://chatgpt.com/codex/settings/usage')
   })
 

@@ -28,7 +28,7 @@ import SimeonCore
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
     case general, usage, models, wallet, credentials, permissions, computer, updates, help, legal, account
-    /** One connected AI account's page, under AI Models (`SettingsState.modelAccount`). */
+    /** One connected AI account's page, under Usage & Billing (`SettingsState.modelAccount`). */
     case modelAccount
 
     var title: String {
@@ -44,7 +44,7 @@ final class SettingsState {
       case .help: String(localized: "Help & support")
       case .legal: String(localized: "Legal")
       case .account: String(localized: "Account")
-      case .modelAccount: String(localized: "AI Models")
+      case .modelAccount: String(localized: "Usage & Billing")
       }
     }
 
@@ -52,7 +52,7 @@ final class SettingsState {
       switch self {
       case .general: "gearshape"
       case .usage: "chart.bar"
-      case .models: "cpu"
+      case .models: "brain"
       case .wallet: "wallet.bifold"
       case .credentials: "key"
       case .permissions: "hand.raised"
@@ -61,15 +61,15 @@ final class SettingsState {
       case .help: "questionmark.circle"
       case .legal: "checkmark.shield"
       case .account: "person.crop.circle"
-      case .modelAccount: "cpu"
+      case .modelAccount: "chart.bar"
       }
     }
 
-    /** The page it sits under, with Back to it: the account under General (its first row), an AI account under AI Models. */
+    /** The page it sits under, with Back to it: the account under General (its first row), an AI account under Usage & Billing (its Subscriptions). */
     var parent: Page? {
       switch self {
       case .account: .general
-      case .modelAccount: .models
+      case .modelAccount: .usage
       default: nil
       }
     }
@@ -111,7 +111,7 @@ final class SettingsState {
     isOpen = false
   }
 
-  /** A connected AI account's page, from its row in AI Models. */
+  /** A connected AI account's page, from its row in Usage & Billing's Subscriptions. */
   func openModelAccount(_ id: String) {
     modelAccount = id
     page = .modelAccount

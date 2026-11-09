@@ -61,8 +61,12 @@ final class AIModelsTests: XCTestCase {
     XCTAssertTrue(updated.hasPrefix("Updated ") && updated.contains("2:00"), updated)
 
     XCTAssertEqual(account.planPage?.absoluteString, "https://claude.ai/settings/usage")
+    // Usage & Billing's Subscriptions: both windows in a line; the plan before the first use.
+    XCTAssertEqual(account.usageLine(now: now, timeZone: utc), "5-hour limit 93% · Weekly limit 12%")
     let chatgpt = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "chatgpt"]))
     XCTAssertNil(chatgpt.usage, "none until the account has been used")
+    let plus = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "plan": "plus"]))
+    XCTAssertEqual(plus.usageLine(), "Subscription · Plus")
     XCTAssertEqual(chatgpt.planPage?.absoluteString, "https://chatgpt.com/codex/settings/usage")
   }
 

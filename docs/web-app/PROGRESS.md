@@ -839,6 +839,32 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: ChatGPT and Claude usage moved into Usage & Billing; AI Models' icon a brain
+
+The founder, after #631: "these should be in usage and billing, when
+nothing is connected. it's okay to keep simeon as it is. if one is
+connected, have Simeon usage, and below a tab Subscriptions ... no need to
+have it in AI models", and "can the icon be a brain".
+
+- **Done (web and Mac, the same):** Usage & Billing gains "Subscriptions"
+  (`SubscriptionsGroup`) under Simeon's usage and plan, only while an
+  account is connected: each account's icon, its name over
+  `usageLine` ("5-hour limit 42% · Weekly limit 18%"; its plan before its
+  first use; "Signed out" in red), `›` to its page. The page now sits under
+  Usage & Billing (Back and the list's highlight). AI Models' rows are as
+  before #631 (no `›`). AI Models' symbol: a brain (the Mac's `brain`; the
+  web's own drawing on the 16 grid, `SettingsSymbol` `brain`, in place of
+  `cpu`). No new words.
+- **Checked:** in Chromium against a stand-in server: Usage & Billing with
+  Claude (usage) and ChatGPT (before its first use), a row opening Claude's
+  page with Usage & Billing current in the list, Back to Usage & Billing,
+  AI Models with no clickable rows, no Subscriptions with nothing
+  connected; the brain drawn at 16, 32 and 110 (screenshots sent to the
+  founder); 192 core and window tests, typecheck, lint, the build's check,
+  `check_names.py`, `check_translations.py`. Mac Swift parsed; the core's
+  new test run on Linux in a package of its own.
+- **Not checked:** the Mac app built and run; the Windows app itself.
+
 ### 9 November 2026: each AI account's page, its plan's usage like Usage & Billing
 
 The founder: "we need the usage for both claude and chat gpt ... it should

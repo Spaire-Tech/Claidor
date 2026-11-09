@@ -170,6 +170,18 @@ function planTime(
   }).format(new Date(ms))
 }
 
+/** The line under its name in Usage & Billing's Subscriptions (`ModelAccount.usageLine`): "5-hour limit 42% · Weekly limit 18%", or, before its first use, "Subscription · Max". */
+export function usageLine(
+  account: ModelAccount,
+  options: { now?: Date; locale?: string; timeZone?: string } = {},
+): string {
+  const lines = account.usage ? planUsageLines(account.usage, options) : []
+  if (lines.length === 0) return accountDetail(account)
+  return lines
+    .map((line) => `${line.title} ${line.meter.valueLabel}`)
+    .join(' · ')
+}
+
 /** The provider's own page for the plan's usage and the plan (`ModelAccount.planPage`): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
 export function planPage(account: ModelAccount): string | undefined {
   if (account.provider === chatGPT)

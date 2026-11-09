@@ -144,18 +144,16 @@
   outline-offset: -2px;
 }
 
-/* A connected account opens its page (the plan's usage), as a link row: the row's hover, the hand, `›` at its end (`MacModelAccountLine`). */
-.models-line.opens:hover {
-  background: var(--grouped-row-hover);
-}
-
-.models-open {
-  flex: 1;
-  min-width: 0;
+/* An account under Usage & Billing's Subscriptions (`MacSubscriptionLine`): as a link row, its whole width opens its page; the row's hover, `›` at its end. */
+.subscription-line {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 18px;
+  box-sizing: border-box;
   border: 0;
   background: transparent;
   color: inherit;
@@ -164,23 +162,27 @@
   cursor: pointer;
 }
 
-.models-open:focus-visible {
-  outline: 2px solid var(--unread);
-  outline-offset: 2px;
-  border-radius: 6px;
+.subscription-line:hover {
+  background: var(--grouped-row-hover);
 }
 
-.models-chevron {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 12px;
-  height: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--ink-tertiary);
-  cursor: pointer;
+.subscription-line:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+.subscription-line.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.models-subtitle.signed-out {
+  color: var(--danger);
 }
 
 /* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in; the blue edge with the keys. */
