@@ -815,6 +815,10 @@ private struct TranscriptRow: View {
       OnePasswordConnectCardView(entryId: id, agentId: agentId, card: connect, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .request(let id, .storeEntry(let card)):
+      StoreEntryCardView(entryId: id, agentId: agentId, card: card, look: look)
+        .frame(maxWidth: limit(460), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)
         .padding(.top, startsGroup ? 12 : 0)

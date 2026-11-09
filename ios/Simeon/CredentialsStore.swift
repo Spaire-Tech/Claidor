@@ -178,6 +178,8 @@ struct SiteIconTile: View {
  */
 struct CredentialEditor: View {
   let model: CredentialsStoreModel
+  /** Told once a new entry is saved (the chat's store card says Saved). */
+  var onSaved: ((StoredCredential) -> Void)?
   /** The entry as last saved; nil while it is new. */
   @State private var entry: StoredCredential?
   @Environment(\.dismiss) private var dismiss
@@ -198,9 +200,14 @@ struct CredentialEditor: View {
   }
 
   init(model: CredentialsStoreModel, newKind: StoredCredential.Kind) {
+    self.init(model: model, filled: CredentialDraft(kind: newKind))
+  }
+
+  /** A new entry, already filled (from the chat's store card). */
+  init(model: CredentialsStoreModel, filled start: CredentialDraft, onSaved: ((StoredCredential) -> Void)? = nil) {
     self.model = model
+    self.onSaved = onSaved
     _entry = State(initialValue: nil)
-    let start = CredentialDraft(kind: newKind)
     _draft = State(initialValue: start)
     _opened = State(initialValue: start)
     _passwordRead = State(initialValue: true)
@@ -431,6 +438,7 @@ struct CredentialEditor: View {
     guard let saved else { problem = model.problem; Haptics.tap(); return }
     Haptics.press()
     if entry == nil {
+      onSaved?(saved)
       dismiss()
     } else {
       // Stays open on the entry as saved, as Settings' pages do; a password just typed is known now.

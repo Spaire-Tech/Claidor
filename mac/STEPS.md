@@ -667,6 +667,14 @@ checked in the reference window. Pushed:
   the person's details first, the entry's Name and Hints last. Account:
   Password says Set Password or Change Password at its end; its form has
   Cancel and Save.
+- **The Credentials Store's card in the chat** (the founder, 9 November
+  2026: "the agent needs to know. and recommend it when needed. it also
+  needs to have a card for everything in the store"). `StoreEntryCardView`
+  (`OnePasswordCards.swift`): the site's icon, "Save your Amazon login" /
+  "Add a card" / "Add your contact info", the agent's line, the X, and the
+  button that opens `MacCredentialSheet` over the chat already filled
+  (`MacCredentialEdit.filled`); saved, the card says Saved
+  (`answerStoreEntry`). A note says when a saved login was used or saved.
 - **Cards in the Credentials Store** (the founder, 9 November 2026: "actual
   cards there that the agent can use to make payments"; the security code
   kept). Cards lists the saved cards (`MacPaymentMark`, the name or the

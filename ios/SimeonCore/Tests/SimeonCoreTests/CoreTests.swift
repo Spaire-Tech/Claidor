@@ -647,6 +647,7 @@ final class ChatTests: XCTestCase {
         case .form(let form): return "form:\(form.title)"
         case .credential(let card): return "credential:\(card.title)"
         case .onePasswordConnect: return "onepassword-connect"
+        case .storeEntry(let card): return "store:\(card.kind.rawValue)"
         }
       case .notice(_, let text): return text == Chat.notShown ? "notice" : text
       case .cloudAgent(_, let bcId): return "cloud-agent:\(bcId)"

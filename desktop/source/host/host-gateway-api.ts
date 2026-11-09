@@ -324,6 +324,11 @@ export function createHostGatewayApi(
       markActive("user_action");
       return method(manager, "dismissOnePasswordConnect")({ agentId: args?.agentId, entryId: args?.entryId });
     },
+    // The Credentials Store's card (9 November 2026, transcript/store-cards.ts): saved in the store's form, or its X.
+    answerStoreEntry: (args: any) => {
+      markActive("user_action");
+      return method(manager, "answerStoreEntry")({ agentId: args?.agentId, entryId: args?.entryId, saved: args?.saved === true });
+    },
     reactToMessage: (args: any) => {
       markActive("user_action");
       method(telemetry.analytics, "trackEvent")("sand.reaction.added", {

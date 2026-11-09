@@ -1,8 +1,9 @@
 // Step 3b: what an agent asks of the person (mac/Simeon/Cards.swift's
 // `SecretCardView` and `ComputerHandoffCard`, UserFormCard.swift,
 // OnePasswordCards.swift): a secret to give, the computer handed over, an
-// in-chat form, 1Password's fill and connect cards. Read by
-// `src/core/requestCards.ts`.
+// in-chat form, 1Password's fill and connect cards, the Credentials Store's
+// card (its button opens the store's own sheet over the chat, filled; 9
+// November 2026). Read by `src/core/requestCards.ts`.
 //
 // 1Password's Connect needs the 1Password app's command-line tool on this
 // computer: in the Windows app it runs there (step 7d,
@@ -16,12 +17,14 @@
 import { useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CardKind } from '../core/chat'
+import { CredentialsStoreModel } from '../core/credentialsStore'
 import {
   type ComputerCard,
   type CredentialCard,
   type FormField,
   type OnePasswordConnectCard,
   type SecretCard,
+  type StoreEntryCard,
   type UserFormCard,
   canFill,
   computerCard,
@@ -37,6 +40,13 @@ import {
   handoffCardState,
   onePasswordConnectCard,
   secretCard,
+  storeActionTitle,
+  storeDetail,
+  storeDraft,
+  storeEntryCard,
+  storeHeadline,
+  storeIconSite,
+  storeStatusLine,
   trimmed,
   trimmedSpaces,
   userFormCard,
@@ -59,11 +69,18 @@ import { openComputerView } from './ComputerView'
 import { Alert } from './Dialogs'
 import { confirmPresence } from './presence'
 import './RequestCards.css'
+import { CredentialSheet, SiteIconTile } from './SettingsCredentials'
+import { PaymentMark } from './ShopCards'
 import { useWindowModel } from './windowModel'
 
 type RequestKind = Extract<
   CardKind,
-  'secret' | 'computer' | 'form' | 'credential' | 'onePasswordConnect'
+  | 'secret'
+  | 'computer'
+  | 'form'
+  | 'credential'
+  | 'onePasswordConnect'
+  | 'storeEntry'
 >
 
 /** The card for one of 3b's kinds, or none when its line doesn't read as one (the chat then says it can't be shown). */
@@ -100,6 +117,13 @@ export function requestCardView(
           card={onePasswordConnectCard(card.entry)}
         />
       )
+    case 'storeEntry': {
+      const read = storeEntryCard(
+        card.entry.message,
+        card.entry.get('storeState'),
+      )
+      return read && <StoreEntryCardView {...props} card={read} />
+    }
   }
 }
 
@@ -1024,5 +1048,90 @@ function OnePasswordConnecting({
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * The Credentials Store's card (`StoreEntryCardView`): the site's icon (a
+ * card's mark, a person for contact info), what the agent asks, the X; its
+ * button opens the store's own sheet over the chat, already filled; once it
+ * is saved the card says Saved and the agent carries on. A note (a saved
+ * login used, a new one saved) is the same head without a button.
+ */
+function StoreEntryCardView({
+  entryId,
+  agentId,
+  card,
+  store,
+}: ViewProps<StoreEntryCard>) {
+  const [busy, run] = useBusy()
+  const [model, setModel] = useState<CredentialsStoreModel>()
+  const [editing, setEditing] = useState(false)
+  const asking = card.mode === 'request' && card.state === 'open'
+  const status = storeStatusLine(card)
+  const open = () => {
+    const made = model ?? new CredentialsStoreModel(store.credentialsCall)
+    setModel(made)
+    setEditing(true)
+    // A card's billing address is chosen from the saved contact info.
+    if (card.kind === 'card') void made.load()
+  }
+  return (
+    <CardShell>
+      <div className="store-ask-head">
+        {card.kind === 'card' ? (
+          <PaymentMark />
+        ) : (
+          <SiteIconTile
+            site={storeIconSite(card)}
+            title={card.title}
+            contact={card.kind === 'contact'}
+          />
+        )}
+        <AskHead
+          title={storeHeadline(card)}
+          quiet={card.state === 'dismissed'}
+          site={storeDetail(card)}
+          end={
+            asking ? (
+              <DismissButton
+                help={t('Dismiss')}
+                label={t('Dismiss')}
+                onClick={() =>
+                  run(() => store.answerStoreEntry(entryId, agentId, false))
+                }
+              />
+            ) : (
+              status != null && (
+                <AskPill
+                  words={status}
+                  dot={card.state === 'saved' ? 'green' : undefined}
+                />
+              )
+            )
+          }
+        />
+      </div>
+      {asking && (
+        <div>
+          <CardButton
+            title={storeActionTitle(card)}
+            prominent
+            disabled={busy}
+            onClick={open}
+          />
+        </div>
+      )}
+      {editing && model && (
+        <CredentialSheet
+          model={model}
+          edit={{ filled: storeDraft(card) }}
+          close={() => setEditing(false)}
+          onSaved={() =>
+            run(() => store.answerStoreEntry(entryId, agentId, true))
+          }
+        />
+      )}
+    </CardShell>
   )
 }

@@ -121,3 +121,81 @@ struct OnePasswordConnectCardView: View {
     .card()
   }
 }
+
+/**
+ * The Credentials Store's card (9 November 2026, SimeonCore's
+ * `StoreEntryCard`), as the Mac's: the agent offers to keep a login, a card
+ * or contact info; its button opens the store's editor over the chat,
+ * already filled with what the agent knows; once saved the card says Saved
+ * and the agent carries on. The X is a no. A note (a saved login used, a new
+ * one saved) is the same head without a button.
+ */
+struct StoreEntryCardView: View {
+  let entryId: String
+  let agentId: String
+  let card: StoreEntryCard
+  @Environment(AppStore.self) private var store
+  @State private var model: CredentialsStoreModel?
+  @State private var editing = false
+  @State private var busy = false
+
+  private var asking: Bool { card.mode == .request && card.state == .open }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 10) {
+        if card.kind == .card {
+          PaymentMark(brand: nil)
+        } else {
+          SiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact)
+        }
+        VStack(alignment: .leading, spacing: 1) {
+          Text(card.headline).font(.system(size: 17, weight: .medium)).foregroundStyle(card.state == .dismissed ? Ink.secondary : Ink.primary)
+          if let detail = card.detail { Text(detail).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(2) }
+        }
+        Spacer(minLength: 0)
+        if asking {
+          Button {
+            run { await store.answerStoreEntry(entryId, in: agentId, saved: false) }
+          } label: {
+            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
+              .frame(width: 32, height: 32).contentShape(Rectangle())
+          }
+          .buttonStyle(.tactile)
+          .accessibilityLabel("Dismiss")
+        } else if let status = card.statusLine {
+          StatusPill(text: status, dot: card.state == .saved ? Ink.live : Ink.tertiary)
+        }
+      }
+      if asking {
+        Button(card.actionTitle) { open() }
+          .buttonStyle(Tactile(look: BlueButtonStyle()))
+          .disabled(busy)
+      }
+    }
+    .card()
+    .sheet(isPresented: $editing) {
+      if let model {
+        NavigationStack {
+          CredentialEditor(model: model, filled: card.draft) { _ in
+            run { await store.answerStoreEntry(entryId, in: agentId, saved: true) }
+          }
+        }
+      }
+    }
+  }
+
+  /** The store's editor, filled; the saved contacts read for a card's billing address. */
+  private func open() {
+    let made = model ?? CredentialsStoreModel(store: store)
+    model = made
+    editing = true
+    if card.kind == .card { Task { await made.load() } }
+  }
+
+  private func run(_ work: @escaping () async -> Void) {
+    guard !busy else { return }
+    busy = true
+    Task { await work(); busy = false }
+  }
+}

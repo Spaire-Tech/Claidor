@@ -1736,6 +1736,19 @@ export class AppStore {
     )
   }
 
+  /** The Credentials Store's card (`answerStoreEntry`): saved in the store's form it opened, or its X, a no. */
+  async answerStoreEntry(
+    entryId: string,
+    agentId: string,
+    saved: boolean,
+  ): Promise<void> {
+    await this.command(
+      'answerStoreEntry',
+      { agentId, entryId, saved },
+      t("Couldn't dismiss the card"),
+    )
+  }
+
   // MARK: Step 3c's cards: apps to connect, Slack or GitHub for a routine,
   // the cloud agent, a new teammate joined (Store.swift's commands for them).
   // 3c's state and commands go below this line, and nowhere else.

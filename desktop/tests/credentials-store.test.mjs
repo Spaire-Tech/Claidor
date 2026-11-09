@@ -32,6 +32,7 @@ async function load(entry, name) {
 const ACME = "0b0e7c1a-5d1e-4b6a-9f43-1a2b3c4d5e6f";
 const HOME = "1c1f8d2b-6e2f-4c7b-8a54-2b3c4d5e6f70";
 const MADE = "2d209e3c-7f30-4d8c-9b65-3c4d5e6f7081";
+const CARD = "3e31af4d-8041-4e9d-8c76-4d5e6f708192";
 const PASSWORD = "correct horse battery";
 
 /** The server, as this computer reads it: the list without passwords, one login with its own. */
@@ -41,9 +42,11 @@ function fakeServer() {
     [ACME]: { id: ACME, kind: "login", name: "Acme", website: "https://acme.example/login", site: "acme.example", username: "ada@example.com", hasPassword: true, hints: "Use for work", password: PASSWORD },
   };
   const contact = { id: HOME, kind: "contact", name: "Home", hints: "", fullName: "Ada Lovelace", email: "ada@example.com", phone: "+44 20 7946 0000", addressLine1: "12 St James's Square", addressLine2: "", city: "London", region: "", postalCode: "SW1Y 4LB", country: "GB" };
+  // A card as the server lists it: never its number or code.
+  const card = { id: CARD, kind: "card", name: "Travel", cardholder: "Ada Lovelace", brand: "visa", last4: "4242", expiry: "08/28", hasSecurityCode: true, billingId: HOME, hints: "For trips" };
   const api = async (pathName, request = {}) => {
     calls.push({ path: pathName, method: request.method ?? "GET", json: request.json });
-    if (pathName === "credentials" && (request.method ?? "GET") === "GET") return { entries: [...Object.values(logins).map(({ password: _password, ...rest }) => rest), contact] };
+    if (pathName === "credentials" && (request.method ?? "GET") === "GET") return { entries: [...Object.values(logins).map(({ password: _password, ...rest }) => rest), contact, card] };
     if (pathName === "credentials" && request.method === "POST") {
       const { password, ...rest } = request.json;
       logins[MADE] = { ...rest, id: MADE, name: rest.name ?? "", site: rest.website, hasPassword: true, hints: rest.hints ?? "", password };
@@ -81,7 +84,8 @@ test("the store's client reads the list, one login with its password, and saves 
     const store = module.createCredentialsStore(server.api);
     const listed = await store.list();
     assert.equal(listed.ok, true);
-    assert.deepEqual(listed.entries.map((entry) => entry.kind), ["login", "contact"]);
+    assert.deepEqual(listed.entries.map((entry) => entry.kind), ["login", "contact", "card"]);
+    assert.deepEqual(listed.entries[2], { kind: "card", id: CARD, name: "Travel", cardholder: "Ada Lovelace", brand: "visa", last4: "4242", expiry: "08/28", hasSecurityCode: true, billingId: HOME, hints: "For trips" }, "a card read without a number or code");
     assert.equal(listed.entries[0].password, undefined, "the list never holds a password");
     assert.equal(listed.entries[1].city, "London");
 
@@ -142,6 +146,9 @@ test("the agent's tools: a login typed only on its own site, a password read onl
     assert.match(listedForSite, new RegExp(`entry_id ${ACME}: \\\\"Acme\\\\" \\(acme\\.example\\); username ada@example\\.com; hints: Use for work`));
     assert.match(listedForSite, /full name Ada Lovelace; email ada@example\.com; phone \+44 20 7946 0000; address 12 St James's Square, London, SW1Y 4LB, GB/);
     assert.doesNotMatch(listedForSite, /correct horse/, "the list never shows a password");
+    // A card by its name, network and last four, its billing address named by its contact info.
+    assert.match(listedForSite, new RegExp(`entry_id ${CARD}: \\\\"Travel\\\\" \\(Visa \u2022\u2022\u2022\u2022 4242\\); expires 08/28; name on card Ada Lovelace; billing address from \\\\"Home\\\\"; hints: For trips`));
+    assert.match(listedForSite, /You never see a card's number or security code; you pay only through RequestPurchase/);
     assert.match(await call(list, { site: "other.example" }), /none saved for other\.example/);
 
     // A login is typed on its own site and its subdomains, never another.
@@ -246,14 +253,15 @@ test("a sign-up's new password goes into the password and its confirmation, neve
 
 test("the store's tools are in the agent's turn and brief, never in a shared room, and the server keeps the store", async () => {
   const composition = await src("host/host-runner-composition.ts");
-  assert.match(composition, /createCredentialsStoreToolInputs: \(\) =>/);
+  assert.match(composition, /createCredentialsStoreToolInputs: turn =>/);
   assert.match(composition, /fillLogin: async \(request\) => await fillUserForm\(\{ \.\.\.request, ports: ports\(\), missingAs: "notFound" \}\)/);
   assert.match(composition, /requestSource: \(\) => \{ const source = method\(extensions\.api\("transcript"\), "activeRequestSource"\)\?\.\(session\.id\)/);
   assert.match(await src("host/extensions/transcript/transcript-manager.ts"), /\["activeRequestSource", "turnRuntime"\]/);
   const toolset = await src("host/runner/tools/turn-toolset.ts");
-  assert.match(toolset, /const credentialsStore = factories\.credentialsStore\?\.\(\);/);
+  // In every turn of the person's own chats (9 November 2026), the browser's tools only while it's up.
+  assert.match(toolset, /if \(!host\.isSubagentRunner\) \{\n    const credentialsStore = factories\.credentialsStore\?\.\(\{ browser: host\.remoteBoxHasDesktop && host\.getRemoteBoxAvailable\(\) \}\);/);
   const shared = toolset.slice(toolset.indexOf("export const SHARED_ROOM_TOOL_NAMES"), toolset.indexOf("export const SAND_FORCED_STATIC_TOOL_NAMES"));
-  for (const name of ["ListStoredCredentials", "FillStoredLogin", "ReadStoredPassword", "FillNewPassword", "SaveStoredLogin"]) assert.doesNotMatch(shared, new RegExp(name), `${name} is never offered in a shared room`);
+  for (const name of ["ListStoredCredentials", "FillStoredLogin", "ReadStoredPassword", "FillNewPassword", "SaveStoredLogin", "RequestStoreEntry"]) assert.doesNotMatch(shared, new RegExp(name), `${name} is never offered in a shared room`);
   const brief = await src("host/runner/system-prompt.ts");
   assert.match(brief, /At any sign-in or sign-up, look in their Credentials Store first \(ListStoredCredentials with the page's site/);
   assert.match(await src("host/runner/prompt-collector-glue.ts"), /FillNewPassword makes the password, types it into the page and saves the login/);
@@ -261,4 +269,148 @@ test("the store's tools are in the agent's turn and brief, never in a shared roo
   const serverModule = await readFile(path.join(repoRoot, "..", "server", "simeon", "desktop", "credentials.py"), "utf8");
   assert.match(serverModule, /@router\.get\("\/api\/credentials", name="desktop:credentials_list"\)/);
   assert.match(serverModule, /return f"credentials:\{user_id\}"/, "each person's entries sealed for them alone");
+});
+
+test("the agent knows the store without the browser, offers to keep what's missing, and says once what it used", async () => {
+  const tools = await load("source/host/runner/tools/credentials-store-tools.ts", "credentials-store-tools-cards");
+  const storeModule = await load("source/shared/node/credentials-store/credentials-store.ts", "credentials-store-cards");
+  const context = await load("source/packages/context/core.ts", "context-core-store-cards");
+  const shape = await load("source/host/runner/turn-shape.ts", "turn-shape-store");
+  try {
+    const server = fakeServer();
+    const cards = [];
+    let source = "turn";
+    const deps = {
+      store: storeModule.module.createCredentialsStore(server.api),
+      fillLogin: async () => ({ ok: true, page: "acme.example", outcomes: { username: "filled", password: "filled" }, submitted: false }),
+      fillNewPassword: async () => ({ ok: true, page: "shop.example", filled: 2, failed: 0 }),
+      requestSource: () => source,
+      agentName: () => "Nora",
+      makePassword: () => "kobwyc-Qinbe7-mocwux",
+      emitCard: (message) => { cards.push(message); return `e${cards.length}`; },
+      now: () => 1,
+    };
+    const call = async (tool, args) => said(await run(context.module.createContext, tool, args));
+    // What the turn reads: the tool's own words.
+    const raw = async (tool, args) => (await run(context.module.createContext, tool, args)).success.currentStep;
+
+    // With no browser on the computer: the list, the ask and the save, so the agent always knows the store.
+    const without = tools.module.createCredentialsStoreTools(deps, { browser: false });
+    assert.deepEqual(without.map((tool) => tool.name), ["ListStoredCredentials", "RequestStoreEntry", "SaveStoredLogin"]);
+    const [, request] = without;
+    const all = tools.module.createCredentialsStoreTools(deps);
+    assert.deepEqual(all.map((tool) => tool.name), ["ListStoredCredentials", "FillStoredLogin", "ReadStoredPassword", "FillNewPassword", "SaveStoredLogin", "RequestStoreEntry"]);
+
+    // The ask: a card whose button opens the store's form; the turn ends on it.
+    const asked = await raw(request, { kind: "login", title: "Amazon", website: "https://www.amazon.com/ap/signin", reason: "So I can sign in to Amazon for you next time" });
+    assert.deepEqual(cards.at(-1), { type: "store-entry", store: { mode: "request", kind: "login", title: "Amazon", website: "amazon.com", reason: "So I can sign in to Amazon for you next time" } });
+    assert.match(asked, /^The Credentials Store card for "Amazon" is in the chat/);
+    assert.equal(shape.module.cardCallWaits("RequestStoreEntry", asked), true, "the turn ends on the card");
+    // A login already saved for the site: no card, the agent is told to use it.
+    const saved = await raw(request, { kind: "login", title: "Acme", website: "login.acme.example" });
+    assert.match(saved, new RegExp(`A login for login\\.acme\\.example is already saved: entry_id ${ACME}`));
+    assert.equal(shape.module.cardCallWaits("RequestStoreEntry", saved), false);
+    assert.equal(cards.length, 1);
+    assert.match(await call(request, { kind: "login", title: "Amazon" }), /Give the login's website/);
+    await call(request, { kind: "contact", title: "Home", reason: "For your deliveries" });
+    assert.deepEqual(cards.at(-1).store, { mode: "request", kind: "contact", title: "Home", reason: "For your deliveries" });
+    await call(request, { kind: "card", title: "Travel card" });
+    assert.deepEqual(cards.at(-1).store, { mode: "request", kind: "card", title: "Travel card" });
+
+    // A saved login used: one small card, however many steps the sign-in takes; the agent doesn't repeat it.
+    const [, fill, , make, save] = all;
+    cards.length = 0;
+    assert.match(await call(fill, { entry_id: ACME, site: "acme.example" }), /The chat shows the user a small card saying you used their saved login \\"Acme\\": don't repeat it/);
+    await call(fill, { entry_id: ACME, site: "acme.example" });
+    assert.deepEqual(cards, [{ type: "store-entry", store: { mode: "used", kind: "login", title: "Acme", website: "acme.example" } }]);
+    // A sign-up's login saved: one card; a refused password replaced says nothing new.
+    assert.match(await call(make, { site: "signup.shop.example", username: "ada@example.com" }), /small card saying the login is saved in their Credentials Store: don't repeat it/);
+    assert.deepEqual(cards.at(-1), { type: "store-entry", store: { mode: "saved", kind: "login", title: "shop.example", website: "shop.example" } });
+    await call(make, { site: "signup.shop.example", username: "ada@example.com", replace_entry_id: MADE });
+    assert.equal(cards.length, 2);
+    assert.doesNotMatch(JSON.stringify(cards), /kobwyc|correct horse/, "no password on a card");
+    await call(save, { website: "gym.example", username: "ada", password: "s3cret" });
+    assert.equal(cards.at(-1).store.mode, "saved");
+
+    // Never for a channel's message; nowhere to show it, it says where the person adds it.
+    source = "connector";
+    const count = cards.length;
+    assert.match(await call(request, { kind: "contact", title: "Home" }), /isn't used for a message that came through a channel/);
+    assert.equal(cards.length, count);
+    source = "turn";
+    const [, bare] = tools.module.createCredentialsStoreTools({ ...deps, emitCard: undefined }, { browser: false });
+    assert.match(await call(bare, { kind: "contact", title: "Home" }), /can't be shown here\. Tell the user they can add it in Settings → Credentials Store/);
+  } finally {
+    await tools.dispose();
+    await storeModule.dispose();
+    await context.dispose();
+    await shape.dispose();
+  }
+});
+
+function fakeManager(entries) {
+  const db = {
+    getTranscriptEntries: () => entries,
+    updateTranscriptEntry: (id, update) => { const index = entries.findIndex((item) => item.id === id); if (index >= 0) entries[index] = update(entries[index]); },
+  };
+  const emitted = [];
+  const wakes = [];
+  const tm = {
+    userLanguage: () => "en",
+    sessions: { activeSession: { id: "other" }, liveSessions: new Map([["a1", { id: "a1", db }]]), inMemoryTranscriptAgentId: "other", isAgentGone: () => false },
+    sessionStore: { readAgentTranscriptEntries: () => [], withAgentDb: async () => null },
+    roster: { emit: (event, agentId) => emitted.push({ ...event, agentId }), emitAgentUpdate: async () => undefined },
+    backgroundWakes: { runHiddenPromptWake: async (agentId, wakeSource, prompt, _tray, options) => { wakes.push({ agentId, source: wakeSource, prompt, options }); } },
+  };
+  return { tm, emitted, wakes };
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+test("the store's card says Saved and wakes its agent; its X is a no; a note takes no answer", async () => {
+  const cardsModule = await load("source/host/extensions/transcript/store-cards.ts", "store-cards");
+  try {
+    const entries = [
+      { id: "s1", kind: "send-message", message: { type: "store-entry", store: { mode: "request", kind: "login", title: "Amazon", website: "amazon.com" } } },
+      { id: "s2", kind: "send-message", message: { type: "store-entry", store: { mode: "request", kind: "contact", title: "Home" } } },
+      { id: "s3", kind: "send-message", message: { type: "store-entry", store: { mode: "used", kind: "login", title: "Acme", website: "acme.example" } } },
+    ];
+    const { tm, emitted, wakes } = fakeManager(entries);
+    const cards = new cardsModule.module.StoreCards(tm, { log: () => undefined });
+    assert.deepEqual(await cards.answerStoreEntry({ agentId: "a1", entryId: "s1", saved: true }), { accepted: true });
+    await settle();
+    assert.equal(entries[0].storeState, "saved");
+    assert.equal(emitted[0].entry.storeState, "saved", "the apps hear it");
+    assert.equal(wakes[0].source, "store-entry-saved");
+    assert.match(wakes[0].prompt, /The user saved a login for "Amazon" in their Credentials Store \(entry s1\)\. Call ListStoredCredentials and carry on/);
+    assert.equal(wakes[0].options, undefined);
+    assert.deepEqual(await cards.answerStoreEntry({ agentId: "a1", entryId: "s1", saved: true }), { accepted: false }, "answered once");
+
+    assert.deepEqual(await cards.answerStoreEntry({ agentId: "a1", entryId: "s2" }), { accepted: true });
+    await settle();
+    assert.equal(entries[1].storeState, "dismissed");
+    assert.match(wakes[1].prompt, /dismissed saving their contact info for "Home".*Don't ask again for it/s);
+    assert.deepEqual(wakes[1].options, { isSilenceAllowed: true });
+
+    assert.deepEqual(await cards.answerStoreEntry({ agentId: "a1", entryId: "s3", saved: true }), { accepted: false }, "a note isn't asked");
+    assert.deepEqual(await cards.answerStoreEntry({ agentId: "a1", entryId: "gone", saved: true }), { accepted: false });
+    assert.equal(wakes.length, 2);
+  } finally {
+    await cardsModule.dispose();
+  }
+});
+
+test("the store's card is on the gateway and in the brief, and the agent is told to recommend it", async () => {
+  assert.match(await src("host/host-gateway-api.ts"), /answerStoreEntry: \(args: any\) => \{\n      markActive\("user_action"\);\n      return method\(manager, "answerStoreEntry"\)\(\{ agentId: args\?\.agentId, entryId: args\?\.entryId, saved: args\?\.saved === true \}\);/);
+  assert.match(await src("host/gateway-protocol.ts"), /answerStoreEntry: \(api: GatewayApi, body: string\) => api\.answerStoreEntry\(parseCommandArgs\(body\)\)/);
+  assert.match(await src("host/extensions/transcript/transcript-manager.ts"), /\["answerStoreEntry", "storeCards"\]/);
+  assert.match(await src("shared/rpc/coordinator.ts"), /answerStoreEntry: \{ args: "object", reply: "record" \}/);
+  assert.match(await readFile(path.join(repoRoot, "frontend", "src", "recovered", "runtime", "coordinator-source.ts"), "utf8"), /answerStoreEntry: "widgets"/);
+  const composition = await src("host/host-runner-composition.ts");
+  const storeInputs = composition.slice(composition.indexOf("createCredentialsStoreToolInputs: turn =>"), composition.indexOf("createOnePasswordToolInputs"));
+  assert.match(storeInputs, /emitCard: \(message, timestampMs\) =>/);
+  const brief = await src("host/runner/system-prompt.ts");
+  assert.match(brief, /"## The user's Credentials Store"/);
+  assert.match(brief, /offer to keep it with RequestStoreEntry/);
+  assert.match(brief, /Never ask for a password, a card number or a security code in the chat/);
 });

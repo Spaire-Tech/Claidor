@@ -839,6 +839,42 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: the agent knows the Credentials Store, a card for each kind
+
+The founder: "the agent is just not aware of the credential store. i
+tested it, it has no idea it exist ... the agent needs to know. and
+recommend it when needed. it also needs to have a card for everything in
+the store." Measured first: the store's tools were offered only while the
+computer's browser was up, and the brief named the store in one sign-in
+line.
+
+- **Done (engine):** `ListStoredCredentials`, `RequestStoreEntry` (new)
+  and `SaveStoredLogin` in every turn of the person's own chats; the list
+  names cards by name, network, last four and expiry; the brief has its
+  own "The user's Credentials Store" section. `RequestStoreEntry` posts
+  the `store-entry` card and ends the turn; `answerStoreEntry` stamps it
+  Saved or Dismissed and wakes the agent. A saved login used, or one saved
+  at a sign-up, posts a small note card once.
+- **Done (web, Mac and iPhone, the same):** the card: the site's icon
+  (a card's mark, a person for contact info), "Save your Amazon login" /
+  "Add a card" / "Add your contact info" with the agent's line, the X, and
+  Save Login / Add Card / Add Contact Info, which opens the store's own
+  sheet over the chat already filled (website and name); saved, the card
+  says Saved. Notes: "Signed in with your saved login" / "Login saved"
+  with the site. Core: `StoreEntryCard`, `Store.answerStoreEntry`; web:
+  `storeEntryCard`, `answerStoreEntry`, `CredentialSheet`'s `filled` and
+  `onSaved`.
+- **Checked:** in Chromium against a stand-in computer and server: the
+  note, two asks and a saved card in a chat; Save Login opening the sheet
+  filled (amazon.com, Amazon), the login posted and `answerStoreEntry`
+  sent with `saved: true`; the X sending `saved: false`. Engine tests
+  (the store's file: 7), the engine's typecheck; web tests (1223),
+  typecheck, lint, the build's check; the core's new test in a package of
+  its own; the Mac's and iPhone's Swift parsed; `check_translations.py`.
+- **Not checked:** the Mac and iPhone apps built and run; an agent on a
+  real computer offering the card (needs a new host bundle).
+- **Next:** paying with a saved card at checkout.
+
 ### 9 November 2026: cards in the Credentials Store
 
 The founder: "when i asked you to add cards to credential store, i didnt

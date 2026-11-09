@@ -18,6 +18,7 @@ import {
 } from './chatRuns'
 import { Entry, earlierCall } from './entry'
 import {
+  type JSONValue,
   arr,
   bool,
   field,
@@ -33,6 +34,7 @@ import { displayLocale } from './listTime'
 import { soleFence } from './markdown'
 import { type Party, fileName, fileTitle } from './models'
 import { plainError } from './plainWords'
+import { storeEntryCard, storeHeadline } from './requestCards'
 
 /** Whose side a row sits on, for spacing runs: the person, an agent (by id, or none), or the middle. */
 export type Side = 'person' | 'middle' | `agent:${string}`
@@ -200,6 +202,7 @@ export type CardKind =
   | 'form'
   | 'credential'
   | 'onePasswordConnect'
+  | 'storeEntry'
   | 'cloudAgent'
   | 'purchase'
   | 'products'
@@ -556,6 +559,10 @@ export function cardText(message: unknown): string {
       return of('credential', 'title')
     case 'onepassword-connect':
       return t('Connect 1Password')
+    case 'store-entry': {
+      const card = storeEntryCard(message as JSONValue)
+      return card === undefined ? '' : storeHeadline(card)
+    }
     case 'email-draft': {
       const subject = of('draft', 'subject')
       return subject === '' ? of('draft', 'body') : subject
@@ -1362,6 +1369,8 @@ export function rowFor(entry: Entry): ChatRow | undefined {
           return card('credential')
         case 'onepassword-connect':
           return card('onePasswordConnect')
+        case 'store-entry':
+          return card('storeEntry')
         case 'cloud-agent':
           return text(field(message, 'bcId')) != null
             ? card('cloudAgent')

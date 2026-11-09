@@ -142,6 +142,16 @@ describe('the asking cards’ buttons', () => {
     )
   })
 
+  it('answers the Credentials Store’s card: saved, or its X', async () => {
+    const { backend, store } = await attached()
+    await store.answerStoreEntry('s1', 'iris', true)
+    await store.answerStoreEntry('s2', 'iris', false)
+    expect(sent(backend, 'answerStoreEntry')).toEqual([
+      { agentId: 'iris', entryId: 's1', saved: true },
+      { agentId: 'iris', entryId: 's2', saved: false },
+    ])
+  })
+
   it('sends nothing before it is attached', async () => {
     const store = new AppStore()
     expect(await store.submitUserForm({}, 'f1', 'iris')).toBe(

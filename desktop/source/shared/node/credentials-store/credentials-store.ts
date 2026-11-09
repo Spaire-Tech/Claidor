@@ -6,7 +6,8 @@
 // agents use them while the Mac is closed. This computer asks for them as the
 // person's computer: the list without a password, one login with its password
 // when a sign-in needs it, a new login when an agent made a password at a
-// sign-up or was given one in the chat. Cards are never here: Link holds them.
+// sign-up or was given one in the chat. Cards (9 November 2026): listed by
+// their network, last four and expiry; only the person adds one, in the apps.
 
 import { randomInt } from "node:crypto";
 import { siteOf } from "../onepassword/onepassword.js";
@@ -32,7 +33,31 @@ export interface StoredLogin {
 
 export type StoredContact = { readonly kind: "contact"; readonly id: string; readonly name: string; readonly hints: string } & { readonly [field in ContactField]: string };
 
-export type StoredEntry = StoredLogin | StoredContact;
+/** A card the person keeps (9 November 2026): never its number or code here; the computer reads those only to pay a checkout the person approved. */
+export interface StoredCard {
+  readonly kind: "card";
+  readonly id: string;
+  readonly name: string;
+  readonly cardholder: string;
+  /** `visa`, `mastercard`, `amex`… */
+  readonly brand: string;
+  readonly last4: string;
+  /** "08/28". */
+  readonly expiry: string;
+  readonly hasSecurityCode: boolean;
+  /** The contact info whose address bills it. */
+  readonly billingId: string;
+  readonly hints: string;
+}
+
+export type StoredEntry = StoredLogin | StoredContact | StoredCard;
+
+const BRAND_NAMES: Readonly<Record<string, string>> = { visa: "Visa", mastercard: "Mastercard", amex: "American Express", discover: "Discover", jcb: "JCB", diners: "Diners Club", unionpay: "UnionPay" };
+
+/** A card's name as the agent and the apps show it: the person's name for it, else its network. */
+export function cardTitle(card: Pick<StoredCard, "name" | "brand">): string {
+  return card.name.trim() || BRAND_NAMES[card.brand] || "Card";
+}
 
 /** One call to `/desktop/api/<path>` as this computer, the app's envelope opened (`simeonApiData`). */
 export type CredentialsStoreApi = (path: string, request?: { readonly method?: "GET" | "POST" | "PATCH"; readonly json?: unknown }) => Promise<unknown>;
@@ -74,6 +99,20 @@ function readEntry(value: unknown): StoredEntry | undefined {
   if (value.kind === "contact") {
     const fields = Object.fromEntries(CONTACT_FIELDS.map((field) => [field, text(value[field])])) as { [field in ContactField]: string };
     return { kind: "contact", id, name: text(value.name), hints: text(value.hints), ...fields };
+  }
+  if (value.kind === "card") {
+    return {
+      kind: "card",
+      id,
+      name: text(value.name),
+      cardholder: text(value.cardholder),
+      brand: text(value.brand),
+      last4: text(value.last4),
+      expiry: text(value.expiry),
+      hasSecurityCode: value.hasSecurityCode === true,
+      billingId: text(value.billingId),
+      hints: text(value.hints),
+    };
   }
   return undefined;
 }

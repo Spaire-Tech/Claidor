@@ -1528,10 +1528,21 @@ decline. A password or a code is masked, and nothing they typed is ever shown to
 Credentials Store"; its first name, Credentials Store, was cut in the Mac's
 Settings list), on the iPhone and the Mac, as the upstream app's vault: Logins (a name,
 the website, the username or email, the password, and hints, "Tell Simeon when to use this
-entry"), Cards and Contact info (a name, their full name, email, phone and address). Each
-login shows its site's icon. A saved password shows only after Face ID or Touch ID. Cards are
-not kept here: the Cards row leads to Wallet, where Link holds them, and an agent pays with a
-one-time card.
+entry"), Cards (9 November 2026: the number, expiry, security code, name on the card and a
+billing address, all sealed) and Contact info (a name, their full name, email, phone and
+address). Each login shows its site's icon. A saved password or card number shows only after
+Face ID or Touch ID.
+
+The agent knows the store in every turn of the person's own chats (9 November 2026, the
+founder: "the agent is just not aware of the credential store... the agent needs to know. and
+recommend it when needed. it also needs to have a card for everything in the store"), the
+computer's browser up or not. When a task needed something that isn't saved (a site the person
+signed in to by hand, contact info the agent had to ask for, a card to pay with), the agent
+offers to keep it: a card in the chat, "Save your Amazon login", "Add your contact info" or
+"Add a card", whose button opens the store's own form over the chat, the website or name
+already written. The person types it there, never in the chat; once saved the card says Saved
+and the agent carries on; the X is a no, and the agent doesn't ask again. When the agent signs
+in with a saved login, or saves a new one at a sign-up, a small card says so once.
 
 At any sign-in or sign-up the agent looks in the store first. A saved login is typed into the
 page with no card to answer (the person saved it for this), and the agent says which login it
@@ -1562,32 +1573,58 @@ sees a password only when it asks for it, for a sign-in the fill can't reach.
   `acme.com`; a site that refuses it gets another with `replace_entry_id`), and
   `SaveStoredLogin` (a login the person gave in the chat and asked to keep). Nothing is saved
   before the password went into the page; a save that fails twice hands the password to the
-  agent so it isn't lost.
+  agent so it isn't lost. The list names each card by its name, network, last four, expiry,
+  name on the card and the contact info that bills it; never its number or code.
+- **In every turn** (`turn-toolset.ts`): `ListStoredCredentials`, `RequestStoreEntry` and
+  `SaveStoredLogin` are offered in every turn of the person's own chats; the tools that type
+  into a page (`FillStoredLogin`, `FillNewPassword`) and `ReadStoredPassword` only while the
+  computer's browser is up. Never for a subagent.
+- **The store's card** (`shared/node/credentials-store/store-cards.ts`, message type
+  `store-entry`, `store.mode` `request`, `used` or `saved`, `store.kind` `login`, `card` or
+  `contact`). `RequestStoreEntry` (kind, title, a login's website, one line why) posts the ask
+  and ends the turn (`WAITING_CARDS` in `turn-shape.ts`); a login already saved for the site is
+  named to the agent instead of a card. The apps answer with the gateway's `answerStoreEntry`
+  (`{ agentId, entryId, saved }`, `host/extensions/transcript/store-cards.ts`): the entry is
+  stamped `storeState` `saved` or `dismissed` and the agent woken (a dismissal may stay
+  silent). `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
+  and `SaveStoredLogin` a `saved` one; the tools then tell the agent not to repeat it. Nothing
+  saved passes through the computer: the apps save it with the server.
 - **Never for a channel's message.** A turn begun by a message through Discord, Slack or
   Telegram (`activeRequestSource` is `connector`), where others can write to the agent, gets
   a refusal from every one of these tools. A shared room's turns never have them (its tools are
   an allowlist).
-- **The brief** (`system-prompt.ts`, `prompt-collector-glue.ts`): the store first at any
-  sign-in or sign-up, then 1Password for someone who connected it, then the in-chat form or the
-  computer handed over.
+- **The brief** (`system-prompt.ts`, `prompt-collector-glue.ts`): its own section, "The
+  user's Credentials Store" (what it holds; look there before asking for a login or a detail;
+  a card pays only through `RequestPurchase`; offer to keep what was missing with
+  `RequestStoreEntry`, once; never ask for a password, card number or security code in the
+  chat); the store first at any sign-in or sign-up, then 1Password for someone who connected
+  it, then the in-chat form or the computer handed over.
 - **The apps** (`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift`, shared;
   `ios/Simeon/CredentialsStore.swift`; `mac/Simeon/SettingsCredentials.swift`). A login's icon
   is read on the device from the site itself (its touch icon, its icon, then `/favicon.ico`),
   never a favicon service, kept a week (`SiteIcons`). A change sends only what changed; a
   password not read with Face ID is sent only when one was typed. The demo has a login and
-  contact info (`Demo.swift`).
+  contact info (`Demo.swift`). The store's card in the chat: `StoreEntryCard` (core,
+  `CredentialsStore.swift`), `StoreEntryCardView` (`mac/Simeon/OnePasswordCards.swift`,
+  `ios/Simeon/OnePasswordCards.swift`, `clients/apps/app/src/window/RequestCards.tsx`); its
+  button opens the store's own sheet (`MacCredentialSheet`, `CredentialEditor`,
+  `CredentialSheet`) filled from the card.
 
 * **Log lines.** Server: `desktop.credentials.saved`, `.read`, `.changed`, `.deleted` (with
   `kind` and `by`: `app` or `computer`), `desktop.credentials.unreadable` (entries sealed under
   another `SECRET`, kept). Host: `[credentials] <agent> filled a login on <site>: username filled,
   password filled`, `[credentials] <agent> made a password on <site> and saved the login`,
-  `[credentials] <agent> read the password of a login for <site>`. Never a value.
+  `[credentials] <agent> read the password of a login for <site>`, `[credentials] <agent>
+  asked to save a <kind> for <site> (<entry id>)`, `[credentials] <agent id>/<entry id>: <kind>
+  saved|dismissed`. Never a value.
 * **Tested.** The server's routes (`server/tests/desktop/test_credentials.py`); the tools and the
-  new-password fill against a real Chromium (`desktop/tests/credentials-store.test.mjs`); the
-  core's model against the demo (`CredentialsStoreTests.swift`, run here as a program, since the
-  core's test binary does not start on Linux).
+  new-password fill against a real Chromium, the cards in the list, the ask, the notes, the
+  answer and its wake (`desktop/tests/credentials-store.test.mjs`); the core's model against the
+  demo and the store's card (`CredentialsStoreTests.swift`, run here as a program, since the
+  core's test binary does not start on Linux); the web card in Chromium against a stand-in.
 * **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone; the iPhone and Mac
-  screens were not compiled here (no Apple SDK on Linux).
+  screens were not compiled here (no Apple SDK on Linux). The store's card needs a new host
+  bundle to reach people.
 
 ### 1Password (28 October 2026)
 

@@ -118,6 +118,8 @@ export const COORDINATOR_METHOD_TABLE = {
   answerCredentialRequest: { args: "object", reply: "record" },
   connectOnePassword: { args: "object", reply: "record" },
   dismissOnePasswordConnect: { args: "object", reply: "record" },
+  // The Credentials Store's card (9 November 2026, `store-cards.ts`): `{ accepted }`.
+  answerStoreEntry: { args: "object", reply: "record" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
   // The voice channel (1 October 2026): a call opens, relays to, reads and ends here.

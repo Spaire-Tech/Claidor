@@ -404,6 +404,95 @@ public final class CredentialsStoreModel {
 }
 
 /**
+ * The Credentials Store's card in the chat (9 November 2026, `store-entry`,
+ * the engine's `credentials-store/store-cards.ts`). The ask (`request`): the
+ * agent offers to keep a login, a card or contact info; its button opens the
+ * store's form for it, already filled with what the agent knows, and once it
+ * is saved the card says Saved and the agent carries on (`answerStoreEntry`
+ * with `saved`); the X is a no. The notes (`used`, `saved`): a saved login
+ * the agent signed in with, or one it saved at a sign-up, said once.
+ */
+public struct StoreEntryCard: Hashable, Sendable {
+  public enum Mode: String, Sendable { case request, used, saved }
+  public enum State: String, Sendable { case open, saved, dismissed }
+
+  public let mode: Mode
+  public let kind: StoredCredential.Kind
+  /** What it's for: "Amazon", "Home", a card's name. */
+  public let title: String
+  /** A login's site ("amazon.com"). */
+  public let website: String?
+  public let reason: String?
+  public let state: State
+
+  public init(mode: Mode, kind: StoredCredential.Kind, title: String, website: String? = nil, reason: String? = nil, state: State = .open) {
+    self.mode = mode; self.kind = kind; self.title = title; self.website = website; self.reason = reason; self.state = state
+  }
+
+  init?(message: JSON, entry: Entry?) {
+    let store = message["store"]
+    func text(_ value: JSON?) -> String? {
+      let value = value?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+      return value.isEmpty ? nil : value
+    }
+    guard let mode = text(store?["mode"]).flatMap(Mode.init(rawValue:)), let kind = text(store?["kind"]).flatMap(StoredCredential.Kind.init(rawValue:)), let title = text(store?["title"]) else { return nil }
+    self.init(mode: mode, kind: kind, title: title, website: text(store?["website"]), reason: text(store?["reason"]), state: text(entry?["storeState"]).flatMap(State.init(rawValue:)) ?? .open)
+  }
+
+  /** The card's first line. */
+  public var headline: String {
+    switch (mode, kind) {
+    case (.request, .login): return L10n.text("Save your \(title) login")
+    case (.request, .card): return L10n.text("Add a card")
+    case (.request, .contact): return L10n.text("Add your contact info")
+    case (.used, _): return L10n.text("Signed in with your saved login")
+    case (.saved, _): return L10n.text("Login saved")
+    }
+  }
+
+  /** The line under it: the site, or what the agent said it's for. */
+  public var detail: String? {
+    switch mode {
+    case .request: return reason ?? (kind == .login ? website : nil)
+    case .used, .saved: return website ?? title
+    }
+  }
+
+  /** The ask's button. */
+  public var actionTitle: String {
+    switch kind {
+    case .login: return L10n.text("Save Login")
+    case .card: return L10n.text("Add Card")
+    case .contact: return L10n.text("Add Contact Info")
+    }
+  }
+
+  public var statusLine: String? {
+    switch state {
+    case .open: return nil
+    case .saved: return L10n.text("Saved")
+    case .dismissed: return L10n.text("Dismissed")
+    }
+  }
+
+  /** A login's site icon. */
+  public var iconSite: String? { kind == .login ? website.map(CredentialSite.site).flatMap { $0.isEmpty ? nil : $0 } : nil }
+
+  /** The store's form the button opens, already filled with what the agent knows. */
+  public var draft: CredentialDraft {
+    var draft = CredentialDraft(kind: kind)
+    switch kind {
+    case .login:
+      draft.website = website ?? ""
+      if CredentialSite.site(title) != CredentialSite.site(draft.website) { draft.name = title }
+    case .card, .contact:
+      draft.name = title
+    }
+    return draft
+  }
+}
+
+/**
  * A saved login's icon: the site's own, read on this device from the site
  * itself, never a favicon service (a person's sites stay between them and
  * those sites). The site's touch icon first (sharp at a row's size), then its
