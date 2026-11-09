@@ -2199,7 +2199,7 @@ struct PurchaseCardView: View {
     let row = HStack(spacing: 12) {
       PaymentMark(brand: shown.needsCard ? nil : shown.cardBrand)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : String(localized: "Your Link card")))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : shown.wallet == .card ? String(localized: "Your card") : String(localized: "Your Link card")))
           .font(.system(size: 15, weight: .medium)).foregroundStyle(shown.needsCard ? Ink.blue : Ink.theirsText)
           .lineLimit(1).truncationMode(.middle)
         LinkByStripe(wallet: shown.wallet)
@@ -2435,10 +2435,10 @@ struct LinkByStripe: View {
 
   var body: some View {
     HStack(spacing: 5) {
-      if let mark = UIImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
+      if wallet != .card, let mark = UIImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
         Image(uiImage: mark).resizable().scaledToFit().frame(width: 14, height: 14).clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
       }
-      Text(wallet == .shop ? PurchaseCard.payWithShop : PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
+      Text(wallet == .shop ? PurchaseCard.payWithShop : wallet == .card ? PurchaseCard.payWithSaved : PurchaseCard.payWithLink).font(.system(size: 13)).foregroundStyle(Ink.fineGrey)
     }
     .accessibilityElement(children: .combine)
   }

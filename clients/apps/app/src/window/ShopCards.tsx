@@ -532,7 +532,13 @@ function PurchaseCardView({
             action={checkoutWords.allow}
             onAction={() => {
               setConfirming(false)
-              void store.answerPurchase(entryId, true, agentId)
+              // A saved card has no app to approve in: the person's yes here is the approval (Link asks in its own app).
+              void store.answerPurchase(
+                entryId,
+                true,
+                agentId,
+                shown.wallet === 'card' ? {} : undefined,
+              )
             }}
             onCancel={() => setConfirming(false)}
           />,
@@ -623,7 +629,9 @@ function PaymentRow({
       ? checkoutWords.chooseCard
       : shown.wallet === 'shop'
         ? t('Your Shop card')
-        : t('Your Link card'))
+        : shown.wallet === 'card'
+          ? t('Your card')
+          : t('Your Link card'))
   const content = (
     <>
       <PaymentMark brand={waiting ? undefined : shown.cardBrand} />
@@ -632,13 +640,15 @@ function PaymentRow({
           words={named}
           className={classes('payment-line', waiting && 'choose')}
         />
-        <span className="wallet-line">
-          <img
-            className="wallet-mark"
-            src={shown.wallet === 'shop' ? shopMark : linkMark}
-            alt=""
-            draggable={false}
-          />
+        <span className="payment-wallet">
+          {shown.wallet !== 'card' && (
+            <img
+              className="payment-wallet-mark"
+              src={shown.wallet === 'shop' ? shopMark : linkMark}
+              alt=""
+              draggable={false}
+            />
+          )}
           <span>{walletLabel(shown)}</span>
         </span>
       </span>

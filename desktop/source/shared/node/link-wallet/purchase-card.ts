@@ -111,7 +111,10 @@ export interface PurchaseCardData {
   /**
    * The wallet that pays (14 October 2026): Link (absent, as every card
    * before Shop) or Shop. The card names it beside the card that pays
-   * ("· Link by Stripe", "· Shop") and Allow asks it.
+   * ("· Link by Stripe", "· Shop") and Allow asks it. "card" (9 November
+   * 2026): a card the person saved in their Credentials Store
+   * (`credentials-store/card-wallet.ts`), its id in `link.paymentMethodId`
+   * and the chooser's ids, approved by the person's Allow on their device.
    */
   readonly wallet?: PurchaseWalletName;
   /**
@@ -123,10 +126,11 @@ export interface PurchaseCardData {
   readonly shopCheckout?: { readonly handle: string };
 }
 
-export type PurchaseWalletName = "link" | "shop";
+export type PurchaseWalletName = "link" | "shop" | "card";
 
 /** The wallet a card is paid with, as the agent and the person name it. */
 export function purchaseWalletOf(card: Pick<PurchaseCardData, "wallet">): { readonly id: PurchaseWalletName; readonly name: string; readonly app: string } {
+  if (card.wallet === "card") return { id: "card", name: "the saved card", app: "Simeon" };
   return card.wallet === "shop" ? { id: "shop", name: "Shop", app: "the Shop app" } : { id: "link", name: "Link", app: "the Link app" };
 }
 
@@ -333,6 +337,18 @@ export function buildPurchaseApprovedWakePrompt(entryId: string, card: PurchaseC
     `1. Check the checkout in the browser still shows the same items, delivery and total. If anything changed, don't pay: call cancel_purchase on ${wallet.name} (CallMcpTool, server "${wallet.id}") with spend_request_id "${spendRequestId}", call MarkPurchaseDone with outcome "canceled" and say what changed.`,
     `2. Call pay_checkout on ${wallet.name} (server "${wallet.id}") with spend_request_id "${spendRequestId}" and checkout_url "${card.url}". It types the one-time card into the page; you never see or type card details.`,
     `3. Have the browser subagent press the page's Place order (or Pay) button once, telling it the person approved this exact order in Simeon and in ${wallet.name} and the card is already filled in, and have it read back the confirmation (order number, delivery estimate).`,
+    `4. Call MarkPurchaseDone with entry_id "${entryId}": outcome "ordered" with the order number once the shop confirms it, or "failed" with one plain sentence. If you can't tell whether the order went through, say exactly that and never press Pay again.`,
+    "Then tell the person in one or two lines what was ordered and when it arrives.]",
+  ].join("\n");
+}
+
+/** A saved card the person allowed on their device: the agent checks the checkout, has it typed in, places the order once, and reports. */
+export function buildStoredCardApprovedWakePrompt(entryId: string, card: PurchaseCardData): string {
+  return [
+    `[The person allowed the checkout card for ${describe(card)} (entry ${entryId}) and confirmed it on their device; the card they saved in their Credentials Store pays. Finish the purchase now:`,
+    "1. Check the checkout in the browser still shows the same items, delivery and total. If anything changed, don't pay: call MarkPurchaseDone with outcome \"canceled\" and say what changed.",
+    `2. Call PayWithSavedCard with entry_id "${entryId}". It types the saved card into the checkout on ${card.domain}, and nowhere else; you never see or type card details.`,
+    "3. Have the browser subagent press the page's Place order (or Pay) button once, telling it the person approved this exact order in Simeon and the card is already filled in, and have it read back the confirmation (order number, delivery estimate). If the bank asks the person to confirm (a code, its app), hand them the screen with request_box_help.",
     `4. Call MarkPurchaseDone with entry_id "${entryId}": outcome "ordered" with the order number once the shop confirms it, or "failed" with one plain sentence. If you can't tell whether the order went through, say exactly that and never press Pay again.`,
     "Then tell the person in one or two lines what was ordered and when it arrives.]",
   ].join("\n");

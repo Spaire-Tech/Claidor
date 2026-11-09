@@ -35,6 +35,7 @@ import {
   buildPurchaseApprovedWakePrompt,
   buildPurchaseClosedWakePrompt,
   buildPurchaseDeniedWakePrompt,
+  buildStoredCardApprovedWakePrompt,
   buildShopEscalatedWakePrompt,
   buildShopOrderedWakePrompt,
   buildShopUncertainWakePrompt,
@@ -71,6 +72,11 @@ export interface PurchaseWallets {
   readonly link?: PurchaseWallet;
   readonly shop?: PurchaseWallet;
 }
+
+/** The person's saved cards (`credentials-store/card-wallet.ts`): a wallet, and the fill that types one into a checkout. */
+export type StoredCardPurchaseWallet = PurchaseWallet & {
+  pay(args: { readonly agentId: string; readonly cardId: string; readonly checkoutUrl: string }): Promise<{ readonly ok: true; readonly page: string; readonly filled: readonly string[]; readonly missing: readonly string[] } | { readonly ok: false; readonly message: string }>;
+};
 
 /** The wallet that answers a card: one given for every card (the tests', the flights'), else the card's own of the box's. */
 export function purchaseWalletFor(card: Pick<PurchaseCardData, "wallet">, wallets: PurchaseWallet | PurchaseWallets | undefined): PurchaseWallet | undefined {
@@ -112,6 +118,8 @@ export interface PurchaseCardsOptions {
 export class PurchaseCards {
   /** Cards Link is being watched for, by agent and entry. */
   private readonly watching = new Set<string>();
+  /** The person's saved cards, set by the host (9 November 2026). */
+  private cardWallet: StoredCardPurchaseWallet | undefined;
   private readonly retryDelayMs: number;
   private readonly now: () => number;
   private readonly log: (line: string) => void;
@@ -120,6 +128,32 @@ export class PurchaseCards {
     this.retryDelayMs = options.retryDelayMs ?? 10_000;
     this.now = options.now ?? Date.now;
     this.log = options.log ?? ((line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`));
+  }
+
+  setStoredCardWallet(wallet: StoredCardPurchaseWallet | undefined): void {
+    this.cardWallet = wallet;
+  }
+
+  /** The wallet that answers a card: a saved card's is the host's own, the others the gateway's. */
+  private walletOf(card: PurchaseCardData, wallets: PurchaseWallet | PurchaseWallets | undefined): PurchaseWallet | undefined {
+    return card.wallet === "card" ? this.cardWallet : purchaseWalletFor(card, wallets);
+  }
+
+  /**
+   * PayWithSavedCard, after the person allowed a saved card's checkout card:
+   * the card typed into the checkout on its own site. Which fields went in
+   * comes back, never a value.
+   */
+  async payWithSavedCard(args: { readonly agentId: string; readonly entryId: string }): Promise<{ readonly ok: true; readonly page: string; readonly filled: readonly string[]; readonly missing: readonly string[] } | { readonly ok: false; readonly message: string }> {
+    const current = await this.read(args.agentId, args.entryId);
+    if (current == null) return { ok: false, message: `No checkout card with entry id "${args.entryId}" in this chat.` };
+    const card = current.message.purchase;
+    if (card.wallet !== "card") return { ok: false, message: `This checkout card is paid with ${purchaseWalletOf(card).name}: use its own pay_checkout.` };
+    const state = purchaseStateOf(current);
+    if (state !== "approved") return { ok: false, message: state === "review" || state === "sending" ? "The person hasn't allowed this checkout card yet: wait to be woken." : "This checkout card is closed: nothing to pay." };
+    const cardId = current.purchasePaymentMethodId ?? card.link.paymentMethodId ?? "";
+    if (this.cardWallet == null || cardId.length === 0) return { ok: false, message: "The saved card can't be reached from here." };
+    return await this.cardWallet.pay({ agentId: args.agentId, cardId, checkoutUrl: card.url });
   }
 
   /**
@@ -133,7 +167,7 @@ export class PurchaseCards {
     const current = await this.read(args.agentId, args.entryId);
     if (current == null) return null;
     const state = purchaseStateOf(current);
-    const wallet = purchaseWalletFor(current.message.purchase, wallets);
+    const wallet = this.walletOf(current.message.purchase, wallets);
     if (args.resume === true) {
       if (state === "approving" && current.message.purchase.shopCheckout != null && wallet != null) this.watchShopCheckout(args.agentId, args.entryId, current.message.purchase.shopCheckout.handle, wallet);
       else if ((state === "approving" || state === "sending") && current.purchaseSpendRequestId != null && wallet != null) this.watch(args.agentId, args.entryId, current.purchaseSpendRequestId, wallet);
@@ -255,7 +289,7 @@ export class PurchaseCards {
     const current = await this.read(args.agentId, args.entryId);
     if (current == null) return { ok: false, message: `No checkout card with entry id "${args.entryId}" in this chat.` };
     if (purchaseFlightOf(current.message.purchase) != null) return { ok: false, message: "Simeon books flights itself and closes their card; there is nothing to mark. Wait to be told how the booking went." };
-    const wallet = purchaseWalletFor(current.message.purchase, wallets);
+    const wallet = this.walletOf(current.message.purchase, wallets);
     const state = purchaseStateOf(current);
     if (current.message.purchase.shopCheckout != null && !PURCHASE_FINAL_STATES.has(state)) return { ok: false, message: "Shop pays this checkout itself and the card shows how it went; there is nothing to mark." };
     if (state === "review" || state === "sending" || state === "approving") return { ok: false, message: "This purchase isn't approved yet: nothing to mark. Wait to be woken." };
@@ -331,7 +365,7 @@ export class PurchaseCards {
       void Promise.resolve(flights.payApprovedFlight(agentId, entryId, card, spend.id)).catch((error: unknown) => this.log(`[flight] paying ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
       return stamped;
     }
-    if (state === "approved") this.wake(agentId, "purchase-approved", buildPurchaseApprovedWakePrompt(entryId, card, spend.id));
+    if (state === "approved") this.wake(agentId, "purchase-approved", card.wallet === "card" ? buildStoredCardApprovedWakePrompt(entryId, card) : buildPurchaseApprovedWakePrompt(entryId, card, spend.id));
     else {
       this.tm.flightBookings?.flightClosed?.(agentId, card);
       this.wake(agentId, `purchase-${state}`, buildPurchaseClosedWakePrompt(entryId, card, state));

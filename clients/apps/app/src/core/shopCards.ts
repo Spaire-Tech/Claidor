@@ -79,8 +79,8 @@ const purchaseStates: readonly PurchaseState[] = [
   'canceled',
 ]
 
-/** The wallet that pays: Link (every card before 14 October 2026) or Shop. */
-export type Wallet = 'link' | 'shop'
+/** The wallet that pays: Link (every card before 14 October 2026), Shop, or a card saved in the Credentials Store (9 November 2026). */
+export type Wallet = 'link' | 'shop' | 'card'
 
 /** Where Simeon is while paying an approved flight, or that the airline never answered. */
 export type PurchaseStep =
@@ -190,7 +190,9 @@ export function purchaseCard(entry: Entry): PurchaseCard | undefined {
   })
   const state = str(entry.get('purchaseState')) as PurchaseState | undefined
   const step = str(entry.get('purchaseStep')) as PurchaseStep | undefined
-  const wallet: Wallet = trimmed(purchase.wallet) === 'shop' ? 'shop' : 'link'
+  const named = trimmed(purchase.wallet)
+  const wallet: Wallet =
+    named === 'shop' ? 'shop' : named === 'card' ? 'card' : 'link'
   return {
     merchant:
       trimmed(purchase.merchant) === '' ? domain : trimmed(purchase.merchant),
@@ -315,6 +317,13 @@ export const checkoutWords = {
   get shopCheckoutCardsFooter() {
     return t('The ways to pay this store offers you through Shop.')
   },
+  // A saved card's words (9 November 2026): no app to approve in; Allow is the approval.
+  get payWithSaved() {
+    return t('Credentials Store')
+  },
+  get savedCardsFooter() {
+    return t('Your cards in the Credentials Store.')
+  },
   get shopApprovingDetail() {
     return t(
       'Shop sent it to the Shop app on your phone. Approve it there; nothing is paid until you do. No Shop app yet? Get it and sign in with the account you connected.',
@@ -337,8 +346,9 @@ export const checkoutWords = {
   },
 }
 
-/** What the card row names beside the card that pays: "Link by Stripe" or "Shop". */
+/** What the card row names beside the card that pays: "Link by Stripe", "Shop", or "Credentials Store" for a saved card. */
 export function walletLabel(card: PurchaseCard): string {
+  if (card.wallet === 'card') return checkoutWords.payWithSaved
   return card.wallet === 'shop'
     ? checkoutWords.payWithShop
     : checkoutWords.payWithLink
@@ -347,6 +357,7 @@ export function walletLabel(card: PurchaseCard): string {
 /** The chooser's footer, by wallet. */
 export function cardsFooter(card: PurchaseCard): string {
   if (card.wallet === 'link') return checkoutWords.cardsFooter
+  if (card.wallet === 'card') return checkoutWords.savedCardsFooter
   return card.isShopCheckout
     ? checkoutWords.shopCheckoutCardsFooter
     : checkoutWords.shopCardsFooter
@@ -364,6 +375,7 @@ export function openWalletLabel(card: PurchaseCard): string {
 export function walletApp(
   card: PurchaseCard,
 ): { label: string; url: string } | undefined {
+  if (card.wallet === 'card') return undefined
   if (card.wallet === 'link')
     return { label: checkoutWords.getLinkApp, url: checkoutWords.linkAppURL }
   return card.isShopCheckout
@@ -473,7 +485,8 @@ export function purchaseStatus(
     const flight = flightStatus(card)
     if (flight) return flight
   }
-  const link = card.wallet === 'link'
+  // A saved card has no app to approve in: In progress, as Link's.
+  const link = card.wallet !== 'shop'
   switch (card.state) {
     case 'review':
       return undefined
@@ -489,8 +502,11 @@ export function purchaseStatus(
       }
     case 'approving':
       return {
-        label: link
-          ? t('Approve with Link')
+        label:
+          card.wallet === 'card'
+            ? t('In progress')
+            : link
+              ? t('Approve with Link')
           : card.isShopCheckout
             ? t("Finish on the store's page")
             : t('Approve it in the Shop app'),
@@ -567,7 +583,7 @@ export function purchaseDetail(card: PurchaseCard): string | undefined {
       // Link's wait says nothing more than its status (the founder, 24 October 2026: "we speak way too much").
       return (
         card.note ??
-        (card.wallet === 'link' ? undefined : checkoutWords.shopApprovingDetail)
+        (card.wallet === 'shop' ? checkoutWords.shopApprovingDetail : undefined)
       )
     case 'ordered': {
       const order = card.order

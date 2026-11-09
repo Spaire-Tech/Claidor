@@ -677,6 +677,13 @@ checked in the reference window. Pushed:
   (`MacCredentialEdit.filled`); saved, "Saved" in green as "Connected"
   (`answerStoreEntry`). A note of the same shape says when a saved login
   was used or saved.
+- **A saved card pays at a checkout** (9 November 2026). The checkout card
+  (`PurchaseCardView`, `Cards.swift`) names the saved card ("Travel •••• 4242"
+  with its network's mark) over "Credentials Store", with no wallet's mark
+  and no app to approve in; its chooser offers the other saved cards ("Your
+  cards in the Credentials Store."). Allow with Touch ID is the approval;
+  then "In progress" while the agent has Simeon type the card on the shop's
+  own page. Core: `PurchaseCard.Wallet.card`.
 - **Cards in the Credentials Store** (the founder, 9 November 2026: "actual
   cards there that the agent can use to make payments"; the security code
   kept). Cards lists the saved cards (`MacPaymentMark`, the name or the

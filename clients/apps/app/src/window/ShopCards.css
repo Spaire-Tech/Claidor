@@ -340,8 +340,8 @@
   white-space: pre;
 }
 
-/* "Link by Stripe" (12, grey) after Link's mark (12, 3 round), 4 apart. */
-.wallet-line {
+/* "Link by Stripe" (12, grey) after Link's mark (12, 3 round), 4 apart. Its own name: Settings' Wallet rows are `.wallet-line`. */
+.payment-wallet {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -350,7 +350,7 @@
   color: var(--shop-grey);
 }
 
-.wallet-mark {
+.payment-wallet-mark {
   flex: none;
   width: 12px;
   height: 12px;

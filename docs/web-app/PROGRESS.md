@@ -839,6 +839,34 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: paying with a card saved in the Credentials Store
+
+The founder: "actual cards there that the agent can use to make
+payments", then "step 4". A saved card is a third wallet beside Link and
+Shop; the agent never sees its number.
+
+- **Done (engine):** `card-wallet.ts` (the saved cards, an expired one left
+  out; Allow approved only with the device's confirmation);
+  RequestPurchase picks a saved card first (`wallet: "card"` on the card);
+  the new `PayWithSavedCard` has the host read the card and type it into
+  the checkout on its own site only (`strictSite` in the checkout fill);
+  the brief says so.
+- **Done (web, Mac and iPhone, the same):** the checkout card says
+  "Credentials Store" under the card, with no wallet's mark and no app to
+  get; "In progress" while it pays; the chooser's footer "Your cards in
+  the Credentials Store.". On the web and Windows (no Face ID) the
+  window's own Allow is the approval, for a saved card only.
+- **Fixed on the way:** the checkout card's "Link by Stripe" line shared
+  its style's name with Settings' Wallet rows (`.wallet-line`), which
+  made it 14 high with 18 of padding; it is `.payment-wallet` now.
+- **Checked:** the engine's tests (the wallet, the wake, the fill's
+  arguments, no number in a wake or the log; `strictSite` against a real
+  Chromium); in Chromium, the card for a saved card beside a Link card,
+  and Allow sending its approval; web tests, typecheck, lint, the build's
+  check; the core's test in its own package; the Swift parsed.
+- **Not checked:** a real checkout paid with a saved card; the Mac and
+  iPhone apps built and run. It needs a new host bundle.
+
 ### 10 November 2026: the store's card drawn as the connector card
 
 The founder, on #638's card: "Whats that card claude. Why is the button

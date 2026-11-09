@@ -83,6 +83,8 @@ export interface FillCheckoutOptions {
   readonly loadPlaywright?: () => PlaywrightLike;
   /** Pause between typed keys, so masked fields keep up. */
   readonly keyDelayMs?: number;
+  /** Only a tab on the hint's own site (a saved card, 9 November 2026): never another tab with card fields. */
+  readonly strictSite?: boolean;
 }
 
 /** The DevTools ports Chrome uses on the box: 9223 for :1, 9222+N for a fork window :N. */
@@ -348,6 +350,7 @@ export async function fillCheckout(options: FillCheckoutOptions): Promise<Checko
     const byAddress = hint.length === 0 ? [] : pages.filter((page) => page.url().includes(hint));
     const bySite = hint.length === 0 ? [] : pages.filter((page) => hostOf(page.url()) === hostOf(hint) || hostOf(page.url()).endsWith(`.${hostOf(hint)}`));
     const hinted = hint.length === 0 ? pages : byAddress.length > 0 ? byAddress : bySite;
+    if (options.strictSite === true && hinted.length === 0) return { ok: false, message: `No tab on ${hostOf(hint) || "the checkout's site"} is open. Open the checkout there, then try again.` };
     const candidates = hinted.length > 0 ? hinted : pages;
     const delay = options.keyDelayMs ?? 35;
 

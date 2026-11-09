@@ -136,6 +136,22 @@ final class PurchaseCardTests: XCTestCase {
     XCTAssertEqual(review.shown(answered: .sending).wallet, .shop)
   }
 
+  /** A card saved in the Credentials Store pays (9 November 2026): named under the card, no app to approve in. */
+  func testASavedCardSaysTheCredentialsStoreAndNeedsNoApp() throws {
+    let saved = Self.message.setting("purchase", Self.message["purchase"]!.setting("wallet", "card").setting("card", ["brand": "visa", "last4": "4242", "name": "Travel"]))
+    guard case .purchase(_, let review) = try XCTUnwrap(Chat.row(for: entry(message: saved))) else { return XCTFail("not a checkout card") }
+    XCTAssertEqual(review.wallet, .card)
+    XCTAssertEqual(review.walletLabel, "Credentials Store")
+    XCTAssertEqual(review.cardsFooter, PurchaseCard.savedCardsFooter)
+    XCTAssertEqual(review.cardLine, "Travel •••• 4242")
+    XCTAssertNil(review.walletApp, "no app to approve in")
+    guard case .purchase(_, let sending) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "sending"], message: saved))) else { return XCTFail() }
+    XCTAssertEqual(sending.status?.label, "In progress")
+    XCTAssertNil(sending.detail)
+    guard case .purchase(_, let approved) = try XCTUnwrap(Chat.row(for: entry(["purchaseState": "approved"], message: saved))) else { return XCTFail() }
+    XCTAssertEqual(approved.status?.label, "Approved · placing your order")
+  }
+
   func testACardWithoutItsFactsIsSaidInWords() throws {
     let broken: JSON = ["type": "purchase", "content": "Checkout at ncvss.com · $80.00", "purchase": ["merchant": "NCVSS"]]
     guard case .notice(_, let text) = try XCTUnwrap(Chat.row(for: entry(message: broken))) else { return XCTFail("a notice") }

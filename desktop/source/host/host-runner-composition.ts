@@ -199,13 +199,14 @@ import type {
 import type { AgentRule } from "../packages/proto/generated/agent/v1/agent_rules_pb.js";
 import { HOST_LOG_PREFIX, logHostLine } from "../shared/host-log.js";
 import { configuredSimeonModel } from "./extensions/inference/provider-session.js";
-import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
+import { BOX_CHROME_PORTS, captureCheckout, fetchCheckoutIcon, fillCheckout, readCheckoutText } from "../shared/node/link-wallet/checkout-fill.js";
 import { checkUserForm, fillNewPassword, fillUserForm, locateFields } from "../shared/node/user-form/form-fill.js";
 import { OnePassword } from "../shared/node/onepassword/onepassword.js";
 import { createCredentialsStore } from "../shared/node/credentials-store/credentials-store.js";
+import { createStoredCardWallet } from "../shared/node/credentials-store/card-wallet.js";
 import type { LinkTools } from "../shared/node/link-wallet/link-tools.js";
 import type { ShopTools } from "../shared/node/shop-wallet/shop-tools.js";
-import type { WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
+import type { PurchaseToolDependencies, WalletCheckoutFacts } from "./runner/tools/purchase-tool.js";
 
 // The model id the composition projects onto the loop (parentModelInfo,
 // the Task tool's child configs, web search). It was the upstream's
@@ -929,6 +930,19 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     signal: AbortSignal.timeout(20_000),
     language: userLanguage(),
   }));
+  // Its cards pay at a checkout (9 November 2026, credentials-store/card-wallet.ts): the checkout
+  // card's Allow is the approval, and the card is typed into the agent's own Chrome first, on the
+  // checkout's own site only.
+  const storedCardWallet = createStoredCardWallet({
+    store: credentialsStore,
+    fill: fillCheckout,
+    ports: (agentId) => {
+      const own = 9222 + (boxAgentWindowIndex(extensions.api("forever-box").box as any, agentId) ?? 1);
+      return [own, ...BOX_CHROME_PORTS.filter((port) => port !== own)];
+    },
+    log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
+  });
+  method(extensions.api("transcript"), "setStoredCardWallet")?.(storedCardWallet);
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -2512,9 +2526,15 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               const link = (mcp as { linkWallet?: LinkTools }).linkWallet;
               const shop = (mcp as { shopWallet?: ShopTools }).shopWallet;
               const wallets = { ...(link == null ? {} : { link }), ...(shop == null ? {} : { shop }) };
-              // The wallet asked for, else Link when it's connected, else Shop.
-              const facts = async (request: { readonly amount: number; readonly currency: string; readonly paymentMethodId?: string; readonly wallet?: "link" | "shop" }): Promise<WalletCheckoutFacts> => {
+              // The wallet asked for, else a card saved in the Credentials Store (9 November 2026), else Link when it's connected, else Shop.
+              const facts = async (request: { readonly amount: number; readonly currency: string; readonly paymentMethodId?: string; readonly wallet?: "card" | "link" | "shop" }): Promise<WalletCheckoutFacts> => {
                 const { wallet: asked, ...rest } = request;
+                const saved = async (): Promise<WalletCheckoutFacts> => {
+                  const answer = await storedCardWallet.checkoutFacts(rest);
+                  return answer.ok ? { ...answer, wallet: "card" } : answer;
+                };
+                if (asked === "card") return await saved();
+                if (asked == null && await storedCardWallet.hasCards().catch(() => false)) return await saved();
                 const from = async (name: "link" | "shop"): Promise<WalletCheckoutFacts> => {
                   const wallet = name === "shop" ? shop : link;
                   if (wallet == null) return { ok: false, message: `${name === "shop" ? "Shop" : "Link"} isn't on this computer.` };
@@ -2522,8 +2542,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   return answer.ok ? { ...answer, wallet: name } : answer;
                 };
                 if (asked != null) return await from(asked);
+                if (link == null && shop == null) return { ok: false, message: "No card is saved in the user's Credentials Store, and neither Link nor Shop is on this computer. Offer to keep a card with RequestStoreEntry (kind card)." };
                 const notConnected = (answer: WalletCheckoutFacts): boolean => !answer.ok && /isn't connected/.test(answer.message);
-                const neither: WalletCheckoutFacts = { ok: false, message: "Neither Link nor Shop is connected, so nothing can be paid yet. Propose one with ProposeConnector (Link pays at any store; Shop pays with the person's Shop card), or call AuthenticateMcpServer for one that's installed; then call RequestPurchase again." };
+                const neither: WalletCheckoutFacts = { ok: false, message: "No card is saved in the user's Credentials Store and neither Link nor Shop is connected, so nothing can be paid yet. Offer to keep their card with RequestStoreEntry (kind card), or propose Link with ProposeConnector (Shop pays with the person's Shop card), or call AuthenticateMcpServer for one that's installed; then call RequestPurchase again." };
                 // Link first whenever this computer has it (19 October 2026). It
                 // came first only once something had asked the server about Link,
                 // so on a freshly started engine Shop went first and paid.
@@ -2555,7 +2576,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 dependencies: {
                   // The cards' own text (the chat list's preview) in the person's language.
                   language: userLanguage,
-                  checkoutFacts: (request) => link == null && shop == null ? undefined : facts(request),
+                  checkoutFacts: (request) => facts(request),
                   ...(shop == null ? {} : {
                     shopCheckoutCard: async (handle: string) => {
                       const card = await shop.shopCheckoutCard(handle);
@@ -2591,6 +2612,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     if (turn.emitUpdate === undefined) hooks.transport.onUpdate(update);
                     else turn.emitUpdate(update);
                     return hooks.transport.lastSentMessageId?.();
+                  },
+                  // PayWithSavedCard: the saved card typed into the checkout the person allowed (transcript/purchase-cards.ts).
+                  payWithSavedCard: async (entryId) => {
+                    const paid = await method(extensions.api("transcript"), "payWithSavedCard")?.({ agentId: session.id, entryId }) as Awaited<ReturnType<NonNullable<PurchaseToolDependencies["payWithSavedCard"]>>> | undefined;
+                    return paid ?? { ok: false, message: "The checkout card could not be reached." };
                   },
                   markPurchaseDone: async (args) => {
                     const done = await method(extensions.api("transcript"), "markPurchaseDone")?.({ agentId: session.id, ...args }, wallets) as { ok: true } | { ok: false; message: string } | undefined;

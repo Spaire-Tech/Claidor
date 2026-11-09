@@ -662,7 +662,7 @@ test("SearchProducts searches Shop's catalog with no account, and says so where 
 
 test("the agents' instructions: one way to buy, Shop only when asked for by name (19 October 2026)", async () => {
   const prompt = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
-  assert.match(prompt, /Every purchase goes one way: the store's own checkout, paid with a one-time Link card\. Shop \(MCP server \\"shop\\"\) is only for the orders they track there: never search, check out or pay through Shop unless the user asks for Shop by name/);
+  assert.match(prompt, /Every purchase goes one way: the store's own checkout, paid with a card the user saved in their Credentials Store when they have one \(RequestPurchase picks it; you never see its number\), else a one-time Link card\. Shop \(MCP server \\"shop\\"\) is only for the orders they track there: never search, check out or pay through Shop unless the user asks for Shop by name/);
   for (const words of ["SearchProducts", "prepare_checkout", "shop_checkout", "Shop always asks in the Shop app", "any warning Shop gave"]) assert.ok(!prompt.includes(words), words);
   assert.match(prompt, /WebSearch the item at the big retailers that sell it \(for most goods Amazon, Walmart, Target, Best Buy and Costco/);
   assert.match(prompt, /Prefer a new item from an established store with an ordinary guest checkout over the cheapest listing anywhere/);
