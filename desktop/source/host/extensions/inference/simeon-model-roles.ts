@@ -41,6 +41,14 @@ export interface SimeonModelRoles {
    * `sand-agent-model.ts`). None named, the primary does it (18 October 2026).
    */
   readonly computer?: string;
+  /**
+   * The person's own Claude plan (9 November 2026, docs/your-own-models.md,
+   * section 6): the agent's turns are run by Claude Code on the computer, on
+   * this model (`opus`, `sonnet`). The server names it as a `primary` row on
+   * the `claude-code` wire; `primary` itself stays Simeon's, which answers
+   * whenever Claude Code can't.
+   */
+  readonly claudeCode?: string;
 }
 
 export const SIMEON_MODEL_ROLES_PATH = "models/available";
@@ -52,6 +60,10 @@ export const SIMEON_MODEL_ROLES_FILE = "model-roles.json";
 // The wires this engine writes for the loop. A role on any other wire is not
 // one it can follow, and is left to the defaults.
 const FOLLOWED_TRANSPORTS: ReadonlySet<string> = new Set(["openai-responses", "anthropic-messages"]);
+/** The wire of a turn run by Claude Code on the computer: no model calls of the engine's own. */
+export const CLAUDE_CODE_TRANSPORT = "claude-code";
+/** A Claude Code model name as `--model` takes it (`opus`, `sonnet`, `claude-opus-5-5`). */
+const CLAUDE_CODE_MODEL = /^[a-z][a-z0-9.-]{0,63}$/;
 
 let current: SimeonModelRoles = {};
 let lastLogged = "";
@@ -66,7 +78,7 @@ export function setSimeonModelRolesForTest(roles: SimeonModelRoles): void {
   lastKept = "";
 }
 
-type Row = { modelId?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown };
+type Row = { modelId?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown; claudeCodeModel?: unknown };
 
 function transportOf(row: Row): string {
   if (typeof row.transportApi === "string" && row.transportApi.length > 0) return row.transportApi;
@@ -87,12 +99,25 @@ export function parseSimeonModelRoles(body: unknown): SimeonModelRoles | undefin
     return typeof row?.modelId === "string" ? row.modelId.trim() : undefined;
   };
   const primary = holder("primary"), cheap = holder("cheap"), fallback = holder("fallback"), computer = holder("computer");
+  const claude = (rows as Row[]).find((one) => one != null
+    && one.role === "primary"
+    && one.transportApi === CLAUDE_CODE_TRANSPORT
+    && one.accessible !== false
+    && typeof one.claudeCodeModel === "string"
+    && CLAUDE_CODE_MODEL.test(one.claudeCodeModel.trim()));
+  const claudeCode = typeof claude?.claudeCodeModel === "string" ? claude.claudeCodeModel.trim() : undefined;
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
     ...(computer === undefined ? {} : { computer }),
+    ...(claudeCode === undefined ? {} : { claudeCode }),
   };
+}
+
+/** The roles' line in the host log; Claude Code named only when chosen. */
+function rolesLine(roles: SimeonModelRoles): string {
+  return `primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}${roles.claudeCode === undefined ? "" : ` claudeCode=${roles.claudeCode}`}`;
 }
 
 export interface SimeonModelRolesSource {
@@ -109,11 +134,14 @@ function keptRoles(value: unknown): SimeonModelRoles | undefined {
   const record = value as Record<string, unknown>;
   const name = (key: string): string | undefined => typeof record[key] === "string" && (record[key] as string).trim().length > 0 ? (record[key] as string).trim() : undefined;
   const primary = name("primary"), cheap = name("cheap"), fallback = name("fallback"), computer = name("computer");
+  const claude = name("claudeCode");
+  const claudeCode = claude !== undefined && CLAUDE_CODE_MODEL.test(claude) ? claude : undefined;
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
     ...(computer === undefined ? {} : { computer }),
+    ...(claudeCode === undefined ? {} : { claudeCode }),
   };
 }
 
@@ -143,7 +171,7 @@ export function recallSimeonModelRoles(file: string): SimeonModelRoles | undefin
   if (Object.keys(current).length === 0) {
     current = roles;
     lastKept = `${JSON.stringify(roles)}\n`;
-    note(`${HOST_LOG_PREFIX} model-roles remembered primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}`);
+    note(`${HOST_LOG_PREFIX} model-roles remembered ${rolesLine(roles)}`);
   }
   return roles;
 }
@@ -167,7 +195,7 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
     }
     current = roles;
     if (source.rememberIn !== undefined) keep(source.rememberIn, roles);
-    note(`${HOST_LOG_PREFIX} model-roles primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}`);
+    note(`${HOST_LOG_PREFIX} model-roles ${rolesLine(roles)}`);
     return roles;
   } catch (error) {
     note(`${HOST_LOG_PREFIX} model-roles unread reason=${error instanceof Error ? error.message : String(error)}`);
