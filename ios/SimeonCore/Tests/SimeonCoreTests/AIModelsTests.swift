@@ -107,7 +107,8 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(model.chosenName, "Simeon's models")
     XCTAssertFalse(model.connected(AIModels.chatGPT))
 
-    let signIn = try XCTUnwrap(await model.startChatGPT())
+    let started = await model.startChatGPT()
+    let signIn = try XCTUnwrap(started)
     XCTAssertEqual(signIn.userCode, "ABCD-1234")
     let outcome = await model.waitForApproval(signIn)
     guard case .connected(let account) = outcome else { return XCTFail("connected, not \(outcome)") }
@@ -199,7 +200,8 @@ final class AIModelsTests: XCTestCase {
       },
       sleep: { _ in }
     )
-    let signIn = try XCTUnwrap(await model.startClaude())
+    let started = await model.startClaude()
+    let signIn = try XCTUnwrap(started)
     XCTAssertEqual(signIn.shownAddress, "claude.com")
     let wrong = await model.finishClaude(code: "nope")
     XCTAssertEqual(wrong, .refused)

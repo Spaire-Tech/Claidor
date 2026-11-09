@@ -257,11 +257,12 @@ public final class AIModelsModel {
 
   public init(
     call: @escaping Call,
-    command: @escaping Command = { _, _ in throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) },
+    command: Command? = nil,
     sleep: @escaping @Sendable (Int) async throws -> Void = { try await Task.sleep(nanoseconds: UInt64($0) * 1_000_000_000) }
   ) {
     self.call = call
-    self.command = command
+    // No computer given (a test of the server's part): every command is refused as for someone signed out.
+    self.command = command ?? { _, _ in throw SimeonAPIError(message: L10n.text("Sign in to Simeon first."), status: 401) }
     self.sleep = sleep
   }
 
