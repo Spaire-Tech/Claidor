@@ -817,7 +817,7 @@ private struct TranscriptRow: View {
         .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .storeEntry(let card)):
       StoreEntryCardView(entryId: id, agentId: agentId, card: card, look: look)
-        .frame(maxWidth: limit(460), alignment: .leading)
+        .frame(maxWidth: limit(640), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     default:
       LaterCard(kind: row.kind, look: look)

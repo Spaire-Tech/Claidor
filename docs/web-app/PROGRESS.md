@@ -839,6 +839,25 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the store's card drawn as the connector card
+
+The founder, on #638's card: "Whats that card claude. Why is the button
+there? Can you respect our design". The card had its own layout (a blue
+button under the words, an X).
+
+- **Done (web, Mac and iPhone, the same):** the card is the connector
+  card: the site's icon on its 40 tile (a card's mark, a person for
+  contact info), the name (13, 500) over one line (the agent's reason,
+  else the site or what it is), and at its right Save (a login) or Add in
+  the grey capsule; saved, "Saved" in green as "Connected". No X. The
+  notes take the same shape ("Signed in with your saved login"). Core:
+  `StoreEntryCard.line`, `asks`, `isSaved`; the words no longer used went.
+- **Checked:** in Chromium, the card under a Link connector card: same
+  tile, type, line and capsule; Save opens the sheet filled and sends
+  `answerStoreEntry`. Web tests, typecheck, lint, the build's check; the
+  core's test in its own package; the Swift parsed.
+- **Not checked:** the Mac and iPhone apps built and run.
+
 ### 9 November 2026: the agent knows the Credentials Store, a card for each kind
 
 The founder: "the agent is just not aware of the credential store. i

@@ -181,11 +181,12 @@ struct OnePasswordConnectCardView: View {
 
 /**
  * The Credentials Store's card (9 November 2026, SimeonCore's
- * `StoreEntryCard`): the agent offers to keep a login, a card or contact
- * info. Its button opens the store's own sheet over the chat, already filled
- * with what the agent knows; once saved the card says Saved and the agent
- * carries on. The X is a no. A note (a saved login used, a new one saved) is
- * the same head without a button.
+ * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`; 10
+ * November 2026, the founder: "Can you respect our design"): the site's
+ * icon (a card's mark, a person for contact info) on its 40 tile, its name
+ * (13, 500) over one line (13 at 60%), and at its right Save (a login) or
+ * Add in the grey capsule, which opens the store's own sheet over the chat
+ * already filled; once saved, "Saved" in green as "Connected".
  */
 struct StoreEntryCardView: View {
   let entryId: String
@@ -195,51 +196,61 @@ struct StoreEntryCardView: View {
   @Environment(AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var editing: MacCredentialEdit?
-  @State private var busy = false
-
-  private var asking: Bool { card.mode == .request && card.state == .open }
 
   var body: some View {
     CardShell(look: look) {
-      HStack(alignment: .center, spacing: 10) {
+      HStack(spacing: 12) {
         if card.kind == .card {
           MacPaymentMark(brand: nil, edge: look.ink.opacity(look.dark ? 0.16 : 0.12))
         } else {
-          MacSiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, side: 28, look: look)
+          MacSiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, side: 40, look: look)
         }
         VStack(alignment: .leading, spacing: 0) {
-          Text(card.headline)
-            .font(.system(size: 14, weight: .medium)).tracking(-0.15)
-            .foregroundStyle(card.state == .dismissed ? look.inkSecondary : look.ink)
-            .cssLineHeight(22, size: 14, weight: .medium)
-          if let detail = card.detail {
-            Text(detail).font(.system(size: 13)).tracking(-0.08).foregroundStyle(look.inkSecondary).lineLimit(2)
+          Text(card.title)
+            .font(.system(size: 13, weight: .medium))
+            .tracking(-0.08)
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .frame(height: 18)
+          if let line = card.line {
+            Text(line)
+              .font(.system(size: 13))
+              .tracking(-0.08)
+              .foregroundStyle(look.inkSecondary)
+              .lineLimit(1)
+              .truncationMode(.tail)
+              .frame(height: 18)
+              .help(line)
           }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        if asking {
-          Button {
-            run { await store.answerStoreEntry(entryId, in: agentId, saved: false) }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .medium)).foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20).contentShape(RoundedRectangle(cornerRadius: 6))
+        if card.isSaved {
+          Text("Saved")
+            .font(.system(size: 14, weight: .medium))
+            .tracking(-0.15)
+            .foregroundStyle(look.added)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .background(look.addedWash, in: Capsule())
+        } else if card.asks {
+          Button(action: open) {
+            Text(card.kind == .login ? String(localized: "Save") : String(localized: "Add"))
+              .font(.system(size: 13))
+              .foregroundStyle(look.ink)
+              .padding(.horizontal, 13)
+              .frame(height: 32)
+              .background(look.wash, in: Capsule())
+              .overlay { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+              .contentShape(Capsule())
           }
           .buttonStyle(.hand)
-          .help("Dismiss")
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
-          StatusPill(text: status, look: look, dot: card.state == .saved ? look.working : nil)
         }
-      }
-      if asking {
-        CardButton(title: card.actionTitle, prominent: true, look: look, action: open)
-          .disabled(busy)
       }
     }
     .sheet(item: $editing) { edit in
       if let model {
         MacCredentialSheet(model: model, edit: edit) { _ in
-          run { await store.answerStoreEntry(entryId, in: agentId, saved: true) }
+          Task { await store.answerStoreEntry(entryId, in: agentId, saved: true) }
         }
       }
     }
@@ -251,11 +262,5 @@ struct StoreEntryCardView: View {
     model = made
     editing = .filled(card.draft)
     if card.kind == .card { Task { await made.load() } }
-  }
-
-  private func run(_ work: @escaping () async -> Void) {
-    guard !busy else { return }
-    busy = true
-    Task { await work(); busy = false }
   }
 }

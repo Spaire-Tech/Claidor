@@ -559,10 +559,10 @@ export type StoreEntryState = 'open' | 'saved' | 'dismissed'
 
 /**
  * `store-entry` (9 November 2026, CredentialsStore.swift's
- * `StoreEntryCard`): the ask (`request`), where the agent offers to keep a
- * login, a card or contact info and the button opens the store's form for
- * it, already filled; once saved it says Saved and the agent carries on
- * (`answerStoreEntry` with `saved`); the X is a no. The notes (`used`,
+ * `StoreEntryCard`), drawn as the connector card: the ask (`request`),
+ * where the agent offers to keep a login, a card or contact info and Save
+ * or Add opens the store's form for it, already filled; once saved it says
+ * Saved and the agent carries on (`answerStoreEntry`). The notes (`used`,
  * `saved`): a saved login the agent signed in with, or one it saved at a
  * sign-up.
  */
@@ -605,32 +605,24 @@ export function storeEntryCard(
   }
 }
 
-/** The card's first line. */
-export function storeHeadline(card: StoreEntryCard): string {
+/** The line under its name, as the connector card's reason: why the agent asks, else the site or what it is; a note says what was done. */
+export function storeLine(card: StoreEntryCard): string | undefined {
   if (card.mode === 'used') return t('Signed in with your saved login')
-  if (card.mode === 'saved') return t('Login saved')
-  if (card.kind === 'card') return t('Add a card')
-  if (card.kind === 'contact') return t('Add your contact info')
-  return t`Save your ${card.title} login`
+  if (card.mode === 'saved') return card.website
+  if (card.reason !== undefined) return card.reason
+  if (card.kind === 'card') return t('Card')
+  if (card.kind === 'contact') return t('Contact info')
+  return card.website
 }
 
-/** The line under it: the site, or what the agent said it's for. */
-export function storeDetail(card: StoreEntryCard): string | undefined {
-  if (card.mode !== 'request') return card.website ?? card.title
-  return card.reason ?? (card.kind === 'login' ? card.website : undefined)
+/** Waiting on the person: Save (a login) or Add at its right. */
+export function storeAsks(card: StoreEntryCard): boolean {
+  return card.mode === 'request' && card.state === 'open'
 }
 
-/** The ask's button. */
-export function storeActionTitle(card: StoreEntryCard): string {
-  if (card.kind === 'card') return t('Add Card')
-  if (card.kind === 'contact') return t('Add Contact Info')
-  return t('Save Login')
-}
-
-export function storeStatusLine(card: StoreEntryCard): string | undefined {
-  if (card.state === 'saved') return t('Saved')
-  if (card.state === 'dismissed') return t('Dismissed')
-  return undefined
+/** Saved: "Saved" in green at its right, as "Connected" on the connector card. */
+export function storeIsSaved(card: StoreEntryCard): boolean {
+  return card.mode === 'saved' || card.state === 'saved'
 }
 
 /** A login's site icon. */

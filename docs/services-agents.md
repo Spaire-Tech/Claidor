@@ -1538,11 +1538,12 @@ founder: "the agent is just not aware of the credential store... the agent needs
 recommend it when needed. it also needs to have a card for everything in the store"), the
 computer's browser up or not. When a task needed something that isn't saved (a site the person
 signed in to by hand, contact info the agent had to ask for, a card to pay with), the agent
-offers to keep it: a card in the chat, "Save your Amazon login", "Add your contact info" or
-"Add a card", whose button opens the store's own form over the chat, the website or name
-already written. The person types it there, never in the chat; once saved the card says Saved
-and the agent carries on; the X is a no, and the agent doesn't ask again. When the agent signs
-in with a saved login, or saves a new one at a sign-up, a small card says so once.
+offers to keep it: a card in the chat drawn as the connector card (10 November 2026, the
+founder: "Can you respect our design"), the site's icon, its name ("Amazon", "Home", "Travel
+card") over the agent's line, and Save (a login) or Add at its right, which opens the store's
+own form over the chat, the website or name already written. The person types it there, never
+in the chat; once saved, "Saved" in green and the agent carries on. When the agent signs in
+with a saved login, or saves a new one at a sign-up, a card of the same shape says so once.
 
 At any sign-in or sign-up the agent looks in the store first. A saved login is typed into the
 page with no card to answer (the person saved it for this), and the agent says which login it
@@ -1586,7 +1587,7 @@ sees a password only when it asks for it, for a sign-in the fill can't reach.
   named to the agent instead of a card. The apps answer with the gateway's `answerStoreEntry`
   (`{ agentId, entryId, saved }`, `host/extensions/transcript/store-cards.ts`): the entry is
   stamped `storeState` `saved` or `dismissed` and the agent woken (a dismissal may stay
-  silent). `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
+  silent; the apps' card has no X since 10 November 2026, as the connector card has none). `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
   and `SaveStoredLogin` a `saved` one; the tools then tell the agent not to repeat it. Nothing
   saved passes through the computer: the apps save it with the server.
 - **Never for a channel's message.** A turn begun by a message through Discord, Slack or

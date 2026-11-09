@@ -58,7 +58,7 @@ final class CredentialsStoreTests: XCTestCase {
     XCTAssertEqual(changed.changes(from: opened, passwordRead: false)["securityCode"]?.string, "999")
   }
 
-  /** The store's card in the chat (9 November 2026): the ask opens the form already filled; once saved it says so; a note of a login used. */
+  /** The store's card in the chat (9 November 2026), as the connector card: the ask opens the form already filled; once saved it says so; a note of a login used. */
   func testTheStoreCardAsksForWhatIsMissingAndOpensTheFormFilled() throws {
     func card(_ store: JSON, _ fields: [String: JSON] = [:]) throws -> StoreEntryCard {
       var raw: JSON = ["id": "s1", "kind": "send-message", "timestampMs": 1, "message": ["type": "store-entry", "store": store]]
@@ -67,26 +67,30 @@ final class CredentialsStoreTests: XCTestCase {
       return card
     }
     let login = try card(["mode": "request", "kind": "login", "title": "Amazon", "website": "amazon.com", "reason": "So I can sign in for you next time"])
-    XCTAssertEqual(login.headline, "Save your Amazon login")
-    XCTAssertEqual(login.detail, "So I can sign in for you next time")
-    XCTAssertEqual(login.actionTitle, "Save Login")
+    XCTAssertEqual(login.title, "Amazon")
+    XCTAssertEqual(login.line, "So I can sign in for you next time")
+    XCTAssertTrue(login.asks)
+    XCTAssertFalse(login.isSaved)
     XCTAssertEqual(login.iconSite, "amazon.com")
-    XCTAssertNil(login.statusLine)
     XCTAssertEqual(login.draft.kind, .login)
     XCTAssertEqual(login.draft.website, "amazon.com")
     XCTAssertEqual(login.draft.name, "Amazon")
+    XCTAssertEqual(try card(["mode": "request", "kind": "login", "title": "Amazon", "website": "amazon.com"]).line, "amazon.com", "without a reason, the site")
     XCTAssertEqual(try card(["mode": "request", "kind": "login", "title": "amazon.com", "website": "amazon.com"]).draft.name, "", "the site needs no name of its own")
-    XCTAssertEqual(try card(["mode": "request", "kind": "login", "title": "Amazon", "website": "amazon.com"], ["storeState": "saved"]).statusLine, "Saved")
-    let contact = try card(["mode": "request", "kind": "contact", "title": "Home"], ["storeState": "dismissed"])
-    XCTAssertEqual(contact.headline, "Add your contact info")
-    XCTAssertEqual(contact.actionTitle, "Add Contact Info")
-    XCTAssertEqual(contact.statusLine, "Dismissed")
+    let saved = try card(["mode": "request", "kind": "login", "title": "Amazon", "website": "amazon.com"], ["storeState": "saved"])
+    XCTAssertTrue(saved.isSaved)
+    XCTAssertFalse(saved.asks)
+    let contact = try card(["mode": "request", "kind": "contact", "title": "Home"])
+    XCTAssertEqual(contact.line, "Contact info")
     XCTAssertEqual(contact.draft.name, "Home")
+    XCTAssertFalse(try card(["mode": "request", "kind": "contact", "title": "Home"], ["storeState": "dismissed"]).asks)
     XCTAssertEqual(try card(["mode": "request", "kind": "card", "title": "Travel card"]).draft.kind, .card)
     let used = try card(["mode": "used", "kind": "login", "title": "Acme", "website": "acme.example"])
-    XCTAssertEqual(used.headline, "Signed in with your saved login")
-    XCTAssertEqual(used.detail, "acme.example")
-    XCTAssertEqual(Chat.cardText(["type": "store-entry", "store": ["mode": "saved", "kind": "login", "title": "shop.example"]]), "Login saved")
+    XCTAssertEqual(used.line, "Signed in with your saved login")
+    XCTAssertFalse(used.asks)
+    XCTAssertFalse(used.isSaved)
+    XCTAssertTrue(try card(["mode": "saved", "kind": "login", "title": "shop.example", "website": "shop.example"]).isSaved)
+    XCTAssertEqual(Chat.cardText(["type": "store-entry", "store": ["mode": "saved", "kind": "login", "title": "shop.example"]]), "shop.example")
     // Without what it's for, it isn't drawn.
     let raw: JSON = ["id": "s2", "kind": "send-message", "timestampMs": 1, "message": ["type": "store-entry", "store": ["mode": "request", "kind": "login"]]]
     guard case .notice = try XCTUnwrap(Chat.row(for: Entry(raw)!)) else { return XCTFail() }

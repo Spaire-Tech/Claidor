@@ -124,11 +124,12 @@ struct OnePasswordConnectCardView: View {
 
 /**
  * The Credentials Store's card (9 November 2026, SimeonCore's
- * `StoreEntryCard`), as the Mac's: the agent offers to keep a login, a card
- * or contact info; its button opens the store's editor over the chat,
- * already filled with what the agent knows; once saved the card says Saved
- * and the agent carries on. The X is a no. A note (a saved login used, a new
- * one saved) is the same head without a button.
+ * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`; 10
+ * November 2026, the founder: "Can you respect our design"): the site's
+ * icon (a card's mark, a person for contact info) on its 40 tile, its name
+ * over one line, and at its right Save (a login) or Add in the grey
+ * capsule, which opens the store's own editor over the chat already
+ * filled; once saved, "Saved" in green with its tick, as "Connected".
  */
 struct StoreEntryCardView: View {
   let entryId: String
@@ -137,40 +138,24 @@ struct StoreEntryCardView: View {
   @Environment(AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var editing = false
-  @State private var busy = false
-
-  private var asking: Bool { card.mode == .request && card.state == .open }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 10) {
-        if card.kind == .card {
-          PaymentMark(brand: nil)
-        } else {
-          SiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact)
-        }
-        VStack(alignment: .leading, spacing: 1) {
-          Text(card.headline).font(.system(size: 17, weight: .medium)).foregroundStyle(card.state == .dismissed ? Ink.secondary : Ink.primary)
-          if let detail = card.detail { Text(detail).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(2) }
-        }
-        Spacer(minLength: 0)
-        if asking {
-          Button {
-            run { await store.answerStoreEntry(entryId, in: agentId, saved: false) }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 32, height: 32).contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
-          StatusPill(text: status, dot: card.state == .saved ? Ink.live : Ink.tertiary)
-        }
+    HStack(spacing: 12) {
+      if card.kind == .card {
+        PaymentMark(brand: nil)
+      } else {
+        SiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, size: 40)
       }
-      if asking {
-        Button(card.actionTitle) { open() }
-          .buttonStyle(Tactile(look: BlueButtonStyle()))
-          .disabled(busy)
+      VStack(alignment: .leading, spacing: 0) {
+        Text(card.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+        if let line = card.line { Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1) }
+      }
+      Spacer(minLength: 0)
+      if card.isSaved {
+        Label("Saved", systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.success).labelStyle(.titleAndIcon)
+      } else if card.asks {
+        Button(card.kind == .login ? String(localized: "Save") : String(localized: "Add")) { open() }
+          .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
       }
     }
     .card()
@@ -178,7 +163,7 @@ struct StoreEntryCardView: View {
       if let model {
         NavigationStack {
           CredentialEditor(model: model, filled: card.draft) { _ in
-            run { await store.answerStoreEntry(entryId, in: agentId, saved: true) }
+            Task { await store.answerStoreEntry(entryId, in: agentId, saved: true) }
           }
         }
       }
@@ -191,11 +176,5 @@ struct StoreEntryCardView: View {
     model = made
     editing = true
     if card.kind == .card { Task { await made.load() } }
-  }
-
-  private func run(_ work: @escaping () async -> Void) {
-    guard !busy else { return }
-    busy = true
-    Task { await work(); busy = false }
   }
 }

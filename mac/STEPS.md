@@ -670,11 +670,13 @@ checked in the reference window. Pushed:
 - **The Credentials Store's card in the chat** (the founder, 9 November
   2026: "the agent needs to know. and recommend it when needed. it also
   needs to have a card for everything in the store"). `StoreEntryCardView`
-  (`OnePasswordCards.swift`): the site's icon, "Save your Amazon login" /
-  "Add a card" / "Add your contact info", the agent's line, the X, and the
-  button that opens `MacCredentialSheet` over the chat already filled
-  (`MacCredentialEdit.filled`); saved, the card says Saved
-  (`answerStoreEntry`). A note says when a saved login was used or saved.
+  (`OnePasswordCards.swift`), drawn as `ConnectorCard` (10 November: "Can
+  you respect our design"): the site's icon on its 40 tile, the name over
+  the agent's line, and Save or Add in the grey capsule at its right,
+  which opens `MacCredentialSheet` over the chat already filled
+  (`MacCredentialEdit.filled`); saved, "Saved" in green as "Connected"
+  (`answerStoreEntry`). A note of the same shape says when a saved login
+  was used or saved.
 - **Cards in the Credentials Store** (the founder, 9 November 2026: "actual
   cards there that the agent can use to make payments"; the security code
   kept). Cards lists the saved cards (`MacPaymentMark`, the name or the
