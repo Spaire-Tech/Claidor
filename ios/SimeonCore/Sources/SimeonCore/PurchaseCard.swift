@@ -33,8 +33,8 @@ public struct PurchaseCard: Hashable, Sendable {
     case ordered, failed, denied, expired, canceled
   }
 
-  /** The wallet that pays: Link (every card before 14 October 2026) or Shop. */
-  public enum Wallet: String, Sendable { case link, shop }
+  /** The wallet that pays: Link (every card before 14 October 2026), Shop, or a card saved in the Credentials Store (9 November 2026). */
+  public enum Wallet: String, Sendable { case link, shop, card }
 
   public struct Item: Hashable, Sendable {
     public let name: String
@@ -197,14 +197,31 @@ public struct PurchaseCard: Hashable, Sendable {
   public static let shopCardsFooter = L10n.text("Your cards in Shop. Add or remove cards in the Shop app.")
   public static let shopCheckoutCardsFooter = L10n.text("The ways to pay this store offers you through Shop.")
 
-  /** What the card row names beside the card that pays: "Link by Stripe" or "Shop". */
-  public var walletLabel: String { wallet == .shop ? Self.payWithShop : Self.payWithLink }
+  // A saved card's words (9 November 2026): no app to approve in; Allow is the approval.
+  public static let payWithSaved = L10n.text("Credentials Store")
+  public static let savedCardsFooter = L10n.text("Your cards in the Credentials Store.")
+
+  /** What the card row names beside the card that pays: "Link by Stripe", "Shop", or "Credentials Store" for a saved card. */
+  public var walletLabel: String {
+    switch wallet {
+    case .link: return Self.payWithLink
+    case .shop: return Self.payWithShop
+    case .card: return Self.payWithSaved
+    }
+  }
   /** The chooser's footer, by wallet. */
-  public var cardsFooter: String { wallet == .link ? Self.cardsFooter : isShopCheckout ? Self.shopCheckoutCardsFooter : Self.shopCardsFooter }
+  public var cardsFooter: String {
+    switch wallet {
+    case .link: return Self.cardsFooter
+    case .card: return Self.savedCardsFooter
+    case .shop: return isShopCheckout ? Self.shopCheckoutCardsFooter : Self.shopCardsFooter
+    }
+  }
   /** While the wallet waits on the person: the button that opens its page ("Open Link", "Open Shop", the store's page). */
   public var openWalletLabel: String { wallet == .link ? Self.openLink : isShopCheckout ? Self.openStorePage : Self.openShop }
   /** The wallet's app, for someone without it: none for a Shop checkout (the store's page is the step). */
   public var walletApp: (label: String, url: URL)? {
+    if wallet == .card { return nil }
     if wallet == .link { return (Self.getLinkApp, Self.linkAppURL) }
     return isShopCheckout ? nil : (Self.getShopApp, Self.shopAppURL)
   }
@@ -276,8 +293,8 @@ public struct PurchaseCard: Hashable, Sendable {
     switch state {
     case .review: return nil
     // Link's in short (the founder, 24 October 2026: "no more Asking Link - say In progress … let it be Approve with link").
-    case .sending: return (wallet == .link ? L10n.text("In progress") : isShopCheckout ? L10n.text("Placing your order with Shop…") : L10n.text("Asking Shop…"), .working)
-    case .approving: return (wallet == .link ? L10n.text("Approve with Link") : isShopCheckout ? L10n.text("Finish on the store's page") : L10n.text("Approve it in the Shop app"), .working)
+    case .sending: return (wallet != .shop ? L10n.text("In progress") : isShopCheckout ? L10n.text("Placing your order with Shop…") : L10n.text("Asking Shop…"), .working)
+    case .approving: return (wallet == .card ? L10n.text("In progress") : wallet == .link ? L10n.text("Approve with Link") : isShopCheckout ? L10n.text("Finish on the store's page") : L10n.text("Approve it in the Shop app"), .working)
     case .approved: return (L10n.text("Approved · placing your order"), .working)
     case .ordered: return (L10n.text("Ordered"), .success)
     case .failed: return (L10n.text("Didn't go through"), .danger)
@@ -321,7 +338,7 @@ public struct PurchaseCard: Hashable, Sendable {
     switch state {
     case .approving:
       // Link's wait says nothing more than its status (the founder, 24 October 2026: "we speak way too much").
-      return note ?? (wallet == .link ? nil : Self.shopApprovingDetail)
+      return note ?? (wallet == .shop ? Self.shopApprovingDetail : nil)
     case .ordered:
       let number = order.map { order in
         let numbered = order.hasPrefix("#") ? order : "#\(order)"

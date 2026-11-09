@@ -430,6 +430,15 @@ test("the filler types the card into a checkout's own fields and its payment fra
   const none = await module.fillCheckout({ card, pageHint: `${base}/token`, ports: [port], loadPlaywright: () => playwright });
   assert.equal(none.ok, false);
 
+  // A saved card (9 November 2026): only a tab on the checkout's own site, never another with card fields.
+  const elsewhere = await module.fillCheckout({ card, pageHint: "shop.example.com", strictSite: true, ports: [port], loadPlaywright: () => playwright, keyDelayMs: 5 });
+  assert.equal(elsewhere.ok, false);
+  assert.match(elsewhere.message, /No tab on shop\.example\.com is open/);
+  await frame.locator('input[name="cardnumber"]').fill("");
+  const ownSite = await module.fillCheckout({ card, pageHint: `${base}/checkout`, strictSite: true, ports: [port], loadPlaywright: () => playwright, keyDelayMs: 5 });
+  assert.equal(ownSite.ok, true, ownSite.message);
+  assert.equal(await frame.locator('input[name="cardnumber"]').inputValue(), "4242424242424242");
+
   // The checkout card's picture: a JPEG of the shop's own tab, never another site's.
   const shot = await module.captureCheckout({ pageHint: `${base}/checkout`, ports: [port], loadPlaywright: () => playwright });
   assert.equal(shot?.page, "127.0.0.1");

@@ -11,6 +11,12 @@
  * woken once Link has approved (or the person or Link said no).
  * MarkPurchaseDone closes the card after the agent paid: ordered with the
  * shop's order number, failed, or canceled.
+ *
+ * A card the person saved in their Credentials Store pays too (9 November
+ * 2026, wallet "card", `credentials-store/card-wallet.ts`): first when they
+ * have one, unless they asked for Link or Shop. Allow, confirmed on their
+ * device, is the approval; PayWithSavedCard then has the host type it into
+ * the checkout, on its own site only, and the agent places the order.
  */
 import { z } from "zod";
 import { defineCommunicateTool } from "./communicate-tool.js";
@@ -50,9 +56,9 @@ export const requestPurchaseParameters = z.object({
     label: z.string().trim().min(1).describe("As the checkout writes it, e.g. \"Shipping\"."),
     amount: amount("Smallest unit."),
   })).optional().describe("The checkout's own lines: subtotal, shipping, tax, discount."),
-  payment_method_id: z.string().trim().optional().describe("Only when the person named a card: its id from Link's get_wallet (or Shop's get_account). Leave it out otherwise; the card shows their default and lets them choose among their cards."),
+  payment_method_id: z.string().trim().optional().describe("Only when the person named a card: its entry_id from ListStoredCredentials for a saved card, or its id from Link's get_wallet (or Shop's get_account). Leave it out otherwise; the card shows their first card and lets them choose among their cards."),
   context: z.string().trim().optional().describe("What the person reads in Link (or Shop) when approving: what is bought, from whom, and why. Spelled out for you when short."),
-  wallet: z.enum(["link", "shop"]).optional().describe("Which wallet pays, only when the person said (\"pay with Shop\"): otherwise Link when it's connected, else Shop."),
+  wallet: z.enum(["card", "link", "shop"]).optional().describe("Which pays, only when the person said (\"pay with Link\"): otherwise a card saved in their Credentials Store when they have one, else Link when it's connected, else Shop."),
   shop_checkout: z.string().trim().optional().describe("The Shop checkout prepare_checkout said is ready (chk_…): the card then shows Shop's own items and total and Shop pays it at Allow. Give the items and total prepare_checkout reported."),
   credential_type: z.enum(["card", "link_pay_token"]).default("card").describe("\"card\" for a normal card form (almost always). \"link_pay_token\" only when the checkout page holds a `.AiAgentPaymentSteering` block with both input[name=\"link_pay_token\"] and data-stripe-merchant-account in the same frame."),
   merchant_account_id: z.string().trim().optional().describe("acct_… from that block's data-stripe-merchant-account, for link_pay_token only."),
@@ -91,6 +97,8 @@ export interface PurchaseToolDependencies {
   now?: () => number;
   /** The person's language (`userLanguage`): the cards' own text, which the chat list shows. */
   language?: () => string | undefined;
+  /** A saved card's checkout card, allowed: the host types the card into the checkout on its site (`purchase-cards.ts` `payWithSavedCard`). */
+  payWithSavedCard?(entryId: string): Promise<{ readonly ok: true; readonly page: string; readonly filled: readonly string[]; readonly missing: readonly string[] } | { readonly ok: false; readonly message: string }>;
 }
 
 export const showProductsParameters = z.object({
@@ -222,6 +230,9 @@ export const PURCHASE_SHOWN_NOTE = "Nothing has been paid and Link has not been 
 /** The same, for a card Shop pays with a one-time card the person approves in the Shop app. */
 export const PURCHASE_SHOWN_NOTE_SHOP = "Nothing has been paid and Shop has not been asked yet. The person checks the card (Review order opens your computer's screen on the checkout), picks the Shop card that pays on it, and presses Allow (then approves it in the Shop app) or Deny; you are woken once Shop approves (then you pay with pay_checkout on Shop and place the order) or when they say no. Stop here: say nothing more this turn, don't ask which card or for a go-ahead in chat, and don't touch the checkout until you are woken.";
 
+/** The same, for a card the person saved in their Credentials Store. */
+export const PURCHASE_SHOWN_NOTE_CARD = "Nothing has been paid. The person checks the card (Review order opens your computer's screen on the checkout), picks which of their saved cards pays, and presses Allow (confirmed with Face ID or Touch ID) or Deny; you are woken once they allow it (then you pay with PayWithSavedCard and place the order) or when they say no. Stop here: say nothing more this turn, don't ask which card or for a go-ahead in chat, and don't touch the checkout until you are woken.";
+
 /** The same, for a Shop checkout Shop pays itself at Allow. */
 export const PURCHASE_SHOWN_NOTE_SHOP_CHECKOUT = "Nothing has been paid. The person checks the card (Shop's own items and total), picks the card that pays, and presses Allow (Shop then places the order with Shop Pay; no browser, nothing for you to pay) or Deny; you are told how it went. Stop here: say nothing more this turn, and don't ask which card or for a go-ahead in chat.";
 
@@ -231,8 +242,10 @@ export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParamet
   const domain = purchaseDomain(url);
   if (domain.length === 0 || !/^https:\/\//i.test(url)) return "checkout_url must be the https address of the checkout page open in the browser.";
   const shop = facts.wallet === "shop";
-  if (shop && args.credential_type === "link_pay_token") return "A Link pay token works only with Link: use credential_type card with Shop.";
+  const saved = facts.wallet === "card";
+  if ((shop || saved) && args.credential_type === "link_pay_token") return `A Link pay token works only with Link: use credential_type card with ${saved ? "a saved card" : "Shop"}.`;
   if (shop && args.test === true) return "Shop has no test mode: leave test out, or pay with Link's test mode (wallet \"link\").";
+  if (saved && args.test === true) return "A saved card has no test mode: it is charged. Leave test out, or pay with Link's test mode (wallet \"link\").";
   if (args.credential_type === "link_pay_token" && (args.merchant_account_id ?? "").length === 0) return "link_pay_token needs merchant_account_id (acct_… from the checkout's data-stripe-merchant-account). Without it, use credential_type card.";
   if (args.credential_type === "link_pay_token" && args.test === true) return "Link's test mode works only with credential_type card.";
   const currency = args.currency.toLowerCase();
@@ -262,7 +275,7 @@ export function purchaseCardFromArgs(args: z.infer<typeof requestPurchaseParamet
       context: shop ? purchaseShopIntent(args.context ?? "", base) : purchaseLinkContext(args.context ?? "", base),
       test: args.test === true,
     },
-    ...(shop ? { wallet: "shop" as const } : {}),
+    ...(shop ? { wallet: "shop" as const } : saved ? { wallet: "card" as const } : {}),
   };
   return { type: PURCHASE_MESSAGE_TYPE, content: purchaseCardText(purchase, language), purchase };
 }
@@ -334,16 +347,44 @@ export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
         if (!checked.ok) return checked.message;
       }
       const asked = resolved.checkoutFacts({ amount: args.total, currency: args.currency, ...(args.payment_method_id == null || args.payment_method_id.length === 0 ? {} : { paymentMethodId: args.payment_method_id }), ...(args.wallet == null ? {} : { wallet: args.wallet }) });
-      if (asked == null) return "Link and Shop run on the cloud computer and aren't available here, so nothing can be bought from this conversation.";
+      if (asked == null) return "Payments run on the cloud computer and aren't available here, so nothing can be bought from this conversation.";
       const facts = await asked;
       if (!facts.ok) return facts.message;
       const preview = await resolved.capturePreview(args.checkout_url).catch(() => undefined);
       const message = purchaseCardFromArgs(args, facts, preview, undefined, deps.language?.());
       if (typeof message === "string") return message;
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
-      const walletName = facts.wallet === "shop" ? "Shop" : "Link";
-      const card = facts.card.last4.length > 0 ? ` with ${facts.card.brand} ending ${facts.card.last4}` : (message.purchase.cards ?? []).length > 1 ? ` (the person picks which of their ${message.purchase.cards?.length} ${walletName} cards pays)` : "";
-      return `The checkout card for ${message.purchase.total} at ${message.purchase.domain}${card}${facts.wallet === "shop" ? ", paid through Shop," : ""} is in the chat${entryId == null ? "" : ` (entry ${entryId})`}${preview == null ? " (no picture: the checkout tab couldn't be found on your computer's browser; keep it open there)" : ""}. ${facts.wallet === "shop" ? PURCHASE_SHOWN_NOTE_SHOP : PURCHASE_SHOWN_NOTE}`;
+      const walletName = facts.wallet === "shop" ? "Shop" : facts.wallet === "card" ? "saved" : "Link";
+      const card = facts.card.last4.length > 0 ? ` with ${facts.wallet === "card" ? "their saved " : ""}${facts.card.brand} ending ${facts.card.last4}` : (message.purchase.cards ?? []).length > 1 ? ` (the person picks which of their ${message.purchase.cards?.length} ${walletName} cards pays)` : "";
+      const note = facts.wallet === "shop" ? PURCHASE_SHOWN_NOTE_SHOP : facts.wallet === "card" ? PURCHASE_SHOWN_NOTE_CARD : PURCHASE_SHOWN_NOTE;
+      return `The checkout card for ${message.purchase.total} at ${message.purchase.domain}${card}${facts.wallet === "shop" ? ", paid through Shop," : ""} is in the chat${entryId == null ? "" : ` (entry ${entryId})`}${preview == null ? " (no picture: the checkout tab couldn't be found on your computer's browser; keep it open there)" : ""}. ${note}`;
+    },
+  });
+}
+
+export const payWithSavedCardParameters = z.object({
+  entry_id: z.string().trim().min(1).describe("The checkout card's entry id, from the wake that said the person allowed it."),
+});
+
+/**
+ * PayWithSavedCard (9 November 2026): after the person allowed a checkout
+ * card their saved card pays, the host types it into the checkout on the
+ * card's own site; the agent never sees it.
+ */
+export function createPayWithSavedCardTool(deps: PurchaseToolDependencies) {
+  return defineCommunicateTool(deps, {
+    id: "PAY_WITH_SAVED_CARD",
+    name: "PayWithSavedCard",
+    description: "After the person allowed a checkout card that their saved card (from their Credentials Store) pays, and you checked the checkout still shows the same order: types the card (number, expiry, security code, name and billing ZIP) into the checkout's payment fields on that shop's own site. You never see or type card details. It doesn't press Pay: have the browser subagent press Place order once.",
+    parameters: payWithSavedCardParameters,
+    describeActivity: () => ({ detail: "Filling in the saved card" }),
+    execute: async (_ctx, args: z.infer<typeof payWithSavedCardParameters>, resolved) => {
+      const pay = resolved.payWithSavedCard?.(args.entry_id);
+      if (pay == null) return "Saved cards are filled in on the cloud computer and aren't available here.";
+      const done = await pay;
+      if (!done.ok) return `The card wasn't filled in: ${done.message}`;
+      const missing = done.missing.length > 0 ? ` Not found on the page: ${done.missing.join(", ")}; have the browser subagent check the payment step (pick "card" if it offers several ways), then call PayWithSavedCard again.` : "";
+      return `The saved card is filled in on ${done.page} (${done.filled.join(", ")}).${missing} Have the browser subagent take a fresh snapshot and press Place order once, then call MarkPurchaseDone. Never take a screenshot of the card fields.`;
     },
   });
 }

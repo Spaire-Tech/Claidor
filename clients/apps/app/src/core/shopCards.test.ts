@@ -374,6 +374,23 @@ describe('the checkout card', () => {
     ).toBe(false)
   })
 
+  it('says the Credentials Store on a saved-card card, and needs no app', () => {
+    const saved = with_({ wallet: 'card' })
+    const review = card({}, saved)
+    expect(review.wallet).toBe('card')
+    expect(walletLabel(review)).toBe('Credentials Store')
+    expect(cardsFooter(review)).toBe(checkoutWords.savedCardsFooter)
+    expect(walletApp(review)).toBeUndefined()
+    expect(
+      purchaseStatus(card({ purchaseState: 'sending' }, saved))?.label,
+    ).toBe('In progress')
+    const approved = card({ purchaseState: 'approved' }, saved)
+    expect(purchaseStatus(approved)?.label).toBe(
+      'Approved · placing your order',
+    )
+    expect(shownPurchase(review, 'sending').wallet).toBe('card')
+  })
+
   it('reads a card without its facts as none, whose message says its words', () => {
     const broken: JSONObject = {
       type: 'purchase',

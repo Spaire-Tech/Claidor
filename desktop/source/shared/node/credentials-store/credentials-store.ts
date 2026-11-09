@@ -11,6 +11,7 @@
 
 import { randomInt } from "node:crypto";
 import { siteOf } from "../onepassword/onepassword.js";
+import type { CheckoutCard } from "../link-wallet/checkout-fill.js";
 
 export const CONTACT_FIELDS = ["fullName", "email", "phone", "addressLine1", "addressLine2", "city", "region", "postalCode", "country"] as const;
 export type ContactField = (typeof CONTACT_FIELDS)[number];
@@ -167,7 +168,7 @@ export function createCredentialsStore(api: CredentialsStoreApi) {
       const raw = isRecord(data) ? data.entry : undefined;
       const entry = readEntry(raw);
       if (entry == null) return { ok: false, message: "That entry couldn't be read." };
-      if (entry.kind !== "login") return { ok: false, message: "That entry is contact info, not a login." };
+      if (entry.kind !== "login") return { ok: false, message: `That entry is ${entry.kind === "card" ? "a card" : "contact info"}, not a login.` };
       return { ok: true, login: entry, password: isRecord(raw) ? text(raw.password) : "" };
     } catch (error) {
       return { ok: false, message: failure(error) };
@@ -189,7 +190,45 @@ export function createCredentialsStore(api: CredentialsStoreApi) {
     }
   };
 
-  return { list, readLogin, saveLogin };
+  /**
+   * One card whole, to type into a checkout the person approved (9 November
+   * 2026): its number, expiry and security code, the name on it, and the
+   * address of the contact info that bills it. Only the host's fill holds it;
+   * never the agent.
+   */
+  const readCard = async (entryId: string): Promise<Answer<{ readonly card: StoredCard; readonly fill: CheckoutCard }>> => {
+    if (!isEntryId(entryId)) return { ok: false, message: "That isn't a card from the Credentials Store." };
+    try {
+      const data = await api(`credentials/${entryId}`);
+      const raw = isRecord(data) ? data.entry : undefined;
+      const entry = readEntry(raw);
+      if (entry == null || entry.kind !== "card" || !isRecord(raw)) return { ok: false, message: "That card isn't in the Credentials Store anymore." };
+      const number = text(raw.number).replace(/\D/g, "");
+      const expiry = /^(\d{2})\/(\d{2})$/.exec(text(raw.expiry));
+      if (number.length < 12 || expiry == null) return { ok: false, message: `"${cardTitle(entry)}" has no number or expiry saved.` };
+      let billing: CheckoutCard["billing"];
+      if (isEntryId(entry.billingId)) {
+        const contact = await api(`credentials/${entry.billingId}`).catch(() => undefined);
+        const read = readEntry(isRecord(contact) ? contact.entry : undefined);
+        if (read != null && read.kind === "contact") billing = { name: entry.cardholder || read.fullName, line1: read.addressLine1, line2: read.addressLine2, city: read.city, state: read.region, postalCode: read.postalCode, country: read.country };
+      }
+      if (billing == null && entry.cardholder.length > 0) billing = { name: entry.cardholder, line1: "", line2: "", city: "", state: "", postalCode: "", country: "" };
+      const fill: CheckoutCard = { number, cvc: text(raw.securityCode).replace(/\D/g, ""), expMonth: Number(expiry[1]), expYear: 2000 + Number(expiry[2]), ...(billing == null ? {} : { billing }) };
+      return { ok: true, card: entry, fill };
+    } catch (error) {
+      return { ok: false, message: failure(error) };
+    }
+  };
+
+  return { list, readLogin, saveLogin, readCard };
+}
+
+/** "08/28" is past at the end of August 2028. */
+export function cardExpired(expiry: string, now: Date = new Date()): boolean {
+  const match = /^(\d{2})\/(\d{2})$/.exec(expiry);
+  if (match == null) return false;
+  const year = 2000 + Number(match[2]), month = Number(match[1]);
+  return year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 }
 
 export type CredentialsStore = ReturnType<typeof createCredentialsStore>;

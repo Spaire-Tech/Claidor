@@ -1878,7 +1878,7 @@ struct PurchaseCardView: View {
     let row = HStack(spacing: 12) {
       MacPaymentMark(brand: shown.needsCard ? nil : shown.cardBrand, edge: hairline)
       VStack(alignment: .leading, spacing: 2) {
-        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : String(localized: "Your Link card")))
+        Text(shown.cardLine ?? (shown.needsCard ? PurchaseCard.chooseCard : shown.wallet == .shop ? String(localized: "Your Shop card") : shown.wallet == .card ? String(localized: "Your card") : String(localized: "Your Link card")))
           .font(.system(size: 14, weight: .medium)).foregroundStyle(shown.needsCard ? blue : ink)
           .lineLimit(1).truncationMode(.middle)
         MacLinkByStripe(grey: grey, wallet: shown.wallet)
@@ -2073,7 +2073,7 @@ struct MacPaymentMark: View {
   }
 }
 
-/** "Link by Stripe" with Link's own mark, under the card that pays. */
+/** "Link by Stripe" with Link's own mark, under the card that pays; "Credentials Store", with no mark, for a saved card. */
 private struct MacLinkByStripe: View {
   let grey: Color
   /** Shop's name and mark for a card Shop pays (14 October 2026). */
@@ -2081,10 +2081,10 @@ private struct MacLinkByStripe: View {
 
   var body: some View {
     HStack(spacing: 4) {
-      if let mark = NSImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
+      if wallet != .card, let mark = NSImage(named: wallet == .shop ? "Connectors/shop" : "Brands/link") {
         Image(nsImage: mark).resizable().scaledToFit().frame(width: 12, height: 12).clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
       }
-      Text(wallet == .shop ? PurchaseCard.payWithShop : PurchaseCard.payWithLink).font(.system(size: 12)).foregroundStyle(grey)
+      Text(wallet == .shop ? PurchaseCard.payWithShop : wallet == .card ? PurchaseCard.payWithSaved : PurchaseCard.payWithLink).font(.system(size: 12)).foregroundStyle(grey)
     }
     .accessibilityElement(children: .combine)
   }

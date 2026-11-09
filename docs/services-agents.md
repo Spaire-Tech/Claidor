@@ -1192,8 +1192,9 @@ Shop's tools and sign-ins the same way, the connected marker being `simeon-shop`
   when the watch gives up (35 minutes) is canceled, Link's too. `pay_checkout`
   takes the issued card from Shop's answer, types it into the page and never writes it to disk;
   MarkPurchaseDone reports to Shop (`complete_spend_request`).
-- **Which wallet pays.** RequestPurchase asks the one the agent names (`wallet`), else Link when
-  it's connected, else Shop. Link is asked first only when it has a sign-in on the computer (or
+- **Which wallet pays.** RequestPurchase asks the one the agent names (`wallet`), else a card
+  saved in the Credentials Store (9 November 2026; "The Credentials Store" in section 8), else
+  Link when it's connected, else Shop. Link is asked first only when it has a sign-in on the computer (or
   Shop has none), so a person with only Shop never starts Link's CLI, whose first run installs it.
   Flights still pay through Link only.
 
@@ -1552,6 +1553,16 @@ types it in (and in its confirmation), and saves the new login in the store. The
 the logins and the contact info (the founder: "the agent should be able to see logins"); it
 sees a password only when it asks for it, for a sign-in the fill can't reach.
 
+**Paying with a saved card** (9 November 2026, the founder: "actual cards there that the agent
+can use to make payments"). At a checkout the agent posts the usual checkout card; when the
+person has a card saved (not expired), that card pays: the card shows its network, its name and
+its last four over "Credentials Store", and its chooser offers the other saved cards. Allow,
+confirmed with Face ID or Touch ID on the Mac or the iPhone (the window's own Allow on the web
+and Windows), is the approval: there is no other app to approve in. The agent then checks the
+checkout, and Simeon types the card into the checkout on the shop's own site; the agent never
+sees the number or the security code. A person with no saved card pays with Link or Shop as
+before.
+
 **How it works.**
 
 - **Kept on the server** (`server/simeon/desktop/credentials.py`, table `desktop_credentials`),
@@ -1590,13 +1601,27 @@ sees a password only when it asks for it, for a sign-in the fill can't reach.
   silent; the apps' card has no X since 10 November 2026, as the connector card has none). `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
   and `SaveStoredLogin` a `saved` one; the tools then tell the agent not to repeat it. Nothing
   saved passes through the computer: the apps save it with the server.
+- **A saved card pays** (`shared/node/credentials-store/card-wallet.ts`, a third wallet beside
+  Link and Shop, `wallet: "card"` on the checkout card, `purchase-card.ts`). RequestPurchase
+  picks it when the agent asks for wallet `card`, or names no wallet and a card is saved
+  (`host-runner-composition.ts`); the card named by `payment_method_id` (an entry id), else the
+  first, pays, and an expired one is never offered. A saved card has no test mode and takes no
+  Link pay token. Allow (`answerPurchase`) is approved at once only with the device's
+  confirmation (`approval`); without it nothing is approved ("Allow needs your OK on your
+  device"). The agent is woken to check the checkout and call `PayWithSavedCard` (`entry_id`,
+  `purchase-tool.ts` → the gateway's `payWithSavedCard`, `purchase-cards.ts`): only for an
+  approved saved-card checkout, the host reads the card whole from the server (`GET
+  credentials/{id}`, `readCard`, with its billing contact) and types it with the checkout fill
+  (`checkout-fill.ts`) with `strictSite`: only into a tab on the checkout's own site, never
+  another. The agent gets back which fields went in, never a value. Then a subagent presses
+  Place order once, and `MarkPurchaseDone` closes the card as with Link.
 - **Never for a channel's message.** A turn begun by a message through Discord, Slack or
   Telegram (`activeRequestSource` is `connector`), where others can write to the agent, gets
   a refusal from every one of these tools. A shared room's turns never have them (its tools are
   an allowlist).
 - **The brief** (`system-prompt.ts`, `prompt-collector-glue.ts`): its own section, "The
   user's Credentials Store" (what it holds; look there before asking for a login or a detail;
-  a card pays only through `RequestPurchase`; offer to keep what was missing with
+  a card pays only through `RequestPurchase`, then `PayWithSavedCard`; offer to keep what was missing with
   `RequestStoreEntry`, once; never ask for a password, card number or security code in the
   chat); the store first at any sign-in or sign-up, then 1Password for someone who connected
   it, then the in-chat form or the computer handed over.
@@ -1617,15 +1642,22 @@ sees a password only when it asks for it, for a sign-in the fill can't reach.
   password filled`, `[credentials] <agent> made a password on <site> and saved the login`,
   `[credentials] <agent> read the password of a login for <site>`, `[credentials] <agent>
   asked to save a <kind> for <site> (<entry id>)`, `[credentials] <agent id>/<entry id>: <kind>
-  saved|dismissed`. Never a value.
+  saved|dismissed`, and for a saved card `[purchase] allowed with a saved card for <site>` and
+  `[purchase] saved card typed on <site>: card number, expiry, …` (or `not typed: <why>`).
+  Never a value.
 * **Tested.** The server's routes (`server/tests/desktop/test_credentials.py`); the tools and the
   new-password fill against a real Chromium, the cards in the list, the ask, the notes, the
-  answer and its wake (`desktop/tests/credentials-store.test.mjs`); the core's model against the
+  answer and its wake (`desktop/tests/credentials-store.test.mjs`); paying with a saved card
+  (the cards offered, no expired one, Allow without the device's OK refused, the wake, the card
+  typed only on the checkout's site with no number in a wake or the log,
+  `desktop/tests/saved-card-payment.test.mjs`; `strictSite` against a real Chromium in
+  `link-wallet.test.mjs`); the core's model against the
   demo and the store's card (`CredentialsStoreTests.swift`, run here as a program, since the
   core's test binary does not start on Linux); the web card in Chromium against a stand-in.
 * **Not yet verified.** Not run on the cloud computer, a Mac or an iPhone; the iPhone and Mac
-  screens were not compiled here (no Apple SDK on Linux). The store's card needs a new host
-  bundle to reach people.
+  screens were not compiled here (no Apple SDK on Linux). The store's card and paying with a
+  saved card need a new host bundle to reach people. No real checkout has been paid with a
+  saved card.
 
 ### 1Password (28 October 2026)
 
