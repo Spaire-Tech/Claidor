@@ -701,8 +701,13 @@ for the computer", then "use codex sign in. everybody does. even reason"
 person connects their ChatGPT account and Simeon keeps its sign-in, sealed
 (`server/simeon/desktop/model_accounts.py`, table `desktop_model_accounts`).
 Once the person chooses one of its models, their agents' calls go to ChatGPT
-on that account (`server/simeon/desktop/own_models.py`, below). **No app
-shows any of it yet**: that is the next piece.
+on that account (`server/simeon/desktop/own_models.py`, below). The apps
+show it in **Settings › AI Models** (9 November 2026): the Mac
+(`mac/Simeon/SettingsModels.swift`), the iPhone (`ios/Simeon/AIModels.swift`)
+and the web and Windows app (`clients/apps/app/src/window/SettingsModels.tsx`),
+all on the shared core's model (`AIModels.swift`, `src/core/aiModels.ts`): the
+model menu, the accounts with Rename and Disconnect, and the Connect ChatGPT
+sheet (the code, Copy, Open, the wait).
 
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
@@ -721,9 +726,9 @@ Routes (signed-in app, `get_desktop_session`):
 | Route | What |
 |---|---|
 | `GET /desktop/api/models/accounts` | The person's accounts: id, provider, kind, name, plan, `status` (`available`, `limited` with `limitedUntil`, `signed_out`). Never a token. |
-| `POST /desktop/api/models/accounts/chatgpt/start` | `{connectId, userCode, verificationUrl, interval, expiresIn}`; the sign-in waits 15 minutes (Codex's own). `502 {error: device_code_off}` when OpenAI answers 404 (device code off for that client), `502 {error: provider_unavailable}` otherwise. |
-| `POST /desktop/api/models/accounts/chatgpt/poll` | `{connectId}` in, every `interval` seconds: `waiting`, `connected` with the account, `expired` (over, already used, or someone else's), or `502 failed` with OpenAI's code. |
-| `PATCH /desktop/api/models/accounts/{id}` | `{label}`: renamed. |
+| `POST /desktop/api/models/accounts/chatgpt/start` | `{connectId, userCode, verificationUrl, interval, expiresIn}`; the sign-in waits 15 minutes (Codex's own). `502 {error: {code: device_code_off, message}}` when OpenAI answers 404 (device code off for that client), `502 {error: {code: provider_unavailable, message}}` otherwise. |
+| `POST /desktop/api/models/accounts/chatgpt/poll` | `{connectId}` in, every `interval` seconds: `{status}` `waiting`, `connected` with the account, `expired` (over, already used, or someone else's), or `failed` with OpenAI's code as `reason`. |
+| `PATCH /desktop/api/models/accounts/{id}` | `{label}`: renamed (`400 {error: {code: empty_label}}` for an empty one; `404 {error: {code: not_found}}` for another person's or a gone account, as for `DELETE`). |
 | `DELETE /desktop/api/models/accounts/{id}` | Revoked at OpenAI (`/oauth/revoke`), then forgotten, even when OpenAI can't be reached: `{disconnected, revoked}`. |
 
 For a model call (the relay, next), `model_accounts.access_for` gives a live
@@ -744,7 +749,9 @@ keeps a token that is still valid, and otherwise raises `ChatGptUnavailable`.
   engine release is needed.
 - `GET /desktop/api/models/own` gives the models the person may choose and
   the one chosen. `PUT` with `{model}` chooses one, kept in `users.meta`
-  (`own_model`); `{model: null}` goes back to Simeon's.
+  (`own_model`); `{model: null}` goes back to Simeon's; a model not offered
+  is `400 {error: {code: not_offered}}`. Every refusal of these routes is
+  `{error: {code, message}}`, the shape the apps read a code from.
 - With a choice and an account signed in, `/desktop/api/models/available`
   puts the chosen model first for `primary` and `computer`, and GPT-6 Luna
   for `cheap`. The engine follows within five minutes.

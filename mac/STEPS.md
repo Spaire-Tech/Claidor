@@ -2818,3 +2818,30 @@ Windows.
 
 Not yet built or run on a Mac: no Swift here, so the change was read, not
 compiled.
+
+### Settings › AI Models (9 November 2026)
+
+The founder: "go ahead with the app screens", for the person's own ChatGPT
+plan (`docs/your-own-models.md`). A page after Usage & Billing
+(`SettingsModels.swift`, the `cpu` symbol): what it is for in a line; "Your
+agents use" with the model menu (Simeon's models, then the account's), once
+an account is signed in; Connected, each account its tile, its name, its kind
+and plan and how it stands (green while usable, red when signed out) and `⋯`
+(Rename, Connect Again when signed out, Disconnect, asked first); then
+Subscriptions, ChatGPT's Connect or Add Another, with the line that voice
+calls, dictation and video still use the credits.
+
+Connect opens the Connect ChatGPT sheet: the code, big, with Copy; "Enter it
+on auth.openai.com/codex/device and approve" with Open (the default browser);
+the line that OpenAI's page names Codex; "Waiting for you to approve…" while
+the server is asked every few seconds. Connected, it says which model the
+agents now use (the account's best, chosen when none was) and has Done. An
+expired code or a refusal says so, with Try Again. Closing the sheet stops
+the asking. The model is the shared core's (`AIModelsModel`); the iPhone's
+page (`ios/Simeon/AIModels.swift`) and the web app's say the same.
+
+Not yet built or run on a Mac or an iPhone: no Swift here, so the code was
+read, not compiled, and the core's new tests (`AIModelsTests`) did not run.
+The web app's translation of the same model and page ran in Chromium against
+a stand-in server. The tile is the letter C: there is no ChatGPT logo in the
+repository yet.

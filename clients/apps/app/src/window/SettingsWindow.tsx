@@ -5,7 +5,7 @@
 // on its left, each with its symbol, the current one on a grey ground, Log
 // out at the foot; the page's name at the top of the rest, its groups
 // under it. General, Usage & Billing once the account's usage is in hand,
-// Wallet, Credentials Store, Permissions, Computer, Help & support and
+// AI Models (the person's own ChatGPT, 8 November 2026), Wallet, Credentials Store, Permissions, Computer, Help & support and
 // Legal; the account is General's first row, its page under General with
 // Back. Updates in the Windows app only (step 7e): a web page is always the
 // latest. Each opening starts afresh on the page asked for, at its top.
@@ -14,7 +14,7 @@
 //
 // The pages are each part's own: General, Account, Permissions, Computer,
 // Help & support and Legal (6e); Usage & Billing, Wallet and the
-// Credentials Store (6f).
+// Credentials Store (6f); AI Models (SettingsModels.tsx).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { t as coreT } from '../core/l10n'
@@ -33,6 +33,7 @@ import {
   SettingsLegalPage,
   SettingsPermissionsPage,
 } from './SettingsGeneral'
+import { SettingsModelsPage } from './SettingsModels'
 import {
   PanelDisc,
   SettingsSymbol,
@@ -52,6 +53,7 @@ const pages: Record<
 > = {
   general: { title: () => t('General'), symbol: 'gearshape' },
   usage: { title: () => t('Usage & Billing'), symbol: 'chartBar' },
+  models: { title: () => t('AI Models'), symbol: 'cpu' },
   wallet: { title: () => t('Wallet'), symbol: 'wallet' },
   credentials: { title: () => t('Credentials Store'), symbol: 'key' },
   permissions: { title: () => t('Permissions'), symbol: 'handRaised' },
@@ -72,6 +74,7 @@ export function listed(store: AppStore): SettingsPage[] {
   const order: SettingsPage[] = [
     'general',
     'usage',
+    'models',
     'wallet',
     'credentials',
     'permissions',
@@ -96,6 +99,8 @@ function PageBody({ page, store }: { page: SettingsPage; store: AppStore }) {
       return <SettingsGeneralPage store={store} />
     case 'usage':
       return <SettingsUsagePage store={store} />
+    case 'models':
+      return <SettingsModelsPage store={store} />
     case 'wallet':
       return <SettingsWalletPage store={store} />
     case 'credentials':

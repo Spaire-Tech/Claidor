@@ -839,6 +839,58 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: Settings › AI Models
+
+The founder: "go ahead with the app screens" (the person's own ChatGPT
+plan, `docs/your-own-models.md`; the server's side merged in #606 to #609).
+The page is new on the Mac (`mac/Simeon/SettingsModels.swift`) and the
+iPhone (`ios/Simeon/AIModels.swift`) in the same pull request, with the
+shared core's model (`AIModels.swift`); the web app's is their translation.
+
+- **Done:**
+  - `src/core/aiModels.ts`: the core's `AIModels.swift` translated (an
+    account and its words, the plans' names, the limit's time, the code
+    sign-in, the page's model with its wait for approval), with the core's
+    tests and two of its own (closing the sheet stops the asking; a server
+    not reached while waiting is asked again).
+  - `src/window/SettingsModels.tsx`: the page after Usage & Billing (the
+    `cpu` symbol): what it is for; "Your agents use" with the model menu
+    (Simeon's models, then the account's); Connected, each account its
+    tile, its name, its kind and plan and how it stands (green while
+    usable, red when signed out) and `⋯` (Rename, Connect Again when signed
+    out, Disconnect, asked first); Subscriptions, ChatGPT's Connect or Add
+    Another. The Connect ChatGPT sheet: the code with Copy, the page to
+    enter it on with Open, the line on Codex, the wait; Connected with the
+    model now used; the code expired, a refusal, Try Again.
+  - `store.modelsCall`: the page's calls to the server.
+- **Decisions (the session):**
+  - OpenAI's page opens in a new tab without `opener` or the referrer (in
+    the Windows app, the default browser, as the window's other pages);
+    only an https address from the server is ever opened.
+  - The code is copied with the window's clipboard (`clipboard.ts`: the
+    browser's, or the Windows app's through the app).
+  - The sheet asks the server every few seconds only while it is open;
+    closing it, Escape or a click outside ends the asking.
+- **Checked:**
+  - `pnpm test` (1214 tests, the words, the brands, the connector pages,
+    the build), `pnpm typecheck`, `pnpm lint`;
+  - in Chromium, the built app against a stand-in server and computer
+    (nothing real reached; OpenAI's page answered by a stub), light, dark
+    and French: the page with nothing connected; Connect, the code, Copy
+    (the clipboard read back), Open (the address, no opener, no referrer),
+    three questions to the server, Connected and the best model chosen;
+    the account green; the menu; Rename (the name tidied); Disconnect
+    (asked, then back to Subscriptions only); a refused start
+    (`device_code_off`) in the person's words; Escape; an expired code; Try
+    Again then the sheet closed (no question after); a limited account
+    ("Limit reached until 4:10 AM") and a signed-out one in red with
+    Connect Again; the model menu, a model picked and sent.
+- **Not checked:** a real ChatGPT sign-in or call; the Windows app (the
+  default browser opening OpenAI's page). The tile is the letter C: the
+  repository has no ChatGPT logo yet.
+- **Next:** the founder's word on the screens; the composer's model pill
+  (later).
+
 ### 7 November 2026: the Windows app's tests on the Dell
 
 The Dell ran `npm test` in `windows/` for the first time, on `2db7c33`:

@@ -86,6 +86,7 @@ export type ChatCover =
 export type SettingsPage =
   | 'general'
   | 'usage'
+  | 'models'
   | 'wallet'
   | 'credentials'
   | 'permissions'

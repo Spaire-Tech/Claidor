@@ -568,8 +568,30 @@ class _RenameBody(BaseModel):
     label: str
 
 
+#: What each refusal of these routes says, in English: the apps show their
+#: own words for the code (`AIModels.startProblem`), these where they have
+#: none.
+_REFUSALS = {
+    "device_code_off": "ChatGPT didn't allow signing in with a code.",
+    "provider_unavailable": "Couldn't reach ChatGPT. Try again in a moment.",
+    "not_found": "That account isn't connected.",
+    "empty_label": "Give the account a name.",
+    "not_offered": "That model isn't one of your accounts' models.",
+}
+
+
+def refusal(code: str, status: int) -> JSONResponse:
+    """A refusal in the shape the apps read (`{"error": {"code", "message"}}`,
+    as the model proxy's): the code for the apps' own words, the message
+    where they have none."""
+    return JSONResponse(
+        {"error": {"code": code, "message": _REFUSALS.get(code, code)}},
+        status_code=status,
+    )
+
+
 def _provider_unavailable(code: str = "provider_unavailable") -> JSONResponse:
-    return JSONResponse({"error": code}, status_code=502)
+    return refusal(code, 502)
 
 
 @router.get("/api/models/accounts", name="desktop:model_accounts_list")
@@ -638,7 +660,9 @@ async def model_accounts_chatgpt_poll(
     except ChatGptError as error:
         log.warning("desktop.models.poll_failed", status=error.status, error=error.code)
         await redis.delete(f"{_CONNECT_PREFIX}{body.connectId}")
-        return JSONResponse({"status": "failed", "error": error.code}, status_code=502)
+        # The poll answered: the sign-in failed (the app says so and offers
+        # to start again).
+        return JSONResponse({"status": "failed", "reason": error.code})
     except httpx.HTTPError as error:
         log.warning("desktop.models.poll_failed", reason=type(error).__name__)
         return JSONResponse({"status": "waiting"})
@@ -662,10 +686,10 @@ async def model_accounts_rename(
     repository = ModelAccountRepository.from_session(session)
     account = await repository.one_for_user(desktop_session.user_id, account_id)
     if account is None:
-        return JSONResponse({"error": "not_found"}, status_code=404)
+        return refusal("not_found", 404)
     label = body.label.strip()[:200]
     if not label:
-        return JSONResponse({"error": "empty_label"}, status_code=400)
+        return refusal("empty_label", 400)
     account.label = label
     await session.flush()
     return JSONResponse({"account": account_json(account)})
@@ -681,5 +705,5 @@ async def model_accounts_disconnect(
 ) -> JSONResponse:
     result = await disconnect(session, desktop_session.user_id, account_id)
     if not result["disconnected"]:
-        return JSONResponse({"error": "not_found"}, status_code=404)
+        return refusal("not_found", 404)
     return JSONResponse(result)

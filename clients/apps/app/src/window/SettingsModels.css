@@ -1,0 +1,295 @@
+/*
+ * AI Models (SettingsModels.tsx, mac/Simeon/SettingsModels.swift): its line
+ * and groups 22 apart; an account's tile, its name over its kind, plan and
+ * how it stands (green while usable, red when signed out), and `⋯`; the
+ * rename's field; the Connect ChatGPT sheet, 460 wide on the grouped
+ * ground, padded 28, its parts 20 apart.
+ */
+:root {
+  /* The rename's field (`TextField` in an alert): white with a faint ring, the row's grey on dark. */
+  --models-field: #ffffff;
+  --models-field-ring: rgb(20 30 60 / 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --models-field: rgb(119 119 119 / 0.173);
+    --models-field-ring: transparent;
+  }
+}
+
+.models-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.models-lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.models-loading {
+  display: flex;
+  justify-content: center;
+}
+
+/* A refusal under the groups: 12, red, 8 in. */
+.models-problem {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+/* An account: 18 in, 10 above and below, at least 56; its tile and words 12 apart, then `⋯`. */
+.models-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 18px;
+  box-sizing: border-box;
+}
+
+.models-line.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.models-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.models-title,
+.models-subtitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.models-title {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.models-subtitle {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.models-status.usable {
+  color: var(--settings-green);
+}
+
+.models-status.signed-out {
+  color: var(--danger);
+}
+
+/* `⋯`: 28 square, the grey, a step darker under the pointer. */
+.models-more {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.models-more:hover {
+  background: var(--grouped-row-hover);
+}
+
+.models-more:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: -2px;
+}
+
+/* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in; the blue edge with the keys. */
+.models-alert-field {
+  box-sizing: border-box;
+  align-self: stretch;
+  height: 24px;
+  margin-top: 12px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--models-field);
+  box-shadow: inset 0 0 0 0.5px var(--models-field-ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.models-alert-field:focus {
+  box-shadow: inset 0 0 0 1px var(--unread);
+}
+
+/* MARK: The sheet */
+
+.sheet.models-sheet {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 20px;
+  width: 460px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 28px;
+  background: var(--grouped-ground);
+  color: var(--ink);
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.models-sheet button {
+  font-family: inherit;
+}
+
+/* The head: ChatGPT's tile (36), "Connect ChatGPT" (17, medium), the glass disc that closes it at its end. */
+.models-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.models-sheet-title {
+  flex: 1;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.models-sheet-words {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.models-sheet-problem {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.models-sheet-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.models-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* A step: its number (12, medium) in a grey disc (22), 12 from its words; what goes with it 10 under them. */
+.models-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.models-step-number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--grouped-row);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.models-step-words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.models-code-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* The code: 22, medium, monospaced, on the row's grey, 10 round, padded 14 and 8; the person may select it. */
+.models-code {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--grouped-row);
+  color: var(--ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 500;
+  user-select: text;
+}
+
+.models-note {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.models-waiting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.models-connected {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.models-connected-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--settings-green);
+  font-size: 13px;
+}
+
+/* Done: the app's blue, white words (14, semibold), at least 96 wide, 32 high, round. */
+.models-done {
+  min-width: 96px;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--yours);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.models-done:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+}

@@ -14,8 +14,11 @@ OpenAI approves, only the client id changes. Built so far, on the server
 (`services-core.md`, section 2, "The person's own AI accounts"): the model
 accounts, the ChatGPT sign-in, the person's choice of model, and the relay
 on their account. A limit moves the call to their next account, then to
-Simeon's model. Next: the apps. The model is chosen per person for now; per
-agent comes later.
+Simeon's model. In the apps (9 November 2026): Settings › AI Models on the
+Mac, the iPhone and the web and Windows app (step 7 below; "make default" is
+the model menu, since the choice is the person's). Next: the pill in the
+message field (step 8), and the Privacy Policy and Terms (step 10). The model
+is chosen per person for now; per agent comes later.
 
 ## 1. What Reason does (read from its app and docs, 8 November 2026)
 

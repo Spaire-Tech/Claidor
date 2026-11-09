@@ -5913,6 +5913,17 @@ export class AppStore {
     return backend.server(path, method, body)
   }
 
+  /**
+   * AI Models' calls to Simeon Labs' server (`models/accounts…`,
+   * `models/own`; `AIModelsModel(store:)`): the person's own ChatGPT
+   * accounts, their sign-in and the model the agents use.
+   */
+  modelsCall = (
+    path: string,
+    method?: string,
+    body?: JSONValue,
+  ): Promise<JSONValue> => this.credentialsCall(path, method, body)
+
   /** 6f's state back to nothing (signed out). */
   private resetUsageAndBilling(): void {
     this.usage = emptyUsage

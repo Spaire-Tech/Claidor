@@ -7,7 +7,8 @@ import SimeonCore
 
 /**
  * Settings, in the order the founder's reference has it (9 and 11 October
- * 2026): the account and, under it, Usage with its share; Connect apps, as
+ * 2026): the account and, under it, Usage with its share and AI Models
+ * (the person's own ChatGPT, 8 November 2026); Connect apps, as
  * the Mac's sidebar has it; the agents' settings (Auto-review and its rules,
  * the time zone, set automatically or chosen); Notifications, Face ID (where
  * the phone has it, off until turned on), Appearance and Haptics (both
@@ -56,6 +57,8 @@ struct SettingsSheet: View {
               LabeledContent("Usage", value: store.usage.summary.flatMap { UsageMeters($0).weekly?.barPercent }.map { "\(Int($0.rounded()))%" } ?? "")
             }
           }
+          // The person's own AI subscription (8 November 2026), after Usage as the Mac lists it (AIModels.swift).
+          NavigationLink { AIModelsPage() } label: { Text("AI Models").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)
         Section {
