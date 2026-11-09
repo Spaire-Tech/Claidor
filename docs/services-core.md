@@ -1239,6 +1239,25 @@ computer hibernated to a snapshot. What differs from Docker:
   host bundle or template) is woken if asleep, its backup is brought up to
   date, and only then is it replaced; if the backup cannot be brought up to
   date it stays as it is (`sand.box.update_deferred`, reason `backup`).
+- **A new engine on the same computer** (9 November 2026). When only the
+  host bundle is new, the computer is not replaced: once its backup is up to
+  date and it is idle, the server writes each engine file beside the old one
+  (`<path>.next`) and runs `/run/simeon/update-engine.sh` on it
+  (`ENGINE_UPDATE_SCRIPT` in `box_e2b.py`), which moves the files in, stops
+  the engine and the exec daemon (TERM, then KILL after 15 seconds) and
+  waits up to a minute for the image's supervisor to start them again. Once
+  the engine answers, the row notes the new bundle
+  (`sand_boxes.host_meta.host_sha256`; E2B's own record keeps the one it was
+  made with) and the log says `sand.box.updated_in_place` with how long it
+  took. Everything outside the backup stays, Claude Code's sign-in first
+  (`docs/your-own-models.md`, section 6): replaced for each engine
+  published, every computer lost it. When the engine does not come back
+  (`sand.box.update_in_place_failed` with the script's answer:
+  `not-running`, `not-staged`, `not-moved`, `not-restarted`, `no-pgrep`, or
+  `not ready`), the computer is replaced from its backup as before. A new
+  template, or a move to another server, still replaces it. Run here against
+  a stand-in supervisor and engine (the swap, a host ignoring TERM, nothing
+  staged, nothing restarting); not yet on a real computer.
 - **Reaching it.** The API dials `https://<port>-<sandbox>.<domain>` with the
   computer's traffic token (`e2b-traffic-access-token`, kept in
   `sand_boxes.host_meta`); E2B refuses its ports to anyone without it. The

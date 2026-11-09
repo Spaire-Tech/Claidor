@@ -1188,6 +1188,52 @@ class TestClaudeThroughClaudeCode:
         assert claude.called
         assert not chatgpt.called
 
+    async def test_claude_signed_out_on_the_computer_shows_and_comes_back(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """9 November 2026: Claude Code lost its sign-in on a new computer,
+        and the app went on showing Claude as usable. The engine now says so:
+        the account shows signed out and the agents get Simeon's models;
+        connecting again brings Claude back with the choice kept."""
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        await _choose(client, headers, CLAUDE_OPUS)
+
+        told = await client.post(
+            "/desktop/api/models/accounts/claude/signed-out", headers=headers
+        )
+        assert told.status_code == 200, told.text
+        assert told.json()["account"]["status"] == "signed_out"
+        listed = await client.get("/desktop/api/models/accounts", headers=headers)
+        assert [one["status"] for one in listed.json()["accounts"]] == ["signed_out"]
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert not any(row.get("transportApi") == "claude-code" for row in rows)
+        # Told twice (each agent's turn finds it): nothing changes.
+        again = await client.post(
+            "/desktop/api/models/accounts/claude/signed-out", headers=headers
+        )
+        assert again.json()["account"]["status"] == "signed_out"
+
+        await _claude(client, headers)
+        own = (await client.get("/desktop/api/models/own", headers=headers)).json()
+        assert own["model"] == CLAUDE_OPUS
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert rows[0]["transportApi"] == "claude-code"
+
+    async def test_claude_signed_out_without_a_claude_account_is_nothing(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        told = await client.post(
+            "/desktop/api/models/accounts/claude/signed-out", headers=headers
+        )
+        assert told.status_code == 200
+        assert told.json() == {"account": None}
+
     async def test_disconnecting_claude_forgets_it_and_goes_back_to_simeons(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

@@ -329,3 +329,43 @@ test("before a turn, the roles are read again when the last read is old, and a s
     await dispose();
   }
 });
+
+test("Claude Code signed out on the computer: the server is told, then the roles are read again", async () => {
+  const { module: roles, dispose } = await load("source/host/extensions/inference/simeon-model-roles.ts", "simeon-model-roles");
+  try {
+    const asked = [];
+    let signedOut = false;
+    const source = {
+      getAccessToken: async () => "simeon_db_stand_in",
+      backendUrl: "https://simeon.example",
+      fetch: async (url, init = {}) => {
+        asked.push({ url: String(url), method: init.method ?? "GET", auth: init.headers?.authorization });
+        if (String(url).endsWith("/models/accounts/claude/signed-out")) { signedOut = true; return Response.json({ account: { status: "signed_out" } }); }
+        // Signed out, the server offers Claude no more: the roles go back to Simeon's.
+        return Response.json({ data: signedOut ? [] : [{ modelId: "own:claude:claude-opus-5-5", role: "primary", transportApi: "claude-code", claudeCodeModel: "claude-opus-5-5" }] });
+      },
+    };
+    roles.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    // Nothing to tell before the engine reads its roles from the server.
+    roles.setSimeonModelRolesSourceForTest(undefined);
+    assert.equal(await roles.reportClaudeCodeSignedOut(), false);
+
+    roles.setSimeonModelRolesSourceForTest(source, Date.now());
+    assert.equal(await roles.reportClaudeCodeSignedOut(), true);
+    assert.deepEqual(asked.map((one) => `${one.method} ${one.url}`), [
+      "POST https://simeon.example/desktop/api/models/accounts/claude/signed-out",
+      "GET https://simeon.example/desktop/api/models/available",
+    ]);
+    assert.equal(asked[0].auth, "Bearer simeon_db_stand_in");
+    assert.equal(roles.simeonModelRoles().claudeCode, undefined);
+
+    // A server that refuses it: the roles are left as they are.
+    roles.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    roles.setSimeonModelRolesSourceForTest({ ...source, fetch: async () => new Response("no", { status: 503 }) }, Date.now());
+    assert.equal(await roles.reportClaudeCodeSignedOut(), false);
+    assert.equal(roles.simeonModelRoles().claudeCode, "claude-opus-5-5");
+  } finally {
+    roles.setSimeonModelRolesSourceForTest(undefined);
+    await dispose();
+  }
+});

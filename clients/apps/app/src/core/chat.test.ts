@@ -654,6 +654,21 @@ describe('notices, pictures and links', () => {
     )
   })
 
+  it('shows a notice written for the person as it is (Claude’s), and hides a computer’s own', () => {
+    const words =
+      'Claude isn’t signed in on your computer any more, so Simeon’s models answer. Connect Claude again in Settings › AI Models.'
+    const rows = chatRows([
+      entry({ kind: 'notice', id: 'n1', text: words, forPerson: true }),
+      entry({ kind: 'notice', id: 'n2', text: 'claude-sonnet-5-5 overloaded' }),
+    ])
+    const text = (id: string) =>
+      rows.find((row) => row.kind === 'notice' && row.id === id) as
+        | { text: string }
+        | undefined
+    expect(text('n1')?.text).toBe(words)
+    expect(text('n2')?.text).not.toBe('claude-sonnet-5-5 overloaded')
+  })
+
   it('draws the person’s sent pictures together, under their message’s stamp', () => {
     const day = 1_760_000_000_000
     const entries = [

@@ -29,9 +29,9 @@
  */
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
-import { simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
+import { reportClaudeCodeSignedOut, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
 import { getSandRootDir } from "../host-paths.js";
-import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type EngineTool } from "./claude-code-tools.js";
+import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
 import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, type ClaudeCodeOutcome } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
 
@@ -48,7 +48,15 @@ export interface ClaudeCodeTurnInput {
   readonly signal: AbortSignal;
 }
 
-export type ClaudeCodeTurnResult = { readonly ran: true; readonly text: string } | { readonly ran: false };
+/**
+ * What the turn hands back: whether Claude Code ran it, its last words, and
+ * what it said to the person as the model's history (`claudeCodeHistory`),
+ * which the handler keeps as the loop keeps its own, also when the turn moves
+ * to Simeon's model after Claude spoke.
+ */
+export type ClaudeCodeTurnResult =
+  | { readonly ran: true; readonly text: string; readonly history?: readonly unknown[] }
+  | { readonly ran: false; readonly history?: readonly unknown[] };
 
 export interface ClaudeCodeTurnHook {
   chosen(conversationId: string): boolean;
@@ -86,6 +94,27 @@ export function claudeCodeReplyToSend(ending: ClaudeCodeEnding, owed: boolean): 
   const text = ending.text.trim();
   if (text === "") return undefined;
   return owed || ending.workedAfterSpeaking ? text : undefined;
+}
+
+/**
+ * What a turn Claude Code ran said to the person, as the model's history
+ * (9 November 2026): each message and reaction it sent (a SendMessage or
+ * ReactToMessage call and its answer, as the loop keeps them), then its last
+ * words. Without it, the history held the person's messages alone, and
+ * Simeon's model, answering a later turn, told the person "a few of your
+ * messages got dropped on my end" and did the work again. Its other calls
+ * (commands, files, connectors) stay in Claude Code's own session.
+ */
+export function claudeCodeHistory(calls: readonly BridgeCall[], text: string): unknown[] {
+  const history: unknown[] = [];
+  for (const call of calls) {
+    if (!SPEAKING_TOOLS.has(call.name)) continue;
+    const answer = call.result.content.filter((part) => part.type === "text").map((part) => (part as { text: string }).text).join("\n");
+    history.push({ role: "assistant", content: [{ type: "tool-call", toolCallId: call.id, toolName: call.name, args: call.args }] });
+    history.push({ role: "tool", content: [{ type: "tool-result", toolCallId: call.id, toolName: call.name, result: answer, ...(call.result.isError === true ? { isError: true } : {}) }] });
+  }
+  if (text.trim() !== "") history.push({ role: "assistant", content: text.trim() });
+  return history;
 }
 
 const endings = new Map<string, ClaudeCodeEnding>();
@@ -153,10 +182,10 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
   let pausedUntil = 0;
   let toolsNamed = false;
 
-  const fallBack = (conversationId: string, why: ClaudeCodeFallback, pauseMs: number, until?: number): ClaudeCodeTurnResult => {
+  const fallBack = (conversationId: string, why: ClaudeCodeFallback, pauseMs: number, history: unknown[], until?: number): ClaudeCodeTurnResult => {
     pausedUntil = Math.max(pausedUntil, until ?? now() + pauseMs);
     options.onFallback?.(conversationId, why, until);
-    return { ran: false };
+    return history.length > 0 ? { ran: false, history } : { ran: false };
   };
 
   return {
@@ -168,8 +197,10 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       const chosenEffort = effort();
       const started = now();
       const calls: string[] = [];
+      const answered: BridgeCall[] = [];
       const tools = bridgeEngineTools(input.tools as readonly EngineTool[], {
         onCall: (name) => calls.push(name),
+        onResult: (call) => answered.push(call),
         ctx: input.ctx,
         signal: input.signal,
         listener: input.listener,
@@ -203,18 +234,20 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
         await server.close();
       }
       options.log?.(`claude-code turn agent=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
+      // What it said, whatever the outcome: a turn that moves to Simeon's model after Claude spoke keeps it too.
+      const said = claudeCodeHistory(answered, outcome.kind === "done" ? outcome.text : "");
       switch (outcome.kind) {
         case "done":
           endings.set(input.conversationId, claudeCodeEnding(calls, outcome.text, now()));
-          return { ran: true, text: outcome.text };
+          return { ran: true, text: outcome.text, history: said };
         // The person stopped the turn: it is over, on Claude or not.
-        case "aborted": return { ran: true, text: "" };
-        case "limited": return fallBack(input.conversationId, "limited", 60 * MINUTE, outcome.until !== undefined && outcome.until > now() ? outcome.until : undefined);
-        case "signed_out": return fallBack(input.conversationId, "signed_out", 5 * MINUTE);
-        case "not_installed": return fallBack(input.conversationId, "not_installed", 60 * MINUTE);
+        case "aborted": return said.length > 0 ? { ran: true, text: "", history: said } : { ran: true, text: "" };
+        case "limited": return fallBack(input.conversationId, "limited", 60 * MINUTE, said, outcome.until !== undefined && outcome.until > now() ? outcome.until : undefined);
+        case "signed_out": return fallBack(input.conversationId, "signed_out", 5 * MINUTE, said);
+        case "not_installed": return fallBack(input.conversationId, "not_installed", 60 * MINUTE, said);
         // A session it still couldn't find, or a failure: this turn on Simeon's, Claude again next turn after a minute.
         case "no_session":
-        case "failed": return fallBack(input.conversationId, "failed", MINUTE);
+        case "failed": return fallBack(input.conversationId, "failed", MINUTE, said);
       }
     },
   };
@@ -251,6 +284,8 @@ export function claudeCodeTurnHook(): ClaudeCodeTurnHook {
     sessions: new ClaudeCodeSessions(join(getSandRootDir(), CLAUDE_CODE_SESSIONS_FILE)),
     log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
     onFallback: (agentId, why) => {
+      // Signed out: the app shows it, and the agents stop trying Claude until the person connects it again.
+      if (why === "signed_out") void reportClaudeCodeSignedOut();
       if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, why)) fallbackNotice(agentId, why);
     },
   });

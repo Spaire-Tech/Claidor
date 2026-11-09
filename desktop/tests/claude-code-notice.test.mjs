@@ -69,6 +69,8 @@ test("the notice reaches the chat whether it's open, running or at rest; never a
     assert.equal(open.seen.appended.length, 1);
     assert.equal(open.seen.appended[0].kind, "notice");
     assert.match(open.seen.appended[0].id, /^notice-claude-/);
+    // Written for the person: the apps show it as it is, though it names Claude.
+    assert.equal(open.seen.appended[0].forPerson, true);
     assert.deepEqual(open.seen.updated, ["nora"]);
 
     const running = manager({ active: "theo", live: "nora", language: "fr" });

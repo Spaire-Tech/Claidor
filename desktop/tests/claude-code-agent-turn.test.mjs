@@ -96,7 +96,8 @@ test("Claude Code runs the agent's turn: the brief with the tools' note, the con
   try {
     assert.equal(box.hook.chosen("nora"), true);
     const first = await box.hook.run(box.input("Book the dentist for Tuesday"));
-    assert.deepEqual(first, { ran: true, text: "Sent. tools=SendMessage,ReviewPermission" });
+    assert.equal(first.ran, true);
+    assert.equal(first.text, "Sent. tools=SendMessage,ReviewPermission");
     assert.deepEqual(box.sent, [{ type: "text", content: "Done: Book the dentist for Tuesday" }]);
     const second = await box.hook.run(box.input("And the vet on Friday"));
     assert.equal(second.ran, true);
@@ -259,6 +260,50 @@ test("after a turn the person started, Claude's own words reach them and nothing
     const simeon = await runtime.ensureUserReply(runner, nothingSent, session, 1, "ack-3", undefined, undefined, undefined, Date.now() + 60_000_000_000);
     assert.equal(runs, 3);
     assert.equal(simeon.deliveryOwed, true);
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("what Claude said goes into the model's history, so Simeon's model sees each message answered", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    // Simeon's SendMessage: the call and its answer, as the loop keeps them, then Claude's last words.
+    const sent = await box.hook.run(box.input("Book the dentist for Tuesday"));
+    const [call, answer, last] = sent.history;
+    assert.equal(sent.history.length, 3);
+    assert.equal(call.role, "assistant");
+    assert.equal(call.content[0].type, "tool-call");
+    assert.equal(call.content[0].toolName, "SendMessage");
+    assert.deepEqual(call.content[0].args, { type: "text", content: "Done: Book the dentist for Tuesday" });
+    assert.match(call.content[0].toolCallId, /^cc_[0-9a-f-]+$/);
+    assert.equal(answer.role, "tool");
+    assert.equal(answer.content[0].type, "tool-result");
+    assert.equal(answer.content[0].toolCallId, call.content[0].toolCallId);
+    assert.equal(answer.content[0].toolName, "SendMessage");
+    assert.equal(typeof answer.content[0].result, "string");
+    assert.deepEqual(last, { role: "assistant", content: "Sent. tools=SendMessage,ReviewPermission" });
+
+    // Its answer in its own words: those words alone.
+    await box.mode("words");
+    const words = await box.hook.run(box.input("Is it booked?"));
+    assert.deepEqual(words.history, [{ role: "assistant", content: "Tuesday at 10 is booked." }]);
+
+    // Signed out before saying anything: nothing to keep, Simeon's model answers.
+    await box.mode("expired");
+    assert.deepEqual(await box.hook.run(box.input("Hi")), { ran: false });
+
+    // Only what reached the person is kept; a command's call stays in Claude Code's own session.
+    const result = { content: [{ type: "text", text: "ok" }] };
+    assert.deepEqual(bridge.claudeCodeHistory([
+      { id: "cc_1", name: "Shell", args: { command: "ls" }, result },
+      { id: "cc_2", name: "ReactToMessage", args: { emoji: "👍" }, result: { content: [{ type: "text", text: "no such message" }], isError: true } },
+    ], "  "), [
+      { role: "assistant", content: [{ type: "tool-call", toolCallId: "cc_2", toolName: "ReactToMessage", args: { emoji: "👍" } }] },
+      { role: "tool", content: [{ type: "tool-result", toolCallId: "cc_2", toolName: "ReactToMessage", result: "no such message", isError: true }] },
+    ]);
   } finally {
     await box.dispose();
     await dispose();

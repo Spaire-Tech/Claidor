@@ -248,6 +248,38 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
   }
 }
 
+/** Where the engine says Claude Code is signed out on this computer. */
+export const CLAUDE_SIGNED_OUT_PATH = "models/accounts/claude/signed-out";
+
+/**
+ * Claude Code found itself signed out on this computer (9 November 2026):
+ * the server is told, so the person's Claude account shows signed out (red,
+ * with Connect Again) and is offered to the agents no more; then the roles
+ * are read again, and the agents' turns go to Simeon's models without trying
+ * Claude first, until the person connects it again. Until then the app went
+ * on showing Claude as usable. True when the server took it.
+ */
+export async function reportClaudeCodeSignedOut(): Promise<boolean> {
+  const source = liveSource;
+  if (source === undefined) return false;
+  try {
+    const token = await source.getAccessToken();
+    const response = await (source.fetch ?? fetch)(simeonApiUrl(CLAUDE_SIGNED_OUT_PATH, source.backendUrl), {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+      body: "{}",
+      signal: AbortSignal.timeout(SIMEON_MODEL_ROLES_TIMEOUT_MS),
+    });
+    note(`${HOST_LOG_PREFIX} claude-code signed-out reported status=${response.status}`);
+    if (!response.ok) return false;
+    await refreshSimeonModelRoles(source);
+    return true;
+  } catch (error) {
+    note(`${HOST_LOG_PREFIX} claude-code signed-out unreported reason=${error instanceof Error ? error.message : String(error)}`);
+    return false;
+  }
+}
+
 // A line when something changes, not every five minutes.
 function note(line: string): void {
   if (line === lastLogged) return;

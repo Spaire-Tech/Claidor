@@ -202,6 +202,21 @@ final class ChatThreadTests: XCTestCase {
   }
 
   /**
+   * 9 November 2026: the line the engine writes when Claude is signed out names Claude, and the
+   * check for a machine's words hid it behind "Something didn't work here". Written for the person
+   * (`forPerson`), it is shown as it is; a computer's own line naming Claude is still hidden.
+   */
+  func testANoticeWrittenForThePersonIsShownAsItIs() {
+    let words = "Claude isn't signed in on your computer any more, so Simeon's models answer. Connect Claude again in Settings › AI Models."
+    let rows = Chat.rows([
+      Entry(["kind": "notice", "id": "n1", "text": .string(words), "forPerson": true])!,
+      Entry(["kind": "notice", "id": "n2", "text": "claude-sonnet-5-5 overloaded"])!,
+    ])
+    XCTAssertTrue(rows.contains { if case .notice("n1", words) = $0 { return true }; return false })
+    XCTAssertTrue(rows.contains { if case .notice("n2", let text) = $0 { return text != "claude-sonnet-5-5 overloaded" }; return false })
+  }
+
+  /**
    * A picture the person sent is a picture, not a file card; several in one
    * send are one gallery; a PDF beside them stays a card. It takes its
    * message's time by their nonce, so the stamp goes above it, not between

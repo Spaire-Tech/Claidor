@@ -99,7 +99,10 @@ export interface ClaudeCodeTurnHook {
     readonly listener: unknown;
     readonly stateHandler: unknown;
     readonly signal: AbortSignal;
-  }): Promise<{ readonly ran: true; readonly text: string } | { readonly ran: false }>;
+  }): Promise<
+    | { readonly ran: true; readonly text: string; readonly history?: readonly unknown[] }
+    | { readonly ran: false; readonly history?: readonly unknown[] }
+  >;
 }
 
 export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
@@ -367,8 +370,11 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
   /**
    * One turn run by Claude Code (`ClaudeCodeTurnHook`, the host's): this turn's own tools, built as the loop
    * builds them; the brief and the context the loop would send; the person's words. Claude Code keeps its own
-   * history, so its last words are kept here as the turn's text. True when Claude Code ran the turn to its
-   * end; false leaves the turn to the loop.
+   * history, so its last words are kept here as the turn's text, and what it said to the person (its messages
+   * and reactions, and its last words) goes into the model's history, as the loop's own turns do: Simeon's
+   * model, when it answers a later turn, sees each message answered (9 November 2026: with only the person's
+   * messages there, it told them "a few of your messages got dropped" and did the work again). True when
+   * Claude Code ran the turn to its end; false leaves the turn to the loop.
    */
   private async runOnClaudeCode(ctx: Any, hook: ClaudeCodeTurnHook, rootPromptExecutor: Any, stateHandler: Any, turn: Any, mcpTools: Any, requestContext: Any): Promise<boolean> {
     const configAny: Any = this.config;
@@ -412,6 +418,8 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
       stateHandler,
       signal: ctx.signal,
     });
+    const history = outcome.history ?? [];
+    if (history.length > 0) turn.appendPromptMessages(toRedactedCoreMessages(history as Any[], stateHandler.getPrivacyMode()));
     if (!outcome.ran) return false;
     if (outcome.text.trim() !== "") await turn.recordText(ctx, outcome.text);
     return true;
