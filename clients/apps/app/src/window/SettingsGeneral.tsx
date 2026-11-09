@@ -22,7 +22,6 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
-  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -65,6 +64,7 @@ import { classes } from './classes'
 import { copyText } from './clipboard'
 import { ContextMenu, Glyph } from './ContextMenu'
 import { markStyle } from './FirstRun'
+import { FormButton, FormField } from './FormParts'
 import { useDismiss } from './MessageActions'
 import './SettingsGeneral.css'
 import {
@@ -492,10 +492,13 @@ function ZoneMenu({
 // MARK: Account
 
 /**
- * The account, under General (`SettingsAccountPage`): its face (44) beside
- * its name and email; Name, written in place (what the agents call the
- * person), then Email (copied with a click) and Password (set or changed
- * here, typed twice). Log out is at the foot of the list of pages.
+ * The account, under General (`SettingsAccountPage`; the founder, 9
+ * November 2026: the page in Settings' cards was "weak design and very
+ * confusing"): its face (44) beside its name and email; then, as a form,
+ * each name over its box: Name (Save beside it once it changed, or
+ * Return), Email (copied with its button) and Password (Set Password, or
+ * Change Password once there is one). At most 520 wide. Log out is at the
+ * foot of the list of pages.
  */
 export function SettingsAccountPage({ store }: { store: AppStore }) {
   useWatched(store)
@@ -504,9 +507,16 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
   const mail = account?.email ?? ''
   const [copied, setCopied] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
-  // Why the name was not saved, under its card in red.
-  const [nameProblem, setNameProblem] = useState<string>()
-  const hint = useId()
+  const [hasPassword, setHasPassword] = useState<boolean>()
+  useEffect(() => {
+    let live = true
+    void store.hasPassword().then((has) => {
+      if (live) setHasPassword(has)
+    })
+    return () => {
+      live = false
+    }
+  }, [store])
   useEffect(() => {
     if (!copied) return
     const timer = setTimeout(() => setCopied(false), 1_200)
@@ -518,9 +528,8 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
       () => {},
     )
   }
-  const at = mail.lastIndexOf('@')
   return (
-    <div className="settings-page general-page">
+    <div className="settings-page general-page account-form">
       <div className="account-head">
         <SettingsAccountFace size={44} store={store} />
         <div className="account-head-words">
@@ -530,76 +539,60 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
           )}
         </div>
       </div>
-      <SettingsGroup
-        footer={nameProblem ?? t('Your agents call you by this name.')}
-        footerTint={nameProblem ? 'var(--danger)' : undefined}
-      >
-        <NameLine store={store} problem={setNameProblem} />
-      </SettingsGroup>
-      <SettingsGroup>
-        {mail !== '' && (
+      <NameField store={store} />
+      {mail !== '' && (
+        <FormField label={t('Email')}>
+          <span className="account-email-value">{mail}</span>
           <button
             type="button"
-            className="account-email"
-            aria-describedby={hint}
+            className="account-copy"
+            title={t('Copies the email')}
+            aria-label={t('Copies the email')}
             onClick={copy}
           >
-            <SettingsLine label={t('Email')}>
-              <span className="account-email-end">
-                {/* Cut in its middle, as the Mac's: what is before the @ gives way, the domain stays. */}
-                <span className="account-email-value">
-                  <span className="account-email-local">
-                    {at > 0 ? mail.slice(0, at) : mail}
-                  </span>
-                  {at > 0 && (
-                    <span className="account-email-domain">
-                      {mail.slice(at)}
-                    </span>
-                  )}
-                </span>
-                <OwnSymbol name={copied ? 'checkmark' : 'docOnDoc'} size={12} />
-              </span>
-            </SettingsLine>
-            <span id={hint} hidden>
-              {t('Copies the email')}
-            </span>
+            <OwnSymbol name={copied ? 'checkmark' : 'docOnDoc'} size={12} />
           </button>
+        </FormField>
+      )}
+      <div className="form-field">
+        {/* Open, its boxes say what they are ("New password"). */}
+        {!changingPassword && (
+          <span className="form-label">{t('Password')}</span>
         )}
-        <SettingsLinkRow
-          label={t('Password')}
-          divided={mail !== ''}
-          onClick={() => setChangingPassword((open) => !open)}
-        />
-        {changingPassword && (
+        {changingPassword ? (
           <PasswordForm
             store={store}
             email={mail}
-            done={() => setChangingPassword(false)}
+            hasPassword={hasPassword === true}
+            done={(saved) => {
+              setChangingPassword(false)
+              if (saved) setHasPassword(true)
+            }}
           />
+        ) : (
+          <span>
+            <FormButton onClick={() => setChangingPassword(true)}>
+              {hasPassword === true ? t('Change Password') : t('Set Password')}
+            </FormButton>
+          </span>
         )}
-      </SettingsGroup>
+      </div>
     </div>
   )
 }
 
 /**
- * Name, written in its row (`NameLine`; the founder, 22 October 2026:
- * "theres name there, but uneditable"): a field at the row's end, saved on
- * Return or when it lets go of the keys, when it changed
- * (`AppStore.changeName`); a spinner while it goes. Refused, the name comes
- * back and why is said under the card.
+ * Name (`NameField`; the founder, 22 October 2026: "theres name there, but
+ * uneditable"): its box, and Save beside it once what is typed differs from
+ * the name; Return saves too (`AppStore.changeName`). Refused, the name
+ * comes back and why is said under it in red.
  */
-function NameLine({
-  store,
-  problem,
-}: {
-  store: AppStore
-  problem: (why: string | undefined) => void
-}) {
+function NameField({ store }: { store: AppStore }) {
   const saved = store.account?.name ?? ''
   const [text, setText] = useState(saved)
   const [saving, setSaving] = useState(false)
   const [focused, setFocused] = useState(false)
+  const [problem, setProblem] = useState<string>()
   const busy = useRef(false)
   // The account's name changed elsewhere: the field follows it, unless it is being written in or saved.
   const [seen, setSeen] = useState(saved)
@@ -607,69 +600,82 @@ function NameLine({
     setSeen(saved)
     if (!focused && !saving) setText(saved)
   }
+  const typed = normalizedName(text)
+  const changed = typed !== '' && typed !== saved
   const save = async () => {
     if (busy.current) return
-    const typed = normalizedName(text)
     // Nothing new, or nothing at all: the name stays as it was.
-    if (typed === '' || typed === saved) {
+    if (!changed) {
       setText(saved)
       return
     }
     busy.current = true
     setSaving(true)
-    problem(undefined)
+    setProblem(undefined)
     const refused = await store.changeName(typed)
     busy.current = false
     setSaving(false)
     setText(store.account?.name ?? saved)
-    problem(refused)
+    setProblem(refused)
   }
   return (
-    <SettingsLine label={t('Name')}>
-      <span className="account-name-end">
-        {saving && <span className="settings-spinner" aria-hidden="true" />}
-        <input
-          className="account-field account-name-field"
-          value={text}
-          aria-label={t('Name')}
-          autoComplete="name"
-          spellCheck={false}
-          disabled={saving}
-          onChange={(event) => setText(event.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => {
-            setFocused(false)
-            void save()
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
-            event.preventDefault()
-            void save()
-          }}
-        />
-      </span>
-    </SettingsLine>
+    <div className="form-field">
+      <label className="form-label" htmlFor="account-name">
+        {t('Name')}
+      </label>
+      <div className="account-name-line">
+        <span className="form-box">
+          <input
+            id="account-name"
+            value={text}
+            autoComplete="name"
+            spellCheck={false}
+            disabled={saving}
+            onChange={(event) => setText(event.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+              event.preventDefault()
+              void save()
+            }}
+          />
+        </span>
+        {(changed || saving) && (
+          <FormButton kind="primary" busy={saving} onClick={() => void save()}>
+            {t('Save')}
+          </FormButton>
+        )}
+      </div>
+      <p
+        className={classes('form-note', problem !== undefined && 'refused')}
+        role={problem !== undefined ? 'alert' : undefined}
+      >
+        {problem ?? t('Your agents call you by this name.')}
+      </p>
+    </div>
   )
 }
 
 /**
- * The password (`PasswordForm`, the iPhone's Password page, in its row):
- * typed twice, at least eight characters; Set Password, or Change Password
- * once there is one. A refusal or a mismatch in red under the fields. What
- * is typed stays in the browser's own masked fields: looked at only to say
- * whether the two match and are long enough, read once as it is sent,
- * emptied once saved, never kept by the page.
+ * The password (`PasswordForm`, the iPhone's Password page): typed twice,
+ * at least eight characters, each in its box; under them what it takes (or
+ * why not, in red); Cancel, and Set Password (or Change Password once there
+ * is one). What is typed stays in the browser's own masked fields: looked at
+ * only to say whether the two match and are long enough, read once as it is
+ * sent, emptied once saved, never kept by the page.
  */
 function PasswordForm({
   store,
   email,
+  hasPassword,
   done,
 }: {
   store: AppStore
   email: string
-  done: () => void
+  hasPassword: boolean
+  done: (saved: boolean) => void
 }) {
-  const [hasPassword, setHasPassword] = useState<boolean>()
   const first = useRef<HTMLInputElement>(null)
   const again = useRef<HTMLInputElement>(null)
   const [typed, setTyped] = useState({
@@ -688,15 +694,6 @@ function PasswordForm({
       shown.current = false
     }
   }, [])
-  useEffect(() => {
-    let live = true
-    void store.hasPassword().then((has) => {
-      if (live) setHasPassword(has)
-    })
-    return () => {
-      live = false
-    }
-  }, [store])
   const look = () => {
     const one = first.current?.value ?? ''
     const two = again.current?.value ?? ''
@@ -723,51 +720,54 @@ function PasswordForm({
     }
     if (first.current) first.current.value = ''
     if (again.current) again.current.value = ''
-    done()
+    done(true)
   }
   const line =
     problem ??
     (mismatch
       ? t("The two don't match.")
       : t`At least ${minimumPassword} characters. You'll sign in with ${email || 'your email'} and this password.`)
-  const field = (ref: RefObject<HTMLInputElement | null>, prompt: string) => (
-    <input
-      ref={ref}
-      type="password"
-      className="account-field password-field"
-      placeholder={prompt}
-      aria-label={prompt}
-      autoComplete="new-password"
-      onInput={look}
-      onKeyDown={(event) => {
-        if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
-        event.preventDefault()
-        void save()
-      }}
-    />
+  const field = (ref: RefObject<HTMLInputElement | null>, label: string) => (
+    <FormField label={label}>
+      <input
+        ref={ref}
+        type="password"
+        autoComplete="new-password"
+        onInput={look}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' || event.nativeEvent.isComposing) return
+          event.preventDefault()
+          void save()
+        }}
+      />
+    </FormField>
   )
   return (
-    <div className="password-form">
-      {field(first, hasPassword === true ? t('New password') : t('Password'))}
+    <div className="password-form form-fields">
+      {field(first, t('New password'))}
       {field(again, t('Type it again'))}
       <p
         className={classes(
-          'password-line',
+          'form-note',
           (problem !== undefined || mismatch) && 'refused',
         )}
         role={problem !== undefined ? 'alert' : undefined}
       >
         {line}
       </p>
-      <div className="password-actions">
-        {saving && <span className="settings-spinner" aria-hidden="true" />}
-        <SettingsPill
-          title={
-            hasPassword === true ? t('Change Password') : t('Set Password')
-          }
-          disabled={!ready || saving}
+      <div className="form-buttons">
+        <span className="form-buttons-spacer" />
+        <FormButton disabled={saving} onClick={() => done(false)}>
+          {t('Cancel')}
+        </FormButton>
+        <FormButton
+          kind="primary"
+          busy={saving}
+          disabled={!ready}
           onClick={() => void save()}
-        />
+        >
+          {hasPassword ? t('Change Password') : t('Set Password')}
+        </FormButton>
       </div>
     </div>
   )
@@ -818,7 +818,12 @@ export function SettingsPermissionsPage({ store }: { store: AppStore }) {
   )
 }
 
-/** One list (Allow automatically, Ask first): its rules, then the row that adds one; what the list means under it. */
+/**
+ * One list (Allow automatically, Ask first; the founder, 9 November 2026:
+ * "whats with the + signs. i click on them all the time. i dont understand
+ * this ui"): its name and what it means, its rules in a card (none, no
+ * card), then a box to type a new one with Add beside it.
+ */
 function RuleList({
   behavior,
   model,
@@ -830,30 +835,31 @@ function RuleList({
     (rule) => rule.behavior === behavior,
   )
   return (
-    <SettingsGroup
-      title={ruleListLabel(behavior)}
-      footer={
-        behavior === 'allow'
-          ? t('Simeon does these without asking you.')
-          : t(
-              'Simeon asks you before doing these. When two rules disagree, it asks.',
-            )
-      }
-    >
-      {listed.map((rule, index) => (
-        <RuleLine
-          key={`${rule.listIndex}:${rule.text}`}
-          rule={rule}
-          divided={index > 0}
-          model={model}
-        />
-      ))}
-      <NewRuleLine
-        behavior={behavior}
-        divided={listed.length > 0}
-        model={model}
-      />
-    </SettingsGroup>
+    <section className="rule-list">
+      <div className="rule-list-head">
+        <h3 className="rule-list-name">{ruleListLabel(behavior)}</h3>
+        <p className="rule-list-means">
+          {behavior === 'allow'
+            ? t('Simeon does these without asking you.')
+            : t(
+                'Simeon asks you before doing these. When two rules disagree, it asks.',
+              )}
+        </p>
+      </div>
+      {listed.length > 0 && (
+        <SettingsGroup>
+          {listed.map((rule, index) => (
+            <RuleLine
+              key={`${rule.listIndex}:${rule.text}`}
+              rule={rule}
+              divided={index > 0}
+              model={model}
+            />
+          ))}
+        </SettingsGroup>
+      )}
+      <NewRuleLine behavior={behavior} model={model} />
+    </section>
   )
 }
 
@@ -926,53 +932,41 @@ function RuleLine({
   )
 }
 
-/**
- * A list's last row (`NewRuleLine`): a rule typed straight into it ("e.g.
- * read my calendar"), the plus before it, Add at its end (or Return); a full
- * list says so instead.
- */
+/** A new rule (`NewRuleLine`): a box to type it in ("e.g. read my calendar"), a line growing to four, and Add beside it (or Return); a full list says so instead. */
 function NewRuleLine({
   behavior,
-  divided,
   model,
 }: {
   behavior: RuleBehavior
-  divided: boolean
   model: GeneralSettingsModel
 }) {
   const full = isFullList(ruleList(model.rules, behavior))
   const draft = model.drafts[behavior] ?? ''
+  if (full) return <p className="form-note">{ruleLimitNote()}</p>
   return (
-    <div className={classes('rule-new', divided && 'divided')}>
-      <span className={classes('rule-new-plus', full && 'full')}>
-        <OwnSymbol name="plusCircleFill" size={15} />
+    <div className="rule-new">
+      <span className="form-box">
+        <RuleText
+          className="rule-new-field"
+          value={draft}
+          placeholder={
+            behavior === 'allow'
+              ? t('e.g. read my calendar')
+              : t('e.g. reply to emails for me')
+          }
+          label={t('Add Rule')}
+          onChange={(words) => model.setDraft(behavior, words)}
+          onSubmit={() => void model.add(behavior)}
+        />
       </span>
-      {full ? (
-        <span className="rule-new-full">{ruleLimitNote()}</span>
-      ) : (
-        <>
-          <RuleText
-            className="rule-new-field"
-            value={draft}
-            placeholder={
-              behavior === 'allow'
-                ? t('e.g. read my calendar')
-                : t('e.g. reply to emails for me')
-            }
-            label={t('Add Rule')}
-            onChange={(words) => model.setDraft(behavior, words)}
-            onSubmit={() => void model.add(behavior)}
-          />
-          {model.rulesPending && draft !== '' && (
-            <span className="settings-spinner" aria-hidden="true" />
-          )}
-          <SettingsPill
-            title={t('Add')}
-            disabled={!model.canAdd(behavior)}
-            onClick={() => void model.add(behavior)}
-          />
-        </>
-      )}
+      <FormButton
+        kind="primary"
+        busy={model.rulesPending && draft !== ''}
+        disabled={!model.canAdd(behavior)}
+        onClick={() => void model.add(behavior)}
+      >
+        {t('Add')}
+      </FormButton>
     </div>
   )
 }

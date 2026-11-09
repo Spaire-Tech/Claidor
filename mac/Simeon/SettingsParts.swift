@@ -379,3 +379,182 @@ struct SettingsAccountFace: View {
     .accessibilityHidden(true)
   }
 }
+
+// MARK: Forms
+
+extension Look {
+  /** A form's box: white, or #1c1c1e on dark. */
+  var formBox: Color { dark ? Color(hex: 0x1c1c1e) : .white }
+  /** Its edge: a hairline, the blue while it has the keys. */
+  var formEdge: Color { dark ? Color.white.opacity(0.14) : Color.black.opacity(0.13) }
+}
+
+/**
+ * A form's field (the founder, 9 November 2026, with another app's contact
+ * form beside ours: a label on the left and "Optional" on the right was
+ * "very confusing"; the other's "is how grok bot does it ... what makes
+ * sense"): its name (13, grey) over a box 38 high, 10 round, white with a
+ * hairline, its edge blue while it has the keys; a note under it (12, grey).
+ */
+struct FormField<Content: View>: View {
+  var label: String? = nil
+  var note: String? = nil
+  var noteTint: Color? = nil
+  var focused = false
+  let look: Look
+  @ViewBuilder let content: () -> Content
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      if let label {
+        Text(label)
+          .font(PanelType.row)
+          .foregroundStyle(look.inkSecondary)
+          .lineLimit(1)
+      }
+      content()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(look.formBox))
+        .overlay {
+          RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(focused ? look.settingsAction : look.formEdge, lineWidth: focused ? 1.5 : 1)
+        }
+      if let note, !note.isEmpty {
+        Text(note)
+          .font(PanelType.detail)
+          .foregroundStyle(noteTint ?? look.inkSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+/** A form's text field: its name over its box (`FormField`); a password's dots; words over several lines when it grows. */
+struct FormTextField: View {
+  let label: String
+  @Binding var text: String
+  var prompt: String? = nil
+  var note: String? = nil
+  var content: NSTextContentType? = nil
+  var secure = false
+  var grows = false
+  let look: Look
+  var submit: () -> Void = {}
+  @FocusState private var focused: Bool
+
+  var body: some View {
+    FormField(label: label, note: note, focused: focused, look: look) {
+      Group {
+        if secure {
+          SecureField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) })
+        } else if grows {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) }, axis: .vertical)
+            .lineLimit(1...5)
+        } else {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) })
+        }
+      }
+      .textFieldStyle(.plain)
+      .labelsHidden()
+      .font(.system(size: 14))
+      .foregroundStyle(look.ink)
+      .textContentType(content)
+      .focused($focused)
+      .onSubmit(submit)
+    }
+  }
+}
+
+/** A form's choice of many (a country): its name over a box with the choice and a chevron; Apple's menu of the choices, the current one ticked. */
+struct FormMenuField<Value: Hashable>: View {
+  let label: String
+  let options: [(value: Value, label: String)]
+  let value: Value
+  /** The words shown when nothing is chosen. */
+  var placeholder: String? = nil
+  let look: Look
+  let pick: (Value) -> Void
+
+  var body: some View {
+    let current = options.first { $0.value == value }?.label
+    FormField(label: label, look: look) {
+      Menu {
+        ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+          Toggle(option.label, isOn: Binding(get: { option.value == value }, set: { _ in if option.value != value { pick(option.value) } }))
+        }
+      } label: {
+        HStack(spacing: 8) {
+          Text(current ?? placeholder ?? "")
+            .font(.system(size: 14))
+            .foregroundStyle(current == nil ? look.inkTertiary : look.ink)
+            .lineLimit(1)
+          Spacer(minLength: 0)
+          Image(systemName: "chevron.down")
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(look.inkSecondary)
+        }
+        .contentShape(Rectangle())
+      }
+      .menuStyle(.button)
+      .buttonStyle(.borderless)
+      .menuIndicator(.hidden)
+      .frame(maxWidth: .infinity)
+      .handCursor()
+      .accessibilityLabel(label)
+      .accessibilityValue(current ?? "")
+    }
+  }
+}
+
+/** A form's button, a capsule 36 high: the main one in the ink (white words), the others in the cards' grey, one that takes something away in red on a red wash. */
+struct FormButton: View {
+  enum Kind { case primary, secondary, destructive }
+
+  let title: String
+  var kind: Kind = .secondary
+  var busy = false
+  var disabled = false
+  let look: Look
+  let action: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    Button(action: action) {
+      HStack(spacing: 6) {
+        if busy { ProgressView().controlSize(.small) }
+        Text(title)
+          .font(.system(size: 14, weight: .medium))
+          .lineLimit(1)
+      }
+      .foregroundStyle(ink)
+      .padding(.horizontal, 18)
+      .frame(height: 36)
+      .background(Capsule().fill(fill))
+      .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .disabled(disabled || busy)
+    .opacity(disabled ? 0.4 : 1)
+    .onHover { hovering = $0 }
+  }
+
+  private var ink: Color {
+    switch kind {
+    case .primary: return look.dark ? Color.black : Color.white
+    case .secondary: return look.ink
+    case .destructive: return look.danger
+    }
+  }
+
+  private var fill: Color {
+    let lit = hovering && !disabled
+    switch kind {
+    case .primary: return look.ink.opacity(lit ? 0.82 : 1)
+    case .secondary: return lit ? look.groupedRowHover : look.groupedRow
+    case .destructive: return look.danger.opacity(lit ? 0.16 : 0.1)
+    }
+  }
+}

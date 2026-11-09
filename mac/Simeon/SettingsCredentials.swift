@@ -201,12 +201,15 @@ struct MacSiteIconTile: View {
 }
 
 /**
- * A login or contact info on a sheet, in the app's own parts (the travellers'
- * sheet): the glass disc that closes it and its name at the top; its fields
- * as Settings' rows, the label on the left and what is typed on the right; a
- * saved password as dots until the eye is pressed and Touch ID allows it;
- * Hints; Delete for a saved one; Save the sheet's one wide button in the
- * blue. A click outside closes it only while nothing was changed.
+ * A login or contact info on a sheet (the founder, 9 November 2026: the
+ * Settings rows with "Optional" on the right were "very confusing"; another
+ * app's form, "how grok bot does it", is "what makes sense"): its kind's
+ * symbol and its name at the top, the glass disc that closes it at the
+ * right; each field's name over its box, two to a line where they pair
+ * (City and State, Postal code and Country, Name and Hints); a saved
+ * password as dots until the eye is pressed and Touch ID allows it; at the
+ * foot Delete (a saved one) on the left, Cancel and Save on the right. A
+ * click outside closes it only while nothing was changed.
  */
 struct MacCredentialSheet: View {
   let model: CredentialsStoreModel
@@ -219,6 +222,7 @@ struct MacCredentialSheet: View {
   @State private var showsPassword: Bool
   @State private var saving = false
   @State private var problem: String?
+  @FocusState private var passwordFocused: Bool
 
   private var look: Look { Look(scheme) }
   private var isLogin: Bool { draft.kind == .login }
@@ -250,130 +254,116 @@ struct MacCredentialSheet: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      ZStack {
+      HStack(spacing: 10) {
+        Image(systemName: isLogin ? "key" : "person")
+          .font(.system(size: 13))
+          .foregroundStyle(look.inkSecondary)
+          .frame(width: 28, height: 28)
+          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedRow))
         Text(title)
           .font(PanelType.title)
           .foregroundStyle(look.ink)
           .lineLimit(1)
-          .padding(.horizontal, 56)
           .accessibilityAddTraits(.isHeader)
-        HStack {
-          GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
-            .keyboardShortcut(.cancelAction)
-            .disabled(saving)
-          Spacer(minLength: 0)
-        }
+        Spacer(minLength: 8)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+          .disabled(saving)
       }
-      .padding(.horizontal, 16)
-      .padding(.top, 16)
-      .padding(.bottom, 8)
+      .padding(.horizontal, 24)
+      .padding(.top, 20)
+      .padding(.bottom, 12)
       ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-          SettingsGroup(look: look) {
-            MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, prompt: String(localized: "Optional"), divided: false, look: look)
-            if isLogin {
-              MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, look: look)
-              MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, prompt: String(localized: "Required"), content: .username, look: look)
-              passwordRow
-            } else {
-              MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, prompt: String(localized: "Optional"), content: .name, look: look)
-              MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, prompt: String(localized: "Optional"), content: .emailAddress, look: look)
-              MacStoreTextRow(label: String(localized: "Phone"), text: $draft.phone, prompt: String(localized: "Optional"), content: .telephoneNumber, look: look)
+        VStack(alignment: .leading, spacing: 18) {
+          if isLogin {
+            FormTextField(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, look: look, submit: submit)
+            FormTextField(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look, submit: submit)
+            passwordField
+          } else {
+            FormTextField(label: String(localized: "Full name"), text: $draft.fullName, content: .name, look: look, submit: submit)
+            FormTextField(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, look: look, submit: submit)
+            FormTextField(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look, submit: submit)
+            HStack(alignment: .top, spacing: 16) {
+              FormTextField(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look, submit: submit)
+              FormTextField(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look, submit: submit)
             }
-          }
-          if !isLogin {
-            SettingsGroup(title: String(localized: "Address"), look: look) {
-              MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, prompt: String(localized: "Optional"), content: .streetAddressLine1, divided: false, look: look)
-              MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, prompt: String(localized: "Optional"), content: .streetAddressLine2, look: look)
-              MacStoreTextRow(label: String(localized: "City"), text: $draft.city, prompt: String(localized: "Optional"), content: .addressCity, look: look)
-              MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, prompt: String(localized: "Optional"), content: .addressState, look: look)
-              MacStoreTextRow(label: String(localized: "Postal code"), text: $draft.postalCode, prompt: String(localized: "Optional"), content: .postalCode, look: look)
-              SettingsMenu(
+            HStack(alignment: .top, spacing: 16) {
+              FormTextField(label: String(localized: "Postal code"), text: $draft.postalCode, content: .postalCode, look: look, submit: submit)
+              FormMenuField(
                 label: String(localized: "Country"),
-                divided: true,
                 options: MacCountryName.all.map { (value: $0.code, label: $0.name) },
                 value: draft.country,
-                shown: draft.country.isEmpty ? String(localized: "Choose") : nil,
+                placeholder: String(localized: "Choose"),
                 look: look
               ) { draft.country = $0 }
             }
+            FormTextField(label: String(localized: "Phone"), text: $draft.phone, content: .telephoneNumber, look: look, submit: submit)
+            FormTextField(label: String(localized: "Email"), text: $draft.email, content: .emailAddress, look: look, submit: submit)
           }
-          SettingsGroup(title: String(localized: "Hints"), footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
-            TextField("Hints", text: $draft.hints, prompt: Text("Tell Simeon when to use this entry").foregroundStyle(look.inkTertiary), axis: .vertical)
-              .textFieldStyle(.plain)
-              .font(PanelType.row)
-              .foregroundStyle(look.ink)
-              .lineLimit(2...6)
-              .padding(.horizontal, SettingsRowSize.inset)
-              .padding(.vertical, SettingsRowSize.vertical)
-              .frame(minHeight: SettingsRowSize.minHeight, alignment: .topLeading)
+          HStack(alignment: .top, spacing: 16) {
+            FormTextField(label: String(localized: "Name"), text: $draft.name, look: look, submit: submit)
+            FormTextField(label: String(localized: "Hints"), text: $draft.hints, note: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
+          }
+          if let by = entry?.savedBy {
+            Text("Saved by \(by) at a sign-up.")
+              .font(PanelType.detail)
+              .foregroundStyle(look.inkSecondary)
           }
           if let problem {
             Text(problem)
               .font(PanelType.detail)
               .foregroundStyle(look.danger)
               .fixedSize(horizontal: false, vertical: true)
-              .padding(.horizontal, 8)
-          }
-          if entry != nil {
-            SettingsGroup(look: look) {
-              SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
-            }
           }
         }
-        .padding(.horizontal, 32)
-        .padding(.top, 8)
-        .padding(.bottom, 24)
+        .padding(.horizontal, 24)
+        .padding(.top, 4)
+        .padding(.bottom, 20)
       }
-      VStack(spacing: 0) {
-        Button {
-          Task { await save() }
-        } label: {
-          HStack(spacing: 8) {
-            if saving { ProgressView().controlSize(.small).tint(.white) }
-            Text("Save")
-          }
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(maxWidth: .infinity)
-          .frame(height: 36)
+      HStack(spacing: 10) {
+        if entry != nil {
+          FormButton(title: String(localized: "Delete"), kind: .destructive, disabled: saving, look: look) { askToDelete() }
         }
-        .prominentGlassButton()
-        .controlSize(.large)
-        .tint(look.yours)
-        .keyboardShortcut(.defaultAction)
-        .handCursor()
-        .disabled(saving || draft.isEmpty || (entry != nil && draft == opened))
+        Spacer(minLength: 0)
+        FormButton(title: String(localized: "Cancel"), disabled: saving, look: look) { dismiss() }
+        FormButton(title: String(localized: "Save"), kind: .primary, busy: saving, disabled: draft.isEmpty || (entry != nil && draft == opened), look: look) { submit() }
+          .keyboardShortcut(.defaultAction)
       }
-      .padding(.horizontal, 32)
+      .padding(.horizontal, 24)
       .padding(.top, 12)
-      .padding(.bottom, 24)
+      .padding(.bottom, 20)
     }
-    .frame(width: 560, height: isLogin ? 560 : 720)
+    .frame(width: 560, height: isLogin ? 500 : 760)
     .background(look.groupedGround)
     .interactiveDismissDisabled(saving)
     .closesOnClickOutside { if !saving && draft == opened { dismiss() } }
   }
 
+  /** Return in a field, or Save: saves when there is something new to save. */
+  private func submit() {
+    guard !saving, !draft.isEmpty, entry == nil || draft != opened else { return }
+    Task { await save() }
+  }
+
   /** The password: dots, or the words once shown; a saved one is read only after Touch ID. */
-  private var passwordRow: some View {
-    SettingsLine(label: String(localized: "Password"), divided: true, look: look) {
+  private var passwordField: some View {
+    FormField(label: String(localized: "Password"), focused: passwordFocused, look: look) {
       HStack(spacing: 8) {
         Group {
           let hidden = entry?.hasPassword == true && !passwordRead
           if showsPassword {
-            TextField("Password", text: $draft.password, prompt: Text(String(localized: "Required")).foregroundStyle(look.inkTertiary))
+            TextField("Password", text: $draft.password)
           } else {
-            SecureField("Password", text: $draft.password, prompt: Text(hidden ? "••••••••" : String(localized: "Required")).foregroundStyle(look.inkTertiary))
+            SecureField("Password", text: $draft.password, prompt: hidden ? Text("••••••••").foregroundStyle(look.inkTertiary) : nil)
           }
         }
         .textFieldStyle(.plain)
         .labelsHidden()
-        .multilineTextAlignment(.trailing)
-        .font(PanelType.row)
+        .font(.system(size: 14))
         .foregroundStyle(look.ink)
         .textContentType(.password)
-        .frame(width: 260)
+        .focused($passwordFocused)
+        .onSubmit(submit)
         Button { Task { await togglePassword() } } label: {
           Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
         }
@@ -421,29 +411,6 @@ struct MacCredentialSheet: View {
       Task {
         if await model.delete(entry) { dismiss() } else { problem = model.problem }
       }
-    }
-  }
-}
-
-/** A row with a field: the label on the left, what is typed on the right, in the row's own type. */
-private struct MacStoreTextRow: View {
-  let label: String
-  @Binding var text: String
-  let prompt: String
-  var content: NSTextContentType? = nil
-  var divided = true
-  let look: Look
-
-  var body: some View {
-    SettingsLine(label: label, divided: divided, look: look) {
-      TextField(label, text: $text, prompt: Text(prompt).foregroundStyle(look.inkTertiary))
-        .textFieldStyle(.plain)
-        .labelsHidden()
-        .multilineTextAlignment(.trailing)
-        .font(PanelType.row)
-        .foregroundStyle(look.ink)
-        .textContentType(content)
-        .frame(width: 300)
     }
   }
 }

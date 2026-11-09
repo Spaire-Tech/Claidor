@@ -50,15 +50,14 @@ import { classes } from './classes'
 import { AppLogoTile } from './ConnectCards'
 import countries from './countries.json'
 import { Alert } from './Dialogs'
+import { FormButton, FormField, FormSelect } from './FormParts'
 import { useSiteIcon } from './MessageText'
 import { confirmPresence } from './presence'
 import './SettingsCredentials.css'
 import {
   PanelDisc,
-  SettingsActionRow,
   SettingsGroup,
   SettingsLine,
-  SettingsMenu,
   SettingsPill,
   SettingsSymbol,
 } from './SettingsParts'
@@ -397,13 +396,16 @@ const notTheirs = {
 } as const
 
 /**
- * A login or contact info on a sheet, in the app's own parts
- * (`MacCredentialSheet`): the glass disc that closes it and its name at
- * the top; its fields as Settings' rows, the label on the left and what is
- * typed on the right; a saved password as dots until the eye is pressed and
- * the person allows it; Hints; Delete for a saved one; Save the sheet's one
- * wide button in the blue. A click outside closes it only while nothing was
- * changed; Escape closes it; Return in a field saves.
+ * A login or contact info on a sheet (`MacCredentialSheet`; the founder, 9
+ * November 2026: the Settings rows with "Optional" on the right were "very
+ * confusing"; another app's form, "how grok bot does it", is "what makes
+ * sense"): its kind's symbol and its name at the top, the glass disc that
+ * closes it at the right; each field's name over its box, two to a line
+ * where they pair (City and State, Postal code and Country, Name and
+ * Hints); a saved password as dots until the eye is pressed and the person
+ * allows it; at the foot Delete (a saved one) on the left, Cancel and Save
+ * on the right. A click outside closes it only while nothing was changed;
+ * Escape closes it; Return in a field saves.
  */
 function CredentialSheet({
   model,
@@ -439,8 +441,6 @@ function CredentialSheet({
   const sheet = useRef<HTMLDivElement>(null)
   const [masks] = useState(masksText)
   const shape = secretFieldShape(showsPassword, masks)
-  /** The Country menu was open as this press began (its own listener closes it first): the press is the menu's. */
-  const menuAtPress = useRef(false)
 
   const unchanged = sameFields(fields, opened) && !passwordChanged
   const empty =
@@ -455,16 +455,6 @@ function CredentialSheet({
     close()
   }
 
-  // Before any listener of the page sees a press: whether the Country menu is open.
-  useEffect(() => {
-    const press = () => {
-      menuAtPress.current =
-        sheet.current?.querySelector('.context-menus') != null
-    }
-    window.addEventListener('mousedown', press, true)
-    return () => window.removeEventListener('mousedown', press, true)
-  }, [])
-
   // The keys come to the sheet as it opens, and go back to what had them as it closes.
   useEffect(() => {
     const before =
@@ -477,7 +467,7 @@ function CredentialSheet({
     }
   }, [])
 
-  // Escape closes it (the × is its `cancelAction`), not while it saves, an alert is over it or its Country menu is open.
+  // Escape closes it (the × is its `cancelAction`), not while it saves or an alert is over it.
   const latest = useRef({ close: leave, saving, asking })
   useEffect(() => {
     latest.current = { close: leave, saving, asking }
@@ -487,7 +477,6 @@ function CredentialSheet({
       if (event.key !== 'Escape' || event.isComposing) return
       const now = latest.current
       if (now.asking !== undefined) return
-      if (sheet.current?.querySelector('.context-menus')) return
       event.preventDefault()
       event.stopPropagation()
       if (!now.saving) now.close()
@@ -606,35 +595,31 @@ function CredentialSheet({
       : t('New Contact Info')
   const hidden = entry?.hasPassword === true && !passwordRead
 
-  const row = (
+  const field = (
     key: keyof Fields,
     label: string,
-    prompt: string,
-    options: { divided?: boolean; autoComplete?: string; mine?: boolean } = {},
+    options: { autoComplete?: string; mine?: boolean; prompt?: string } = {},
   ) => (
-    <SettingsLine label={label} divided={options.divided ?? true}>
+    <FormField label={label}>
       <input
-        className="credentials-field"
         value={fields[key]}
-        placeholder={prompt}
-        aria-label={label}
+        placeholder={options.prompt}
         autoComplete={options.autoComplete ?? 'off'}
         spellCheck={false}
         {...(options.mine ? notTheirs : {})}
         onChange={(event) => set(key)(event.target.value)}
         onKeyDown={onReturn}
       />
-    </SettingsLine>
+    </FormField>
   )
 
   return createPortal(
     <div
       className="sheet-scrim"
       onMouseDown={(event) => {
-        // A click outside closes it only while nothing was changed; with the Country menu open, it closes only the menu.
+        // A click outside closes it only while nothing was changed.
         if (event.target !== event.currentTarget || event.defaultPrevented)
           return
-        if (menuAtPress.current) return
         if (!saving && unchanged && asking === undefined) leave()
       }}
     >
@@ -647,164 +632,150 @@ function CredentialSheet({
         tabIndex={-1}
       >
         <div className="credential-head">
-          <span className="credential-close">
-            <PanelDisc
-              symbol="xmark"
-              label={t('Close')}
-              disabled={saving}
-              onClick={leave}
+          <span className="credential-kind" aria-hidden="true">
+            <SettingsSymbol
+              name={isLogin ? 'key' : 'personCropCircle'}
+              size={14}
             />
           </span>
           <h2 className="credential-title">{title}</h2>
+          <PanelDisc
+            symbol="xmark"
+            label={t('Close')}
+            disabled={saving}
+            onClick={leave}
+          />
         </div>
-        <div className="credential-body">
-          <SettingsGroup>
-            {row('name', t('Name'), t('Optional'), { divided: false })}
-            {isLogin ? (
-              <>
-                {row('website', t('Website'), 'acme.com', {
-                  autoComplete: 'off',
-                  mine: true,
-                })}
-                {row('username', t('Username or email'), t('Required'), {
-                  autoComplete: 'off',
-                  mine: true,
-                })}
-                <SettingsLine label={t('Password')} divided>
-                  <span className="credential-password">
-                    <input
-                      ref={password}
-                      className={classes(
-                        'credentials-field password',
-                        shape.masked && 'masked',
-                      )}
-                      type={shape.type}
-                      defaultValue=""
-                      placeholder={hidden ? '••••••••' : t('Required')}
-                      aria-label={t('Password')}
-                      autoComplete={shape.autoComplete}
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      {...notTheirs}
-                      onChange={passwordTyped}
-                      onKeyDown={onReturn}
-                      // Masked, its words can't be copied, cut or dragged out, as a password field's.
-                      onCopy={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                      onCut={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                      onDragStart={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="credential-eye"
-                      title={
-                        showsPassword ? t('Hide Password') : t('Show Password')
-                      }
-                      aria-label={
-                        showsPassword ? t('Hide Password') : t('Show Password')
-                      }
-                      disabled={revealing || deleting}
-                      onClick={togglePassword}
-                    >
-                      <EyeSymbol slashed={showsPassword} />
-                    </button>
-                  </span>
-                </SettingsLine>
-              </>
-            ) : (
-              <>
-                {row('fullName', t('Full name'), t('Optional'), {
-                  autoComplete: 'name',
-                })}
-                {row('email', t('Email'), t('Optional'), {
-                  autoComplete: 'email',
-                })}
-                {row('phone', t('Phone'), t('Optional'), {
-                  autoComplete: 'tel',
-                })}
-              </>
-            )}
-          </SettingsGroup>
-          {!isLogin && (
-            <SettingsGroup title={t('Address')}>
-              {row('addressLine1', t('Address'), t('Optional'), {
-                divided: false,
+        <div className="credential-body form-fields">
+          {isLogin ? (
+            <>
+              {field('website', t('Website'), {
+                mine: true,
+                prompt: 'acme.com',
+              })}
+              {field('username', t('Username or email'), { mine: true })}
+              <FormField label={t('Password')}>
+                <input
+                  ref={password}
+                  className={classes(
+                    'credential-secret',
+                    shape.masked && 'masked',
+                  )}
+                  type={shape.type}
+                  defaultValue=""
+                  placeholder={hidden ? '••••••••' : undefined}
+                  autoComplete={shape.autoComplete}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  {...notTheirs}
+                  onChange={passwordTyped}
+                  onKeyDown={onReturn}
+                  // Masked, its words can't be copied, cut or dragged out, as a password field's.
+                  onCopy={(event) => {
+                    if (shape.masked) event.preventDefault()
+                  }}
+                  onCut={(event) => {
+                    if (shape.masked) event.preventDefault()
+                  }}
+                  onDragStart={(event) => {
+                    if (shape.masked) event.preventDefault()
+                  }}
+                />
+                <button
+                  type="button"
+                  className="credential-eye"
+                  title={
+                    showsPassword ? t('Hide Password') : t('Show Password')
+                  }
+                  aria-label={
+                    showsPassword ? t('Hide Password') : t('Show Password')
+                  }
+                  disabled={revealing || deleting}
+                  onClick={togglePassword}
+                >
+                  <EyeSymbol slashed={showsPassword} />
+                </button>
+              </FormField>
+            </>
+          ) : (
+            <>
+              {field('fullName', t('Full name'), { autoComplete: 'name' })}
+              {field('addressLine1', t('Address'), {
                 autoComplete: 'address-line1',
               })}
-              {row('addressLine2', t('Address line 2'), t('Optional'), {
+              {field('addressLine2', t('Address line 2'), {
                 autoComplete: 'address-line2',
               })}
-              {row('city', t('City'), t('Optional'), {
-                autoComplete: 'address-level2',
-              })}
-              {row('region', t('State or region'), t('Optional'), {
-                autoComplete: 'address-level1',
-              })}
-              {row('postalCode', t('Postal code'), t('Optional'), {
-                autoComplete: 'postal-code',
-              })}
-              <SettingsMenu
-                label={t('Country')}
-                divided
-                options={(countries as [string, string][]).map(
-                  ([code, name]) => ({ value: code, label: name }),
-                )}
-                value={fields.country}
-                shown={fields.country === '' ? t('Choose') : undefined}
-                pick={set('country')}
-              />
-            </SettingsGroup>
+              <div className="form-pair">
+                {field('city', t('City'), { autoComplete: 'address-level2' })}
+                {field('region', t('State or region'), {
+                  autoComplete: 'address-level1',
+                })}
+              </div>
+              <div className="form-pair">
+                {field('postalCode', t('Postal code'), {
+                  autoComplete: 'postal-code',
+                })}
+                <FormSelect
+                  label={t('Country')}
+                  options={(countries as [string, string][]).map(
+                    ([code, name]) => ({ value: code, label: name }),
+                  )}
+                  value={fields.country}
+                  placeholder={t('Choose')}
+                  pick={set('country')}
+                />
+              </div>
+              {field('phone', t('Phone'), { autoComplete: 'tel' })}
+              {field('email', t('Email'), { autoComplete: 'email' })}
+            </>
           )}
-          <SettingsGroup
-            title={t('Hints')}
-            footer={
-              entry?.savedBy !== undefined
-                ? t`Saved by ${entry.savedBy} at a sign-up.`
-                : undefined
-            }
-          >
-            <textarea
-              className="credential-hints"
-              value={fields.hints}
-              rows={2}
-              placeholder={t('Tell Simeon when to use this entry')}
-              aria-label={t('Hints')}
-              onChange={(event) => set('hints')(event.target.value)}
-            />
-          </SettingsGroup>
+          <div className="form-pair">
+            {field('name', t('Name'))}
+            <FormField
+              label={t('Hints')}
+              note={t('Tell Simeon when to use this entry')}
+            >
+              <textarea
+                value={fields.hints}
+                rows={1}
+                onChange={(event) => set('hints')(event.target.value)}
+              />
+            </FormField>
+          </div>
+          {entry?.savedBy !== undefined && (
+            <p className="form-note">{t`Saved by ${entry.savedBy} at a sign-up.`}</p>
+          )}
           {problem !== undefined && (
             <p className="credential-problem" role="alert">
               {problem}
             </p>
           )}
-          {entry && (
-            <SettingsGroup>
-              <SettingsActionRow
-                title={isLogin ? t('Delete Login') : t('Delete Contact Info')}
-                destructive
-                busy={deleting}
-                disabled={saving}
-                onClick={() => setAsking('delete')}
-              />
-            </SettingsGroup>
-          )}
         </div>
-        <div className="credential-foot">
-          <button
-            type="button"
-            className="credential-save"
+        <div className="credential-foot form-buttons">
+          {entry && (
+            <FormButton
+              kind="destructive"
+              busy={deleting}
+              disabled={saving}
+              onClick={() => setAsking('delete')}
+            >
+              {t('Delete')}
+            </FormButton>
+          )}
+          <span className="form-buttons-spacer" />
+          <FormButton disabled={saving} onClick={leave}>
+            {t('Cancel')}
+          </FormButton>
+          <FormButton
+            kind="primary"
+            busy={saving}
             disabled={!canSave}
             onClick={() => void save()}
           >
-            {saving && <span className="credential-wheel" aria-hidden="true" />}
             {t('Save')}
-          </button>
+          </FormButton>
         </div>
       </div>
       {asking === 'reveal' && entry && (

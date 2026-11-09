@@ -16,7 +16,6 @@ import { fileSize } from '../core/fileLine'
 import { fileExtension } from '../core/filePreview'
 import { t } from '../l10n'
 import { fileIcon } from './Files'
-import { useDismiss } from './MessageActions'
 
 /** A file waiting to go with the next message (the window's staged attachment): its name and bytes. */
 export interface StagedFile {
@@ -160,10 +159,10 @@ export function useStaging(): Staging {
 
 /**
  * Attach file (`sand-prompt-attach`): the iPhone's 40-point glass disc with
- * a plus beside the field; off once six wait. It opens its menu upward from
- * itself (`AttachMenu`, the founder, 29 October 2026): Photo or Video (the
- * browser's file chooser, pictures and videos only) and Choose File
- * (several files of any kind).
+ * a plus beside the field; off once six wait. It opens the computer's file
+ * chooser at once, several files of any kind (the founder, 9 November
+ * 2026: Photo or Video "leave that to iphone. on mac/window its
+ * confusing"; it had a menu of the two since 29 October).
  */
 export function AttachButton({
   full,
@@ -172,28 +171,16 @@ export function AttachButton({
   full: boolean
   stage: (files: File[]) => void
 }) {
-  const [open, setOpen] = useState(false)
-  /** The disc and its menu: a click on the disc is no click outside the menu, so the disc's own click closes it. */
-  const spot = useRef<HTMLDivElement>(null)
-  const media = useRef<HTMLInputElement>(null)
   const any = useRef<HTMLInputElement>(null)
-  const take = (input: HTMLInputElement) => {
-    const chosen = [...(input.files ?? [])]
-    // The same file can be chosen again.
-    input.value = ''
-    stage(chosen)
-  }
   return (
-    <div className="attach" ref={spot}>
+    <div className="attach">
       <button
         type="button"
         className="attach-button glass-disc"
         title={t('Attach file')}
         aria-label={t('Attach file')}
-        aria-haspopup="menu"
-        aria-expanded={open}
         disabled={full}
-        onClick={() => setOpen((was) => !was)}
+        onClick={() => any.current?.click()}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
           <path
@@ -205,97 +192,24 @@ export function AttachButton({
           />
         </svg>
       </button>
-      {open && (
-        <AttachMenu
-          spot={spot}
-          close={() => setOpen(false)}
-          photos={() => media.current?.click()}
-          files={() => any.current?.click()}
-        />
-      )}
-      <input
-        ref={media}
-        type="file"
-        accept="image/*,video/*"
-        multiple
-        hidden
-        onChange={(event) => take(event.currentTarget)}
-      />
       <input
         ref={any}
         type="file"
         multiple
         hidden
-        onChange={(event) => take(event.currentTarget)}
+        onChange={(event) => {
+          const input = event.currentTarget
+          const chosen = [...(input.files ?? [])]
+          // The same file can be chosen again.
+          input.value = ''
+          stage(chosen)
+        }}
       />
     </div>
   )
 }
 
-/** Attach's menu: the window's menu look, its foot 4 over the disc's top, from its left; each item with its symbol. */
-function AttachMenu({
-  spot,
-  close,
-  photos,
-  files,
-}: {
-  spot: React.RefObject<HTMLDivElement | null>
-  close: () => void
-  photos: () => void
-  files: () => void
-}) {
-  const box = useRef<HTMLDivElement>(null)
-  useDismiss(spot, close)
-  useEffect(() => box.current?.focus(), [])
-  const items = [
-    { label: t('Photo or Video'), glyph: <PhotoGlyph />, action: photos },
-    { label: t('Choose File'), glyph: <FolderGlyph />, action: files },
-  ]
-  return (
-    <div
-      ref={box}
-      className="pop-menu attach-menu"
-      role="menu"
-      tabIndex={-1}
-      onKeyDown={(event) => {
-        const buttons = [
-          ...(box.current?.querySelectorAll<HTMLButtonElement>('button') ?? []),
-        ]
-        const index = buttons.indexOf(
-          document.activeElement as HTMLButtonElement,
-        )
-        if (event.key === 'ArrowDown')
-          buttons[(index + 1) % buttons.length]?.focus()
-        else if (event.key === 'ArrowUp')
-          buttons[
-            index < 0
-              ? buttons.length - 1
-              : (index - 1 + buttons.length) % buttons.length
-          ]?.focus()
-        else return
-        event.preventDefault()
-      }}
-    >
-      {items.map((item) => (
-        <button
-          key={item.label}
-          type="button"
-          role="menuitem"
-          className="menu-item"
-          onClick={() => {
-            close()
-            item.action()
-          }}
-        >
-          {item.glyph}
-          <span>{item.label}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-/** `photo.on.rectangle`. */
+/** `photo.on.rectangle`: a picture the browser can't draw. */
 function PhotoGlyph() {
   return (
     <svg width="15" height="14" viewBox="0 0 15 14" aria-hidden="true">
@@ -310,21 +224,6 @@ function PhotoGlyph() {
         <path d="m4 9 3-3 2.5 2.5 1.5-1.5 2.5 2.5" />
       </g>
       <circle cx="10.5" cy="4.3" r="0.9" fill="currentColor" />
-    </svg>
-  )
-}
-
-/** `folder`. */
-function FolderGlyph() {
-  return (
-    <svg width="15" height="14" viewBox="0 0 15 14" aria-hidden="true">
-      <path
-        d="M1.5 3.5A1.5 1.5 0 0 1 3 2h2.8l1.4 1.5H12A1.5 1.5 0 0 1 13.5 5v5.5A1.5 1.5 0 0 1 12 12H3a1.5 1.5 0 0 1-1.5-1.5Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinejoin="round"
-      />
     </svg>
   )
 }

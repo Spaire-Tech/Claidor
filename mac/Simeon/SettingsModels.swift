@@ -547,8 +547,8 @@ private struct MacConnectStep<Content: View>: View {
  * "look at how unpropotionate it is"); then, on the person's own plan, how
  * hard it thinks ("High ⌄", Reason's), its menu Light, Medium, High, Extra
  * High, Max. Simeon's mark and "Simeon" while the agents use Simeon's
- * models. Each opens Apple's menu upward from itself, as Attach does
- * (`AttachMenu`): Simeon, then each connected provider with its models in a
+ * models. Each opens Apple's menu upward from itself (its foot 4 over the
+ * button's top): Simeon, then each connected provider with its models in a
  * submenu, the chosen one ticked, then Add More…, which opens Settings › AI
  * Models. The choice is the account's (`models/own`), for every agent.
  */
@@ -616,7 +616,7 @@ struct ComposerModelMenu: View {
   }
 }
 
-/** The composer's two menus, Apple's, opening upward from their buttons (`AttachMenu`'s way). */
+/** The composer's two menus, Apple's, opening upward from their buttons, their foot 4 over the button's top. */
 @MainActor
 enum ComposerModelMenus {
   static func showModels(over button: CGRect, model: AIModelsModel, addMore: @escaping () -> Void) {

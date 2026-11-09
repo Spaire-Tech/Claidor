@@ -227,20 +227,21 @@ enum MacLanguage {
 // MARK: - Account
 
 /**
- * The account, under General: its face (56) beside its name and email, from
- * the left; Name, written in place (what the agents call the person, the
- * name the first run asked for; 22 October 2026), then Email (copied with a
- * click) and Password (set or changed here, typed twice). No Delete Account
- * on the Mac (the founder, 21 October 2026); Log out is at the foot of the
- * list of pages.
+ * The account, under General (the founder, 9 November 2026: the page in
+ * Settings' cards was "weak design and very confusing"): its face (44)
+ * beside its name and email; then, as a form, each name over its box: Name
+ * (what the agents call the person; Save beside it once it changed, or
+ * Return), Email (copied with its button) and Password (Set Password, or
+ * Change Password once there is one: two boxes, Cancel and the button that
+ * saves). At most 520 wide. No Delete Account on the Mac (the founder, 21
+ * October 2026); Log out is at the foot of the list of pages.
  */
 struct SettingsAccountPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @State private var copied = false
   @State private var changingPassword = false
-  /** Why the name was not saved, under its card in red. */
-  @State private var nameProblem: String?
+  @State private var hasPassword: Bool?
 
   var body: some View {
     let account = store.account
@@ -261,36 +262,51 @@ struct SettingsAccountPage: View {
           }
         }
       }
-      SettingsGroup(footer: nameProblem ?? String(localized: "Your agents call you by this name."),
-                    footerTint: nameProblem == nil ? nil : look.danger, look: look) {
-        NameLine(look: look) { nameProblem = $0 }
-      }
-      SettingsGroup(look: look) {
-        if let mail = account?.email, !mail.isEmpty {
-          Button { copy(mail) } label: {
-            SettingsLine(label: String(localized: "Email"), look: look) {
-              HStack(spacing: 8) {
-                Text(mail)
-                  .font(PanelType.row)
-                  .foregroundStyle(look.inkSecondary)
-                  .lineLimit(1)
-                  .truncationMode(.middle)
-                Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                  .font(.system(size: 11))
-                  .foregroundStyle(look.inkSecondary)
-              }
+      NameField(look: look)
+      if let mail = account?.email, !mail.isEmpty {
+        FormField(label: String(localized: "Email"), look: look) {
+          HStack(spacing: 8) {
+            Text(mail)
+              .font(.system(size: 14))
+              .foregroundStyle(look.inkSecondary)
+              .lineLimit(1)
+              .truncationMode(.middle)
+              .textSelection(.enabled)
+            Spacer(minLength: 0)
+            Button { copy(mail) } label: {
+              Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                .font(.system(size: 12))
+                .foregroundStyle(look.inkSecondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(.hand)
+            .help(String(localized: "Copies the email"))
+            .accessibilityLabel(String(localized: "Copies the email"))
           }
-          .buttonStyle(.hand)
-          .accessibilityHint("Copies the email")
         }
-        SettingsLinkRow(label: String(localized: "Password"), divided: !(account?.email ?? "").isEmpty, look: look) { changingPassword.toggle() }
+      }
+      VStack(alignment: .leading, spacing: 6) {
+        // Open, its boxes say what they are ("New password").
+        if !changingPassword {
+          Text("Password")
+            .font(PanelType.row)
+            .foregroundStyle(look.inkSecondary)
+        }
         if changingPassword {
-          PasswordForm(look: look) { changingPassword = false }
+          PasswordForm(hasPassword: hasPassword == true, look: look) { saved in
+            changingPassword = false
+            if saved { hasPassword = true }
+          }
+        } else {
+          FormButton(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), look: look) {
+            changingPassword = true
+          }
         }
       }
     }
+    .frame(maxWidth: 520, alignment: .leading)
+    .task { hasPassword = await store.hasPassword() }
   }
 
   private func copy(_ mail: String) {
@@ -305,43 +321,51 @@ struct SettingsAccountPage: View {
 }
 
 /**
- * Name, written in its row (the founder, 22 October 2026: "theres name
- * there, but uneditable"): a field at the row's end, saved on Return or
- * when it lets go of the keys, when it changed (`AppStore.changeName`); a
- * spinner while it goes. Refused, the name comes back and why is said
- * under the card.
+ * Name (the founder, 22 October 2026: "theres name there, but
+ * uneditable"): its box, and Save beside it once what is typed differs from
+ * the name; Return saves too (`AppStore.changeName`). Refused, the name
+ * comes back and why is said under it in red.
  */
-private struct NameLine: View {
+private struct NameField: View {
   let look: Look
-  let problem: (String?) -> Void
   @Environment(AppStore.self) private var store
   @State private var text = ""
   @State private var saving = false
+  @State private var problem: String?
   @FocusState private var focused: Bool
 
   var body: some View {
     let saved = store.account?.name ?? ""
-    SettingsLine(label: String(localized: "Name"), look: look) {
-      HStack(spacing: 8) {
-        if saving { ProgressView().controlSize(.small) }
-        TextField("", text: $text)
-          .textFieldStyle(.plain)
-          .font(PanelType.row)
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-          .focused($focused)
-          .onSubmit(save)
-          .disabled(saving)
-          .padding(.horizontal, 10)
-          .frame(width: 240, height: 30)
-          .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
-          .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(focused ? 0.25 : 0.1), lineWidth: 1))
-          .accessibilityLabel(String(localized: "Name"))
+    let typed = Onboarding.normalizedName(text)
+    let changed = !typed.isEmpty && typed != saved
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Name")
+        .font(PanelType.row)
+        .foregroundStyle(look.inkSecondary)
+      HStack(spacing: 10) {
+        FormField(focused: focused, look: look) {
+          TextField("Name", text: $text)
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .font(.system(size: 14))
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .textContentType(.name)
+            .focused($focused)
+            .onSubmit(save)
+            .disabled(saving)
+        }
+        if changed || saving {
+          FormButton(title: String(localized: "Save"), kind: .primary, busy: saving, look: look, action: save)
+        }
       }
+      Text(problem ?? String(localized: "Your agents call you by this name."))
+        .font(PanelType.detail)
+        .foregroundStyle(problem == nil ? look.inkSecondary : look.danger)
+        .fixedSize(horizontal: false, vertical: true)
     }
     .onAppear { text = saved }
     .onChange(of: saved) { _, now in if !focused && !saving { text = now } }
-    .onChange(of: focused) { _, now in if !now { save() } }
   }
 
   private func save() {
@@ -354,26 +378,26 @@ private struct NameLine: View {
       return
     }
     saving = true
-    problem(nil)
+    problem = nil
     Task {
       let refused = await store.changeName(typed)
       saving = false
       text = store.account?.name ?? saved
-      problem(refused)
+      problem = refused
     }
   }
 }
 
 /**
- * The password (the iPhone's Password page, in its row): typed twice, at
- * least eight characters; Set Password, or Change Password once there is
- * one. A refusal or a mismatch in red under the fields.
+ * The password (the iPhone's Password page): typed twice, at least eight
+ * characters, each in its box; under them what it takes (or why not, in
+ * red); Cancel, and Set Password (or Change Password once there is one).
  */
 private struct PasswordForm: View {
+  let hasPassword: Bool
   let look: Look
-  let done: () -> Void
+  let done: (Bool) -> Void
   @Environment(AppStore.self) private var store
-  @State private var hasPassword: Bool?
   @State private var password = ""
   @State private var again = ""
   @State private var saving = false
@@ -383,34 +407,19 @@ private struct PasswordForm: View {
   private var ready: Bool { password.count >= EmailSignIn.minimumPassword && again == password }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      field(hasPassword == true ? String(localized: "New password") : String(localized: "Password"), text: $password)
-      field(String(localized: "Type it again"), text: $again)
+    VStack(alignment: .leading, spacing: 12) {
+      FormTextField(label: String(localized: "New password"), text: $password, secure: true, look: look, submit: save)
+      FormTextField(label: String(localized: "Type it again"), text: $again, secure: true, look: look, submit: save)
       Text(problem ?? (mismatch ? String(localized: "The two don't match.") : String(localized: "At least \(EmailSignIn.minimumPassword) characters. You'll sign in with \(store.account?.email ?? "your email") and this password.")))
         .font(PanelType.detail)
         .foregroundStyle(problem != nil || mismatch ? look.danger : look.inkSecondary)
         .fixedSize(horizontal: false, vertical: true)
-      HStack {
+      HStack(spacing: 10) {
         Spacer(minLength: 0)
-        if saving { ProgressView().controlSize(.small) }
-        SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), primary: true, disabled: !ready || saving, look: look, action: save)
+        FormButton(title: String(localized: "Cancel"), disabled: saving, look: look) { done(false) }
+        FormButton(title: hasPassword ? String(localized: "Change Password") : String(localized: "Set Password"), kind: .primary, busy: saving, disabled: !ready, look: look, action: save)
       }
     }
-    .padding(.horizontal, SettingsRowSize.inset)
-    .padding(.vertical, SettingsRowSize.vertical)
-    .overlay(alignment: .top) { SettingsDivider(look: look) }
-    .task { hasPassword = await store.hasPassword() }
-  }
-
-  private func field(_ prompt: String, text: Binding<String>) -> some View {
-    SecureField(prompt, text: text)
-      .textFieldStyle(.plain)
-      .font(PanelType.row)
-      .padding(.horizontal, 10)
-      .frame(height: 30)
-      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
-      .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
-      .onSubmit(save)
   }
 
   private func save() {
@@ -420,7 +429,7 @@ private struct PasswordForm: View {
     Task {
       let refused = await store.setPassword(password)
       saving = false
-      if let refused { problem = refused } else { done() }
+      if let refused { problem = refused } else { done(true) }
     }
   }
 }
@@ -470,7 +479,12 @@ struct SettingsPermissionsPage: View {
   }
 }
 
-/** One list (Allow automatically, Ask first): its rules, then the row that adds one; what the list means under it. */
+/**
+ * One list (Allow automatically, Ask first; the founder, 9 November 2026:
+ * "whats with the + signs. i click on them all the time. i dont understand
+ * this ui"): its name and what it means, its rules in a card (none, no
+ * card), then a box to type a new one with Add beside it.
+ */
 private struct RuleList: View {
   let behavior: AutoReviewInstructions.Behavior
   @Bindable var model: GeneralSettingsModel
@@ -478,14 +492,26 @@ private struct RuleList: View {
 
   var body: some View {
     let listed = model.rules.rules.filter { $0.behavior == behavior }
-    SettingsGroup(title: AutoReviewInstructions.label(behavior),
-                  footer: behavior == .allow ? String(localized: "Simeon does these without asking you.")
-                                             : String(localized: "Simeon asks you before doing these. When two rules disagree, it asks."),
-                  look: look) {
-      ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
-        RuleLine(rule: rule, divided: index > 0, model: model, look: look)
+    VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(AutoReviewInstructions.label(behavior))
+          .font(PanelType.section)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        Text(behavior == .allow ? String(localized: "Simeon does these without asking you.")
+                                : String(localized: "Simeon asks you before doing these. When two rules disagree, it asks."))
+          .font(PanelType.detail)
+          .foregroundStyle(look.inkSecondary)
+          .fixedSize(horizontal: false, vertical: true)
       }
-      NewRuleLine(behavior: behavior, divided: !listed.isEmpty, model: model, look: look)
+      if !listed.isEmpty {
+        SettingsGroup(look: look) {
+          ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
+            RuleLine(rule: rule, divided: index > 0, model: model, look: look)
+          }
+        }
+      }
+      NewRuleLine(behavior: behavior, model: model, look: look)
     }
   }
 }
@@ -531,52 +557,42 @@ private struct RuleLine: View {
 }
 
 /**
- * A list's last row: a rule typed straight into it ("e.g. read my
- * calendar"), the plus before it, Add at its end (or Return); a full list
- * says so instead.
+ * A new rule: a box to type it in ("e.g. read my calendar"), a line growing
+ * to four, and Add beside it (or Return); a full list says so instead.
  */
 private struct NewRuleLine: View {
   let behavior: AutoReviewInstructions.Behavior
-  let divided: Bool
   @Bindable var model: GeneralSettingsModel
   let look: Look
   @Environment(AppStore.self) private var store
+  @FocusState private var focused: Bool
 
   var body: some View {
-    let full = AutoReviewInstructions.isFull(model.rules.list(behavior))
-    HStack(spacing: 12) {
-      Image(systemName: "plus.circle.fill")
-        .font(.system(size: 15))
-        .foregroundStyle(full ? look.inkTertiary : look.settingsAction)
-        .frame(width: 20)
-        .accessibilityHidden(true)
-      if full {
-        Text(AutoReviewInstructions.limitNote)
-          .font(PanelType.row)
-          .foregroundStyle(look.inkSecondary)
-          .frame(maxWidth: .infinity, alignment: .leading)
-      } else {
-        TextField("", text: Binding(get: { model.drafts[behavior] ?? "" }, set: { @MainActor in model.drafts[behavior] = AutoReviewInstructions.clip($0) }),
-                  prompt: Text(behavior == .allow ? String(localized: "e.g. read my calendar") : String(localized: "e.g. reply to emails for me"))
-                    .foregroundStyle(look.inkTertiary),
-                  axis: .vertical)
-          .textFieldStyle(.plain)
-          .font(PanelType.row)
-          .foregroundStyle(look.ink)
-          .lineLimit(1...4)
-          .onSubmit { model.add(behavior, store: store) }
-          .accessibilityLabel(String(localized: "Add Rule"))
-          .frame(maxWidth: .infinity, alignment: .leading)
-        if model.rulesPending && !(model.drafts[behavior] ?? "").isEmpty {
-          ProgressView().controlSize(.small)
+    if AutoReviewInstructions.isFull(model.rules.list(behavior)) {
+      Text(AutoReviewInstructions.limitNote)
+        .font(PanelType.detail)
+        .foregroundStyle(look.inkSecondary)
+    } else {
+      HStack(alignment: .top, spacing: 10) {
+        FormField(focused: focused, look: look) {
+          TextField("", text: Binding(get: { model.drafts[behavior] ?? "" }, set: { @MainActor in model.drafts[behavior] = AutoReviewInstructions.clip($0) }),
+                    prompt: Text(behavior == .allow ? String(localized: "e.g. read my calendar") : String(localized: "e.g. reply to emails for me"))
+                      .foregroundStyle(look.inkTertiary),
+                    axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(.system(size: 14))
+            .foregroundStyle(look.ink)
+            .lineLimit(1...4)
+            .focused($focused)
+            .onSubmit { model.add(behavior, store: store) }
+            .accessibilityLabel(String(localized: "Add Rule"))
         }
-        SettingsPill(title: String(localized: "Add"), disabled: !model.canAdd(behavior), look: look) { model.add(behavior, store: store) }
+        FormButton(title: String(localized: "Add"), kind: .primary,
+                   busy: model.rulesPending && !(model.drafts[behavior] ?? "").isEmpty,
+                   disabled: !model.canAdd(behavior), look: look) { model.add(behavior, store: store) }
+          .padding(.top, 1)
       }
     }
-    .padding(.horizontal, SettingsRowSize.inset)
-    .padding(.vertical, SettingsRowSize.vertical)
-    .frame(minHeight: SettingsRowSize.minHeight)
-    .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
 }
 
