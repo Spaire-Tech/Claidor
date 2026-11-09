@@ -667,6 +667,13 @@ checked in the reference window. Pushed:
   the person's details first, the entry's Name and Hints last. Account:
   Password says Set Password or Change Password at its end; its form has
   Cancel and Save.
+- **Cards in the Credentials Store** (the founder, 9 November 2026: "actual
+  cards there that the agent can use to make payments"; the security code
+  kept). Cards lists the saved cards (`MacPaymentMark`, the name or the
+  network, "•••• 4242 · 08/28") and Add Card; the card's sheet: Card number
+  with its network's mark (a saved one's last four until the eye and Touch
+  ID show the number and the code), Expiry, Security code, Name on card,
+  Billing address (a contact info's address), Name, Hints, Delete Card.
 - **Each AI account's page, its plan's usage like Usage & Billing** (the
   founder, 9 November 2026: "you can click on chatgpt and claude ... and it
   shows you your usage", then "these should be in usage and billing ... no

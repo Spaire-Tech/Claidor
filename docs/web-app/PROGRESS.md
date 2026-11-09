@@ -839,6 +839,34 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: cards in the Credentials Store
+
+The founder: "when i asked you to add cards to credential store, i didnt
+mean to just have the wallet again. i mean to have actual cards there that
+the agent can use to make payments", the security code "stored. otherwise
+its useless".
+
+- **Done (web, Mac and iPhone, the same):** Cards lists the saved cards
+  (the network's mark, the name or the network, "•••• 4242 · 08/28") with
+  Add Card; the Link row went (Wallet keeps Link). The card's sheet: Card
+  number (its network's mark as typed; a saved one's last four until the
+  eye, after the person's OK, shows the number and the code), Expiry,
+  Security code (dots), Name on card, Billing address (one of the contact
+  info, by its address), then Name and Hints, Delete Card. Core:
+  `CardNumber`/`cardBrand`, `cardNumberValid` (Luhn), `cardExpiry`,
+  `cardSecrets`; the draft sends a saved card's number and code only when
+  changed. Server (#634): the card sealed, listed by its last four only.
+- **Checked:** in Chromium against a stand-in server: the list with a card,
+  a new card (Mastercard's mark as typed, "9/29" sent as "09/29"), a saved
+  card (last four, dots, Home as billing); the store's tests (8),
+  typecheck, lint, the build's check, `check_translations.py`. The core's
+  new test run on Linux in a package of its own; the Mac's and iPhone's
+  Swift parsed.
+- **Not checked:** the Mac and iPhone apps built and run; Face ID / Touch
+  ID / Windows Hello before showing a card (the same call as a password's).
+- **Next:** the agent told of the store and its cards (a card per kind in
+  the chat), then paying with a saved card at checkout.
+
 ### 9 November 2026: ChatGPT and Claude usage moved into Usage & Billing; AI Models' icon a brain
 
 The founder, after #631: "these should be in usage and billing, when

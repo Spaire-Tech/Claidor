@@ -6,6 +6,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   CredentialsStoreModel,
+  cardBrand,
+  cardExpiry,
+  cardNumberValid,
   credentialSubtitle,
   credentialTitle,
   draftBody,
@@ -118,7 +121,40 @@ describe('the Credentials Store (CredentialsStoreTests)', () => {
     expect(credentialSubtitle(contact)).toBe('theo@example.com')
     expect(iconSite(contact)).toBeUndefined()
     // Cards are never kept here.
-    expect(storedCredential({ id: 'x', kind: 'card' })).toBeUndefined()
+    expect(storedCredential({ id: 'x', kind: 'note' })).toBeUndefined()
+    // A card (9 November 2026): its network, last four and expiry; never its number.
+    const card = storedCredential({
+      id: 'k1',
+      kind: 'card',
+      name: '',
+      brand: 'visa',
+      last4: '4242',
+      expiry: '08/28',
+      hasSecurityCode: true,
+    })
+    if (!card) throw new Error('read')
+    expect(credentialTitle(card)).toBe('Visa')
+    expect(credentialSubtitle(card)).toBe('•••• 4242 · 08/28')
+    expect(cardBrand('5555 5555 5555 4444')).toBe('mastercard')
+    expect(cardNumberValid('4242 4242-4242 4242')).toBe(true)
+    expect(cardNumberValid('4242 4242 4242 4241')).toBe(false)
+    expect(cardExpiry('0828')).toBe('08/28')
+    expect(cardExpiry('13/28')).toBeUndefined()
+    const draft = {
+      ...newDraft('card'),
+      number: '4242424242424242',
+      expiry: '8/28',
+      securityCode: '12',
+    }
+    expect(draftProblem(draft)).toBe('The security code is 3 or 4 digits.')
+    expect(draftProblem({ ...draft, securityCode: '123' })).toBeUndefined()
+    expect(draftBody({ ...draft, securityCode: '123' }).expiry).toBe('08/28')
+    // A saved card opened without the person's OK keeps its number and code.
+    const opened = draftOf(card)
+    expect(draftProblem(opened)).toBeUndefined()
+    expect(draftChanges({ ...opened, name: 'Travel' }, opened, false)).toEqual({
+      name: 'Travel',
+    })
     expect(storedCredential({ kind: 'login' })).toBeUndefined()
   })
 

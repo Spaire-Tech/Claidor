@@ -9,9 +9,10 @@ import SimeonCore
  * October 2026: "use our existing design and for whatever saved, have the
  * favicon be there"; 29 October: "name it Credentials Store"): what
  * it is for in a line, as Wallet's page; then Logins, each its site's icon
- * (28), its name over its username; Cards, which Link keeps (Wallet's
- * page); Contact info. Each group ends in its Add, in the link blue. A row
- * opens its sheet.
+ * (28), its name over its username; Cards (9 November 2026, the founder:
+ * "actual cards there that the agent can use to make payments"), each its
+ * network's mark, its name over "•••• 4242 · 08/28"; Contact info. Each
+ * group ends in its Add, in the link blue. A row opens its sheet.
  */
 struct SettingsCredentialsPage: View {
   let look: Look
@@ -22,7 +23,7 @@ struct SettingsCredentialsPage: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 22) {
-      Text("Logins and details your agents use to sign in and sign up for you.")
+      Text("Logins, cards and details your agents use to sign in, sign up and pay for you.")
         .font(PanelType.row)
         .foregroundStyle(look.ink)
         .fixedSize(horizontal: false, vertical: true)
@@ -44,11 +45,11 @@ struct SettingsCredentialsPage: View {
             }
             MacStoreAddRow(title: String(localized: "Add Login"), divided: !model.logins.isEmpty, look: look) { editing = .new(.login) }
           }
-          SettingsGroup(title: String(localized: "Cards"), footer: String(localized: "Your cards stay with Link. Simeon pays with a one-time card and never sees a card's number or security code."), look: look) {
-            MacStoreLine(divided: false, look: look, action: { settings.page = .wallet }) {
-              AppLogoTile(name: "Link", look: look, side: 28, id: "link")
-              Text(verbatim: "Link by Stripe").font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+          SettingsGroup(title: String(localized: "Cards"), footer: String(localized: "Your agents pay with a card only after you approve. They never see its number or security code."), look: look) {
+            ForEach(Array(model.cards.enumerated()), id: \.element.id) { index, entry in
+              MacCredentialLine(entry: entry, divided: index > 0, look: look) { editing = .entry(entry) }
             }
+            MacStoreAddRow(title: String(localized: "Add Card"), divided: !model.cards.isEmpty, look: look) { editing = .new(.card) }
           }
           SettingsGroup(title: String(localized: "Contact info"), footer: String(localized: "Simeon can see your logins and contact info so it can type them in for you."), look: look) {
             ForEach(Array(model.contacts.enumerated()), id: \.element.id) { index, entry in
@@ -120,7 +121,11 @@ private struct MacCredentialLine: View {
 
   var body: some View {
     MacStoreLine(divided: divided, look: look, action: open) {
-      MacSiteIconTile(site: entry.iconSite, title: entry.title, contact: entry.kind == .contact, side: 28, look: look)
+      if entry.kind == .card {
+        MacPaymentMark(brand: entry.brand, edge: look.ink.opacity(look.dark ? 0.16 : 0.12))
+      } else {
+        MacSiteIconTile(site: entry.iconSite, title: entry.title, contact: entry.kind == .contact, side: 28, look: look)
+      }
       VStack(alignment: .leading, spacing: 2) {
         Text(entry.title).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
         if !entry.subtitle.isEmpty {
@@ -222,6 +227,7 @@ struct MacCredentialSheet: View {
 
   private var look: Look { Look(scheme) }
   private var isLogin: Bool { draft.kind == .login }
+  private var isCard: Bool { draft.kind == .card }
 
   init(model: CredentialsStoreModel, edit: MacCredentialEdit) {
     self.model = model
@@ -245,7 +251,11 @@ struct MacCredentialSheet: View {
 
   private var title: String {
     if let entry { return entry.title }
-    return isLogin ? String(localized: "New Login") : String(localized: "New Contact Info")
+    switch draft.kind {
+    case .login: return String(localized: "New Login")
+    case .contact: return String(localized: "New Contact Info")
+    case .card: return String(localized: "New Card")
+    }
   }
 
   var body: some View {
@@ -274,6 +284,24 @@ struct MacCredentialSheet: View {
               MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, divided: false, look: look)
               MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look)
               passwordRow
+            }
+          } else if isCard {
+            SettingsGroup(look: look) {
+              cardNumberRow
+              MacStoreTextRow(label: String(localized: "Expiry"), text: $draft.expiry, prompt: "MM/YY", look: look)
+              securityCodeRow
+              MacStoreTextRow(label: String(localized: "Name on card"), text: $draft.cardholder, content: .name, look: look)
+            }
+            // The billing address: one of the person's contact info, by its address.
+            let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
+            SettingsGroup(look: look) {
+              SettingsMenu(
+                label: String(localized: "Billing address"),
+                options: [(value: "", label: String(localized: "None"))] + addresses.map { (value: $0.id, label: "\($0.title) · \($0.addressLine)") },
+                value: draft.billingId,
+                shown: addresses.first { $0.id == draft.billingId }.map(\.title) ?? String(localized: "None"),
+                look: look
+              ) { draft.billingId = $0 }
             }
           } else {
             SettingsGroup(look: look) {
@@ -311,7 +339,7 @@ struct MacCredentialSheet: View {
           }
           if entry != nil {
             SettingsGroup(look: look) {
-              SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
+              SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
             }
           }
         }
@@ -343,7 +371,7 @@ struct MacCredentialSheet: View {
       .padding(.top, 12)
       .padding(.bottom, 24)
     }
-    .frame(width: 560, height: isLogin ? 560 : 720)
+    .frame(width: 560, height: isLogin ? 560 : isCard ? 680 : 720)
     .background(look.groupedGround)
     .interactiveDismissDisabled(saving)
     .closesOnClickOutside { if !saving && draft == opened { dismiss() } }
@@ -376,6 +404,73 @@ struct MacCredentialSheet: View {
     }
   }
 
+  /**
+   * A card's number: as typed, its network's mark at the end; a saved one
+   * shows its last four until the eye is pressed and Touch ID allows it,
+   * which shows the number and the security code.
+   */
+  private var cardNumberRow: some View {
+    SettingsLine(label: String(localized: "Card number"), divided: false, look: look) {
+      HStack(spacing: 8) {
+        let saved = entry?.last4 ?? ""
+        TextField("Card number", text: $draft.number, prompt: Text(saved.isEmpty ? "1234 5678 9012 3456" : "•••• \(saved)").foregroundStyle(look.inkTertiary))
+          .textFieldStyle(.plain)
+          .labelsHidden()
+          .font(PanelType.row.monospacedDigit())
+          .foregroundStyle(look.ink)
+        let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+        if !brand.isEmpty {
+          MacPaymentMark(brand: brand, edge: look.ink.opacity(look.dark ? 0.16 : 0.12)).scaleEffect(0.7).frame(width: 28, height: 19)
+        }
+        if entry != nil {
+          Button { Task { await revealCard() } } label: {
+            Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
+          }
+          .buttonStyle(.hand)
+          .help(showsPassword ? String(localized: "Hide Card") : String(localized: "Show Card"))
+        }
+      }
+      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
+    }
+  }
+
+  /** The security code: dots until shown, as the password's. */
+  private var securityCodeRow: some View {
+    SettingsLine(label: String(localized: "Security code"), divided: true, look: look) {
+      Group {
+        let hidden = entry?.hasSecurityCode == true && !passwordRead
+        if showsPassword {
+          TextField("Security code", text: $draft.securityCode, prompt: Text("123").foregroundStyle(look.inkTertiary))
+        } else {
+          SecureField("Security code", text: $draft.securityCode, prompt: hidden ? Text("•••").foregroundStyle(look.inkTertiary) : Text("123").foregroundStyle(look.inkTertiary))
+        }
+      }
+      .textFieldStyle(.plain)
+      .labelsHidden()
+      .font(PanelType.row.monospacedDigit())
+      .foregroundStyle(look.ink)
+      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
+    }
+  }
+
+  private func revealCard() async {
+    if showsPassword { showsPassword = false; return }
+    guard let entry, !passwordRead else { showsPassword = true; return }
+    guard await PurchaseApproval.confirm(reason: String(localized: "Show the card \(entry.title)")) != nil else { return }
+    do {
+      let secrets = try await model.cardSecrets(of: entry)
+      // What was typed before it was read is kept; the rest is the saved card.
+      if draft.number.isEmpty { draft.number = secrets.number }
+      if draft.securityCode.isEmpty { draft.securityCode = secrets.securityCode }
+      opened.number = secrets.number
+      opened.securityCode = secrets.securityCode
+      passwordRead = true
+      showsPassword = true
+    } catch {
+      problem = error.localizedDescription
+    }
+  }
+
   private func togglePassword() async {
     if showsPassword { showsPassword = false; return }
     guard let entry, entry.hasPassword, !passwordRead else { showsPassword = true; return }
@@ -405,7 +500,7 @@ struct MacCredentialSheet: View {
     guard let entry else { return }
     let alert = NSAlert()
     alert.alertStyle = .warning
-    alert.messageText = isLogin ? String(localized: "Delete this login?") : String(localized: "Delete this contact info?")
+    alert.messageText = isLogin ? String(localized: "Delete this login?") : isCard ? String(localized: "Delete this card?") : String(localized: "Delete this contact info?")
     alert.informativeText = String(localized: "Your agents won't be able to use it anymore.")
     alert.addButton(withTitle: String(localized: "Delete"))
     alert.addButton(withTitle: String(localized: "Cancel")).keyEquivalent = "\u{1b}"

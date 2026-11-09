@@ -85,7 +85,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/CredentialsStoreTests.swift",
-  "tests": 5
+  "tests": 6
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/DictatedTextTests.swift",
