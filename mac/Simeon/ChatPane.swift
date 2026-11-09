@@ -308,6 +308,18 @@ private struct CallButton: View {
  * up lets go, and scrolling back down to the newest pins it again. A
  * message that arrives while pinned comes in (`data-enter="new"`). A
  * sideways swipe shows every message's time (`PeekCatcher`).
+ *
+ * A chat opens at its newest, and is never seen getting there (the founder,
+ * 9 November 2026, a recording of Iris's chat: "when you click on an agent,
+ * the thing opens at the top to drop ... it must open at the bottom"). The
+ * scroll view takes its place at the bottom once, on its first layout; a
+ * chat whose lines came after it opened (kept on this Mac, then the
+ * computer's) stayed at the top, and the bottom asked for then landed where
+ * the rows' guessed heights put it, mid-chat, before gliding down. So the
+ * scroll view starts again when the rows come, and the messages stay unseen
+ * until the newest row is drawn at the bottom (`Opening`); every correction
+ * until then goes straight there, never animated, and lets nothing go of the
+ * newest. As the iPhone's chat learnt on 15 October (`holdAtEnd`).
  */
 private struct Transcript: View {
   let agentId: String
@@ -321,7 +333,7 @@ private struct Transcript: View {
   @State private var position = ScrollPosition(edge: .bottom)
   @State private var pinned = true
   @State private var userScrolling = false
-  /** Until when a change of the chat's width is still settling: its rows rewrap, and the scroll view's corrections are not the person scrolling. */
+  /** Until when a change of the chat's width (or the chat just shown) is still settling: its rows rewrap or take their heights, and the scroll view's corrections are not the person scrolling. */
   @State private var resizedUntil = Date.distantPast
   /** Rows that arrived while pinned, coming in. */
   @State private var arrivals = Arrivals()
@@ -329,6 +341,10 @@ private struct Transcript: View {
   @State private var unseen = 0
   /** Words a drag chose across the messages (`TranscriptSelection`). */
   @State private var selection = TranscriptSelection()
+  /** The messages are on screen: from the moment the chat first stood at its newest with rows in it. */
+  @State private var shown = false
+  /** Where the opening chat stands, read without redrawing it. */
+  @State private var opening = Opening()
 
   /** The chat's rows, or the open thread's. */
   private var allRows: [ChatRow] { threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? [] }
@@ -381,6 +397,12 @@ private struct Transcript: View {
             }
           }
           ActivitySlot(agent: agent, line: activity, look: look)
+            // Always the last row: drawn, the chat's newest end is laid out (`Opening`).
+            .onAppear {
+              opening.endsDrawn += 1
+              showIfAtNewest()
+            }
+            .onDisappear { opening.endsDrawn = max(0, opening.endsDrawn - 1) }
         }
         // A new width (the agent's pane, the sidebar's rail, the window) rewraps every row at once, never
         // animated: under the pane's slide, the rows that came into view faded in from nothing and the
@@ -405,18 +427,35 @@ private struct Transcript: View {
         // Over the message field: its frame and 28 (the working line's 40 is in the slot).
         .padding(.bottom, control.composerHeight + 28)
       }
+      // The rows came after the chat opened: a new scroll view, whose first layout (the only one that takes the bottom
+      // anchor below) has them, rather than the empty one left at its top.
+      .id(rows.isEmpty)
+      // Unseen until the chat stands at its newest (`shown`); a chat with no rows yet shows what it has (its working line).
+      .opacity(shown || rows.isEmpty ? 1 : 0)
       .scrollPosition($position)
       .background { PeekCatcher(control: control, viewers: viewers) }
       .onChange(of: control.jump) { _, jump in
         guard let jump else { return }
         // Going to a row lets go of the newest, so rows laid out on the way do not pull the chat back down.
         pinned = false
+        // A line search found, in a chat just opened: the chat is on screen for the way to it.
+        shown = true
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
       }
       .onChange(of: control.reveal) { _, reveal in
         guard let reveal else { return }
         pinned = false
+        shown = true
         withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
+      }
+      // The rows came: straight to the newest, unseen. Should the newest never say it is drawn, the chat is shown
+      // all the same after 0.4 s, wherever it stands.
+      .task(id: rows.isEmpty) {
+        guard !allRows.isEmpty, !shown else { return }
+        pinned = true
+        position.scrollTo(edge: .bottom)
+        try? await Task.sleep(nanoseconds: 400_000_000)
+        if !Task.isCancelled && !shown { show() }
       }
       // Another chat or thread: the words chosen in this one go.
       .onChange(of: agentId) { _, _ in selection.clear() }
@@ -521,9 +560,11 @@ private struct Transcript: View {
 
   /** The window's pin (`lht`, 4 points) and its smooth follow while pinned. */
   private func follow(_ old: Bottom, _ new: Bottom) {
+    opening.gap = allRows.isEmpty ? nil : new.gap
     let resized = abs(new.width - old.width) >= 0.5
     if resized { resizedUntil = Date().addingTimeInterval(0.6) }
-    let settling = Date() < resizedUntil
+    // Not yet on screen, the chat is still taking its place at the newest, as while a new width settles.
+    let settling = Date() < resizedUntil || !shown
     let same = abs(new.height - old.height) < 0.5 && abs(new.container - old.container) < 0.5 && !resized
     if new.gap <= 4 {
       pinned = true
@@ -533,8 +574,10 @@ private struct Transcript: View {
       // agent's pane let go of the newest).
       pinned = false
     }
-    // Longer content, or a smaller window, keeps the newest in view while pinned.
-    guard pinned, !same else { return }
+    showIfAtNewest()
+    // Longer content, or a smaller window, keeps the newest in view while pinned; so does a chat not yet shown that
+    // the scroll view moved off its newest by itself.
+    guard pinned, !same || (!shown && new.gap > 4) else { return }
     if resized || settling {
       position.scrollTo(edge: .bottom)
     } else if new.height > old.height && old.height > old.container {
@@ -542,6 +585,37 @@ private struct Transcript: View {
     } else {
       position.scrollTo(edge: .bottom)
     }
+  }
+
+  /** The chat stands at its newest with rows in it: shown from now on. */
+  private func showIfAtNewest() {
+    guard !shown, opening.atNewest, !allRows.isEmpty else { return }
+    show()
+  }
+
+  /** The messages on screen. For half a second more, rows above taking their heights keep the newest where it is at once, never gliding. */
+  private func show() {
+    shown = true
+    resizedUntil = max(resizedUntil, Date().addingTimeInterval(0.5))
+  }
+
+  /**
+   * Where a chat that just opened stands (see `Transcript`), kept outside
+   * SwiftUI's state so that reading and writing it redraws nothing: whether
+   * its newest end is drawn (the working line's slot, always the last row,
+   * laid out; counted, as a new scroll view's slot can come before the old
+   * one's goes), and how far under what shows its content ends, as last
+   * measured with rows in it (nil before: a measure of the empty chat says
+   * nothing of where its rows stand). Both are needed: the scroll view's
+   * height for rows not yet drawn is a guess, and at the bottom of the guess
+   * the chat can still be mid-way, its last row not drawn.
+   */
+  @MainActor
+  final class Opening {
+    var endsDrawn = 0
+    var gap: CGFloat?
+
+    var atNewest: Bool { endsDrawn > 0 && (gap ?? 0) <= 4 }
   }
 
   /**

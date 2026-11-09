@@ -45,7 +45,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatExtrasTests.swift",
-  "tests": 39
+  "tests": 40
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatPeekTests.swift",

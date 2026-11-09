@@ -654,6 +654,19 @@ checked in the reference window. Pushed:
   glide it down to stay at the newest; scrolling up lets go, scrolling
   back to the newest pins it again (the window's bottom pin, `lht`). 2a
   followed within 48 points and jumped.
+- **A chat opens at its newest, never seen getting there** (the founder,
+  9 November 2026, with a recording of Iris's chat: it opened at her first
+  message, stopped mid-chat, then dropped to the newest). The scroll view
+  takes its bottom anchor only on its first layout, and a chat whose lines
+  came a moment after it opened stayed at its top; the bottom asked for
+  then landed where the rows' guessed heights put it. Now the scroll view
+  starts again when the rows come, and the messages stay unseen (the head
+  and the field are there) until the last row, the working line's slot, is
+  drawn at the bottom, every correction until then straight there; 0.4 s at
+  the most, whatever happens. A line found by search shows the chat at
+  once for the way to it. The web and Windows app already opened at the
+  newest (every painted frame measured in Chromium, 9 November). Not yet
+  run on a Mac.
 - **A message's time on a sideways swipe**: a mostly sideways two-finger
   swipe over the chat (1.5 points or more, and not over something that
   scrolls sideways itself, such as a code block or a table) moves the
