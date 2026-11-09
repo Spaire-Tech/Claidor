@@ -1,3 +1,4 @@
+import { claudeCodeTurnHook } from "../claude-code/claude-code-agent-turn.js";
 import {
   buildTurnTools,
   type TurnTool,
@@ -317,6 +318,11 @@ export function createSandAgentStaticConfig(
     },
     enableTerminalFiles: false,
     enableTranscriptInSummary: true,
+    // The person's own Claude plan runs the agent's own turns through Claude Code (9 November 2026,
+    // docs/your-own-models.md, section 6); never a subagent's, a box-scoped helper's or a shared room's.
+    ...(input.isSubagentRunner || input.isSharedRoomRunner || input.isBoxScopedSubagent
+      ? {}
+      : { claudeCodeTurn: claudeCodeTurnHook() }),
   };
 }
 
