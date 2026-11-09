@@ -930,7 +930,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .film-box video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:filter .45s,transform .45s}
 /* the thumbnail blurred behind the press until the film starts (the founder, 9 November 2026), drawn a little larger so its
    blurred edge never shows */
-.film-box:not(.on) video{filter:blur(6px);transform:scale(1.04)}
+.film-box:not(.on):not(.solo) video{filter:blur(6px);transform:scale(1.04)}
 .film-box::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)}
 .film-play{position:absolute;left:50%;top:50%;z-index:2;display:flex;align-items:center;gap:.62em;height:2.9em;padding:0 .42em 0 1.15em;border:0;border-radius:999px;background:rgba(255,255,255,.92);color:#1d1d1f;font:inherit;font-size:clamp(14px,1.15*var(--vw,1vw),16px);font-weight:500;letter-spacing:-.01em;white-space:nowrap;cursor:pointer;transform:translate(-50%,-50%);box-shadow:inset 0 0 0 1px rgba(0,0,0,.07),0 6px 18px -8px rgba(0,0,0,.18);transition:opacity .3s,background .2s,transform .2s}
 .film-play:hover{background:#fff;transform:translate(-50%,-50%) scale(1.02)}
@@ -939,7 +939,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 .film-play:focus-visible{outline:2px solid #1d1d1f;outline-offset:4px}
 .film-box.on .film-play{opacity:0;pointer-events:none}
 /* on a phone the same press, smaller */
-@media (max-width:734px){.film-play{font-size:12px}.film-box:not(.on) video{filter:blur(2.5px);transform:scale(1.03)}}
+@media (max-width:734px){.film-play{font-size:12px}.film-box:not(.on):not(.solo) video{filter:blur(2.5px);transform:scale(1.03)}}
 /* The film's own controls, as Apple's film players draw them (the founder, 1 November 2026: "more Apple like", not the
    browser's): one dark glass pill floating over the foot of the film, with play or pause, the time gone, a thin
    scrubber, the time left, sound and full screen. It shows when the film starts, on a move or a tap, and while paused;
@@ -1207,9 +1207,10 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
       v.addEventListener('webkitendfullscreen', unsolo);
       document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) unsolo(); });
       b.addEventListener('click', () => { if (phone.matches) return solo(); box.classList.add('on'); v.play(); wake(); });
-      v.addEventListener('click', () => { if (box.classList.contains('solo')) return; toggle(); wake(); });
+      // a press anywhere on the still starts the film as the button does (on a phone, full screen), never in place, blurred
+      v.addEventListener('click', () => { if (box.classList.contains('solo')) return; if (!box.classList.contains('on')) return b.click(); toggle(); wake(); });
       pp.addEventListener('click', () => { toggle(); wake(); });
-      v.addEventListener('play', () => { pp.dataset.icon = 'pause'; pp.setAttribute('aria-label', 'Pause'); wake(); });
+      v.addEventListener('play', () => { if (!box.classList.contains('solo')) box.classList.add('on'); pp.dataset.icon = 'pause'; pp.setAttribute('aria-label', 'Pause'); wake(); });
       v.addEventListener('pause', () => { pp.dataset.icon = 'play'; pp.setAttribute('aria-label', 'Play'); wake(); });
       v.addEventListener('timeupdate', draw); v.addEventListener('loadedmetadata', draw);
       vol.addEventListener('click', () => { v.muted = !v.muted; vol.dataset.icon = v.muted ? 'off' : 'on'; vol.setAttribute('aria-label', v.muted ? 'Unmute' : 'Mute'); wake(); });
