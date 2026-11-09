@@ -724,6 +724,22 @@ async def _on_account(
             await _mark_limited(request, session, user_id, account_id, until)
         raise _Refused(upstream.status_code, refusal)
 
+    # How much of the plan is used, as ChatGPT says with each answer: kept
+    # on the account for the apps (9 November 2026), never in the way of
+    # the answer.
+    plan_usage = model_accounts.chatgpt_usage(upstream.headers, utc_now())
+    if plan_usage is not None:
+        try:
+            await _in_own_session(
+                request,
+                session,
+                lambda one: model_accounts.keep_usage(
+                    one, user_id, account_id, plan_usage
+                ),
+            )
+        except Exception:
+            log.exception("desktop.models.usage_not_kept")
+
     model = own.desktop_model()
 
     async def record(usage: Usage) -> None:

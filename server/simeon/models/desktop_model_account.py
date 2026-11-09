@@ -9,9 +9,11 @@ server: the model proxy uses them for the person's agents
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import TIMESTAMP, ForeignKey, String, Text, UniqueConstraint, Uuid
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from simeon.kit.db.models import RecordModel
@@ -51,3 +53,9 @@ class DesktopModelAccount(RecordModel):
     limited_until: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True), nullable=True
     )
+    #: How much of the plan's limits is used, as the provider last said
+    #: (9 November 2026): `{"windows": [{"kind", "usedPercent", "resetsAt",
+    #: "minutes"}], "at"}`. ChatGPT's comes with each answer through the
+    #: relay; Claude's from Claude Code on the person's computer. None until
+    #: the account has been used.
+    usage: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
