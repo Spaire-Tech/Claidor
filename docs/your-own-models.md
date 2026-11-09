@@ -241,7 +241,7 @@ approve, paste the code back) is Claude Code's own sign-in.
 | Step | What | About |
 |---|---|---|
 | C1 | This plan | done |
-| C2 | The image installs Claude Code; the credentials file kept out of the backup; the engine's commands to start the sign-in, hand over the code, read the status, sign out | 1 to 2 days |
+| C2 | The image installs Claude Code (2.1.311, its stable release); the credentials file kept out of the backup; the engine's commands `claudeCodeStatus`, `claudeCodeSignInStart` (the link), `claudeCodeSignInFinish` (`{code}`), `claudeCodeSignInCancel`, `claudeCodeSignOut` (`desktop/source/host/claude-code/claude-code-account.ts`) | done 9 November 2026, tested against a stand-in `claude`; not yet on any computer |
 | C3 | The server's Claude row (no token), Connect Claude on the Mac, the iPhone and the web, Claude in the model menu, the ten languages | 2 to 3 days |
 | C4 | The engine runs a Claude turn through Claude Code with Simeon's tools over MCP, the safety review, the fallback | 5 to 6 days |
 | C5 | Docs, Privacy Policy and Terms, checks | 1 day |
