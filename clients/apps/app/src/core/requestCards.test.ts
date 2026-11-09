@@ -24,13 +24,12 @@ import {
   onePasswordConnectCard,
   pendingHandoff,
   secretCard,
-  storeActionTitle,
-  storeDetail,
+  storeAsks,
   storeDraft,
   storeEntryCard,
-  storeHeadline,
   storeIconSite,
-  storeStatusLine,
+  storeIsSaved,
+  storeLine,
   userFormCard,
 } from './requestCards'
 import { loadWords } from './words'
@@ -474,10 +473,12 @@ describe('the Credentials Store’s card (CredentialsStoreTests)', () => {
   const read = (store: JSONObject, fields: JSONObject = {}) => {
     const made = line('s1', { type: 'store-entry', store }, fields)
     expect(kindOf(made)).toBe('storeEntry')
-    return storeEntryCard(made.message, made.get('storeState'))
+    const card = storeEntryCard(made.message, made.get('storeState'))
+    if (!card) throw new Error('read')
+    return card
   }
 
-  it('asks for what is missing and opens the form filled', () => {
+  it('asks for what is missing, as the connector card, and opens the form filled', () => {
     const login = read({
       mode: 'request',
       kind: 'login',
@@ -485,25 +486,36 @@ describe('the Credentials Store’s card (CredentialsStoreTests)', () => {
       website: 'amazon.com',
       reason: 'So I can sign in for you next time',
     })
-    if (!login) throw new Error('read')
-    expect(storeHeadline(login)).toBe('Save your Amazon login')
-    expect(storeDetail(login)).toBe('So I can sign in for you next time')
-    expect(storeActionTitle(login)).toBe('Save Login')
+    expect(login.title).toBe('Amazon')
+    expect(storeLine(login)).toBe('So I can sign in for you next time')
+    expect(storeAsks(login)).toBe(true)
+    expect(storeIsSaved(login)).toBe(false)
     expect(storeIconSite(login)).toBe('amazon.com')
-    expect(storeStatusLine(login)).toBeUndefined()
     expect(storeDraft(login)).toMatchObject({
       kind: 'login',
       website: 'amazon.com',
       name: 'Amazon',
     })
-    const bySite = read({
-      mode: 'request',
-      kind: 'login',
-      title: 'amazon.com',
-      website: 'amazon.com',
-    })
-    if (!bySite) throw new Error('read')
-    expect(storeDraft(bySite).name).toBe('')
+    expect(
+      storeLine(
+        read({
+          mode: 'request',
+          kind: 'login',
+          title: 'Amazon',
+          website: 'amazon.com',
+        }),
+      ),
+    ).toBe('amazon.com')
+    expect(
+      storeDraft(
+        read({
+          mode: 'request',
+          kind: 'login',
+          title: 'amazon.com',
+          website: 'amazon.com',
+        }),
+      ).name,
+    ).toBe('')
     const saved = read(
       {
         mode: 'request',
@@ -513,19 +525,23 @@ describe('the Credentials Store’s card (CredentialsStoreTests)', () => {
       },
       { storeState: 'saved' },
     )
-    if (!saved) throw new Error('read')
-    expect(storeStatusLine(saved)).toBe('Saved')
-    const contact = read(
-      { mode: 'request', kind: 'contact', title: 'Home' },
-      { storeState: 'dismissed' },
-    )
-    if (!contact) throw new Error('read')
-    expect(storeHeadline(contact)).toBe('Add your contact info')
-    expect(storeActionTitle(contact)).toBe('Add Contact Info')
-    expect(storeStatusLine(contact)).toBe('Dismissed')
+    expect(storeIsSaved(saved)).toBe(true)
+    expect(storeAsks(saved)).toBe(false)
+    const contact = read({ mode: 'request', kind: 'contact', title: 'Home' })
+    expect(storeLine(contact)).toBe('Contact info')
     expect(storeDraft(contact).name).toBe('Home')
-    const card = read({ mode: 'request', kind: 'card', title: 'Travel card' })
-    expect(card && storeDraft(card).kind).toBe('card')
+    expect(
+      storeAsks(
+        read(
+          { mode: 'request', kind: 'contact', title: 'Home' },
+          { storeState: 'dismissed' },
+        ),
+      ),
+    ).toBe(false)
+    expect(
+      storeDraft(read({ mode: 'request', kind: 'card', title: 'Travel card' }))
+        .kind,
+    ).toBe('card')
   })
 
   it('says once what was used or saved, and is no card without what it’s for', () => {
@@ -535,17 +551,29 @@ describe('the Credentials Store’s card (CredentialsStoreTests)', () => {
       title: 'Acme',
       website: 'acme.example',
     })
-    if (!used) throw new Error('read')
-    expect(storeHeadline(used)).toBe('Signed in with your saved login')
-    expect(storeDetail(used)).toBe('acme.example')
+    expect(storeLine(used)).toBe('Signed in with your saved login')
+    expect(storeAsks(used)).toBe(false)
+    expect(storeIsSaved(used)).toBe(false)
+    expect(
+      storeIsSaved(
+        read({
+          mode: 'saved',
+          kind: 'login',
+          title: 'shop.example',
+          website: 'shop.example',
+        }),
+      ),
+    ).toBe(true)
     expect(
       cardText({
         type: 'store-entry',
         store: { mode: 'saved', kind: 'login', title: 'shop.example' },
       }),
-    ).toBe('Login saved')
-    expect(read({ mode: 'request', kind: 'login' })).toBeUndefined()
-    expect(read({ mode: 'later', kind: 'login', title: 'A' })).toBeUndefined()
+    ).toBe('shop.example')
+    const unread = (store: JSONObject) =>
+      storeEntryCard(line('s2', { type: 'store-entry', store }).message)
+    expect(unread({ mode: 'request', kind: 'login' })).toBeUndefined()
+    expect(unread({ mode: 'later', kind: 'login', title: 'A' })).toBeUndefined()
   })
 })
 

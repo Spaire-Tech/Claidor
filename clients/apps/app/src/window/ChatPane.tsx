@@ -1167,7 +1167,7 @@ const cardCaps: Record<CardKind, number> = {
   form: 520,
   credential: 520,
   onePasswordConnect: 520,
-  storeEntry: 460,
+  storeEntry: 640,
   connectors: 640,
   listenerConnect: 520,
   cloudAgent: 640,

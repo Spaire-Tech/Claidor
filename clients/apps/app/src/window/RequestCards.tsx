@@ -40,13 +40,12 @@ import {
   handoffCardState,
   onePasswordConnectCard,
   secretCard,
-  storeActionTitle,
-  storeDetail,
+  storeAsks,
   storeDraft,
   storeEntryCard,
-  storeHeadline,
   storeIconSite,
-  storeStatusLine,
+  storeIsSaved,
+  storeLine,
   trimmed,
   trimmedSpaces,
   userFormCard,
@@ -66,6 +65,7 @@ import { t } from '../l10n'
 import { CardButton, type CardProps, CardShell, GrowingField } from './Cards'
 import { classes } from './classes'
 import { openComputerView } from './ComputerView'
+import './ConnectCards.css'
 import { Alert } from './Dialogs'
 import { confirmPresence } from './presence'
 import './RequestCards.css'
@@ -1052,11 +1052,13 @@ function OnePasswordConnecting({
 }
 
 /**
- * The Credentials Store's card (`StoreEntryCardView`): the site's icon (a
- * card's mark, a person for contact info), what the agent asks, the X; its
- * button opens the store's own sheet over the chat, already filled; once it
- * is saved the card says Saved and the agent carries on. A note (a saved
- * login used, a new one saved) is the same head without a button.
+ * The Credentials Store's card (`StoreEntryCardView`), drawn as the
+ * connector card (ConnectCards.tsx; the founder, 10 November 2026: "Can
+ * you respect our design"): the site's icon (a card's mark, a person for
+ * contact info) on its 40 tile, its name over one line, and at its right
+ * Save (a login) or Add in the grey capsule, which opens the store's own
+ * sheet over the chat already filled; once saved, "Saved" in green as
+ * "Connected".
  */
 function StoreEntryCardView({
   entryId,
@@ -1064,11 +1066,9 @@ function StoreEntryCardView({
   card,
   store,
 }: ViewProps<StoreEntryCard>) {
-  const [busy, run] = useBusy()
   const [model, setModel] = useState<CredentialsStoreModel>()
   const [editing, setEditing] = useState(false)
-  const asking = card.mode === 'request' && card.state === 'open'
-  const status = storeStatusLine(card)
+  const line = storeLine(card)
   const open = () => {
     const made = model ?? new CredentialsStoreModel(store.credentialsCall)
     setModel(made)
@@ -1078,7 +1078,7 @@ function StoreEntryCardView({
   }
   return (
     <CardShell>
-      <div className="store-ask-head">
+      <div className="connector-row">
         {card.kind === 'card' ? (
           <PaymentMark />
         ) : (
@@ -1086,50 +1086,33 @@ function StoreEntryCardView({
             site={storeIconSite(card)}
             title={card.title}
             contact={card.kind === 'contact'}
+            side={40}
           />
         )}
-        <AskHead
-          title={storeHeadline(card)}
-          quiet={card.state === 'dismissed'}
-          site={storeDetail(card)}
-          end={
-            asking ? (
-              <DismissButton
-                help={t('Dismiss')}
-                label={t('Dismiss')}
-                onClick={() =>
-                  run(() => store.answerStoreEntry(entryId, agentId, false))
-                }
-              />
-            ) : (
-              status != null && (
-                <AskPill
-                  words={status}
-                  dot={card.state === 'saved' ? 'green' : undefined}
-                />
-              )
-            )
-          }
-        />
-      </div>
-      {asking && (
-        <div>
-          <CardButton
-            title={storeActionTitle(card)}
-            prominent
-            disabled={busy}
-            onClick={open}
-          />
+        <div className="connector-words">
+          <span className="connector-title">{card.title}</span>
+          {line !== undefined && (
+            <span className="connector-line" title={line}>
+              {line}
+            </span>
+          )}
         </div>
-      )}
+        {storeIsSaved(card) ? (
+          <span className="connector-connected">{t('Saved')}</span>
+        ) : (
+          storeAsks(card) && (
+            <button type="button" className="connector-connect" onClick={open}>
+              {card.kind === 'login' ? t('Save') : t('Add')}
+            </button>
+          )
+        )}
+      </div>
       {editing && model && (
         <CredentialSheet
           model={model}
           edit={{ filled: storeDraft(card) }}
           close={() => setEditing(false)}
-          onSaved={() =>
-            run(() => store.answerStoreEntry(entryId, agentId, true))
-          }
+          onSaved={() => void store.answerStoreEntry(entryId, agentId, true)}
         />
       )}
     </CardShell>

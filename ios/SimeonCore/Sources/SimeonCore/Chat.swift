@@ -701,7 +701,7 @@ public enum Chat {
     case "user-form": return message["form"]?["title"]?.string ?? ""
     case "credential-request": return message["credential"]?["title"]?.string ?? ""
     case "onepassword-connect": return L10n.text("Connect 1Password")
-    case "store-entry": return StoreEntryCard(message: message, entry: nil)?.headline ?? ""
+    case "store-entry": return StoreEntryCard(message: message, entry: nil)?.title ?? ""
     case "email-draft":
       let subject = message["draft"]?["subject"]?.string ?? ""
       return subject.isEmpty ? (message["draft"]?["body"]?.string ?? "") : subject
