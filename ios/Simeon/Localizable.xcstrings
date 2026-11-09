@@ -10161,60 +10161,60 @@
         }
       }
     },
-    "Connect your own AI subscription. Your agents then think, search and draw on it, not on your Simeon credits." : {
+    "Connect providers and choose the models your agents use." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbinde dein eigenes KI-Abonnement. Deine Agenten denken, suchen und zeichnen dann damit, nicht mit deinen Simeon-Credits."
+            "value" : "Verbinde Anbieter und wähle die Modelle, die deine Agenten nutzen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecta tu propia suscripción de IA. Así tus agentes piensan, buscan y dibujan con ella, no con tus créditos de Simeon."
+            "value" : "Conecta proveedores y elige los modelos que usan tus agentes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connecte ton propre abonnement d’IA. Tes agents réfléchissent, cherchent et dessinent alors avec lui, et non avec tes crédits Simeon."
+            "value" : "Connecte des fournisseurs et choisis les modèles qu’utilisent tes agents."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collega il tuo abbonamento IA. I tuoi agenti pensano, cercano e disegnano con quello, non con i tuoi crediti Simeon."
+            "value" : "Collega i fornitori e scegli i modelli che usano i tuoi agenti."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koppel je eigen AI-abonnement. Je agenten denken, zoeken en tekenen dan daarmee, niet met je Simeon-credits."
+            "value" : "Koppel aanbieders en kies de modellen die je agenten gebruiken."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Połącz własną subskrypcję AI. Twoi agenci będą wtedy myśleć, szukać i rysować na niej, a nie na twoich kredytach Simeon."
+            "value" : "Połącz dostawców i wybierz modele, których używają twoi agenci."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecte sua própria assinatura de IA. Assim seus agentes pensam, pesquisam e desenham com ela, não com seus créditos do Simeon."
+            "value" : "Conecte provedores e escolha os modelos que seus agentes usam."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anslut din egen AI-prenumeration. Då tänker, söker och ritar dina agenter med den, inte med dina Simeon-krediter."
+            "value" : "Anslut leverantörer och välj vilka modeller dina agenter använder."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kendi yapay zekâ aboneliğini bağla. Ajanların artık Simeon kredilerinle değil, onunla düşünür, arar ve çizer."
+            "value" : "Sağlayıcıları bağla ve ajanlarının kullandığı modelleri seç."
           }
         }
       }
@@ -39722,122 +39722,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Şu durumlarda kullan…"
-          }
-        }
-      }
-    },
-    "Use your ChatGPT plan" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nutze deinen ChatGPT-Tarif"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa tu plan de ChatGPT"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilise ton forfait ChatGPT"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa il tuo piano ChatGPT"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruik je ChatGPT-abonnement"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Użyj swojego planu ChatGPT"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use seu plano do ChatGPT"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Använd ditt ChatGPT-abonnemang"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ChatGPT planını kullan"
-          }
-        }
-      }
-    },
-    "Use your Claude plan" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nutze deinen Claude-Tarif"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa tu plan de Claude"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilise ton forfait Claude"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa il tuo piano Claude"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruik je Claude-abonnement"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Użyj swojego planu Claude"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Use seu plano do Claude"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Använd ditt Claude-abonnemang"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude planını kullan"
           }
         }
       }

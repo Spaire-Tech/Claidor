@@ -1,12 +1,14 @@
 // Settings' AI Models (mac/Simeon/SettingsModels.swift, the core's
 // AIModels.swift; 8 November 2026, the founder: "allow people to bring
 // their own subscriptions and charge only for the computer", "do it exactly
-// like Reason", then "use codex sign in"): what it is for in a line; the
+// like Reason", then "use codex sign in"): what it is for in a line (9
+// November: "Connect providers and choose the models your agents use"); the
 // model the agents use (Simeon's, or one of the person's own); the accounts
 // connected, each its name, its kind and plan, how it stands and a `⋯`
-// (Rename, Connect Again, Disconnect); then Subscriptions, ChatGPT's
-// Connect, which opens the code sheet, and Claude's (9 November 2026), which
-// signs in to Claude Code on the person's computer.
+// (Rename, Connect Again, Disconnect); then Subscriptions, each provider with
+// its own logo and nothing under its name: ChatGPT's Connect, which opens the
+// code sheet, and Claude's (9 November 2026), which signs in to Claude Code
+// on the person's computer.
 //
 // The web's own ways: the code is copied with the window's clipboard
 // (clipboard.ts: the browser's, or the Windows app's); OpenAI's page opens
@@ -42,7 +44,6 @@ import {
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { copyText } from './clipboard'
-import { AppLogoTile } from './ConnectCards'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import { Alert, Sheet } from './Dialogs'
 import './SettingsModels.css'
@@ -70,9 +71,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   return (
     <div className="models-page">
       <p className="models-lead">
-        {t(
-          'Connect your own AI subscription. Your agents then think, search and draw on it, not on your Simeon credits.',
-        )}
+        {t('Connect providers and choose the models your agents use.')}
       </p>
       {!model.loaded ? (
         model.problem !== undefined ? (
@@ -137,30 +136,23 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
               'Voice calls, dictation and video still use your Simeon credits.',
             )}
           >
-            <SettingsLine
-              label={providerName(chatGPT)}
-              detail={t('Use your ChatGPT plan')}
-            >
+            <ProviderLine provider={chatGPT}>
               <SettingsPill
                 title={
                   model.connected(chatGPT) ? t('Add Another') : t('Connect')
                 }
                 onClick={() => setConnectingChatGPT(true)}
               />
-            </SettingsLine>
+            </ProviderLine>
             {/* Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6). */}
-            <SettingsLine
-              label={providerName(claude)}
-              detail={t('Use your Claude plan')}
-              divided
-            >
+            <ProviderLine provider={claude} divided>
               {!model.connected(claude) && (
                 <SettingsPill
                   title={t('Connect')}
                   onClick={() => setConnectingClaude(true)}
                 />
               )}
-            </SettingsLine>
+            </ProviderLine>
           </SettingsGroup>
           {model.problem !== undefined && (
             <p className="models-problem" role="alert">
@@ -247,7 +239,7 @@ function ModelAccountLine({
       : undefined
   return (
     <div className={divided ? 'models-line divided' : 'models-line'}>
-      <AppLogoTile name={providerName(account.provider)} side={28} />
+      <ProviderTile provider={account.provider} side={28} />
       <span className="models-words">
         <span className="models-title">{account.label}</span>
         <span className="models-subtitle">
@@ -283,6 +275,62 @@ function ModelAccountLine({
           close={() => setMenu(undefined)}
           label={account.label}
         />
+      )}
+    </div>
+  )
+}
+
+/** The providers' logos (the founder's files, 9 November 2026), as the Mac's `Providers/<provider>`. */
+const providerLogos: Record<string, string> = {
+  [chatGPT]: new URL('../assets/providers/chatgpt.png', import.meta.url).href,
+  [claude]: new URL('../assets/providers/claude.png', import.meta.url).href,
+}
+
+/**
+ * A provider's logo on the grey tile (`MacProviderTile`): ChatGPT's knot in
+ * the ink, so white on dark; Claude's mark in its own orange.
+ */
+function ProviderTile({ provider, side }: { provider: string; side: number }) {
+  const logo = providerLogos[provider]
+  return (
+    <span
+      className="models-provider-tile"
+      style={{ width: side, height: side, borderRadius: (side * 11) / 40 }}
+      aria-hidden="true"
+    >
+      {logo === undefined ? null : provider === chatGPT ? (
+        <span
+          className="models-provider-mask"
+          style={{
+            maskImage: `url("${logo}")`,
+            WebkitMaskImage: `url("${logo}")`,
+          }}
+        />
+      ) : (
+        <img src={logo} alt="" />
+      )}
+    </span>
+  )
+}
+
+/** A provider's row under Subscriptions (`MacProviderLine`): its logo, its name, and its Connect. */
+function ProviderLine({
+  provider,
+  divided,
+  children,
+}: {
+  provider: string
+  divided?: boolean
+  children?: ReactNode
+}) {
+  return (
+    <div className={divided ? 'models-line divided' : 'models-line'}>
+      <ProviderTile provider={provider} side={28} />
+      <span className="models-words">
+        <span className="models-title">{providerName(provider)}</span>
+      </span>
+      {children != null && (
+        <span className="models-provider-end">{children}</span>
       )}
     </div>
   )
@@ -482,7 +530,7 @@ function ChatGPTConnectSheet({
   return (
     <Sheet label={t('Connect ChatGPT')} close={close} className="models-sheet">
       <div className="models-sheet-head">
-        <AppLogoTile name={providerName(chatGPT)} side={36} />
+        <ProviderTile provider={chatGPT} side={36} />
         <h2 className="models-sheet-title">{t('Connect ChatGPT')}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
       </div>
@@ -631,7 +679,7 @@ function ClaudeConnectSheet({
   return (
     <Sheet label={t('Connect Claude')} close={shut} className="models-sheet">
       <div className="models-sheet-head">
-        <AppLogoTile name={providerName(claude)} side={36} />
+        <ProviderTile provider={claude} side={36} />
         <h2 className="models-sheet-title">{t('Connect Claude')}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={shut} />
       </div>

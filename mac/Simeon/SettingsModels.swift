@@ -7,12 +7,14 @@ import SimeonCore
 /**
  * AI Models (8 November 2026; the founder: "allow people to bring their own
  * subscriptions and charge only for the computer", "do it exactly like
- * Reason", then "use codex sign in"): what it is for in a line; the model
+ * Reason", then "use codex sign in"): what it is for in a line (9 November:
+ * "Connect providers and choose the models your agents use"); the model
  * the agents use (Simeon's, or one of the person's own); the accounts
  * connected, each its name, its kind and plan, how it stands and a `⋯`
- * (Rename, Connect Again, Disconnect); then Subscriptions, ChatGPT's
- * Connect, which opens the code sheet, and Claude's (9 November 2026), which
- * signs in to Claude Code on the person's computer. The model
+ * (Rename, Connect Again, Disconnect); then Subscriptions, each provider
+ * with its own logo and nothing under its name: ChatGPT's Connect, which
+ * opens the code sheet, and Claude's (9 November 2026), which signs in to
+ * Claude Code on the person's computer. The model
  * (`AIModelsModel`) is the shared core's, as the iPhone's page and the web
  * app's are.
  */
@@ -27,7 +29,7 @@ struct SettingsModelsPage: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 22) {
-      Text("Connect your own AI subscription. Your agents then think, search and draw on it, not on your Simeon credits.")
+      Text("Connect providers and choose the models your agents use.")
         .font(PanelType.row)
         .foregroundStyle(look.ink)
         .fixedSize(horizontal: false, vertical: true)
@@ -71,11 +73,11 @@ struct SettingsModelsPage: View {
             }
           }
           SettingsGroup(title: String(localized: "Subscriptions"), footer: String(localized: "Voice calls, dictation and video still use your Simeon credits."), look: look) {
-            SettingsLine(label: AIModels.providerName(AIModels.chatGPT), detail: String(localized: "Use your ChatGPT plan"), look: look) {
+            MacProviderLine(provider: AIModels.chatGPT, look: look) {
               SettingsPill(title: model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect"), look: look) { connectingChatGPT = true }
             }
             // Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6).
-            SettingsLine(label: AIModels.providerName(AIModels.claude), detail: String(localized: "Use your Claude plan"), divided: true, look: look) {
+            MacProviderLine(provider: AIModels.claude, divided: true, look: look) {
               if !model.connected(AIModels.claude) {
                 SettingsPill(title: String(localized: "Connect"), look: look) { connectingClaude = true }
               }
@@ -125,6 +127,55 @@ struct SettingsModelsPage: View {
   }
 }
 
+/** A provider's row under Subscriptions: its logo, its name, and its Connect; a line above it when it follows another. */
+private struct MacProviderLine<Trailing: View>: View {
+  let provider: String
+  var divided = false
+  let look: Look
+  @ViewBuilder let trailing: () -> Trailing
+
+  var body: some View {
+    HStack(spacing: 12) {
+      MacProviderTile(provider: provider, look: look, side: 28)
+      Text(verbatim: AIModels.providerName(provider))
+        .font(PanelType.row)
+        .foregroundStyle(look.ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      trailing()
+        .fixedSize()
+    }
+    .padding(.horizontal, SettingsRowSize.inset)
+    .padding(.vertical, 10)
+    .frame(minHeight: SettingsRowSize.minHeight)
+    .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
+  }
+}
+
+/**
+ * A provider's logo on the grey tile (`Providers/<provider>`, the founder's
+ * files, 9 November 2026): ChatGPT's knot in the ink, so white in dark mode;
+ * Claude's mark in its own orange.
+ */
+struct MacProviderTile: View {
+  let provider: String
+  let look: Look
+  var side: CGFloat = 36
+
+  var body: some View {
+    Image("Providers/\(provider)")
+      .renderingMode(provider == AIModels.chatGPT ? .template : .original)
+      .resizable()
+      .interpolation(.high)
+      .aspectRatio(contentMode: .fit)
+      .foregroundStyle(look.ink)
+      .frame(width: side * 0.6, height: side * 0.6)
+      .frame(width: side, height: side)
+      .background(look.logoTile)
+      .clipShape(RoundedRectangle(cornerRadius: side * 11 / 40))
+      .accessibilityHidden(true)
+  }
+}
+
 /** One account: the provider's tile, its name over its kind and plan and how it stands (green while usable), and `⋯`. */
 private struct MacModelAccountLine: View {
   let account: ModelAccount
@@ -136,7 +187,7 @@ private struct MacModelAccountLine: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      AppLogoTile(name: account.providerName, look: look, side: 28)
+      MacProviderTile(provider: account.provider, look: look, side: 28)
       VStack(alignment: .leading, spacing: 2) {
         Text(account.label).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
         HStack(spacing: 0) {
@@ -196,7 +247,7 @@ struct MacChatGPTConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        AppLogoTile(name: AIModels.providerName(AIModels.chatGPT), look: look, side: 36)
+        MacProviderTile(provider: AIModels.chatGPT, look: look, side: 36)
         Text("Connect ChatGPT")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
@@ -343,7 +394,7 @@ struct MacClaudeConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        AppLogoTile(name: AIModels.providerName(AIModels.claude), look: look, side: 36)
+        MacProviderTile(provider: AIModels.claude, look: look, side: 36)
         Text("Connect Claude")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
