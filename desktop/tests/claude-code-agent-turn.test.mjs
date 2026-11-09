@@ -102,8 +102,9 @@ test("Claude Code runs the agent's turn: the brief with the tools' note, the con
     assert.equal(second.ran, true);
 
     const [one, two] = await box.seen();
-    // The brief: the agent's own, then the note naming Simeon's tools.
-    assert.ok(one.brief.startsWith("You are Nora.\n\n## Your Simeon tools"), one.brief);
+    // The brief: who it is first (not a coding assistant; answer first), the agent's own, then the note naming Simeon's tools.
+    assert.ok(one.brief.startsWith("## Who you are\nYou are not a coding assistant here."), one.brief);
+    assert.match(one.brief, /Answer the person first\. Look at files or run commands only when what they asked needs it\.\n\nYou are Nora\.\n\n## Your Simeon tools/);
     assert.match(one.brief, /mcp__simeon__SendMessage/);
     // The context goes with the session's first turn only; Claude Code keeps it after.
     assert.equal(one.prompt, "<user_info>Bass, Paris, 9 November</user_info>\n\nBook the dentist for Tuesday");

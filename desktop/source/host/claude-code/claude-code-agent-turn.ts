@@ -114,6 +114,22 @@ export interface ClaudeCodeAgentTurnOptions {
 
 const MINUTE = 60_000;
 
+/**
+ * The line before the agent's brief (9 November 2026, the founder: "claude
+ * code never acts like a software engineer right"). Claude Code's own
+ * instructions, which the brief is added to, make it a coding assistant: it
+ * looked around the computer with a command or two before answering (each
+ * first command waits on the safety review, 7 to 8 seconds) and answered
+ * tersely. The agent is told who it is first, and to answer first.
+ */
+export function claudeCodeBriefLead(): string {
+  return [
+    "## Who you are",
+    "You are not a coding assistant here. You are one of the person's agents in Simeon, as the brief below says: answer as that agent, in its own voice.",
+    "Answer the person first. Look at files or run commands only when what they asked needs it.",
+  ].join("\n");
+}
+
 /** The line added to the brief: where Simeon's own tools are. */
 export function claudeCodeBriefNote(): string {
   return [
@@ -174,7 +190,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
           prompt: claudeCodePrompt(input.text, input.context, options.sessions.get(input.conversationId) === undefined),
           model: chosenModel,
           effort: chosenEffort,
-          brief: [input.brief, claudeCodeBriefNote()].filter((part) => part.trim() !== "").join("\n\n"),
+          brief: [claudeCodeBriefLead(), input.brief, claudeCodeBriefNote()].filter((part) => part.trim() !== "").join("\n\n"),
           mcpServers: { [SIMEON_MCP_SERVER]: server.config },
           permissionPromptTool: `mcp__${SIMEON_MCP_SERVER}__${PERMISSION_TOOL_NAME}`,
           disallowedTools: CLAUDE_CODE_TOOLS_OFF,
