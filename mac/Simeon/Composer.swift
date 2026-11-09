@@ -1,5 +1,4 @@
 import AppKit
-import PhotosUI
 import SwiftUI
 import SimeonCore
 
@@ -515,21 +514,19 @@ struct Composer: View {
 
 /**
  * Attach file (`sand-prompt-attach`): the iPhone's 40-point glass disc with
- * a plus beside the field; off once six wait. It opens its menu upward
- * from itself, as the iPhone's does (`AttachMenu`): Photo or Video (the
- * Photos library's picker) or Choose File (the open panel, several files).
+ * a plus beside the field; off once six wait. It opens the open panel at
+ * once, several files of any kind (the founder, 9 November 2026: Photo or
+ * Video "leave that to iphone. on mac/window its confusing"; it had a menu
+ * of the two since 29 October).
  */
 private struct AttachButton: View {
   let look: Look
   let full: Bool
   @Environment(ChatControl.self) private var control
-  @State private var spot = WindowSpot()
-  @State private var photos = false
-  @State private var selection: [PhotosPickerItem] = []
 
   var body: some View {
     Button {
-      AttachMenu.show(over: spot.frame, photos: { photos = true }, files: { control.chooseFiles() })
+      control.chooseFiles()
     } label: {
       Image(systemName: "plus")
         .font(.system(size: 18, weight: .regular))
@@ -539,24 +536,10 @@ private struct AttachButton: View {
     }
     .buttonStyle(.hand)
     .liquidGlass(in: .circle, interactive: true)
-    .background(WindowSpotReader(spot: spot))
     .disabled(full)
     .opacity(full ? 0.4 : 1)
     .help("Attach file")
     .accessibilityLabel("Attach file")
-    .photosPicker(isPresented: $photos, selection: $selection, maxSelectionCount: AttachmentLimits.maxStaged, matching: .any(of: [.images, .videos]))
-    .onChange(of: selection) { _, items in
-      guard !items.isEmpty else { return }
-      selection = []
-      Task {
-        var picked: [IncomingFile] = []
-        for (index, item) in items.enumerated() {
-          guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
-          picked.append(.photo(data, type: item.supportedContentTypes.first, number: index + 1))
-        }
-        control.stage(picked)
-      }
-    }
   }
 }
 

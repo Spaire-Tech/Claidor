@@ -495,7 +495,8 @@ function ZoneMenu({
  * The account, under General (`SettingsAccountPage`): its face (44) beside
  * its name and email; Name, written in place (what the agents call the
  * person), then Email (copied with a click) and Password (set or changed
- * here, typed twice). Log out is at the foot of the list of pages.
+ * here, typed twice; Change Password at its row's end). Log out is at the
+ * foot of the list of pages.
  */
 export function SettingsAccountPage({ store }: { store: AppStore }) {
   useWatched(store)
@@ -504,6 +505,16 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
   const mail = account?.email ?? ''
   const [copied, setCopied] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
+  const [hasPassword, setHasPassword] = useState<boolean>()
+  useEffect(() => {
+    let live = true
+    void store.hasPassword().then((has) => {
+      if (live) setHasPassword(has)
+    })
+    return () => {
+      live = false
+    }
+  }, [store])
   // Why the name was not saved, under its card in red.
   const [nameProblem, setNameProblem] = useState<string>()
   const hint = useId()
@@ -565,16 +576,26 @@ export function SettingsAccountPage({ store }: { store: AppStore }) {
             </span>
           </button>
         )}
-        <SettingsLinkRow
-          label={t('Password')}
-          divided={mail !== ''}
-          onClick={() => setChangingPassword((open) => !open)}
-        />
+        {/* Password, and what can be done about it in words at its end (the founder, 9 November 2026: the chevron
+            that unfolded the form was confusing); the form opens under it in the card. */}
+        <SettingsLine label={t('Password')} divided={mail !== ''}>
+          {!changingPassword && (
+            <SettingsPill
+              title={
+                hasPassword === true ? t('Change Password') : t('Set Password')
+              }
+              onClick={() => setChangingPassword(true)}
+            />
+          )}
+        </SettingsLine>
         {changingPassword && (
           <PasswordForm
             store={store}
             email={mail}
-            done={() => setChangingPassword(false)}
+            done={(saved) => {
+              setChangingPassword(false)
+              if (saved) setHasPassword(true)
+            }}
           />
         )}
       </SettingsGroup>
@@ -654,8 +675,7 @@ function NameLine({
 
 /**
  * The password (`PasswordForm`, the iPhone's Password page, in its row):
- * typed twice, at least eight characters; Set Password, or Change Password
- * once there is one. A refusal or a mismatch in red under the fields. What
+ * typed twice, at least eight characters; Cancel, and Save. A refusal or a mismatch in red under the fields. What
  * is typed stays in the browser's own masked fields: looked at only to say
  * whether the two match and are long enough, read once as it is sent,
  * emptied once saved, never kept by the page.
@@ -667,7 +687,7 @@ function PasswordForm({
 }: {
   store: AppStore
   email: string
-  done: () => void
+  done: (saved: boolean) => void
 }) {
   const [hasPassword, setHasPassword] = useState<boolean>()
   const first = useRef<HTMLInputElement>(null)
@@ -723,7 +743,7 @@ function PasswordForm({
     }
     if (first.current) first.current.value = ''
     if (again.current) again.current.value = ''
-    done()
+    done(true)
   }
   const line =
     problem ??
@@ -762,9 +782,12 @@ function PasswordForm({
       <div className="password-actions">
         {saving && <span className="settings-spinner" aria-hidden="true" />}
         <SettingsPill
-          title={
-            hasPassword === true ? t('Change Password') : t('Set Password')
-          }
+          title={t('Cancel')}
+          disabled={saving}
+          onClick={() => done(false)}
+        />
+        <SettingsPill
+          title={t('Save')}
           disabled={!ready || saving}
           onClick={() => void save()}
         />
@@ -811,14 +834,20 @@ export function SettingsPermissionsPage({ store }: { store: AppStore }) {
       {/* The lists once the computer's are read: never the page's empty ones in their place. */}
       {model.loaded &&
         model.rules.isEnabled &&
-        ruleBehaviors.map((behavior) => (
+        (['ask', 'allow'] as const).map((behavior) => (
           <RuleList key={behavior} behavior={behavior} model={model} />
         ))}
     </div>
   )
 }
 
-/** One list (Allow automatically, Ask first): its rules, then the row that adds one; what the list means under it. */
+/**
+ * One list (`RuleList`; Ask first, Allow automatically; the founder, 9
+ * November 2026: "whats with the + signs ... just have it like this. in our
+ * design"): its name over what it means, Add Rule at the right; Add Rule
+ * opens a card to type the rule in, with Cancel and Add Rule; the list's
+ * rules in a card under it (none, no card).
+ */
 function RuleList({
   behavior,
   model,
@@ -829,31 +858,50 @@ function RuleList({
   const listed = reviewRules(model.rules).filter(
     (rule) => rule.behavior === behavior,
   )
+  const full = isFullList(ruleList(model.rules, behavior))
   return (
-    <SettingsGroup
-      title={ruleListLabel(behavior)}
-      footer={
-        behavior === 'allow'
-          ? t('Simeon does these without asking you.')
-          : t(
-              'Simeon asks you before doing these. When two rules disagree, it asks.',
-            )
-      }
-    >
-      {listed.map((rule, index) => (
-        <RuleLine
-          key={`${rule.listIndex}:${rule.text}`}
-          rule={rule}
-          divided={index > 0}
-          model={model}
-        />
-      ))}
-      <NewRuleLine
-        behavior={behavior}
-        divided={listed.length > 0}
-        model={model}
-      />
-    </SettingsGroup>
+    <section className="rule-list">
+      <div className="rule-list-head">
+        <div className="rule-list-words">
+          <h3 className="settings-group-title">{ruleListLabel(behavior)}</h3>
+          <p className="rule-list-means">
+            {behavior === 'allow'
+              ? t('Simeon does these without asking you.')
+              : t(
+                  'Simeon asks you before doing these. When two rules disagree, it asks.',
+                )}
+          </p>
+        </div>
+        {full ? (
+          <span className="rule-list-full">{ruleLimitNote()}</span>
+        ) : (
+          model.adding !== behavior && (
+            <SettingsPill
+              title={t('Add Rule')}
+              disabled={model.editing !== undefined || model.rulesPending}
+              onClick={() => model.openAdding(behavior)}
+            />
+          )
+        )}
+      </div>
+      {model.adding === behavior && !full && (
+        <SettingsGroup>
+          <NewRuleLine behavior={behavior} model={model} />
+        </SettingsGroup>
+      )}
+      {listed.length > 0 && (
+        <SettingsGroup>
+          {listed.map((rule, index) => (
+            <RuleLine
+              key={`${rule.listIndex}:${rule.text}`}
+              rule={rule}
+              divided={index > 0}
+              model={model}
+            />
+          ))}
+        </SettingsGroup>
+      )}
+    </section>
   )
 }
 
@@ -926,53 +974,45 @@ function RuleLine({
   )
 }
 
-/**
- * A list's last row (`NewRuleLine`): a rule typed straight into it ("e.g.
- * read my calendar"), the plus before it, Add at its end (or Return); a full
- * list says so instead.
- */
+/** A new rule, in its card (`NewRuleLine`, as a rule edited in its row): its words in the field, then Cancel and Add Rule (or Return). */
 function NewRuleLine({
   behavior,
-  divided,
   model,
 }: {
   behavior: RuleBehavior
-  divided: boolean
   model: GeneralSettingsModel
 }) {
-  const full = isFullList(ruleList(model.rules, behavior))
   const draft = model.drafts[behavior] ?? ''
   return (
-    <div className={classes('rule-new', divided && 'divided')}>
-      <span className={classes('rule-new-plus', full && 'full')}>
-        <OwnSymbol name="plusCircleFill" size={15} />
-      </span>
-      {full ? (
-        <span className="rule-new-full">{ruleLimitNote()}</span>
-      ) : (
-        <>
-          <RuleText
-            className="rule-new-field"
-            value={draft}
-            placeholder={
-              behavior === 'allow'
-                ? t('e.g. read my calendar')
-                : t('e.g. reply to emails for me')
-            }
-            label={t('Add Rule')}
-            onChange={(words) => model.setDraft(behavior, words)}
-            onSubmit={() => void model.add(behavior)}
-          />
-          {model.rulesPending && draft !== '' && (
-            <span className="settings-spinner" aria-hidden="true" />
-          )}
-          <SettingsPill
-            title={t('Add')}
-            disabled={!model.canAdd(behavior)}
-            onClick={() => void model.add(behavior)}
-          />
-        </>
-      )}
+    <div className="rule-editor">
+      <RuleText
+        className="rule-field"
+        value={draft}
+        placeholder={
+          behavior === 'allow'
+            ? t('e.g. read my calendar')
+            : t('e.g. reply to emails for me')
+        }
+        label={t('Add Rule')}
+        focus
+        onChange={(words) => model.setDraft(behavior, words)}
+        onSubmit={() => void model.add(behavior)}
+      />
+      <div className="rule-editor-bar">
+        <span className="rule-editor-spacer" />
+        {model.rulesPending && draft !== '' && (
+          <span className="settings-spinner" aria-hidden="true" />
+        )}
+        <SettingsPill
+          title={t('Cancel')}
+          onClick={() => model.cancelAdding()}
+        />
+        <SettingsPill
+          title={t('Add Rule')}
+          disabled={!model.canAdd(behavior)}
+          onClick={() => void model.add(behavior)}
+        />
+      </div>
     </div>
   )
 }

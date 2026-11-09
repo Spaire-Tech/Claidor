@@ -3262,16 +3262,6 @@ button {
   cursor: default;
 }
 
-/* Its menu opens upward: its foot 4 over the disc, from its left. */
-.attach-menu {
-  left: 0;
-  bottom: calc(100% + 4px);
-}
-
-.attach-menu .menu-item svg {
-  flex: none;
-}
-
 /* The files over the words: 8 apart, 54 high, scrolling sideways when they don't fit. */
 .attachment-strip {
   display: flex;

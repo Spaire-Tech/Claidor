@@ -654,6 +654,19 @@ checked in the reference window. Pushed:
   glide it down to stay at the newest; scrolling up lets go, scrolling
   back to the newest pins it again (the window's bottom pin, `lht`). 2a
   followed within 48 points and jumped.
+- **+ opens the files at once** (the founder, 9 November 2026: Photo or
+  Video "leave that to iphone. on mac/window its confusing"): no menu; the
+  open panel, several files of any kind. The iPhone keeps its menu.
+- **Settings' forms, simple, in the app's own parts** (the founder, 9
+  November 2026, after a first try in another app's look was stopped: "make
+  it simple in OUR STYLE ... same font, same button style, same size, same
+  colors"). Permissions: each list's name over what it means with Add Rule
+  in the blue at its right, Ask first first; Add Rule opens a card with the
+  rule's field, Cancel and Add Rule; no plus rows. The Credentials Store's
+  sheet: each row's field in the Account page's Name box, no "Optional";
+  the person's details first, the entry's Name and Hints last. Account:
+  Password says Set Password or Change Password at its end; its form has
+  Cancel and Save.
 - **A chat opens at its newest, never seen getting there** (the founder,
   9 November 2026, with a recording of Iris's chat: it opened at her first
   message, stopped mid-chat, then dropped to the newest). The scroll view

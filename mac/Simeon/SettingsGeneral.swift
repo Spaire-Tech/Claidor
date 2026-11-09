@@ -239,6 +239,7 @@ struct SettingsAccountPage: View {
   @Environment(AppStore.self) private var store
   @State private var copied = false
   @State private var changingPassword = false
+  @State private var hasPassword: Bool?
   /** Why the name was not saved, under its card in red. */
   @State private var nameProblem: String?
 
@@ -285,12 +286,24 @@ struct SettingsAccountPage: View {
           .buttonStyle(.hand)
           .accessibilityHint("Copies the email")
         }
-        SettingsLinkRow(label: String(localized: "Password"), divided: !(account?.email ?? "").isEmpty, look: look) { changingPassword.toggle() }
+        // Password, and what can be done about it in words at its end (the founder, 9 November 2026: the chevron that
+        // unfolded the form was confusing); the form opens under it in the card.
+        SettingsLine(label: String(localized: "Password"), divided: !(account?.email ?? "").isEmpty, look: look) {
+          if !changingPassword {
+            SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), look: look) {
+              changingPassword = true
+            }
+          }
+        }
         if changingPassword {
-          PasswordForm(look: look) { changingPassword = false }
+          PasswordForm(look: look) { saved in
+            changingPassword = false
+            if saved { hasPassword = true }
+          }
         }
       }
     }
+    .task { hasPassword = await store.hasPassword() }
   }
 
   private func copy(_ mail: String) {
@@ -366,12 +379,12 @@ private struct NameLine: View {
 
 /**
  * The password (the iPhone's Password page, in its row): typed twice, at
- * least eight characters; Set Password, or Change Password once there is
- * one. A refusal or a mismatch in red under the fields.
+ * least eight characters; Cancel, and Save. A refusal or a mismatch in red
+ * under the fields.
  */
 private struct PasswordForm: View {
   let look: Look
-  let done: () -> Void
+  let done: (Bool) -> Void
   @Environment(AppStore.self) private var store
   @State private var hasPassword: Bool?
   @State private var password = ""
@@ -390,10 +403,11 @@ private struct PasswordForm: View {
         .font(PanelType.detail)
         .foregroundStyle(problem != nil || mismatch ? look.danger : look.inkSecondary)
         .fixedSize(horizontal: false, vertical: true)
-      HStack {
+      HStack(spacing: 8) {
         Spacer(minLength: 0)
         if saving { ProgressView().controlSize(.small) }
-        SettingsPill(title: hasPassword == true ? String(localized: "Change Password") : String(localized: "Set Password"), primary: true, disabled: !ready || saving, look: look, action: save)
+        SettingsPill(title: String(localized: "Cancel"), disabled: saving, look: look) { done(false) }
+        SettingsPill(title: String(localized: "Save"), primary: true, disabled: !ready || saving, look: look, action: save)
       }
     }
     .padding(.horizontal, SettingsRowSize.inset)
@@ -420,7 +434,7 @@ private struct PasswordForm: View {
     Task {
       let refused = await store.setPassword(password)
       saving = false
-      if let refused { problem = refused } else { done() }
+      if let refused { problem = refused } else { done(true) }
     }
   }
 }
@@ -457,8 +471,8 @@ struct SettingsPermissionsPage: View {
       }
       // The lists once the computer's are read: never the page's empty ones in their place.
       if model.hostRead.loaded && model.rules.isEnabled {
-        RuleList(behavior: .allow, model: model, look: look)
         RuleList(behavior: .ask, model: model, look: look)
+        RuleList(behavior: .allow, model: model, look: look)
       }
     }
     .task { await model.load(store: store) }
@@ -470,7 +484,13 @@ struct SettingsPermissionsPage: View {
   }
 }
 
-/** One list (Allow automatically, Ask first): its rules, then the row that adds one; what the list means under it. */
+/**
+ * One list (Ask first, Allow automatically; the founder, 9 November 2026,
+ * with another app's page beside ours: "whats with the + signs ... just
+ * have it like this. in our design"): its name over what it means, Add Rule
+ * at the right; Add Rule opens a card to type the rule in, with Cancel and
+ * Add Rule; the list's rules in a card under it (none, no card).
+ */
 private struct RuleList: View {
   let behavior: AutoReviewInstructions.Behavior
   @Bindable var model: GeneralSettingsModel
@@ -478,14 +498,43 @@ private struct RuleList: View {
 
   var body: some View {
     let listed = model.rules.rules.filter { $0.behavior == behavior }
-    SettingsGroup(title: AutoReviewInstructions.label(behavior),
-                  footer: behavior == .allow ? String(localized: "Simeon does these without asking you.")
-                                             : String(localized: "Simeon asks you before doing these. When two rules disagree, it asks."),
-                  look: look) {
-      ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
-        RuleLine(rule: rule, divided: index > 0, model: model, look: look)
+    let full = AutoReviewInstructions.isFull(model.rules.list(behavior))
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 2) {
+          Text(AutoReviewInstructions.label(behavior))
+            .font(PanelType.section)
+            .foregroundStyle(look.inkSecondary)
+            .accessibilityAddTraits(.isHeader)
+          Text(behavior == .allow ? String(localized: "Simeon does these without asking you.")
+                                  : String(localized: "Simeon asks you before doing these. When two rules disagree, it asks."))
+            .font(PanelType.detail)
+            .foregroundStyle(look.inkTertiary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        Spacer(minLength: 8)
+        if full {
+          Text(AutoReviewInstructions.limitNote)
+            .font(PanelType.detail)
+            .foregroundStyle(look.inkSecondary)
+        } else if model.adding != behavior {
+          SettingsPill(title: String(localized: "Add Rule"), disabled: model.editing != nil || model.rulesPending, look: look) {
+            model.adding = behavior
+          }
+        }
       }
-      NewRuleLine(behavior: behavior, divided: !listed.isEmpty, model: model, look: look)
+      if model.adding == behavior && !full {
+        SettingsGroup(look: look) {
+          NewRuleLine(behavior: behavior, model: model, look: look)
+        }
+      }
+      if !listed.isEmpty {
+        SettingsGroup(look: look) {
+          ForEach(Array(listed.enumerated()), id: \.element) { index, rule in
+            RuleLine(rule: rule, divided: index > 0, model: model, look: look)
+          }
+        }
+      }
     }
   }
 }
@@ -530,53 +579,30 @@ private struct RuleLine: View {
   }
 }
 
-/**
- * A list's last row: a rule typed straight into it ("e.g. read my
- * calendar"), the plus before it, Add at its end (or Return); a full list
- * says so instead.
- */
+/** A new rule, in its card (as a rule edited in its row): its words in the field, then Cancel and Add Rule (or Return). */
 private struct NewRuleLine: View {
   let behavior: AutoReviewInstructions.Behavior
-  let divided: Bool
   @Bindable var model: GeneralSettingsModel
   let look: Look
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    let full = AutoReviewInstructions.isFull(model.rules.list(behavior))
-    HStack(spacing: 12) {
-      Image(systemName: "plus.circle.fill")
-        .font(.system(size: 15))
-        .foregroundStyle(full ? look.inkTertiary : look.settingsAction)
-        .frame(width: 20)
-        .accessibilityHidden(true)
-      if full {
-        Text(AutoReviewInstructions.limitNote)
-          .font(PanelType.row)
-          .foregroundStyle(look.inkSecondary)
-          .frame(maxWidth: .infinity, alignment: .leading)
-      } else {
-        TextField("", text: Binding(get: { model.drafts[behavior] ?? "" }, set: { @MainActor in model.drafts[behavior] = AutoReviewInstructions.clip($0) }),
-                  prompt: Text(behavior == .allow ? String(localized: "e.g. read my calendar") : String(localized: "e.g. reply to emails for me"))
-                    .foregroundStyle(look.inkTertiary),
-                  axis: .vertical)
-          .textFieldStyle(.plain)
-          .font(PanelType.row)
-          .foregroundStyle(look.ink)
-          .lineLimit(1...4)
-          .onSubmit { model.add(behavior, store: store) }
-          .accessibilityLabel(String(localized: "Add Rule"))
-          .frame(maxWidth: .infinity, alignment: .leading)
+    VStack(alignment: .leading, spacing: 10) {
+      RuleField(text: Binding(get: { model.drafts[behavior] ?? "" }, set: { @MainActor in model.drafts[behavior] = AutoReviewInstructions.clip($0) }),
+                prompt: behavior == .allow ? String(localized: "e.g. read my calendar") : String(localized: "e.g. reply to emails for me"),
+                look: look) { model.add(behavior, store: store) }
+        .accessibilityLabel(String(localized: "Add Rule"))
+      HStack(spacing: 8) {
+        Spacer(minLength: 0)
         if model.rulesPending && !(model.drafts[behavior] ?? "").isEmpty {
           ProgressView().controlSize(.small)
         }
-        SettingsPill(title: String(localized: "Add"), disabled: !model.canAdd(behavior), look: look) { model.add(behavior, store: store) }
+        SettingsPill(title: String(localized: "Cancel"), look: look) { model.cancelAdding() }
+        SettingsPill(title: String(localized: "Add Rule"), primary: true, disabled: !model.canAdd(behavior), look: look) { model.add(behavior, store: store) }
       }
     }
     .padding(.horizontal, SettingsRowSize.inset)
     .padding(.vertical, SettingsRowSize.vertical)
-    .frame(minHeight: SettingsRowSize.minHeight)
-    .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
   }
 }
 
@@ -728,6 +754,8 @@ final class GeneralSettingsModel {
   var hostRead = HostSettingsLoad()
   /** The rule being written at the foot of each list. */
   var drafts: [AutoReviewInstructions.Behavior: String] = [:]
+  /** The list whose Add Rule card is open, if one is. */
+  var adding: AutoReviewInstructions.Behavior?
 
   /** A rule being edited in its row: the rule as stored, and its words and list as changed. */
   struct Editing: Equatable {
@@ -817,7 +845,16 @@ final class GeneralSettingsModel {
 
   func add(_ behavior: AutoReviewInstructions.Behavior, store: AppStore) {
     guard canAdd(behavior), let next = rules.saving((drafts[behavior] ?? "").trimmingCharacters(in: .whitespacesAndNewlines), as: behavior, editing: nil) else { return }
-    write(next, store: store) { [weak self] in self?.drafts[behavior] = nil }
+    write(next, store: store) { [weak self] in
+      self?.drafts[behavior] = nil
+      if self?.adding == behavior { self?.adding = nil }
+    }
+  }
+
+  /** Add Rule's card closed, what was typed in it let go. */
+  func cancelAdding() {
+    if let adding { drafts[adding] = nil }
+    adding = nil
   }
 
   func delete(_ rule: AutoReviewInstructions.Rule, store: AppStore) {

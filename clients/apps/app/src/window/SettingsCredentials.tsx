@@ -399,8 +399,10 @@ const notTheirs = {
 /**
  * A login or contact info on a sheet, in the app's own parts
  * (`MacCredentialSheet`): the glass disc that closes it and its name at
- * the top; its fields as Settings' rows, the label on the left and what is
- * typed on the right; a saved password as dots until the eye is pressed and
+ * the top; its fields as Settings' rows, the label on the left and its box
+ * on the right (the Account page's Name box: where to type is plain without
+ * "Optional" in every row; the founder, 9 November 2026); the person's
+ * details first, the entry's Name and Hints last; a saved password as dots until the eye is pressed and
  * the person allows it; Hints; Delete for a saved one; Save the sheet's one
  * wide button in the blue. A click outside closes it only while nothing was
  * changed; Escape closes it; Return in a field saves.
@@ -609,7 +611,7 @@ function CredentialSheet({
   const row = (
     key: keyof Fields,
     label: string,
-    prompt: string,
+    prompt: string | undefined,
     options: { divided?: boolean; autoComplete?: string; mine?: boolean } = {},
   ) => (
     <SettingsLine label={label} divided={options.divided ?? true}>
@@ -658,125 +660,123 @@ function CredentialSheet({
           <h2 className="credential-title">{title}</h2>
         </div>
         <div className="credential-body">
-          <SettingsGroup>
-            {row('name', t('Name'), t('Optional'), { divided: false })}
-            {isLogin ? (
-              <>
-                {row('website', t('Website'), 'acme.com', {
-                  autoComplete: 'off',
-                  mine: true,
-                })}
-                {row('username', t('Username or email'), t('Required'), {
-                  autoComplete: 'off',
-                  mine: true,
-                })}
-                <SettingsLine label={t('Password')} divided>
-                  <span className="credential-password">
-                    <input
-                      ref={password}
-                      className={classes(
-                        'credentials-field password',
-                        shape.masked && 'masked',
-                      )}
-                      type={shape.type}
-                      defaultValue=""
-                      placeholder={hidden ? '••••••••' : t('Required')}
-                      aria-label={t('Password')}
-                      autoComplete={shape.autoComplete}
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      {...notTheirs}
-                      onChange={passwordTyped}
-                      onKeyDown={onReturn}
-                      // Masked, its words can't be copied, cut or dragged out, as a password field's.
-                      onCopy={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                      onCut={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                      onDragStart={(event) => {
-                        if (shape.masked) event.preventDefault()
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="credential-eye"
-                      title={
-                        showsPassword ? t('Hide Password') : t('Show Password')
-                      }
-                      aria-label={
-                        showsPassword ? t('Hide Password') : t('Show Password')
-                      }
-                      disabled={revealing || deleting}
-                      onClick={togglePassword}
-                    >
-                      <EyeSymbol slashed={showsPassword} />
-                    </button>
-                  </span>
-                </SettingsLine>
-              </>
-            ) : (
-              <>
-                {row('fullName', t('Full name'), t('Optional'), {
+          {isLogin ? (
+            <SettingsGroup>
+              {row('website', t('Website'), 'acme.com', {
+                divided: false,
+                autoComplete: 'off',
+                mine: true,
+              })}
+              {row('username', t('Username or email'), undefined, {
+                autoComplete: 'off',
+                mine: true,
+              })}
+              <SettingsLine label={t('Password')} divided>
+                <span className="credential-password">
+                  <input
+                    ref={password}
+                    className={classes(
+                      'credentials-field password',
+                      shape.masked && 'masked',
+                    )}
+                    type={shape.type}
+                    defaultValue=""
+                    placeholder={hidden ? '••••••••' : undefined}
+                    aria-label={t('Password')}
+                    autoComplete={shape.autoComplete}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    {...notTheirs}
+                    onChange={passwordTyped}
+                    onKeyDown={onReturn}
+                    // Masked, its words can't be copied, cut or dragged out, as a password field's.
+                    onCopy={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                    onCut={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                    onDragStart={(event) => {
+                      if (shape.masked) event.preventDefault()
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="credential-eye"
+                    title={
+                      showsPassword ? t('Hide Password') : t('Show Password')
+                    }
+                    aria-label={
+                      showsPassword ? t('Hide Password') : t('Show Password')
+                    }
+                    disabled={revealing || deleting}
+                    onClick={togglePassword}
+                  >
+                    <EyeSymbol slashed={showsPassword} />
+                  </button>
+                </span>
+              </SettingsLine>
+            </SettingsGroup>
+          ) : (
+            <>
+              <SettingsGroup>
+                {row('fullName', t('Full name'), undefined, {
+                  divided: false,
                   autoComplete: 'name',
                 })}
-                {row('email', t('Email'), t('Optional'), {
-                  autoComplete: 'email',
+                {row('email', t('Email'), undefined, { autoComplete: 'email' })}
+                {row('phone', t('Phone'), undefined, { autoComplete: 'tel' })}
+              </SettingsGroup>
+              <SettingsGroup title={t('Address')}>
+                {row('addressLine1', t('Address'), undefined, {
+                  divided: false,
+                  autoComplete: 'address-line1',
                 })}
-                {row('phone', t('Phone'), t('Optional'), {
-                  autoComplete: 'tel',
+                {row('addressLine2', t('Address line 2'), undefined, {
+                  autoComplete: 'address-line2',
                 })}
-              </>
-            )}
-          </SettingsGroup>
-          {!isLogin && (
-            <SettingsGroup title={t('Address')}>
-              {row('addressLine1', t('Address'), t('Optional'), {
-                divided: false,
-                autoComplete: 'address-line1',
-              })}
-              {row('addressLine2', t('Address line 2'), t('Optional'), {
-                autoComplete: 'address-line2',
-              })}
-              {row('city', t('City'), t('Optional'), {
-                autoComplete: 'address-level2',
-              })}
-              {row('region', t('State or region'), t('Optional'), {
-                autoComplete: 'address-level1',
-              })}
-              {row('postalCode', t('Postal code'), t('Optional'), {
-                autoComplete: 'postal-code',
-              })}
-              <SettingsMenu
-                label={t('Country')}
-                divided
-                options={(countries as [string, string][]).map(
-                  ([code, name]) => ({ value: code, label: name }),
-                )}
-                value={fields.country}
-                shown={fields.country === '' ? t('Choose') : undefined}
-                pick={set('country')}
-              />
-            </SettingsGroup>
+                {row('city', t('City'), undefined, {
+                  autoComplete: 'address-level2',
+                })}
+                {row('region', t('State or region'), undefined, {
+                  autoComplete: 'address-level1',
+                })}
+                {row('postalCode', t('Postal code'), undefined, {
+                  autoComplete: 'postal-code',
+                })}
+                <SettingsMenu
+                  label={t('Country')}
+                  divided
+                  options={(countries as [string, string][]).map(
+                    ([code, name]) => ({ value: code, label: name }),
+                  )}
+                  value={fields.country}
+                  shown={fields.country === '' ? t('Choose') : undefined}
+                  pick={set('country')}
+                />
+              </SettingsGroup>
+            </>
           )}
+          {/* What the entry is called and when to use it, last (the founder, 9 November 2026). */}
           <SettingsGroup
-            title={t('Hints')}
             footer={
               entry?.savedBy !== undefined
                 ? t`Saved by ${entry.savedBy} at a sign-up.`
                 : undefined
             }
           >
-            <textarea
-              className="credential-hints"
-              value={fields.hints}
-              rows={2}
-              placeholder={t('Tell Simeon when to use this entry')}
-              aria-label={t('Hints')}
-              onChange={(event) => set('hints')(event.target.value)}
-            />
+            {row('name', t('Name'), undefined, { divided: false })}
+            <SettingsLine label={t('Hints')} divided>
+              <textarea
+                className="credentials-field credential-hints"
+                value={fields.hints}
+                rows={1}
+                placeholder={t('Tell Simeon when to use this entry')}
+                aria-label={t('Hints')}
+                onChange={(event) => set('hints')(event.target.value)}
+              />
+            </SettingsLine>
           </SettingsGroup>
           {problem !== undefined && (
             <p className="credential-problem" role="alert">

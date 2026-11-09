@@ -269,25 +269,24 @@ struct MacCredentialSheet: View {
       .padding(.bottom, 8)
       ScrollView {
         VStack(alignment: .leading, spacing: 24) {
-          SettingsGroup(look: look) {
-            MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, prompt: String(localized: "Optional"), divided: false, look: look)
-            if isLogin {
-              MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, look: look)
-              MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, prompt: String(localized: "Required"), content: .username, look: look)
+          if isLogin {
+            SettingsGroup(look: look) {
+              MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look)
               passwordRow
-            } else {
-              MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, prompt: String(localized: "Optional"), content: .name, look: look)
-              MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, prompt: String(localized: "Optional"), content: .emailAddress, look: look)
-              MacStoreTextRow(label: String(localized: "Phone"), text: $draft.phone, prompt: String(localized: "Optional"), content: .telephoneNumber, look: look)
             }
-          }
-          if !isLogin {
+          } else {
+            SettingsGroup(look: look) {
+              MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, content: .name, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, content: .emailAddress, look: look)
+              MacStoreTextRow(label: String(localized: "Phone"), text: $draft.phone, content: .telephoneNumber, look: look)
+            }
             SettingsGroup(title: String(localized: "Address"), look: look) {
-              MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, prompt: String(localized: "Optional"), content: .streetAddressLine1, divided: false, look: look)
-              MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, prompt: String(localized: "Optional"), content: .streetAddressLine2, look: look)
-              MacStoreTextRow(label: String(localized: "City"), text: $draft.city, prompt: String(localized: "Optional"), content: .addressCity, look: look)
-              MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, prompt: String(localized: "Optional"), content: .addressState, look: look)
-              MacStoreTextRow(label: String(localized: "Postal code"), text: $draft.postalCode, prompt: String(localized: "Optional"), content: .postalCode, look: look)
+              MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look)
+              MacStoreTextRow(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look)
+              MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look)
+              MacStoreTextRow(label: String(localized: "Postal code"), text: $draft.postalCode, content: .postalCode, look: look)
               SettingsMenu(
                 label: String(localized: "Country"),
                 divided: true,
@@ -298,15 +297,10 @@ struct MacCredentialSheet: View {
               ) { draft.country = $0 }
             }
           }
-          SettingsGroup(title: String(localized: "Hints"), footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
-            TextField("Hints", text: $draft.hints, prompt: Text("Tell Simeon when to use this entry").foregroundStyle(look.inkTertiary), axis: .vertical)
-              .textFieldStyle(.plain)
-              .font(PanelType.row)
-              .foregroundStyle(look.ink)
-              .lineLimit(2...6)
-              .padding(.horizontal, SettingsRowSize.inset)
-              .padding(.vertical, SettingsRowSize.vertical)
-              .frame(minHeight: SettingsRowSize.minHeight, alignment: .topLeading)
+          // What the entry is called and when to use it, last (the founder, 9 November 2026).
+          SettingsGroup(footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
+            MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, divided: false, look: look)
+            MacStoreTextRow(label: String(localized: "Hints"), text: $draft.hints, prompt: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
           }
           if let problem {
             Text(problem)
@@ -355,31 +349,30 @@ struct MacCredentialSheet: View {
     .closesOnClickOutside { if !saving && draft == opened { dismiss() } }
   }
 
-  /** The password: dots, or the words once shown; a saved one is read only after Touch ID. */
+  /** The password: dots, or the words once shown, in the rows' box; a saved one is read only after Touch ID. */
   private var passwordRow: some View {
     SettingsLine(label: String(localized: "Password"), divided: true, look: look) {
       HStack(spacing: 8) {
         Group {
           let hidden = entry?.hasPassword == true && !passwordRead
           if showsPassword {
-            TextField("Password", text: $draft.password, prompt: Text(String(localized: "Required")).foregroundStyle(look.inkTertiary))
+            TextField("Password", text: $draft.password)
           } else {
-            SecureField("Password", text: $draft.password, prompt: Text(hidden ? "••••••••" : String(localized: "Required")).foregroundStyle(look.inkTertiary))
+            SecureField("Password", text: $draft.password, prompt: hidden ? Text("••••••••").foregroundStyle(look.inkTertiary) : nil)
           }
         }
         .textFieldStyle(.plain)
         .labelsHidden()
-        .multilineTextAlignment(.trailing)
         .font(PanelType.row)
         .foregroundStyle(look.ink)
         .textContentType(.password)
-        .frame(width: 260)
         Button { Task { await togglePassword() } } label: {
           Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
         }
         .buttonStyle(.hand)
         .help(showsPassword ? String(localized: "Hide Password") : String(localized: "Show Password"))
       }
+      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
     }
   }
 
@@ -425,25 +418,53 @@ struct MacCredentialSheet: View {
   }
 }
 
-/** A row with a field: the label on the left, what is typed on the right, in the row's own type. */
+/**
+ * A row with a field: the label on the left, its box on the right (the
+ * Account page's Name box: the page's ground, 8 round, a line of the ink at
+ * 10%, 25% while it has the keys), so where to type is plain without
+ * "Optional" in every row (the founder, 9 November 2026: "very confusing").
+ */
 private struct MacStoreTextRow: View {
+  static let width: CGFloat = 280
+
   let label: String
   @Binding var text: String
-  let prompt: String
+  var prompt: String? = nil
   var content: NSTextContentType? = nil
+  var grows = false
   var divided = true
   let look: Look
+  @FocusState private var focused: Bool
 
   var body: some View {
     SettingsLine(label: label, divided: divided, look: look) {
-      TextField(label, text: $text, prompt: Text(prompt).foregroundStyle(look.inkTertiary))
-        .textFieldStyle(.plain)
-        .labelsHidden()
-        .multilineTextAlignment(.trailing)
-        .font(PanelType.row)
-        .foregroundStyle(look.ink)
-        .textContentType(content)
-        .frame(width: 300)
+      Group {
+        if grows {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) }, axis: .vertical)
+            .lineLimit(1...5)
+        } else {
+          TextField(label, text: $text, prompt: prompt.map { Text($0).foregroundStyle(look.inkTertiary) })
+        }
+      }
+      .textFieldStyle(.plain)
+      .labelsHidden()
+      .font(PanelType.row)
+      .foregroundStyle(look.ink)
+      .textContentType(content)
+      .focused($focused)
+      .storeBox(width: Self.width, focused: focused, look: look)
     }
+  }
+}
+
+private extension View {
+  /** The rows' box, as the Account page's Name field. */
+  func storeBox(width: CGFloat, focused: Bool, look: Look) -> some View {
+    padding(.horizontal, 10)
+      .padding(.vertical, 6)
+      .frame(width: width, alignment: .leading)
+      .frame(minHeight: 30)
+      .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
+      .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(focused ? 0.25 : 0.1), lineWidth: 1))
   }
 }

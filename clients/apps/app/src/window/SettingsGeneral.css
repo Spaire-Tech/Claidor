@@ -11,8 +11,7 @@
 
 /* The line between two rows of this file's own, inset 18 at both ends (`SettingsDivider`). */
 .password-form::before,
-.rule-editor.divided::before,
-.rule-new.divided::before {
+.rule-editor.divided::before {
   content: '';
   position: absolute;
   top: 0;
@@ -351,8 +350,7 @@
   overflow-y: auto;
 }
 
-.rule-field::placeholder,
-.rule-new-field::placeholder {
+.rule-field::placeholder {
   color: var(--ink-tertiary);
   opacity: 1;
 }
@@ -373,47 +371,34 @@
   font-size: 11px;
 }
 
-/* A list's last row: the plus (15, in the action blue; grey when full) in a 20 column, the rule typed, Add; 56 high at the least. */
-.rule-new {
-  position: relative;
+/* A list (`RuleList`): its name (the groups' title) over what it means (12, the tertiary grey), Add Rule at the right; then the new rule's card and the rules' card, 8 apart. */
+.rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-list-head {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 56px;
-  padding: 14px 18px;
-  box-sizing: border-box;
 }
 
-.rule-new-plus {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 20px;
-  color: var(--settings-action);
-}
-
-.rule-new-plus.full {
-  color: var(--ink-tertiary);
-}
-
-.rule-new-full {
+.rule-list-words {
+  display: flex;
   flex: 1;
-  color: var(--ink-secondary);
-  font-size: 13px;
-}
-
-.rule-new-field {
-  flex: 1;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
-  max-height: 64px;
-  padding: 0;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 13px;
-  line-height: 16px;
-  resize: none;
-  overflow-y: auto;
+}
+
+.rule-list-means {
+  margin: 0;
+  color: var(--ink-tertiary);
+  font-size: 12px;
+}
+
+.rule-list-full {
+  color: var(--ink-secondary);
+  font-size: 12px;
 }
