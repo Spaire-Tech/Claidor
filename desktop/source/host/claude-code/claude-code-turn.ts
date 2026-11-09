@@ -1,0 +1,298 @@
+/**
+ * One agent turn run by Claude Code on the person's computer (9 November
+ * 2026, docs/your-own-models.md, section 6, step C4): the person chose Claude
+ * in AI Models and signed in to Claude Code there (`claude-code-account.ts`).
+ *
+ * The program is Anthropic's own, unmodified: `claude -p` in stream-json, its
+ * session resumed per agent (`--resume`), the agent's brief added to Claude
+ * Code's own (`--append-system-prompt-file`), Simeon's tools offered as an MCP
+ * server (`--mcp-config`, the engine's), and its permission asks sent to the
+ * engine's safety review (`--permission-prompt-tool`). The model calls are
+ * Claude Code's, on the person's plan; nothing here calls Anthropic.
+ *
+ * What comes back is sorted for the engine: done; the plan's limit reached;
+ * the sign-in gone; the session to resume gone (the computer was made
+ * afresh); Claude Code not installed; failed. Anything but done means the
+ * turn runs on Simeon's model instead, and the chat says why once.
+ *
+ * Nothing here logs the prompt, the brief, a tool's input or a sign-in.
+ */
+import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { claudeCodeBinary, claudeCodeEnv } from "./claude-code-account.js";
+
+/** The MCP server name Simeon's tools are offered under: Claude Code calls them `mcp__simeon__<Tool>`. */
+export const SIMEON_MCP_SERVER = "simeon";
+/** The longest a turn may run before it is stopped (the engine's own turns are bounded by steps, not time). */
+const TURN_TIMEOUT_MS = 60 * 60_000;
+/** A session id as Claude Code writes them (a UUID). */
+const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface ClaudeCodeTurnInput {
+  /** What the agent is asked this turn (the person's message, a routine's instruction…). */
+  readonly prompt: string;
+  /** `--model`: `opus`, `sonnet`. */
+  readonly model: string;
+  /** The session to resume; none starts a new one (its id is in the outcome). */
+  readonly resume?: string | undefined;
+  /** Added to Claude Code's own system prompt: the agent's brief. */
+  readonly brief?: string | undefined;
+  /** `{ mcpServers: { simeon: … } }`, written to a private file for `--mcp-config`. */
+  readonly mcpServers?: Readonly<Record<string, unknown>> | undefined;
+  /** `mcp__simeon__<Tool>` that answers Claude Code's permission asks. */
+  readonly permissionPromptTool?: string | undefined;
+  /** Claude Code's own tools it may not use this turn. */
+  readonly disallowedTools?: readonly string[] | undefined;
+  readonly maxTurns?: number | undefined;
+  /** Where Claude Code works (its project, which keys its sessions). */
+  readonly cwd?: string | undefined;
+  readonly signal?: AbortSignal | undefined;
+  /** Each event Claude Code writes, as it comes. */
+  readonly onEvent?: ((event: ClaudeCodeEvent) => void) | undefined;
+  readonly env?: NodeJS.ProcessEnv | undefined;
+  readonly configDir?: string | undefined;
+  readonly timeoutMs?: number | undefined;
+}
+
+/** One line of Claude Code's stream-json output (`system`, `assistant`, `user`, `result`). */
+export interface ClaudeCodeEvent {
+  readonly type: string;
+  readonly subtype?: string;
+  readonly session_id?: string;
+  readonly [key: string]: unknown;
+}
+
+export type ClaudeCodeOutcome =
+  /** The turn ran to its end; `text` is Claude Code's last words (the agent's scratchpad, never shown). */
+  | { readonly kind: "done"; readonly sessionId: string; readonly text: string; readonly turns: number }
+  /** The plan's limit is reached, until `until` (ms) when Claude Code says. */
+  | { readonly kind: "limited"; readonly sessionId?: string | undefined; readonly until?: number | undefined; readonly said: string }
+  /** Claude Code isn't signed in any more: the person connects Claude again. */
+  | { readonly kind: "signed_out"; readonly said: string }
+  /** The session to resume isn't on this computer (made afresh): start a new one. */
+  | { readonly kind: "no_session" }
+  | { readonly kind: "not_installed" }
+  | { readonly kind: "aborted"; readonly sessionId?: string | undefined }
+  | { readonly kind: "failed"; readonly sessionId?: string | undefined; readonly said: string; readonly exitCode: number | null };
+
+/** The arguments for one turn (no prompt: it goes in on stdin). */
+export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: string | undefined; mcp?: string | undefined }, newSession: string | undefined): string[] {
+  const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--model", input.model];
+  if (input.resume !== undefined) args.push("--resume", input.resume);
+  else if (newSession !== undefined) args.push("--session-id", newSession);
+  if (files.brief !== undefined) args.push("--append-system-prompt-file", files.brief);
+  if (files.mcp !== undefined) args.push("--mcp-config", files.mcp, "--strict-mcp-config");
+  if (input.permissionPromptTool !== undefined) args.push("--permission-prompt-tool", input.permissionPromptTool);
+  if (input.disallowedTools !== undefined && input.disallowedTools.length > 0) args.push("--disallowedTools", input.disallowedTools.join(","));
+  if (input.maxTurns !== undefined) args.push("--max-turns", String(input.maxTurns));
+  return args;
+}
+
+/** The prompt as one stream-json user message. */
+export function claudeCodeUserMessage(prompt: string): string {
+  return `${JSON.stringify({ type: "user", message: { role: "user", content: [{ type: "text", text: prompt }] } })}\n`;
+}
+
+const said = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
+
+/**
+ * When the limit ends, from Claude Code's words: `…limit reached|1794150000`
+ * (seconds), or none.
+ */
+export function limitEnds(words: string): number | undefined {
+  const epoch = /\|(\d{10,13})\s*$/.exec(words);
+  if (epoch?.[1] === undefined) return undefined;
+  const value = Number(epoch[1]);
+  return epoch[1].length === 13 ? value : value * 1000;
+}
+
+/** What Claude Code's error words mean for the engine. */
+export function classifyClaudeCodeError(words: string): "limited" | "signed_out" | "no_session" | "failed" {
+  if (/no conversation found with session id/i.test(words)) return "no_session";
+  if (/usage limit|limit reached|limit will reset|resets? (?:at|in)\b/i.test(words)) return "limited";
+  if (/\/login|not logged in|log ?in again|invalid api key|oauth token (?:has )?expired|token (?:has )?expired|authentication[_ ](?:error|failed)|unauthori[sz]ed/i.test(words)) return "signed_out";
+  return "failed";
+}
+
+/** Reads stream-json lines as they come; a line that isn't JSON is ignored (Claude Code writes only JSON on stdout). */
+export class StreamJsonLines {
+  private rest = "";
+  constructor(private readonly each: (event: ClaudeCodeEvent) => void) {}
+  push(chunk: string): void {
+    this.rest += chunk;
+    let newline = this.rest.indexOf("\n");
+    while (newline >= 0) {
+      this.line(this.rest.slice(0, newline));
+      this.rest = this.rest.slice(newline + 1);
+      newline = this.rest.indexOf("\n");
+    }
+  }
+  end(): void {
+    if (this.rest.trim() !== "") this.line(this.rest);
+    this.rest = "";
+  }
+  private line(raw: string): void {
+    const trimmed = raw.trim();
+    if (trimmed === "") return;
+    try {
+      const event = JSON.parse(trimmed) as unknown;
+      if (event !== null && typeof event === "object" && typeof (event as { type?: unknown }).type === "string") this.each(event as ClaudeCodeEvent);
+    } catch {
+      // Not an event.
+    }
+  }
+}
+
+/** Runs one turn to its end; never throws. */
+export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<ClaudeCodeOutcome> {
+  if (input.signal?.aborted === true) return { kind: "aborted" };
+  const newSession = input.resume === undefined ? randomUUID() : undefined;
+  const folder = mkdtempSync(path.join(os.tmpdir(), "simeon-claude-turn-"));
+  const files: { brief?: string; mcp?: string } = {};
+  try {
+    if (input.brief !== undefined && input.brief.trim() !== "") {
+      files.brief = path.join(folder, "brief.md");
+      writeFileSync(files.brief, input.brief, { mode: 0o600 });
+    }
+    if (input.mcpServers !== undefined) {
+      files.mcp = path.join(folder, "mcp.json");
+      writeFileSync(files.mcp, JSON.stringify({ mcpServers: input.mcpServers }), { mode: 0o600 });
+    }
+    return await new Promise<ClaudeCodeOutcome>((resolve) => {
+      // Claude Code's own Bash tool runs in bash, as on any computer it's installed on.
+      const env: Record<string, string> = { ...claudeCodeEnv(input.env ?? process.env, { configDir: input.configDir }), SHELL: "/bin/bash" };
+      const cwd = input.cwd ?? env.HOME;
+      let sessionId = input.resume ?? newSession;
+      let result: ClaudeCodeEvent | undefined;
+      let lastText = "";
+      let stderr = "";
+      let settled = false;
+      const finish = (outcome: ClaudeCodeOutcome): void => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        input.signal?.removeEventListener("abort", abort);
+        resolve(outcome);
+      };
+      const lines = new StreamJsonLines((event) => {
+        if (typeof event.session_id === "string" && SESSION_ID.test(event.session_id)) sessionId = event.session_id;
+        if (event.type === "assistant") {
+          const content = (event.message as { content?: unknown } | undefined)?.content;
+          if (Array.isArray(content)) {
+            const words = content.filter((part): part is { type: string; text: string } => part?.type === "text" && typeof part.text === "string").map((part) => part.text).join("");
+            if (words !== "") lastText = words;
+          }
+        }
+        if (event.type === "result") result = event;
+        try { input.onEvent?.(event); } catch { /* the caller's own trouble */ }
+      });
+      let child: ReturnType<typeof spawn>;
+      try {
+        child = spawn(claudeCodeBinary(input.env ?? process.env), claudeCodeTurnArgs(input, files, newSession), {
+          ...(cwd === undefined ? {} : { cwd }),
+          env,
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+      } catch {
+        finish({ kind: "not_installed" });
+        return;
+      }
+      const abort = (): void => {
+        child.kill("SIGTERM");
+        setTimeout(() => child.kill("SIGKILL"), 5_000).unref();
+      };
+      const timer = setTimeout(abort, input.timeoutMs ?? TURN_TIMEOUT_MS);
+      timer.unref();
+      input.signal?.addEventListener("abort", abort, { once: true });
+      child.stdout?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => lines.push(chunk));
+      child.stderr?.setEncoding("utf8");
+      child.stderr?.on("data", (chunk: string) => { if (stderr.length < 8_000) stderr += chunk; });
+      child.on("error", (error: NodeJS.ErrnoException) => {
+        finish(error.code === "ENOENT" ? { kind: "not_installed" } : { kind: "failed", sessionId, said: error.message, exitCode: null });
+      });
+      child.on("close", (code) => {
+        lines.end();
+        if (input.signal?.aborted === true) { finish({ kind: "aborted", sessionId }); return; }
+        const words = said(result?.result) || said(stderr);
+        const failed = result === undefined || result.is_error === true || (result.subtype !== undefined && result.subtype !== "success");
+        if (!failed && sessionId !== undefined) {
+          finish({ kind: "done", sessionId, text: said(result?.result) || lastText, turns: typeof result?.num_turns === "number" ? result.num_turns : 0 });
+          return;
+        }
+        const kind = classifyClaudeCodeError(`${words}\n${said(stderr)}`);
+        if (kind === "limited") finish({ kind, sessionId, until: limitEnds(words), said: words });
+        else if (kind === "signed_out") finish({ kind, said: words });
+        else if (kind === "no_session") finish({ kind });
+        else finish({ kind: "failed", sessionId, said: words || `claude exited ${code ?? "on a signal"}`, exitCode: code });
+      });
+      child.stdin?.on("error", () => { /* closed early: the close event says why */ });
+      child.stdin?.end(claudeCodeUserMessage(input.prompt));
+    });
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+}
+
+// MARK: Each agent's session
+
+/** Each agent's Claude Code session, kept on the data volume (`claude-code-sessions.json`). */
+export class ClaudeCodeSessions {
+  constructor(private readonly file: string) {}
+
+  private read(): Record<string, string> {
+    try {
+      const value = JSON.parse(readFileSync(this.file, "utf8")) as unknown;
+      if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+      const kept: Record<string, string> = {};
+      for (const [agent, id] of Object.entries(value as Record<string, unknown>)) if (typeof id === "string" && SESSION_ID.test(id)) kept[agent] = id;
+      return kept;
+    } catch {
+      return {};
+    }
+  }
+
+  get(agentId: string): string | undefined {
+    return this.read()[agentId];
+  }
+
+  set(agentId: string, sessionId: string): void {
+    if (!SESSION_ID.test(sessionId)) return;
+    const all = this.read();
+    if (all[agentId] === sessionId) return;
+    all[agentId] = sessionId;
+    this.write(all);
+  }
+
+  forget(agentId: string): void {
+    const all = this.read();
+    if (!(agentId in all)) return;
+    delete all[agentId];
+    this.write(all);
+  }
+
+  private write(all: Record<string, string>): void {
+    mkdirSync(path.dirname(this.file), { recursive: true });
+    writeFileSync(this.file, `${JSON.stringify(all)}\n`, { mode: 0o600 });
+  }
+}
+
+/**
+ * A turn with the agent's own session: resumed when it has one, started
+ * afresh when the computer no longer has it, and kept for the next turn.
+ */
+export async function runAgentClaudeCodeTurn(agentId: string, sessions: ClaudeCodeSessions, input: Omit<ClaudeCodeTurnInput, "resume">): Promise<ClaudeCodeOutcome> {
+  const resume = sessions.get(agentId);
+  let outcome = await runClaudeCodeTurn({ ...input, resume });
+  if (outcome.kind === "no_session" && resume !== undefined) {
+    sessions.forget(agentId);
+    outcome = await runClaudeCodeTurn({ ...input, resume: undefined });
+  }
+  const id = "sessionId" in outcome ? outcome.sessionId : undefined;
+  // Kept whenever Claude Code may have it; one it never made answers "no_session" next time, and a new one starts.
+  if (id !== undefined) sessions.set(agentId, id);
+  return outcome;
+}
