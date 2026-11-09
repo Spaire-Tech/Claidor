@@ -36,6 +36,10 @@ import {
   chatGPT,
   claude,
   kindName,
+  planName,
+  planPage,
+  planUsageLines,
+  planUsageUpdated,
   providerName,
   shownAddress,
   shownName,
@@ -56,12 +60,17 @@ import {
   PanelDisc,
   SettingsGroup,
   SettingsLine,
+  SettingsLinkRow,
   SettingsPill,
+  SettingsSymbol,
 } from './SettingsParts'
+import { UsageMeterLine } from './SettingsUsage'
 import { useWatched } from './useStore'
+import { useWindowModel } from './windowModel'
 
 export function SettingsModelsPage({ store }: { store: AppStore }) {
   const model = store.aiModels
+  const windowModel = useWindowModel()
   useWatched(model)
   const connector = useConnector()
   const [connectingChatGPT, setConnectingChatGPT] = useState(false)
@@ -105,6 +114,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                   key={account.id}
                   account={account}
                   divided={index > 0}
+                  open={() => windowModel.showModelAccount(account.id)}
                   rename={() => setRenaming(account)}
                   addAnother={
                     account.provider === chatGPT
@@ -203,10 +213,11 @@ function voiceFooter(): string {
   return t('Voice calls, dictation and video still use your Simeon credits.')
 }
 
-/** One account (`MacModelAccountLine`): its app's icon, its name over "Subscription" (and how it stands, only when it can't be used), and `⋯`. */
+/** One account (`MacModelAccountLine`): its app's icon, its name over "Subscription", how it stands, `⋯`, and `›`: a click opens its page, its plan's usage (9 November 2026, the founder: "you can click on chatgpt and claude, like with connectors"). */
 function ModelAccountLine({
   account,
   divided,
+  open,
   rename,
   addAnother,
   connectAgain,
@@ -214,6 +225,7 @@ function ModelAccountLine({
 }: {
   account: ModelAccount
   divided: boolean
+  open: () => void
   rename: () => void
   /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
   addAnother?: () => void
@@ -239,25 +251,30 @@ function ModelAccountLine({
     },
   ]
   return (
-    <div className={divided ? 'models-line divided' : 'models-line'}>
-      <ProviderIcon provider={account.provider} side={28} />
-      <span className="models-words">
-        <span className="models-title">{shownName(account)}</span>
-        <span className="models-subtitle">{kindName(account)}</span>
-      </span>
-      {/* How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯"). */}
-      <span
-        className={
-          usable(account)
-            ? 'models-status usable'
-            : account.status === 'signed_out'
-              ? 'models-status signed-out'
-              : 'models-status'
-        }
-      >
-        <span className="models-status-dot" aria-hidden="true" />
-        {statusWords(account)}
-      </span>
+    <div
+      className={divided ? 'models-line opens divided' : 'models-line opens'}
+    >
+      {/* The row opens the account's page; `⋯` keeps its own menu (outside the button, so its click stays its own). */}
+      <button type="button" className="models-open" onClick={open}>
+        <ProviderIcon provider={account.provider} side={28} />
+        <span className="models-words">
+          <span className="models-title">{shownName(account)}</span>
+          <span className="models-subtitle">{kindName(account)}</span>
+        </span>
+        {/* How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯"). */}
+        <span
+          className={
+            usable(account)
+              ? 'models-status usable'
+              : account.status === 'signed_out'
+                ? 'models-status signed-out'
+                : 'models-status'
+          }
+        >
+          <span className="models-status-dot" aria-hidden="true" />
+          {statusWords(account)}
+        </span>
+      </button>
       <button
         ref={button}
         type="button"
@@ -277,6 +294,15 @@ function ModelAccountLine({
           <circle cx="13" cy="8" r="1.3" fill="currentColor" />
         </svg>
       </button>
+      <button
+        type="button"
+        className="models-chevron"
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={open}
+      >
+        <SettingsSymbol name="chevronRight" size={10} weight={1.7} />
+      </button>
       {menu && (
         <ContextMenu
           items={items}
@@ -284,6 +310,80 @@ function ModelAccountLine({
           close={() => setMenu(undefined)}
           label={shownName(account)}
         />
+      )}
+    </div>
+  )
+}
+
+/**
+ * A connected AI account's page (`SettingsModelAccountPage`; 9 November
+ * 2026, the founder: "it should look like usage and billing ... then a way
+ * to go to their plan in claude or chat website"): "Usage", the plan's
+ * 5-hour and weekly limits drawn as Usage & Billing's meters
+ * (`UsageMeterLine`), with when the provider last said it under; then
+ * "Plan", the plan and Manage Plan ↗, the provider's own page (Codex's usage
+ * on chatgpt.com, claude.ai's), in a new tab (in the Windows app, the
+ * default browser). An account disconnected meanwhile goes back to AI
+ * Models.
+ */
+export function SettingsModelAccountPage({ store }: { store: AppStore }) {
+  const model = store.aiModels
+  const windowModel = useWindowModel()
+  useWatched(model)
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    void model.load()
+    const timer = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [model])
+  const overlay = windowModel.overlay
+  const id = overlay?.kind === 'settings' ? overlay.modelAccount : undefined
+  const account = model.accounts.find((one) => one.id === id)
+  const gone = model.loaded && account === undefined
+  useEffect(() => {
+    if (gone) windowModel.showSettingsPage('models')
+  }, [gone, windowModel])
+  if (!account) return null
+  const lines = account.usage ? planUsageLines(account.usage, { now }) : []
+  const named = account.plan ? planName(account.plan) : ''
+  const page = planPage(account)
+  return (
+    <div className="models-page">
+      <SettingsGroup
+        title={t('Usage')}
+        footer={
+          lines.length > 0 && account.usage
+            ? planUsageUpdated(account.usage, { now })
+            : undefined
+        }
+      >
+        {lines.length === 0 ? (
+          <SettingsLine
+            label={t`Shown after your agents next use ${providerName(account.provider)}.`}
+          />
+        ) : (
+          lines.map((line, index) => (
+            <UsageMeterLine
+              key={line.title}
+              title={line.title}
+              meter={line.meter}
+              divided={index > 0}
+            />
+          ))
+        )}
+      </SettingsGroup>
+      {(named !== '' || page !== undefined) && (
+        <SettingsGroup title={t('Plan')}>
+          {named !== '' && <SettingsLine label={t`Current plan: ${named}`} />}
+          {page !== undefined && (
+            <SettingsLinkRow
+              label={t('Manage Plan')}
+              divided={named !== ''}
+              external
+              onClick={() => openPage(page)}
+            />
+          )}
+        </SettingsGroup>
       )}
     </div>
   )

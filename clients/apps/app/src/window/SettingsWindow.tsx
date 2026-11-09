@@ -17,6 +17,7 @@
 // Credentials Store (6f); AI Models (SettingsModels.tsx).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { shownName } from '../core/aiModels'
 import { t as coreT } from '../core/l10n'
 import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
@@ -33,7 +34,7 @@ import {
   SettingsLegalPage,
   SettingsPermissionsPage,
 } from './SettingsGeneral'
-import { SettingsModelsPage } from './SettingsModels'
+import { SettingsModelAccountPage, SettingsModelsPage } from './SettingsModels'
 import {
   PanelDisc,
   SettingsSymbol,
@@ -62,11 +63,14 @@ const pages: Record<
   help: { title: () => t('Help & support'), symbol: 'questionmarkCircle' },
   legal: { title: () => t('Legal'), symbol: 'checkmarkShield' },
   account: { title: () => t('Account'), symbol: 'personCropCircle' },
+  modelAccount: { title: () => t('AI Models'), symbol: 'cpu' },
 }
 
-/** The page it sits under, with Back to it: the account under General (its first row). */
+/** The page it sits under, with Back to it: the account under General (its first row), an AI account under AI Models. */
 function parentOf(page: SettingsPage): SettingsPage | undefined {
-  return page === 'account' ? 'general' : undefined
+  if (page === 'account') return 'general'
+  if (page === 'modelAccount') return 'models'
+  return undefined
 }
 
 /** The pages listed, in the Mac's order: Usage & Billing as the iPhone lists it, not for an enterprise team (`store.usageListed`); Updates in the Windows app only (a web page is always the latest). */
@@ -117,6 +121,8 @@ function PageBody({ page, store }: { page: SettingsPage; store: AppStore }) {
       return <SettingsLegalPage store={store} />
     case 'account':
       return <SettingsAccountPage store={store} />
+    case 'modelAccount':
+      return <SettingsModelAccountPage store={store} />
   }
 }
 
@@ -225,6 +231,17 @@ function SettingsPanel({
   const model = useWindowModel()
   const panel = useRef<HTMLDivElement>(null)
   const parent = parentOf(page)
+  useWatched(store.aiModels)
+  // An AI account's page is named after the account ("ChatGPT", "Claude").
+  const shown =
+    page === 'modelAccount'
+      ? store.aiModels.accounts.find(
+          (one) =>
+            model.overlay?.kind === 'settings' &&
+            one.id === model.overlay.modelAccount,
+        )
+      : undefined
+  const title = shown ? shownName(shown) : pages[page].title()
   // The panel takes the keys as it opens, so nothing behind keeps them (the message field would take Escape and the letters).
   useEffect(() => {
     panel.current?.focus()
@@ -249,7 +266,7 @@ function SettingsPanel({
               onClick={() => model.showSettingsPage(parent)}
             />
           )}
-          <h2 className="panel-title">{pages[page].title()}</h2>
+          <h2 className="panel-title">{title}</h2>
           <PanelDisc
             symbol="xmark"
             label={t('Close')}

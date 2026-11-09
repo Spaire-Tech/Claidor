@@ -46,10 +46,12 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
   public let plan: String?
   public let status: Status
   public let limitedUntil: Date?
+  /** How much of its plan is used, as the provider last said; none until the account has been used. */
+  public let usage: PlanUsage?
 
-  public init(id: String, provider: String, kind: String, label: String, plan: String?, status: Status, limitedUntil: Date? = nil) {
+  public init(id: String, provider: String, kind: String, label: String, plan: String?, status: Status, limitedUntil: Date? = nil, usage: PlanUsage? = nil) {
     self.id = id; self.provider = provider; self.kind = kind; self.label = label
-    self.plan = plan; self.status = status; self.limitedUntil = limitedUntil
+    self.plan = plan; self.status = status; self.limitedUntil = limitedUntil; self.usage = usage
   }
 
   public init?(json: JSON?) {
@@ -61,8 +63,18 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
       label: json["label"]?.text ?? AIModels.providerName(provider),
       plan: json["plan"]?.text,
       status: json["status"]?.string.flatMap(Status.init(rawValue:)) ?? .available,
-      limitedUntil: json["limitedUntil"]?.double.map { Date(timeIntervalSince1970: $0 / 1000) }
+      limitedUntil: json["limitedUntil"]?.double.map { Date(timeIntervalSince1970: $0 / 1000) },
+      usage: PlanUsage(json: json["usage"])
     )
+  }
+
+  /** The provider's own page for the plan's usage and the plan (9 November 2026): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
+  public var planPage: URL? {
+    switch provider {
+    case AIModels.chatGPT: return URL(string: "https://chatgpt.com/codex/settings/usage")
+    case AIModels.claude: return URL(string: "https://claude.ai/settings/usage")
+    default: return nil
+    }
   }
 
   /** "ChatGPT". */
@@ -103,6 +115,93 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
     case .signedOut: return false
     case .limited: return (limitedUntil ?? .distantFuture) <= now
     }
+  }
+}
+
+/**
+ * How much of an account's plan is used (9 November 2026, the founder: "we
+ * need the usage for both claude and chat gpt ... it should look like usage
+ * and billing"), as its provider last said: ChatGPT with each answer,
+ * Claude from Claude Code on the computer (server/simeon/desktop/
+ * model_accounts.py). Each window its share used and when it resets: the
+ * 5-hour one, then the week's. Never guessed: a window whose reset has
+ * passed reads as unused until the provider says again.
+ */
+public struct PlanUsage: Equatable, Sendable {
+  public struct Window: Equatable, Sendable {
+    public enum Kind: String, Sendable {
+      case fiveHour = "five_hour"
+      case weekly
+    }
+
+    public let kind: Kind
+    /** 0 to 100; past 100 when the plan lets usage run on. */
+    public let usedPercent: Double
+    public let resetsAt: Date?
+
+    public init(kind: Kind, usedPercent: Double, resetsAt: Date?) {
+      self.kind = kind; self.usedPercent = usedPercent; self.resetsAt = resetsAt
+    }
+  }
+
+  /** A window as Usage & Billing draws a meter: its title, then what is used, when it resets and the bar. */
+  public struct Line: Identifiable, Equatable, Sendable {
+    public let title: String
+    public let meter: UsageMeters.Meter
+    public var id: String { title }
+  }
+
+  public let windows: [Window]
+  /** When the provider said it. */
+  public let at: Date?
+
+  public init(windows: [Window], at: Date?) {
+    self.windows = windows; self.at = at
+  }
+
+  public init?(json: JSON?) {
+    let windows = (json?["windows"]?.array ?? []).compactMap { one -> Window? in
+      guard let kind = one["kind"]?.string.flatMap(Window.Kind.init(rawValue:)), let used = one["usedPercent"]?.double, used.isFinite else { return nil }
+      return Window(kind: kind, usedPercent: max(0, used), resetsAt: PlanUsage.date(one["resetsAt"]))
+    }
+    guard !windows.isEmpty else { return nil }
+    self.init(windows: windows, at: PlanUsage.date(json?["at"]))
+  }
+
+  /** Milliseconds since 1970, as the server says a time. */
+  private static func date(_ value: JSON?) -> Date? {
+    guard let ms = value?.double, ms.isFinite, ms > 0 else { return nil }
+    return Date(timeIntervalSince1970: ms / 1000)
+  }
+
+  /** "5-hour limit" and "Weekly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
+  public func lines(now: Date = Date(), timeZone: TimeZone = .current) -> [Line] {
+    let order: [Window.Kind] = [.fiveHour, .weekly]
+    return order.compactMap { kind in
+      guard let window = windows.first(where: { $0.kind == kind }) else { return nil }
+      let reset = window.resetsAt.flatMap { $0 > now ? $0 : nil }
+      let passed = window.resetsAt != nil && reset == nil
+      let used = passed ? 0 : window.usedPercent
+      let title = kind == .fiveHour ? L10n.text("5-hour limit") : L10n.text("Weekly limit")
+      let resets = reset.map { L10n.text("Resets \(PlanUsage.time($0, now: now, timeZone: timeZone))") }
+      return Line(title: title, meter: UsageMeters.Meter(valueLabel: UsageMeters.percent(used), barPercent: max(0, min(100, used)), resetLabel: resets))
+    }
+  }
+
+  /** "Updated 4:12 PM": when the provider last said it. */
+  public func updatedWords(now: Date = Date(), timeZone: TimeZone = .current) -> String? {
+    guard let at else { return nil }
+    return L10n.text("Updated \(PlanUsage.time(at, now: now, timeZone: timeZone))")
+  }
+
+  /** "4:00 PM" today, "Thu 4:00 PM" within the week, "Nov 16, 4:00 PM" further. */
+  static func time(_ date: Date, now: Date, timeZone: TimeZone) -> String {
+    guard abs(date.timeIntervalSince(now)) >= 6 * 86_400 else { return AIModels.time(date, now: now, timeZone: timeZone) }
+    let format = DateFormatter()
+    format.locale = L10n.locale()
+    format.timeZone = timeZone
+    format.setLocalizedDateFormatFromTemplate("MMMdjmm")
+    return format.string(from: date)
   }
 }
 

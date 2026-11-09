@@ -268,8 +268,8 @@ function CancelTrialQuestion({
   )
 }
 
-/** A meter (`UsageMeterLine`): its title with what is used at the right (grey), when it resets under it (grey), then its bar across (5, the blue; red past 90%). */
-function UsageMeterLine({
+/** A meter (`UsageMeterLine`): its title with what is used at the right (grey), when it resets under it (grey), then its bar across (5, the blue; red past 90%). An AI account's page draws its plan's limits with it too (`SettingsModelAccountPage`). */
+export function UsageMeterLine({
   title,
   meter,
   divided,

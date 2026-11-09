@@ -180,6 +180,7 @@
  "1 video": "1 video",
  "1Password didn't get your answer": "1Password yanıtını almadı",
  "1Password wasn't connected": "1Password bağlanmadı",
+ "5-hour limit": "5 saatlik sınır",
  "50 is the maximum": "En fazla 50",
  "7 days free, then your plan. Add a card on the web; cancel anytime.": "7 gün ücretsiz, sonra planın başlar. Web’de bir kart ekle; istediğin zaman iptal et.",
  "A drawing your agents share gets a link on excalidraw.com that anyone with the link can open.": "Ajanlarının paylaştığı bir çizim, excalidraw.com’da bağlantıya sahip herkesin açabileceği bir bağlantı alır.",
@@ -1251,6 +1252,7 @@
  "Research uses your vidIQ credits.": "Araştırmalar vidIQ kredilerini kullanır.",
  "Reset face": "Yüzü sıfırla",
  "Reset failed": "Sıfırlama başarısız",
+ "Resets %@": "Sıfırlanma: %@",
  "Resets in %lld days": {
   "one": "%lld gün sonra yenilenir",
   "other": "%lld gün sonra yenilenir"
@@ -1637,6 +1639,7 @@
  "Update when agents are done": "Ajanlar bitirince güncelle",
  "Update when done": "Bitince güncelle",
  "Update while agents are working?": "Ajanlar çalışırken güncellensin mi?",
+ "Updated %@": "Güncellendi: %@",
  "Updated routine": "Rutin güncellendi",
  "Updated routines": "Rutinler güncellendi",
  "Updates": "Güncellemeler",
@@ -1683,6 +1686,7 @@
  "Weekdays": "Hafta içi",
  "Weekdays at %@": "Hafta içi saat %@",
  "Weekends": "Hafta sonu",
+ "Weekly limit": "Haftalık sınır",
  "Weekly usage": "Haftalık kullanım",
  "What action items came out of the Acme meeting in Fireflies?": "Fireflies’taki Acme toplantısından hangi görevler çıktı?",
  "What action items do I have from today’s meetings in Granola?": "Granola’daki bugünkü toplantılardan bana hangi görevler düştü?",

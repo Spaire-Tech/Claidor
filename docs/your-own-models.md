@@ -354,6 +354,43 @@ Anthropic in a test.
 **Still true:** Simeon's own Claude models on credits stay as they are, and a
 person's own Anthropic API key (section 7) comes later.
 
+### How much of the plan is used (9 November 2026)
+
+The founder: "we need the usage for both claude and chat gpt ... it should
+look like usage and billing ... then a way to go to their plan in claude or
+chat website ... you can click on chatgpt and claude, like with connectors".
+
+- **In the apps.** In Settings › AI Models each connected account opens its
+  page (`›`): "Usage", the plan's 5-hour limit and weekly limit drawn as
+  Usage & Billing draws its meters (what is used, when it resets, the bar,
+  red past 90%), with when the provider last said it under; then "Plan",
+  the plan and Manage Plan ↗, the provider's own page
+  (`chatgpt.com/codex/settings/usage`, `claude.ai/settings/usage`). Mac
+  (`SettingsModelAccountPage`) and the web and Windows app (the same name
+  in `SettingsModels.tsx`); the words from the shared core (`PlanUsage`).
+  Before the account's first use, one line says it shows after the agents
+  next use it. A window whose reset has passed reads as unused until the
+  provider says again; nothing is guessed.
+- **ChatGPT's** comes with every answer through the relay: the headers
+  Codex reads (`x-codex-primary-used-percent`, `-window-minutes`,
+  `-reset-at`; the same for `secondary`). The relay keeps them on the
+  account (`model_accounts.chatgpt_usage`, `keep_usage`), in a short session
+  of its own, never in the way of the answer (`desktop.models.usage_not_kept`
+  if it fails).
+- **Claude's** comes from Claude Code on the person's computer: its stream's
+  `rate_limit_event` carries `unifiedWindows` (`five_hour`, `seven_day`: a
+  `utilization` and a `resetsAt`). After each turn the engine sends the last
+  it said (`POST /desktop/api/models/accounts/claude/usage`, log line
+  `desktop.models.usage provider=claude windows=five_hour=42,weekly=18`),
+  again only when it changes or every fifteen minutes. Simeon never asks
+  Anthropic for it with the person's sign-in.
+- Kept in `desktop_model_accounts.usage` (migration
+  `desktop_model_usage_1109`), in each account's JSON as `usage`.
+- **What reaches people when.** The server and the apps' pages with the
+  next deploy and app builds; ChatGPT's figures from the first answer after
+  the server deploys. Claude's need the new engine published
+  (`npm run publish:host-bundle` on a Mac).
+
 ## 7. Then: API keys
 
 The "API keys" list, Reason's order. Connect asks for the key, checks it with
