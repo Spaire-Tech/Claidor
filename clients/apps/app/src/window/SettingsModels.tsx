@@ -476,7 +476,7 @@ function ChatGPTConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return <ConnectedEnd model={model} close={close} />
+      return <ConnectedEnd provider={chatGPT} close={close} />
     if (outcome?.kind === 'expired' || outcome?.kind === 'failed')
       return (
         <>
@@ -596,7 +596,7 @@ function ClaudeConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return <ConnectedEnd model={model} close={close} />
+      return <ConnectedEnd provider={claude} close={close} />
     if (outcome)
       return (
         <>
@@ -672,8 +672,14 @@ function ClaudeConnectSheet({
   )
 }
 
-/** Connected (both sheets): the green tick and "Connected", which model the agents now use, and Done. */
-function ConnectedEnd({ model, close }: { model: Model; close: () => void }) {
+/** Connected (both sheets): the green tick and "Connected", "You're now connected to Claude." (the founder: "just say you're now connected to claude"), and Done. */
+function ConnectedEnd({
+  provider,
+  close,
+}: {
+  provider: string
+  close: () => void
+}) {
   return (
     <>
       <div className="models-connected">
@@ -692,7 +698,7 @@ function ConnectedEnd({ model, close }: { model: Model; close: () => void }) {
           {t('Connected')}
         </span>
         <span className="models-sheet-words">
-          {t`Your agents now use ${model.chosenName}.`}
+          {t`You're now connected to ${providerName(provider)}.`}
         </span>
       </div>
       <div className="models-sheet-end">

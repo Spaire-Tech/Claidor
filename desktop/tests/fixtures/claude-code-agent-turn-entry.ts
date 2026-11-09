@@ -3,3 +3,4 @@ export * from "../../source/host/claude-code/claude-code-agent-turn.js";
 export { ClaudeCodeSessions } from "../../source/host/claude-code/claude-code-turn.js";
 export { createSendMessageTool } from "../../source/host/runner/tools/send-message-tool.js";
 export { createContext } from "../../source/packages/context/core.js";
+export { TurnRuntime } from "../../source/host/extensions/transcript/turn-runtime.js";

@@ -49,6 +49,12 @@ export interface SimeonModelRoles {
    * whenever Claude Code can't.
    */
   readonly claudeCode?: string;
+  /**
+   * How hard Claude thinks on those turns (`--effort`: `low`, `medium`,
+   * `high`, `xhigh`, `max`), as the person chose beside the model on the
+   * composer (9 November 2026); none, Claude Code's own.
+   */
+  readonly claudeCodeEffort?: string;
 }
 
 export const SIMEON_MODEL_ROLES_PATH = "models/available";
@@ -64,9 +70,42 @@ const FOLLOWED_TRANSPORTS: ReadonlySet<string> = new Set(["openai-responses", "a
 export const CLAUDE_CODE_TRANSPORT = "claude-code";
 /** A Claude Code model name as `--model` takes it (`opus`, `sonnet`, `claude-opus-5-5`). */
 const CLAUDE_CODE_MODEL = /^[a-z][a-z0-9.-]{0,63}$/;
+/** The efforts Claude Code takes (`claude --help`, 2.1.311). */
+const CLAUDE_CODE_EFFORTS: ReadonlySet<string> = new Set(["low", "medium", "high", "xhigh", "max"]);
 
 let current: SimeonModelRoles = {};
 let lastLogged = "";
+/** When the roles were last read, and where from (`startSimeonModelRoles`): the read before a turn. */
+let lastReadAt = 0;
+let liveSource: SimeonModelRolesSource | undefined;
+let readingBeforeTurn: Promise<unknown> | undefined;
+
+/** A read older than this is made again before an agent's turn. */
+export const SIMEON_MODEL_ROLES_TURN_FRESH_MS = 15_000;
+/** The longest a turn waits for that read; past it, the turn goes on the roles it has. */
+export const SIMEON_MODEL_ROLES_TURN_WAIT_MS = 3_000;
+
+/**
+ * Before an agent's turn: the roles read again when the last read is more
+ * than fifteen seconds old, waited for at most three seconds (9 November
+ * 2026). Until then a model or an effort chosen on the composer reached the
+ * agents only at the next five-minute read: the founder connected Claude at
+ * 22:44 and his next two messages were still answered on Simeon's model.
+ */
+export async function refreshSimeonModelRolesBeforeTurn(now: number = Date.now()): Promise<void> {
+  const source = liveSource;
+  if (source === undefined || now - lastReadAt < SIMEON_MODEL_ROLES_TURN_FRESH_MS) return;
+  readingBeforeTurn ??= refreshSimeonModelRoles(source).finally(() => { readingBeforeTurn = undefined; });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([readingBeforeTurn, new Promise<void>((resolve) => { timer = setTimeout(resolve, SIMEON_MODEL_ROLES_TURN_WAIT_MS); })]);
+  if (timer !== undefined) clearTimeout(timer);
+}
+
+/** For tests: the source the read before a turn uses, and when the last read was. */
+export function setSimeonModelRolesSourceForTest(source: SimeonModelRolesSource | undefined, readAt = 0): void {
+  liveSource = source;
+  lastReadAt = readAt;
+}
 
 export function simeonModelRoles(): SimeonModelRoles {
   return current;
@@ -78,7 +117,7 @@ export function setSimeonModelRolesForTest(roles: SimeonModelRoles): void {
   lastKept = "";
 }
 
-type Row = { modelId?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown; claudeCodeModel?: unknown };
+type Row = { modelId?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown; claudeCodeModel?: unknown; claudeCodeEffort?: unknown };
 
 function transportOf(row: Row): string {
   if (typeof row.transportApi === "string" && row.transportApi.length > 0) return row.transportApi;
@@ -106,18 +145,20 @@ export function parseSimeonModelRoles(body: unknown): SimeonModelRoles | undefin
     && typeof one.claudeCodeModel === "string"
     && CLAUDE_CODE_MODEL.test(one.claudeCodeModel.trim()));
   const claudeCode = typeof claude?.claudeCodeModel === "string" ? claude.claudeCodeModel.trim() : undefined;
+  const claudeCodeEffort = typeof claude?.claudeCodeEffort === "string" && CLAUDE_CODE_EFFORTS.has(claude.claudeCodeEffort) ? claude.claudeCodeEffort : undefined;
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
     ...(computer === undefined ? {} : { computer }),
     ...(claudeCode === undefined ? {} : { claudeCode }),
+    ...(claudeCode === undefined || claudeCodeEffort === undefined ? {} : { claudeCodeEffort }),
   };
 }
 
 /** The roles' line in the host log; Claude Code named only when chosen. */
 function rolesLine(roles: SimeonModelRoles): string {
-  return `primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}${roles.claudeCode === undefined ? "" : ` claudeCode=${roles.claudeCode}`}`;
+  return `primary=${roles.primary ?? "-"} cheap=${roles.cheap ?? "-"} fallback=${roles.fallback ?? "-"} computer=${roles.computer ?? "-"}${roles.claudeCode === undefined ? "" : ` claudeCode=${roles.claudeCode}`}${roles.claudeCodeEffort === undefined ? "" : ` effort=${roles.claudeCodeEffort}`}`;
 }
 
 export interface SimeonModelRolesSource {
@@ -136,12 +177,15 @@ function keptRoles(value: unknown): SimeonModelRoles | undefined {
   const primary = name("primary"), cheap = name("cheap"), fallback = name("fallback"), computer = name("computer");
   const claude = name("claudeCode");
   const claudeCode = claude !== undefined && CLAUDE_CODE_MODEL.test(claude) ? claude : undefined;
+  const effort = name("claudeCodeEffort");
+  const claudeCodeEffort = effort !== undefined && CLAUDE_CODE_EFFORTS.has(effort) ? effort : undefined;
   return {
     ...(primary === undefined ? {} : { primary }),
     ...(cheap === undefined ? {} : { cheap }),
     ...(fallback === undefined ? {} : { fallback }),
     ...(computer === undefined ? {} : { computer }),
     ...(claudeCode === undefined ? {} : { claudeCode }),
+    ...(claudeCode === undefined || claudeCodeEffort === undefined ? {} : { claudeCodeEffort }),
   };
 }
 
@@ -194,6 +238,7 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
       return undefined;
     }
     current = roles;
+    lastReadAt = Date.now();
     if (source.rememberIn !== undefined) keep(source.rememberIn, roles);
     note(`${HOST_LOG_PREFIX} model-roles ${rolesLine(roles)}`);
     return roles;
@@ -222,6 +267,7 @@ export const SIMEON_MODEL_ROLES_FIRST_RETRY_MS = 5_000;
  * returned function stops it.
  */
 export function startSimeonModelRoles(source: SimeonModelRolesSource): () => void {
+  liveSource = source;
   let stopped = false;
   let readOnce = false;
   let timer: ReturnType<typeof setTimeout> | undefined;

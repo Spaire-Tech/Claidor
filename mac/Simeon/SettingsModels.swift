@@ -267,7 +267,7 @@ struct MacChatGPTConnectSheet: View {
         Label("Connected", systemImage: "checkmark.circle.fill")
           .font(PanelType.row)
           .foregroundStyle(look.settingsGreen)
-        Text("Your agents now use \(model.chosenName).")
+        Text("You're now connected to \(AIModels.providerName(AIModels.chatGPT)).")
           .font(PanelType.row)
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
@@ -411,7 +411,7 @@ struct MacClaudeConnectSheet: View {
         Label("Connected", systemImage: "checkmark.circle.fill")
           .font(PanelType.row)
           .foregroundStyle(look.settingsGreen)
-        Text("Your agents now use \(model.chosenName).")
+        Text("You're now connected to \(AIModels.providerName(AIModels.claude)).")
           .font(PanelType.row)
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
@@ -542,58 +542,150 @@ private struct MacConnectStep<Content: View>: View {
  * The model the agents use, on the composer (9 November 2026; the founder:
  * "the model chosen is on the composer. not on the setting app. ours will
  * have the logo though", from Reason's): at the field's right before the
- * microphone, the chosen model's mark, its name and a chevron; Simeon's mark
- * and "Simeon" while the agents use Simeon's models. Apple's menu, as
- * `SettingsMenu`'s: Simeon, then each connected provider with its models in
- * a submenu, the chosen one ticked, then Add More…, which opens Settings ›
- * AI Models. The choice is the account's (`models/own`), for every agent.
+ * microphone, the chosen model's mark and its name in the field's grey, at
+ * the field's size, centred on the microphone (the founder, the same day:
+ * "look at how unpropotionate it is"); then, on the person's own plan, how
+ * hard it thinks ("High ⌄", Reason's), its menu Light, Medium, High, Extra
+ * High, Max. Simeon's mark and "Simeon" while the agents use Simeon's
+ * models. Each opens Apple's menu upward from itself, as Attach does
+ * (`AttachMenu`): Simeon, then each connected provider with its models in a
+ * submenu, the chosen one ticked, then Add More…, which opens Settings › AI
+ * Models. The choice is the account's (`models/own`), for every agent.
  */
 struct ComposerModelMenu: View {
   let look: Look
   @Environment(AppStore.self) private var store
   @Environment(SettingsState.self) private var settings
+  @State private var modelSpot = WindowSpot()
+  @State private var effortSpot = WindowSpot()
 
   var body: some View {
     let model = store.aiModels
-    Menu {
-      Toggle(isOn: Binding(get: { model.chosen == nil }, set: { if $0 { Task { await model.choose(nil) } } })) {
-        Label { Text(verbatim: AIModels.simeon) } icon: { Image("Providers/simeon-mark") }
-      }
-      ForEach(model.choices) { choice in
-        Menu {
-          ForEach(choice.models) { option in
-            Toggle(option.name, isOn: Binding(get: { model.chosen == option.id }, set: { if $0 { Task { await model.choose(option.id) } } }))
+    HStack(spacing: 2) {
+      Button {
+        ComposerModelMenus.showModels(over: modelSpot.frame, model: model) { settings.open(.models) }
+      } label: {
+        HStack(spacing: 5) {
+          ProviderMark(provider: model.chosenChoice?.provider, ink: look.inkSecondary, side: 13)
+          Text(verbatim: model.composerName)
+            .font(PanelType.row)
+            .foregroundStyle(look.inkSecondary)
+            .lineLimit(1)
+          if model.effortName == nil {
+            Image(systemName: "chevron.down")
+              .font(.system(size: 8, weight: .semibold))
+              .foregroundStyle(look.inkTertiary)
           }
-        } label: {
-          Label { Text(verbatim: AIModels.providerName(choice.provider)) } icon: { Image("Providers/\(choice.provider)-mark") }
         }
+        .padding(.horizontal, 6)
+        .frame(height: 28)
+        .contentShape(Rectangle())
       }
-      Divider()
-      Button(String(localized: "Add More…")) { settings.open(.models) }
-    } label: {
-      HStack(spacing: 6) {
-        ProviderMark(provider: model.chosenChoice?.provider, ink: look.ink, side: 14)
-        Text(verbatim: model.composerName)
-          .font(PanelType.row)
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-        Image(systemName: "chevron.down")
-          .font(.system(size: 9, weight: .medium))
-          .foregroundStyle(look.inkTertiary)
+      .buttonStyle(.hand)
+      .background(WindowSpotReader(spot: modelSpot))
+      .accessibilityLabel(String(localized: "Model"))
+      .accessibilityValue(model.composerName)
+      if let effortName = model.effortName {
+        Button {
+          ComposerModelMenus.showEfforts(over: effortSpot.frame, model: model)
+        } label: {
+          HStack(spacing: 4) {
+            Text(verbatim: effortName)
+              .font(PanelType.row)
+              .foregroundStyle(look.ink)
+              .lineLimit(1)
+            Image(systemName: "chevron.down")
+              .font(.system(size: 8, weight: .semibold))
+              .foregroundStyle(look.inkSecondary)
+          }
+          .padding(.horizontal, 9)
+          .frame(height: 24)
+          .background(look.wash, in: Capsule())
+          .contentShape(Capsule())
+        }
+        .buttonStyle(.hand)
+        .background(WindowSpotReader(spot: effortSpot))
+        .accessibilityLabel(String(localized: "Thinking effort"))
+        .accessibilityValue(effortName)
       }
-      .padding(.horizontal, 6)
-      .frame(height: 36)
-      .contentShape(Rectangle())
     }
-    .menuStyle(.button)
-    .buttonStyle(.borderless)
-    .menuIndicator(.hidden)
+    .frame(height: 36)
     .fixedSize()
     .disabled(model.choosing)
-    .handCursor()
-    .accessibilityLabel(String(localized: "Model"))
-    .accessibilityValue(model.composerName)
     .task { if !model.loaded { await model.load() } }
+  }
+}
+
+/** The composer's two menus, Apple's, opening upward from their buttons (`AttachMenu`'s way). */
+@MainActor
+enum ComposerModelMenus {
+  static func showModels(over button: CGRect, model: AIModelsModel, addMore: @escaping () -> Void) {
+    let handler = Handler()
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+    menu.addItem(handler.item(AIModels.simeon, image: mark(nil), on: model.chosen == nil) { Task { await model.choose(nil) } })
+    for choice in model.choices {
+      let item = NSMenuItem(title: AIModels.providerName(choice.provider), action: nil, keyEquivalent: "")
+      item.image = mark(choice.provider)
+      // Ticked while one of its models is in use.
+      item.state = model.chosenChoice?.provider == choice.provider ? .on : .off
+      let models = NSMenu()
+      for option in choice.models {
+        models.addItem(handler.item(option.name, on: model.chosen == option.id) { Task { await model.choose(option.id) } })
+      }
+      item.submenu = models
+      menu.addItem(item)
+    }
+    menu.addItem(.separator())
+    menu.addItem(handler.item(String(localized: "Add More…"), action: addMore))
+    pop(menu, handler: handler, over: button)
+  }
+
+  static func showEfforts(over button: CGRect, model: AIModelsModel) {
+    let handler = Handler()
+    let menu = NSMenu()
+    menu.autoenablesItems = false
+    for level in model.efforts {
+      menu.addItem(handler.item(AIModels.effortName(level), on: model.effort == level) { Task { await model.chooseEffort(level) } })
+    }
+    pop(menu, handler: handler, over: button)
+  }
+
+  /** A provider's mark at the menu's size (Simeon's for none): the template ones in the menu's ink, Claude's in its orange. */
+  private static func mark(_ provider: String?) -> NSImage? {
+    guard let image = NSImage(named: provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")?.copy() as? NSImage else { return nil }
+    image.size = NSSize(width: 16, height: 16)
+    image.isTemplate = provider != AIModels.claude
+    return image
+  }
+
+  private static func pop(_ menu: NSMenu, handler: Handler, over button: CGRect) {
+    // The handler lives as long as the menu.
+    objc_setAssociatedObject(menu, &Handler.key, handler, .OBJC_ASSOCIATION_RETAIN)
+    guard let window = NSApp.keyWindow ?? MacServices.shared.mainWindow, let view = window.contentView else { return }
+    // Its foot 4 over the button's top, at the button's left: the composer is at the window's foot.
+    let point = button == .zero ? window.mouseLocationOutsideOfEventStream : NSPoint(x: button.minX, y: button.maxY + 4 + menu.size.height)
+    menu.popUp(positioning: nil, at: view.convert(point, from: nil), in: view)
+  }
+
+  final class Handler: NSObject {
+    nonisolated(unsafe) static var key = 0
+    private var actions: [() -> Void] = []
+
+    func item(_ title: String, image: NSImage? = nil, on: Bool = false, action: @escaping () -> Void) -> NSMenuItem {
+      let item = NSMenuItem(title: title, action: #selector(run(_:)), keyEquivalent: "")
+      item.target = self
+      item.tag = actions.count
+      item.image = image
+      item.state = on ? .on : .off
+      actions.append(action)
+      return item
+    }
+
+    @MainActor @objc func run(_ sender: NSMenuItem) {
+      guard actions.indices.contains(sender.tag) else { return }
+      actions[sender.tag]()
+    }
   }
 }
 

@@ -2,16 +2,19 @@
 // mac/Simeon/SettingsModels.swift; 9 November 2026, the founder: "the model
 // chosen is on the composer. not on the setting app. ours will have the
 // logo though", from Reason's): at the field's right before the microphone,
-// the chosen model's mark, its name and a chevron; Simeon's mark and
-// "Simeon" while the agents use Simeon's models. Its menu, as the window's
-// menus look (`ContextMenu`), as Reason's: Simeon, then each connected
-// provider with its models in a submenu, a tick at the end of the one in
-// use and before the chosen model, then Add More…, which opens Settings ›
-// AI Models. The choice is the account's (`models/own`), for every agent.
+// the chosen model's mark and its name in the field's grey, at the field's
+// size (the founder: "look at how unpropotionate it is"); then, on the
+// person's own plan, how hard it thinks ("High ⌄", Reason's), its menu
+// Light, Medium, High, Extra High, Max. Simeon's mark and "Simeon" while the
+// agents use Simeon's models. The model's menu, as the window's menus look
+// (`ContextMenu`), as Reason's: Simeon, then each connected provider with
+// its models in a submenu, a tick at the end of the one in use and before
+// the chosen model, then Add More…, which opens Settings › AI Models. The
+// choice is the account's (`models/own`), for every agent.
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { providerName, simeon } from '../core/aiModels'
+import { effortName, providerName, simeon } from '../core/aiModels'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import './ComposerModelMenu.css'
@@ -62,7 +65,9 @@ export function ComposerModelMenu({ store }: { store: AppStore }) {
   useWatched(model)
   const window = useWindowModel()
   const [menu, setMenu] = useState<{ x: number; y: number }>()
+  const [effortMenu, setEffortMenu] = useState<{ x: number; y: number }>()
   const button = useRef<HTMLButtonElement>(null)
+  const effortButton = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (!model.loaded) void model.load()
   }, [model])
@@ -93,6 +98,17 @@ export function ComposerModelMenu({ store }: { store: AppStore }) {
       action: () => window.openSettings('models'),
     },
   ]
+  const efforts: MenuLine[] = model.efforts.map((level) => ({
+    label: effortName(level),
+    checked: model.effort === level,
+    action: () => void model.chooseEffort(level),
+  }))
+  const effort = model.effortName
+  // Over the button, its foot 4 above it: the composer is at the window's foot.
+  const over = (target: HTMLButtonElement | null) => {
+    const box = target?.getBoundingClientRect()
+    return box ? { x: box.left, y: box.top - 4 } : undefined
+  }
   return (
     <>
       <button
@@ -106,24 +122,32 @@ export function ComposerModelMenu({ store }: { store: AppStore }) {
         onMouseDown={(event) => event.preventDefault()}
         onClick={(event) => {
           event.stopPropagation()
-          const box = button.current?.getBoundingClientRect()
-          // Over the button, its foot 4 above it: the composer is at the window's foot.
-          if (box) setMenu({ x: box.left, y: box.top - 4 })
+          setMenu(over(button.current))
         }}
       >
-        <ProviderMark provider={inUse} />
+        <ProviderMark provider={inUse} side={13} />
         <span className="model-name">{model.composerName}</span>
-        <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
-          <path
-            d="M2 3.5 5 6.5 8 3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        {effort === undefined && <Chevron />}
       </button>
+      {effort !== undefined && (
+        <button
+          ref={effortButton}
+          type="button"
+          className="effort-button"
+          disabled={model.choosing}
+          aria-label={t('Thinking effort')}
+          aria-haspopup="menu"
+          aria-expanded={effortMenu !== undefined}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={(event) => {
+            event.stopPropagation()
+            setEffortMenu(over(effortButton.current))
+          }}
+        >
+          {effort}
+          <Chevron />
+        </button>
+      )}
       {/* On the page's body: the field's glass (backdrop-filter) would be the menu's frame, and place it wrong. */}
       {menu &&
         createPortal(
@@ -136,6 +160,33 @@ export function ComposerModelMenu({ store }: { store: AppStore }) {
           />,
           document.body,
         )}
+      {effortMenu &&
+        createPortal(
+          <ContextMenu
+            items={efforts}
+            at={effortMenu}
+            close={() => setEffortMenu(undefined)}
+            label={t('Thinking effort')}
+            foot
+          />,
+          document.body,
+        )}
     </>
+  )
+}
+
+/** The menus' chevron, 9 square, in the grey. */
+function Chevron() {
+  return (
+    <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true">
+      <path
+        d="M2 3.5 5 6.5 8 3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }

@@ -223,6 +223,18 @@ struct ComposerModelMenu: View {
           Label { Text(verbatim: AIModels.providerName(choice.provider)) } icon: { Image("Providers/\(choice.provider)-mark") }
         }
       }
+      // How hard it thinks, on the person's own plan (Light … Max; the Mac's and the web's "High ⌄").
+      if !model.efforts.isEmpty {
+        Divider()
+        Menu {
+          ForEach(model.efforts, id: \.self) { level in
+            Toggle(AIModels.effortName(level), isOn: Binding(get: { model.effort == level }, set: { if $0 { Task { await model.chooseEffort(level) } } }))
+          }
+        } label: {
+          Text("Thinking effort")
+          if let effortName = model.effortName { Text(verbatim: effortName) }
+        }
+      }
       Divider()
       Button(String(localized: "Add More…")) { addingMore = true }
     } label: {
@@ -314,7 +326,7 @@ struct ChatGPTConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("Your agents now use \(model.chosenName).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(AIModels.providerName(AIModels.chatGPT)).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.expired), .some(.failed):
@@ -439,7 +451,7 @@ struct ClaudeConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("Your agents now use \(model.chosenName).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(AIModels.providerName(AIModels.claude)).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.refused), .some(.failed):

@@ -9,6 +9,7 @@ import {
   accountDetail,
   chatGPTSignIn,
   claudeSignIn,
+  effortName,
   kindName,
   modelAccount,
   planName,
@@ -509,5 +510,50 @@ describe('Claude in Claude Code on the computer', () => {
     expect(
       claudeSignIn({ url: 'http://claude.com/oauth/authorize' }),
     ).toBeUndefined()
+  })
+})
+
+describe('the effort beside the model', () => {
+  it('reads it, names it as the composer does, and changes it alone', async () => {
+    let effort = 'high'
+    const puts: JSONValue[] = []
+    const model = new AIModelsModel(
+      async (path, method, body): Promise<JSONValue> => {
+        if (method === 'PUT') {
+          puts.push(body ?? null)
+          effort = text(field(body, 'effort')) ?? effort
+        }
+        if (path === 'models/accounts') return { accounts: [] }
+        return {
+          model: 'own:claude:claude-opus-5-5',
+          models: [
+            {
+              modelId: 'own:claude:claude-opus-5-5',
+              modelName: 'Claude Opus 5.5',
+              provider: 'claude',
+            },
+          ],
+          effort,
+          efforts: ['low', 'medium', 'high', 'xhigh', 'max'],
+        }
+      },
+    )
+    await model.load()
+    expect(model.effort).toBe('high')
+    expect(model.effortName).toBe('High')
+    expect(model.efforts.map(effortName)).toEqual([
+      'Light',
+      'Medium',
+      'High',
+      'Extra High',
+      'Max',
+    ])
+    await model.chooseEffort('xhigh')
+    expect(model.effortName).toBe('Extra High')
+    expect(puts).toEqual([{ effort: 'xhigh' }])
+    // One its provider doesn't take, or the one in use: nothing asked.
+    await model.chooseEffort('extreme')
+    await model.chooseEffort('xhigh')
+    expect(puts).toHaveLength(1)
   })
 })

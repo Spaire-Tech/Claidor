@@ -37,6 +37,8 @@ export interface ClaudeCodeTurnInput {
   readonly prompt: string;
   /** `--model`: `opus`, `sonnet`. */
   readonly model: string;
+  /** `--effort`: how hard Claude thinks (`low`, `medium`, `high`, `xhigh`, `max`), as the person chose on the composer; none, Claude Code's own. */
+  readonly effort?: string | undefined;
   /** The session to resume; none starts a new one (its id is in the outcome). */
   readonly resume?: string | undefined;
   /** Added to Claude Code's own system prompt: the agent's brief. */
@@ -69,7 +71,7 @@ export interface ClaudeCodeEvent {
 }
 
 export type ClaudeCodeOutcome =
-  /** The turn ran to its end; `text` is Claude Code's last words (the agent's scratchpad, never shown). */
+  /** The turn ran to its end; `text` is Claude Code's last words (sent to the person when it sent them nothing else, `claudeCodeReplyToSend`). */
   | { readonly kind: "done"; readonly sessionId: string; readonly text: string; readonly turns: number }
   /** The plan's limit is reached, until `until` (ms) when Claude Code says. */
   | { readonly kind: "limited"; readonly sessionId?: string | undefined; readonly until?: number | undefined; readonly said: string }
@@ -84,6 +86,7 @@ export type ClaudeCodeOutcome =
 /** The arguments for one turn (no prompt: it goes in on stdin). */
 export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: string | undefined; mcp?: string | undefined }, newSession: string | undefined): string[] {
   const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--model", input.model];
+  if (input.effort !== undefined) args.push("--effort", input.effort);
   if (input.resume !== undefined) args.push("--resume", input.resume);
   else if (newSession !== undefined) args.push("--session-id", newSession);
   if (files.brief !== undefined) args.push("--append-system-prompt-file", files.brief);

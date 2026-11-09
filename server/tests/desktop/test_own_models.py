@@ -184,6 +184,22 @@ class TestTheRequest:
         kept = own_models.codex_body(_engine_request(), "gpt-6-luna")
         assert kept["reasoning"] == {"effort": "medium"}
 
+    async def test_the_effort_chosen_replaces_the_agents_own_not_the_machinerys(
+        self,
+    ) -> None:
+        loop = own_models.codex_body(
+            {**_engine_request(), "reasoning": {"effort": "high"}}, "gpt-6.1-sol", "low"
+        )
+        assert loop["reasoning"] == {"effort": "low"}
+        machinery = own_models.codex_body(
+            {**_engine_request(), "reasoning": {"effort": "low"}}, "gpt-6.1-sol", "high"
+        )
+        assert machinery["reasoning"] == {"effort": "low"}
+        no_choice = own_models.codex_body(
+            {**_engine_request(), "reasoning": {"effort": "high"}}, "gpt-6.1-sol"
+        )
+        assert no_choice["reasoning"] == {"effort": "high"}
+
     async def test_a_limit_says_until_when(self) -> None:
         now = utc_now()
         at = int((now + timedelta(hours=3)).timestamp())
@@ -214,7 +230,12 @@ class TestTheChoice:
     ) -> None:
         headers = await _headers(client, session, user)
         listed = await client.get("/desktop/api/models/own", headers=headers)
-        assert listed.json() == {"model": None, "models": []}
+        assert listed.json() == {
+            "model": None,
+            "models": [],
+            "effort": None,
+            "efforts": [],
+        }
         refused = await _choose(client, headers)
         assert refused.status_code == 400
         assert refused.json()["error"]["code"] == "not_offered"
@@ -279,7 +300,12 @@ class TestTheChoice:
         ).json()["data"]
         assert not any(row["modelId"].startswith("own:") for row in rows)
         listed = await client.get("/desktop/api/models/own", headers=headers)
-        assert listed.json() == {"model": None, "models": []}
+        assert listed.json() == {
+            "model": None,
+            "models": [],
+            "effort": None,
+            "efforts": [],
+        }
 
 
 @pytest.mark.asyncio
@@ -1046,6 +1072,46 @@ class TestClaudeThroughClaudeCode:
         assert roles["cheap"] == "claude-haiku-5-5"
         assert roles["computer"] == "claude-sonnet-5-5"
 
+    async def test_the_effort_chosen_beside_claude_reaches_claude_code(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        # Simeon's models: no effort to choose.
+        listed = (await client.get("/desktop/api/models/own", headers=headers)).json()
+        assert listed["effort"] is None
+        assert listed["efforts"] == []
+        refused = await client.put(
+            "/desktop/api/models/own", headers=headers, json={"effort": "high"}
+        )
+        assert refused.status_code == 400
+        # Claude chosen: Claude Code's own effort until one is chosen.
+        chosen = (await _choose(client, headers, CLAUDE_OPUS)).json()
+        assert chosen["effort"] == "high"
+        assert chosen["efforts"] == ["low", "medium", "high", "xhigh", "max"]
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert rows[0]["claudeCodeEffort"] == "high"
+        # Max chosen, the model left as it was.
+        maxed = await client.put(
+            "/desktop/api/models/own", headers=headers, json={"effort": "max"}
+        )
+        assert maxed.status_code == 200, maxed.text
+        assert maxed.json()["model"] == CLAUDE_OPUS
+        assert maxed.json()["effort"] == "max"
+        rows = (
+            await client.get("/desktop/api/models/available", headers=headers)
+        ).json()["data"]
+        assert rows[0]["claudeCodeEffort"] == "max"
+        # Another Claude model keeps it; an effort Claude Code doesn't take is refused.
+        sonnet = (await _choose(client, headers, "own:claude:claude-sonnet-5-5")).json()
+        assert sonnet["effort"] == "max"
+        wrong = await client.put(
+            "/desktop/api/models/own", headers=headers, json={"effort": "extreme"}
+        )
+        assert wrong.status_code == 400
+
     async def test_the_first_claude_choices_still_read_as_their_versions(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
@@ -1136,7 +1202,12 @@ class TestClaudeThroughClaudeCode:
         assert gone.status_code == 200
         assert not revoke.called, "nothing to revoke: Claude Code signs out itself"
         listed = await client.get("/desktop/api/models/own", headers=headers)
-        assert listed.json() == {"model": None, "models": []}
+        assert listed.json() == {
+            "model": None,
+            "models": [],
+            "effort": None,
+            "efforts": [],
+        }
         rows = (
             await client.get("/desktop/api/models/available", headers=headers)
         ).json()["data"]

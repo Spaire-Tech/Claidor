@@ -48,6 +48,7 @@ process.stdin.on("end", async () => {
   out({ type: "system", subtype: "init" });
   if (mode === "limit") { out({ type: "result", subtype: "success", is_error: true, result: "Claude AI usage limit reached|1794150000" }); process.exit(1); }
   if (mode === "expired") { out({ type: "result", subtype: "success", is_error: true, result: "Invalid API key · Please run /login" }); process.exit(1); }
+  if (mode === "words") { out({ type: "result", subtype: "success", is_error: false, result: "Tuesday at 10 is booked.", num_turns: 1 }); return; }
   const url = JSON.parse(fs.readFileSync(flag("--mcp-config"), "utf8")).mcpServers.simeon.url;
   const rpc = async (id, method, params) => (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, method, params }) })).json();
   await rpc(1, "initialize", { protocolVersion: "2025-06-18" });
@@ -167,6 +168,98 @@ test("the prompt and the brief's note", async () => {
     assert.match(bridge.claudeCodePrompt("  ", undefined, false), /continue as the brief says/);
     assert.match(bridge.claudeCodeBriefNote(), /The person sees only what you send with it/);
   } finally {
+    await dispose();
+  }
+});
+
+test("how a turn ended: its last words, whether it sent anything, and whether it worked on after", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    // Simeon's SendMessage reached the chat: its last words are notes, not owed to anyone.
+    await box.hook.run(box.input("Book the dentist for Tuesday"));
+    const sent = bridge.claudeCodeEndingSince("nora", 0);
+    assert.equal(sent.spoke, true);
+    assert.equal(sent.workedAfterSpeaking, false);
+    assert.equal(bridge.claudeCodeReplyToSend(sent, false), undefined);
+    // Its answer in its own words, nothing sent: those words are the reply.
+    await box.mode("words");
+    box.advance(1_000);
+    await box.hook.run(box.input("Is it booked?"));
+    const words = bridge.claudeCodeEndingSince("nora", 1_794_140_000_500);
+    assert.equal(words.spoke, false);
+    assert.equal(words.text, "Tuesday at 10 is booked.");
+    assert.equal(bridge.claudeCodeReplyToSend(words, true), "Tuesday at 10 is booked.");
+    // An ending from before the person's turn began is not this turn's.
+    assert.equal(bridge.claudeCodeEndingSince("nora", 1_794_140_002_000), undefined);
+    assert.match(bridge.claudeCodeBriefNote(), /your final words are sent to them as your reply/);
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("the words sent after a turn: none, its answer, or the result after an \"On it\"", async () => {
+  const { module: bridge, dispose } = await load();
+  try {
+    const ending = (calls, text) => bridge.claudeCodeEnding(calls, text, 1);
+    // Nothing reached the person: its words are the reply.
+    assert.equal(bridge.claudeCodeReplyToSend(ending(["Shell", "Shell"], "  The grep found 3 lines. "), true), "The grep found 3 lines.");
+    // "On it", then work, then the result in its own words: sent.
+    const after = ending(["SendMessage", "Shell", "Shell"], "Here are the results.");
+    assert.equal(after.workedAfterSpeaking, true);
+    assert.equal(bridge.claudeCodeReplyToSend(after, false), "Here are the results.");
+    // The result was its last message: its notes after it stay its own.
+    assert.equal(bridge.claudeCodeReplyToSend(ending(["Shell", "SendMessage"], "Sent the results."), false), undefined);
+    // A reaction is speaking too.
+    assert.equal(ending(["ReactToMessage"], "").spoke, true);
+    // No words, nothing to send.
+    assert.equal(bridge.claudeCodeReplyToSend(ending([], " "), true), undefined);
+  } finally {
+    await dispose();
+  }
+});
+
+test("after a turn the person started, Claude's own words reach them and nothing pokes it", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    const updates = [];
+    let runs = 0;
+    const runner = { run: async () => { runs += 1; return { sentMessageCount: 0, reacted: false, aborted: false }; }, emitUpdate: (update) => updates.push(update) };
+    const runtime = new bridge.TurnRuntime({ sendPipeline: { currentTurnEpoch: () => 1 }, telemetry: { reportClosingSendNudge: () => {} } });
+    const session = { id: "nora" };
+    const nothingSent = { sentMessageCount: 0, reacted: false, aborted: false };
+
+    // Claude answered in its own words: they're sent, once, with the turn's ack token; no hidden turn runs.
+    await box.mode("words");
+    const started = Date.now() - 1;
+    box.advance(Date.now() - 1_794_140_000_000);
+    await box.hook.run(box.input("Is it booked?"));
+    const words = await runtime.ensureUserReply(runner, nothingSent, session, 1, "ack-1", undefined, undefined, undefined, started);
+    assert.equal(runs, 0);
+    assert.equal(words.deliveryOwed, false);
+    assert.equal(words.replyNudgeAttempts, 0);
+    assert.deepEqual(updates.map(({ type, message, ackToken }) => ({ type, message, ackToken })), [{ type: "send-message", message: { type: "text", content: "Tuesday at 10 is booked." }, ackToken: "ack-1" }]);
+
+    // Claude's SendMessage reached the chat and that was its last word: nothing more, and no closing nudge,
+    // though the engine's own history (which Claude Code doesn't write) looks like a silent ending.
+    await box.mode("ok");
+    box.advance(1_000);
+    const later = Date.now() - 1;
+    box.advance(1_000);
+    await box.hook.run(box.input("Thanks"));
+    const spoke = await runtime.ensureUserReply(runner, { sentMessageCount: 1, reacted: false, aborted: false, endedOnSilentToolCalls: true }, session, 1, "ack-2", undefined, undefined, undefined, later);
+    assert.equal(runs, 0);
+    assert.equal(spoke.deliveryOwed, false);
+    assert.equal(updates.length, 1);
+
+    // A turn Simeon's model answered (no Claude ending since it began): the nudges stay as they were.
+    const simeon = await runtime.ensureUserReply(runner, nothingSent, session, 1, "ack-3", undefined, undefined, undefined, Date.now() + 60_000_000_000);
+    assert.equal(runs, 3);
+    assert.equal(simeon.deliveryOwed, true);
+  } finally {
+    await box.dispose();
     await dispose();
   }
 });

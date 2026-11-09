@@ -1,4 +1,5 @@
 import { claudeCodeTurnHook } from "../claude-code/claude-code-agent-turn.js";
+import { refreshSimeonModelRolesBeforeTurn } from "../extensions/inference/simeon-model-roles.js";
 import {
   buildTurnTools,
   type TurnTool,
@@ -320,9 +321,11 @@ export function createSandAgentStaticConfig(
     enableTranscriptInSummary: true,
     // The person's own Claude plan runs the agent's own turns through Claude Code (9 November 2026,
     // docs/your-own-models.md, section 6); never a subagent's, a box-scoped helper's or a shared room's.
+    // Before each of them, the model and effort the person chose read again when the last read is old (a choice made
+    // on the composer applies to the next message, not five minutes later).
     ...(input.isSubagentRunner || input.isSharedRoomRunner || input.isBoxScopedSubagent
       ? {}
-      : { claudeCodeTurn: claudeCodeTurnHook() }),
+      : { claudeCodeTurn: claudeCodeTurnHook(), beforeTurn: () => refreshSimeonModelRolesBeforeTurn() }),
   };
 }
 

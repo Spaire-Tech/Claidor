@@ -16,6 +16,16 @@
  * it resets (an hour when Claude Code doesn't say); after the sign-in is
  * gone, five minutes before trying again; when Claude Code isn't installed,
  * an hour. A turn the person stopped is over: it doesn't move to Simeon's.
+ *
+ * How a turn ended (`claudeCodeEndingSince`): Claude's last words, and
+ * whether it sent the person anything and worked on after. Claude Code
+ * answers in its own words more often than through SendMessage; until 9
+ * November 2026 those words reached no one, the engine poked Claude three
+ * more times in hidden turns ("they received nothing and are still
+ * waiting"), the person's next message waited behind them, and the reply
+ * that came opened with "Sorry, I missed your last message" (the founder:
+ * "TAKING FOREVER TO ANSWER"). The turn runtime now sends those words as
+ * the reply (`claudeCodeReplyToSend`) and pokes no one.
  */
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
@@ -48,10 +58,50 @@ export interface ClaudeCodeTurnHook {
 /** Why Claude didn't answer, for the one line the chat gets (step C4 part 4). */
 export type ClaudeCodeFallback = "limited" | "signed_out" | "not_installed" | "failed";
 
+/** How a turn Claude Code ran to its end finished: its last words, whether it sent the person anything, and whether it worked on after its last message. */
+export interface ClaudeCodeEnding {
+  readonly at: number;
+  readonly text: string;
+  readonly spoke: boolean;
+  readonly workedAfterSpeaking: boolean;
+}
+
+/** The tools that put words in front of the person. */
+const SPEAKING_TOOLS: ReadonlySet<string> = new Set(["SendMessage", "ReactToMessage"]);
+
+/** The ending of the calls Claude Code made, in order, and its last words. */
+export function claudeCodeEnding(calls: readonly string[], text: string, at: number): ClaudeCodeEnding {
+  const lastSpoke = calls.findLastIndex((name) => SPEAKING_TOOLS.has(name));
+  const lastWorked = calls.findLastIndex((name) => !SPEAKING_TOOLS.has(name));
+  return { at, text, spoke: lastSpoke >= 0, workedAfterSpeaking: lastSpoke >= 0 && lastWorked > lastSpoke };
+}
+
+/**
+ * The words to send the person after a turn they started, which Claude Code
+ * ran: its last words, when nothing reached them (`owed`) or when it worked
+ * on after its last message (an "On it", then the result in its own words).
+ * None when there are no words, or when its last message came after its work.
+ */
+export function claudeCodeReplyToSend(ending: ClaudeCodeEnding, owed: boolean): string | undefined {
+  const text = ending.text.trim();
+  if (text === "") return undefined;
+  return owed || ending.workedAfterSpeaking ? text : undefined;
+}
+
+const endings = new Map<string, ClaudeCodeEnding>();
+
+/** How the last turn Claude Code ran for this agent ended, when it ended at or after `since`. */
+export function claudeCodeEndingSince(conversationId: string, since: number): ClaudeCodeEnding | undefined {
+  const ending = endings.get(conversationId);
+  return ending !== undefined && ending.at >= since ? ending : undefined;
+}
+
 export interface ClaudeCodeAgentTurnOptions {
   readonly sessions: ClaudeCodeSessions;
   /** The model Claude Code runs on; the roles' `claudeCode` by default. */
   readonly model?: () => string | undefined;
+  /** How hard it thinks (`--effort`); the roles' `claudeCodeEffort` by default. */
+  readonly effort?: () => string | undefined;
   /** Claude Code's permission asks, answered by the person's safety review; none allows (the computer is the agent's own). */
   readonly review?: ((toolName: string, input: Readonly<Record<string, unknown>>, signal: AbortSignal) => Promise<{ allow: boolean; reason?: string }>) | undefined;
   /** Claude didn't answer this turn: the chat says why, once. */
@@ -70,6 +120,7 @@ export function claudeCodeBriefNote(): string {
     "## Your Simeon tools",
     `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names. The person sees only what you send with it; your own text is your scratchpad.`,
     `Run shell commands with \`mcp__${SIMEON_MCP_SERVER}__Shell\`: it carries the person's safety review, and your own Bash is off. Files, web search and web fetch are your own tools.`,
+    "When you answer the person's message and end your turn without having sent them the answer, your final words are sent to them as your reply: write them to the person, not as notes to yourself.",
   ].join("\n");
 }
 
@@ -82,6 +133,7 @@ export function claudeCodePrompt(text: string, context: string | undefined, firs
 export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): ClaudeCodeTurnHook {
   const now = options.now ?? Date.now;
   const model = options.model ?? (() => simeonModelRoles().claudeCode);
+  const effort = options.effort ?? (() => simeonModelRoles().claudeCodeEffort);
   let pausedUntil = 0;
   let toolsNamed = false;
 
@@ -97,8 +149,11 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
     async run(input) {
       const chosenModel = model();
       if (chosenModel === undefined) return { ran: false };
+      const chosenEffort = effort();
       const started = now();
+      const calls: string[] = [];
       const tools = bridgeEngineTools(input.tools as readonly EngineTool[], {
+        onCall: (name) => calls.push(name),
         ctx: input.ctx,
         signal: input.signal,
         listener: input.listener,
@@ -118,6 +173,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
         outcome = await runAgentClaudeCodeTurn(input.conversationId, options.sessions, {
           prompt: claudeCodePrompt(input.text, input.context, options.sessions.get(input.conversationId) === undefined),
           model: chosenModel,
+          effort: chosenEffort,
           brief: [input.brief, claudeCodeBriefNote()].filter((part) => part.trim() !== "").join("\n\n"),
           mcpServers: { [SIMEON_MCP_SERVER]: server.config },
           permissionPromptTool: `mcp__${SIMEON_MCP_SERVER}__${PERMISSION_TOOL_NAME}`,
@@ -130,9 +186,11 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       } finally {
         await server.close();
       }
-      options.log?.(`claude-code turn agent=${input.conversationId} model=${chosenModel} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
+      options.log?.(`claude-code turn agent=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
       switch (outcome.kind) {
-        case "done": return { ran: true, text: outcome.text };
+        case "done":
+          endings.set(input.conversationId, claudeCodeEnding(calls, outcome.text, now()));
+          return { ran: true, text: outcome.text };
         // The person stopped the turn: it is over, on Claude or not.
         case "aborted": return { ran: true, text: "" };
         case "limited": return fallBack(input.conversationId, "limited", 60 * MINUTE, outcome.until !== undefined && outcome.until > now() ? outcome.until : undefined);
