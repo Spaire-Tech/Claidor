@@ -97,9 +97,13 @@ edge shared by the wordmark, the headline and the demo.
 - **Hero**: "Put intelligent agents to work for whatever needs doing." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
-- **The film** (before Pricing): "Hear it from our spokesperson agent", the 90-second launch film of
-  Iris explaining Simeon (`source/video/what-is-simeon.mp4`, its still `source/img/film-poster.webp`) in a
-  rounded card; Play starts it with the player's controls, and it returns to the still when it ends.
+- **The film** (before Pricing): "A new kind of intelligence", Simeon's launch film (9 November 2026), its
+  YouTube cut (`source/video/simeon-launch.mp4`, 1920 × 1080) under its YouTube thumbnail
+  (`source/img/launch-poster.webp`) in a rounded card with a hairline edge; "Watch the film", a white pill at
+  its foot with a black play mark and the film's length in a grey chip, starts it with the player's controls,
+  and it returns to the still when it ends. On a phone the card is a little taller, the still at its top and
+  the pill in a band of the still's own white under it, clear of the agents. On a phone the press plays the reel's cut instead (`source/video/simeon-launch-tall.mp4`,
+  1080 × 1920) full screen in the phone's own player; leaving full screen stops it and shows the still again.
 - **Statement**: one centred sentence, the key words in black.
 - **Gallery**: six cards, light grey and dusk blue in turn, moved with back
   and next: connect your apps, message an agent, a computer of its own, agents
