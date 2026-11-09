@@ -917,6 +917,9 @@ struct ChatComposer: View {
               .frame(maxWidth: .infinity, alignment: .leading)
             // While it listens, the bar under the words has the ✓ (DictationBar).
             if mode != .stop {
+              // The model the agents use, before the microphone (9 November 2026, the founder: "the model chosen is on the composer").
+              ComposerModelMenu()
+                .padding(.bottom, 2)
               ZStack {
                 switch mode {
                 case .stop:

@@ -706,8 +706,10 @@ show it in **Settings › AI Models** (9 November 2026): the Mac
 (`mac/Simeon/SettingsModels.swift`), the iPhone (`ios/Simeon/AIModels.swift`)
 and the web and Windows app (`clients/apps/app/src/window/SettingsModels.tsx`),
 all on the shared core's model (`AIModels.swift`, `src/core/aiModels.ts`): the
-model menu, the accounts with Rename and Disconnect, and the Connect ChatGPT
-sheet (the code, Copy, Open, the wait).
+accounts connected with Add Another, Rename and Disconnect in their `⋯`, the
+providers not yet connected under Subscriptions, and the Connect sheets. The
+model the agents use is chosen on the composer (9 November 2026,
+`ComposerModelMenu` on each), which `PUT models/own` as the page did.
 
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only

@@ -839,6 +839,60 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: the model on the composer; AI Models without duplicates
+
+The founder, on the AI Models page: "the model chosen is on the composer.
+not on the setting app. ours will have the logo though" (Reason's composer
+and menu as the reference, with "✳ Claude Opus 5.5" and "⌘ Simeon"); "do
+not duplicate the subscription", Add Another and the rest in the `⋯`; "just
+have subscription there. not plus or usage available"; the logos whole "as
+link and shop" in Wallet, "not inside a box"; "my style is minimalist". The
+Mac (`SettingsModels.swift`, `Composer.swift`) and the iPhone
+(`ios/Simeon/AIModels.swift`, `ChatView.swift`) change in the same pull
+request.
+
+- **Done:**
+  - `src/window/ComposerModelMenu.tsx`: before the microphone, the chosen
+    model's mark, its name and a chevron ("Simeon" with Simeon's mark on
+    Simeon's models); the window's menu opening upward, drawn on the page's
+    body (the field's glass would place it wrong): Simeon, each connected
+    provider with its logo, a tick at the end of the one in use and `›` to
+    its models (the chosen one ticked), then Add More…, which opens
+    Settings › AI Models. `ContextMenu` gained `endCheck` for that tick.
+  - `SettingsModels.tsx`: no model menu; Connected lists the accounts with
+    the app's icon, the name and "Subscription" (how it stands only when it
+    can't be used), `⋯` with Add Another (ChatGPT), Connect Again, Rename,
+    Disconnect; Subscriptions lists only the providers not yet connected
+    and goes once both are; the line about voice calls under the last group.
+  - The icons: ChatGPT's and Claude's own App Store icons (Apple's lookup,
+    as `ios/scripts/app_icons.py` fetches the connectors'), whole as
+    Wallet's Link and Shop; the bare marks (the founder's files, and
+    Simeon's from the menu bar's) for the composer.
+  - One model for the window (`store.aiModels`, `AppStore.aiModels` in the
+    core), so the page and the composer show the same. The core's
+    `unconnected`, `choices`, `chosenChoice`, `composerName`, `kindName`,
+    with a test each side.
+  - "Add More…" in the nine languages; "Your agents use" and its footer
+    gone from the catalogues.
+- **Decisions (the session):** the choice stays the person's, for every
+  agent (per agent needs the engine and the server); no search in the menu
+  (a handful of models) and no effort; on the iPhone the composer shows the
+  mark and the chevron only, for room; a signed-out or limited account
+  still says so beside "Subscription".
+- **Checked:** `pnpm test` (1217), `pnpm typecheck`, `pnpm lint`; in
+  Chromium against the stand-ins, light, dark and French: the composer
+  saying Simeon, its menu (Simeon ✓, Add More…); with Claude connected,
+  "Claude Opus" with Claude's mark, the menu (Claude ✓ ›), the submenu
+  beside it, picking Claude Sonnet (`PUT models/own` once, the composer
+  following), Add More… opening AI Models; the page with Claude under
+  Connected and only ChatGPT under Subscriptions, Claude's `⋯` (Rename,
+  Disconnect); both connected, no Subscriptions, ChatGPT's `⋯` (Add
+  Another, Rename, Disconnect), a signed-out account in red. The core's
+  Swift built and its AI Models tests run on Linux (10 pass).
+- **Not checked:** the Mac and iPhone screens built (no Xcode here); the
+  Windows app.
+- **Next:** the founder's Mac build.
+
 ### 9 November 2026: AI Models with the providers' logos, fewer words
 
 The founder, looking at the Mac app's page: "put the real logos", "remove

@@ -7,110 +7,94 @@ import SimeonCore
 /**
  * AI Models (8 November 2026; the founder: "allow people to bring their own
  * subscriptions and charge only for the computer", "do it exactly like
- * Reason", then "use codex sign in"): what it is for in a line (9 November:
- * "Connect providers and choose the models your agents use"); the model
- * the agents use (Simeon's, or one of the person's own); the accounts
- * connected, each its name, its kind and plan, how it stands and a `⋯`
- * (Rename, Connect Again, Disconnect); then Subscriptions, each provider
- * with its own logo and nothing under its name: ChatGPT's Connect, which
- * opens the code sheet, and Claude's (9 November 2026), which signs in to
- * Claude Code on the person's computer. The model
- * (`AIModelsModel`) is the shared core's, as the iPhone's page and the web
- * app's are.
+ * Reason", then "use codex sign in"): what it is for in a line; the
+ * accounts connected, each its app's icon, its name and "Subscription" (how
+ * it stands only when it can't be used) and a `⋯` (Rename, Add Another for
+ * ChatGPT, Connect Again, Disconnect); then Subscriptions, the providers not
+ * yet connected, each its app's icon, its name and Connect. 9 November, the
+ * founder: "do not duplicate the subscription", "just have subscription
+ * there", the icons whole as Wallet's Link and Shop, and the model chosen on
+ * the composer (`ComposerModelMenu`), not here. The model (`AIModelsModel`)
+ * is the shared core's, one for the app (`store.aiModels`), as the iPhone's
+ * page and the web app's are.
  */
 struct SettingsModelsPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var model: AIModelsModel?
   @State private var connectingChatGPT = false
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
   @State private var newName = ""
 
   var body: some View {
+    let model = store.aiModels
     VStack(alignment: .leading, spacing: 22) {
       Text("Connect providers and choose the models your agents use.")
         .font(PanelType.row)
         .foregroundStyle(look.ink)
         .fixedSize(horizontal: false, vertical: true)
-      if let model {
-        if !model.loaded {
-          if let problem = model.problem {
-            SettingsGroup(look: look) {
-              SettingsLine(label: problem, labelTint: look.danger, look: look) {
-                SettingsPill(title: String(localized: "Try Again"), look: look) { Task { await model.load() } }
-              }
+      if !model.loaded {
+        if let problem = model.problem {
+          SettingsGroup(look: look) {
+            SettingsLine(label: problem, labelTint: look.danger, look: look) {
+              SettingsPill(title: String(localized: "Try Again"), look: look) { Task { await model.load() } }
             }
-          } else {
-            ProgressView().controlSize(.small).frame(maxWidth: .infinity)
           }
         } else {
-          if !model.models.isEmpty {
-            SettingsGroup(title: String(localized: "Your agents use"), footer: String(localized: "When your plan's limit is reached, your agents use Simeon's models until it resets."), look: look) {
-              SettingsMenu(
-                label: String(localized: "Model"),
-                options: [(value: String?.none, label: AIModels.simeonsModels)] + model.models.map { (value: Optional($0.id), label: $0.name) },
-                value: model.chosen,
-                pending: model.choosing,
-                look: look
-              ) { picked in Task { await model.choose(picked) } }
+          ProgressView().controlSize(.small).frame(maxWidth: .infinity)
+        }
+      } else {
+        let open = model.unconnected
+        let footer = String(localized: "Voice calls, dictation and video still use your Simeon credits.")
+        if !model.accounts.isEmpty {
+          SettingsGroup(title: String(localized: "Connected"), footer: open.isEmpty ? footer : nil, look: look) {
+            ForEach(Array(model.accounts.enumerated()), id: \.element.id) { index, account in
+              MacModelAccountLine(
+                account: account,
+                divided: index > 0,
+                look: look,
+                rename: { newName = account.label; renaming = account },
+                addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
+                connectAgain: { connect(account.provider) },
+                disconnect: { askToDisconnect(account, model: model) }
+              )
             }
           }
-          if !model.accounts.isEmpty {
-            SettingsGroup(title: String(localized: "Connected"), look: look) {
-              ForEach(Array(model.accounts.enumerated()), id: \.element.id) { index, account in
-                MacModelAccountLine(
-                  account: account,
-                  divided: index > 0,
-                  look: look,
-                  rename: { newName = account.label; renaming = account },
-                  connectAgain: {
-                    if account.provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
-                  },
-                  disconnect: { askToDisconnect(account, model: model) }
-                )
+        }
+        if !open.isEmpty {
+          SettingsGroup(title: String(localized: "Subscriptions"), footer: footer, look: look) {
+            ForEach(Array(open.enumerated()), id: \.element) { index, provider in
+              MacProviderLine(provider: provider, divided: index > 0, look: look) {
+                SettingsPill(title: String(localized: "Connect"), look: look) { connect(provider) }
               }
             }
           }
-          SettingsGroup(title: String(localized: "Subscriptions"), footer: String(localized: "Voice calls, dictation and video still use your Simeon credits."), look: look) {
-            MacProviderLine(provider: AIModels.chatGPT, look: look) {
-              SettingsPill(title: model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect"), look: look) { connectingChatGPT = true }
-            }
-            // Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6).
-            MacProviderLine(provider: AIModels.claude, divided: true, look: look) {
-              if !model.connected(AIModels.claude) {
-                SettingsPill(title: String(localized: "Connect"), look: look) { connectingClaude = true }
-              }
-            }
-          }
-          if let problem = model.problem {
-            Text(problem)
-              .font(PanelType.detail)
-              .foregroundStyle(look.danger)
-              .fixedSize(horizontal: false, vertical: true)
-              .padding(.horizontal, 8)
-          }
+        }
+        if let problem = model.problem {
+          Text(problem)
+            .font(PanelType.detail)
+            .foregroundStyle(look.danger)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 8)
         }
       }
     }
-    .sheet(isPresented: $connectingChatGPT) {
-      if let model { MacChatGPTConnectSheet(model: model) }
-    }
-    .sheet(isPresented: $connectingClaude) {
-      if let model { MacClaudeConnectSheet(model: model) }
-    }
+    .sheet(isPresented: $connectingChatGPT) { MacChatGPTConnectSheet(model: model) }
+    .sheet(isPresented: $connectingClaude) { MacClaudeConnectSheet(model: model) }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
       Button("Rename") {
-        if let account = renaming, let model { Task { await model.rename(account, to: newName) } }
+        if let account = renaming { Task { await model.rename(account, to: newName) } }
         renaming = nil
       }
       Button("Cancel", role: .cancel) { renaming = nil }
     }
-    .task {
-      if model == nil { model = AIModelsModel(store: store) }
-      await model?.load()
-    }
+    .task { await model.load() }
+  }
+
+  /** A provider's sign-in: ChatGPT's code sheet, or Claude's (Claude Code on the computer). */
+  private func connect(_ provider: String) {
+    if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
   }
 
   private func askToDisconnect(_ account: ModelAccount, model: AIModelsModel) {
@@ -127,7 +111,7 @@ struct SettingsModelsPage: View {
   }
 }
 
-/** A provider's row under Subscriptions: its logo, its name, and its Connect; a line above it when it follows another. */
+/** A provider not yet connected, under Subscriptions: its app's icon, its name, and Connect; a line above it when it follows another. */
 private struct MacProviderLine<Trailing: View>: View {
   let provider: String
   var divided = false
@@ -136,7 +120,7 @@ private struct MacProviderLine<Trailing: View>: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      MacProviderTile(provider: provider, look: look, side: 28)
+      MacProviderIcon(provider: provider, look: look, side: 28)
       Text(verbatim: AIModels.providerName(provider))
         .font(PanelType.row)
         .foregroundStyle(look.ink)
@@ -152,57 +136,60 @@ private struct MacProviderLine<Trailing: View>: View {
 }
 
 /**
- * A provider's logo on the grey tile (`Providers/<provider>`, the founder's
- * files, 9 November 2026): ChatGPT's knot in the ink, so white in dark mode;
- * Claude's mark in its own orange.
+ * A provider's app icon, whole, as Wallet draws Link's and Shop's
+ * (`AppIconImage`; the founder, 9 November 2026: "how link and shop have
+ * their full logo, not inside a box"): ChatGPT's and Claude's own, from the
+ * App Store (`Providers/<provider>`).
  */
-struct MacProviderTile: View {
+struct MacProviderIcon: View {
   let provider: String
   let look: Look
-  var side: CGFloat = 36
+  var side: CGFloat = 28
 
   var body: some View {
-    Image("Providers/\(provider)")
-      .renderingMode(provider == AIModels.chatGPT ? .template : .original)
-      .resizable()
-      .interpolation(.high)
-      .aspectRatio(contentMode: .fit)
-      .foregroundStyle(look.ink)
-      .frame(width: side * 0.6, height: side * 0.6)
-      .frame(width: side, height: side)
-      .background(look.logoTile)
-      .clipShape(RoundedRectangle(cornerRadius: side * 11 / 40))
-      .accessibilityHidden(true)
+    if let icon = NSImage(named: "Providers/\(provider)") {
+      AppIconImage(icon: icon, side: side, look: look)
+    } else {
+      AppLogoTile(name: AIModels.providerName(provider), look: look, side: side)
+    }
   }
 }
 
-/** One account: the provider's tile, its name over its kind and plan and how it stands (green while usable), and `⋯`. */
+/** A connected account: its app's icon, its name over "Subscription" (and how it stands, only when it can't be used), and `⋯`. */
 private struct MacModelAccountLine: View {
   let account: ModelAccount
   let divided: Bool
   let look: Look
   let rename: () -> Void
+  /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
+  let addAnother: (() -> Void)?
   let connectAgain: () -> Void
   let disconnect: () -> Void
 
   var body: some View {
     HStack(spacing: 12) {
-      MacProviderTile(provider: account.provider, look: look, side: 28)
+      MacProviderIcon(provider: account.provider, look: look, side: 28)
       VStack(alignment: .leading, spacing: 2) {
         Text(account.label).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
         HStack(spacing: 0) {
-          Text(verbatim: "\(account.detail) · ").foregroundStyle(look.inkSecondary)
-          Text(account.statusWords()).foregroundStyle(account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary)
+          Text(account.kindName).foregroundStyle(look.inkSecondary)
+          if !account.usable() {
+            Text(verbatim: " · ").foregroundStyle(look.inkSecondary)
+            Text(account.statusWords()).foregroundStyle(account.status == .signedOut ? look.danger : look.inkSecondary)
+          }
         }
         .font(PanelType.detail)
         .lineLimit(1)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       Menu {
-        Button("Rename", action: rename)
+        if let addAnother {
+          Button("Add Another", action: addAnother)
+        }
         if account.status == .signedOut {
           Button("Connect Again", action: connectAgain)
         }
+        Button("Rename", action: rename)
         Divider()
         Button("Disconnect", role: .destructive, action: disconnect)
       } label: {
@@ -247,7 +234,7 @@ struct MacChatGPTConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        MacProviderTile(provider: AIModels.chatGPT, look: look, side: 36)
+        MacProviderIcon(provider: AIModels.chatGPT, look: look, side: 36)
         Text("Connect ChatGPT")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
@@ -394,7 +381,7 @@ struct MacClaudeConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        MacProviderTile(provider: AIModels.claude, look: look, side: 36)
+        MacProviderIcon(provider: AIModels.claude, look: look, side: 36)
         Text("Connect Claude")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
@@ -548,5 +535,84 @@ private struct MacConnectStep<Content: View>: View {
         content()
       }
     }
+  }
+}
+
+// MARK: - The model on the composer
+
+/**
+ * The model the agents use, on the composer (9 November 2026; the founder:
+ * "the model chosen is on the composer. not on the setting app. ours will
+ * have the logo though", from Reason's): at the field's right before the
+ * microphone, the chosen model's mark, its name and a chevron; Simeon's mark
+ * and "Simeon" while the agents use Simeon's models. Apple's menu, as
+ * `SettingsMenu`'s: Simeon, then each connected provider with its models in
+ * a submenu, the chosen one ticked, then Add More…, which opens Settings ›
+ * AI Models. The choice is the account's (`models/own`), for every agent.
+ */
+struct ComposerModelMenu: View {
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(SettingsState.self) private var settings
+
+  var body: some View {
+    let model = store.aiModels
+    Menu {
+      Toggle(isOn: Binding(get: { model.chosen == nil }, set: { if $0 { Task { await model.choose(nil) } } })) {
+        Label { Text(verbatim: AIModels.simeon) } icon: { Image("Providers/simeon-mark") }
+      }
+      ForEach(model.choices) { choice in
+        Menu {
+          ForEach(choice.models) { option in
+            Toggle(option.name, isOn: Binding(get: { model.chosen == option.id }, set: { if $0 { Task { await model.choose(option.id) } } }))
+          }
+        } label: {
+          Label { Text(verbatim: AIModels.providerName(choice.provider)) } icon: { Image("Providers/\(choice.provider)-mark") }
+        }
+      }
+      Divider()
+      Button(String(localized: "Add More…")) { settings.open(.models) }
+    } label: {
+      HStack(spacing: 6) {
+        ProviderMark(provider: model.chosenChoice?.provider, ink: look.ink, side: 14)
+        Text(verbatim: model.composerName)
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+        Image(systemName: "chevron.down")
+          .font(.system(size: 9, weight: .medium))
+          .foregroundStyle(look.inkTertiary)
+      }
+      .padding(.horizontal, 6)
+      .frame(height: 36)
+      .contentShape(Rectangle())
+    }
+    .menuStyle(.button)
+    .buttonStyle(.borderless)
+    .menuIndicator(.hidden)
+    .fixedSize()
+    .disabled(model.choosing)
+    .handCursor()
+    .accessibilityLabel(String(localized: "Model"))
+    .accessibilityValue(model.composerName)
+    .task { if !model.loaded { await model.load() } }
+  }
+}
+
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink, Claude's in its orange; no provider is Simeon's. */
+struct ProviderMark: View {
+  let provider: String?
+  let ink: Color
+  var side: CGFloat = 14
+
+  var body: some View {
+    Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
+      .renderingMode(provider == AIModels.claude ? .original : .template)
+      .resizable()
+      .interpolation(.high)
+      .aspectRatio(contentMode: .fit)
+      .foregroundStyle(ink)
+      .frame(width: side, height: side)
+      .accessibilityHidden(true)
   }
 }

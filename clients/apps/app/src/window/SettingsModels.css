@@ -89,32 +89,7 @@
   font-size: 12px;
 }
 
-/* A provider's logo (`MacProviderTile`): on the grey tile, 60% of its side; ChatGPT's in the ink, Claude's in its orange. */
-.models-provider-tile {
-  flex: none;
-  display: grid;
-  place-items: center;
-  background: var(--logo-tile);
-}
-
-.models-provider-tile img,
-.models-provider-mask {
-  display: block;
-  width: 60%;
-  height: 60%;
-  object-fit: contain;
-}
-
-.models-provider-mask {
-  background-color: var(--ink);
-  mask-size: contain;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  -webkit-mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-}
-
+/* The end of a provider's row under Subscriptions: its Connect. */
 .models-provider-end {
   flex: none;
 }

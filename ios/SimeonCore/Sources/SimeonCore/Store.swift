@@ -242,6 +242,8 @@ public final class AppStore {
     case update(Agent)
   }
   @ObservationIgnored public var rosterNews: ((RosterNews) -> Void)?
+  /** The person's own AI accounts and the model their agents use (`AIModels.swift`): one for the app, so Settings › AI Models and the composer's model show the same (9 November 2026). */
+  @ObservationIgnored public private(set) lazy var aiModels = AIModelsModel(store: self)
   /** A message the box took (`sendPrompt` answered): the Mac lets go of its "Allow once" answers then (`clearLocalToolApprovals`). */
   @ObservationIgnored public var promptSent: ((String) -> Void)?
   /** The phone says so in an alert; the Mac's sidebar says it in place, as the window does. */

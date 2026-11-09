@@ -1,0 +1,52 @@
+/*
+ * The model on the composer (ComposerModelMenu.tsx): its mark (14), its name
+ * (13, the ink) and a chevron (the grey) in a 36 target before the
+ * microphone, 6 apart, padded 0 6, a step darker under the pointer.
+ */
+.model-button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  margin: 0 0 2px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.model-button:hover:not(:disabled) {
+  background: rgb(119 119 119 / 0.1);
+}
+
+.model-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.model-name {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.model-mark {
+  flex: none;
+  display: block;
+  object-fit: contain;
+}
+
+/* ChatGPT's and Simeon's marks in the ink, so white on dark. */
+.model-mark-ink {
+  background-color: var(--ink);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}

@@ -25,6 +25,13 @@
   color: #ffffff;
 }
 
+/* A tick at an item's end, before its chevron (the one in use, its logo kept before it). */
+.menu-end-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
 /* A figure: 46 high (30 without its line), 14 in from the menu's edges; its title (13, tracked -0.08) over its line (12, the lighter grey), its value (13) at the right, 8 from them. */
 .menu-figure {
   display: flex;

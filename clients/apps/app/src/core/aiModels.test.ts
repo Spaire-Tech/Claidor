@@ -9,6 +9,7 @@ import {
   accountDetail,
   chatGPTSignIn,
   claudeSignIn,
+  kindName,
   modelAccount,
   planName,
   providerName,
@@ -246,6 +247,60 @@ describe('the page’s model', () => {
     expect(model.accounts).toEqual([])
     expect(model.chosen).toBeUndefined()
     expect(model.models).toEqual([])
+  })
+
+  it('a connected provider leaves Subscriptions, and the composer names the model', async () => {
+    let chosen: string | undefined
+    const model = new AIModelsModel(
+      async (path, method, body): Promise<JSONValue> => {
+        if (path === 'models/accounts')
+          return {
+            accounts: [
+              {
+                id: 'c1',
+                provider: 'claude',
+                kind: 'subscription',
+                label: 'ada@example.com',
+                plan: 'max',
+                status: 'available',
+              },
+            ],
+          }
+        if (method === 'PUT') chosen = text(field(body, 'model'))
+        return {
+          model: chosen ?? null,
+          models: [
+            {
+              modelId: 'own:claude:sonnet',
+              modelName: 'Claude Sonnet',
+              provider: 'claude',
+            },
+            {
+              modelId: 'own:claude:opus',
+              modelName: 'Claude Opus',
+              provider: 'claude',
+            },
+          ],
+        }
+      },
+      noWait,
+    )
+    await model.load()
+    expect(model.unconnected).toEqual(['chatgpt'])
+    expect(model.hasAccount('claude')).toBe(true)
+    expect(model.choices.map((one) => one.provider)).toEqual(['claude'])
+    expect(model.choices[0]?.models.map((one) => one.name)).toEqual([
+      'Claude Sonnet',
+      'Claude Opus',
+    ])
+    expect(model.composerName).toBe('Simeon')
+    expect(model.chosenChoice).toBeUndefined()
+    await model.choose('own:claude:opus')
+    expect(model.composerName).toBe('Claude Opus')
+    expect(model.chosenChoice?.provider).toBe('claude')
+    const account = model.accounts[0]
+    if (!account) throw new Error('an account')
+    expect(kindName(account)).toBe('Subscription')
   })
 
   it('a refused sign-in says why in the person’s words', async () => {

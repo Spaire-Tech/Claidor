@@ -3661,6 +3661,64 @@
         }
       }
     },
+    "Add More…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere hinzufügen…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir más…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter d’autres…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungine altri…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer toevoegen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj więcej…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar mais…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till fler…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha fazla ekle…"
+          }
+        }
+      }
+    },
     "Add Another Account" : {
       "localizations" : {
         "de" : {
@@ -48443,64 +48501,6 @@
         }
       }
     },
-    "When your plan's limit is reached, your agents use Simeon's models until it resets." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn das Limit deines Tarifs erreicht ist, nutzen deine Agenten Simeons Modelle, bis es zurückgesetzt wird."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cuando alcanzas el límite de tu plan, tus agentes usan los modelos de Simeon hasta que se restablezca."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quand la limite de ton forfait est atteinte, tes agents utilisent les modèles de Simeon jusqu’à sa réinitialisation."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando raggiungi il limite del tuo piano, i tuoi agenti usano i modelli di Simeon finché non si azzera."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Als de limiet van je abonnement is bereikt, gebruiken je agenten de modellen van Simeon tot die wordt gereset."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gdy wyczerpiesz limit swojego planu, twoi agenci używają modeli Simeona, dopóki się nie odnowi."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quando o limite do seu plano acaba, seus agentes usam os modelos do Simeon até ele ser renovado."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "När ditt abonnemangs gräns är nådd använder dina agenter Simeons modeller tills den återställs."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Planının limiti dolduğunda ajanların, limit yenilenene kadar Simeon’un modellerini kullanır."
-          }
-        }
-      }
-    },
     "Will send when reconnected" : {
       "localizations" : {
         "de" : {
@@ -49367,64 +49367,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajanların bu hesabı kullanmayı bırakır. İstediğin zaman yeniden bağlayabilirsin."
-          }
-        }
-      }
-    },
-    "Your agents use" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deine Agenten nutzen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tus agentes usan"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tes agents utilisent"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I tuoi agenti usano"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je agenten gebruiken"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoi agenci używają"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seus agentes usam"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dina agenter använder"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajanlarının kullandığı"
           }
         }
       }

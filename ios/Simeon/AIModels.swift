@@ -5,19 +5,19 @@ import UIKit
 /**
  * AI Models (8 November 2026; the founder: "allow people to bring their own
  * subscriptions and charge only for the computer", "do it exactly like
- * Reason", then "use codex sign in"), as plain as Wallet: what it is for
- * (9 November: "Connect providers and choose the models your agents use");
- * the model the agents use (Simeon's, or one of the person's own); the
- * accounts connected, each its name, its kind and plan and how it stands,
- * with `⋯` (Rename, Connect Again, Disconnect); Subscriptions, each
- * provider with its own logo and nothing under its name, ChatGPT's Connect
- * opening the code sheet, Claude's (9 November 2026) signing in to Claude
- * Code on the person's computer. The Mac's page (mac/Simeon/SettingsModels.swift)
- * and the web app's say the same; the model is the shared core's.
+ * Reason", then "use codex sign in"), as plain as Wallet: what it is for;
+ * the accounts connected, each its app's icon, its name and "Subscription"
+ * (how it stands only when it can't be used), with `⋯` (Add Another for
+ * ChatGPT, Connect Again, Rename, Disconnect); Subscriptions, the providers
+ * not yet connected, each its app's icon, its name and Connect. 9 November,
+ * the founder: "do not duplicate the subscription", "just have subscription
+ * there", the icons whole as Wallet's Link and Shop, and the model chosen on
+ * the composer (`ComposerModelMenu`), not here. The Mac's page
+ * (mac/Simeon/SettingsModels.swift) and the web app's say the same; the
+ * model is the shared core's, one for the app (`store.aiModels`).
  */
 struct AIModelsPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
-  @State private var model: AIModelsModel?
   @State private var connectingChatGPT = false
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
@@ -25,6 +25,7 @@ struct AIModelsPage: View {
   @State private var disconnecting: ModelAccount?
 
   var body: some View {
+    let model = store.aiModels
     Form {
       Section {
         Text("Connect providers and choose the models your agents use.")
@@ -32,82 +33,58 @@ struct AIModelsPage: View {
           .foregroundStyle(Ink.secondary)
       }
       .listRowBackground(Color.clear)
-      if let model {
-        if let problem = model.problem, !model.loaded {
+      if let problem = model.problem, !model.loaded {
+        Section {
+          Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)
+          Button("Try Again") { Task { await model.load() } }
+        }
+        .listRowBackground(Ink.groupedRow)
+      } else if !model.loaded {
+        Section { HStack { Spacer(); ProgressView(); Spacer() } }
+          .listRowBackground(Color.clear)
+      } else {
+        let open = model.unconnected
+        if !model.accounts.isEmpty {
           Section {
-            Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)
-            Button("Try Again") { Task { await model.load() } }
+            ForEach(model.accounts) { account in
+              ModelAccountRow(
+                account: account,
+                rename: { newName = account.label; renaming = account },
+                addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
+                connectAgain: { connect(account.provider) },
+                disconnect: { disconnecting = account }
+              )
+            }
+          } header: {
+            Text("Connected")
+          } footer: {
+            if open.isEmpty { Text("Voice calls, dictation and video still use your Simeon credits.") }
           }
           .listRowBackground(Ink.groupedRow)
-        } else if !model.loaded {
-          Section { HStack { Spacer(); ProgressView(); Spacer() } }
-            .listRowBackground(Color.clear)
-        } else {
-          if !model.models.isEmpty {
-            Section {
-              Picker("Model", selection: Binding(get: { model.chosen }, set: { picked in Task { await model.choose(picked) } })) {
-                Text(AIModels.simeonsModels).tag(String?.none)
-                ForEach(model.models) { choice in
-                  Text(choice.name).tag(Optional(choice.id))
-                }
-              }
-              .disabled(model.choosing)
-            } header: {
-              Text("Your agents use")
-            } footer: {
-              Text("When your plan's limit is reached, your agents use Simeon's models until it resets.")
-            }
-            .listRowBackground(Ink.groupedRow)
-          }
-          if !model.accounts.isEmpty {
-            Section {
-              ForEach(model.accounts) { account in
-                ModelAccountRow(
-                  account: account,
-                  rename: { newName = account.label; renaming = account },
-                  connectAgain: {
-                    if account.provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
-                  },
-                  disconnect: { disconnecting = account }
-                )
-              }
-            } header: {
-              Text("Connected")
-            }
-            .listRowBackground(Ink.groupedRow)
-          }
+        }
+        if !open.isEmpty {
           Section {
-            HStack(spacing: 14) {
-              ProviderTile(provider: AIModels.chatGPT, size: 30)
-              Text(verbatim: AIModels.providerName(AIModels.chatGPT)).font(.system(size: 17)).foregroundStyle(Ink.primary)
-              Spacer(minLength: 8)
-              Button(model.connected(AIModels.chatGPT) ? String(localized: "Add Another") : String(localized: "Connect")) { connectingChatGPT = true }
-                .foregroundStyle(Ink.link)
-                .buttonStyle(.borderless)
-            }
-            .padding(.vertical, 2)
-            // Claude: Claude Code on the person's computer, one sign-in there (docs/your-own-models.md, section 6).
-            HStack(spacing: 14) {
-              ProviderTile(provider: AIModels.claude, size: 30)
-              Text(verbatim: AIModels.providerName(AIModels.claude)).font(.system(size: 17)).foregroundStyle(Ink.primary)
-              Spacer(minLength: 8)
-              if !model.connected(AIModels.claude) {
-                Button(String(localized: "Connect")) { connectingClaude = true }
+            ForEach(open, id: \.self) { provider in
+              HStack(spacing: 14) {
+                ProviderIcon(provider: provider, size: 30)
+                Text(verbatim: AIModels.providerName(provider)).font(.system(size: 17)).foregroundStyle(Ink.primary)
+                Spacer(minLength: 8)
+                Button(String(localized: "Connect")) { connect(provider) }
                   .foregroundStyle(Ink.link)
                   .buttonStyle(.borderless)
               }
+              .padding(.vertical, 2)
             }
-            .padding(.vertical, 2)
           } header: {
             Text("Subscriptions")
           } footer: {
             Text("Voice calls, dictation and video still use your Simeon credits.")
           }
           .listRowBackground(Ink.groupedRow)
-          if let problem = model.problem {
-            Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
-              .listRowBackground(Ink.groupedRow)
-          }
+        }
+        if let problem = model.problem {
+          Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
+            .listRowBackground(Ink.groupedRow)
         }
       }
     }
@@ -115,19 +92,15 @@ struct AIModelsPage: View {
     .navigationTitle("AI Models")
     .inlineBarTitle()
     .sheet(isPresented: $connectingChatGPT) {
-      if let model {
-        NavigationStack { ChatGPTConnectSheet(model: model) }
-      }
+      NavigationStack { ChatGPTConnectSheet(model: model) }
     }
     .sheet(isPresented: $connectingClaude) {
-      if let model {
-        NavigationStack { ClaudeConnectSheet(model: model) }
-      }
+      NavigationStack { ClaudeConnectSheet(model: model) }
     }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
       Button("Rename") {
-        if let account = renaming, let model { Task { await model.rename(account, to: newName) } }
+        if let account = renaming { Task { await model.rename(account, to: newName) } }
         renaming = nil
       }
       Button("Cancel", role: .cancel) { renaming = nil }
@@ -137,70 +110,150 @@ struct AIModelsPage: View {
       isPresented: Binding(get: { disconnecting != nil }, set: { if !$0 { disconnecting = nil } })
     ) {
       Button("Disconnect", role: .destructive) {
-        if let account = disconnecting, let model { Task { await model.disconnect(account) } }
+        if let account = disconnecting { Task { await model.disconnect(account) } }
         disconnecting = nil
       }
       Button("Cancel", role: .cancel) { disconnecting = nil }
     } message: {
       Text("Your agents stop using this account. You can connect it again anytime.")
     }
-    .task {
-      if model == nil { model = AIModelsModel(store: store) }
-      await model?.load()
-    }
+    .task { await model.load() }
+  }
+
+  /** A provider's sign-in: ChatGPT's code sheet, or Claude's (Claude Code on the computer). */
+  private func connect(_ provider: String) {
+    if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
   }
 }
 
 /**
- * A provider's logo on the app tile (`Providers/<provider>`, the founder's
- * files, 9 November 2026), as `ConnectorTile` draws a mark: ChatGPT's knot in
- * the ink, so white in dark mode; Claude's mark in its own orange.
+ * A provider's app icon, whole, as Wallet and Connectors draw an app's
+ * (`ConnectorTile`'s icon; the founder, 9 November 2026: "how link and shop
+ * have their full logo, not inside a box"): ChatGPT's and Claude's own, from
+ * the App Store (`Providers/<provider>`).
  */
-struct ProviderTile: View {
+struct ProviderIcon: View {
   let provider: String
   var size: CGFloat = 30
 
   var body: some View {
-    let shape = RoundedRectangle(cornerRadius: size * 11 / 40, style: .continuous)
-    ZStack {
-      shape.fill(Ink.tile)
-      Image("Providers/\(provider)")
-        .renderingMode(provider == AIModels.chatGPT ? .template : .original)
+    if let icon = UIImage(named: "Providers/\(provider)") {
+      let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+      Image(uiImage: icon)
         .resizable()
-        .scaledToFit()
-        .foregroundStyle(Ink.primary)
-        .frame(width: size * 0.6, height: size * 0.6)
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: size, height: size)
+        .clipShape(shape)
+        .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
+        .accessibilityHidden(true)
+    } else {
+      ConnectorTile(name: AIModels.providerName(provider), size: size)
     }
-    .frame(width: size, height: size)
-    .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
-    .accessibilityHidden(true)
   }
 }
 
-/** One account: the provider's tile, its name over its kind, plan and how it stands (green while usable), and `⋯`. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink, Claude's in its orange; no provider is Simeon's. */
+struct ProviderMark: View {
+  let provider: String?
+  var side: CGFloat = 16
+
+  var body: some View {
+    Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
+      .renderingMode(provider == AIModels.claude ? .original : .template)
+      .resizable()
+      .interpolation(.high)
+      .scaledToFit()
+      .foregroundStyle(Ink.primary)
+      .frame(width: side, height: side)
+      .accessibilityHidden(true)
+  }
+}
+
+/**
+ * The model the agents use, on the composer (9 November 2026; the founder:
+ * "the model chosen is on the composer. not on the setting app. ours will
+ * have the logo though"): inside the field before the microphone, the
+ * chosen model's mark and a chevron (the phone's field has no room for the
+ * name; the menu says it); Simeon's mark while the agents use Simeon's
+ * models. The menu: Simeon, then each connected provider with its models,
+ * the chosen one ticked, then Add More…, which opens Settings › AI Models.
+ * The choice is the account's (`models/own`), for every agent.
+ */
+struct ComposerModelMenu: View {
+  @Environment(SimeonCore.AppStore.self) private var store
+  @State private var addingMore = false
+
+  var body: some View {
+    let model = store.aiModels
+    Menu {
+      Toggle(isOn: Binding(get: { model.chosen == nil }, set: { if $0 { Task { await model.choose(nil) } } })) {
+        Label { Text(verbatim: AIModels.simeon) } icon: { Image("Providers/simeon-mark") }
+      }
+      ForEach(model.choices) { choice in
+        Menu {
+          ForEach(choice.models) { option in
+            Toggle(option.name, isOn: Binding(get: { model.chosen == option.id }, set: { if $0 { Task { await model.choose(option.id) } } }))
+          }
+        } label: {
+          Label { Text(verbatim: AIModels.providerName(choice.provider)) } icon: { Image("Providers/\(choice.provider)-mark") }
+        }
+      }
+      Divider()
+      Button(String(localized: "Add More…")) { addingMore = true }
+    } label: {
+      HStack(spacing: 3) {
+        ProviderMark(provider: model.chosenChoice?.provider, side: 17)
+        Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary)
+      }
+      .frame(height: 36)
+      .padding(.horizontal, 4)
+      .contentShape(.rect)
+    }
+    .disabled(model.choosing)
+    .accessibilityLabel(String(localized: "Model"))
+    .accessibilityValue(model.composerName)
+    .task { if !model.loaded { await model.load() } }
+    .sheet(isPresented: $addingMore) {
+      NavigationStack {
+        AIModelsPage()
+          .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { addingMore = false } } }
+      }
+    }
+  }
+}
+
+/** One account: its app's icon, its name over "Subscription" (and how it stands, only when it can't be used), and `⋯`. */
 private struct ModelAccountRow: View {
   let account: ModelAccount
   let rename: () -> Void
+  /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
+  let addAnother: (() -> Void)?
   let connectAgain: () -> Void
   let disconnect: () -> Void
 
   var body: some View {
     HStack(spacing: 14) {
-      ProviderTile(provider: account.provider, size: 30)
+      ProviderIcon(provider: account.provider, size: 30)
       VStack(alignment: .leading, spacing: 2) {
         Text(account.label).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-        Text(account.detail).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
-        Text(account.statusWords())
-          .font(.system(size: 15))
-          .foregroundStyle(account.usable() ? Ink.success : account.status == .signedOut ? Ink.danger : Ink.secondary)
-          .lineLimit(1)
+        Text(account.kindName).font(.system(size: 15)).foregroundStyle(Ink.secondary).lineLimit(1)
+        if !account.usable() {
+          Text(account.statusWords())
+            .font(.system(size: 15))
+            .foregroundStyle(account.status == .signedOut ? Ink.danger : Ink.secondary)
+            .lineLimit(1)
+        }
       }
       Spacer(minLength: 8)
       Menu {
-        Button("Rename", action: rename)
+        if let addAnother {
+          Button("Add Another", action: addAnother)
+        }
         if account.status == .signedOut {
           Button("Connect Again", action: connectAgain)
         }
+        Button("Rename", action: rename)
         Button("Disconnect", role: .destructive, action: disconnect)
       } label: {
         Image(systemName: "ellipsis.circle")

@@ -10,9 +10,10 @@ import SimeonCore
  * 40-point glass disc at the left, then the field in Liquid Glass, 20
  * round, 40 high on one line and growing a line at a time (14 on 20, the
  * words 16 in and 10 over and under; six lines, 120, then they scroll).
- * At the field's right, 2 in: the grey microphone while there is nothing
- * to send (dictation, step 2e), the blue send once there is; the recording
- * chip while listening. Over the field, 6 apart and lined up with it: a
+ * At the field's right, 2 in: the model the agents use (`ComposerModelMenu`,
+ * 9 November 2026), then the grey microphone while there is nothing to send
+ * (dictation, step 2e), the blue send once there is; the recording chip
+ * while listening. Over the field, 6 apart and lined up with it: a
  * send's error, dictation's and the files' lines, the files, then the
  * message being answered on its own glass. Nothing opaque behind it: the
  * messages fade into the window's ground under it as they scroll (the
@@ -279,6 +280,11 @@ struct Composer: View {
         .padding(.leading, Composer.wordsInset.width)
         .padding(.vertical, Composer.wordsInset.height)
         .frame(maxWidth: .infinity, alignment: .leading)
+      // The model the agents use, before the microphone (9 November 2026, the founder: "the model chosen is on the composer").
+      if dictation.phase == .idle {
+        ComposerModelMenu(look: look)
+          .padding(.bottom, 2)
+      }
       fieldButton(payload: payload)
         .padding(.trailing, 2)
         .padding(.bottom, 2)
