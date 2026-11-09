@@ -112,6 +112,8 @@ test("the engine's tools bridged: Simeon's real SendMessage reaches the chat, Cl
     onSendMessage: (message, timestampMs) => { sent.push({ message, timestampMs }); return "t3s1"; },
   });
   const readTool = { toolIdentifier: "READ", name: "Read", parameters: { jsonSchema: { type: "object" } }, execute: async () => "file" };
+  // The engine's Shell is offered: it carries the person's safety review, and Claude Code's own Bash is off.
+  const shellTool = { toolIdentifier: "SHELL", name: "Shell", parameters: { jsonSchema: { type: "object" } }, execute: async () => "ran" };
   const reaching = {
     toolIdentifier: "ASK_LOOP",
     name: "Ask Loop!",
@@ -121,8 +123,9 @@ test("the engine's tools bridged: Simeon's real SendMessage reaches the chat, Cl
   };
   const turn = new AbortController();
   try {
-    const tools = bridge.bridgeEngineTools([sendMessage, readTool, reaching], { ctx: bridge.createContext(), signal: turn.signal, log: (line) => lines.push(line) });
-    assert.deepEqual(tools.map((tool) => tool.name), ["SendMessage", "Ask_Loop_"]);
+    const tools = bridge.bridgeEngineTools([sendMessage, readTool, shellTool, reaching], { ctx: bridge.createContext(), signal: turn.signal, log: (line) => lines.push(line) });
+    assert.deepEqual(tools.map((tool) => tool.name), ["SendMessage", "Shell", "Ask_Loop_"]);
+    assert.deepEqual(bridge.CLAUDE_CODE_TOOLS_OFF, ["Bash", "BashOutput", "KillShell", "KillBash"]);
     const send = tools[0];
     assert.match(send.description, /This is your only voice/);
     assert.equal(send.inputSchema.type, "object");
@@ -137,9 +140,9 @@ test("the engine's tools bridged: Simeon's real SendMessage reaches the chat, Cl
     assert.equal(wrong.isError, true);
     assert.equal(sent.length, 1);
 
-    const missing = await tools[1].call({}, new AbortController().signal);
+    const missing = await tools[2].call({}, new AbortController().signal);
     assert.equal(missing.isError, true);
-    await tools[1].call({}, new AbortController().signal);
+    await tools[2].call({}, new AbortController().signal);
     assert.deepEqual(lines.filter((line) => line.includes("tool-handler missing")), ["claude-code tool-handler missing=requestUserApproval"]);
   } finally {
     await dispose();

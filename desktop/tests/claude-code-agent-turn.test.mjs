@@ -110,6 +110,11 @@ test("Claude Code runs the agent's turn: the brief with the tools' note, the con
     assert.equal(two.argv[two.argv.indexOf("--resume") + 1], box.sessions.get("nora"));
     assert.equal(one.argv[one.argv.indexOf("--model") + 1], "opus");
     assert.equal(one.argv[one.argv.indexOf("--permission-prompt-tool") + 1], "mcp__simeon__ReviewPermission");
+    // Claude Code's own shell is off; every command goes through the engine's Shell and its safety review. Simeon's tools don't ask.
+    assert.equal(one.argv[one.argv.indexOf("--disallowedTools") + 1], "Bash,BashOutput,KillShell,KillBash");
+    assert.equal(one.argv[one.argv.indexOf("--allowedTools") + 1], "mcp__simeon");
+    assert.match(one.brief, /Run shell commands with `mcp__simeon__Shell`/);
+    assert.deepEqual(box.lines.filter((line) => line.startsWith("claude-code tools offered=")), ["claude-code tools offered=SendMessage"]);
     assert.ok(box.lines.some((line) => /^claude-code turn agent=nora model=opus outcome=done tools=1 ms=\d+$/.test(line)), box.lines.join("\n"));
     assert.deepEqual(box.fallbacks, []);
   } finally {

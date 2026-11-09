@@ -1,3 +1,5 @@
+import { setClaudeCodeFallbackNotice } from "../../claude-code/claude-code-agent-turn.js";
+import { appendClaudeCodeNotice } from "./claude-code-notice.js";
 import {
   createDebouncePolicy,
   realClock,
@@ -64,6 +66,8 @@ export const transcriptExtension = defineHostExtension<
       new PromptAcceptanceLedger(sandRoot),
       new SandPendingWakeStore(sandRoot),
     );
+    // The chat's one line when Claude Code can't run a turn and Simeon's models answer (docs/your-own-models.md, section 6).
+    setClaudeCodeFallbackNotice((agentId, why) => void appendClaudeCodeNotice(manager, agentId, why));
     manager.setTelemetry(deps.telemetry.brain);
     manager.setProductAnalytics(deps.telemetry.analytics);
     manager.setTraceFlusher(deps.telemetry.flushTracing);

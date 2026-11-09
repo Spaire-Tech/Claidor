@@ -46,6 +46,8 @@ export interface ClaudeCodeTurnInput {
   readonly permissionPromptTool?: string | undefined;
   /** Claude Code's own tools it may not use this turn. */
   readonly disallowedTools?: readonly string[] | undefined;
+  /** Tools it may use without asking (`mcp__simeon`: every tool of Simeon's server, which carry their own cards and reviews). */
+  readonly allowedTools?: readonly string[] | undefined;
   readonly maxTurns?: number | undefined;
   /** Where Claude Code works (its project, which keys its sessions). */
   readonly cwd?: string | undefined;
@@ -87,6 +89,7 @@ export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: 
   if (files.mcp !== undefined) args.push("--mcp-config", files.mcp, "--strict-mcp-config");
   if (input.permissionPromptTool !== undefined) args.push("--permission-prompt-tool", input.permissionPromptTool);
   if (input.disallowedTools !== undefined && input.disallowedTools.length > 0) args.push("--disallowedTools", input.disallowedTools.join(","));
+  if (input.allowedTools !== undefined && input.allowedTools.length > 0) args.push("--allowedTools", input.allowedTools.join(","));
   if (input.maxTurns !== undefined) args.push("--max-turns", String(input.maxTurns));
   return args;
 }

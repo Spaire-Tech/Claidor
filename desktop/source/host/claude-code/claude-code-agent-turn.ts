@@ -21,7 +21,7 @@ import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
 import { getSandRootDir } from "../host-paths.js";
-import { bridgeEngineTools, permissionBridgeTool, PERMISSION_TOOL_NAME, type EngineTool } from "./claude-code-tools.js";
+import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type EngineTool } from "./claude-code-tools.js";
 import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, type ClaudeCodeOutcome } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
 
@@ -68,7 +68,8 @@ const MINUTE = 60_000;
 export function claudeCodeBriefNote(): string {
   return [
     "## Your Simeon tools",
-    `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names. The person sees only what you send with it; your own text is your scratchpad. Your own tools (the shell, files, web search) are Claude Code's.`,
+    `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names. The person sees only what you send with it; your own text is your scratchpad.`,
+    `Run shell commands with \`mcp__${SIMEON_MCP_SERVER}__Shell\`: it carries the person's safety review, and your own Bash is off. Files, web search and web fetch are your own tools.`,
   ].join("\n");
 }
 
@@ -82,6 +83,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
   const now = options.now ?? Date.now;
   const model = options.model ?? (() => simeonModelRoles().claudeCode);
   let pausedUntil = 0;
+  let toolsNamed = false;
 
   const fallBack = (conversationId: string, why: ClaudeCodeFallback, pauseMs: number, until?: number): ClaudeCodeTurnResult => {
     pausedUntil = Math.max(pausedUntil, until ?? now() + pauseMs);
@@ -103,6 +105,12 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
         stateHandler: input.stateHandler,
         log: options.log,
       });
+      // The tools offered, named once a run: the list the engine builds for Claude Code, read from a real turn.
+      if (!toolsNamed) {
+        toolsNamed = true;
+        options.log?.(`claude-code tools offered=${tools.map((tool) => tool.name).join(",")}`);
+      }
+      // What still asks (a file written, a page fetched) is the agent's own computer, as the engine's own tools there; the shell goes through Shell's review.
       const review = options.review ?? (async () => ({ allow: true }));
       let outcome: ClaudeCodeOutcome;
       const server = await startSimeonMcpServer({ tools: () => [...tools, permissionBridgeTool(review)], signal: input.signal, log: options.log });
@@ -113,6 +121,8 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
           brief: [input.brief, claudeCodeBriefNote()].filter((part) => part.trim() !== "").join("\n\n"),
           mcpServers: { [SIMEON_MCP_SERVER]: server.config },
           permissionPromptTool: `mcp__${SIMEON_MCP_SERVER}__${PERMISSION_TOOL_NAME}`,
+          disallowedTools: CLAUDE_CODE_TOOLS_OFF,
+          allowedTools: [`mcp__${SIMEON_MCP_SERVER}`],
           signal: input.signal,
           env: options.env,
           configDir: options.configDir,
@@ -142,12 +152,33 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
 export const CLAUDE_CODE_SESSIONS_FILE = "claude-code-sessions.json";
 
 let engineHook: ClaudeCodeTurnHook | undefined;
+let fallbackNotice: ((agentId: string, why: ClaudeCodeFallback) => void) | undefined;
+/** The last notice per agent and reason: the chat says why once, not at every turn (at most once an hour). */
+const noticed = new Map<string, number>();
+const NOTICE_EVERY_MS = 60 * MINUTE;
+
+/** Where the chat's one line goes (the transcript's, `claude-code-notice.ts`), registered when the transcript starts. */
+export function setClaudeCodeFallbackNotice(write: ((agentId: string, why: ClaudeCodeFallback) => void) | undefined): void {
+  fallbackNotice = write;
+}
+
+/** Whether a notice for this agent and reason is due now; when it is, it's counted as said. */
+export function claudeCodeNoticeDue(agentId: string, why: ClaudeCodeFallback, now: number = Date.now()): boolean {
+  const key = `${agentId}\u0000${why}`;
+  const last = noticed.get(key);
+  if (last !== undefined && now - last < NOTICE_EVERY_MS) return false;
+  noticed.set(key, now);
+  return true;
+}
 
 /** The engine's hook, made at its first use: sessions on the data volume, lines in the host log. */
 export function claudeCodeTurnHook(): ClaudeCodeTurnHook {
   engineHook ??= createClaudeCodeAgentTurn({
     sessions: new ClaudeCodeSessions(join(getSandRootDir(), CLAUDE_CODE_SESSIONS_FILE)),
     log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
+    onFallback: (agentId, why) => {
+      if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, why)) fallbackNotice(agentId, why);
+    },
   });
   return engineHook;
 }
