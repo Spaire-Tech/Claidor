@@ -37869,6 +37869,64 @@
         }
       }
     },
+    "Shown after your agents next use %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird angezeigt, sobald deine Agenten %@ das nächste Mal nutzen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se muestra después de que tus agentes usen %@ la próxima vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affiché après la prochaine utilisation de %@ par tes agents."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viene mostrato dopo che i tuoi agenti useranno %@ la prossima volta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wordt getoond nadat je agents %@ de volgende keer gebruiken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pojawi się, gdy twoi agenci następnym razem użyją %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aparece depois que seus agentes usarem o %@ da próxima vez."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visas när dina agenter använder %@ nästa gång."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajanların %@ uygulamasını bir dahaki kullanışından sonra gösterilir."
+          }
+        }
+      }
+    },
     "Shows every app in %@" : {
       "localizations" : {
         "de" : {

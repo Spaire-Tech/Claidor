@@ -180,6 +180,7 @@
  "1 video": "1 video",
  "1Password didn't get your answer": "1Password heeft je antwoord niet ontvangen",
  "1Password wasn't connected": "1Password is niet gekoppeld",
+ "5-hour limit": "Limiet van 5 uur",
  "50 is the maximum": "50 is het maximum",
  "7 days free, then your plan. Add a card on the web; cancel anytime.": "7 dagen gratis, daarna je abonnement. Voeg een kaart toe op het web; opzeggen kan altijd.",
  "A drawing your agents share gets a link on excalidraw.com that anyone with the link can open.": "Een tekening die je agenten delen, krijgt een link op excalidraw.com die iedereen met de link kan openen.",
@@ -1251,6 +1252,7 @@
  "Research uses your vidIQ credits.": "Onderzoek gebruikt je vidIQ-credits.",
  "Reset face": "Herstel gezicht",
  "Reset failed": "Reset mislukt",
+ "Resets %@": "Wordt gereset: %@",
  "Resets in %lld days": {
   "one": "Reset over %lld dag",
   "other": "Reset over %lld dagen"
@@ -1637,6 +1639,7 @@
  "Update when agents are done": "Werk bij als agenten klaar zijn",
  "Update when done": "Werk bij na afloop",
  "Update while agents are working?": "Bijwerken terwijl agenten bezig zijn?",
+ "Updated %@": "Bijgewerkt: %@",
  "Updated routine": "Routine bijgewerkt",
  "Updated routines": "Routines bijgewerkt",
  "Updates": "Updates",
@@ -1683,6 +1686,7 @@
  "Weekdays": "Doordeweeks",
  "Weekdays at %@": "Doordeweeks om %@",
  "Weekends": "Weekends",
+ "Weekly limit": "Weeklimiet",
  "Weekly usage": "Wekelijks gebruik",
  "What action items came out of the Acme meeting in Fireflies?": "Welke actiepunten kwamen uit de vergadering met Acme in Fireflies?",
  "What action items do I have from today’s meetings in Granola?": "Welke actiepunten heb ik uit de vergaderingen van vandaag in Granola?",

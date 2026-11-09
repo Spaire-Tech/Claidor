@@ -95,6 +95,8 @@ export type SettingsPage =
   | 'help'
   | 'legal'
   | 'account'
+  /** One connected AI account's page, under AI Models (`.modelAccount`; the overlay's `modelAccount` names which). */
+  | 'modelAccount'
 
 /** What Connectors is asked to show as it opens (PluginsWindow.swift's `PluginsState.Opening`). */
 export type ConnectorsOpening =
@@ -117,6 +119,8 @@ export type OverlaySlot =
       /** The page the opening asked for: asking for it again changes nothing (⌘, over Settings). */
       asked: SettingsPage
       opening: number
+      /** The AI account the `modelAccount` page shows. */
+      modelAccount?: string
     }
   | {
       kind: 'connectors'
@@ -765,6 +769,14 @@ export class WindowModel {
     const now = this.overlay
     if (now?.kind !== 'settings' || now.page === page) return
     this.overlay = { ...now, page }
+    this.changed()
+  }
+
+  /** A connected AI account's page, from its row in AI Models (`SettingsState.openModelAccount`). */
+  showModelAccount(id: string): void {
+    const now = this.overlay
+    if (now?.kind !== 'settings') return
+    this.overlay = { ...now, page: 'modelAccount', modelAccount: id }
     this.changed()
   }
 

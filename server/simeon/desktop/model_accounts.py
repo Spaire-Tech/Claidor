@@ -34,6 +34,10 @@ The apps' routes:
 - `PATCH /desktop/api/models/accounts/{id}` `{label}`: renamed.
 - `DELETE /desktop/api/models/accounts/{id}`: revoked at the provider, then
   forgotten here. Account deletion does the same for every one.
+- `POST /desktop/api/models/accounts/claude/usage` `{windows}` (9 November
+  2026): how much of the Claude plan is used, as Claude Code on the
+  computer last said (`keep_usage`); ChatGPT's comes with each answer
+  through the relay (`chatgpt_usage`). Each account's JSON carries it.
 - `POST /desktop/api/models/accounts/claude` `{label, plan}` (9 November
   2026): Claude, signed in to in Claude Code on the person's computer
   (docs/your-own-models.md, section 6). The app says so once the computer
@@ -50,17 +54,19 @@ from __future__ import annotations
 
 import base64
 import json
+import math
 import secrets
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 import httpx
 import structlog
 from fastapi import Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from simeon.config import settings
 from simeon.kit.sealed import seal, unseal
@@ -550,6 +556,88 @@ def _ms(value: datetime | None) -> int | None:
     return int(value.timestamp() * 1000) if value is not None else None
 
 
+# --- how much of the plan is used (9 November 2026) -----------------------------
+#
+# The founder: "we need the usage for both claude and chat gpt ... it should
+# look like usage and billing". Each provider says it per window: ChatGPT
+# with every answer, Claude in Claude Code's stream. Kept as last said, never
+# guessed.
+
+#: The windows a plan's usage is told in: the 5-hour one and the week's.
+USAGE_FIVE_HOUR = "five_hour"
+USAGE_WEEKLY = "weekly"
+
+
+def _number(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def usage_window(
+    kind: str, used_percent: float, resets_at_ms: int | None, minutes: int | None
+) -> dict[str, Any]:
+    """One window as the apps show it: how much is used (0 to 100, past 100
+    when a provider lets usage run past its cap) and when it resets."""
+    return {
+        "kind": kind,
+        "usedPercent": round(min(max(used_percent, 0.0), 1000.0), 1),
+        "resetsAt": resets_at_ms,
+        "minutes": minutes,
+    }
+
+
+def chatgpt_usage(headers: Mapping[str, str], now: datetime) -> dict[str, Any] | None:
+    """ChatGPT's own word on the plan's usage, from an answer's headers, as
+    Codex reads it (openai/codex, `codex-rs/codex-api/src/rate_limits.rs`):
+    `x-codex-primary-used-percent`, `-window-minutes` and `-reset-at`
+    (seconds since 1970; `-reset-after-seconds` in older answers), and the
+    same for `secondary`. Primary is the 5-hour window, secondary the
+    week's; a window longer than a day is the week's. None when the answer
+    said nothing of it."""
+    windows: list[dict[str, Any]] = []
+    for name, fallback in (("primary", USAGE_FIVE_HOUR), ("secondary", USAGE_WEEKLY)):
+        used = _number(headers.get(f"x-codex-{name}-used-percent"))
+        if used is None:
+            continue
+        minutes = _number(headers.get(f"x-codex-{name}-window-minutes"))
+        whole_minutes = int(minutes) if minutes is not None and minutes > 0 else None
+        kind = (
+            fallback
+            if whole_minutes is None
+            else USAGE_FIVE_HOUR
+            if whole_minutes <= 24 * 60
+            else USAGE_WEEKLY
+        )
+        reset_at = _number(headers.get(f"x-codex-{name}-reset-at"))
+        if reset_at is None:
+            after = _number(headers.get(f"x-codex-{name}-reset-after-seconds"))
+            if after is not None and after >= 0:
+                reset_at = now.timestamp() + after
+        resets_at_ms = (
+            int(reset_at * 1000) if reset_at is not None and reset_at > 0 else None
+        )
+        windows.append(usage_window(kind, used, resets_at_ms, whole_minutes))
+    if not windows:
+        return None
+    return {"windows": windows, "at": _ms(now)}
+
+
+async def keep_usage(
+    session: AsyncSession, user_id: UUID, account_id: UUID, usage: dict[str, Any]
+) -> None:
+    """The account's usage as its provider last said it."""
+    account = await ModelAccountRepository.from_session(session).one_for_user(
+        user_id, account_id
+    )
+    if account is None:
+        return
+    account.usage = usage
+    await session.flush()
+
+
 def account_json(account: DesktopModelAccount) -> dict[str, Any]:
     """An account as the apps show it: never a token."""
     now = utc_now()
@@ -570,6 +658,7 @@ def account_json(account: DesktopModelAccount) -> dict[str, Any]:
         "status": status,
         "limitedUntil": _ms(account.limited_until) if limited else None,
         "createdAt": _ms(account.created_at),
+        "usage": account.usage,
     }
 
 
@@ -621,6 +710,17 @@ class _RenameBody(BaseModel):
 class _ClaudeBody(BaseModel):
     label: str | None = None
     plan: str | None = None
+
+
+class _UsageWindowBody(BaseModel):
+    kind: Literal["five_hour", "weekly"]
+    used_percent: float = Field(alias="usedPercent", ge=0, le=1000)
+    resets_at: int | None = Field(default=None, alias="resetsAt", ge=0)
+    minutes: int | None = Field(default=None, ge=1)
+
+
+class _ClaudeUsageBody(BaseModel):
+    windows: list[_UsageWindowBody] = Field(max_length=4)
 
 
 #: What each refusal of these routes says, in English: the apps show their
@@ -787,6 +887,43 @@ async def model_accounts_claude_signed_out(
     return JSONResponse(
         {"account": account_json(account) if account is not None else None}
     )
+
+
+@router.post(
+    "/api/models/accounts/claude/usage",
+    name="desktop:model_accounts_claude_usage",
+)
+async def model_accounts_claude_usage(
+    body: _ClaudeUsageBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """How much of the Claude plan is used, as Claude Code on the computer
+    last said it (its stream's `rate_limit_event`: the 5-hour and weekly
+    windows); kept on the person's Claude account."""
+    repository = ModelAccountRepository.from_session(session)
+    account = await repository.by_key(
+        desktop_session.user_id, PROVIDER_CLAUDE, CLAUDE_ACCOUNT_KEY
+    )
+    if account is None or not body.windows:
+        return JSONResponse({"account": None})
+    account.usage = {
+        "windows": [
+            usage_window(one.kind, one.used_percent, one.resets_at, one.minutes)
+            for one in body.windows
+        ],
+        "at": _ms(utc_now()),
+    }
+    await session.flush()
+    log.info(
+        "desktop.models.usage",
+        user_id=str(desktop_session.user_id),
+        provider=PROVIDER_CLAUDE,
+        windows=",".join(
+            f"{one.kind}={round(one.used_percent)}" for one in body.windows
+        ),
+    )
+    return JSONResponse({"account": account_json(account)})
 
 
 @router.patch("/api/models/accounts/{account_id}", name="desktop:model_accounts_rename")

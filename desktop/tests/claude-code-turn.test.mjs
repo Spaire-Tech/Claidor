@@ -190,6 +190,16 @@ test("the endings: the plan's limit, the sign-in gone, a crash, not installed, s
     assert.equal(apiError.until, 1_794_153_600_000);
     // An allowed-with-warning event is not a limit.
     assert.equal(turn.limitFromEvent({ type: "rate_limit_event", rate_limit_info: { status: "allowed_warning", resetsAt: 1 } }), undefined);
+    // How much of the plan is used (9 November 2026): the 5-hour and weekly windows, as percents with their resets.
+    assert.deepEqual(turn.usageFromEvent({ type: "rate_limit_event", rate_limit_info: { status: "allowed", unifiedWindows: { five_hour: { utilization: 0.4237, resetsAt: 1794150000 }, seven_day: { utilization: 1.2 }, seven_day_overage_included: { utilization: 0.1 } } } }), [
+      { kind: "five_hour", usedPercent: 42.4, resetsAt: 1_794_150_000_000 },
+      { kind: "weekly", usedPercent: 120 },
+    ]);
+    assert.deepEqual(turn.usageFromEvent({ type: "rate_limit_event", rate_limit_info: { status: "allowed", rateLimitType: "seven_day", utilization: 0.3, resetsAt: 1794500000 } }), [
+      { kind: "weekly", usedPercent: 30, resetsAt: 1_794_500_000_000 },
+    ]);
+    assert.equal(turn.usageFromEvent({ type: "rate_limit_event", rate_limit_info: { status: "allowed", resetsAt: 1 } }), undefined);
+    assert.equal(turn.usageFromEvent({ type: "assistant", message: {} }), undefined);
 
     await box.mode("expired");
     assert.deepEqual(await turn.runClaudeCodeTurn(base), { kind: "signed_out", said: "OAuth token has expired. Please run /login" });
@@ -324,6 +334,41 @@ test("before a turn, the roles are read again when the last read is old, and a s
     const waited = Date.now() - started;
     assert.ok(waited >= 2_900 && waited < 4_500, String(waited));
     assert.equal(roles.simeonModelRoles().claudeCodeEffort, "low");
+  } finally {
+    roles.setSimeonModelRolesSourceForTest(undefined);
+    await dispose();
+  }
+});
+
+test("how much of the Claude plan is used is told to the server, again only when it changes", async () => {
+  const { module: roles, dispose } = await load("source/host/extensions/inference/simeon-model-roles.ts", "simeon-model-roles");
+  try {
+    const asked = [];
+    const source = {
+      getAccessToken: async () => "simeon_db_stand_in",
+      backendUrl: "https://simeon.example",
+      fetch: async (url, init = {}) => {
+        asked.push({ url: String(url), auth: init.headers?.authorization, body: init.body === undefined ? undefined : JSON.parse(init.body) });
+        return Response.json({ account: {} });
+      },
+    };
+    const windows = [{ kind: "five_hour", usedPercent: 42.4, resetsAt: 1_794_150_000_000 }, { kind: "weekly", usedPercent: 6 }];
+    roles.setSimeonModelRolesSourceForTest(undefined);
+    roles.resetClaudeCodeUsageForTest();
+    assert.equal(await roles.reportClaudeCodeUsage(windows), false, "nothing to tell before the engine reads its roles");
+    roles.setSimeonModelRolesSourceForTest(source, Date.now());
+    const at = 1_794_140_000_000;
+    assert.equal(await roles.reportClaudeCodeUsage(windows, at), true);
+    assert.deepEqual(asked, [{
+      url: "https://simeon.example/desktop/api/models/accounts/claude/usage",
+      auth: "Bearer simeon_db_stand_in",
+      body: { windows: [{ kind: "five_hour", usedPercent: 42.4, resetsAt: 1_794_150_000_000 }, { kind: "weekly", usedPercent: 6, resetsAt: null }] },
+    }]);
+    // The same again soon: not told; changed, or later: told.
+    assert.equal(await roles.reportClaudeCodeUsage(windows, at + 60_000), false);
+    assert.equal(await roles.reportClaudeCodeUsage([{ kind: "five_hour", usedPercent: 50 }], at + 120_000), true);
+    assert.equal(await roles.reportClaudeCodeUsage([{ kind: "five_hour", usedPercent: 50 }], at + 120_000 + roles.CLAUDE_USAGE_AGAIN_MS), true);
+    assert.equal(asked.length, 3);
   } finally {
     roles.setSimeonModelRolesSourceForTest(undefined);
     await dispose();

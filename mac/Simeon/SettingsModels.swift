@@ -21,6 +21,7 @@ import SimeonCore
 struct SettingsModelsPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
+  @Environment(SettingsState.self) private var settings
   @State private var connectingChatGPT = false
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
@@ -53,6 +54,7 @@ struct SettingsModelsPage: View {
                 account: account,
                 divided: index > 0,
                 look: look,
+                open: { settings.openModelAccount(account.id) },
                 rename: { newName = account.shownName; renaming = account },
                 addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
                 connectAgain: { connect(account.provider) },
@@ -164,11 +166,18 @@ struct MacProviderIcon: View {
   }
 }
 
-/** A connected account: its app's icon, its name ("ChatGPT", never the e-mail) over "Subscription", how it stands beside `⋯` (a dot and its words: "Usage available" in green, "Signed out" in red), and `⋯`. */
+/**
+ * A connected account: its app's icon, its name ("ChatGPT", never the
+ * e-mail) over "Subscription", how it stands beside `⋯` (a dot and its
+ * words: "Usage available" in green, "Signed out" in red), `⋯`, and `›`:
+ * a click opens its page, its plan's usage (9 November 2026, the founder:
+ * "you can click on chatgpt and claude, like with connectors").
+ */
 private struct MacModelAccountLine: View {
   let account: ModelAccount
   let divided: Bool
   let look: Look
+  let open: () -> Void
   let rename: () -> Void
   /** ChatGPT's: another ChatGPT account, from here rather than a second row under Subscriptions. */
   let addAnother: (() -> Void)?
@@ -177,19 +186,27 @@ private struct MacModelAccountLine: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      MacProviderIcon(provider: account.provider, look: look, side: 28)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
-        Text(account.kindName).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
+      // The row opens the account's page; `⋯` keeps its own menu (outside the button, so its click stays its own).
+      Button(action: open) {
+        HStack(spacing: 12) {
+          MacProviderIcon(provider: account.provider, look: look, side: 28)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(account.shownName).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
+            Text(account.kindName).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          // How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯").
+          let tint = account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary
+          HStack(spacing: 6) {
+            Circle().fill(tint).frame(width: 7, height: 7)
+            Text(account.statusWords()).font(PanelType.row).foregroundStyle(tint).lineLimit(1)
+          }
+          .fixedSize()
+        }
+        .contentShape(Rectangle())
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      // How it stands, beside `⋯` (the founder's reference: "● Usage available ⋯").
-      let tint = account.usable() ? look.settingsGreen : account.status == .signedOut ? look.danger : look.inkSecondary
-      HStack(spacing: 6) {
-        Circle().fill(tint).frame(width: 7, height: 7)
-        Text(account.statusWords()).font(PanelType.row).foregroundStyle(tint).lineLimit(1)
-      }
-      .fixedSize()
+      .buttonStyle(.hand)
+      .accessibilityLabel(account.shownName)
       Menu {
         if let addAnother {
           Button("Add Another", action: addAnother)
@@ -213,11 +230,85 @@ private struct MacModelAccountLine: View {
       .fixedSize()
       .handCursor()
       .accessibilityLabel(String(localized: "More"))
+      Button(action: open) {
+        Image(systemName: "chevron.right")
+          .font(.system(size: 10, weight: .medium))
+          .foregroundStyle(look.inkTertiary)
+          .frame(width: 12, height: 28)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.hand)
+      .accessibilityHidden(true)
     }
     .padding(.horizontal, SettingsRowSize.inset)
     .padding(.vertical, 10)
     .frame(minHeight: SettingsRowSize.minHeight)
+    .background(hovering ? look.groupedRowHover : Color.clear)
+    .onHover { hovering = $0 }
     .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
+  }
+
+  @State private var hovering = false
+}
+
+/**
+ * A connected AI account's page (9 November 2026, the founder: "it should
+ * look like usage and billing ... then a way to go to their plan in claude
+ * or chat website"): "Usage", the plan's 5-hour and weekly limits drawn as
+ * Usage & Billing's meters (`UsageMeterLine`), each what is used, when it
+ * resets and its bar, with when the provider last said it under; then
+ * "Plan", the plan and Manage Plan ↗, the provider's own page (Codex's
+ * usage on chatgpt.com, claude.ai's). Back goes to AI Models; an account
+ * disconnected meanwhile goes back there too.
+ */
+struct SettingsModelAccountPage: View {
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @Environment(SettingsState.self) private var settings
+
+  var body: some View {
+    let model = store.aiModels
+    let account = model.accounts.first { $0.id == settings.modelAccount }
+    VStack(alignment: .leading, spacing: 22) {
+      if let account {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+          usage(account, now: context.date)
+        }
+        plan(account)
+      }
+    }
+    .task { await model.load() }
+    .onChange(of: account == nil) { _, gone in
+      if gone && model.loaded { settings.page = .models }
+    }
+  }
+
+  private func usage(_ account: ModelAccount, now: Date) -> some View {
+    let lines = account.usage?.lines(now: now) ?? []
+    return SettingsGroup(title: String(localized: "Usage"), footer: lines.isEmpty ? nil : account.usage?.updatedWords(now: now), look: look) {
+      if lines.isEmpty {
+        SettingsLine(label: String(localized: "Shown after your agents next use \(account.providerName)."), look: look) { EmptyView() }
+      } else {
+        ForEach(Array(lines.enumerated()), id: \.element.id) { index, line in
+          UsageMeterLine(title: line.title, meter: line.meter, divided: index > 0, look: look)
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func plan(_ account: ModelAccount) -> some View {
+    let named = account.plan.map { AIModels.planName($0) }.flatMap { $0.isEmpty ? nil : $0 }
+    if named != nil || account.planPage != nil {
+      SettingsGroup(title: String(localized: "Plan"), look: look) {
+        if let named {
+          SettingsLine(label: String(localized: "Current plan: \(named)"), look: look) { EmptyView() }
+        }
+        if let page = account.planPage {
+          SettingsLinkRow(label: String(localized: "Manage Plan"), divided: named != nil, external: true, look: look) { NSWorkspace.shared.open(page) }
+        }
+      }
+    }
   }
 }
 

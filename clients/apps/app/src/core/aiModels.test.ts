@@ -13,6 +13,9 @@ import {
   kindName,
   modelAccount,
   planName,
+  planPage,
+  planUsageLines,
+  planUsageUpdated,
   providerName,
   shownAddress,
   shownName,
@@ -87,6 +90,60 @@ describe('an account as the server lists it', () => {
       { now, locale: 'en-US', timeZone: 'UTC' },
     )
     expect(later).toBe('Limit reached until Mon 4:00 PM')
+  })
+
+  it('draws the plan’s usage as Usage & Billing draws its meters', () => {
+    const now = new Date(1_794_146_400_000) // 8 November 2026, 14:00 UTC
+    const options = { now, locale: 'en-US', timeZone: 'UTC' }
+    const account = modelAccount({
+      id: 'c1',
+      provider: 'claude',
+      usage: {
+        windows: [
+          {
+            kind: 'weekly',
+            usedPercent: 12.4,
+            resetsAt: +now + 3 * 86_400_000,
+          },
+          {
+            kind: 'five_hour',
+            usedPercent: 93,
+            resetsAt: +now + 2 * 3_600_000,
+          },
+          { kind: 'monthly', usedPercent: 5 },
+        ],
+        at: +now,
+      },
+    })
+    if (!account?.usage) throw new Error('read')
+    expect(account.usage.windows).toHaveLength(2)
+    const lines = planUsageLines(account.usage, options)
+    expect(lines.map((line) => line.title)).toEqual([
+      '5-hour limit',
+      'Weekly limit',
+    ])
+    expect(lines.map((line) => line.meter.valueLabel)).toEqual(['93%', '12%'])
+    expect(lines[0]?.meter.barPercent).toBe(93)
+    expect(lines[0]?.meter.resetLabel).toBe('Resets 4:00 PM')
+    expect(lines[1]?.meter.resetLabel).toBe('Resets Wed 2:00 PM')
+    // Once a window has reset, it reads as unused until the provider says again.
+    const later = planUsageLines(account.usage, {
+      ...options,
+      now: new Date(+now + 3 * 3_600_000),
+    })
+    expect(later[0]?.meter.valueLabel).toBe('0%')
+    expect(later[0]?.meter.resetLabel).toBeUndefined()
+    expect(
+      planUsageUpdated(account.usage, {
+        ...options,
+        now: new Date(+now + 600_000),
+      }),
+    ).toBe('Updated 2:00 PM')
+    expect(planPage(account)).toBe('https://claude.ai/settings/usage')
+    const chatgpt = modelAccount({ id: 'a1', provider: 'chatgpt' })
+    if (!chatgpt) throw new Error('read')
+    expect(chatgpt.usage).toBeUndefined()
+    expect(planPage(chatgpt)).toBe('https://chatgpt.com/codex/settings/usage')
   })
 
   it('names the plans as people know them', () => {

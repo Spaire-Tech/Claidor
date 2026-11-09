@@ -144,6 +144,45 @@
   outline-offset: -2px;
 }
 
+/* A connected account opens its page (the plan's usage), as a link row: the row's hover, the hand, `›` at its end (`MacModelAccountLine`). */
+.models-line.opens:hover {
+  background: var(--grouped-row-hover);
+}
+
+.models-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.models-open:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.models-chevron {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 12px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-tertiary);
+  cursor: pointer;
+}
+
 /* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in; the blue edge with the keys. */
 .models-alert-field {
   box-sizing: border-box;

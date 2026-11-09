@@ -28,6 +28,8 @@ import SimeonCore
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
     case general, usage, models, wallet, credentials, permissions, computer, updates, help, legal, account
+    /** One connected AI account's page, under AI Models (`SettingsState.modelAccount`). */
+    case modelAccount
 
     var title: String {
       switch self {
@@ -42,6 +44,7 @@ final class SettingsState {
       case .help: String(localized: "Help & support")
       case .legal: String(localized: "Legal")
       case .account: String(localized: "Account")
+      case .modelAccount: String(localized: "AI Models")
       }
     }
 
@@ -58,17 +61,26 @@ final class SettingsState {
       case .help: "questionmark.circle"
       case .legal: "checkmark.shield"
       case .account: "person.crop.circle"
+      case .modelAccount: "cpu"
       }
     }
 
-    /** The page it sits under, with Back to it: the account under General (its first row). */
-    var parent: Page? { self == .account ? .general : nil }
+    /** The page it sits under, with Back to it: the account under General (its first row), an AI account under AI Models. */
+    var parent: Page? {
+      switch self {
+      case .account: .general
+      case .modelAccount: .models
+      default: nil
+      }
+    }
   }
 
   private(set) var isOpen = false {
     didSet { SettingsState.showing = isOpen }
   }
   var page: Page = .general
+  /** The AI account `.modelAccount` shows (9 November 2026: its plan's usage, like Usage & Billing). */
+  var modelAccount: String?
   /** Bumped at each opening: the pages are drawn afresh, at their top. */
   private(set) var opening = 0
   /** The page the opening asked for: asking for it again changes nothing (⌘, over Settings, the window's way). */
@@ -97,6 +109,12 @@ final class SettingsState {
     guard isOpen else { return }
     NSApp.keyWindow?.makeFirstResponder(nil)
     isOpen = false
+  }
+
+  /** A connected AI account's page, from its row in AI Models. */
+  func openModelAccount(_ id: String) {
+    modelAccount = id
+    page = .modelAccount
   }
 
   /** Connectors (Wallet's apps): Settings gives way to the Plugins panel, on an app's page when one is named. */
@@ -152,6 +170,7 @@ struct SettingsLayer: View {
 private struct SettingsPanel: View {
   let look: Look
   @Environment(SettingsState.self) private var settings
+  @Environment(AppStore.self) private var store
 
   var body: some View {
     HStack(spacing: 0) {
@@ -162,7 +181,7 @@ private struct SettingsPanel: View {
           if let parent = settings.page.parent {
             GlassDiscButton(symbol: "chevron.left", help: String(localized: "Back")) { settings.page = parent }
           }
-          Text(settings.page.title)
+          Text(title)
             .font(PanelType.title)
             .foregroundStyle(look.ink)
             .lineLimit(1)
@@ -186,6 +205,7 @@ private struct SettingsPanel: View {
             case .help: SettingsHelpPage(look: look)
             case .legal: SettingsLegalPage(look: look)
             case .account: SettingsAccountPage(look: look)
+            case .modelAccount: SettingsModelAccountPage(look: look)
             }
           }
           .frame(maxWidth: .infinity, alignment: .leading)
@@ -207,6 +227,12 @@ private struct SettingsPanel: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Simeon settings")
     .accessibilityAddTraits(.isModal)
+  }
+
+  /** The page's name; an AI account's page is named after the account ("ChatGPT", "Claude"). */
+  private var title: String {
+    guard settings.page == .modelAccount else { return settings.page.title }
+    return store.aiModels.accounts.first { $0.id == settings.modelAccount }?.shownName ?? settings.page.title
   }
 }
 
@@ -247,7 +273,7 @@ private struct SettingsNav: View {
   private var pages: [SettingsState.Page] {
     SettingsState.Page.allCases.filter { page in
       switch page {
-      case .account: false
+      case .account, .modelAccount: false
       // Usage & Billing, as the iPhone lists it: not for an enterprise team.
       case .usage: store.usage.summary == nil || store.usage.showsSection
       default: true

@@ -92,8 +92,8 @@ private struct UsageGroup: View {
   }
 }
 
-/** A meter, the reference's: its title with what is used at the right (grey), when it resets under it (grey), then its bar across (5, the blue; red past 90%). */
-private struct UsageMeterLine: View {
+/** A meter, the reference's: its title with what is used at the right (grey), when it resets under it (grey), then its bar across (5, the blue; red past 90%). An AI account's page draws its plan's limits with it too (`SettingsModelAccountPage`). */
+struct UsageMeterLine: View {
   let title: String
   let meter: UsageMeters.Meter
   var divided = false

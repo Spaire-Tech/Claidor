@@ -35,6 +35,37 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(limited.statusWords(now: until.addingTimeInterval(1)), "Usage available")
   }
 
+  func testThePlansUsageAsUsageAndBillingDrawsIt() throws {
+    let now = Date(timeIntervalSince1970: 1_794_146_400)  // 8 November 2026, 14:00 UTC
+    let utc = TimeZone(identifier: "UTC")!
+    let ms = { (date: Date) in JSON.number(date.timeIntervalSince1970 * 1000) }
+    let account = try XCTUnwrap(ModelAccount(json: ["id": "c1", "provider": "claude", "usage": ["windows": [
+      ["kind": "weekly", "usedPercent": 12.4, "resetsAt": ms(now.addingTimeInterval(3 * 86_400))],
+      ["kind": "five_hour", "usedPercent": 93, "resetsAt": ms(now.addingTimeInterval(2 * 3600))],
+      ["kind": "monthly", "usedPercent": 5],
+    ], "at": ms(now)]]))
+    let usage = try XCTUnwrap(account.usage)
+    XCTAssertEqual(usage.windows.count, 2, "a window it doesn't know is left out")
+    let lines = usage.lines(now: now, timeZone: utc)
+    XCTAssertEqual(lines.map(\.title), ["5-hour limit", "Weekly limit"], "the 5-hour one first")
+    XCTAssertEqual(lines.map(\.meter.valueLabel), ["93%", "12%"])
+    XCTAssertEqual(lines[0].meter.barPercent, 93)
+    let today = try XCTUnwrap(lines[0].meter.resetLabel)
+    XCTAssertTrue(today.hasPrefix("Resets ") && today.contains("4:00") && !today.contains("Wed"), today)
+    XCTAssertTrue(try XCTUnwrap(lines[1].meter.resetLabel).contains("Wed"), "within the week, its day")
+    // Once a window has reset, it reads as unused until the provider says again.
+    let later = usage.lines(now: now.addingTimeInterval(3 * 3600), timeZone: utc)
+    XCTAssertEqual(later[0].meter.valueLabel, "0%")
+    XCTAssertNil(later[0].meter.resetLabel)
+    let updated = try XCTUnwrap(usage.updatedWords(now: now.addingTimeInterval(600), timeZone: utc))
+    XCTAssertTrue(updated.hasPrefix("Updated ") && updated.contains("2:00"), updated)
+
+    XCTAssertEqual(account.planPage?.absoluteString, "https://claude.ai/settings/usage")
+    let chatgpt = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "chatgpt"]))
+    XCTAssertNil(chatgpt.usage, "none until the account has been used")
+    XCTAssertEqual(chatgpt.planPage?.absoluteString, "https://chatgpt.com/codex/settings/usage")
+  }
+
   func testPlanNamesAsPeopleKnowThem() {
     XCTAssertEqual(AIModels.planName("plus"), "Plus")
     XCTAssertEqual(AIModels.planName("pro"), "Pro")

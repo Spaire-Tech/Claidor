@@ -839,6 +839,41 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 9 November 2026: each AI account's page, its plan's usage like Usage & Billing
+
+The founder: "we need the usage for both claude and chat gpt ... it should
+look like usage and billing ... then a way to go to their plan in claude or
+chat website ... you can click on chatgpt and claude, like with connectors".
+
+- **Done (web and Mac, the same):**
+  - AI Models: each connected account's row opens its page (the row and
+    its `›`; `⋯` keeps its menu). `windowModel.showModelAccount`, the
+    Settings page `modelAccount` under AI Models, named after the account.
+  - The page (`SettingsModelAccountPage`): "Usage", the 5-hour limit and
+    the weekly limit as Usage & Billing's meters (`UsageMeterLine`, now
+    shared), "Updated …" under; one line before the account's first use;
+    then "Plan": the plan and Manage Plan ↗ (`chatgpt.com/codex/settings/usage`,
+    `claude.ai/settings/usage`, in a new tab; in the Windows app, the
+    default browser).
+  - Core: `planUsage`, `planUsageLines`, `planUsageUpdated`, `planPage`
+    (SimeonCore's `PlanUsage`, `ModelAccount.planPage`); four new words in
+    the core's catalogue and one in the Mac's, each in nine languages.
+  - Server and engine: docs/your-own-models.md, "How much of the plan is
+    used".
+- **Checked:** in Chromium, the built app against a stand-in server: AI
+  Models' rows with `›`, Claude's page with both meters and its plan,
+  ChatGPT's with the line before its first use, Manage Plan opening
+  claude.ai's page in a new tab (caught by the stand-in), Back, and `⋯`
+  still opening its menu, not the page (screenshots sent to the founder);
+  the core's and window's tests (192), typecheck, lint, the build's check,
+  `check_names.py`, `check_translations.py`. The Mac's Swift checked for
+  syntax; SimeonCore's new test run on Linux in a package of its own (the
+  core's whole suite stops on Linux before any test, at a cast of its
+  `@MainActor` test classes, on `main` too).
+- **Not checked:** the Mac app built and run (no Xcode here); the Windows
+  app itself; real figures from ChatGPT or Claude (only stand-ins).
+- **Next:** what the founder says of the screenshots.
+
 ### 9 November 2026: + opens the files at once; Settings' forms simple, in our own parts
 
 The founder: the + should open the computer's files directly ("leave

@@ -898,6 +898,10 @@ When it misbehaves (nothing here logs a token, a code or a verifier):
 - `desktop.models.poll_failed`: the exchange was refused; the app starts
   again.
 - `desktop.models.signed_out`: OpenAI ended the sign-in at a refresh.
+- `desktop.models.usage provider=claude windows=five_hour=42,weekly=18`: the
+  engine said how much of the Claude plan is used (ChatGPT's comes with each
+  answer and is kept without a line); `desktop.models.usage_not_kept` when
+  the relay couldn't keep ChatGPT's (the answer goes on).
 - `desktop.models.refresh_failed`: OpenAI didn't refresh; the account stays.
 - `desktop.models.revoke_failed`: the sign-in wasn't ended at OpenAI; the
   row is gone all the same.

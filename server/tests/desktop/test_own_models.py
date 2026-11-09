@@ -1258,3 +1258,130 @@ class TestClaudeThroughClaudeCode:
             await client.get("/desktop/api/models/available", headers=headers)
         ).json()["data"]
         assert not any(row["modelId"].startswith("own:") for row in rows)
+
+
+@pytest.mark.asyncio
+class TestPlanUsage:
+    """How much of each plan is used (9 November 2026), shown in the apps
+    like Usage & Billing: ChatGPT's from its answers' headers, Claude's as
+    the engine tells it from Claude Code."""
+
+    async def test_chatgpts_headers_read_as_codex_reads_them(self) -> None:
+        now = utc_now()
+        usage = accounts.chatgpt_usage(
+            {
+                "x-codex-primary-used-percent": "42.36",
+                "x-codex-primary-window-minutes": "300",
+                "x-codex-primary-reset-at": "1900000000",
+                "x-codex-secondary-used-percent": "7",
+                "x-codex-secondary-window-minutes": "10080",
+                "x-codex-secondary-reset-after-seconds": "3600",
+            },
+            now,
+        )
+        assert usage is not None
+        five, week = usage["windows"]
+        assert five == {
+            "kind": "five_hour",
+            "usedPercent": 42.4,
+            "resetsAt": 1_900_000_000_000,
+            "minutes": 300,
+        }
+        assert week["kind"] == "weekly"
+        assert week["usedPercent"] == 7.0
+        assert week["resetsAt"] == int((now.timestamp() + 3600) * 1000)
+        assert usage["at"] == int(now.timestamp() * 1000)
+        # Nothing said, or nonsense: nothing kept.
+        assert accounts.chatgpt_usage({}, now) is None
+        assert (
+            accounts.chatgpt_usage({"x-codex-primary-used-percent": "nan"}, now) is None
+        )
+
+    async def test_an_answer_keeps_the_accounts_usage(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(
+                return_value=httpx.Response(
+                    200,
+                    content=_completed(),
+                    headers={
+                        "content-type": "text/event-stream",
+                        "x-codex-primary-used-percent": "12",
+                        "x-codex-primary-window-minutes": "300",
+                        "x-codex-primary-reset-at": "1900000000",
+                        "x-codex-secondary-used-percent": "3",
+                        "x-codex-secondary-window-minutes": "10080",
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(),
+            )
+        assert answer.status_code == 200, answer.text
+        [account] = (
+            await client.get("/desktop/api/models/accounts", headers=headers)
+        ).json()["accounts"]
+        assert [
+            (one["kind"], one["usedPercent"]) for one in account["usage"]["windows"]
+        ] == [("five_hour", 12.0), ("weekly", 3.0)]
+        assert account["usage"]["windows"][0]["resetsAt"] == 1_900_000_000_000
+
+    async def test_an_answer_saying_nothing_of_it_keeps_what_was(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(return_value=_stream())
+            await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(),
+            )
+        [account] = (
+            await client.get("/desktop/api/models/accounts", headers=headers)
+        ).json()["accounts"]
+        assert account["usage"] is None
+
+    async def test_claudes_usage_as_the_engine_tells_it(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        route = "/desktop/api/models/accounts/claude/usage"
+        windows = [
+            {"kind": "five_hour", "usedPercent": 61.5, "resetsAt": 1_900_000_000_000},
+            {"kind": "weekly", "usedPercent": 20, "resetsAt": None},
+        ]
+        nothing = await client.post(route, headers=headers, json={"windows": windows})
+        assert nothing.json() == {"account": None}, "no Claude account yet"
+
+        await _claude(client, headers)
+        with capture_logs() as logs:
+            told = await client.post(route, headers=headers, json={"windows": windows})
+        assert told.status_code == 200, told.text
+        usage = told.json()["account"]["usage"]
+        assert [(one["kind"], one["usedPercent"]) for one in usage["windows"]] == [
+            ("five_hour", 61.5),
+            ("weekly", 20.0),
+        ]
+        assert any(
+            one["event"] == "desktop.models.usage"
+            and one["windows"] == "five_hour=62,weekly=20"
+            for one in logs
+        )
+        listed = await client.get("/desktop/api/models/accounts", headers=headers)
+        assert listed.json()["accounts"][0]["usage"] == usage
+
+        refused = await client.post(
+            route,
+            headers=headers,
+            json={"windows": [{"kind": "monthly", "usedPercent": 5}]},
+        )
+        assert refused.status_code == 422
+        anonymous = await client.post(route, json={"windows": windows})
+        assert anonymous.status_code == 401

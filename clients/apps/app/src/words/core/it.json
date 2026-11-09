@@ -183,6 +183,7 @@
  "1 video": "1 video",
  "1Password didn't get your answer": "1Password non ha ricevuto la tua risposta",
  "1Password wasn't connected": "1Password non è stato collegato",
+ "5-hour limit": "Limite di 5 ore",
  "50 is the maximum": "50 è il massimo",
  "7 days free, then your plan. Add a card on the web; cancel anytime.": "7 giorni gratis, poi il tuo piano. Aggiungi una carta sul web; disdici quando vuoi.",
  "A drawing your agents share gets a link on excalidraw.com that anyone with the link can open.": "Un disegno condiviso dai tuoi agenti riceve un link su excalidraw.com che chiunque abbia il link può aprire.",
@@ -1254,6 +1255,7 @@
  "Research uses your vidIQ credits.": "Le ricerche usano i tuoi crediti vidIQ.",
  "Reset face": "Reimposta volto",
  "Reset failed": "Reimpostazione non riuscita",
+ "Resets %@": "Si azzera %@",
  "Resets in %lld days": {
   "one": "Si rinnova tra %lld giorno",
   "other": "Si rinnova tra %lld giorni"
@@ -1640,6 +1642,7 @@
  "Update when agents are done": "Aggiorna quando hanno finito",
  "Update when done": "Aggiorna alla fine",
  "Update while agents are working?": "Aggiornare mentre gli agenti lavorano?",
+ "Updated %@": "Aggiornato %@",
  "Updated routine": "Routine aggiornata",
  "Updated routines": "Routine aggiornate",
  "Updates": "Aggiornamenti",
@@ -1686,6 +1689,7 @@
  "Weekdays": "Giorni feriali",
  "Weekdays at %@": "Giorni feriali alle %@",
  "Weekends": "Fine settimana",
+ "Weekly limit": "Limite settimanale",
  "Weekly usage": "Utilizzo settimanale",
  "What action items came out of the Acme meeting in Fireflies?": "Quali azioni sono uscite dalla riunione con Acme in Fireflies?",
  "What action items do I have from today’s meetings in Granola?": "Quali azioni mi spettano dalle riunioni di oggi in Granola?",

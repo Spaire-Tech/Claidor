@@ -26,6 +26,7 @@ import { GatewayError } from './gatewayConnection'
 import { type JSONValue, arr, field, int, num, str, text } from './json'
 import { t } from './l10n'
 import { displayLocale } from './listTime'
+import { type Meter, percentLabel } from './usage'
 
 export const chatGPT = 'chatgpt'
 export const claude = 'claude'
@@ -57,6 +58,124 @@ export interface ModelAccount {
   status: ModelAccountStatus
   /** When the plan's limit ends, in milliseconds. */
   limitedUntil?: number
+  /** How much of its plan is used, as the provider last said; none until the account has been used. */
+  usage?: PlanUsage
+}
+
+/** One window of a plan's usage (`PlanUsage.Window`): its share used (0 to 100, past 100 when the plan lets usage run on) and its reset, in milliseconds. */
+export interface PlanWindow {
+  kind: 'five_hour' | 'weekly'
+  usedPercent: number
+  resetsAt?: number
+}
+
+/**
+ * How much of an account's plan is used (`PlanUsage`; 9 November 2026, the
+ * founder: "we need the usage for both claude and chat gpt ... it should
+ * look like usage and billing"), as its provider last said: ChatGPT with
+ * each answer, Claude from Claude Code on the computer. Never guessed: a
+ * window whose reset has passed reads as unused until the provider says
+ * again.
+ */
+export interface PlanUsage {
+  windows: PlanWindow[]
+  /** When the provider said it, in milliseconds. */
+  at?: number
+}
+
+/** A window as Usage & Billing draws a meter (`PlanUsage.Line`). */
+export interface PlanUsageLine {
+  title: string
+  meter: Meter
+}
+
+export function planUsage(json: JSONValue | undefined): PlanUsage | undefined {
+  const windows = (arr(field(json, 'windows')) ?? []).flatMap(
+    (one): PlanWindow[] => {
+      const kind = str(field(one, 'kind'))
+      const used = num(field(one, 'usedPercent'))
+      if ((kind !== 'five_hour' && kind !== 'weekly') || used === undefined)
+        return []
+      const resetsAt = num(field(one, 'resetsAt'))
+      return [
+        {
+          kind,
+          usedPercent: Math.max(0, used),
+          ...(resetsAt !== undefined && resetsAt > 0 ? { resetsAt } : {}),
+        },
+      ]
+    },
+  )
+  if (windows.length === 0) return undefined
+  const at = num(field(json, 'at'))
+  return { windows, ...(at !== undefined && at > 0 ? { at } : {}) }
+}
+
+/** "5-hour limit" and "Weekly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
+export function planUsageLines(
+  usage: PlanUsage,
+  options: { now?: Date; locale?: string; timeZone?: string } = {},
+): PlanUsageLine[] {
+  const now = options.now ?? new Date()
+  return (['five_hour', 'weekly'] as const).flatMap((kind) => {
+    const window = usage.windows.find((one) => one.kind === kind)
+    if (!window) return []
+    const reset =
+      window.resetsAt !== undefined && window.resetsAt > +now
+        ? window.resetsAt
+        : undefined
+    const used =
+      window.resetsAt !== undefined && reset === undefined
+        ? 0
+        : window.usedPercent
+    return [
+      {
+        title: kind === 'five_hour' ? t('5-hour limit') : t('Weekly limit'),
+        meter: {
+          valueLabel: percentLabel(used),
+          barPercent: Math.max(0, Math.min(100, used)),
+          ...(reset === undefined
+            ? {}
+            : {
+                resetLabel: t`Resets ${planTime(reset, { ...options, now })}`,
+              }),
+        },
+      },
+    ]
+  })
+}
+
+/** "Updated 4:12 PM": when the provider last said it. */
+export function planUsageUpdated(
+  usage: PlanUsage,
+  options: { now?: Date; locale?: string; timeZone?: string } = {},
+): string | undefined {
+  if (usage.at === undefined) return undefined
+  return t`Updated ${planTime(usage.at, options)}`
+}
+
+/** "4:00 PM" today, "Thu 4:00 PM" within the week, "Nov 16, 4:00 PM" further (`PlanUsage.time`). */
+function planTime(
+  ms: number,
+  options: { now?: Date; locale?: string; timeZone?: string } = {},
+): string {
+  const now = options.now ?? new Date()
+  if (Math.abs(ms - +now) < 6 * 86_400_000) return limitTime(ms, options)
+  return new Intl.DateTimeFormat(options.locale ?? displayLocale(), {
+    timeZone: options.timeZone,
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(ms))
+}
+
+/** The provider's own page for the plan's usage and the plan (`ModelAccount.planPage`): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
+export function planPage(account: ModelAccount): string | undefined {
+  if (account.provider === chatGPT)
+    return 'https://chatgpt.com/codex/settings/usage'
+  if (account.provider === claude) return 'https://claude.ai/settings/usage'
+  return undefined
 }
 
 export function modelAccount(
@@ -75,6 +194,7 @@ export function modelAccount(
     status:
       status === 'limited' || status === 'signed_out' ? status : 'available',
     limitedUntil: num(field(json, 'limitedUntil')),
+    usage: planUsage(field(json, 'usage')),
   }
 }
 
