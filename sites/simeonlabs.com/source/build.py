@@ -372,6 +372,9 @@ async def main():
     # The Connectors page (connectors.py, the apps' connector catalogue), at /connectors.
     import connectors
     connectors.build(OUT)
+    # The AI models pages (models.py: the server's key providers and plans), at /models.
+    import models
+    models.build(OUT)
     # The Pricing page (pricing.py, the home page's plans), at /pricing.
     import pricing
     pricing.build(OUT)

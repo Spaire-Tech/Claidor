@@ -35,6 +35,7 @@ RESOURCES = (
 # The pages after the menus.
 LINKS = (
     ("connectors", "/connectors", "Connectors"),
+    ("models", "/models", "Models"),
     ("pricing", "/pricing", "Pricing"),
 )
 
@@ -75,6 +76,7 @@ COLUMNS = (
     ("Product", (
         ("marketplace", "/marketplace", "Marketplace"),
         ("connectors", "/connectors", "Connectors"),
+        ("models", "/models", "Models"),
         ("pricing", "/pricing", "Pricing"),
         ("", MAC_DOWNLOAD, "Download for Mac"),
     )),
