@@ -234,10 +234,15 @@ def redirect_kind(redirect_uri: str | None) -> Kind | None:
     return next((kind for _, kind in KINDS if kind.kind == found), None)
 
 
-def kind_of(*names: str | None, redirect_uri: str | None = None) -> Kind:
-    """What an agent is: where its sign-in returned first, then each name in
-    turn (the client's hello before its registration: Grok Bot registers as
-    "Cursor")."""
+def kind_of(
+    *names: str | None, redirect_uri: str | None = None, hint: str | None = None
+) -> Kind:
+    """What an agent is: the bot its address names (`/mcp/grok-bot`), then
+    where its sign-in returned, then each name in turn (the client's hello
+    before its registration: Grok Bot registers as "Cursor")."""
+    named = next((kind for _, kind in KINDS if kind.kind == hint), None)
+    if named is not None:
+        return named
     found = redirect_kind(redirect_uri)
     if found is not None:
         return found
@@ -486,6 +491,7 @@ class Network:
         client_name: str | None,
         info_name: str | None,
         redirect_uri: str | None = None,
+        kind_hint: str | None = None,
     ) -> DesktopNetworkSession:
         """A session for an MCP client that just said hello. A bot in its
         maker's cloud (Grok Bot, Dots…) is one agent: each of its
@@ -495,7 +501,9 @@ class Network:
         await self.membership()
         now = utc_now()
         await self.sessions.remove_older_than(self.user.id, now - SESSIONS_KEPT)
-        kind = kind_of(info_name, client_name, redirect_uri=redirect_uri)
+        kind = kind_of(
+            info_name, client_name, redirect_uri=redirect_uri, hint=kind_hint
+        )
         mine = await self.sessions.of_person(self.user.id)
         if kind.kind in HOSTED and client_id is not None:
             same = [s for s in mine if s.client_id == client_id]
@@ -549,10 +557,11 @@ class Network:
         client_id: str | None,
         client_name: str | None,
         redirect_uri: str | None = None,
+        kind_hint: str | None = None,
     ) -> DesktopNetworkSession:
         """For a client that keeps no session id: its last session, or one."""
         found = await self.sessions.last_of_client(self.user.id, client_id)
-        if found is not None:
+        if found is not None and (kind_hint is None or found.kind == kind_hint):
             await self.sessions.touch(found)
             return found
         return await self.open_session(
@@ -560,6 +569,7 @@ class Network:
             client_name=client_name,
             info_name=None,
             redirect_uri=redirect_uri,
+            kind_hint=kind_hint,
         )
 
     async def address_of(self, session: DesktopNetworkSession) -> str:
@@ -1062,6 +1072,13 @@ class Network:
                 at = int(said["at"]) if said["at"] is not None else line.at_ms
                 if asked.answered_ms is not None and at <= asked.answered_ms:
                     continue
+                # Where the time went, each on one clock: the message reaching the
+                # agent's computer (this server's: sent, its line first seen here)
+                # and the agent answering (the computer's: its line, the answer's).
+                reached = max(
+                    0.0, (question.created_at - asked.created_at).total_seconds()
+                )
+                answered = max(0.0, (at - question.at_ms) / 1000)
                 found.append(
                     {
                         "id": f"{asked.id}:{line.entry_id}",
@@ -1069,7 +1086,16 @@ class Network:
                         "text": said["text"],
                         "at": at,
                         "replyTo": str(asked.id),
+                        "reachedAfterSeconds": round(reached),
+                        "answeredAfterSeconds": round(answered),
                     }
+                )
+                log.info(
+                    "desktop.network.answered",
+                    user_id=str(asked.to_user_id),
+                    agent=asked.to_address,
+                    reached_s=round(reached, 1),
+                    answered_s=round(answered, 1),
                 )
                 asked.answered_ms = at
             self.session.add(asked)

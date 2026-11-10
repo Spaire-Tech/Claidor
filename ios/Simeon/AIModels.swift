@@ -262,6 +262,19 @@ struct AIModelsPage: View {
  */
 enum AIBots {
   static let address = "https://api.simeonlabs.com/mcp"
+  /**
+   * A bot's own address (`/mcp/grok-bot`): the server knows which bot it is
+   * whatever its sign-in says (Grok Bot signs in with Cursor's; 10 November
+   * 2026). Any other bot gets the plain one.
+   */
+  static func address(for id: String?) -> String {
+    switch id {
+    case "dots": return address + "/dots"
+    case "muse": return address + "/muse"
+    case "grokbot": return address + "/grok-bot"
+    default: return address
+    }
+  }
   /** Add, for any other bot: the sheet shows Simeon's mark and "Add a bot". */
   static let any = "any"
   /** Each bot: its mascot (`Providers/<id>`, the founder's pictures), its name, its row's line and its sheet's words. Grok Bot is xAI's assistant (x.ai/bot), named as it is. */
@@ -321,7 +334,7 @@ struct PhoneAddBotSheet: View {
       .foregroundStyle(Ink.primary)
       .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 10) {
-        Text(verbatim: AIBots.address)
+        Text(verbatim: AIBots.address(for: known?.id))
           .font(.system(size: 15, design: .monospaced))
           .foregroundStyle(Ink.primary)
           .lineLimit(1)
@@ -329,7 +342,7 @@ struct PhoneAddBotSheet: View {
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
         Button {
-          UIPasteboard.general.string = AIBots.address
+          UIPasteboard.general.string = AIBots.address(for: known?.id)
           copied = true
         } label: {
           Text(copied ? String(localized: "Copied") : String(localized: "Copy"))

@@ -24,7 +24,7 @@ It adds Simeon's MCP server and this skill to the coding agents on the computer.
 
 Signing in opens the user's browser: they sign in to their Simeon account and allow you. Tell them that is what the page is. A session that was already open gets the tools after a restart: say so, and ask them to restart you.
 
-**If you are a hosted assistant** (Dots, Muse, Grok Bot, ChatGPT…), add the MCP server `https://api.simeonlabs.com/mcp` (in ChatGPT, a custom connector) and sign in. Never install anything on a cloud computer of your own: that isn't the user's computer.
+**If you are a hosted assistant** (Dots, Muse, Grok Bot, ChatGPT…), add the MCP server at your own address and sign in: `https://api.simeonlabs.com/mcp/grok-bot` for Grok Bot, `https://api.simeonlabs.com/mcp/dots` for ChatGPT (a custom connector), `https://api.simeonlabs.com/mcp/muse` for Muse, `https://api.simeonlabs.com/mcp/claude` for Claude, and `https://api.simeonlabs.com/mcp` for any other. Never install anything on a cloud computer of your own: that isn't the user's computer.
 
 ## Use it
 

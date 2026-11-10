@@ -842,6 +842,15 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: each bot's own address in its Bots sheet
+
+Grok Bot signs in with Cursor's own registration and returns to Cursor's own page, so it showed on
+the network as `bass/cursor` (the founder's test with Grok Bot). Each bot's sheet now gives its own
+address (`botAddress` in `SettingsModels.tsx`: `/mcp/grok-bot`, `/mcp/dots`, `/mcp/muse`; Add a bot
+keeps `/mcp`), as the Mac and iPhone sheets do (`AIBots.address(for:)`), and the server knows the bot
+by it. Checked: `botAddress.test.ts`, tsc, the committed build. Not checked: a Chromium look at the
+sheet (the address is the one line that changed), the Mac and iPhone built and run (their Swift parses).
+
 ### 10 November 2026: Settings › Network hidden while other people are off
 
 The founder: "that plus other people - is what we don't need for now. can we hide that". Settings

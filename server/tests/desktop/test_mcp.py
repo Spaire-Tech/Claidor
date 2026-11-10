@@ -79,12 +79,15 @@ async def _bot(
 
 
 async def _hello(
-    client: httpx.AsyncClient, headers: dict[str, str], info_name: str
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    info_name: str,
+    path: str = "/mcp",
 ) -> dict[str, str]:
     """The agent says hello as an MCP client called `info_name`; its
     headers from then on carry the session it was given."""
     response = await client.post(
-        "/mcp",
+        path,
         json={
             "jsonrpc": "2.0",
             "id": 0,
@@ -429,6 +432,10 @@ class TestTools:
         )
         read = await _said(client, bot, "check_inbox")
         assert [m["text"] for m in read["messages"]] == ["Thursday works."]
+        # Where the time went: the agent's answer on its own clock, the way there on this server's.
+        (answer,) = read["messages"]
+        assert answer["answeredAfterSeconds"] == 30
+        assert 0 <= answer["reachedAfterSeconds"] <= 5
 
     async def test_the_first_tools_names_still_answer(
         self,
@@ -603,3 +610,57 @@ class TestWhichBot:
         after = await _said(client, after_hello, "list_team")
         assert after["you"] == before["you"].replace("/cursor", "/grok-bot")
         assert not any(a["address"] == before["you"] for a in after["agents"])
+
+    async def test_a_bot_at_its_own_address_is_that_bot(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """Grok Bot returns to Cursor's own page, as Cursor's cloud agents do
+        (10 November 2026, `bass/cursor`): the address its Bots sheet gives,
+        `/mcp/grok-bot`, says what it is."""
+        headers = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            token="simeon_at_hosted",
+            redirect_uris=CURSORS,
+            returned="https://www.cursor.com/agents/mcp/oauth/callback",
+        )
+        team = await _said(
+            client,
+            await _hello(client, headers, "Cursor", "/mcp/grok-bot"),
+            "list_team",
+        )
+        assert team["you"].endswith("/grok-bot")
+        # Without a session id it is still the bot its address names.
+        response = await client.post(
+            "/mcp/grok-bot",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": {"name": "list_team", "arguments": {}},
+            },
+            headers=headers,
+        )
+        assert response.json()["result"]["structuredContent"]["you"] == team["you"]
+
+    async def test_each_bots_address_is_found_and_signs_in(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        resource = (
+            await client.get("/.well-known/oauth-protected-resource/mcp/grok-bot")
+        ).json()
+        assert resource["resource"].endswith("/mcp/grok-bot")
+        response = await client.post(
+            "/mcp/grok-bot", json={"jsonrpc": "2.0", "id": 1, "method": "initialize"}
+        )
+        assert response.status_code == 401
+        assert (
+            "/.well-known/oauth-protected-resource/mcp/grok-bot"
+            in response.headers["www-authenticate"]
+        )
+        assert (await client.post("/mcp/nobody", json={})).status_code == 404
+        assert (
+            await client.get("/.well-known/oauth-protected-resource/mcp/nobody")
+        ).status_code == 404

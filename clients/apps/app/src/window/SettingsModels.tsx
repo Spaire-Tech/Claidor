@@ -287,6 +287,21 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
 export const botsAddress = 'https://api.simeonlabs.com/mcp'
 
 /**
+ * A bot's own address (`/mcp/grok-bot`): the server knows which bot it is
+ * whatever its sign-in says (Grok Bot signs in with Cursor's; 10 November
+ * 2026). Any other bot gets the plain one.
+ */
+export function botAddress(id: string | undefined): string {
+  const own: Record<string, string> = {
+    dots: 'dots',
+    muse: 'muse',
+    grokbot: 'grok-bot',
+  }
+  const path = id == null ? undefined : own[id]
+  return path ? `${botsAddress}/${path}` : botsAddress
+}
+
+/**
  * The bots the person can give Simeon to (10 November 2026, the founder,
  * with another app's Bots as the reference: "i want it to talk to other
  * agents like dots, muse etc"), each with its own mascot (the founder's
@@ -368,8 +383,9 @@ function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
   const [details, setDetails] = useState(false)
   const known = bots.find((one) => one.id === bot)
   const title = known?.name ?? t('Add a bot')
+  const address = botAddress(known?.id)
   const copy = async () => {
-    await copyText(botsAddress)
+    await copyText(address)
     setCopied(true)
   }
   return (
@@ -391,7 +407,7 @@ function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
           : t('Give this to any bot that can add an MCP server.')}
       </p>
       <div className="bots-address">
-        <span className="bots-address-text">{botsAddress}</span>
+        <span className="bots-address-text">{address}</span>
         <button type="button" className="bots-copy" onClick={() => void copy()}>
           {copied ? t('Copied') : t('Copy')}
         </button>

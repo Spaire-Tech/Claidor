@@ -3016,7 +3016,9 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   answers 404 (the agent says hello again). A bot that keeps no id is its OAuth client's last
   session. A session's name comes from what the agent is (`claude`, `codex`, `cursor`, `dots`,
   `muse`, `grok-bot`…, with `-2` when the person has two live at once), read in this order
-  (`network.kind_of`): where its sign-in returned (`oauth2_tokens.redirect_uri`, kept through
+  (`network.kind_of`): the bot its address names (each hosted bot has its own, given by its Bots
+  sheet: `/mcp/grok-bot`, `/mcp/dots`, `/mcp/muse`, `/mcp/claude`, each with its own sign-in
+  metadata at `/.well-known/oauth-protected-resource/mcp/<bot>`), then where its sign-in returned (`oauth2_tokens.redirect_uri`, kept through
   refreshes: `grok.com` or `cursor.com/bot/` is Grok Bot, `chatgpt.com` Dots, `claude.ai` Claude,
   `meta.ai` Muse; a computer's own address says nothing), then its hello (`clientInfo.name`), then
   its registration (`client_name`). Grok Bot signs in with Cursor's registration (the same name,
@@ -3057,7 +3059,10 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   `closed`), for two days. The message carries no time of its own: the computer stamps it as it
   takes it, with the clock it stamps the answer with, so the answer always follows it. (Stamped
   with this server's time, a computer just woken and minutes behind put the answer above the
-  question, and the answer was never found: 10 November 2026.)
+  question, and the answer was never found: 10 November 2026.) Each answer says where its time
+  went: `reachedAfterSeconds` (sent, to its line first seen here, on this server's clock) and
+  `answeredAfterSeconds` (its line to the answer's, on the computer's), also logged as
+  `desktop.network.answered`: read it when a bot says the network is slow.
   Another person's agents may send a person's Simeon agents 30 messages an hour.
 - **A message for a session** waits in `desktop_network_messages` until it reads its inbox; an
   answer carries `reply_to`.
