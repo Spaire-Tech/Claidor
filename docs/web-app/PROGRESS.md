@@ -842,6 +842,27 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: Bots, so other agents talk to yours
+
+The founder, with another app's Bots section and its "Add a bot" as the reference: "i want it
+to talk to other agents like dots, muse etc". The server side is the MCP endpoint
+(`https://api.simeonlabs.com/mcp`, `docs/services-agents.md` §18). Here and on the Mac and the
+iPhone, AI Models ends with a **Bots** group: Dots ("Connect Simeon to ChatGPT dots."), Muse
+("Connect Simeon to Meta Muse.") and Grok ("Connect Simeon to Grok."), each under its maker's
+icon with a + at its end, then a last row with a + and "Add" in grey for any other bot. Each
+opens **Add a bot**: the bot's icon (Simeon's mark for Add), the title and the round close;
+"Give this to any bot that can add an MCP server."; the address in its field with Copy inside it
+(Copied once pressed); MCP details, which opens what the bot can do once it's in. The bots'
+names are theirs and stay untranslated. The third row takes its maker's name, not the reference's:
+that name was the upstream app's own, and `check_names.py` refuses it.
+
+Checked in Chromium, light and dark: the group, a bot's sheet, Add's sheet with Simeon's mark,
+Copy putting the address on the clipboard, MCP details, no console error, nothing outside the
+stand-ins reached. tsc, ESLint, the AI Models tests, the words and the committed build,
+`check_names.py`, `check_translations.py` (the eight new strings in nine languages, both
+catalogs). Not checked: the Mac and iPhone apps built and run (their Swift parses); a real bot
+added with the address.
+
 ### 10 November 2026: new logos for Grok, xAI, Amazon Bedrock and GitHub Copilot
 
 The founder, with four logos: "use these logos instead for the ai model section . also grab

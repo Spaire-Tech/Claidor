@@ -38,6 +38,8 @@ struct AIModelsPage: View {
   @State private var pendingKey: KeyProvider?
   @State private var keying: KeyProvider?
   @State private var confirmed = false
+  /** The bot whose "Add a bot" sheet is open ("any": Add, for any other). */
+  @State private var addingBot: String?
 
   var body: some View {
     let model = store.aiModels
@@ -131,6 +133,40 @@ struct AIModelsPage: View {
           }
           .listRowBackground(Ink.groupedRow)
         }
+        // Bots (10 November 2026, the founder, with another app's Bots as the reference): each other company's agent with a +, then Add for any other.
+        Section {
+          ForEach(AIBots.all, id: \.provider) { bot in
+            HStack(spacing: 14) {
+              ProviderIcon(provider: bot.provider, size: 30)
+              VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: bot.name).font(.system(size: 17)).foregroundStyle(Ink.primary)
+                Text(bot.line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+              }
+              Spacer(minLength: 8)
+              Button { addingBot = bot.provider } label: {
+                Image(systemName: "plus")
+                  .font(.system(size: 15, weight: .medium))
+                  .foregroundStyle(Ink.primary)
+                  .frame(width: 34, height: 34)
+                  .background(Ink.pillButton, in: Circle())
+              }
+              .buttonStyle(.borderless)
+              .accessibilityLabel(Text("Add a bot"))
+            }
+            .padding(.vertical, 2)
+          }
+          Button { addingBot = AIBots.any } label: {
+            HStack {
+              Image(systemName: "plus").font(.system(size: 17)).frame(width: 30)
+              Spacer()
+              Text("Add").font(.system(size: 17))
+            }
+            .foregroundStyle(Ink.secondary)
+          }
+        } header: {
+          Text("Bots")
+        }
+        .listRowBackground(Ink.groupedRow)
         if let problem = model.problem {
           Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
             .listRowBackground(Ink.groupedRow)
@@ -162,6 +198,9 @@ struct AIModelsPage: View {
     }
     .sheet(item: $keying) { provider in
       NavigationStack { KeyConnectSheet(model: model, provider: provider) }
+    }
+    .sheet(isPresented: Binding(get: { addingBot != nil }, set: { if !$0 { addingBot = nil } })) {
+      PhoneAddBotSheet(bot: addingBot ?? AIBots.any)
     }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
@@ -208,6 +247,114 @@ struct AIModelsPage: View {
   /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
   private func connect(_ provider: String) {
     if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
+  }
+}
+
+// MARK: Bots
+
+/**
+ * The bots a person can give Simeon to (10 November 2026, the founder, with
+ * another app's Bots as the reference: "i want it to talk to other agents
+ * like dots, muse etc"): each other company's agent under its maker's icon,
+ * and the address they reach the person's agents at (the server's MCP
+ * endpoint, `server/simeon/desktop/mcp.py`). Their names are theirs, never
+ * translated.
+ */
+enum AIBots {
+  static let address = "https://api.simeonlabs.com/mcp"
+  /** Add, for any other bot: the sheet shows Simeon's mark. */
+  static let any = "any"
+  static let all: [(provider: String, name: String, line: LocalizedStringResource)] = [
+    (AIModels.chatGPT, "Dots", "Connect Simeon to ChatGPT dots."),
+    ("meta", "Muse", "Connect Simeon to Meta Muse."),
+    (AIModels.grok, "Grok", "Connect Simeon to Grok."),
+  ]
+}
+
+/**
+ * "Add a bot" (the reference): the round close, the bot's icon (Simeon's
+ * mark for any other) and the title; what to do with the address; the
+ * address in its field with Copy inside it; MCP details, which open what the
+ * bot can do once it is in.
+ */
+struct PhoneAddBotSheet: View {
+  let bot: String
+  @Environment(\.dismiss) private var dismiss
+  @State private var copied = false
+  @State private var details = false
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 18) {
+      HStack {
+        CloseDisc { dismiss() }
+        Spacer()
+      }
+      HStack(spacing: 14) {
+        if bot == AIBots.any {
+          Image("Providers/simeon-mark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 26, height: 26)
+            .foregroundStyle(Ink.primary)
+            .frame(width: 48, height: 48)
+            .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Ink.tileEdge, lineWidth: 0.5) }
+        } else {
+          ProviderIcon(provider: bot, size: 48)
+        }
+        Text("Add a bot")
+          .font(.system(size: 24))
+          .foregroundStyle(Ink.primary)
+          .accessibilityAddTraits(.isHeader)
+      }
+      Text("Give this to any bot that can add an MCP server.")
+        .font(.system(size: 17))
+        .foregroundStyle(Ink.primary)
+        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: 10) {
+        Text(verbatim: AIBots.address)
+          .font(.system(size: 15, design: .monospaced))
+          .foregroundStyle(Ink.primary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Button {
+          UIPasteboard.general.string = AIBots.address
+          copied = true
+        } label: {
+          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
+            .font(.system(size: 15))
+            .foregroundStyle(Ink.primary)
+            .padding(.horizontal, 16)
+            .frame(height: 38)
+            .background(Ink.pillButton, in: Capsule())
+        }
+        .buttonStyle(.plain)
+      }
+      .padding(.leading, 16)
+      .padding(.trailing, 6)
+      .frame(minHeight: 54)
+      .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Ink.edge, lineWidth: 1) }
+      Button { withAnimation(.snappy) { details.toggle() } } label: {
+        Text("MCP details").font(.system(size: 15)).underline().foregroundStyle(Ink.link)
+      }
+      .buttonStyle(.plain)
+      if details {
+        Text("It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.")
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(.horizontal, 20)
+    .padding(.top, 16)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.groupedGround)
+    .presentationDetents([.medium, .large])
   }
 }
 

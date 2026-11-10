@@ -39,6 +39,7 @@ export type SettingsSymbolName =
   | 'chevronRight'
   | 'chevronDown'
   | 'xmark'
+  | 'plus'
   | 'arrowUpRight'
   | 'sun'
   | 'moon'
@@ -100,6 +101,7 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
   chevronRight: <path d="M6 3l5 5-5 5" />,
   chevronDown: <path d="M4 6l4 4 4-4" />,
   xmark: <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />,
+  plus: <path d="M8 2.5v11M2.5 8h11" />,
   arrowUpRight: <path d="M5 11 11 5M6 5h5v5" />,
   sun: (
     <>
@@ -156,7 +158,7 @@ export function PanelDisc({
   size = 32,
   disabled,
 }: {
-  symbol: 'xmark' | 'chevronLeft'
+  symbol: 'xmark' | 'chevronLeft' | 'plus'
   label: string
   onClick: () => void
   size?: number
