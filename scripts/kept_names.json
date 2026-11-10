@@ -670,6 +670,45 @@
       ],
       "match": "^(?!.*grok[ _-]?bot)",
       "reason": "Grok, xAI's assistant, is a provider a person connects for their agents on their own SuperGrok or X Premium plan (10 November 2026, the founder: \"lets do grok\"): its name on the apps' pages and in their words, xAI's sign-in, proxy and API addresses, and the headers and client values xAI's servers read. The upstream Grok Bot stays a finding everywhere, these files included."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "xai",
+        "spacex"
+      ],
+      "paths": [
+        "server/simeon/desktop/key_providers.py",
+        "server/simeon/desktop/own_models.py",
+        "server/simeon/desktop/model_accounts.py",
+        "server/tests/desktop/test_api_keys.py",
+        "ios/SimeonCore/Sources/SimeonCore/AIModels.swift",
+        "ios/SimeonCore/Sources/SimeonCore/KeyProviders.swift",
+        "ios/SimeonCore/Tests/SimeonCoreTests/AIModelsTests.swift",
+        "ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings",
+        "ios/Simeon/AIModels.swift",
+        "ios/Simeon/Localizable.xcstrings",
+        "ios/Simeon/Assets.xcassets/Providers/xai*",
+        "mac/Simeon/SettingsModels.swift",
+        "mac/Simeon/Localizable.xcstrings",
+        "mac/Simeon/Assets.xcassets/Providers/xai*",
+        "mac/STEPS.md",
+        "clients/apps/app/src/core/aiModels.ts",
+        "clients/apps/app/src/core/aiModels.test.ts",
+        "clients/apps/app/src/core/keyProviders.ts",
+        "clients/apps/app/src/window/SettingsModels.tsx",
+        "clients/apps/app/src/window/ComposerModelMenu.tsx",
+        "clients/apps/app/src/assets/providers/xai*",
+        "clients/apps/app/src/words/*/*.json",
+        "clients/apps/web/public/app-next/assets/*",
+        "docs/web-app/inventory/*",
+        "docs/web-app/PROGRESS.md",
+        "docs/your-own-models.md",
+        "docs/services-core.md"
+      ],
+      "match": "^(?!.*grok[ _-]?bot)",
+      "reason": "SpaceXAI (xAI's API, api.x.ai) is one of the providers a person brings their own API key for (10 November 2026, the founder's list under API keys), and Grok is its models' name and the plan its row points to: there they are a provider, not an earlier name of ours."
     }
   ]
 }

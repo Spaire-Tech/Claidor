@@ -59,3 +59,8 @@ class DesktopModelAccount(RecordModel):
     #: relay; Claude's from Claude Code on the person's computer. None until
     #: the account has been used.
     usage: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    #: The models an API key reaches (10 November 2026), as its provider
+    #: listed them when the key was connected: `[{"id", "name",
+    #: "contextWindow"}]`, best first (`key_providers.offered`). None for a
+    #: sign-in, whose models are the provider's own list.
+    models: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)

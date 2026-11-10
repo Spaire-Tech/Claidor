@@ -51,18 +51,27 @@ The apps' routes:
   SuperGrok or X Premium plan, signed in to with xAI's device code in the
   same sheet (`grok.py`). A plan xAI doesn't let use Grok here is refused
   at once (`failed`, `not_allowed`).
+- `POST /desktop/api/models/accounts/keys/{provider}` `{key, fields}` (10
+  November 2026, the founder: "Below subscription something called api
+  keys"): the person's own API key for one of `key_providers.PROVIDERS`,
+  tried at the provider first (`key_providers.check_key`), then kept
+  sealed with the details the provider needs (Azure's endpoint,
+  Cloudflare's account) and the models it reaches. A key the provider
+  refuses is never kept (`key_refused`). The list route names the
+  providers (`keyProviders`) for the apps' API keys section.
 
-The tokens never leave the server. Nothing here logs a token, a code or a
-verifier.
+The tokens and keys never leave the server. Nothing here logs a token, a
+key, a code or a verifier.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import secrets
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
@@ -81,7 +90,7 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 
-from . import grok
+from . import grok, key_providers
 from .auth import get_desktop_session
 from .model_account_repository import ModelAccountRepository
 from .model_sign_in import (
@@ -108,6 +117,8 @@ PROVIDER_CLAUDE = "claude"
 #: The one Claude row a person has: Claude Code on their one computer.
 CLAUDE_ACCOUNT_KEY = "claude-code"
 KIND_SUBSCRIPTION = "subscription"
+#: The person's own API key (`key_providers.py`).
+KIND_API_KEY = "api_key"
 STATUS_AVAILABLE = "available"
 STATUS_SIGNED_OUT = "signed_out"
 #: How long a started sign-in waits for the person: Codex's own 15 minutes.
@@ -148,6 +159,8 @@ class AccessGrant:
     access_token: str
     account_key: str
     expires_at: datetime | None
+    #: An API key's details (Azure's endpoint, Cloudflare's account).
+    fields: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -317,6 +330,16 @@ def _keep(account: DesktopModelAccount, tokens: SignInTokens) -> None:
 _NAMES = {PROVIDER_CHATGPT: "ChatGPT", PROVIDER_GROK: "Grok"}
 
 
+def provider_name(provider: str) -> str:
+    """The provider as the person knows it: ChatGPT, Grok, DeepSeek…"""
+    if provider in _NAMES:
+        return _NAMES[provider]
+    if provider == PROVIDER_CLAUDE:
+        return "Claude"
+    one = key_providers.provider(provider)
+    return one.name if one is not None else provider
+
+
 def _identity(
     provider: str, tokens: SignInTokens
 ) -> tuple[str | None, str, str | None]:
@@ -396,6 +419,87 @@ async def keep_claude(
     return account
 
 
+def _key_account_key(key: str, fields: Mapping[str, str]) -> str:
+    """A key's own name among the person's accounts, never the key: the same
+    key connected again replaces its row."""
+    digest = hashlib.sha256(
+        json.dumps([key, dict(sorted(fields.items()))]).encode()
+    ).hexdigest()
+    return f"key:{digest[:40]}"
+
+
+async def keep_key(
+    session: AsyncSession,
+    user_id: UUID,
+    provider: str,
+    key: str,
+    fields: Mapping[str, str],
+    models: list[dict[str, Any]],
+) -> DesktopModelAccount:
+    """An API key the provider took, kept sealed with its details and the
+    models it reaches. Its name shows only its last four characters."""
+    account_key = _key_account_key(key, fields)
+    sealed = seal(json.dumps({"key": key, "fields": dict(fields)}), purpose=_SEALED)
+    repository = ModelAccountRepository.from_session(session)
+    account = await repository.by_key(user_id, provider, account_key)
+    if account is None:
+        account = DesktopModelAccount(
+            user_id=user_id,
+            provider=provider,
+            kind=KIND_API_KEY,
+            account_key=account_key,
+            label=f"…{key[-4:]}",
+            plan=None,
+            access_token=sealed,
+            refresh_token=None,
+            expires_at=None,
+            status=STATUS_AVAILABLE,
+            limited_until=None,
+            models=models,
+        )
+        await repository.create(account, flush=True)
+        return account
+    account.access_token = sealed
+    account.models = models
+    account.status = STATUS_AVAILABLE
+    account.limited_until = None
+    await session.flush()
+    return account
+
+
+async def key_refused(session: AsyncSession, user_id: UUID, account_id: UUID) -> None:
+    """The provider no longer takes the key (revoked, run out): shown
+    signed out, so the person connects a new one."""
+    account = await ModelAccountRepository.from_session(session).one_for_user(
+        user_id, account_id
+    )
+    if account is None or account.kind != KIND_API_KEY:
+        return
+    account.status = STATUS_SIGNED_OUT
+    await session.flush()
+    log.info(
+        "desktop.models.key_refused", user_id=str(user_id), provider=account.provider
+    )
+
+
+def _key_grant(account: DesktopModelAccount) -> AccessGrant | None:
+    opened = unseal(account.access_token, purpose=_SEALED)
+    try:
+        kept = json.loads(opened) if opened is not None else None
+    except ValueError:
+        kept = None
+    if not isinstance(kept, dict) or not isinstance(kept.get("key"), str):
+        return None
+    given = kept.get("fields")
+    fields: dict[str, Any] = given if isinstance(given, dict) else {}
+    return AccessGrant(
+        kept["key"],
+        account.account_key,
+        None,
+        {str(k): str(v) for k, v in fields.items()},
+    )
+
+
 async def access_for(
     session: AsyncSession,
     user_id: UUID,
@@ -404,9 +508,22 @@ async def access_for(
     force_refresh: bool = False,
 ) -> AccessGrant | None:
     """A live access token for one of the person's accounts, or None when the
-    account is gone or signed out (the person connects again)."""
+    account is gone or signed out (the person connects again). For an API
+    key, the key and its details."""
     repository = ModelAccountRepository.from_session(session)
     account = await repository.one_for_user(user_id, account_id, lock=True)
+    if (
+        account is not None
+        and account.kind == KIND_API_KEY
+        and account.status != STATUS_SIGNED_OUT
+    ):
+        grant = _key_grant(account)
+        if grant is None:
+            # Sealed under another SECRET: unreadable for good.
+            log.warning("desktop.models.unreadable", user_id=str(user_id))
+            account.status = STATUS_SIGNED_OUT
+            await session.flush()
+        return grant
     if (
         account is None
         or account.status == STATUS_SIGNED_OUT
@@ -642,6 +759,8 @@ def account_json(account: DesktopModelAccount) -> dict[str, Any]:
         "limitedUntil": _ms(account.limited_until) if limited else None,
         "createdAt": _ms(account.created_at),
         "usage": account.usage,
+        # The models an API key reaches; none for a sign-in.
+        "models": account.models if account.kind == KIND_API_KEY else None,
     }
 
 
@@ -748,6 +867,10 @@ _REFUSALS = {
     "not_found": "That account isn't connected.",
     "empty_label": "Give the account a name.",
     "not_offered": "That model isn't one of your accounts' models.",
+    "unknown_provider": "That provider can't be connected yet.",
+    "invalid_key": "That doesn't look like a {provider} key.",
+    "invalid_fields": "Check the details {provider} needs.",
+    "key_refused": "{provider} didn't accept this key.",
 }
 
 
@@ -755,7 +878,7 @@ def refusal(code: str, status: int, provider: str = PROVIDER_CHATGPT) -> JSONRes
     """A refusal in the shape the apps read (`{"error": {"code", "message"}}`,
     as the model proxy's): the code for the apps' own words, the message
     where they have none."""
-    message = _REFUSALS.get(code, code).replace("{provider}", _NAMES[provider])
+    message = _REFUSALS.get(code, code).replace("{provider}", provider_name(provider))
     return JSONResponse(
         {"error": {"code": code, "message": message}}, status_code=status
     )
@@ -775,7 +898,74 @@ async def model_accounts_list(
     accounts = await ModelAccountRepository.from_session(session).for_user(
         desktop_session.user_id
     )
-    return JSONResponse({"accounts": [account_json(a) for a in accounts]})
+    return JSONResponse(
+        {
+            "accounts": [account_json(a) for a in accounts],
+            # The apps' API keys section, in the founder's order.
+            "keyProviders": key_providers.catalogue_json(),
+        }
+    )
+
+
+class _KeyBody(BaseModel):
+    key: str = Field(max_length=2000)
+    fields: dict[str, str] = Field(default_factory=dict, max_length=8)
+
+
+def _looks_like_a_key(key: str) -> bool:
+    return (
+        8 <= len(key) <= 1000
+        and key.isprintable()
+        and not any(one.isspace() for one in key)
+    )
+
+
+@router.post("/api/models/accounts/keys/{provider}", name="desktop:model_accounts_key")
+async def model_accounts_key(
+    provider: str,
+    body: _KeyBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """The person's own API key: tried at the provider, then kept sealed with
+    the models it reaches. Refused, it is never kept."""
+    one = key_providers.provider(provider)
+    if one is None or not one.available:
+        return refusal("unknown_provider", 404)
+    key = body.key.strip()
+    if not _looks_like_a_key(key):
+        return refusal("invalid_key", 400, provider)
+    fields = one.field_values(body.fields)
+    if fields is None:
+        return refusal("invalid_fields", 400, provider)
+    user_id = desktop_session.user_id
+    try:
+        checked = await key_providers.check_key(one, key, fields)
+    except key_providers.KeyRefused as error:
+        log.info(
+            "desktop.models.key_not_taken",
+            user_id=str(user_id),
+            provider=provider,
+            status=error.args[0] if error.args else None,
+        )
+        return refusal("key_refused", 400, provider)
+    except key_providers.ProviderUnreachable as error:
+        log.warning(
+            "desktop.models.key_check_failed",
+            user_id=str(user_id),
+            provider=provider,
+            reason=str(error),
+        )
+        return refusal("provider_unavailable", 502, provider)
+    account = await keep_key(session, user_id, provider, key, fields, checked.models)
+    log.info(
+        "desktop.models.connected",
+        user_id=str(user_id),
+        provider=provider,
+        kind=KIND_API_KEY,
+        models=len(checked.models),
+    )
+    return JSONResponse({"status": "connected", "account": account_json(account)})
 
 
 def _started(connect_id: str, device: DeviceCode) -> JSONResponse:

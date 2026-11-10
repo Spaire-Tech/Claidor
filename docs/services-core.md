@@ -977,6 +977,42 @@ respx). **Not verified:** a real sign-in at auth.x.ai, a real call at the
 proxy, xAI's real billing and error bodies: all of it is read from Grok
 Build's code.
 
+**API keys** (10 November 2026, the founder's list "below subscription";
+the plan: `docs/your-own-models.md`, section 7). The person's own key for
+one of 25 providers (`server/simeon/desktop/key_providers.py`; GitHub
+Copilot and Meta listed, not yet connectable):
+
+- `GET /desktop/api/models/accounts` also names the providers
+  (`keyProviders`: name, key page, details asked, `available`, a hint).
+- `POST /desktop/api/models/accounts/keys/{provider}` `{key, fields}`: the
+  key tried at the provider (its model list, or a one-word call where it has
+  none), then kept sealed with the models it reaches (`kind` `api_key`,
+  `models`). Refusals: `unknown_provider` (404), `invalid_key`,
+  `invalid_fields`, `key_refused` (400), `provider_unavailable` (502).
+- Models `own:<provider>:<model>` (`own:deepseek:deepseek-v4-pro`), chosen as
+  a plan's. The relay speaks each provider's wire: Responses as it is
+  (OpenAI, SpaceXAI, Azure), Claude's Messages with its prompt cache
+  (Anthropic, MiniMax), Chat Completions for the rest; the answer always
+  back as Responses events.
+- What a provider wants back with its tool calls (thoughts, Gemini's
+  signatures, Claude's thinking blocks) is kept six hours in Redis
+  (`desktop:own-kept:*`); a model that refused the rest is sent the plain
+  request for a day (`desktop:own-plain:*`).
+
+No setting: every address is the provider's own. Log lines:
+`desktop.models.connected` (`kind=api_key`, how many models),
+`desktop.models.key_not_taken` (the provider refused the key, with its
+status), `desktop.models.key_check_failed` (it couldn't be asked),
+`desktop.models.key_plain` (a model refused the full request; the
+provider's words), `desktop.models.key_refused` (a key it no longer takes:
+shown signed out), and the plans' own `relay_refused`, `limited` and
+`on_simeon`. No key is ever logged.
+
+**Verified:** `server/tests/desktop/test_api_keys.py`,
+`test_chat_wire.py`, `test_messages_wire.py` (every provider stood in by
+respx), and the engine's own AI SDK reading both translators' output. **Not
+verified:** any provider with a real key; the apps' sheet comes next.
+
 ### Settings on Render
 
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.
