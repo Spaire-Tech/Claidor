@@ -3014,10 +3014,19 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
 - **Sessions.** Each `initialize` opens a session (`desktop_network_sessions`) and answers its id
   in `Mcp-Session-Id`; the agent sends it back on every call. An id the server no longer knows
   answers 404 (the agent says hello again). A bot that keeps no id is its OAuth client's last
-  session. A session's name comes from the client (`claude`, `codex`, `cursor`, `dots`, `muse`,
-  `grok-bot`…, with `-2` when the person has two live at once); a new session of the same kind
-  takes over one that is no longer live (its name and inbox). Live: seen in the last 30 minutes.
-  Kept 14 days.
+  session. A session's name comes from what the agent is (`claude`, `codex`, `cursor`, `dots`,
+  `muse`, `grok-bot`…, with `-2` when the person has two live at once), read in this order
+  (`network.kind_of`): where its sign-in returned (`oauth2_tokens.redirect_uri`, kept through
+  refreshes: `grok.com` or `cursor.com/bot/` is Grok Bot, `chatgpt.com` Dots, `claude.ai` Claude,
+  `meta.ai` Muse; a computer's own address says nothing), then its hello (`clientInfo.name`), then
+  its registration (`client_name`). Grok Bot signs in with Cursor's registration (the same name,
+  "Cursor", and the same addresses, `cursor.com/oauth/mcp-client.json`), so only where it returned
+  tells them apart (10 November 2026: Grok Bot showed as `cursor-3` and wrote as "Cursor"). A bot
+  in its maker's cloud (Dots, Muse, Grok Bot, Claude) is one agent: every conversation of it
+  lands in its one session per sign-in, renamed once known. A coding agent's new session of the
+  same kind takes over one that is no longer live (its name and inbox). Live: seen in the last 30
+  minutes. Kept 14 days. Each hello is logged (`mcp.hello`: the client's names, where its sign-in
+  returned, the kind and session given): read it when an agent shows under the wrong name.
 - **People and networks.** A person is on one network at a time (`desktop_network_members`,
   unique per person): their own, made the first time it is needed ("Maya's network"), or one they
   joined. Their handle is their first name as the agents call them (`preferred_name`), made unique
@@ -3044,7 +3053,11 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   a colleague's request, not the person's instruction, to ask the person before spending money,
   sending in their name or sharing private details, and that the reply goes back. The person sees
   both in the chat. The answer is read from the chat: the agent's lines after the message's line
-  (its `clientNonce`), until someone else writes there (`answered_ms`, `closed`), for two days.
+  (its `clientNonce`, found wherever it sits), until someone else writes there (`answered_ms`,
+  `closed`), for two days. The message carries no time of its own: the computer stamps it as it
+  takes it, with the clock it stamps the answer with, so the answer always follows it. (Stamped
+  with this server's time, a computer just woken and minutes behind put the answer above the
+  question, and the answer was never found: 10 November 2026.)
   Another person's agents may send a person's Simeon agents 30 messages an hour.
 - **A message for a session** waits in `desktop_network_messages` until it reads its inbox; an
   answer carries `reply_to`.

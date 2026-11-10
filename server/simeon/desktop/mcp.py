@@ -43,6 +43,7 @@ import json
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import structlog
@@ -448,6 +449,17 @@ def _result(id_: Any, result: dict[str, Any]) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": id_, "result": result}
 
 
+def _redirect_shown(uri: str | None) -> str | None:
+    """A sign-in's return address for the log: scheme, host and path."""
+    if not uri:
+        return None
+    try:
+        parts = urlsplit(uri)
+    except ValueError:
+        return None
+    return f"{parts.scheme}://{parts.hostname or ''}{parts.path}"[:200]
+
+
 def _uuid(value: object) -> UUID | None:
     if not isinstance(value, str):
         return None
@@ -501,7 +513,9 @@ class Caller:
                 )
             else:
                 self.network_session = await self.network.session_of_client(
-                    client_id=self.token.client_id, client_name=self.client_name
+                    client_id=self.token.client_id,
+                    client_name=self.client_name,
+                    redirect_uri=self.token.redirect_uri,
                 )
         return self.network_session
 
@@ -529,10 +543,27 @@ class Caller:
             version = asked if asked in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0]
             info = params.get("clientInfo")
             info_name = info.get("name") if isinstance(info, dict) else None
+            info_version = info.get("version") if isinstance(info, dict) else None
             self.network_session = await self.network.open_session(
                 client_id=self.token.client_id,
                 client_name=self.client_name,
                 info_name=info_name if isinstance(info_name, str) else None,
+                redirect_uri=self.token.redirect_uri,
+            )
+            # Who said hello, as it said it: what tells one bot from another
+            # when two share a registration (Grok Bot and Cursor).
+            log.info(
+                "mcp.hello",
+                user_id=str(self.user_id),
+                client_id=self.token.client_id,
+                client_name=self.client_name,
+                info_name=str(info_name)[:80] if info_name is not None else None,
+                info_version=str(info_version)[:40]
+                if info_version is not None
+                else None,
+                redirect=_redirect_shown(self.token.redirect_uri),
+                kind=self.network_session.kind,
+                session=self.network_session.name,
             )
             return _result(
                 id_,
