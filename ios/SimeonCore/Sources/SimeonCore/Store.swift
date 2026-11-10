@@ -325,6 +325,17 @@ public final class AppStore {
   @ObservationIgnored private var sentOffline: [String: Double] = [:]
   /** Lines that arrived while their chat was on screen, and messages just sent: they come in with the Mac's motion, once. */
   @ObservationIgnored public private(set) var arrived: Set<String> = []
+  /**
+   * The host's copy of a message sent here, by the id it was shown under
+   * while it waited (`settleOutbox`). Its row keeps that id on screen
+   * (`rowKey`), so the bubble is the same one, never drawn anew: drawn anew,
+   * it came in a second time a third of a second after Send (the founder's
+   * recording, 10 November 2026: "this little lag thing i want gone").
+   */
+  @ObservationIgnored public private(set) var sentAs: [String: String] = [:]
+
+  /** The id a row is drawn under: a message sent here keeps the one it had while it waited. */
+  public func rowKey(_ id: String) -> String { sentAs[id] ?? id }
   /** Chats whose lines are on their way from the host: an empty chat shows it is loading, not frozen. */
   public private(set) var fetching: Set<String> = []
   /** Where each chat's older lines start (`nextBeforeSeq`); nil once the first line is here. */
@@ -508,7 +519,7 @@ public final class AppStore {
     agents = []; transcripts = [:]; chatRows = [:]; runFlags = [:]; steps = [:]; call = nil; callLevels = []; isLive = false; account = nil; usage = .empty; usageReadAt = nil; usageReads += 1; access = .checking; accessBlocked = false; hasReachedBox = false; openChat = nil
     layoutTask?.cancel(); layoutTask = nil; pendingLayout = []; refreshing = []; caughtUp = [:]
     pendingAnswers = [:]; answeredApprovals = [:]; answeredPurchases = [:]; watchedPurchases = []; pickedPurchaseCards = [:]; pressedProducts = [:]; localAsks = [:]; trayList = TrayList(); fileLines = [:]; fileReadsAsText = [:]; unreadAfter = [:]; apps = []; catalog = []; appsComingSoon = AppsComingSoon.builtIn; appAccounts = [:]; catalogEntries = []; catalogFresh = false; pinnedIds = []; routinesByAgent = [:]; sidebarSections = nil
-    streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
+    streamingOnly = [:]; outbox = [:]; sentOffline = [:]; arrived = []; sentAs = [:]; olderBefore = [:]; loadingOlder = []; paged = []; firstRunAgentId = nil; revealing = [:]
     // A hand-off still waiting for the name goes on, finds the account gone and stops (`handOff`).
     firstRunNamed = false; let named = firstRunNameWaiters; firstRunNameWaiters = []; named.forEach { $0.resume() }
     openThreads = [:]; threadRows = [:]; threadRoots = [:]; loadFailed = []; isDown = false; isAsleep = false
@@ -975,6 +986,17 @@ public final class AppStore {
       // Held while offline: the host's line keeps saying so, here, until the app quits.
       if item.composedOffline { sentOffline[copy.id] = item.at }
       arrived.remove(copy.id)
+      // On screen it stays the row it was: its words under the waiting line's id, each file under its waiting file's.
+      if copy.kind != "user-attachment" { sentAs[copy.id] = item.id }
+      for (index, file) in item.files.enumerated() {
+        guard let line = entries.first(where: { entry in
+          entry.kind == "user-attachment" && (entry.id == copy.id || !claimed.contains(entry.id)) && !item.known.contains(entry.id)
+            && sentAs[entry.id] == nil && (entry["file_name"]?.text ?? entry["fileName"]?.text) == file.name
+        }) else { continue }
+        claimed.insert(line.id)
+        arrived.remove(line.id)
+        sentAs[line.id] = "\(item.id)-file\(index)"
+      }
       return true
     }
     outbox[agentId] = waiting.isEmpty ? nil : waiting
