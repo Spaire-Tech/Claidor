@@ -99,6 +99,8 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   const [keying, setKeying] = useState<KeyProvider>()
   const [renaming, setRenaming] = useState<ModelAccount>()
   const [disconnecting, setDisconnecting] = useState<ModelAccount>()
+  /** The bot whose "Add a bot" sheet is open (`any`: Add, for any other). */
+  const [addingBot, setAddingBot] = useState<string>()
   useEffect(() => {
     void model.load()
   }, [model])
@@ -218,6 +220,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
               ))}
             </SettingsGroup>
           )}
+          <BotsGroup add={setAddingBot} />
           {model.problem !== undefined && (
             <p className="models-problem" role="alert">
               {model.problem}
@@ -244,6 +247,9 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
           model={model}
           close={() => setConnectingClaude(false)}
         />
+      )}
+      {addingBot !== undefined && (
+        <AddBotSheet bot={addingBot} close={() => setAddingBot(undefined)} />
       )}
       {renaming && (
         <RenameAccountAlert
@@ -272,6 +278,129 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
         />
       )}
     </div>
+  )
+}
+
+// MARK: Bots
+
+/** Where a bot reaches the person's agents (the server's MCP endpoint, `simeon/desktop/mcp.py`). */
+export const botsAddress = 'https://api.simeonlabs.com/mcp'
+
+/**
+ * The bots the person can give Simeon to (10 November 2026, the founder,
+ * with another app's Bots as the reference: "i want it to talk to other
+ * agents like dots, muse etc"): each other company's agent under its
+ * maker's icon. Their names are theirs, never translated.
+ */
+const bots: readonly {
+  provider: string
+  name: string
+  line: () => string
+}[] = [
+  {
+    provider: 'chatgpt',
+    name: 'Dots',
+    line: () => t('Connect Simeon to ChatGPT dots.'),
+  },
+  {
+    provider: 'meta',
+    name: 'Muse',
+    line: () => t('Connect Simeon to Meta Muse.'),
+  },
+  {
+    provider: grok,
+    name: 'Grok',
+    line: () => t('Connect Simeon to Grok.'),
+  },
+]
+
+/** Under API keys: each bot with a + at its end, then Add for any other (the reference's last row: a + and "Add" in grey). */
+function BotsGroup({ add }: { add: (bot: string) => void }) {
+  return (
+    <SettingsGroup title={t('Bots')}>
+      {bots.map((bot, index) => (
+        <div
+          key={bot.provider}
+          className={index > 0 ? 'models-line divided' : 'models-line'}
+        >
+          <ProviderIcon provider={bot.provider} side={28} />
+          <span className="models-words">
+            <span className="models-title">{bot.name}</span>
+            <span className="models-subtitle">{bot.line()}</span>
+          </span>
+          <PanelDisc
+            symbol="plus"
+            label={t('Add a bot')}
+            onClick={() => add(bot.provider)}
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        className="models-line divided bots-any"
+        onClick={() => add('any')}
+      >
+        <span className="bots-any-plus">
+          <SettingsSymbol name="plus" size={14} weight={1.3} />
+        </span>
+        <span className="bots-any-words">{t('Add')}</span>
+      </button>
+    </SettingsGroup>
+  )
+}
+
+/**
+ * "Add a bot" (the reference): the bot's icon (Simeon's for any other),
+ * the title and the glass disc that closes it; what to do with the address;
+ * the address in its field with Copy inside it; MCP details, which open what
+ * the bot can do once it is in.
+ */
+function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
+  const [copied, setCopied] = useState(false)
+  const [details, setDetails] = useState(false)
+  const title = t('Add a bot')
+  const copy = async () => {
+    await copyText(botsAddress)
+    setCopied(true)
+  }
+  return (
+    <Sheet label={title} close={close} className="models-sheet bots-sheet">
+      <div className="models-sheet-head">
+        {bot === 'any' ? (
+          <span className="bots-simeon-tile" aria-hidden="true">
+            <span className="bots-simeon-mark" />
+          </span>
+        ) : (
+          <ProviderIcon provider={bot} side={44} />
+        )}
+        <h2 className="models-sheet-title bots-title">{title}</h2>
+        <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
+      </div>
+      <p className="bots-words">
+        {t('Give this to any bot that can add an MCP server.')}
+      </p>
+      <div className="bots-address">
+        <span className="bots-address-text">{botsAddress}</span>
+        <button type="button" className="bots-copy" onClick={() => void copy()}>
+          {copied ? t('Copied') : t('Copy')}
+        </button>
+      </div>
+      <button
+        type="button"
+        className="bots-details-link"
+        aria-expanded={details}
+        onClick={() => setDetails(!details)}
+      >
+        {t('MCP details')}
+      </button>
+      {details && (
+        <p className="bots-details">
+          {t(
+            'It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.',
+          )}
+        </p>
+      )}
+    </Sheet>
   )
 }
 

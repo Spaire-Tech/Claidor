@@ -3005,6 +3005,10 @@ MCP server (ChatGPT's, Meta's, Claude…), and the bot then talks to their agent
 - **Stateless.** Each POST is one JSON-RPC message and gets a JSON answer; a notification gets
   202; GET answers 405 (no stream). Protocol versions 2024-11-05 to 2025-11-25.
 
+- **In the apps.** Settings › AI Models ends with Bots (three bots by name, then Add for any
+  other); each row's + opens "Add a bot" with the address and Copy (`SettingsModels.tsx`,
+  `mac/Simeon/SettingsModels.swift`, `ios/Simeon/AIModels.swift`, `AIBots.address`).
+
 **Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`) and the chats copy.
 
 **Log.** `mcp.tool` with the tool, the person and the bot's client id (never a message).

@@ -35,6 +35,8 @@ struct SettingsModelsPage: View {
   @State private var keying: KeyProvider?
   @State private var renaming: ModelAccount?
   @State private var newName = ""
+  /** The bot whose "Add a bot" sheet is open ("any": Add, for any other). */
+  @State private var addingBot: String?
 
   var body: some View {
     let model = store.aiModels
@@ -104,6 +106,7 @@ struct SettingsModelsPage: View {
             }
           }
         }
+        MacBotsGroup(look: look) { addingBot = $0 }
         if let problem = model.problem {
           Text(problem)
             .font(PanelType.detail)
@@ -112,6 +115,9 @@ struct SettingsModelsPage: View {
             .padding(.horizontal, 8)
         }
       }
+    }
+    .sheet(isPresented: Binding(get: { addingBot != nil }, set: { if !$0 { addingBot = nil } })) {
+      MacAddBotSheet(bot: addingBot ?? AIBots.any)
     }
     .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
       MacChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT)
@@ -154,6 +160,163 @@ struct SettingsModelsPage: View {
       guard response == .alertFirstButtonReturn else { return }
       Task { await model.disconnect(account) }
     }
+  }
+}
+
+// MARK: Bots
+
+/**
+ * The bots a person can give Simeon to (10 November 2026, the founder, with
+ * another app's Bots as the reference: "i want it to talk to other agents
+ * like dots, muse etc"): each other company's agent under its maker's icon,
+ * and the address they reach the person's agents at (the server's MCP
+ * endpoint, `server/simeon/desktop/mcp.py`). Their names are theirs, never
+ * translated.
+ */
+enum AIBots {
+  static let address = "https://api.simeonlabs.com/mcp"
+  /** Add, for any other bot: the sheet shows Simeon's mark. */
+  static let any = "any"
+  static let all: [(provider: String, name: String, line: LocalizedStringResource)] = [
+    (AIModels.chatGPT, "Dots", "Connect Simeon to ChatGPT dots."),
+    ("meta", "Muse", "Connect Simeon to Meta Muse."),
+    (AIModels.grok, "Grok", "Connect Simeon to Grok."),
+  ]
+}
+
+/** Under API keys: each bot with a + at its end, then Add for any other (the reference's last row: a + and "Add" in grey). */
+private struct MacBotsGroup: View {
+  let look: Look
+  let add: (String) -> Void
+  @State private var anyHovered = false
+
+  var body: some View {
+    SettingsGroup(title: String(localized: "Bots"), look: look) {
+      ForEach(Array(AIBots.all.enumerated()), id: \.element.provider) { index, bot in
+        HStack(spacing: 12) {
+          MacProviderIcon(provider: bot.provider, look: look, side: 28)
+          VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: bot.name).font(PanelType.row).foregroundStyle(look.ink)
+            Text(bot.line).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          GlassDiscButton(symbol: "plus", help: String(localized: "Add a bot"), size: 32) { add(bot.provider) }
+        }
+        .padding(.horizontal, SettingsRowSize.inset)
+        .padding(.vertical, 10)
+        .frame(minHeight: SettingsRowSize.minHeight)
+        .overlay(alignment: .top) { if index > 0 { SettingsDivider(look: look) } }
+      }
+      Button { add(AIBots.any) } label: {
+        HStack(spacing: 12) {
+          Image(systemName: "plus")
+            .font(.system(size: 14))
+            .frame(width: 28, height: 28)
+          Spacer(minLength: 0)
+          Text("Add").font(PanelType.row)
+        }
+        .foregroundStyle(anyHovered ? look.ink : look.inkSecondary)
+        .padding(.horizontal, SettingsRowSize.inset)
+        .frame(minHeight: SettingsRowSize.minHeight)
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .onHover { anyHovered = $0 }
+      .overlay(alignment: .top) { SettingsDivider(look: look) }
+    }
+  }
+}
+
+/**
+ * "Add a bot" (the reference): the bot's icon (Simeon's mark for any
+ * other), the title and the glass disc that closes it; what to do with the
+ * address; the address in its field with Copy inside it; MCP details, which
+ * open what the bot can do once it is in.
+ */
+struct MacAddBotSheet: View {
+  let bot: String
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
+  @State private var copied = false
+  @State private var details = false
+
+  var body: some View {
+    let look = Look(scheme)
+    VStack(alignment: .leading, spacing: 18) {
+      HStack(spacing: 14) {
+        if bot == AIBots.any {
+          Image("Providers/simeon-mark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 24, height: 24)
+            .foregroundStyle(look.ink)
+            .frame(width: 44, height: 44)
+            .background(look.ground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
+        } else {
+          MacProviderIcon(provider: bot, look: look, side: 44)
+        }
+        Text("Add a bot")
+          .font(.system(size: 22))
+          .tracking(-0.3)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 0)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+      }
+      Text("Give this to any bot that can add an MCP server.")
+        .font(.system(size: 15))
+        .foregroundStyle(look.ink)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 4)
+      HStack(spacing: 12) {
+        Text(verbatim: AIBots.address)
+          .font(.system(size: 14, design: .monospaced))
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+          .truncationMode(.middle)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Button {
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(AIBots.address, forType: .string)
+          copied = true
+        } label: {
+          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
+            .font(.system(size: 14))
+            .foregroundStyle(look.ink)
+            .padding(.horizontal, 16)
+            .frame(height: 36)
+            .background(look.ink.opacity(0.07), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.hand)
+      }
+      .padding(.leading, 16)
+      .padding(.trailing, 6)
+      .frame(minHeight: 52)
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+      Button { details.toggle() } label: {
+        Text("MCP details")
+          .font(.system(size: 14))
+          .underline()
+          .foregroundStyle(look.link)
+      }
+      .buttonStyle(.hand)
+      if details {
+        Text("It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.")
+          .font(PanelType.detail)
+          .foregroundStyle(look.inkSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, -8)
+      }
+    }
+    .padding(28)
+    .frame(width: 460)
+    .background(look.groupedRow)
   }
 }
 
