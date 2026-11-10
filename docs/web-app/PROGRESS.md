@@ -842,6 +842,17 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: an answered question card's thin blue tick again
+
+The founder: "before we had the blue check mark after answering a card question was a thin blue
+check icon. now is a big blue round icon. can we bring back how it was before". An answered card's
+line is the thin blue tick again (`.qcard-check`: 18 by 20, blue, no disc; 8 between it and the
+answer), as before the cards' new style (#657), on the Mac (`checkmark`, 12 semibold) and the iPhone
+(13 semibold) too. The round check stays on the option picked while answering (the founder's earlier
+"keep the round check and our blue color"). Checked: the answered markup drawn with the committed
+build's stylesheet in Chromium. Not checked: the Mac and iPhone built and run (their Swift parses; the
+same lines as before #657).
+
 ### 10 November 2026: each bot's own address in its Bots sheet
 
 Grok Bot signs in with Cursor's own registration and returns to Cursor's own page, so it showed on

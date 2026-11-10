@@ -296,7 +296,7 @@ struct StatusPill: View {
  * foot; the answers go together, a line each (`QuestionCard.reply`). A pick
  * moves on by itself, and on the last question sends. Skip on a card of one
  * question declines it. Answered: each question in grey with its answer
- * under a blue round check; dismissed: the question and a pill.
+ * after a thin blue tick (as before the new style, the founder); dismissed: the question and a pill.
  */
 struct QuestionCardView: View {
   let entryId: String
@@ -535,7 +535,7 @@ private struct AskingQuestionsView: View {
   }
 }
 
-/** The answers given: each question in grey with its answer under a blue round check, one at a time for several. */
+/** The answers given: each question in grey with its answer after a thin blue tick, one at a time for several. */
 private struct AnsweredQuestionsView: View {
   let card: QuestionCard
   let answer: String
@@ -586,9 +586,10 @@ private struct AnsweredQuestionsView: View {
     return VStack(alignment: .leading, spacing: 12) {
       Text(card.questions[at].prompt).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.secondary)
         .fixedSize(horizontal: false, vertical: true)
-      HStack(spacing: 12) {
+      HStack(spacing: 8) {
         if let given {
-          Image(systemName: "checkmark.circle.fill").font(.system(size: 24)).foregroundStyle(Ink.blue).frame(width: 28, height: 28)
+          // A thin blue tick, as before the cards' new style (the founder); the round check stays on the option picked.
+          Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue).frame(width: 18)
           Text(given).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
         } else {
           Text("Skipped").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
