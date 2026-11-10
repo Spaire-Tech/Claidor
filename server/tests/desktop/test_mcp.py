@@ -1,16 +1,19 @@
-"""Simeon as an MCP server (`simeon/desktop/mcp.py`, 10 November 2026): a
-bot the person added signs in with the server's OAuth, then lists their
-agents, messages one (through the inbox) and reads the answer."""
+"""Simeon as an MCP server (`simeon/desktop/mcp.py`, 10 November 2026): an
+agent the person added signs in with the server's OAuth, says hello and gets
+a session of its own on the person's Simeon Network, then sees who is on it,
+messages one of the person's agents (through the inbox) and reads the answer
+from its inbox. Between two people: `test_network.py`."""
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import httpx
 import pytest
 from pytest_mock import MockerFixture
 
-from simeon.desktop import mcp
+from simeon.desktop import mcp, network
 from simeon.desktop.chat_repository import DesktopChatInboxRepository
 from simeon.models import OAuth2Client, User
 from simeon.postgres import AsyncSession
@@ -24,22 +27,29 @@ TOKEN = "simeon_at_mcp_test"
 
 @pytest.fixture
 def published(mocker: MockerFixture) -> Any:
-    return mocker.patch.object(mcp, "publish", new=mocker.AsyncMock())
+    return mocker.patch.object(network, "publish", new=mocker.AsyncMock())
 
 
 async def _bot(
-    save_fixture: SaveFixture, user: User, scopes: list[str]
+    save_fixture: SaveFixture,
+    user: User,
+    scopes: list[str],
+    *,
+    name: str = "Dots",
+    token: str = TOKEN,
 ) -> dict[str, str]:
-    """A bot called Dots, signed in as the person with these scopes."""
+    """An agent signed in as the person with these scopes, registered
+    under `name` (as ChatGPT or Claude Code registers itself)."""
+    key = "".join(c for c in name.lower() if c.isalnum())
     client = OAuth2Client(
-        client_id="simeon_ci_dots",
-        client_secret="simeon_cs_dots",
-        registration_access_token="simeon_crt_dots",
+        client_id=f"simeon_ci_{key}",
+        client_secret=f"simeon_cs_{key}",
+        registration_access_token=f"simeon_crt_{key}",
         user=None,
     )
     client.set_client_metadata(
         {
-            "client_name": "Dots",
+            "client_name": name,
             "redirect_uris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
             "token_endpoint_auth_method": "none",
             "grant_types": ["authorization_code", "refresh_token"],
@@ -51,12 +61,34 @@ async def _bot(
     await create_oauth2_token(
         save_fixture,
         client=client,
-        access_token=TOKEN,
-        refresh_token="simeon_rt_mcp_test",
+        access_token=token,
+        refresh_token=f"simeon_rt_{token}",
         scopes=scopes,
         user=user,
     )
-    return {"Authorization": f"Bearer {TOKEN}"}
+    return {"Authorization": f"Bearer {token}"}
+
+
+async def _hello(
+    client: httpx.AsyncClient, headers: dict[str, str], info_name: str
+) -> dict[str, str]:
+    """The agent says hello as an MCP client called `info_name`; its
+    headers from then on carry the session it was given."""
+    response = await client.post(
+        "/mcp",
+        json={
+            "jsonrpc": "2.0",
+            "id": 0,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "clientInfo": {"name": info_name, "version": "1"},
+            },
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    return {**headers, "Mcp-Session-Id": response.headers["mcp-session-id"]}
 
 
 async def _rpc(
@@ -72,10 +104,19 @@ async def _rpc(
 
 
 async def _tool(
-    client: httpx.AsyncClient, headers: dict[str, str], name: str, **arguments: Any
+    client: httpx.AsyncClient, headers: dict[str, str], tool: str, **arguments: Any
 ) -> dict[str, Any]:
-    answer = await _rpc(client, headers, "tools/call", name=name, arguments=arguments)
+    answer = await _rpc(client, headers, "tools/call", name=tool, arguments=arguments)
     return answer["result"]
+
+
+async def _said(
+    client: httpx.AsyncClient, headers: dict[str, str], tool: str, **arguments: Any
+) -> dict[str, Any]:
+    """A tool that worked: what it answered."""
+    result = await _tool(client, headers, tool, **arguments)
+    assert not result.get("isError"), result
+    return result["structuredContent"]
 
 
 AGENTS = [
@@ -146,14 +187,25 @@ class TestSignIn:
 
 @pytest.mark.asyncio
 class TestProtocol:
-    async def test_initialize_tools_and_notifications(
+    async def test_hello_gives_a_session_and_the_network_tools(
         self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
     ) -> None:
         bot = await _bot(save_fixture, user, ["agents"])
-        hello = await _rpc(client, bot, "initialize", protocolVersion="2025-06-18")
+        response = await client.post(
+            "/mcp",
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {"protocolVersion": "2025-06-18"},
+            },
+            headers=bot,
+        )
+        hello = response.json()
         assert hello["result"]["protocolVersion"] == "2025-06-18"
-        assert hello["result"]["serverInfo"]["title"] == "Simeon"
-        assert "tools" in hello["result"]["capabilities"]
+        assert hello["result"]["serverInfo"]["title"] == "Simeon Network"
+        assert "set_status" in hello["result"]["instructions"]
+        assert response.headers["mcp-session-id"]
         later = await _rpc(client, bot, "initialize", protocolVersion="2099-01-01")
         assert later["result"]["protocolVersion"] == mcp.PROTOCOL_VERSIONS[0]
         note = await client.post(
@@ -164,16 +216,31 @@ class TestProtocol:
         assert note.status_code == 202
         tools = (await _rpc(client, bot, "tools/list"))["result"]["tools"]
         assert [t["name"] for t in tools] == [
-            "list_agents",
+            "list_team",
             "send_message",
-            "read_messages",
+            "check_inbox",
+            "set_status",
+            "join_network",
         ]
         assert (await _rpc(client, bot, "nope"))["error"]["code"] == -32601
+
+    async def test_a_session_it_no_longer_knows_is_404(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        bot = await _bot(save_fixture, user, ["agents"])
+        gone = await client.post(
+            "/mcp",
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"},
+            headers={**bot, "Mcp-Session-Id": "8f9e7f53-6d2c-4d9b-9b8e-1d1f1f1f1f1f"},
+        )
+        assert gone.status_code == 404
+        held = await _hello(client, bot, "openai-mcp")
+        assert (await _rpc(client, held, "tools/list"))["result"]["tools"]
 
 
 @pytest.mark.asyncio
 class TestTools:
-    async def test_list_message_and_read(
+    async def test_a_bot_asks_the_persons_agent_and_reads_the_answer(
         self,
         client: httpx.AsyncClient,
         session: AsyncSession,
@@ -182,46 +249,30 @@ class TestTools:
         published: Any,
     ) -> None:
         _, box = await _signed_in_with_box(client, session, user)
-        await _copy(
-            client,
-            box,
-            agents=AGENTS,
-            lines=[
-                {"agentId": "iris", "entry": _line("u1", "Find me a flight", 1_000)},
-                {
-                    "agentId": "iris",
-                    "entry": {
-                        "kind": "send-message",
-                        "id": "a1",
-                        "message": {"type": "text", "content": "On it."},
-                        "timestampMs": 2_000,
-                    },
-                },
-                {
-                    "agentId": "iris",
-                    "entry": {"kind": "tool-call", "id": "t1", "timestampMs": 2_500},
-                },
-            ],
+        await _copy(client, box, agents=AGENTS)
+        bot = await _hello(
+            client, await _bot(save_fixture, user, ["agents"]), "openai-mcp"
         )
-        bot = await _bot(save_fixture, user, ["agents"])
 
-        listed = (await _tool(client, bot, "list_agents"))["structuredContent"]
-        assert listed["agents"] == [
-            {"id": "iris", "name": "Iris", "role": "Travel"},
-            {
-                "id": "team",
-                "name": "Launch team",
-                "group": True,
-                "members": ["Iris", "Theo"],
-            },
-            {"id": "theo", "name": "Theo", "role": "Ops"},
-        ]
-
-        sent = await _tool(
-            client, bot, "send_message", agent="iris", message=" Book the 9am one "
+        team = await _said(client, bot, "list_team")
+        handle = team["you"].split("/")[0]
+        assert team["you"] == f"{handle}/dots"
+        assert team["inbox"] == 0
+        assert team["network"]["invite"].startswith(
+            "Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-"
         )
-        assert sent["structuredContent"]["sent"] is True
-        assert sent["structuredContent"]["agent"] == {"id": "iris", "name": "Iris"}
+        listed = {a["address"]: a for a in team["agents"]}
+        assert listed[f"{handle}/Iris"]["role"] == "Travel"
+        assert listed[f"{handle}/Iris"]["kind"] == "simeon"
+        assert listed[f"{handle}/Launch team"]["group"] is True
+        assert listed[f"{handle}/dots"]["you"] is True
+        assert listed[f"{handle}/dots"]["agent"] == "Dots"
+
+        sent = await _said(
+            client, bot, "send_message", to="iris", message=" Book the 9am one "
+        )
+        (to,) = sent["sent"]
+        assert to["to"] == f"{handle}/Iris"
         published.assert_awaited_once()
         assert published.await_args.args[1:] == (user.id, "chat-inbox")
         (waiting,) = await DesktopChatInboxRepository.from_session(session).waiting(
@@ -229,16 +280,94 @@ class TestTools:
         )
         assert waiting.agent_id == "iris"
         assert waiting.message["prompt"] == "Dots: Book the 9am one"
+        assert waiting.message["network"]["from"] == f"{handle}/dots"
 
-        read = (await _tool(client, bot, "read_messages", agent="Iris"))[
-            "structuredContent"
+        # Not taken by the computer yet: nothing to read.
+        assert (await _said(client, bot, "check_inbox"))["messages"] == []
+
+        now = int(time.time() * 1000)
+        await _copy(
+            client,
+            box,
+            lines=[
+                {
+                    "agentId": "iris",
+                    "entry": _line(
+                        "u1", "Dots: Book the 9am one", now, clientNonce=waiting.nonce
+                    ),
+                },
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "send-message",
+                        "id": "a1",
+                        "message": {"type": "text", "content": "Booked."},
+                        "timestampMs": now + 1_000,
+                    },
+                },
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "tool-call",
+                        "id": "t1",
+                        "timestampMs": now + 1_500,
+                    },
+                },
+            ],
+        )
+        read = await _said(client, bot, "check_inbox", wait_seconds=1)
+        assert [(m["from"], m["text"], m["replyTo"]) for m in read["messages"]] == [
+            (f"{handle}/Iris", "Booked.", to["id"])
         ]
-        assert read["messages"] == [
-            {"id": "u1", "from": "you", "text": "Find me a flight", "at": 1_000},
-            {"id": "a1", "from": "Iris", "text": "On it.", "at": 2_000},
-        ]
-        after = await _tool(client, bot, "read_messages", agent="iris", since=1_500)
-        assert [m["id"] for m in after["structuredContent"]["messages"]] == ["a1"]
+        # Each answer is read once.
+        assert (await _said(client, bot, "check_inbox"))["messages"] == []
+
+        # Someone else writing in the chat ends the answer.
+        await _copy(
+            client,
+            box,
+            lines=[
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "send-message",
+                        "id": "a2",
+                        "message": {"type": "text", "content": "Seats 3A and 3B."},
+                        "timestampMs": now + 2_000,
+                    },
+                },
+                {"agentId": "iris", "entry": _line("u2", "Thanks!", now + 3_000)},
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "send-message",
+                        "id": "a3",
+                        "message": {"type": "text", "content": "Anytime."},
+                        "timestampMs": now + 4_000,
+                    },
+                },
+            ],
+        )
+        later = await _said(client, bot, "check_inbox")
+        assert [m["text"] for m in later["messages"]] == ["Seats 3A and 3B."]
+        assert (await _said(client, bot, "check_inbox"))["messages"] == []
+
+    async def test_the_first_tools_names_still_answer(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        _, box = await _signed_in_with_box(client, session, user)
+        await _copy(client, box, agents=AGENTS)
+        # A bot that keeps no session id: its client's last session.
+        bot = await _bot(save_fixture, user, ["agents"])
+        team = await _said(client, bot, "list_agents")
+        assert team["you"].endswith("/dots")
+        again = await _said(client, bot, "list_team")
+        assert again["you"] == team["you"]
+        assert (await _said(client, bot, "read_messages"))["messages"] == []
 
     async def test_an_unknown_agent_is_said_with_the_names(
         self,
@@ -250,10 +379,39 @@ class TestTools:
     ) -> None:
         _, box = await _signed_in_with_box(client, session, user)
         await _copy(client, box, agents=AGENTS)
-        bot = await _bot(save_fixture, user, ["agents"])
-        refused = await _tool(client, bot, "send_message", agent="Nora", message="Hi")
+        bot = await _hello(
+            client, await _bot(save_fixture, user, ["agents"]), "openai-mcp"
+        )
+        refused = await _tool(client, bot, "send_message", to="Nora", message="Hi")
         assert refused["isError"] is True
-        assert "Iris, Launch team, Theo" in refused["content"][0]["text"]
-        empty = await _tool(client, bot, "send_message", agent="iris", message="  ")
+        assert "/Iris" in refused["content"][0]["text"]
+        empty = await _tool(client, bot, "send_message", to="iris", message="  ")
         assert empty["isError"] is True
         published.assert_not_awaited()
+
+    async def test_set_status_names_the_session(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        bot = await _hello(
+            client,
+            await _bot(save_fixture, user, ["agents"], name="Claude Code"),
+            "claude-code",
+        )
+        saved = await _said(
+            client,
+            bot,
+            "set_status",
+            name="Api Claude",
+            machine="studio",
+            repo="acme/api",
+            branch="main",
+            doing="Edit billing webhook",
+            busy=True,
+        )
+        assert saved["you"].endswith("/api-claude")
+        (me,) = [
+            a for a in (await _said(client, bot, "list_team"))["agents"] if a.get("you")
+        ]
+        assert me["agent"] == "Claude Code"
+        assert (me["repo"], me["branch"], me["status"]) == ("acme/api", "main", "busy")
+        assert me["doing"] == "Edit billing webhook"

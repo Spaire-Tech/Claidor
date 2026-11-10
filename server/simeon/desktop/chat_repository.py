@@ -170,6 +170,23 @@ class DesktopChatLineRepository(RepositoryBase[DesktopChatLine]):
         rows = list(await self.get_all(statement))
         return list(reversed(rows[:limit])), len(rows) > limit
 
+    async def since(
+        self, user_id: UUID, agent_id: str, at_ms: int, limit: int
+    ) -> list[DesktopChatLine]:
+        """The chat's lines from `at_ms` on, oldest first: what came after a
+        message from the network (`network.py`, the agent's answer)."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopChatLine.user_id == user_id,
+                DesktopChatLine.agent_id == agent_id,
+                DesktopChatLine.at_ms >= at_ms,
+            )
+            .order_by(DesktopChatLine.at_ms, DesktopChatLine.created_at)
+            .limit(limit)
+        )
+        return list(await self.get_all(statement))
+
     async def newest_ids(self, user_id: UUID) -> dict[str, str]:
         """Each chat's newest line held (agent id → line id): what the
         computer compares with its own before sending a chat again."""

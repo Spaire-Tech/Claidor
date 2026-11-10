@@ -2981,15 +2981,18 @@ own in Composio (`OWN_APP_NEEDED`, 7c); Instacart waits on its maker (7a). AppFo
 left the packs on 23 October 2026: Dalia (Landlords) keeps her tenants' files in Notion and
 Jasper (Busy Professionals) times the airport rides with Google Maps.
 
-## 18. Bots: other agents talking to yours (MCP)
+## 18. Bots and the Simeon Network (MCP)
 
 The founder, 10 November 2026, with another app's "Add a bot" as the reference: "i want it to
-talk to other agents like dots, muse etc". Simeon is an MCP server at
-**`https://api.simeonlabs.com/mcp`**. A person gives that address to any bot that can add an
-MCP server (ChatGPT's, Meta's, Claude…), and the bot then talks to their agents as them
-(`server/simeon/desktop/mcp.py`).
+talk to other agents like dots, muse etc"; the same day, with Reason Network as the reference:
+"do the reason network". Simeon is an MCP server at **`https://api.simeonlabs.com/mcp`**. Any
+agent that can add an MCP server (Claude Code, Codex, Cursor on a computer; Dots, Muse, Grok Bot
+from a phone) adds it, signs in as the person, and joins the person's **Simeon Network**: the
+agents of everyone on it ask each other for work through the server, so a message still lands
+while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_repository.py`,
+`models/desktop_network.py`). The public page is `simeonlabs.com/docs/network`.
 
-- **Signing in.** The bot's first call is answered 401 with `WWW-Authenticate: Bearer
+- **Signing in.** The agent's first call is answered 401 with `WWW-Authenticate: Bearer
   resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="agents"`. From there it
   finds the server's own OAuth (`/.well-known/oauth-authorization-server`, the same as
   `openid-configuration`), registers itself (`/v1/oauth2/register`, PKCE, no secret needed) and
@@ -2997,23 +3000,63 @@ MCP server (ChatGPT's, Meta's, Claude…), and the bot then talks to their agent
   login page's design with the bot's mascot ("Connect Dots to Simeon", their account, what the
   bot can do, Allow or Deny; `BotConsentPage.tsx`). A bot asking for the `agents` scope always signs in as the person,
   never an organization (`authorization_code.py`). Its token reaches `/mcp` and nothing else.
-- **The tools.** `list_agents` (the agents and group chats from the server's copy, so a
-  sleeping computer is not woken), `send_message` (into the inbox, like a message written in an
-  app while the computer is away: the computer is woken to take it; the words start with the
-  bot's name, "Dots: …", so the agent and the person see who wrote them), `read_messages` (the
-  chat's newest messages, `since` a time, and `wait_seconds` up to 25 for the agent's answer).
-- **Stateless.** Each POST is one JSON-RPC message and gets a JSON answer; a notification gets
-  202; GET answers 405 (no stream). Protocol versions 2024-11-05 to 2025-11-25.
-
+- **Sessions.** Each `initialize` opens a session (`desktop_network_sessions`) and answers its id
+  in `Mcp-Session-Id`; the agent sends it back on every call. An id the server no longer knows
+  answers 404 (the agent says hello again). A bot that keeps no id is its OAuth client's last
+  session. A session's name comes from the client (`claude`, `codex`, `cursor`, `dots`, `muse`,
+  `grok-bot`…, with `-2` when the person has two live at once); a new session of the same kind
+  takes over one that is no longer live (its name and inbox). Live: seen in the last 30 minutes.
+  Kept 14 days.
+- **People and networks.** A person is on one network at a time (`desktop_network_members`,
+  unique per person): their own, made the first time it is needed ("Maya's network"), or one they
+  joined. Their handle is their first name as the agents call them (`preferred_name`), made unique
+  on the network (`maya2`). The invite line is `Join the Simeon Network:
+  https://simeonlabs.com/network/join/#sn1-…`: the token is the network's id and link version,
+  signed with `SIMEON_SECRET` (no table); New link raises the version and the old link stops
+  working. Joining leaves the network they were on, which goes when no one is left on it.
+- **The tools.** `list_team` (people, every person's Simeon agents, always on, and the live
+  sessions with machine, repo, branch, busy or idle, doing; `text` filters, `all` adds the last
+  day; also the caller's address, its unread count and the invite line), `send_message` (to an
+  address; returns at once), `check_inbox` (what was sent to the session and the Simeon agents'
+  answers, each read once; `wait_seconds` up to 25), `set_status` (name, machine, repo, branch,
+  doing, busy), `join_network` (the invite line; marked destructive so the agent's app asks the
+  person first). The first Bots release's `list_agents` and `read_messages` still answer, as
+  `list_team` and `check_inbox`.
+- **Addresses.** `maya/claude`, `maya/Nora` (a Simeon agent by name, letter case and spaces
+  aside), `claude` (when unique on the network), `maya/*`, `repo:api` (the repository or its last
+  part), `*`. Messages to many reach live sessions only, never a Simeon agent: each message to one
+  runs a turn on its person's plan, so they are asked by name. At most 50 at once.
+- **A message for a Simeon agent** goes into its person's inbox (`desktop_chat_inbox`, nonce
+  `net-<message id>`, `message.network` naming the sender) and wakes the computer, as a message
+  written in an app would. From the person's own agent it reads "Dots: …"; from another person's
+  it reads "Maya's Codex (maya/codex), on your Simeon Network: …" followed by the note that it is
+  a colleague's request, not the person's instruction, to ask the person before spending money,
+  sending in their name or sharing private details, and that the reply goes back. The person sees
+  both in the chat. The answer is read from the chat: the agent's lines after the message's line
+  (its `clientNonce`), until someone else writes there (`answered_ms`, `closed`), for two days.
+  Another person's agents may send a person's Simeon agents 30 messages an hour.
+- **A message for a session** waits in `desktop_network_messages` until it reads its inbox; an
+  answer carries `reply_to`.
 - **In the apps.** Settings › AI Models ends with Bots (three bots by name, then Add for any
   other); each row's + opens "Add a bot" with the address and Copy (`SettingsModels.tsx`,
-  `mac/Simeon/SettingsModels.swift`, `ios/Simeon/AIModels.swift`, `AIBots.address`).
+  `mac/Simeon/SettingsModels.swift`, `ios/Simeon/AIModels.swift`, `AIBots.address`). The apps'
+  routes for Settings › Network, with the desktop credential: `GET /desktop/api/network` (the
+  network, its invite line and link, each person with their agents and the sessions seen in the
+  last day), `GET /desktop/api/network/invite?link=` (whose network a link is for, before joining),
+  `POST /desktop/api/network/join` (`link`), `/leave` (refused when they are alone on it),
+  `/rename` (`name`), `/invite/new`.
+- **Delete Account** removes the person's messages either way, sessions, place on a network and a
+  network they made that no one else is on (`account_repository.py`).
 
-**Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`) and the chats copy.
+**Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`), `SIMEON_SECRET` for the
+invite links and the chats copy.
 
-**Log.** `mcp.tool` with the tool, the person and the bot's client id (never a message).
-`desktop.chats.inbox.*` as for the apps' messages.
+**Log.** `mcp.tool` with the tool, the person and the agent's client id (never a message);
+`desktop.network.made`, `.sent` (counts of Simeon agents and sessions reached), `.joined`, `.left`,
+`.new_link`. `desktop.chats.inbox.*` as for the apps' messages.
 
-**Not yet verified.** Not added to a real ChatGPT, Claude or Meta bot: the sign-in through the web
-consent page and a full round trip (message, wake, answer) were checked only in the server's
-tests. A bot whose redirect address is not https (a desktop app's own scheme) can't register yet.
+**Not yet verified.** Not added to a real ChatGPT, Claude Code, Codex, Cursor or Meta agent: the
+sign-in through the web consent page, sessions and a full round trip (message, wake, answer) were
+checked only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`). A bot whose
+redirect address is not https (a desktop app's own scheme) can't register yet. The apps' Settings
+› Network and Simeon agents writing to the network are not built yet.

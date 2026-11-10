@@ -101,6 +101,7 @@ from .language import answer_in_request_language, normalize_language
 from .link_wallet import router as link_wallet_router
 from .mcp_oauth_return import router as mcp_oauth_return_router
 from .model_accounts import router as model_accounts_router
+from .network import router as network_router
 from .packs import router as packs_router
 from .page_heading import router as page_heading_router
 
@@ -1866,6 +1867,8 @@ router.include_router(releases_router)
 router.include_router(packs_router)
 # The copy of the agents and their chats the apps read while the computer is away (26 October 2026).
 router.include_router(chats_router)
+# The Simeon Network's routes for Settings › Network (10 November 2026, `network.py`).
+router.include_router(network_router)
 router.include_router(channel_bots_router)
 # The Credentials Store (`credentials.py`): logins and contact info for the agents' sign-ins and sign-ups.
 router.include_router(credentials_router)
