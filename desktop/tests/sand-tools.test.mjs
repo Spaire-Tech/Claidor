@@ -53,7 +53,7 @@ test("Mac product tools and prompt are the upstream app's, not a Simeon overlay"
     assert.match(gatewayClient, /if \(this\.slimAvatarsEnabled\) headers\[GATEWAY_SLIM_AVATARS_HEADER\] = "1"/);
     assert.doesNotMatch(gatewayClient, /SAND_DISABLE_SLIM_AVATARS/);
     const sendMessage = SAND_TOOLS.find(tool => tool.name === "SendMessage");
-    assert.match(sendMessage.description, /ask rarely: by default decide and proceed/);
+    assert.match(sendMessage.description, /not for a low-stakes call: by default decide and proceed/);
     const install = SAND_TOOLS.find(tool => tool.name === "InstallPlugin");
     assert.match(install.description, /confirm with a question widget first/);
     assert.match(install.description, /connect card is shown to the user automatically/);
