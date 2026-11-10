@@ -109,6 +109,11 @@ edge shared by the wordmark, the headline and the demo.
   working together, call an agent, stay in control.
 - **Security and integrations**: a serif title beside a paragraph, then two
   pale panels of icon rows. A blue dot marks what is still in progress.
+- **Your own models** (`#models`, 10 November 2026): "Use Simeon's models. Or bring your own." beside
+  its paragraph, then the gallery's grey card: the providers' marks (`img/model-*.svg`, LobeHub's,
+  MIT) sliding one place at a time as the connector card's do, and the message card's composer,
+  wide, whose model becomes the resting mark's provider's (deleted, a dot, typed, as the launch
+  film does it). On a phone the card is squarer and the composer larger.
 - **An agent that picks up when your customers call**: a serif title beside the promise, written
   from the customer's side, then one big photo (`img/phone.webp`) with a live call playing out
   as text over it and a white Learn more, with nowhere to go yet, inside the picture. The section
