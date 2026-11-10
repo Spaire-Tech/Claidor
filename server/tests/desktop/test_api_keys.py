@@ -481,6 +481,71 @@ class TestConnect:
         assert unknown.json()["error"]["code"] == "unknown_provider"
 
 
+class TestAHostsMenu:
+    """The models of a host of many, as the composer's menu lists them."""
+
+    def test_a_hosts_menu_best_first_without_the_small_ones(self) -> None:
+        # What the composer's menu shows for Together: the families agents
+        # do best with first, the bigger first within each, nothing under
+        # 14B, a name for each that the person reads.
+        listed = key_providers.listed(
+            "together",
+            [
+                {"id": one, "type": "chat"}
+                for one in (
+                    "arcee-ai/AFM-5B",
+                    "microsoft/Phi-5",
+                    "Qwen/Qwen3.5-7B-Instruct",
+                    "google/gemma-4-27b-it",
+                    "Qwen/Qwen3.5-235B-A22B-Instruct",
+                    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+                    "mistralai/Mixtral-8x22B-Instruct-v0.1",
+                    "Qwen/Qwen3.5-Coder-480B-A35B-Instruct",
+                    "moonshotai/Kimi-K3",
+                    "openai/gpt-oss-20b",
+                    "openai/gpt-oss-120b",
+                )
+            ],
+        )
+        together = key_providers.provider("together")
+        assert together is not None
+        offered = key_providers.offered(together, listed)
+        assert [one["name"] for one in offered] == [
+            "Kimi K3",
+            "Qwen3.5 Coder 480B A35B",
+            "Qwen3.5 235B A22B",
+            "GPT OSS 120B",
+            "Llama 4 Scout 17B 16E",
+            "GPT OSS 20B",
+            "Gemma 4 27B",
+            "Mixtral 8x22B v0.1",
+            "Phi 5",
+        ]
+        # A host that lists only small ones still offers them.
+        small = key_providers.listed("together", [{"id": "arcee-ai/AFM-5B"}])
+        assert [one["name"] for one in key_providers.offered(together, small)] == [
+            "AFM 5B"
+        ]
+
+    def test_two_of_a_hosts_models_under_one_name_show_once(self) -> None:
+        nvidia = key_providers.provider("nvidia")
+        assert nvidia is not None
+        listed = [
+            {
+                "id": "meta/llama-4-maverick-17b-128e-instruct",
+                "name": "Llama 4 Maverick",
+            },
+            {
+                "id": "meta/llama-4-maverick-17b-128e-instruct-fp8",
+                "name": "Llama 4 Maverick",
+            },
+        ]
+        offered = key_providers.offered(nvidia, listed)
+        assert [one["id"] for one in offered] == [
+            "meta/llama-4-maverick-17b-128e-instruct"
+        ]
+
+
 @pytest.mark.asyncio
 class TestTheChoice:
     async def test_the_keys_models_offered_chosen_and_followed(
