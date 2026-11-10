@@ -125,7 +125,7 @@ test("the engine's tools bridged: Simeon's real SendMessage reaches the chat, Cl
   try {
     const tools = bridge.bridgeEngineTools([sendMessage, readTool, shellTool, reaching], { ctx: bridge.createContext(), signal: turn.signal, log: (line) => lines.push(line) });
     assert.deepEqual(tools.map((tool) => tool.name), ["SendMessage", "Shell", "Ask_Loop_"]);
-    assert.deepEqual(bridge.CLAUDE_CODE_TOOLS_OFF, ["Bash", "BashOutput", "KillShell", "KillBash"]);
+    assert.deepEqual(bridge.CLAUDE_CODE_TOOLS_OFF, ["Bash", "BashOutput", "KillShell", "KillBash", "AskUserQuestion"]);
     const send = tools[0];
     assert.match(send.description, /This is your only voice/);
     assert.equal(send.inputSchema.type, "object");

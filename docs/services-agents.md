@@ -1462,6 +1462,20 @@ history). What changed to match them:
     question used to close at the next turn of any kind.
   * Dismissing one tells the agent at once that it was declined (a hidden turn that may end
     without a word); the next turn's note says "take each as declined".
+  * **When the agent asks** (10 November 2026). The founder asked Maya for "flowers to buy for
+    my girl", vague on purpose: she picked a dozen red roses, and when told "ask me more info"
+    wrote four questions in one paragraph. Nothing was broken: the brief kept the card for "the
+    rare occasion" and counted a private preference among the "reasonable readings" an agent
+    picks from. Now (`host/runner/system-prompt.ts`, "Asking the user" and "Autonomy";
+    SendMessage's description): what only the person knows (who a gift is for, the occasion,
+    their taste, a budget, a date) is asked before the agent searches or picks, one card at a
+    time (a card is one question and ends the turn), the question that matters most first,
+    usually two to four; the usual answers as options with `allowCustom`; never the questions
+    written out in a message; always cards when the person says "ask me". How to do the work
+    stays the agent's call, and low-stakes choices are still not asked. On a Claude turn,
+    Claude Code's own `AskUserQuestion` is off (no app shows it), and the brief's note points to
+    the card. Tests: `desktop/tests/asking-with-cards.test.mjs`. **Not yet verified** with a
+    real agent on the Mac: it needs the next engine published.
 * **The secret request.**
   * It can be dismissed (the X on both apps), and the agent hears at once that it was declined,
     as for a question. It could not be dismissed before.
