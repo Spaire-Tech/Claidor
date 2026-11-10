@@ -375,6 +375,9 @@ async def main():
     # The AI models pages (models.py: the server's key providers and plans), at /models.
     import models
     models.build(OUT)
+    # The product pages (products.py: the cloud computer…), at /cloud-computer and the rest of the Products menu.
+    import products
+    products.build(OUT)
     # The Pricing page (pricing.py, the home page's plans), at /pricing.
     import pricing
     pricing.build(OUT)

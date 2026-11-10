@@ -39,7 +39,9 @@ change), `source/models.py` writes `public/models/`, the AI models pages
 (/models: Subscriptions and API keys as two lists; /models/<id>: each one's steps
 to connect and Information), read from the server's `key_providers.py` and
 `own_models.py`, so run it again when a provider or a plan's models change; its
-marks are `source/img/model-*.svg` (LobeHub's, MIT, NOTICE), `source/pricing.py` writes `public/pricing/` and
+marks are `source/img/model-*.svg` (LobeHub's, MIT, NOTICE), `source/products.py` writes the Products menu's
+landing pages (`public/cloud-computer/`, one format for each: the opening, sections as the home page's with a
+picture each in the site's parts, questions, the closing call), `source/pricing.py` writes `public/pricing/` and
 `source/contact.py` writes `public/contact/` the same way (its form posts to the
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'

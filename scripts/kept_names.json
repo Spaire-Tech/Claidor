@@ -359,6 +359,7 @@
         "sites/simeonlabs.com/public/marketplace/**",
         "sites/simeonlabs.com/public/connectors/**",
         "sites/simeonlabs.com/public/models/**",
+        "sites/simeonlabs.com/public/cloud-computer/**",
         "sites/simeonlabs.com/public/pricing/**",
         "sites/simeonlabs.com/public/contact/**",
         "sites/simeonlabs.com/public/newsroom/**",

@@ -3,9 +3,10 @@
 The bar (the founder, 30 October 2026, with another site's for reference: "this
 style for the nav bar"): the wordmark, then Products, Solutions, Resources,
 Connectors and Pricing beside it; Contact Sales and Download on the right.
-Products and Solutions show their arrow but open nothing yet ("a drop down but
-that don't work until i figure out"); Resources opens Marketplace, Newsroom and Docs,
-on a hover or a tap, with no script. On a phone a menu button takes their place
+Products opens each thing Simeon does, a landing page each (since 10 November 2026:
+Cloud computer, Models; products.py, models.py); Solutions shows its arrow but opens
+nothing yet ("a drop down but that don't work until i figure out"); Resources opens
+Marketplace, Newsroom and Docs. Each opens on a hover or a tap, with no script. On a phone a menu button takes their place
 and drops them over the whole page, the two buttons under them. The menu is a
 <details>, so it opens and closes with no script.
 
@@ -25,6 +26,13 @@ LOG_IN = "https://app.simeonlabs.com/login"
 # A small arrow after a menu's name, drawn in the words' colour.
 ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
+# Products' pages (the founder, 10 November 2026: "models should be inside products", with a landing page for each
+# thing Simeon does): their key, address and name.
+PRODUCTS = (
+    ("cloud-computer", "/cloud-computer", "Cloud computer"),
+    ("models", "/models", "Models"),
+)
+
 # Resources' pages: their key (a page passes it as `current`), address and name.
 RESOURCES = (
     ("marketplace", "/marketplace", "Marketplace"),
@@ -35,7 +43,6 @@ RESOURCES = (
 # The pages after the menus.
 LINKS = (
     ("connectors", "/connectors", "Connectors"),
-    ("models", "/models", "Models"),
     ("pricing", "/pricing", "Pricing"),
 )
 
@@ -55,17 +62,19 @@ def _soon(name):
 
 def bar(current=""):
     """The bar; `current` is the page's key (RESOURCES, LINKS, "contact"), or "" on another page."""
+    products = f"""<div class="drops"><button class="drop" type="button" aria-haspopup="true">Products{ARROW}</button><div class="drop-panel">{_links(PRODUCTS, current)}</div></div>"""
+    phone_products = f"""<details class="menu-group"><summary>Products{ARROW}</summary><div>{_links(PRODUCTS, current)}</div></details>"""
     resources = f"""<div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources{ARROW}</button><div class="drop-panel">{_links(RESOURCES, current)}</div></div>"""
     phone_resources = f"""<details class="menu-group"><summary>Resources{ARROW}</summary><div>{_links(RESOURCES, current)}</div></details>"""
     buttons = f'<a class="btn soft" href="/contact"{_mark("contact", current)}>Contact Sales</a><a class="btn" href="{MAC_DOWNLOAD}">Download</a>'
     return f"""<header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
-    <nav class="bar-links" aria-label="Pages">{_soon("Products")}{_soon("Solutions")}{resources}{_links(LINKS, current)}</nav>
+    <nav class="bar-links" aria-label="Pages">{products}{_soon("Solutions")}{resources}{_links(LINKS, current)}</nav>
     <div class="acts">{buttons}</div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages">{_soon("Products")}{_soon("Solutions")}{phone_resources}{_links(LINKS, current)}</nav><div class="menu-acts">{buttons}</div></div>
+      <div class="menu-in"><nav aria-label="Pages">{phone_products}{_soon("Solutions")}{phone_resources}{_links(LINKS, current)}</nav><div class="menu-acts">{buttons}</div></div>
     </details>
   </div>
 </header>"""
@@ -76,6 +85,7 @@ COLUMNS = (
     ("Product", (
         ("marketplace", "/marketplace", "Marketplace"),
         ("connectors", "/connectors", "Connectors"),
+        ("cloud-computer", "/cloud-computer", "Cloud computer"),
         ("models", "/models", "Models"),
         ("pricing", "/pricing", "Pricing"),
         ("", MAC_DOWNLOAD, "Download for Mac"),
