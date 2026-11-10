@@ -4186,6 +4186,64 @@
         }
       }
     },
+    "External Agents" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Externe Agenten"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes externos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agents externes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenti esterni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Externe agenten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zewnętrzni agenci"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes externos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Externa agenter"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harici Ajanlar"
+          }
+        }
+      }
+    },
     "Give this to any bot that can add an MCP server." : {
       "localizations" : {
         "de" : {
@@ -4535,60 +4593,118 @@
         }
       }
     },
-    "It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account." : {
+    "It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Er meldet sich einmal bei Simeon an, mit deiner Erlaubnis. Danach kann er deine Agenten sehen, ihnen schreiben und ihre Antworten lesen, sonst nichts von deinem Konto."
+            "value" : "Er meldet sich einmal bei Simeon an, mit deiner Erlaubnis. Danach kann er deinen Agenten schreiben, ihre Arbeit verfolgen und ihre Routinen starten. Käufe und Passwörter bleiben bei dir, in der App."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inicia sesión en Simeon una vez, con tu permiso. Después puede ver tus agentes, escribirles y leer sus respuestas, y nada más de tu cuenta."
+            "value" : "Inicia sesión en Simeon una vez, con tu permiso. Después puede escribir a tus agentes, seguir su trabajo y ejecutar sus rutinas. Las compras y las contraseñas se quedan contigo, en la app."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il se connecte à Simeon une fois, avec ton accord. Il peut ensuite voir tes agents, leur écrire et lire leurs réponses, et rien d’autre de ton compte."
+            "value" : "Il se connecte à Simeon une fois, avec ton accord. Il peut ensuite écrire à tes agents, suivre leur travail et lancer leurs routines. Les achats et les mots de passe restent à toi, dans l’app."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Accede a Simeon una volta, con il tuo permesso. Poi può vedere i tuoi agenti, scrivergli e leggere le loro risposte, e nient’altro del tuo account."
+            "value" : "Accede a Simeon una volta, con il tuo permesso. Poi può scrivere ai tuoi agenti, seguirne il lavoro e avviare le loro routine. Acquisti e password restano a te, nell’app."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hij meldt zich één keer aan bij Simeon, met jouw toestemming. Daarna kan hij je agenten zien, ze berichten sturen en hun antwoorden lezen, en verder niets van je account."
+            "value" : "Hij meldt zich één keer aan bij Simeon, met je toestemming. Daarna kan hij je agenten berichten sturen, hun werk volgen en hun routines starten. Aankopen en wachtwoorden blijven bij jou, in de app."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loguje się do Simeona raz, za twoją zgodą. Potem może zobaczyć twoich agentów, pisać do nich i czytać ich odpowiedzi, i nic więcej z twojego konta."
+            "value" : "Loguje się do Simeona raz, za twoją zgodą. Potem może pisać do twoich agentów, śledzić ich pracę i uruchamiać ich rutyny. Zakupy i hasła zostają przy tobie, w aplikacji."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ele entra no Simeon uma vez, com sua permissão. Depois pode ver seus agentes, mandar mensagens para eles e ler as respostas, e nada mais da sua conta."
+            "value" : "Ele entra no Simeon uma vez, com sua permissão. Depois pode mandar mensagens para seus agentes, acompanhar o trabalho deles e rodar as rotinas deles. Compras e senhas ficam com você, no app."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Den loggar in på Simeon en gång, med ditt tillstånd. Sedan kan den se dina agenter, skriva till dem och läsa deras svar, och inget annat i ditt konto."
+            "value" : "Den loggar in på Simeon en gång, med ditt tillstånd. Sedan kan den skriva till dina agenter, följa deras arbete och köra deras rutiner. Köp och lösenord stannar hos dig, i appen."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İzninle Simeon'a bir kez giriş yapar. Sonra ajanlarını görebilir, onlara yazabilir ve yanıtlarını okuyabilir; hesabının başka hiçbir yerine erişemez."
+            "value" : "İzninle Simeon'a bir kez giriş yapar. Sonra ajanlarına yazabilir, işlerini takip edebilir ve rutinlerini çalıştırabilir. Satın almalar ve şifreler sende, uygulamada kalır."
+          }
+        }
+      }
+    },
+    "Learn more" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr erfahren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más información"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En savoir plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scopri di più"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer informatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dowiedz się więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saiba mais"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Läs mer"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha fazla bilgi"
           }
         }
       }
@@ -5347,6 +5463,64 @@
         }
       }
     },
+    "Settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configuración"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impostazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawienia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustes"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inställningar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayarlar"
+          }
+        }
+      }
+    },
     "Show Security Code" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5460,6 +5634,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ hesabına giriş yap"
+          }
+        }
+      }
+    },
+    "Simeon with Grok Bot, Muse and Dots" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon mit Grok Bot, Muse und Dots"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon con Grok Bot, Muse y Dots"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon avec Grok Bot, Muse et Dots"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon con Grok Bot, Muse e Dots"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon met Grok Bot, Muse en Dots"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon z Grok Botem, Muse i Dots"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon com Grok Bot, Muse e Dots"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon med Grok Bot, Muse och Dots"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok Bot, Muse ve Dots ile Simeon"
           }
         }
       }

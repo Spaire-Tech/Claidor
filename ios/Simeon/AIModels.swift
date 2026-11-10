@@ -364,7 +364,7 @@ struct PhoneAddBotSheet: View {
       }
       .buttonStyle(.plain)
       if details {
-        Text("It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.")
+        Text("It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app.")
           .font(.system(size: 15))
           .foregroundStyle(Ink.secondary)
           .fixedSize(horizontal: false, vertical: true)
