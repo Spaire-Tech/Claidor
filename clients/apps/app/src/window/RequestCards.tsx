@@ -155,37 +155,6 @@ function AskPill({ words, dot }: { words: string; dot?: Dot }) {
   )
 }
 
-/** The X at the right of a card that waits (`xmark`, 11, in a 20 square): a decline. */
-function DismissButton({
-  help,
-  label,
-  onClick,
-}: {
-  help: string
-  label: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      className="card-close"
-      title={help}
-      aria-label={label}
-      onClick={onClick}
-    >
-      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-        <path
-          d="M3.5 3.5l9 9M12.5 3.5l-9 9"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        />
-      </svg>
-    </button>
-  )
-}
-
 /** A lock (`lock.fill`, 9, in a 12 square, 3 down) and its line (13), at 40%. */
 function LockLine({ words }: { words: string }) {
   return (
@@ -322,35 +291,38 @@ function SecretCardView({
             <AskPill words={t('Saved')} dot="green" />
           ) : card.dismissed ? (
             <AskPill words={t('Dismissed')} />
-          ) : (
-            <DismissButton
-              help={t('Dismiss without giving it')}
-              label={t('Dismiss request')}
-              onClick={() => void store.dismissQuestion(entryId, agentId)}
-            />
-          )
+          ) : null
         }
       />
       {open && (
         <>
-          <div className="secret-row">
-            <input
-              ref={field}
-              {...secretField}
-              className="ask-input"
-              placeholder={prompt}
-              aria-label={prompt}
-              onChange={(event) => setTyped(event.target.value !== '')}
-              onKeyDown={onReturn(save)}
+          <input
+            ref={field}
+            {...secretField}
+            className="ask-input"
+            placeholder={prompt}
+            aria-label={prompt}
+            onChange={(event) => setTyped(event.target.value !== '')}
+            onKeyDown={onReturn(save)}
+          />
+          <div className="card-foot">
+            <LockLine
+              words={t('Stored securely, never shown to your agent.')}
             />
-            <CardButton
-              title={t('Save securely')}
-              prominent
-              disabled={saving || !typed}
-              onClick={save}
-            />
+            <div className="card-buttons">
+              <CardButton
+                title={t('Not now')}
+                disabled={saving}
+                onClick={() => void store.dismissQuestion(entryId, agentId)}
+              />
+              <CardButton
+                title={t('Save securely')}
+                prominent
+                disabled={saving || !typed}
+                onClick={save}
+              />
+            </div>
           </div>
-          <LockLine words={t('Stored securely, never shown to your agent.')} />
         </>
       )}
     </CardShell>
@@ -661,17 +633,7 @@ function UserFormCardView({
         title={card.title}
         quiet={card.state === 'dismissed'}
         site={card.domain}
-        end={
-          open ? (
-            <DismissButton
-              help={t('Dismiss without filling it in')}
-              label={t('Dismiss form')}
-              onClick={() => run(() => store.dismissUserForm(entryId, agentId))}
-            />
-          ) : (
-            status != null && <AskPill words={status} dot={dot} />
-          )
-        }
+        end={!open && status != null && <AskPill words={status} dot={dot} />}
       />
       {open ? (
         <>
@@ -692,17 +654,26 @@ function UserFormCardView({
             )
           })}
           <div className="form-actions">
-            <CardButton
-              title={t('Fill in')}
-              prominent
-              disabled={busy || !fillable}
-              onClick={fill}
-            />
             {card.submitsAfterFill && (
               <span className="form-sends">
                 {t('It’s sent as soon as it’s typed in.')}
               </span>
             )}
+            <div className="card-buttons">
+              <CardButton
+                title={t('Not now')}
+                disabled={busy}
+                onClick={() =>
+                  run(() => store.dismissUserForm(entryId, agentId))
+                }
+              />
+              <CardButton
+                title={t('Fill in')}
+                prominent
+                disabled={busy || !fillable}
+                onClick={fill}
+              />
+            </div>
           </div>
           {refusal && (
             <div className="ask-refusal" role="alert">
@@ -834,15 +805,15 @@ function CredentialCardView({
           )}
           <div className="card-buttons">
             <CardButton
+              title={t('Not now')}
+              disabled={busy || asking}
+              onClick={() => answer(false)}
+            />
+            <CardButton
               title={t('Fill with 1Password')}
               prominent
               disabled={busy || asking}
               onClick={fill}
-            />
-            <CardButton
-              title={t('Not now')}
-              disabled={busy || asking}
-              onClick={() => answer(false)}
             />
           </div>
           {refusal && (
@@ -910,21 +881,12 @@ function OnePasswordConnectCardView({
         title={t('Connect 1Password')}
         quiet={card.state === 'dismissed'}
         end={
-          card.state === 'open' ? (
-            <DismissButton
-              help={t('Dismiss without connecting')}
-              label={t('Dismiss')}
-              onClick={() =>
-                run(() => store.dismissOnePasswordConnect(entryId, agentId))
-              }
+          card.state !== 'open' &&
+          status != null && (
+            <AskPill
+              words={status}
+              dot={card.state === 'connected' ? 'green' : undefined}
             />
-          ) : (
-            status != null && (
-              <AskPill
-                words={status}
-                dot={card.state === 'connected' ? 'green' : undefined}
-              />
-            )
           )
         }
       />
@@ -938,12 +900,15 @@ function OnePasswordConnectCardView({
           )}
         </div>
       )}
-      {card.state === 'open' && desktop() && (
+      {card.state === 'open' && (
         <OnePasswordConnecting
           busy={busy}
           run={run}
           connect={(made) =>
             store.connectOnePassword({ ...made, entryId, agentId })
+          }
+          notNow={() =>
+            run(() => store.dismissOnePasswordConnect(entryId, agentId))
           }
         />
       )}
@@ -965,9 +930,12 @@ function OnePasswordConnecting({
   busy,
   run,
   connect,
+  notNow,
 }: {
   busy: boolean
   run: (work: () => Promise<void>) => void
+  /** Declines it: the card's Not now, beside Connect (only Not now away from the desktop app, which alone can connect). */
+  notNow: () => void
   connect: (made: {
     token: string
     vaultId: string
@@ -1025,12 +993,6 @@ function OnePasswordConnecting({
         </span>
       )}
       <div className="card-buttons">
-        <CardButton
-          title={busy ? t('Connecting…') : t('Connect')}
-          prominent
-          disabled={busy}
-          onClick={press}
-        />
         {failure && needsSetup(failure) && (
           <CardButton
             title={t('How to set it up')}
@@ -1039,6 +1001,15 @@ function OnePasswordConnecting({
                 ?.call('openExternal', setupURL)
                 .catch(() => {})
             }
+          />
+        )}
+        <CardButton title={t('Not now')} disabled={busy} onClick={notNow} />
+        {desktop() && (
+          <CardButton
+            title={busy ? t('Connecting…') : t('Connect')}
+            prominent
+            disabled={busy}
+            onClick={press}
           />
         )}
       </div>

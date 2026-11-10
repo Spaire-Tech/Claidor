@@ -32,11 +32,12 @@ struct CredentialCardView: View {
         if !card.purpose.isEmpty {
           Text(card.purpose).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
         }
-        HStack(spacing: 8) {
-          Button("Fill with 1Password") { fill() }
-            .buttonStyle(Tactile(look: BlueButtonStyle()))
+        // The cards' pills (10 November 2026): Not now grey, Fill the main one, last.
+        CardPills {
           Button("Not now") { run { refusal = await store.answerCredentialRequest(entryId, allow: false, in: agentId) } }
-            .buttonStyle(Tactile(look: GreyButtonStyle()))
+            .buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Fill with 1Password") { fill() }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
         }
         .disabled(busy)
         Text("From your vault shared with Simeon. Your agent never sees it.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
@@ -80,7 +81,7 @@ struct CredentialCardView: View {
  * The 1Password connect card (28 October 2026, SimeonCore's
  * `OnePasswordConnectCard`). 1Password is connected from Simeon on a Mac,
  * where the 1Password app makes the shared vault and its key; here the card
- * says so, and the X is a decline.
+ * says so, and Not now is a decline.
  */
 struct OnePasswordConnectCardView: View {
   let entryId: String
@@ -95,18 +96,7 @@ struct OnePasswordConnectCardView: View {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
         Text("Connect 1Password").font(.system(size: 17, weight: .medium)).foregroundStyle(card.state == .dismissed ? Ink.secondary : Ink.primary)
         Spacer(minLength: 0)
-        if card.state == .open {
-          Button {
-            guard !busy else { return }
-            busy = true
-            Task { await store.dismissOnePasswordConnect(entryId, in: agentId); busy = false }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 32, height: 32).contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
+        if card.state != .open, let status = card.statusLine {
           StatusPill(text: status, dot: card.state == .connected ? Ink.live : Ink.tertiary)
         }
       }
@@ -114,6 +104,16 @@ struct OnePasswordConnectCardView: View {
         if let reason = card.reason { Text(reason).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
         Text("Open Simeon on your Mac to connect it: your 1Password app makes a vault shared with Simeon, and your agent fills sign-ins from it with your OK.")
           .font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        // Not now declines it, as the X did (10 November 2026).
+        CardPills {
+          Button("Not now") {
+            guard !busy else { return }
+            busy = true
+            Task { await store.dismissOnePasswordConnect(entryId, in: agentId); busy = false }
+          }
+          .buttonStyle(Tactile(look: CardPillStyle()))
+          .disabled(busy)
+        }
       } else if card.state == .connected, let account = card.account {
         Text(account).font(.system(size: 15)).foregroundStyle(Ink.secondary)
       }

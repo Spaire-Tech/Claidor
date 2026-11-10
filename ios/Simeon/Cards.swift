@@ -31,22 +31,7 @@ enum ChatMetrics {
   }
 }
 
-/** The chat's blue button (`button[data-variant="primary"]`): 32 pt, 8 pt corners, white 14 pt. */
-struct BlueButtonStyle: ButtonStyle {
-  var height: CGFloat = 32
-  @Environment(\.isEnabled) private var enabled
-
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(.system(size: 14))
-      .foregroundStyle(.white)
-      .padding(.horizontal, 10)
-      .frame(height: height)
-      .background(Ink.bubbleMine.opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.45), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-}
-
-/** The quiet grey button beside it: the faint fill and a hairline edge. */
+/** The quiet grey button outside the cards (Show Hidden Agents, a row's Connect): the faint fill and a hairline edge. */
 struct GreyButtonStyle: ButtonStyle {
   var height: CGFloat = 32
   var capsule = false
@@ -74,6 +59,111 @@ struct GreyButtonStyle: ButtonStyle {
         .contentShape(shape)
         .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.55 : 1)
         .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+  }
+}
+
+/**
+ * A card's button, one style on every card (10 November 2026, the question
+ * card's; the founder: "go for your suggestions"): a capsule 38 high, 15
+ * medium. The main action (`main`) in the ink's own colour, black in light
+ * and white in dark; the others grey; a refusal (`danger`) in red words; and
+ * our blue kept for money (`money`: buy, book, pay). A card sets them in
+ * `CardPills`, at its right, the main one last.
+ */
+struct CardPillStyle: ButtonStyle {
+  enum Tone { case plain, main, danger, money }
+  var tone: Tone = .plain
+  /** 38 under a card; 32 in a card's own row, beside its name (Connect). */
+  var height: CGFloat = 38
+
+  func makeBody(configuration: Configuration) -> some View {
+    CardPill(configuration: configuration, tone: tone, height: height)
+  }
+
+  private struct CardPill: View {
+    let configuration: ButtonStyleConfiguration
+    let tone: Tone
+    let height: CGFloat
+    @Environment(\.isEnabled) private var enabled
+    @Environment(\.cardPillsStacked) private var stacked
+
+    var body: some View {
+      let small = height < 36
+      configuration.label
+        .font(.system(size: small ? 13 : 15, weight: .medium))
+        .foregroundStyle(ink)
+        .lineLimit(1)
+        .padding(.horizontal, small ? 14 : 18)
+        .frame(maxWidth: stacked ? .infinity : nil)
+        .frame(height: height)
+        .background(fill, in: Capsule())
+        .contentShape(Capsule())
+        .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.7 : 1)
+        .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+
+    private var ink: Color {
+      switch tone {
+      case .main: Ink.ground
+      case .money: Ink.mineText
+      case .danger: Ink.danger
+      case .plain: Ink.primary
+      }
+    }
+
+    private var fill: Color {
+      switch tone {
+      case .main: Ink.primary
+      case .money: Ink.bubbleMine
+      case .plain, .danger: Ink.primary.opacity(0.08)
+      }
+    }
+  }
+}
+
+private struct CardPillsStackedKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+  /** Set by `CardPills` when its buttons sit one under the other, each across the card. */
+  var cardPillsStacked: Bool {
+    get { self[CardPillsStackedKey.self] }
+    set { self[CardPillsStackedKey.self] = newValue }
+  }
+}
+
+/**
+ * A card's buttons: in a row at its right, the main one last, with
+ * `leading` (Skip, a note) at its left. When they don't fit across (three
+ * on a small iPhone, or a longer translation), one under the other, each as
+ * wide as the card, `leading` last, rather than cut short.
+ */
+struct CardPills<Leading: View, Content: View>: View {
+  private let leading: Leading
+  private let content: Content
+
+  init(@ViewBuilder content: () -> Content) where Leading == EmptyView {
+    self.leading = EmptyView()
+    self.content = content()
+  }
+
+  init(@ViewBuilder leading: () -> Leading, @ViewBuilder content: () -> Content) {
+    self.leading = leading()
+    self.content = content()
+  }
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 8) {
+        leading
+        Spacer(minLength: 0)
+        content
+      }
+      VStack(spacing: 8) {
+        content
+        leading
+      }
+      .environment(\.cardPillsStacked, true)
     }
   }
 }
@@ -517,26 +607,16 @@ private struct QuestionDots: View {
   }
 }
 
-/** The card's buttons: grey capsules, Next and Send in the ink's own colour. */
+/** The card's buttons, every card's pills: grey, Next and Send the main one. */
 private struct QuestionPill: View {
   let title: String
   var prominent = false
   let action: () -> Void
-  @Environment(\.isEnabled) private var enabled
 
   var body: some View {
-    Button(action: action) {
-      Text(title).font(.system(size: 15, weight: .medium))
-        .foregroundStyle(prominent ? Ink.ground : Ink.primary)
-        .lineLimit(1)
-        .padding(.horizontal, 18)
-        .frame(height: 38)
-        .background(prominent ? Ink.primary : Ink.primary.opacity(0.08), in: Capsule())
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.tactile)
-    .opacity(enabled ? 1 : 0.4)
-    .fixedSize()
+    Button(title, action: action)
+      .buttonStyle(Tactile(look: CardPillStyle(tone: prominent ? .main : .plain)))
+      .fixedSize()
   }
 }
 
@@ -828,7 +908,7 @@ struct ListenerConnectCard: View {
             opening = false
           }
         }
-        .buttonStyle(Tactile(look: BlueButtonStyle()))
+        .buttonStyle(Tactile(look: CardPillStyle(tone: .main, height: 32)))
       }
     }
     .card()
@@ -1282,16 +1362,17 @@ struct DraftCardView: View {
         }
         .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         if editable {
-          HStack(spacing: 8) {
-            Button(isEmail ? "Send email" : "Send message") { send() }
-              .buttonStyle(Tactile(look: BlueButtonStyle()))
-              .disabled(isEmail && !validAddresses)
+          // The cards' pills (10 November 2026): Discard grey, Send the main one, last.
+          CardPills {
+            if busy { ProgressView().controlSize(.small) }
             Button("Discard") {
               busy = true
               Task { await store.discardDraft(entryId, in: agentId); busy = false }
             }
-            .buttonStyle(Tactile(look: GreyButtonStyle()))
-            if busy { ProgressView().controlSize(.small) }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            Button(isEmail ? "Send email" : "Send message") { send() }
+              .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+              .disabled(isEmail && !validAddresses)
           }
           .disabled(busy)
         }
@@ -1797,10 +1878,11 @@ struct RequestCardView: View {
         ApprovalDisclosure(subject: heading.subject, text: command ?? summary, pending: pending)
       }
       if pending {
-        HStack(spacing: 8) {
-          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(Tactile(look: BlueButtonStyle()))
-          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
-          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
+        // Deny in red words, Always allow grey, Allow once the main one, last (10 November 2026).
+        CardPills {
+          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle(tone: .danger)))
+          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
         }
         .disabled(busy)
       }
@@ -1840,31 +1922,28 @@ struct RequestCardView: View {
         Spacer(minLength: 0)
         if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
         else if dismissed { StatusPill(text: String(localized: "Dismissed")) }
-        else {
-          // Not giving it is an answer too: the agent is told it was declined.
-          Button { run { await store.dismissQuestion(entryId, in: agentId) } } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 32, height: 32).contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Dismiss")
-        }
       }
       if !description.isEmpty && !dismissed { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
       if !provided && !dismissed {
         SecureField("Paste your \(label)", text: $secret)
           .font(.system(size: 17))
           .typedAsIs().autocorrectionDisabled()
-          .padding(.horizontal, 10).frame(height: 34)
-          .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1))
-        Button("Save securely") {
-          let value = secret
-          secret = ""
-          run { await store.submitSecret(value, entryId: entryId, in: agentId) }
+          .padding(.horizontal, 12).frame(height: 38)
+          .background(Ink.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+          .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+        CardPills {
+          // Not giving it is an answer too: the agent is told it was declined (Not now replaced the X, 10 November 2026).
+          Button("Not now") { run { await store.dismissQuestion(entryId, in: agentId) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Save securely") {
+            let value = secret
+            secret = ""
+            run { await store.submitSecret(value, entryId: entryId, in: agentId) }
+          }
+          .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+          .disabled(secret.trimmingCharacters(in: .whitespaces).isEmpty)
         }
-        .buttonStyle(Tactile(look: BlueButtonStyle()))
-        .disabled(busy || secret.trimmingCharacters(in: .whitespaces).isEmpty)
+        .disabled(busy)
       }
     }
     .card()
@@ -1924,26 +2003,26 @@ struct RequestCardView: View {
         .accessibilityLabel("Take over the computer")
       }
       if waiting {
-        VStack(spacing: 6) {
-          HStack(spacing: 8) {
-            Button("Take over", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
-            Button("I’m done") { run { await store.handBackComputer(agentId) } }.buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
-              .disabled(busy)
-          }
-          Button { run { await store.handBackComputer(agentId, skip: true) } } label: {
-            Text("Skip").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              .frame(maxWidth: .infinity, minHeight: 32)
-              .contentShape(.rect)
-          }
-          .buttonStyle(.tactile)
-          .disabled(busy)
-          .help("Cancel this request without doing the step; the agent continues without it")
+        // The cards' pills, as on the Mac (10 November 2026): Skip at the left, I'm done grey, Take over the main one.
+        CardPills {
+          Button("Skip") { run { await store.handBackComputer(agentId, skip: true) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            .disabled(busy)
+            .help("Cancel this request without doing the step; the agent continues without it")
+        } content: {
+          Button("I’m done") { run { await store.handBackComputer(agentId) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            .disabled(busy)
+          Button("Take over", action: openComputer)
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
         }
       } else {
-        Button("Open computer", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
+        CardPills {
+          Button("Open computer", action: openComputer).buttonStyle(Tactile(look: CardPillStyle()))
+        }
       }
     }
-    .card(radius: 18, padding: 14)
+    .card()
   }
 
   /** What happened, in its colour: Done and Answered green, Skipped blue, Canceled red. */
@@ -1968,7 +2047,7 @@ struct RequestCardView: View {
   private static let snapshots = NSCache<NSString, UIImage>()
 }
 
-/** The hand-off card's 36 pt pills: the blue one, and the grey beside it. */
+/** The 36 pt pills across a sheet or the checkout card: the blue one (money: Allow, Book with Simeon), and the grey beside it. */
 struct PillButtonStyle: ButtonStyle {
   let primary: Bool
 

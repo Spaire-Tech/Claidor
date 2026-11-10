@@ -842,6 +842,43 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: one style for every card's buttons
+
+The founder, after the question card's new style: "Where else (cards) can we
+bring this design. To avoid inconsistency? The buttons style etc", then "kk.
+go for your suggestions." Every card now has the question card's shape and
+buttons, in the web and Windows app, the Mac and the iPhone:
+
+- **The shape:** 20 round, padded 14 by 16 (`.card-shell`; the Mac's
+  `CardShell`); 22 round and padded 16 on the iPhone (`.card()`), as its
+  question card.
+- **The buttons are pills** (`CardButton` here with `tone`; the Mac's
+  `CardButton`; the iPhone's `CardPillStyle` in `CardPills`): 32 high on the
+  web and the Mac, 38 on the iPhone. The main action in the ink's own colour
+  (black in light, white in dark), the others grey, a refusal in red words
+  (Deny, the Mac's Never), and our blue kept for money only (Buy with, Book
+  with Simeon, the checkout's Allow, which stay as they were). They sit at
+  the card's right, the main one last: Discard, Send; Deny, Always allow,
+  Allow once; Not now, Save securely; Not now, Fill in; Not now, Fill with
+  1Password; Skip at the left, I'm done, Take over.
+- **Not now replaces the corner X** on the secret, in-chat form and
+  1Password connect cards; it declines as the X did. Once answered, the
+  status pill takes the corner.
+- **On the iPhone** the buttons sit one under the other, each across the
+  card, when they don't fit in a row (`ViewThatFits`: the approval's three
+  on a small iPhone, a longer translation), rather than being cut short.
+  The Slack/GitHub Connect and the cloud agent's View PR are main pills too.
+
+Checked in Chromium against a stand-in computer, light and dark: the draft,
+question, approval, secret (open and saved), hand-off, form, 1Password fill
+and 1Password connect cards, each card's buttons in the order above, the
+disabled main pill faded, no console error. tsc, ESLint, the app's tests
+(1246; `ShopCards.test.tsx` typed again: its products left `take` and
+`badge` undefined, which a JSON value can't hold), the words, the committed
+build, `check_names.py`, `check_translations.py`, and the engine's tests that
+read the apps' Swift (35). Not checked: the Mac and iPhone apps built and run
+(no Xcode here; their Swift parses).
+
 ### 10 November 2026: the question card asks several questions, one at a time
 
 The founder, with three pictures of another app's question card: "have the

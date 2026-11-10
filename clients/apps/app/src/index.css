@@ -1309,8 +1309,8 @@ button {
   gap: 10px;
   box-sizing: border-box;
   width: 100%;
-  padding: 12px;
-  border-radius: 16px;
+  padding: 14px 16px;
+  border-radius: 20px;
   background: var(--theirs);
   color: var(--ink);
   box-shadow:
@@ -1359,35 +1359,76 @@ button {
 }
 
 /* The two buttons: 14, 32 high, 12 at the sides, 8 round; plain is the grey with a line at 15%, prominent the person's blue. */
+/*
+ * A card's buttons (10 November 2026, the question card's): at the card's right, the main one last, all pills 32 high;
+ * the main one in the ink's own colour, the others grey, red words for one that destroys, the blue kept for paying.
+ */
 .card-buttons {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
+}
+
+/* A card's foot: a line at the left (the lock's, a note), its buttons at the right. */
+.card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.card-foot > :first-child:not(.card-buttons) {
+  flex: 1;
+  min-width: 160px;
 }
 
 .card-button {
   flex: none;
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-  border-radius: 8px;
-  background: var(--wash);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   line-height: 20px;
   white-space: nowrap;
   cursor: pointer;
 }
 
+.card-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
 .card-button.prominent {
-  border-color: transparent;
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.card-button.prominent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 88%, var(--ground));
+}
+
+.card-button.danger {
+  color: var(--danger);
+}
+
+.card-button.money {
   background: var(--yours);
   color: #ffffff;
 }
 
+.card-button.money:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
+}
+
 .card-button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: default;
 }
 

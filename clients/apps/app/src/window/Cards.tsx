@@ -91,18 +91,22 @@ export function StatusPill({
 export function CardButton({
   title,
   prominent = false,
+  tone,
   disabled,
   onClick,
 }: {
   title: string
+  /** The card's main action: a pill in the ink's own colour. */
   prominent?: boolean
+  /** `danger`: a grey pill in red words; `money`: the blue pill, kept for paying. */
+  tone?: 'danger' | 'money'
   disabled?: boolean
   onClick: () => void
 }) {
   return (
     <button
       type="button"
-      className={classes('card-button', prominent && 'prominent')}
+      className={classes('card-button', prominent && 'prominent', tone)}
       disabled={disabled}
       onClick={onClick}
     >
@@ -741,13 +745,13 @@ export function DraftCardView({
       {editable && (
         <div className="card-buttons">
           <CardButton
+            title={t('Discard')}
+            onClick={() => void store.discardDraft(entryId, agentId)}
+          />
+          <CardButton
             title={email ? t('Send email') : t('Send message')}
             prominent
             onClick={send}
-          />
-          <CardButton
-            title={t('Discard')}
-            onClick={() => void store.discardDraft(entryId, agentId)}
           />
         </div>
       )}
@@ -884,10 +888,10 @@ export function ApprovalCardView({
       {settled === 'pending' && (
         <div className="card-buttons">
           <CardButton
-            title={t('Allow once')}
-            prominent
+            title={t('Deny')}
+            tone="danger"
             disabled={answering}
-            onClick={() => resolve('approved')}
+            onClick={() => resolve('denied')}
           />
           <CardButton
             title={t('Always allow')}
@@ -895,9 +899,10 @@ export function ApprovalCardView({
             onClick={() => resolve('always')}
           />
           <CardButton
-            title={t('Deny')}
+            title={t('Allow once')}
+            prominent
             disabled={answering}
-            onClick={() => resolve('denied')}
+            onClick={() => resolve('approved')}
           />
         </div>
       )}

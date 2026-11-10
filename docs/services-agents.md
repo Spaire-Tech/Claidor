@@ -1509,7 +1509,7 @@ history). What changed to match them:
     (`widgetReplyPreview`). Skip on a card of one question declines it. **Not yet verified** with a
     real agent on the Mac: it needs the next engine published.
 * **The secret request.**
-  * It can be dismissed (the X on both apps), and the agent hears at once that it was declined,
+  * It can be dismissed (Not now, beside Save securely, in every app), and the agent hears at once that it was declined,
     as for a question. It could not be dismissed before.
   * The agent may name the variable it wants (`name`, as `RENDER_API_KEY`) instead of a
     connector and a field.

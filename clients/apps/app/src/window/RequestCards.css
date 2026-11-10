@@ -228,9 +228,16 @@
 /* Fill in, and the line beside it (13, at 40%). */
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 8px 12px;
   min-width: 0;
+}
+
+.form-actions .form-sends {
+  flex: 1;
+  min-width: 160px;
 }
 
 .form-sends {
@@ -412,47 +419,40 @@
   gap: 8px;
 }
 
-.handoff-skip {
-  flex: none;
-  height: 32px;
-  padding: 0 8px;
-  border: 0;
-  background: none;
-  color: var(--handoff-grey);
-  font: inherit;
-  font-size: 13px;
-  line-height: 18px;
-  letter-spacing: -0.15px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.handoff-spacer {
-  flex: 1 0 8px;
-}
-
+/* Skip, I'm done and Take over: the cards' pills (10 November 2026), Take over the main one in the ink's own colour. */
+.handoff-skip,
 .handoff-pill {
   flex: none;
-  min-width: 88px;
   height: 32px;
   padding: 0 16px;
   border: 0;
   border-radius: 999px;
-  background: var(--handoff-fill);
-  color: var(--handoff-ink);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 20px;
-  letter-spacing: -0.15px;
   white-space: nowrap;
   cursor: pointer;
 }
 
-/* Take over: the card's blue, its words white (step 5b). */
+.handoff-skip:hover,
+.handoff-pill:hover {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
 .handoff-pill.blue {
-  background: var(--handoff-blue);
-  color: #ffffff;
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.handoff-pill.blue:hover {
+  background: color-mix(in srgb, var(--ink) 88%, var(--ground));
+}
+
+.handoff-spacer {
+  flex: 1 0 8px;
 }
 
 /* The screen when the agent asked (16:10, 12 round, a hairline, the tile's fill under it): it grows by 2% under the pointer over 0.3 s; a click takes over (step 5b). */
