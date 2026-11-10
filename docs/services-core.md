@@ -1106,8 +1106,11 @@ key sheet: `docs/your-own-models.md`, section 7.
   data folder) and writes `[simeon] model-changed agent=… from=… to=…`
   (`simeon` for Simeon's own model). No such line after a change in AI
   Models: the roles were read as before (`model-roles …`), or the agent has
-  not had a turn since. The first turn an agent has on this engine is only
-  remembered, never a line. `model-changed unwritten` or `not kept` gives
+  not had a turn since, or the computer still runs an older engine (no
+  `sand.box.updated_in_place` since the engine was published). An agent's
+  first turn on this engine is compared with the roles the computer kept
+  before it started (`model-roles remembered …`); an agent made since is
+  only remembered. `model-changed unwritten` or `not kept` gives
   the reason the line or the file was not written; the turn goes on either
   way. `docs/your-own-models.md`, section 10.
 - A tool the model makes up no longer fails the run (15 October 2026: Claude

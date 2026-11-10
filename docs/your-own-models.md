@@ -622,9 +622,22 @@ room's), right after the engine reads the roles (`beforeTurn` in
 It compares that with the model it last saw for the agent, kept in
 `model-seen.json` in the engine's data folder (mode 600). A different model
 writes one line; the same model, none; the same model under a better name
-is only kept. The first turn an agent has on an engine (a new agent, and
-every agent once this engine arrives) is only remembered, so nobody gets a
-line for a change nobody made.
+is only kept. An agent the file doesn't know yet (every agent once this
+engine arrives) is compared, at its first turn, with the model the computer
+was last on before the engine started: the roles its last run kept
+(`model-roles.json`, read as the engine starts), when the agent was there
+then. The founder switched from the Claude plan to an Anthropic key, and
+the first message the new engine ran showed no line: that first turn had
+only been remembered (fixed the same day). An agent made since the engine
+started, or a computer that kept no roles, is only remembered, so nobody
+gets a line for a change nobody made. When the server no longer lists the
+model it was on (the Claude plan's, once a key is chosen), its name is read
+from its id: `claude-opus-5-5` is "Claude Opus 5.5".
+
+The line comes once the computer runs the engine that writes it: the server
+sees a newly published engine within 10 minutes (`BUNDLE_POINTER_TTL`) and
+moves a computer to it the next time the app reaches it while it is idle
+(`sand.box.updated_in_place`).
 
 **How.** The line is an `event` in the chat's own lines,
 `{type: "model-changed", from: {model, name, provider}, to: {…}}`, written
