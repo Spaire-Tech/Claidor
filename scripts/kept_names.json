@@ -660,6 +660,10 @@
         "clients/apps/app/src/window/ComposerModelMenu.tsx",
         "clients/apps/app/src/window/SettingsModels.tsx",
         "clients/apps/app/src/assets/providers/grok*",
+        "sites/simeonlabs.com/source/page.html",
+        "sites/simeonlabs.com/public/index.html",
+        "sites/simeonlabs.com/source/img/model-grok.svg",
+        "sites/simeonlabs.com/public/img/model-grok.svg",
         "clients/apps/app/src/words/*/*.json",
         "clients/apps/web/public/app-next/assets/*",
         "docs/web-app/inventory/*",
@@ -669,7 +673,7 @@
         "docs/kept-names.md"
       ],
       "match": "^(?!.*grok[ _-]?bot)",
-      "reason": "Grok, xAI's assistant, is a provider a person connects for their agents on their own SuperGrok or X Premium plan (10 November 2026, the founder: \"lets do grok\"): its name on the apps' pages and in their words, xAI's sign-in, proxy and API addresses, and the headers and client values xAI's servers read. The upstream Grok Bot stays a finding everywhere, these files included."
+      "reason": "Grok, xAI's assistant, is a provider a person connects for their agents on their own SuperGrok or X Premium plan (10 November 2026, the founder: \"lets do grok\"): its name on the apps' pages and in their words, and on the website's section on people's own models with its mark, xAI's sign-in, proxy and API addresses, and the headers and client values xAI's servers read. The upstream Grok Bot stays a finding everywhere, these files included."
     },
     {
       "kind": "contract",
