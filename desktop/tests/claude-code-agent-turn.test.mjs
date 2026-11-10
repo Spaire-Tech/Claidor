@@ -232,16 +232,19 @@ test("how a turn ended: its last words, whether it sent anything, and whether it
   }
 });
 
-test("the words sent after a turn: none, its answer, or the result after an \"On it\"", async () => {
+test("the words sent after a turn: its answer when nothing reached the person, never its notes after a message", async () => {
   const { module: bridge, dispose } = await load();
   try {
     const ending = (calls, text) => bridge.claudeCodeEnding(calls, text, 1);
     // Nothing reached the person: its words are the reply.
     assert.equal(bridge.claudeCodeReplyToSend(ending(["Shell", "Shell"], "  The grep found 3 lines. "), true), "The grep found 3 lines.");
-    // "On it", then work, then the result in its own words: sent.
-    const after = ending(["SendMessage", "Shell", "Shell"], "Here are the results.");
+    // "Got it", then work, then its notes: they stay its own. They reached the person until 10 November 2026
+    // ("I told Bass I'll use Nov 15…"); the brief tells it to send what came of the work itself.
+    const after = ending(["SendMessage", "Shell", "Shell"], "I told Bass I'll use Nov 15 and wait for the new build.");
     assert.equal(after.workedAfterSpeaking, true);
-    assert.equal(bridge.claudeCodeReplyToSend(after, false), "Here are the results.");
+    assert.equal(bridge.claudeCodeReplyToSend(after, false), undefined);
+    assert.match(bridge.claudeCodeBriefNote(), /nothing you write after it reaches them/);
+    assert.match(bridge.claudeCodeBriefNote(), /written to them: never about them/);
     // The result was its last message: its notes after it stay its own.
     assert.equal(bridge.claudeCodeReplyToSend(ending(["Shell", "SendMessage"], "Sent the results."), false), undefined);
     // A reaction is speaking too.
