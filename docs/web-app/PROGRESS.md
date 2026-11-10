@@ -839,6 +839,38 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the chat says when an agent's model changes
+
+The founder, with a picture of the line: "whenever a model is changed, i
+want this to fire in the chat. that at least tells us that it's working."
+The engine writes a `model-changed` event at the first turn an agent has on
+a new model (a message, a routine, a wake), never at its first turn on the
+engine, never in a group, without waking the agent
+(`docs/your-own-models.md`, section 10). The web app reads it in
+`core/chat.ts` (`modelChange`, a `modelChange` row in the middle) and draws
+it in `ChatPane.tsx` as the notices are, centred and grey: "Changed from ⌘
+Simeon to ✳ Claude Opus 5.5", each model's `ProviderMark` at 11 (Claude's
+in its colour, the others in the secondary ink) before its name. The
+sentence is translated whole ("Changed from %@ to %@" in the core's
+catalogue, the ten languages) and cut around the two names, so French reads
+"Passé de ⌘ Simeon à ✳ Claude Opus 5.5" in its own order. A side without a
+model, or the same model on both, is no line.
+
+Checked: vitest (1243, two new for the line), tsc, ESLint, the words, the
+committed build; the core's test in Swift on Linux (17); the engine's four
+tests (the turn's model, a line only on a change and none at first sight,
+kept across a restart, a slow or failing writer never holding the turn, the
+line in an open, running or resting chat, waking no one, none in a group)
+and its full suite (1016, the one failure the renderer asset not built
+here); Chromium against a stand-in server, light, dark and French, two
+lines (Simeon to Claude, Claude to a DeepSeek key). Not checked: a real
+engine on a computer writing the line, and the Mac and iPhone apps built
+and run (no Xcode here; their Swift parses). The prettier warning on
+`src/core/shopCards.ts` was there before (#641) and is left as it is.
+
+Next: the engine published (a host bundle), with the founder's go, and the
+Mac and iPhone apps rebuilt.
+
 ### 10 November 2026: API keys, under Subscriptions
 
 The founder: "Below subscription something called api keys", with the

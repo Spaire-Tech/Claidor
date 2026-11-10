@@ -24,6 +24,7 @@ import {
   quoteLine,
   routineVerb,
   rowFor,
+  rowSide,
   stampText,
   threadCounts,
   threadEntries,
@@ -976,5 +977,57 @@ describe('a card whose line can’t be read', () => {
     }
     for (const kind of ['form', 'credential', 'question'] as const)
       expect(unreadCardWords(kind, line('Some words'))).toBe(notShown())
+  })
+})
+
+describe("the line when an agent's model changes (Chat.swift's ModelChange)", () => {
+  const changed = (id: string, from: JSONValue, to: JSONValue) =>
+    entry({
+      kind: 'event',
+      id,
+      timestampMs: 1000,
+      event: { type: 'model-changed', from, to },
+    })
+  const simeon = { model: null, name: 'Simeon', provider: null }
+  const opus = {
+    model: 'own:anthropic:claude-opus-5-5',
+    name: 'Claude Opus 5.5',
+    provider: 'anthropic',
+  }
+
+  it('reads with each model in its place, in the middle', () => {
+    const row = rowFor(changed('event-model-1', simeon, opus))
+    if (row?.kind !== 'modelChange') throw new Error(String(row?.kind))
+    expect(row.change.from).toEqual({ name: 'Simeon' })
+    expect(row.change.to).toEqual({
+      provider: 'anthropic',
+      name: 'Claude Opus 5.5',
+    })
+    expect(row.change.text).toBe('Changed from Simeon to Claude Opus 5.5')
+    expect(row.change.pieces).toEqual([
+      { kind: 'words', words: 'Changed from ' },
+      { kind: 'model', side: { name: 'Simeon' } },
+      { kind: 'words', words: ' to ' },
+      {
+        kind: 'model',
+        side: { provider: 'anthropic', name: 'Claude Opus 5.5' },
+      },
+    ])
+    expect(rowSide(row)).toBe('middle')
+  })
+
+  it('names a side by its provider, and draws nothing for a half or a non-change', () => {
+    const row = rowFor(
+      changed(
+        'e2',
+        { provider: 'deepseek' },
+        { provider: '../x', name: 'Odd' },
+      ),
+    )
+    if (row?.kind !== 'modelChange') throw new Error(String(row?.kind))
+    expect(row.change.from).toEqual({ provider: 'deepseek', name: 'DeepSeek' })
+    expect(row.change.to).toEqual({ name: 'Odd' })
+    expect(rowFor(changed('e3', simeon, null))).toBeUndefined()
+    expect(rowFor(changed('e4', opus, opus))).toBeUndefined()
   })
 })

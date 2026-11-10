@@ -74,6 +74,14 @@ const CLAUDE_CODE_MODEL = /^[a-z][a-z0-9.-]{0,63}$/;
 const CLAUDE_CODE_EFFORTS: ReadonlySet<string> = new Set(["low", "medium", "high", "xhigh", "max"]);
 
 let current: SimeonModelRoles = {};
+/**
+ * Each model's name as the last read gave it (`modelName`), and the model the
+ * Claude Code row names (`own:claude:…`): the chat's line when an agent's
+ * model changes names it with them (`turn-model.ts`, 10 November 2026).
+ * Kept apart from the roles, which stay the four ids and Claude Code's two.
+ */
+let modelNames: ReadonlyMap<string, string> = new Map();
+let claudeCodeModelId: string | undefined;
 let lastLogged = "";
 /** When the roles were last read, and where from (`startSimeonModelRoles`): the read before a turn. */
 let lastReadAt = 0;
@@ -111,13 +119,39 @@ export function simeonModelRoles(): SimeonModelRoles {
   return current;
 }
 
+/** A model's name as the server's last answer gave it; undefined when it named none. */
+export function simeonModelName(modelId: string): string | undefined {
+  return modelNames.get(modelId);
+}
+
+/** The model id of the Claude Code row (`own:claude:claude-opus-5-5`), while the person's Claude plan is chosen. */
+export function simeonClaudeCodeModelId(): string | undefined {
+  return claudeCodeModelId;
+}
+
+/** Keeps the names and the Claude Code row's id of one `/desktop/api/models/available` answer. */
+export function rememberSimeonModelNames(body: unknown): void {
+  const rows = (body as { data?: unknown } | null | undefined)?.data;
+  if (!Array.isArray(rows)) return;
+  const names = new Map<string, string>();
+  let claude: string | undefined;
+  for (const row of rows as Row[]) {
+    if (row == null || typeof row.modelId !== "string" || row.modelId.trim() === "") continue;
+    const id = row.modelId.trim();
+    if (typeof row.modelName === "string" && row.modelName.trim() !== "" && !names.has(id)) names.set(id, row.modelName.trim().slice(0, 80));
+    if (claude === undefined && row.role === "primary" && row.transportApi === CLAUDE_CODE_TRANSPORT && row.accessible !== false) claude = id;
+  }
+  modelNames = names;
+  claudeCodeModelId = claude;
+}
+
 export function setSimeonModelRolesForTest(roles: SimeonModelRoles): void {
   current = { ...roles };
   lastLogged = "";
   lastKept = "";
 }
 
-type Row = { modelId?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown; claudeCodeModel?: unknown; claudeCodeEffort?: unknown };
+type Row = { modelId?: unknown; modelName?: unknown; role?: unknown; transportApi?: unknown; provider?: unknown; accessible?: unknown; claudeCodeModel?: unknown; claudeCodeEffort?: unknown };
 
 function transportOf(row: Row): string {
   if (typeof row.transportApi === "string" && row.transportApi.length > 0) return row.transportApi;
@@ -232,12 +266,14 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
       note(`${HOST_LOG_PREFIX} model-roles unread status=${response.status}`);
       return undefined;
     }
-    const roles = parseSimeonModelRoles(await response.json());
+    const body: unknown = await response.json();
+    const roles = parseSimeonModelRoles(body);
     if (roles === undefined) {
       note(`${HOST_LOG_PREFIX} model-roles unread reason=not a model list`);
       return undefined;
     }
     current = roles;
+    rememberSimeonModelNames(body);
     lastReadAt = Date.now();
     if (source.rememberIn !== undefined) keep(source.rememberIn, roles);
     note(`${HOST_LOG_PREFIX} model-roles ${rolesLine(roles)}`);

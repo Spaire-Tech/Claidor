@@ -8,6 +8,7 @@
 import { randomUUID } from "node:crypto";
 import { say } from "../../../shared/say.js";
 import type { ClaudeCodeFallback } from "../../claude-code/claude-code-agent-turn.js";
+import { appendChatLine } from "./chat-line.js";
 import type { TranscriptEntry } from "./transcript-hub.js";
 
 const KEYS = {
@@ -35,20 +36,5 @@ export async function appendClaudeCodeNotice(tm: any, agentId: string, why: Clau
     forPerson: true,
     timestampMs: Date.now(),
   };
-  const sessions = tm.sessions;
-  if (sessions?.activeSession?.id === agentId && (sessions.inMemoryTranscriptAgentId == null || sessions.inMemoryTranscriptAgentId === agentId)) {
-    tm.appendEntry(entry);
-    void tm.roster?.emitAgentUpdate?.(agentId);
-    return;
-  }
-  const live = sessions?.liveSessions?.get(agentId);
-  if (live != null) live.db.appendTranscriptEntry(entry);
-  else {
-    const withDb = tm.sessionStore?.withAgentDb;
-    if (typeof withDb !== "function") return;
-    const written = await withDb.call(tm.sessionStore, agentId, (db: { appendTranscriptEntry(entry: TranscriptEntry): boolean }) => db.appendTranscriptEntry(entry));
-    if (written === false) return;
-  }
-  tm.roster?.emit?.({ type: "appended", entry }, agentId);
-  void tm.roster?.emitAgentUpdate?.(agentId);
+  await appendChatLine(tm, agentId, entry);
 }

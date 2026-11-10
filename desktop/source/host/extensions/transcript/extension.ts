@@ -1,5 +1,8 @@
+import { join } from "node:path";
 import { setClaudeCodeFallbackNotice } from "../../claude-code/claude-code-agent-turn.js";
 import { appendClaudeCodeNotice } from "./claude-code-notice.js";
+import { appendModelChangeLine } from "./model-change-line.js";
+import { setTurnModelLine, TURN_MODELS_FILE } from "../inference/turn-model.js";
 import {
   createDebouncePolicy,
   realClock,
@@ -68,6 +71,8 @@ export const transcriptExtension = defineHostExtension<
     );
     // The chat's one line when Claude Code can't run a turn and Simeon's models answer (docs/your-own-models.md, section 6).
     setClaudeCodeFallbackNotice((agentId, why) => void appendClaudeCodeNotice(manager, agentId, why));
+    // The chat's line when an agent's turn is on another model than its last ("Changed from Simeon to Claude Opus 5.5").
+    setTurnModelLine((agentId, event) => appendModelChangeLine(manager, agentId, event), join(sandRoot, TURN_MODELS_FILE));
     manager.setTelemetry(deps.telemetry.brain);
     manager.setProductAnalytics(deps.telemetry.analytics);
     manager.setTraceFlusher(deps.telemetry.flushTracing);

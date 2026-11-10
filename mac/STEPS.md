@@ -3038,3 +3038,21 @@ Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
 and the core's tests ran on Linux (16). The web app's translation ran in
 Chromium, light, dark and French.
 
+### The chat says when an agent's model changes (10 November 2026)
+
+The founder: "whenever a model is changed, i want this to fire in the
+chat." The engine writes a `model-changed` event at the first turn on a new
+model (`docs/your-own-models.md`, section 10). The core reads it as
+`.modelChange(id:change:)` (`ModelChange`: each side's provider and name,
+and the sentence in pieces). The Mac draws it in `ChatPane.swift`
+(`ModelChangeLine`) as the notices are, centred in 12-point secondary ink:
+"Changed from ⌘ Simeon to ✳ Claude Opus 5.5", each mark 11 points from
+`Providers/<slug>-mark` (or `simeon-mark`), a template in the ink except
+Claude's, which keeps its colour. Choosing words across messages copies it
+as its sentence (`TranscriptSelection.swift`). The iPhone's `ChatView.swift`
+does the same in its own `ModelChangeLine`.
+
+Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
+and the core's tests ran on Linux (17). The web app's translation ran in
+Chromium, light, dark and French.
+

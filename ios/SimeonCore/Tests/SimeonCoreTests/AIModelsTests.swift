@@ -339,6 +339,31 @@ final class AIModelsTests: XCTestCase {
     XCTAssertNil(consent.note)
   }
 
+  func testAModelChangeIsALineWithEachModelsMark() {
+    let line: (String, JSON, JSON) -> Entry = { id, from, to in
+      Entry(["kind": "event", "id": .string(id), "timestampMs": 1_000, "event": ["type": "model-changed", "from": from, "to": to]])!
+    }
+    let simeon: JSON = ["model": nil, "name": "Simeon", "provider": nil]
+    let opus: JSON = ["model": "own:anthropic:claude-opus-5-5", "name": "Claude Opus 5.5", "provider": "anthropic"]
+    let rows = Chat.rows([line("event-model-1", simeon, opus)])
+    guard case .modelChange(let id, let change)? = rows.first(where: { $0.kind == "model-change" }) else { return XCTFail("\(rows.map(\.kind))") }
+    XCTAssertEqual(id, "event-model-1")
+    XCTAssertEqual(change.from, ModelChange.Side(provider: nil, name: "Simeon"))
+    XCTAssertEqual(change.to, ModelChange.Side(provider: "anthropic", name: "Claude Opus 5.5"))
+    XCTAssertEqual(change.text, "Changed from Simeon to Claude Opus 5.5")
+    XCTAssertEqual(change.pieces, [.words("Changed from "), .model(change.from), .words(" to "), .model(change.to)])
+    // In the middle, like the chat's other lines.
+    XCTAssertEqual(rows.first(where: { $0.id == "event-model-1" })?.side, .middle)
+    // A side without a name is named by its provider; one that isn't a slug is Simeon's.
+    let unnamed = Chat.rows([line("e2", ["provider": "deepseek"], ["provider": "../x", "name": "Odd"])])
+    guard case .modelChange(_, let other)? = unnamed.first(where: { $0.kind == "model-change" }) else { return XCTFail() }
+    XCTAssertEqual(other.from, ModelChange.Side(provider: "deepseek", name: "DeepSeek"))
+    XCTAssertEqual(other.to, ModelChange.Side(provider: nil, name: "Odd"))
+    // No line when a side is missing or both are the same.
+    XCTAssertFalse(Chat.rows([line("e3", simeon, nil)]).contains { $0.kind == "model-change" })
+    XCTAssertFalse(Chat.rows([line("e4", opus, opus)]).contains { $0.kind == "model-change" })
+  }
+
   func testAKeysConsentSaysWhoKeepsTheKeyAndWhoBills() {
     let consent = ConnectConsent(keyProvider: "deepseek", name: "DeepSeek")
     XCTAssertEqual(consent.id, "key:deepseek")

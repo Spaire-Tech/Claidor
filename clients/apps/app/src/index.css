@@ -1240,6 +1240,20 @@ button {
   max-width: 560px;
 }
 
+/* "Changed from ⌘ Simeon to ✳ Claude Opus 5.5": each model's mark at the words' size, kept with its name. */
+.model-change-side {
+  white-space: nowrap;
+}
+
+.model-change-side .model-mark {
+  display: inline-block;
+  vertical-align: -1px;
+}
+
+.model-change-side .model-mark-ink {
+  background-color: var(--ink-secondary);
+}
+
 .send-state {
   display: flex;
   gap: 8px;

@@ -1099,6 +1099,17 @@ key sheet: `docs/your-own-models.md`, section 7.
   are on `[simeon] model-roles primary=… cheap=… fallback=… computer=…`, written when
   they change, `model-roles remembered …` when the host starts on the kept
   ones, or `model-roles unread` when the read fails.
+- **The chat's line when an agent's model changes** (10 November 2026,
+  "Changed from Simeon to Claude Opus 5.5"): at the start of an agent's own
+  turn (a message, a routine, a wake), the engine compares the turn's model
+  with the one it last saw for that agent (`model-seen.json` in the engine's
+  data folder) and writes `[simeon] model-changed agent=… from=… to=…`
+  (`simeon` for Simeon's own model). No such line after a change in AI
+  Models: the roles were read as before (`model-roles …`), or the agent has
+  not had a turn since. The first turn an agent has on this engine is only
+  remembered, never a line. `model-changed unwritten` or `not kept` gives
+  the reason the line or the file was not written; the turn goes on either
+  way. `docs/your-own-models.md`, section 10.
 - A tool the model makes up no longer fails the run (15 October 2026: Claude
   called `CheckSubagent`, and the box log read `[sand][turn] agent run failed
   … NoSuchToolError … unavailable tool 'CheckSubagent'`). The call now
