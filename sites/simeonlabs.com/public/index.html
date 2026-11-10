@@ -969,6 +969,27 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 /* a little narrower than the page on a computer (the founder, 1 November 2026: "a bit too wide"); the whole width on a phone */
 @media (max-width:734px){.film-box{width:100%}}
 
+/* Your own models (the founder, 10 November 2026: "a big composer, like the one in the vid, with claude, chat gpt, ...
+   google, mistral, hugging face around, and the model constantly changing"), in the page's own parts: the security
+   section's head, the gallery's grey card, its connector scene's row of marks sliding one place at a time (the mark at
+   rest in the middle swells, those at the edges blur), and the message card's composer, large. As a mark comes to rest,
+   the composer's model becomes that provider's, deleted, a dot and typed as the launch film does it. The marks are
+   LobeHub's (MIT, NOTICE), as the apps' AI Models draw them. */
+.mo-card{position:relative;margin-top:clamp(40px,4*var(--vw,1vw),80px);border-radius:28px;background:var(--soft);aspect-ratio:1260/560;overflow:hidden;container:mo/inline-size;isolation:isolate}
+.mo-row{position:absolute;left:0;right:0;top:10%;height:44%;overflow:hidden}
+.mo-orb{position:absolute;left:0;top:50%;object-fit:contain;will-change:transform,filter,opacity}
+.mo-compose{position:absolute;left:50%;top:73%;transform:translate(-50%,-50%);width:min(72cqw,880px);display:flex;align-items:center;gap:1.4cqw}
+.mo-plus{flex:none;display:grid;place-items:center;width:5.6cqw;height:5.6cqw;border-radius:50%;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1),0 .4cqw 1cqw rgba(0,0,0,.06);font-size:3.2cqw;font-weight:300;line-height:1;color:var(--ink)}
+.mo-field{flex:1;min-width:0;display:flex;align-items:center;gap:1.6cqw;height:5.6cqw;padding:0 1.9cqw 0 2.4cqw;border-radius:99px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.1),0 .6cqw 2cqw -.8cqw rgba(0,0,0,.14);font-size:1.9cqw;letter-spacing:-.015em}
+.mo-ph{flex:1;min-width:0;color:#b0b0b5;white-space:nowrap;overflow:hidden}
+.mo-model{flex:none;display:flex;align-items:center;gap:.42em;color:var(--ink);font-weight:500;white-space:nowrap}
+.mo-model img{width:1.08em;height:1.08em;display:block}
+.mo-model .dot{width:.86em;height:.86em;border-radius:50%;display:block}
+.mo-model .chev{width:.62em;height:.62em;color:#8e8e93}
+.mo-mic{flex:none;width:2.3cqw;height:2.3cqw;color:#8e8e93}
+@media (max-width:809.98px){.mo-card{aspect-ratio:4/4.2;border-radius:24px}}
+@container mo (max-width:700px){.mo-row{top:10%;height:44%}.mo-compose{top:74%;width:88cqw;gap:2.4cqw}.mo-plus{width:11cqw;height:11cqw;font-size:6cqw}.mo-field{height:11cqw;gap:2.6cqw;padding:0 3.6cqw 0 4.6cqw;font-size:4.2cqw}.mo-ph{visibility:hidden}.mo-mic{width:4.6cqw;height:4.6cqw}}
+
 /* Pricing. */
 .bill{display:inline-flex;margin-top:30px;padding:3px;border-radius:99px;background:#e8e8ed}
 .bill button{appearance:none;border:0;background:none;border-radius:99px;padding:8px 18px;font-size:14px;cursor:pointer;color:var(--ink2)}
@@ -1240,6 +1261,72 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
         if (document.fullscreenElement) document.exitFullscreen(); box.classList.remove('on', 'idle'); v.load();
       });
     }
+  </script>
+</section>
+
+<section class="trust" id="models" aria-label="Use Simeon&#8217;s models or bring your own">
+  <div class="wrap">
+    <div class="trust-top">
+      <h2>Use Simeon&#8217;s models.<br>Or bring your own.</h2>
+      <p>Connect your ChatGPT, Claude or Grok plan, or an API key from 25 providers, and choose the model your agents use right in the message box.</p>
+    </div>
+    <div class="mo-card" aria-hidden="true">
+      <div class="mo-row"><img class="mo-orb" src="logos/simeon.svg?v=5c65bb67" alt="" data-model="Simeon"><img class="mo-orb" src="img/model-claude.svg?v=a85248ed" alt="" data-model="Claude Opus 5.5"><img class="mo-orb" src="img/model-openai.svg?v=2dc9e479" alt="" data-model="GPT-6 Astra"><img class="mo-orb" src="img/model-gemini.svg?v=0e9bb449" alt="" data-model="Gemini 4 Argon"><img class="mo-orb" src="img/model-mistral.svg?v=30d9d0c2" alt="" data-model="Mistral Large"><img class="mo-orb" src="img/model-grok.svg?v=a3df7735" alt="" data-model="Grok 4.7"><img class="mo-orb" src="img/model-huggingface.svg?v=1060f23f" alt="" data-model="GLM-5.3"><img class="mo-orb" src="img/model-deepseek.svg?v=1f87241e" alt="" data-model="DeepSeek V4 Pro"><img class="mo-orb" src="img/model-kimi.svg?v=c62c20c4" alt="" data-model="Kimi K3.1 Pro"><img class="mo-orb" src="img/model-qwen.svg?v=fea40f5a" alt="" data-model="Qwen3.8 Max"></div>
+      <div class="mo-compose"><span class="mo-plus">+</span><span class="mo-field"><span class="mo-ph">Message Simeon</span><span class="mo-model"></span><svg class="mo-mic" viewBox="0 0 24 24"><path fill="currentColor" d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12z"/></svg></span></div>
+    </div>
+  </div>
+  <script>
+    // The row slides one place as the connector scene's does, then holds; the mark at rest in the middle is the model
+    // the composer shows, changed as the launch film changes it. It runs only while it is on screen.
+    (() => {
+      const row = document.querySelector('.mo-row'), model = document.querySelector('.mo-model');
+      if (!row || !model) return;
+      const orbs = [...row.querySelectorAll('.mo-orb')];
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const CHEV = '<svg class="chev" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      const show = (orb, n) => { model.innerHTML = '<img src="' + orb.getAttribute('src') + '" alt="">' + orb.dataset.model.slice(0, n) + CHEV; };
+      let shown = 0, typing = 0, t0 = null, run = 0;
+      show(orbs[0], orbs[0].dataset.model.length);
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const change = async (to) => {
+        const id = ++typing, from = orbs[shown];
+        for (let n = from.dataset.model.length - 1; n >= 0; n--) { if (id !== typing) return; show(from, n); await wait(34); }
+        for (const c of ['#000000', '#0577fd', '#fb6713']) { if (id !== typing) return; model.innerHTML = '<i class="dot" style="background:' + c + '"></i>' + CHEV; await wait(90); }
+        shown = to;
+        for (let n = 1; n <= orbs[to].dataset.model.length; n++) { if (id !== typing) return; show(orbs[to], n); await wait(34); }
+      };
+      let rest = 0; change.to = 0;
+      const frame = (id) => (now) => {
+        if (id !== run) return;
+        const W = row.clientWidth, H = row.clientHeight;
+        if (W && H) {
+          const t = Math.min(W * 0.2, H * 0.62), size = t * 0.5, gap = t * 1.05, lane = gap * orbs.length;
+          if (t0 == null) t0 = now;
+          const period = 2600, move = 550, k = still ? 0 : (now - t0) / period, step = Math.floor(k), f = Math.min(1, (k - step) * period / move);
+          const ease = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2;
+          const shift = (rest + step + ease) * gap;
+          orbs.forEach((orb, i) => {
+            let x = (i * gap - shift) % lane;
+            if (x < -lane / 2) x += lane;
+            if (x > lane / 2) x -= lane;
+            const d = Math.abs(x) / (W / 2);
+            const sz = size * (1 + 0.6 * Math.max(0, 1 - Math.abs(x) / (gap * 0.6)));
+            orb.style.width = orb.style.height = sz + 'px';
+            orb.style.transform = 'translate(' + (W / 2 + x - sz / 2) + 'px,-50%)';
+            orb.style.filter = 'blur(' + Math.max(0, (d - 0.8) * 22).toFixed(1) + 'px)';
+            orb.style.opacity = Math.max(0, Math.min(1, 1.9 - d)).toFixed(2);
+          });
+          // the mark coming to rest in the middle: the composer takes its model as it arrives
+          const at = (rest + step + (f > 0.5 ? 1 : 0)) % orbs.length;
+          if (!still && at !== change.to) { change.to = at; change(at); }
+        }
+        if (id > 0 && !still) requestAnimationFrame(frame(id));
+      };
+      frame(0)(performance.now()); t0 = null;
+      new ResizeObserver(() => frame(0)(performance.now())).observe(row);
+      // on screen again, it carries on from the mark it showed
+      new IntersectionObserver(([e]) => { if (e.isIntersecting) { rest = shown; t0 = null; requestAnimationFrame(frame(++run)); } else run++; }, { threshold: 0.1 }).observe(row);
+    })();
   </script>
 </section>
 

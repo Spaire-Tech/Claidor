@@ -63,7 +63,8 @@ Grok and xAI are also, since 10 November 2026, the names of a provider a
 person connects for their agents on their own SuperGrok or X Premium plan
 (the founder: "lets do grok"; `docs/your-own-models.md`, section 9). That
 rule (a **contract**: xAI's addresses and the headers its servers read, and
-Grok's name on the apps' pages) covers only the files of that feature, and
+Grok's name on the apps' pages and on the website's section on people's own
+models, with its mark) covers only the files of that feature, and
 never a line naming the upstream Grok Bot, which stays a finding everywhere.
 
 SpaceXAI (xAI's API) is also one of the providers a person brings their own
