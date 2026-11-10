@@ -138,6 +138,11 @@ class Scope(StrEnum):
     # memory, the profile, or anything else under `/desktop`.
     model_proxy = "model_proxy"
 
+    # A bot the person added (ChatGPT's, Meta's…) talking to their
+    # agents through `/mcp` (`simeon.desktop.mcp`): list them, message them,
+    # read their answers. Nothing else of the account.
+    agents = "agents"
+
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: cs.CoreSchema, handler: GetJsonSchemaHandler
@@ -152,6 +157,7 @@ RESERVED_SCOPES = {Scope.web_read, Scope.web_write}
 SCOPES_SUPPORTED = [s.value for s in Scope if s not in RESERVED_SCOPES]
 SCOPES_SUPPORTED_DISPLAY_NAMES: dict[Scope, str] = {
     Scope.openid: "OpenID",
+    Scope.agents: "Talk to your agents for you",
     Scope.profile: "Read your profile",
     Scope.email: "Read your email address",
     Scope.web_read: "Web Read Access",

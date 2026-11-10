@@ -137,6 +137,12 @@ async def get_auth_subject(
     if is_box_proxy_path(request.url.path):
         return AuthSubject(Anonymous(), set(), None)
 
+    # A bot's MCP calls (simeon.desktop.mcp) check their own token, so a
+    # stale one is answered with MCP's 401 (where to sign in again), not
+    # an OAuth2 error before the endpoint runs.
+    if request.url.path == "/mcp":
+        return AuthSubject(Anonymous(), set(), None)
+
     token = get_bearer_token(request)
     if token is not None:
         if is_registration_token_prefix(token):

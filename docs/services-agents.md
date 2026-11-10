@@ -2980,3 +2980,36 @@ TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio wait for an OAuth app of S
 own in Composio (`OWN_APP_NEEDED`, 7c); Instacart waits on its maker (7a). AppFolio and Uber
 left the packs on 23 October 2026: Dalia (Landlords) keeps her tenants' files in Notion and
 Jasper (Busy Professionals) times the airport rides with Google Maps.
+
+## 18. Bots: other agents talking to yours (MCP)
+
+The founder, 10 November 2026, with another app's "Add a bot" as the reference: "i want it to
+talk to other agents like dots, muse etc". Simeon is an MCP server at
+**`https://api.simeonlabs.com/mcp`**. A person gives that address to any bot that can add an
+MCP server (ChatGPT's, Meta's, Claude…), and the bot then talks to their agents as them
+(`server/simeon/desktop/mcp.py`).
+
+- **Signing in.** The bot's first call is answered 401 with `WWW-Authenticate: Bearer
+  resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="agents"`. From there it
+  finds the server's own OAuth (`/.well-known/oauth-authorization-server`, the same as
+  `openid-configuration`), registers itself (`/v1/oauth2/register`, PKCE, no secret needed) and
+  sends the person to `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see
+  "Dots requests the following permissions to your personal Simeon account: Talk to your agents
+  for you", Allow or Deny. A bot asking for the `agents` scope always signs in as the person,
+  never an organization (`authorization_code.py`). Its token reaches `/mcp` and nothing else.
+- **The tools.** `list_agents` (the agents and group chats from the server's copy, so a
+  sleeping computer is not woken), `send_message` (into the inbox, like a message written in an
+  app while the computer is away: the computer is woken to take it; the words start with the
+  bot's name, "Dots: …", so the agent and the person see who wrote them), `read_messages` (the
+  chat's newest messages, `since` a time, and `wait_seconds` up to 25 for the agent's answer).
+- **Stateless.** Each POST is one JSON-RPC message and gets a JSON answer; a notification gets
+  202; GET answers 405 (no stream). Protocol versions 2024-11-05 to 2025-11-25.
+
+**Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`) and the chats copy.
+
+**Log.** `mcp.tool` with the tool, the person and the bot's client id (never a message).
+`desktop.chats.inbox.*` as for the apps' messages.
+
+**Not yet verified.** Not added to a real ChatGPT, Claude or Meta bot: the sign-in through the web
+consent page and a full round trip (message, wake, answer) were checked only in the server's
+tests. A bot whose redirect address is not https (a desktop app's own scheme) can't register yet.
