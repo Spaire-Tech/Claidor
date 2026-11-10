@@ -1353,8 +1353,8 @@ computer hibernated to a snapshot. What differs from Docker:
   date, and only then is it replaced; if the backup cannot be brought up to
   date it stays as it is (`sand.box.update_deferred`, reason `backup`).
 - **A new engine on the same computer** (9 November 2026). When only the
-  host bundle is new, the computer is not replaced: once its backup is up to
-  date and it is idle, the server writes each engine file beside the old one
+  host bundle is new, the computer is not replaced: once it is idle, the
+  server writes each engine file beside the old one
   (`<path>.next`) and runs `/run/simeon/update-engine.sh` on it
   (`ENGINE_UPDATE_SCRIPT` in `box_e2b.py`), which moves the files in, stops
   the engine and the exec daemon (TERM, then KILL after 15 seconds) and
@@ -1367,10 +1367,24 @@ computer hibernated to a snapshot. What differs from Docker:
   published, every computer lost it. When the engine does not come back
   (`sand.box.update_in_place_failed` with the script's answer:
   `not-running`, `not-staged`, `not-moved`, `not-restarted`, `no-pgrep`, or
-  `not ready`), the computer is replaced from its backup as before. A new
-  template, or a move to another server, still replaces it. Run here against
-  a stand-in supervisor and engine (the swap, a host ignoring TERM, nothing
-  staged, nothing restarting); not yet on a real computer.
+  `not ready`), its backup is brought up to date and the computer is
+  replaced from it as before (or kept as it is when the backup cannot be:
+  `update_deferred`, reason `backup`). A new template, or a move to another
+  server, still replaces it. Run here against a stand-in supervisor and
+  engine (the swap, a host ignoring TERM, nothing staged, nothing
+  restarting); not yet on a real computer. Since 11 November 2026 no backup
+  is asked for before the swap, which keeps the disk: asked first, a backup
+  the computer could not finish put the update off on every wake, each wake
+  holding the person's computer about two minutes (the app's other calls
+  answered "still starting"), and the computer did not answer for about an
+  hour.
+- **An engine that does not answer.** A computer that runs, or was just
+  woken, and whose engine has not answered after `BOX_READY_TIMEOUT` (90
+  seconds) has its engine restarted in place the same way, the published
+  one, its disk kept (`sand.box.revive`, then `sand.box.revived` or
+  `sand.box.revive_failed`), at most once every ten minutes
+  (`sand_boxes.host_meta.revived_at`), so a restart that did not help is not
+  repeated on every wake.
 - **Reaching it.** The API dials `https://<port>-<sandbox>.<domain>` with the
   computer's traffic token (`e2b-traffic-access-token`, kept in
   `sand_boxes.host_meta`); E2B refuses its ports to anyone without it. The
