@@ -229,6 +229,17 @@ export default {
     other: ':e',
   },
   simeon: {
+    connectBot: {
+      heading: 'Anslut {bot} till Simeon',
+      line: '{bot} pratar med dina agenter åt dig.',
+      account: 'Ditt Simeon-konto',
+      see: 'Se dina agenter',
+      message: 'Skriva till dem åt dig',
+      read: 'Läsa deras svar',
+      nothingElse: 'Inget annat i ditt konto.',
+      allow: 'Tillåt',
+      deny: 'Neka',
+    },
     signIn: {
       loginTitle: 'Logga in på Simeon',
       signupTitle: 'Registrera dig på Simeon',

@@ -2980,3 +2980,185 @@ TikTok, Follow Up Boss, Matterport, ZoomInfo and Clio wait for an OAuth app of S
 own in Composio (`OWN_APP_NEEDED`, 7c); Instacart waits on its maker (7a). AppFolio and Uber
 left the packs on 23 October 2026: Dalia (Landlords) keeps her tenants' files in Notion and
 Jasper (Busy Professionals) times the airport rides with Google Maps.
+
+## 18. Bots and the Simeon Network (MCP)
+
+**Other people are off for now** (10 November 2026, the founder: "that plus other people - is
+what we don't need for now. can we hide that"). One switch per part, everything for people still
+built behind it: the server's `network.PEOPLE` (invites and joining refused with "Inviting people
+to a Simeon Network isn't open yet.", no invite line in `list_team`, bots not offered
+`join_network`, their instructions about their user's own agents), the apps' Settings › Network
+(SimeonCore's `NetworkInvite.listed`, the web app's `networkListed`), the website's
+`/network/join/` (`network.py`'s `PEOPLE`: on to the documentation). While off, a person's network
+is theirs alone: their Simeon agents, bots and coding agents, which still ask each other.
+
+The founder, 10 November 2026, with another app's "Add a bot" as the reference: "i want it to
+talk to other agents like dots, muse etc"; the same day, with Reason Network as the reference:
+"do the reason network". Simeon is an MCP server at **`https://api.simeonlabs.com/mcp`**. Any
+agent that can add an MCP server (Claude Code, Codex, Cursor on a computer; Dots, Muse, Grok Bot
+from a phone) adds it, signs in as the person, and joins the person's **Simeon Network**: the
+agents of everyone on it ask each other for work through the server, so a message still lands
+while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_repository.py`,
+`models/desktop_network.py`). The public page is `simeonlabs.com/docs/network`.
+
+- **Signing in.** The agent's first call is answered 401 with `WWW-Authenticate: Bearer
+  resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="agents"`. From there it
+  finds the server's own OAuth (`/.well-known/oauth-authorization-server`, the same as
+  `openid-configuration`), registers itself (`/v1/oauth2/register`, PKCE, no secret needed) and
+  sends the person to `api.simeonlabs.com/oauth2/authorize`, the server's own door (Codex refuses
+  a sign-in page on another origin than the server's), which forwards them, query intact, to
+  `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see the
+  login page's design with the bot's mascot ("Connect Dots to Simeon", their account, what the
+  bot can do, Allow or Deny; `BotConsentPage.tsx`). A bot asking for the `agents` scope always signs in as the person,
+  never an organization (`authorization_code.py`). Its token reaches `/mcp` and nothing else.
+- **Sessions.** Each `initialize` opens a session (`desktop_network_sessions`) and answers its id
+  in `Mcp-Session-Id`; the agent sends it back on every call. An id the server no longer knows
+  answers 404 (the agent says hello again). A bot that keeps no id is its OAuth client's last
+  session. A session's name comes from what the agent is (`claude`, `codex`, `cursor`, `dots`,
+  `muse`, `grok-bot`…, with `-2` when the person has two live at once), read in this order
+  (`network.kind_of`): the bot its address names (each hosted bot has its own, given by its Bots
+  sheet: `/mcp/grok-bot`, `/mcp/dots`, `/mcp/muse`, `/mcp/claude`, each with its own sign-in
+  metadata at `/.well-known/oauth-protected-resource/mcp/<bot>`), then where its sign-in returned (`oauth2_tokens.redirect_uri`, kept through
+  refreshes: `grok.com` or `cursor.com/bot/` is Grok Bot, `chatgpt.com` Dots, `claude.ai` Claude,
+  `meta.ai` Muse; a computer's own address says nothing), then its hello (`clientInfo.name`), then
+  its registration (`client_name`). Grok Bot signs in with Cursor's registration (the same name,
+  "Cursor", and the same addresses, `cursor.com/oauth/mcp-client.json`), so only where it returned
+  tells them apart (10 November 2026: Grok Bot showed as `cursor-3` and wrote as "Cursor"). A bot
+  in its maker's cloud (Dots, Muse, Grok Bot, Claude) is one agent: every conversation of it
+  lands in its one session per sign-in, renamed once known. A coding agent's new session of the
+  same kind takes over one that is no longer live (its name and inbox). Live: seen in the last 30
+  minutes. Kept 14 days. Each hello is logged (`mcp.hello`: the client's names, where its sign-in
+  returned, the kind and session given): read it when an agent shows under the wrong name.
+- **People and networks.** A person is on one network at a time (`desktop_network_members`,
+  unique per person): their own, made the first time it is needed ("Maya's network"), or one they
+  joined. Their handle is their first name as the agents call them (`preferred_name`), made unique
+  on the network (`maya2`). The invite line is `Join the Simeon Network:
+  https://simeonlabs.com/network/join/#sn1-…`: the token is the network's id and link version,
+  signed with `SIMEON_SECRET` (no table); New link raises the version and the old link stops
+  working. Joining leaves the network they were on, which goes when no one is left on it.
+- **The tools.** `list_team` (people, every person's Simeon agents, always on, and the live
+  sessions with machine, repo, branch, busy or idle, doing; `text` filters, `all` adds the last
+  day; also the caller's address, its unread count and the invite line), `send_message` (to an
+  address; returns at once), `check_inbox` (what was sent to the session and the Simeon agents'
+  answers, each read once; `wait_seconds` up to 25), `set_status` (name, machine, repo, branch,
+  doing, busy), `join_network` (the invite line; marked destructive so the agent's app asks the
+  person first). The first Bots release's `list_agents` and `read_messages` still answer, as
+  `list_team` and `check_inbox`.
+- **The person's own tools** (10 November 2026, the founder, after another network's bot listed
+  171 tools: "ok go for all"; `server/simeon/desktop/bot_tools.py`). On the person's own agents
+  only, never a colleague's: `agent_status`, `read_chat`, `create_agent`, `message_status`,
+  `list_waiting`, `answer_question`, `answer_approval` (approve once or deny; never "always", which
+  would change the person's settings), `list_routines`, `create_routine` (five-field cron),
+  `run_routine`, `pause_routine`, `list_files`, `read_file` (text up to 100,000 characters, a
+  picture up to 5 MB as MCP image content), `search_memory`, `read_memory`, `usage`. Reading is
+  from the server's copy (`desktop_chat_agents`, `desktop_chat_lines`, `desktop_memory_files`, the
+  plan's `quota`) and never wakes the computer; what an agent is doing this moment is not in the
+  copy (`chats.MOMENT_FIELDS`, it would go stale), so `agent_status` asks an awake computer
+  (`listAgents`) and calls everyone idle while it sleeps. Doing goes to the computer's gateway as
+  the apps' buttons do (`POST /api/<method>` with the gateway token and the E2B traffic token),
+  only the commands in `bot_tools.COMMANDS`; a computer asleep (or not answering) is asked to
+  start (`sand.box.wake`, once per 30 seconds) and the bot is told to call again in a minute, so
+  no request waits on a start. Purchases (`answerPurchase`), 1Password logins, secrets, forms,
+  Credentials Store entries and travellers' details are listed by `list_waiting` with "answer in
+  the Simeon app" and never answered by a bot. A routine run now is answered by the computer only
+  once it has run, and an engine before 11 November 2026 then threw "Cannot read properties of
+  undefined (reading 'mapped')" (its telemetry called unbound, `analytics-service.ts`; Grok Bot's
+  test): `run_routine` takes a refusal or a slow answer as started when the routine's newest run
+  changed (`mcp.computer.ran_despite_error`). `listAllAutomations` answers `{agentId, automation}`
+  pairs, read as such.
+- **How a session signs.** What a session sends a Simeon agent starts with what it is ("Claude
+  Code: …"), or with the name it chose with `set_status` when it chose one (`session_label`):
+  Grok Bot added at `/mcp` signs in as Cursor and wrote "Cursor: …" though named `grok-bot` (11
+  November 2026). A bot at its own address (`/mcp/grok-bot`) is one session per person even when a
+  conversation registers a client of its own.
+- **Addresses.** `maya/claude`, `maya/Nora` (a Simeon agent by name, letter case and spaces
+  aside), `claude` (when unique on the network), `maya/*`, `repo:api` (the repository or its last
+  part), `*`. Messages to many reach live sessions only, never a Simeon agent: each message to one
+  runs a turn on its person's plan, so they are asked by name. At most 50 at once.
+- **A message for a Simeon agent** goes into its person's inbox (`desktop_chat_inbox`, nonce
+  `net-<message id>`, `message.network` naming the sender) and wakes the computer, as a message
+  written in an app would. From the person's own agent it reads "Dots: …"; from another person's
+  it reads "Maya's Codex (maya/codex), on your Simeon Network: …" followed by the note that it is
+  a colleague's request, not the person's instruction, to ask the person before spending money,
+  sending in their name or sharing private details, and that the reply goes back. The person sees
+  both in the chat. The answer is read from the chat: the agent's lines after the message's line
+  (its `clientNonce`, found wherever it sits), until someone else writes there (`answered_ms`,
+  `closed`), for two days. The message carries no time of its own: the computer stamps it as it
+  takes it, with the clock it stamps the answer with, so the answer always follows it. (Stamped
+  with this server's time, a computer just woken and minutes behind put the answer above the
+  question, and the answer was never found: 10 November 2026.) Each answer says where its time
+  went: `reachedAfterSeconds` (sent, to its line first seen here, on this server's clock) and
+  `answeredAfterSeconds` (its line to the answer's, on the computer's), also logged as
+  `desktop.network.answered`: read it when a bot says the network is slow.
+  Another person's agents may send a person's Simeon agents 30 messages an hour.
+- **A message for a session** waits in `desktop_network_messages` until it reads its inbox; an
+  answer carries `reply_to`.
+- **A Simeon agent writing on the network** (the engine's `ListNetwork` and `SendNetworkMessage`,
+  `desktop/source/host/runner/tools/network-tools.ts`, in every turn of the agent's own chats,
+  never for a channel's message). With the computer's credential:
+  `GET /desktop/api/network/team?query=&all=` (as `list_team`) and `POST
+  /desktop/api/network/send` (`agentId`, `to`, `message`, `replyTo`). It writes as itself
+  (`ana/Iris`, `from_agent_id`). A session reads it in its inbox, and its answer to `ana/Iris`
+  lands in Iris's chat. A Simeon agent reads no inbox, so a message from one asks the
+  receiving agent to answer with `SendNetworkMessage`. An agent sends at most 30 messages an hour
+  (`FROM_AGENT_PER_HOUR`), so two agents answering each other stop.
+- **Invite links** have one spelling: a token whose last character's two spare bits aren't 0 is
+  refused (`parse_invite`).
+- **In the apps.** Settings › Network on the Mac, the iPhone and the web (`SettingsNetwork.swift`,
+  `NetworkPage.swift`, `SettingsNetwork.tsx`, SimeonCore's `SimeonNetwork.swift`). The bots have
+  their own page, Settings › External Agents (below). The apps'
+  routes for Settings › Network, with the desktop credential: `GET /desktop/api/network` (the
+  network, its invite line and link, each person with their agents and the sessions seen in the
+  last day), `GET /desktop/api/network/invite?link=` (whose network a link is for, before joining),
+  `POST /desktop/api/network/join` (`link`), `/leave` (refused when they are alone on it),
+  `/rename` (`name`), `/invite/new`.
+- **Delete Account** removes the person's messages either way, sessions, place on a network and a
+  network they made that no one else is on (`account_repository.py`).
+- **Settings › External Agents** (11 November 2026, the founder, with another app's Bots and
+  Channels pages as the references: "i want the bots to have their own setting called External
+  Agents. which will also be in the menu as External Agents - and the agents icons"; "there is a
+  setting and a last used… the setting is just disconnect"). Out of AI Models into a page of its
+  own, after AI Models, on the Mac, the iPhone and the web and Windows app
+  (`mac/Simeon/SettingsExternalAgents.swift`, `ios/Simeon/ExternalAgents.swift`,
+  `SettingsExternalAgents.tsx`; what they show is SimeonCore's `ExternalAgents.swift`, the web's
+  `core/externalAgents.ts`). A card says in a line what it is, with Learn more
+  (`simeonlabs.com/docs/network`) and Simeon among Grok Bot, Muse and Dots on the website's grey;
+  then each bot let in, its mascot (its maker's mark for a coding agent), its name and "Last used
+  Nov 10, 2026", and a gear whose one item is Disconnect; then Dots, Muse and Grok Bot not let in
+  yet, each with its + and its sheet (the address and Copy); then Add, for any other. The account
+  menu has External Agents, the three mascots at its end (the iPhone's Settings row too).
+  - `GET /desktop/api/external-agents` (the desktop credential; `external_agents.py`): the OAuth
+    clients holding a live token with the `agents` scope for the person (a refresh token not
+    revoked, or an access token not revoked nor expired), one row per kind of bot, read from the
+    network sessions their sign-ins opened (`network.kind_of`): a hosted bot that registered again
+    for a conversation is still one row, and its older sign-in, left without a session, joins the
+    row of the client registered under the same name. A kind the server doesn't know is its
+    client's own row (`client:<id>`, named as it registered). `lastUsedAt` is the newest session's
+    last call, else the newest token's; `connectedAt` the first token's. Newest use first.
+  - `POST /desktop/api/external-agents/disconnect` (`{"id"}`): revokes the row's tokens (the
+    bot's next call is answered 401 and the person must Allow it again), removes its grants (the
+    consent asks again) and its network sessions with what was sent to them, and answers the list
+    as it now is; 404 "This bot isn't connected." for a row that isn't. Grok Bot signs in with
+    Cursor's registration, so disconnecting one disconnects every kind that one client opened.
+    Logged as `desktop.external_agents.disconnected` (the kind, clients, tokens, grants, sessions).
+
+**Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`), `SIMEON_SECRET` for the
+invite links and the chats copy.
+
+**Log.** `mcp.tool` with the tool, the person and the agent's client id (never a message);
+`mcp.computer.command` (the command a bot had the computer run), `mcp.computer.asleep` (it was
+asked to start), `mcp.computer.unreachable` (with the error); `desktop.external_agents.disconnected`;
+`desktop.network.made`, `.sent` (counts of Simeon agents and sessions reached), `.joined`, `.left`,
+`.new_link`. `desktop.chats.inbox.*` as for the apps' messages.
+
+**Verified on 10 November 2026** against a local copy of the server: the real Claude Code
+(2.1.322) and Codex (0.167.0) add it, sign in through the door and the consent (the browser played
+by a script) and connect (`claude mcp list`: Connected; Codex then ran `set_status`, `list_team`
+and `check_inbox` with its own token). **Not yet verified:** a real ChatGPT, Cursor, Gemini CLI or
+Meta agent, and a full round trip with a Simeon agent's computer (message, wake, answer), checked
+only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`) and the engine's
+(`desktop/tests/network-tools.test.mjs`). The person's own tools were checked in the server's
+tests against a stand-in computer (`tests/desktop/test_bot_tools.py`), not yet against a real
+one or a real bot. The Simeon agents' tools reach a person's computer only
+with the next engine release (`npm run publish:host-bundle`). A bot whose redirect address is not
+https (a desktop app's own scheme) can't register yet.

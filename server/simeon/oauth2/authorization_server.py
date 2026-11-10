@@ -46,6 +46,19 @@ from .service.oauth2_grant import oauth2_grant as oauth2_grant_service
 logger: Logger = structlog.get_logger(__name__)
 
 
+def _redirect_of(request: StarletteOAuth2Request) -> str | None:
+    """Where the sign-in behind a new token returned: the authorization
+    code's address, or the refreshed token's (kept from its first sign-in)."""
+    for credential in (
+        getattr(request, "authorization_code", None),
+        getattr(request, "refresh_token", None),
+    ):
+        found = getattr(credential, "redirect_uri", None)
+        if isinstance(found, str) and found:
+            return found
+    return None
+
+
 def _get_server_metadata(server: "AuthorizationServer") -> dict[str, typing.Any]:
     def _dummy_url_for(name: str) -> str:
         return name
@@ -350,7 +363,10 @@ class AuthorizationServer(_AuthorizationServer):
         sub_type, sub = typing.cast(SubTypeValue, request.user)
         client = typing.cast(OAuth2Client, request.client)
         oauth2_token = OAuth2Token(
-            **token_data, client_id=client.client_id, sub_type=sub_type
+            **token_data,
+            client_id=client.client_id,
+            sub_type=sub_type,
+            redirect_uri=_redirect_of(request),
         )
         oauth2_token.sub = sub
         self.session.add(oauth2_token)

@@ -5,7 +5,9 @@
 // on its left, each with its symbol, the current one on a grey ground, Log
 // out at the foot; the page's name at the top of the rest, its groups
 // under it. General, Usage & Billing once the account's usage is in hand,
-// AI Models (the person's own ChatGPT, 8 November 2026), Wallet, Credentials Store, Permissions, Computer, Help & support and
+// AI Models (the person's own ChatGPT, 8 November 2026), External Agents
+// (the bots let in, 11 November 2026), Network (the Simeon Network, 10
+// November 2026), Wallet, Credentials Store, Permissions, Computer, Help & support and
 // Legal; the account is General's first row, its page under General with
 // Back. Updates in the Windows app only (step 7e): a web page is always the
 // latest. Each opening starts afresh on the page asked for, at its top.
@@ -14,11 +16,13 @@
 //
 // The pages are each part's own: General, Account, Permissions, Computer,
 // Help & support and Legal (6e); Usage & Billing, Wallet and the
-// Credentials Store (6f); AI Models (SettingsModels.tsx).
+// Credentials Store (6f); AI Models (SettingsModels.tsx); External Agents
+// (SettingsExternalAgents.tsx); Network (SettingsNetwork.tsx).
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { shownName } from '../core/aiModels'
 import { t as coreT } from '../core/l10n'
+import { askedJoin, networkListed } from '../core/network'
 import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
 import { desktopUpdates } from '../desktop/updates'
@@ -27,6 +31,7 @@ import type { WebSession } from '../session'
 import { Alert } from './Dialogs'
 import { SettingsComputerPage } from './SettingsComputer'
 import { SettingsCredentialsPage } from './SettingsCredentials'
+import { SettingsExternalAgentsPage } from './SettingsExternalAgents'
 import {
   SettingsAccountPage,
   SettingsGeneralPage,
@@ -35,6 +40,7 @@ import {
   SettingsPermissionsPage,
 } from './SettingsGeneral'
 import { SettingsModelAccountPage, SettingsModelsPage } from './SettingsModels'
+import { SettingsNetworkPage } from './SettingsNetwork'
 import {
   PanelDisc,
   SettingsSymbol,
@@ -55,6 +61,8 @@ const pages: Record<
   general: { title: () => t('General'), symbol: 'gearshape' },
   usage: { title: () => t('Usage & Billing'), symbol: 'chartBar' },
   models: { title: () => t('AI Models'), symbol: 'brain' },
+  externalAgents: { title: () => t('External Agents'), symbol: 'sparkles' },
+  network: { title: () => t('Network'), symbol: 'network' },
   wallet: { title: () => t('Wallet'), symbol: 'wallet' },
   credentials: { title: () => t('Credentials Store'), symbol: 'key' },
   permissions: { title: () => t('Permissions'), symbol: 'handRaised' },
@@ -79,6 +87,8 @@ export function listed(store: AppStore): SettingsPage[] {
     'general',
     'usage',
     'models',
+    'externalAgents',
+    'network',
     'wallet',
     'credentials',
     'permissions',
@@ -90,6 +100,8 @@ export function listed(store: AppStore): SettingsPage[] {
   return order.filter(
     (page) =>
       (page !== 'usage' || store.usageListed) &&
+      // Network: hidden while other people on a network are off (`networkListed`).
+      (page !== 'network' || networkListed) &&
       // Updates: the Windows app's own, not a Store install's (the Store updates it).
       (page !== 'updates' ||
         (desktop() !== undefined && desktop()?.facts.store !== true)),
@@ -105,6 +117,10 @@ function PageBody({ page, store }: { page: SettingsPage; store: AppStore }) {
       return <SettingsUsagePage store={store} />
     case 'models':
       return <SettingsModelsPage store={store} />
+    case 'externalAgents':
+      return <SettingsExternalAgentsPage store={store} />
+    case 'network':
+      return <SettingsNetworkPage store={store} />
     case 'wallet':
       return <SettingsWalletPage store={store} />
     case 'credentials':
@@ -333,6 +349,10 @@ export function SettingsLayer({
   const overlay = model.overlay
   const open = overlay?.kind === 'settings'
   const page = open ? overlay.page : undefined
+  // The website's join page handed an invite over (`#network-join=`): Settings opens on Network, which asks whose network it is for.
+  useEffect(() => {
+    if (networkListed && askedJoin()) model.openSettings('network')
+  }, [model])
   // Usage & Billing gone from the list while it is shown (an enterprise team, the summary gone): back to General.
   const usageGone = page === 'usage' && !store.usageListed
   useEffect(() => {

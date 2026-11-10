@@ -1451,6 +1451,10 @@ final class ChatDeliveryTests: XCTestCase {
     backend.push(.transcript(.upsert(agentId: "theo", entry: Entry(["kind": "message", "id": "u3", "role": "user", "content": "Thanks!", "clientNonce": .string(waiting.id), "timestampMs": 3_000])!)))
     try await Task.sleep(nanoseconds: 50_000_000)
     XCTAssertEqual(store.rows(for: "theo").compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil }, ["u1", "u2", "u3"])
+    // On screen it is the same row it was while it waited: the bubble is not drawn anew (the founder's recording,
+    // 10 November 2026: it came in a second time a third of a second after Send).
+    XCTAssertEqual(store.rowKey("u3"), waiting.id)
+    XCTAssertEqual(store.rowKey("u1"), "u1", "a line not sent from here keeps its own id")
 
     // Delete on a failed one: it only leaves the screen.
     backend.failSends = true

@@ -1,8 +1,11 @@
 import { getServerURL } from '@/utils/api'
+import { pageLocale } from '@/utils/i18n'
+import { schemas } from '@simeon/client'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import AuthorizeErrorPage from './AuthorizeErrorPage'
 import AuthorizePage from './AuthorizePage'
+import BotConsentPage from './BotConsentPage'
 import OrganizationSelectionPage from './OrganizationSelectionPage'
 import { AuthorizeResponse } from './types'
 
@@ -70,6 +73,18 @@ export default async function Page(props: {
         <OrganizationSelectionPage
           authorizeResponse={data}
           searchParams={searchParams}
+        />
+      )
+    } else if (
+      sub_type === 'user' &&
+      ((data as AuthorizeResponse).scopes as string[]).includes('agents')
+    ) {
+      // A bot added to talk to the person's agents (Settings › AI Models › Bots): the login page's design.
+      return (
+        <BotConsentPage
+          authorizeResponse={data as schemas['AuthorizeResponseUser']}
+          searchParams={searchParams}
+          locale={await pageLocale(searchParams.locale)}
         />
       )
     } else {

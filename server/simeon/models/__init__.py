@@ -43,6 +43,12 @@ from .desktop_billing import (
 )
 from .desktop_link import DesktopLinkWallet
 from .desktop_model_account import DesktopModelAccount
+from .desktop_network import (
+    DesktopNetwork,
+    DesktopNetworkMember,
+    DesktopNetworkMessage,
+    DesktopNetworkSession,
+)
 from .desktop_share import (
     DesktopShareEvent,
     DesktopShareJoinRequest,
@@ -182,6 +188,10 @@ __all__ = [
     "DesktopLinkWallet",
     "DesktopMemoryFile",
     "DesktopModelAccount",
+    "DesktopNetwork",
+    "DesktopNetworkMember",
+    "DesktopNetworkMessage",
+    "DesktopNetworkSession",
     "DesktopSession",
     "DesktopShareEvent",
     "DesktopShareJoinRequest",

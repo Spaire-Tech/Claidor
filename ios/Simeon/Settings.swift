@@ -59,6 +59,20 @@ struct SettingsSheet: View {
           }
           // The person's own AI subscription (8 November 2026), after Usage as the Mac lists it (AIModels.swift).
           NavigationLink { AIModelsPage() } label: { Text("AI Models").foregroundStyle(Ink.primary) }
+          // The bots let in (11 November 2026, ExternalAgents.swift), after AI Models as the Mac lists it, the bots' mascots at
+          // the row's end (the founder: "in the menu as External Agents - and the agents icons").
+          NavigationLink { ExternalAgentsPage() } label: {
+            HStack {
+              Text("External Agents").foregroundStyle(Ink.primary)
+              Spacer()
+              ExternalAgentsMascots()
+            }
+          }
+          // The Simeon Network (10 November 2026, NetworkPage.swift), after AI Models as the Mac lists it;
+          // hidden while other people on a network are off (SimeonCore's `NetworkInvite.listed`).
+          if NetworkInvite.listed {
+            NavigationLink { NetworkPage() } label: { Text("Network").foregroundStyle(Ink.primary) }
+          }
         }
         .listRowBackground(Ink.groupedRow)
         Section {

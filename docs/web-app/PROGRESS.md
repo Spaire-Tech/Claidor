@@ -842,6 +842,175 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: Settings › External Agents, the bots on a page of their own
+
+The founder, with another app's Bots and Channels pages as the references: "i want the bots to have
+their own setting called External Agents. which will also be in the menu as External Agents - and
+the agents icons"; "use the design layout of screenshot 4. With simeon in the middle, and muse bots
+dots around it. the background is our website background grey. you're here will become Learn more";
+"there is a setting and a last used… the setting is just disconnect". Done on the Mac, the iPhone
+and here, from the server's new list (`GET /desktop/api/external-agents`, `POST
+…/external-agents/disconnect`; `docs/services-agents.md`, section 18).
+
+- Settings lists External Agents after AI Models (`sparkles`); AI Models has no Bots group any
+  more. The page (`SettingsExternalAgents.tsx`, the core's `core/externalAgents.ts`, SimeonCore's
+  `ExternalAgents.swift`): a card with its line, what it does and Learn more (the docs, in a new tab;
+  the default browser in the Windows app), and its picture, Simeon's white tile among Grok Bot, Muse
+  and Dots on a dashed orbit on the website's grey (#f5f5f7, #1c1c1e on dark), 320 by 180, under the
+  words and as wide as the card when the panel is narrow. Then the bots let in, each with "Last used
+  Nov 10, 2026" and a gear whose one item is Disconnect (asked first, as the Mac's alert); then Dots,
+  Muse and Grok Bot not let in yet, each with its + and its sheet (moved from AI Models, unchanged
+  but for its MCP details, which now say what a bot can do: message the agents, follow their work,
+  run their routines, with purchases and passwords staying in the app); then Add.
+- The account menu has External Agents above Settings, the three mascots at its end (a menu item's
+  new `end`), opening Settings on the page.
+- The words: the core's catalogue has the page's lines (and the bots' lines, moved there), the Mac's
+  External Agents, Learn more, the picture's label and the new MCP details; "Bots" is gone. `pnpm
+  words && pnpm build` run.
+
+Checked: the core's tests (`core/externalAgents.test.ts`, as SimeonCore's `ExternalAgentsTests`),
+the whole suite (1258), typecheck, eslint, the words; the committed build in Chromium against a
+stand-in server: the account menu's row and mascots, the page from it, the gear's Disconnect asked
+and the list as the server answers, a + opening Dots' sheet, AI Models without Bots, light, dark,
+French and a narrow window (no page errors, nothing outside asked). Not checked: the Windows app run,
+and the page against the real server with a real bot let in.
+
+### 11 November 2026: an answered question card's thin blue tick again
+
+The founder: "before we had the blue check mark after answering a card question was a thin blue
+check icon. now is a big blue round icon. can we bring back how it was before". An answered card's
+line is the thin blue tick again (`.qcard-check`: 18 by 20, blue, no disc; 8 between it and the
+answer), as before the cards' new style (#657), on the Mac (`checkmark`, 12 semibold) and the iPhone
+(13 semibold) too. The round check stays on the option picked while answering (the founder's earlier
+"keep the round check and our blue color"). Checked: the answered markup drawn with the committed
+build's stylesheet in Chromium. Not checked: the Mac and iPhone built and run (their Swift parses; the
+same lines as before #657).
+
+### 10 November 2026: each bot's own address in its Bots sheet
+
+Grok Bot signs in with Cursor's own registration and returns to Cursor's own page, so it showed on
+the network as `bass/cursor` (the founder's test with Grok Bot). Each bot's sheet now gives its own
+address (`botAddress` in `SettingsModels.tsx`: `/mcp/grok-bot`, `/mcp/dots`, `/mcp/muse`; Add a bot
+keeps `/mcp`), as the Mac and iPhone sheets do (`AIBots.address(for:)`), and the server knows the bot
+by it. Checked: `botAddress.test.ts`, tsc, the committed build. Not checked: a Chromium look at the
+sheet (the address is the one line that changed), the Mac and iPhone built and run (their Swift parses).
+
+### 10 November 2026: Settings › Network hidden while other people are off
+
+The founder: "that plus other people - is what we don't need for now. can we hide that". Settings
+no longer lists Network (`networkListed` in `core/network.ts`, false; the Mac and iPhone read
+SimeonCore's `NetworkInvite.listed`), and the website's invite hand-over no longer opens it. The
+page and its model stay built: the switch turns them back on, with the server's `network.PEOPLE`.
+Bots still connect from AI Models › Bots. Checked: `SettingsWindow.test.tsx` (Network not listed),
+`network.test.ts`, tsc, ESLint, the committed build, one Chromium look at Settings. Not checked:
+the Mac and iPhone built and run (their Swift parses).
+
+### 10 November 2026: Settings › Network, the Simeon Network
+
+The founder: "ok do the reason network. document it like them as well." The server side is the
+network (`server/simeon/desktop/network.py`, `docs/services-agents.md` §18) and the website's
+`/docs/network`, `/network/skill.md`, `/network/install.sh` and join page. Here, as on the Mac
+(`SettingsNetwork.swift`) and the iPhone (`NetworkPage.swift`), Settings lists **Network** after
+AI Models (three joined points), its model the core's (`core/network.ts`, SimeonCore's
+`SimeonNetwork.swift`):
+
+- The network by its name, its **Invite line** with Copy, and **New Link** ("Anyone with this
+  line can join. New Link stops the old one.").
+- **People**: each person (initial, name over handle, "You"), then their Simeon agents ("Always
+  on", green) and the agents of theirs seen in the last day (Claude Code, Codex, Dots…) with
+  where they work ("Claude Code · studio · acme/api@main — Edit billing webhook") and a dot:
+  orange busy, green idle, grey away.
+- **Join a Network**: a pasted line; whose network it is asked first ("Join “Maya's network”?");
+  a refusal (an old link) in red under the field.
+- **Your coding agents**: the install line for a computer and the MCP address, each with Copy.
+- **Rename Network** (the window's alert with a field), **Leave Network** when others are on it
+  (asked first), **How the Simeon Network works** (the docs, in a new tab). A change's refusal
+  shows as an alert, here and on the Mac and iPhone.
+- **The join page's hand-over**: the website's join page opens the app on
+  `#network-join=sn1-…`. The app keeps the invite for the tab (through a sign-in) and takes it
+  out of the address as it starts (`keepAskedJoin`); once the window is up, Settings opens on
+  Network with the line pasted and asks whose network it is. A reload doesn't ask again.
+
+Checked in Chromium against a stand-in server: the page in light, dark and French; Copy (the
+clipboard holds the line), New Link, Rename, Leave refused, an old link refused, and the join
+page's hand-over asking and joining (the calls each sent as the server expects). `network.test.ts`
+(5), SettingsWindow's tests, tsc, ESLint, the words and the committed build, `check_names.py`,
+`check_translations.py`. Not checked: the Mac and iPhone built and run (their Swift parses, the
+core's model tests pass); a real network on the live server.
+
+Next: the Simeon agents themselves on the network (engine tools to list it, message it and read
+their inbox), which needs an engine release.
+
+### 10 November 2026: Bots with their own mascots and words; the Allow page as our login
+
+The founder: "these are the logos", "call it what it is. Grok Bot", "ChatGPT Dots", "be
+INTENTIONAL ... Give this to your Muse", and of the Allow page: "have it the same design as our
+log in web page". Done:
+
+- **The bots' mascots** (the founder's pictures) as tiles on a warm off-white, 192 square:
+  `assets/providers/{dots,muse,grokbot}.png`, the Mac's and iPhone's `Providers/<id>`, and the
+  web dashboard's `public/bots/`.
+- **Rows**: Dots ("Connect Simeon to ChatGPT Dots."), Muse, Grok Bot, then Add.
+- **Each bot's sheet** is its own: its mascot and its name, then "Give this to your Dot." /
+  "Give this to your Muse." / "Give this to your Bot."; Add keeps "Add a bot" and "Give this to
+  any bot that can add an MCP server." Simeon's tile stays white with a black mark in dark mode.
+- **Grok Bot** is named as it is: a narrow rule in `scripts/kept_names.json` for the Bots files
+  (xAI's assistant, not the upstream app, which stays a finding everywhere else).
+- **The Allow page** (`/oauth2/authorize`, `BotConsentPage.tsx`) in the login page's frame
+  (`AuthShell`, its 320 column, 24 heading, 52 round buttons): the bot's mascot, three dots and
+  Simeon's mark; "Connect Dots to Simeon" and "Dots will talk to your agents for you."; the
+  account as a card; what it can do (see your agents, message them for you, read their answers)
+  and "Nothing else in your account."; Allow and Deny; the Terms line. In the ten languages of
+  the sign-in (`@simeon/i18n`, `simeon.connectBot`). A bot is known by the name it registers
+  with; any other shows its own logo or initial.
+
+Checked in Chromium: the rows and the three kinds of sheet, light and dark; the Allow page for
+Dots and Grok Bot against a stand-in API. tsc and ESLint (app and dashboard), the i18n tests
+(22), the words and the committed build, `check_names.py`, `check_translations.py`. Not
+checked: the Mac and iPhone built and run (their Swift parses); a real bot through the page.
+
+### 10 November 2026: Bots, so other agents talk to yours
+
+The founder, with another app's Bots section and its "Add a bot" as the reference: "i want it
+to talk to other agents like dots, muse etc". The server side is the MCP endpoint
+(`https://api.simeonlabs.com/mcp`, `docs/services-agents.md` §18). Here and on the Mac and the
+iPhone, AI Models ends with a **Bots** group: Dots ("Connect Simeon to ChatGPT dots."), Muse
+("Connect Simeon to Meta Muse.") and Grok ("Connect Simeon to Grok."), each under its maker's
+icon with a + at its end, then a last row with a + and "Add" in grey for any other bot. Each
+opens **Add a bot**: the bot's icon (Simeon's mark for Add), the title and the round close;
+"Give this to any bot that can add an MCP server."; the address in its field with Copy inside it
+(Copied once pressed); MCP details, which opens what the bot can do once it's in. The bots'
+names are theirs and stay untranslated. The third row takes its maker's name, not the reference's:
+that name was the upstream app's own, and `check_names.py` refuses it.
+
+Checked in Chromium, light and dark: the group, a bot's sheet, Add's sheet with Simeon's mark,
+Copy putting the address on the clipboard, MCP details, no console error, nothing outside the
+stand-ins reached. tsc, ESLint, the AI Models tests, the words and the committed build,
+`check_names.py`, `check_translations.py` (the eight new strings in nine languages, both
+catalogs). Not checked: the Mac and iPhone apps built and run (their Swift parses); a real bot
+added with the address.
+
+### 10 November 2026: new logos for Grok, xAI, Amazon Bedrock and GitHub Copilot
+
+The founder, with four logos: "use these logos instead for the ai model section . also grab
+main and check the website. you'll see its there as well at / models - change it there too."
+Each is drawn once from the founder's picture into every copy: the 192 tile on white
+(`src/assets/providers/<id>.png`, the apps' `Providers/<id>`, the website's
+`img/provider-<id>.png`) and the composer's mark filling its square (`<id>-mark.png` at 64, the
+apps' `<id>-mark` at 32 and 48). Grok's and xAI's black marks become the ink's, as before;
+Bedrock's brain and Copilot's robot keep their colours, so they join Claude's in the marks
+drawn as they are (`colouredMarks` in `ComposerModelMenu.tsx`, `ProviderMark.coloured` on the
+Mac and the iPhone, `"template-rendering-intent": "original"` on their two assets). The website's
+/models pages were written again by `source/models.py` (python3.13) for the new `?v=`.
+`NOTICE` says these four are the providers' own logos, not LobeHub's.
+
+Checked in Chromium, light and dark: AI Models with Grok, SpaceXAI and Amazon Bedrock connected
+and Copilot under API keys ("Soon"), the model menu (Bedrock's mark in its colours, the others
+in the ink), every logo loaded, no console error, nothing outside the stand-ins reached; the
+website's /models and the four providers' pages, every logo loaded. The app's tests (1247), tsc,
+ESLint, the committed build, `check_names.py`, `check_translations.py`. Not checked: the Mac and
+iPhone apps built and run (their Swift parses).
+
 ### 10 November 2026: the sign-in form over the window, the secret and computer cards as the references
 
 The founder, with four pictures of another app's cards: "log in from the store card comes like

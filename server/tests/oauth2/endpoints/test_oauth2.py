@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import select
 
 from simeon.auth.scope import Scope
 from simeon.auth.service import USER_SESSION_TOKEN_PREFIX
@@ -13,6 +14,7 @@ from simeon.kit.utils import utc_now
 from simeon.models import (
     OAuth2Client,
     OAuth2Grant,
+    OAuth2Token,
     Organization,
     User,
     UserOrganization,
@@ -1016,6 +1018,58 @@ class TestOAuth2Token:
         refresh_token = json["refresh_token"]
         assert refresh_token.startswith("simeon_rt_o_")
 
+    async def test_a_token_keeps_where_its_sign_in_returned(
+        self,
+        save_fixture: SaveFixture,
+        client: AsyncClient,
+        sync_session: Session,
+        user: User,
+        oauth2_client: OAuth2Client,
+    ) -> None:
+        """A bot's registration can be shared (Grok Bot signs in with
+        Cursor's): where its sign-in returned says which it is, kept on the
+        token and on each token refreshed from it."""
+        returned = "https://grok.com/connectors-oauth-exchange-code/"
+        await create_oauth2_authorization_code(
+            save_fixture,
+            client=oauth2_client,
+            code="CODE",
+            scopes=["openid", "profile", "email"],
+            redirect_uri=returned,
+            user=user,
+        )
+        response = await client.post(
+            "/v1/oauth2/token",
+            data={
+                "grant_type": "authorization_code",
+                "code": "CODE",
+                "client_id": oauth2_client.client_id,
+                "client_secret": oauth2_client.client_secret,
+                "redirect_uri": returned,
+            },
+        )
+        assert response.status_code == 200, response.text
+        response = await client.post(
+            "/v1/oauth2/token",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": response.json()["refresh_token"],
+                "client_id": oauth2_client.client_id,
+                "client_secret": oauth2_client.client_secret,
+            },
+        )
+        assert response.status_code == 200, response.text
+        tokens = (
+            sync_session.execute(
+                select(OAuth2Token).where(
+                    OAuth2Token.client_id == oauth2_client.client_id
+                )
+            )
+            .unique()
+            .scalars()
+        )
+        assert [t.redirect_uri for t in tokens] == [returned, returned]
+
     async def test_refresh_token_sub_user(
         self,
         save_fixture: SaveFixture,
@@ -1344,3 +1398,77 @@ class TestOAuth2Token:
         access_token = json["access_token"]
         assert access_token.startswith("simeon_at_o_")
         assert "refresh_token" not in json
+
+
+@pytest.mark.asyncio
+class TestBotsSignIn:
+    """A bot added to talk to the person's agents (`simeon/desktop/mcp.py`)."""
+
+    async def test_the_metadata_is_where_mcp_clients_look_first(
+        self, client: AsyncClient
+    ) -> None:
+        found = (await client.get("/.well-known/oauth-authorization-server")).json()
+        assert found == (await client.get("/.well-known/openid-configuration")).json()
+        assert found["issuer"] == "https://api.simeonlabs.com"
+        assert "S256" in found["code_challenge_methods_supported"]
+        assert "none" in found["token_endpoint_auth_methods_supported"]
+        assert "agents" in found["scopes_supported"]
+
+    async def test_the_sign_in_page_is_reached_from_the_servers_own_address(
+        self, client: AsyncClient
+    ) -> None:
+        # Codex refuses an authorization endpoint on another origin than the
+        # server's: the metadata names the server's door, which sends the
+        # browser on to the page on app.simeonlabs.com with the query intact.
+        found = (await client.get("/.well-known/oauth-authorization-server")).json()
+        assert found["authorization_endpoint"].endswith("/oauth2/authorize")
+        assert "/v1/" not in found["authorization_endpoint"]
+        door = await client.get(
+            "/oauth2/authorize",
+            params={
+                "client_id": "simeon_ci_bot",
+                "scope": "openid agents",
+                "state": "a b",
+            },
+        )
+        assert door.status_code == 302
+        assert door.headers["location"] == (
+            f"{settings.FRONTEND_BASE_URL}/oauth2/authorize"
+            "?client_id=simeon_ci_bot&scope=openid+agents&state=a+b"
+        )
+
+    @pytest.mark.auth
+    async def test_asking_for_the_agents_signs_in_as_the_person(
+        self, client: AsyncClient, save_fixture: SaveFixture
+    ) -> None:
+        # Registered as MCP clients do: no sub_type, so an organization by
+        # default, and the bot doesn't say one when it asks.
+        bot = OAuth2Client(
+            client_id="simeon_ci_bot",
+            client_secret="simeon_cs_bot",
+            registration_access_token="simeon_crt_bot",
+            user=None,
+        )
+        bot.set_client_metadata(
+            {
+                "client_name": "Dots",
+                "redirect_uris": ["http://127.0.0.1:8000/docs/oauth2-redirect"],
+                "token_endpoint_auth_method": "none",
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "scope": "openid agents",
+                "default_sub_type": "organization",
+            }
+        )
+        await save_fixture(bot)
+        params = {
+            "client_id": bot.client_id,
+            "response_type": "code",
+            "redirect_uri": "http://127.0.0.1:8000/docs/oauth2-redirect",
+            "scope": "agents",
+        }
+        response = await client.get("/v1/oauth2/authorize", params=params)
+
+        assert response.status_code == 200, response.text
+        assert response.json()["sub_type"] == "user"
+        assert response.json()["scopes"] == ["agents"]

@@ -113,7 +113,8 @@ struct CardButton: View {
  * together, a line each (`QuestionCard.reply`). A pick moves on by itself,
  * and on the last question sends. Skip on a card of one question declines
  * it, as the X did. Answered, the card keeps each question in grey with its
- * answer under a blue round check, Back and Next to look through several.
+ * answer after a thin blue tick (as before the new style, the founder, 11
+ * November 2026), Back and Next to look through several.
  */
 struct QuestionCardView: View {
   let entryId: String
@@ -327,7 +328,7 @@ private struct AskingQuestionsView: View {
   }
 }
 
-/** The answers given: each question in grey with its answer under a blue round check, one at a time for several. */
+/** The answers given: each question in grey with its answer after a thin blue tick, one at a time for several. */
 private struct AnsweredQuestionsView: View {
   let card: QuestionCard
   let answer: String
@@ -376,12 +377,14 @@ private struct AnsweredQuestionsView: View {
         .font(.system(size: 15, weight: .semibold))
         .foregroundStyle(look.inkSecondary)
         .fixedSize(horizontal: false, vertical: true)
-      HStack(spacing: 12) {
+      HStack(spacing: 8) {
         if let given {
-          Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 22))
+          // A thin blue tick, as before the cards' new style (11 November 2026, the founder: "bring
+          // back how it was before"); the round check stays on the option picked.
+          Image(systemName: "checkmark")
+            .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(look.blue)
-            .frame(width: 24, height: 24)
+            .frame(width: 18, height: 18)
           Text(given)
             .font(.system(size: 14.5))
             .foregroundStyle(look.ink)

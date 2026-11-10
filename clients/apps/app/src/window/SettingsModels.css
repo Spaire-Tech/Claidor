@@ -452,3 +452,136 @@
   color: var(--ink-tertiary);
   font-size: 11px;
 }
+
+/* MARK: Bots (10 November 2026, the founder's reference) */
+
+/* The last row, for any other bot: a + where the icons are, and "Add" in grey at its end. */
+.bots-any {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bots-any-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--ink-secondary);
+}
+
+.bots-any-words {
+  flex: 1;
+  text-align: right;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.bots-any:hover .bots-any-words,
+.bots-any:hover .bots-any-plus {
+  color: var(--ink);
+}
+
+/* The sheet: the bot's icon (44), "Add a bot" (22, regular), then the words, the address, MCP details. */
+.bots-sheet {
+  gap: 18px;
+}
+
+.bots-title {
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.bots-simeon-tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  /* Simeon's tile stays white, its mark black, in dark mode too, as an app's icon does (the founder: "keep it how it is for that frame. white"). */
+  background: #fff;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 10%);
+}
+
+.bots-simeon-mark {
+  width: 24px;
+  height: 24px;
+  background: #0d0d0d;
+  mask: url('../assets/providers/simeon-mark.svg') center / contain no-repeat;
+  -webkit-mask: url('../assets/providers/simeon-mark.svg') center / contain
+    no-repeat;
+}
+
+.bots-words {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+/* The address in its field (14 round, 1 grey line), Copy a grey capsule inside it at its end. */
+.bots-address {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 6px 6px 16px;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: var(--ground);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.bots-address-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  color: var(--ink);
+  user-select: all;
+}
+
+.bots-copy {
+  flex: none;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.bots-copy:hover {
+  background: color-mix(in srgb, var(--ink) 11%, transparent);
+}
+
+.bots-details-link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.bots-details {
+  margin: -8px 0 0;
+  color: var(--ink-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}

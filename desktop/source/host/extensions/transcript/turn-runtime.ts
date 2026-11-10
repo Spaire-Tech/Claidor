@@ -569,7 +569,7 @@ export class TurnRuntime {
     streamOutputProduced: boolean;
   }> {
     // A turn Claude Code ran (the person's own Claude plan, 9 November 2026): its own words are its answer. They
-    // go to the person when nothing else did, or when it worked on after its last message; no hidden turn pokes
+    // go to the person only when nothing else did (once it sent a message they are its notes); no hidden turn pokes
     // it ("they received nothing and are still waiting", which made every reply open with an apology), and the
     // closing nudge, which reads the engine's own history Claude Code doesn't write, is not asked.
     const claude = startedAtMs === undefined ? undefined : claudeCodeEndingSince(session.id, startedAtMs);

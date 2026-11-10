@@ -17,6 +17,10 @@ class OAuth2Token(RecordModel, OAuth2TokenMixin, SubTypeModelMixin):
 
     client_id: Mapped[str] = mapped_column(String(64), nullable=False)
     nonce: Mapped[str | None] = mapped_column(String, index=True, nullable=True)
+    #: Where the sign-in that made this token returned (kept through
+    #: refreshes): which product a shared registration is (Grok Bot signs in
+    #: with Cursor's), `simeon.desktop.network.kind_of`.
+    redirect_uri: Mapped[str | None] = mapped_column(String, nullable=True)
 
     @declared_attr
     def client(cls) -> "Mapped[OAuth2Client]":

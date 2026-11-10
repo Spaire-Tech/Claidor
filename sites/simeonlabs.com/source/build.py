@@ -375,9 +375,6 @@ async def main():
     # The AI models pages (models.py: the server's key providers and plans), at /models.
     import models
     models.build(OUT)
-    # The product pages (products.py: the cloud computer…), at /cloud-computer and the rest of the Products menu.
-    import products
-    products.build(OUT)
     # The Pricing page (pricing.py, the home page's plans), at /pricing.
     import pricing
     pricing.build(OUT)
@@ -390,6 +387,12 @@ async def main():
     # The documentation (docs.py), at /docs: its pages are source/docs/<slug>.md.
     import docs
     docs.build(OUT)
+    # The Simeon Network's addresses (network.py): /network, its skill and install line, the invite page.
+    import network
+    network.build(OUT)
+    # The sitemap and robots.txt (sitemap.py), from every page written above, for Google Search Console.
+    import sitemap
+    sitemap.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())

@@ -65,9 +65,13 @@ export function withAutomationRunAnalytics<T extends TelemetryService>(
     return (...args: Parameters<Method>): ReturnType<Method> =>
       telemetry[name](...args) as ReturnType<Method>;
   };
-  const reportAutomationRun = telemetry.reportAutomationRun as unknown as (
-    report: AutomationRunAnalyticsReport,
-  ) => unknown;
+  // Bound to the telemetry it came from: unbound, its `this` was undefined and
+  // every routine run threw "Cannot read properties of undefined (reading
+  // 'mapped')" once it had run (11 November 2026, a routine run on demand by a
+  // bot: the run happened and its caller was told it failed).
+  const reportAutomationRun = telemetry.reportAutomationRun.bind(
+    telemetry,
+  ) as unknown as (report: AutomationRunAnalyticsReport) => unknown;
 
   return {
     startTurn: forward("startTurn"),

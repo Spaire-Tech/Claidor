@@ -35,6 +35,7 @@ struct SettingsModelsPage: View {
   @State private var keying: KeyProvider?
   @State private var renaming: ModelAccount?
   @State private var newName = ""
+  /** The bot whose "Add a bot" sheet is open ("any": Add, for any other). */
 
   var body: some View {
     let model = store.aiModels
@@ -154,6 +155,108 @@ struct SettingsModelsPage: View {
       guard response == .alertFirstButtonReturn else { return }
       Task { await model.disconnect(account) }
     }
+  }
+}
+
+// MARK: Bots
+
+/**
+ * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
+ * and "Add a bot" for any other; the glass disc that closes it; who to give
+ * the address to, in that bot's words ("Give this to your Muse."); the
+ * address in its field with Copy inside it; MCP details, which open what the
+ * bot can do once it is in. Simeon's tile stays white in dark mode too, as
+ * an app's icon does (the founder: "keep it how it is for that frame. white").
+ */
+struct MacAddBotSheet: View {
+  let bot: String
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
+  @State private var copied = false
+  @State private var details = false
+
+  var body: some View {
+    let look = Look(scheme)
+    let known = ExternalAgents.known.first { $0.kind == bot }
+    VStack(alignment: .leading, spacing: 18) {
+      HStack(spacing: 14) {
+        if let known {
+          MacProviderIcon(provider: known.icon, look: look, side: 44)
+        } else {
+          Image("Providers/simeon-mark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 24, height: 24)
+            .foregroundStyle(Color(hex: 0x0d0d0d))
+            .frame(width: 44, height: 44)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5) }
+        }
+        Group {
+          if let known { Text(verbatim: known.name) } else { Text("Add a bot") }
+        }
+        .font(.system(size: 22))
+        .tracking(-0.3)
+        .foregroundStyle(look.ink)
+        .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 0)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+      }
+      Group {
+        if let known { Text(verbatim: known.give) } else { Text("Give this to any bot that can add an MCP server.") }
+      }
+      .font(.system(size: 15))
+      .foregroundStyle(look.ink)
+      .fixedSize(horizontal: false, vertical: true)
+      .padding(.top, 4)
+      HStack(spacing: 12) {
+        Text(verbatim: ExternalAgents.address(for: known?.kind))
+          .font(.system(size: 14, design: .monospaced))
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+          .truncationMode(.middle)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Button {
+          NSPasteboard.general.clearContents()
+          NSPasteboard.general.setString(ExternalAgents.address(for: known?.kind), forType: .string)
+          copied = true
+        } label: {
+          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
+            .font(.system(size: 14))
+            .foregroundStyle(look.ink)
+            .padding(.horizontal, 16)
+            .frame(height: 36)
+            .background(look.ink.opacity(0.07), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.hand)
+      }
+      .padding(.leading, 16)
+      .padding(.trailing, 6)
+      .frame(minHeight: 52)
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+      Button { details.toggle() } label: {
+        Text("MCP details")
+          .font(.system(size: 14))
+          .underline()
+          .foregroundStyle(look.link)
+      }
+      .buttonStyle(.hand)
+      if details {
+        Text("It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app.")
+          .font(PanelType.detail)
+          .foregroundStyle(look.inkSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, -8)
+      }
+    }
+    .padding(28)
+    .frame(width: 460)
+    .background(look.groupedRow)
   }
 }
 
@@ -996,15 +1099,18 @@ enum ComposerModelMenus {
   }
 }
 
-/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink, Claude's in its orange; no provider is Simeon's. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own colours (10 November 2026, the founder's logos); no provider is Simeon's. */
 struct ProviderMark: View {
   let provider: String?
   let ink: Color
   var side: CGFloat = 14
 
+  /** The marks drawn in their own colours, not the ink. */
+  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot"]
+
   var body: some View {
     Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
-      .renderingMode(provider == AIModels.claude ? .original : .template)
+      .renderingMode(provider.map(ProviderMark.coloured.contains) == true ? .original : .template)
       .resizable()
       .interpolation(.high)
       .aspectRatio(contentMode: .fit)

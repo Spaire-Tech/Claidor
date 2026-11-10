@@ -19,6 +19,7 @@ from simeon.desktop.billing_pages import router as desktop_billing_pages_router
 from simeon.desktop.channel_bots import runner_router as channel_bots_runner_router
 from simeon.desktop.email_sign_in import router as desktop_email_sign_in_router
 from simeon.desktop.endpoints import router as desktop_router
+from simeon.desktop.mcp import router as mcp_router
 from simeon.exception_handlers import add_exception_handlers
 from simeon.health.endpoints import router as health_router
 from simeon.kit.cors import CORSConfig, CORSMatcherMiddleware, Scope
@@ -45,6 +46,7 @@ from simeon.middlewares import (
     PathRewriteMiddleware,
     SandboxResponseHeaderMiddleware,
 )
+from simeon.oauth2.endpoints.well_known import authorize_page_router
 from simeon.oauth2.endpoints.well_known import router as well_known_router
 from simeon.oauth2.exception_handlers import OAuth2Error, oauth2_error_exception_handler
 from simeon.observability.http_middleware import HttpMetricsMiddleware
@@ -290,6 +292,11 @@ def create_app() -> FastAPI:
 
     # /.well-known
     app.include_router(well_known_router)
+    app.include_router(authorize_page_router)
+
+    # /mcp: a bot the person added talks to their agents (and its
+    # /.well-known/oauth-protected-resource)
+    app.include_router(mcp_router)
 
     # /healthz
     app.include_router(health_router)

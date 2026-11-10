@@ -358,7 +358,11 @@ struct ChatMessages: View {
                 else if thread == nil, store.olderBefore[agentId] != nil { await store.loadOlder(agentId) }
               }
           }
-          ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+          // Each row under the id it is drawn with: a message sent here keeps the one it had while it waited
+          // (`AppStore.rowKey`), so the computer's copy of it is the same bubble, never drawn anew.
+          ForEach(rows.indices.map { KeyedRow(id: store.rowKey(rows[$0].id), index: $0) }) { item in
+            let index = item.index
+            let row = rows[index]
             Group {
               if case .unread = row {
                 ChatRowView(row: row, agentId: agentId).equatable()
@@ -390,7 +394,7 @@ struct ChatMessages: View {
         let lit = glow
         actions?.jump = { id in
           leftEnd = true
-          reveal(id) { withAnimation(.snappy) { reader.scrollTo(id, anchor: .center) } }
+          reveal(id) { withAnimation(.snappy) { reader.scrollTo(store.rowKey(id), anchor: .center) } }
           lit.id = id
           Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_400_000_000)
@@ -1809,6 +1813,12 @@ struct ReactionPop: ViewModifier {
         }
       }
   }
+}
+
+/** A row's place in the chat and the id it is drawn under (`AppStore.rowKey`). */
+struct KeyedRow: Identifiable {
+  let id: String
+  let index: Int
 }
 
 /** A line that just arrived, or a message just sent: in with the Mac's motion (240 ms, a 12 pt rise, from 94 %, `cubic-bezier(.23,1,.32,1)`), once. */

@@ -39,10 +39,16 @@ export type SettingsSymbolName =
   | 'chevronRight'
   | 'chevronDown'
   | 'xmark'
+  | 'plus'
   | 'arrowUpRight'
   | 'sun'
   | 'moon'
   | 'display'
+  | 'network'
+  | 'bubbleLeft'
+  | 'terminal'
+  | 'hexagonGrid'
+  | 'sparkles'
 
 const symbols: Record<SettingsSymbolName, ReactNode> = {
   gearshape: (
@@ -100,6 +106,7 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
   chevronRight: <path d="M6 3l5 5-5 5" />,
   chevronDown: <path d="M4 6l4 4 4-4" />,
   xmark: <path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />,
+  plus: <path d="M8 2.5v11M2.5 8h11" />,
   arrowUpRight: <path d="M5 11 11 5M6 5h5v5" />,
   sun: (
     <>
@@ -109,6 +116,35 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
   ),
   moon: <path d="M13 10.1A5.6 5.6 0 0 1 5.9 3a5.6 5.6 0 1 0 7.1 7.1Z" />,
   display: <path d="M2 3h12v8H2ZM6 14h4" />,
+  // `sparkles` (External Agents, as the Mac's): a four-point star and a small one above it.
+  sparkles: (
+    <>
+      <path d="M7 3.5c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z" />
+      <path d="M12.5 1.6c.2 1.1.6 1.5 1.7 1.7-1.1.2-1.5.6-1.7 1.7-.2-1.1-.6-1.5-1.7-1.7 1.1-.2 1.5-.6 1.7-1.7Z" />
+    </>
+  ),
+  // `point.3.connected.trianglepath.dotted` (Network): three points, joined.
+  network: (
+    <>
+      <circle cx="8" cy="3" r="1.6" />
+      <circle cx="3.2" cy="12" r="1.6" />
+      <circle cx="12.8" cy="12" r="1.6" />
+      <path
+        d="M7.2 4.4 4 10.6M8.8 4.4 12 10.6M4.8 12h6.4"
+        strokeDasharray="1.2 1.6"
+      />
+    </>
+  ),
+  bubbleLeft: (
+    <path d="M8 2.6c3.4 0 6 2.1 6 4.8s-2.6 4.8-6 4.8c-.7 0-1.4-.1-2-.3L3 13.4l.8-2.6C2.7 9.9 2 8.7 2 7.4 2 4.7 4.6 2.6 8 2.6Z" />
+  ),
+  terminal: <path d="M2 3h12v10H2ZM4.6 6.4 6.6 8l-2 1.6M8 10h3" />,
+  hexagonGrid: (
+    <>
+      <circle cx="8" cy="8" r="6.3" />
+      <path d="M8 5.2 10.4 6.6v2.8L8 10.8 5.6 9.4V6.6Z" />
+    </>
+  ),
 }
 
 /** One of Settings' symbols, `size` square, in the ink of what holds it. */
@@ -156,7 +192,7 @@ export function PanelDisc({
   size = 32,
   disabled,
 }: {
-  symbol: 'xmark' | 'chevronLeft'
+  symbol: 'xmark' | 'chevronLeft' | 'plus'
   label: string
   onClick: () => void
   size?: number

@@ -128,3 +128,19 @@
   right: 11px;
   display: flex;
 }
+
+/* External Agents' end: the bots' mascots, 16 each, each over the last by 3, each round 4 (Account.swift's `ExternalAgentsMenuRow`). */
+.menu-mascots {
+  display: flex;
+}
+
+.menu-mascots img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.menu-mascots img + img {
+  margin-left: -3px;
+}

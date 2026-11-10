@@ -17,6 +17,7 @@ from authlib.oidc.core.grants import OpenIDToken as _OpenIDToken
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
+from simeon.auth.scope import Scope
 from simeon.config import settings
 from simeon.kit.crypto import generate_token, get_token_hash
 from simeon.models import (
@@ -217,6 +218,11 @@ class ValidateSubAndPrompt:
                 grant.sub_type = SubType(sub_type)
             except ValueError as e:
                 raise InvalidRequestError("Invalid sub_type") from e
+        elif Scope.agents.value in str(payload.scope or "").split():
+            # A bot added to talk to the person's agents (`/mcp`): their
+            # agents belong to the person, never an organization, and an
+            # MCP client doesn't know to ask for a sub_type.
+            grant.sub_type = SubType.user
         else:
             client: OAuth2Client = typing.cast(OAuth2Client, grant.client)
             grant.sub_type = client.default_sub_type

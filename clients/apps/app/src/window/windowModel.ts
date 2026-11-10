@@ -89,6 +89,8 @@ export type SettingsPage =
   | 'general'
   | 'usage'
   | 'models'
+  | 'externalAgents'
+  | 'network'
   | 'wallet'
   | 'credentials'
   | 'permissions'

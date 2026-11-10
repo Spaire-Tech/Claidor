@@ -1637,8 +1637,7 @@ button {
 }
 
 /* Picked: our blue round check, the tick cut out of the blue as `checkmark.circle.fill`. */
-.qcard-tile.picked,
-.qcard-check {
+.qcard-tile.picked {
   border-color: transparent;
   border-radius: 50%;
   background: var(--blue);
@@ -1653,18 +1652,20 @@ button {
   }
 }
 
+/* Answered: a thin blue tick, as before the cards' new style (the founder); the round check stays on the option picked. */
 .qcard-check {
   flex: none;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 20px;
+  color: var(--blue);
 }
 
 .qcard-answer {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 0 8px;
 }
 

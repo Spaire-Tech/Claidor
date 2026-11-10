@@ -146,9 +146,9 @@ function Tick() {
  * sliding to the next, dots at the foot, Back, Skip and Next (Send on the
  * last); the answers go together, a line each (`questionsReply`). A pick
  * moves on by itself, and on the last question sends; Skip on a card of one
- * declines it. Answered: each question in grey with its answer under a blue
- * round check, Back and Next to look through several (Mac's
- * `QuestionCardView`).
+ * declines it. Answered: each question in grey with its answer after a thin
+ * blue tick, as before the new style (11 November 2026, the founder), Back
+ * and Next to look through several (Mac's `QuestionCardView`).
  */
 export function QuestionCardView({
   entryId,

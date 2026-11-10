@@ -170,6 +170,40 @@ class DesktopChatLineRepository(RepositoryBase[DesktopChatLine]):
         rows = list(await self.get_all(statement))
         return list(reversed(rows[:limit])), len(rows) > limit
 
+    async def with_nonce(
+        self, user_id: UUID, agent_id: str, nonce: str
+    ) -> DesktopChatLine | None:
+        """The line a message sent through the server became (its
+        `clientNonce`), wherever the computer's clock put it."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopChatLine.user_id == user_id,
+                DesktopChatLine.agent_id == agent_id,
+                DesktopChatLine.entry["clientNonce"].astext == nonce,
+            )
+            .order_by(DesktopChatLine.at_ms)
+            .limit(1)
+        )
+        return await self.get_one_or_none(statement)
+
+    async def since(
+        self, user_id: UUID, agent_id: str, at_ms: int, limit: int
+    ) -> list[DesktopChatLine]:
+        """The chat's lines from `at_ms` on, oldest first: what came after a
+        message from the network (`network.py`, the agent's answer)."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopChatLine.user_id == user_id,
+                DesktopChatLine.agent_id == agent_id,
+                DesktopChatLine.at_ms >= at_ms,
+            )
+            .order_by(DesktopChatLine.at_ms, DesktopChatLine.created_at)
+            .limit(limit)
+        )
+        return list(await self.get_all(statement))
+
     async def newest_ids(self, user_id: UUID) -> dict[str, str]:
         """Each chat's newest line held (agent id → line id): what the
         computer compares with its own before sending a chat again."""
@@ -230,6 +264,13 @@ class DesktopChatInboxRepository(RepositoryBase[DesktopChatInbox]):
     async def count_waiting(self, user_id: UUID) -> int:
         statement = select(func.count()).where(DesktopChatInbox.user_id == user_id)
         return int((await self.session.execute(statement)).scalar_one())
+
+    async def is_waiting(self, user_id: UUID, nonce: str) -> bool:
+        """Whether this message still waits for the computer (`message_status`)."""
+        statement = select(func.count()).where(
+            DesktopChatInbox.user_id == user_id, DesktopChatInbox.nonce == nonce
+        )
+        return int((await self.session.execute(statement)).scalar_one()) > 0
 
     async def waiting(self, user_id: UUID, limit: int) -> list[DesktopChatInbox]:
         """The person's waiting messages, oldest first: the order they were

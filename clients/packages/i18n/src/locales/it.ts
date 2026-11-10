@@ -232,6 +232,17 @@ export default {
     other: '°',
   },
   simeon: {
+    connectBot: {
+      heading: 'Collega {bot} a Simeon',
+      line: '{bot} parlerà con i tuoi agenti per te.',
+      account: 'Il tuo account Simeon',
+      see: 'Vedere i tuoi agenti',
+      message: 'Scrivergli per te',
+      read: 'Leggere le loro risposte',
+      nothingElse: 'Nient’altro del tuo account.',
+      allow: 'Consenti',
+      deny: 'Rifiuta',
+    },
     signIn: {
       loginTitle: 'Accedi a Simeon',
       signupTitle: 'Registrati su Simeon',

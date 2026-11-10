@@ -376,8 +376,11 @@ private struct Transcript: View {
       if case .thread(_, let root, let count, _) = row, bubbleIds.contains(root) { return (root, count) }
       return nil
     }, uniquingKeysWith: { first, _ in first })
+    // Each row as it is drawn: a message sent here keeps the id it had while it waited (`AppStore.rowKey`), so the
+    // computer's copy of it is the same bubble, not one that comes in again (10 November 2026).
+    let keyed = rows.map { KeyedRow(id: store.rowKey($0.id), row: $0) }
     // Rows new since the last look, while pinned, come in (`KMt`); read as the rows are drawn, so a new row comes in from its first frame.
-    let entering = arrivals.entering(rows.map(\.id), of: "\(agentId)|\(threadRoot ?? "")", pinned: pinned)
+    let entering = arrivals.entering(keyed.map(\.id), of: "\(agentId)|\(threadRoot ?? "")", pinned: pinned)
     // Each entry's time, for a sideways swipe (`Lpt`'s `timestampMs`).
     let times = Dictionary((store.transcripts[agentId] ?? []).compactMap { entry in entry.timestampMs.map { (entry.id, $0) } }, uniquingKeysWith: { first, _ in first })
     // The rows as drawn, for ⌘C to copy the messages a choice runs through (in view or not).
@@ -387,12 +390,13 @@ private struct Transcript: View {
       let width = max(0, box.size.width - 2 * side)
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 0) {
-          ForEach(rows) { row in
+          ForEach(keyed) { item in
+            let row = item.row
             if case .thread(_, let root, _, _) = row, threads[root] != nil {
               EmptyView()
             } else {
               // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
-              TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, entering: entering.contains(row.id), time: Transcript.time(of: row, in: times), look: look)
+              TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, entering: entering.contains(item.id), time: Transcript.time(of: row, in: times), look: look)
                 .environment(\.findMarks, find?.marks(for: row.id))
                 // Where the row is, for a drag to know whose words it starts and ends in.
                 .onGeometryChange(for: CGRect.self) { proxy in
@@ -447,13 +451,13 @@ private struct Transcript: View {
         pinned = false
         // A line search found, in a chat just opened: the chat is on screen for the way to it.
         shown = true
-        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: jump.id, anchor: .center) }
+        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(jump.id), anchor: .center) }
       }
       .onChange(of: control.reveal) { _, reveal in
         guard let reveal else { return }
         pinned = false
         shown = true
-        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: reveal.id, anchor: .center) }
+        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(reveal.id), anchor: .center) }
       }
       // The rows came: straight to the newest, unseen. Should the newest never say it is drawn, the chat is shown
       // all the same after 0.4 s, wherever it stands.
@@ -623,6 +627,12 @@ private struct Transcript: View {
     var gap: CGFloat?
 
     var atNewest: Bool { endsDrawn > 0 && (gap ?? 0) <= 4 }
+  }
+
+  /** A row and the id it is drawn under (`AppStore.rowKey`). */
+  struct KeyedRow: Identifiable {
+    let id: String
+    let row: ChatRow
   }
 
   /**
