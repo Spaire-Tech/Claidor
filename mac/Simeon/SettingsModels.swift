@@ -17,6 +17,13 @@ import SimeonCore
  * the composer (`ComposerModelMenu`), not here. The model (`AIModelsModel`)
  * is the shared core's, one for the app (`store.aiModels`), as the iPhone's
  * page and the web app's are.
+ *
+ * API keys (10 November 2026, the founder: "Below subscription something
+ * called api keys"): under Subscriptions, every provider the server lists in
+ * the founder's order, each its tile, its name (and, for those with a plan
+ * of their own, where to connect the plan instead) and Connect, or "Soon";
+ * Connect asks as an app's does, then the key sheet (`MacKeyConnectSheet`).
+ * A key connected is under Connected, "API key …a1b2".
  */
 struct SettingsModelsPage: View {
   let look: Look
@@ -24,6 +31,8 @@ struct SettingsModelsPage: View {
   /** The provider whose code sheet is open (ChatGPT's, Grok's). */
   @State private var connectingByCode: String?
   @State private var connectingClaude = false
+  /** The key provider whose key sheet is open. */
+  @State private var keying: KeyProvider?
   @State private var renaming: ModelAccount?
   @State private var newName = ""
 
@@ -55,8 +64,12 @@ struct SettingsModelsPage: View {
                 divided: index > 0,
                 look: look,
                 rename: { newName = account.shownName; renaming = account },
-                addAnother: AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
-                connectAgain: { connect(account.provider) },
+                addAnother: account.kind == "api_key"
+                  ? { keying = model.keyProvider(account.provider) }
+                  : AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
+                connectAgain: {
+                  if account.kind == "api_key" { keying = model.keyProvider(account.provider) } else { connect(account.provider) }
+                },
                 disconnect: { askToDisconnect(account, model: model) }
               )
             }
@@ -67,6 +80,26 @@ struct SettingsModelsPage: View {
             ForEach(Array(open.enumerated()), id: \.element) { index, provider in
               MacProviderLine(provider: provider, divided: index > 0, look: look) {
                 SettingsPill(title: String(localized: "Connect"), look: look) { ask(provider) }
+              }
+            }
+          }
+        }
+        let keys = model.unconnectedKeys
+        if !keys.isEmpty {
+          SettingsGroup(title: String(localized: "API keys"), footer: String(localized: "Each provider bills the calls on your key."), look: look) {
+            ForEach(Array(keys.enumerated()), id: \.element.id) { index, one in
+              MacProviderLine(provider: one.provider, name: one.name, hint: one.hint, divided: index > 0, look: look) {
+                if one.available {
+                  SettingsPill(title: String(localized: "Connect"), look: look) {
+                    // The consent an app's Connect shows, in a key's words, then the key sheet.
+                    MacConnector.shared.ask(consent: ConnectConsent(keyProvider: one.provider, name: one.name)) { keying = one }
+                  }
+                } else {
+                  Text("Soon")
+                    .font(PanelType.row)
+                    .foregroundStyle(look.inkTertiary)
+                    .padding(.horizontal, 10)
+                }
               }
             }
           }
@@ -84,6 +117,7 @@ struct SettingsModelsPage: View {
       MacChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT)
     }
     .sheet(isPresented: $connectingClaude) { MacClaudeConnectSheet(model: model) }
+    .sheet(item: $keying) { MacKeyConnectSheet(model: model, provider: $0) }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
       Button("Rename") {
@@ -123,9 +157,12 @@ struct SettingsModelsPage: View {
   }
 }
 
-/** A provider not yet connected, under Subscriptions: its app's icon, its name, and Connect; a line above it when it follows another. */
+/** A provider not yet connected, under Subscriptions or API keys: its app's icon, its name (and a line under it, where it has one), and Connect; a line above it when it follows another. */
 private struct MacProviderLine<Trailing: View>: View {
   let provider: String
+  /** The server's name for a key provider; a plan's own otherwise. */
+  var name: String? = nil
+  var hint: String? = nil
   var divided = false
   let look: Look
   @ViewBuilder let trailing: () -> Trailing
@@ -133,10 +170,18 @@ private struct MacProviderLine<Trailing: View>: View {
   var body: some View {
     HStack(spacing: 12) {
       MacProviderIcon(provider: provider, look: look, side: 28)
-      Text(verbatim: AIModels.providerName(provider))
-        .font(PanelType.row)
-        .foregroundStyle(look.ink)
-        .frame(maxWidth: .infinity, alignment: .leading)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(verbatim: name ?? AIModels.providerName(provider))
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+        if let hint {
+          Text(hint)
+            .font(PanelType.detail)
+            .foregroundStyle(look.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
       trailing()
         .fixedSize()
     }
@@ -633,6 +678,143 @@ struct MacClaudeConnectSheet: View {
   private func close() {
     if signIn != nil, outcome == nil { Task { await model.cancelClaude() } }
     dismiss()
+  }
+}
+
+/**
+ * Connect a provider's API key (10 November 2026): 1, the provider's own
+ * page to make a key on, with Open (the default browser); 2, the key pasted,
+ * hidden as a password is, and the details the provider needs (Azure's
+ * endpoint and deployments, Cloudflare's account, Bedrock's region), each
+ * named; Connect. The server tries the key at the provider before keeping
+ * it, so a refused key is said here, in the provider's name, and the sheet
+ * stays to try again. Connected, the key's best model is chosen when the
+ * person had none.
+ */
+struct MacKeyConnectSheet: View {
+  let model: AIModelsModel
+  let provider: KeyProvider
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
+  @State private var key = ""
+  @State private var fields: [String: String] = [:]
+  @State private var checking = false
+  @State private var outcome: KeyConnect?
+  @FocusState private var focused: String?
+
+  var body: some View {
+    let look = Look(scheme)
+    VStack(alignment: .leading, spacing: 20) {
+      HStack(spacing: 12) {
+        MacProviderIcon(provider: provider.provider, look: look, side: 36)
+        Text("Connect \(provider.name)")
+          .font(PanelType.title)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 0)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+      }
+      if case .connected = outcome {
+        VStack(alignment: .leading, spacing: 10) {
+          Label("Connected", systemImage: "checkmark.circle.fill")
+            .font(PanelType.row)
+            .foregroundStyle(look.settingsGreen)
+          Text("You're now connected to \(provider.name).")
+            .font(PanelType.row)
+            .foregroundStyle(look.ink)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        SheetWideButton(title: String(localized: "Done")) { dismiss() }
+          .padding(.top, 4)
+      } else {
+        steps(look)
+      }
+    }
+    .padding(28)
+    .frame(width: 460)
+    .background(look.groupedRow)
+    .onAppear {
+      fields = Dictionary(uniqueKeysWithValues: provider.fields.map { ($0.key, $0.defaultValue ?? "") })
+      focused = "key"
+    }
+  }
+
+  private var ready: Bool {
+    !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      && provider.fields.allSatisfy { !(fields[$0.key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+  }
+
+  private func steps(_ look: Look) -> some View {
+    VStack(alignment: .leading, spacing: 18) {
+      if let page = provider.keyPage {
+        MacConnectStep(number: 1, title: String(localized: "Make a key on \(provider.name)'s page"), look: look) {
+          SettingsPill(title: String(localized: "Open"), look: look) { NSWorkspace.shared.open(page) }
+        }
+      }
+      MacConnectStep(number: provider.keyPage == nil ? 1 : 2, title: String(localized: "Paste your API key"), look: look) {
+        VStack(alignment: .leading, spacing: 12) {
+          // Hidden as a password is; the keys in it at once, so ⌘V pastes.
+          SecureField(String(localized: "API key"), text: $key, prompt: Text("API key").foregroundStyle(look.inkTertiary))
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .font(.system(size: 13, design: .monospaced))
+            .foregroundStyle(look.ink)
+            .focused($focused, equals: "key")
+            .disabled(checking)
+            .onSubmit { Task { await connect() } }
+            .onChange(of: key) { if case .refused = outcome { outcome = nil } }
+            .storeBox(width: nil, focused: focused == "key", look: look)
+          ForEach(provider.fields) { one in
+            VStack(alignment: .leading, spacing: 5) {
+              Text(one.name)
+                .font(PanelType.detail)
+                .foregroundStyle(look.inkSecondary)
+              TextField(one.name, text: Binding(get: { fields[one.key] ?? "" }, set: { fields[one.key] = $0 }), prompt: Text(verbatim: one.placeholder).foregroundStyle(look.inkTertiary))
+                .textFieldStyle(.plain)
+                .labelsHidden()
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(look.ink)
+                .autocorrectionDisabled()
+                .focused($focused, equals: one.key)
+                .disabled(checking)
+                .onSubmit { Task { await connect() } }
+                .storeBox(width: nil, focused: focused == one.key, look: look)
+              if let note = one.note {
+                Text(note)
+                  .font(.system(size: 11))
+                  .foregroundStyle(look.inkTertiary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+            }
+          }
+        }
+      }
+      if case .refused(let problem) = outcome {
+        Text(problem)
+          .font(PanelType.row)
+          .foregroundStyle(look.danger)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      SheetWideButton(
+        title: checking ? String(localized: "Checking with \(provider.name)…") : String(localized: "Connect"),
+        busy: checking,
+        enabled: checking || ready
+      ) {
+        Task { await connect() }
+      }
+      .padding(.top, 4)
+    }
+  }
+
+  /** The key tried at the provider through the server; refused, it is cleared, never kept here. */
+  private func connect() async {
+    guard ready, !checking else { return }
+    checking = true
+    let answer = await model.connectKey(provider.provider, key: key, fields: fields)
+    checking = false
+    outcome = answer
+    if case .refused = answer { key = ""; focused = "key" }
   }
 }
 

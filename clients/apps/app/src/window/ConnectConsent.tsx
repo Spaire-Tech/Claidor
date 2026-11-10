@@ -5,7 +5,12 @@
 // goes on, ×, Escape or a click on the dim cancels. Step 6b.
 
 import { type ReactNode, useEffect, useLayoutEffect, useRef } from 'react'
-import type { ConnectConsent, ConsentSymbol } from '../core/connectConsent'
+import { providerIconURL } from '../core/connectCards'
+import {
+  type ConnectConsent,
+  type ConsentSymbol,
+  consentProvider,
+} from '../core/connectConsent'
 import { t } from '../l10n'
 import { AppLogoTile } from './ConnectCards'
 import './ConnectConsent.css'
@@ -124,6 +129,9 @@ function ConsentDialog({
     consent.note != null
       ? [...consent.smallPrint, consent.note]
       : consent.smallPrint
+  // A plan's or a key's provider by its own logo (Amazon Bedrock, Z.AI: never a letter); an app by its name.
+  const provider = consentProvider(consent)
+  const icon = provider !== undefined ? providerIconURL(provider) : undefined
   return (
     <Sheet
       label={t`Connect ${consent.title}`}
@@ -132,7 +140,7 @@ function ConsentDialog({
     >
       <div className="consent-content">
         <span className="consent-logo" aria-hidden="true">
-          <AppLogoTile name={consent.title} side={64} />
+          <AppLogoTile name={consent.title} side={64} icon={icon} />
         </span>
         <div className="consent-title" role="heading" aria-level={2}>
           {consent.title}
@@ -184,6 +192,13 @@ const symbols: Record<ConsentSymbol, ReactNode> = {
     <>
       <circle cx="8" cy="8" r="6.4" />
       <path d="M5.3 8.2 7.1 10l3.6-4" />
+    </>
+  ),
+  'lock.shield': (
+    <>
+      <path d="M8 1.6 13.2 3.5v4.2c0 3.1-2.2 5.6-5.2 6.7-3-1.1-5.2-3.6-5.2-6.7V3.5Z" />
+      <rect x="5.7" y="7.4" width="4.6" height="3.4" rx="0.7" />
+      <path d="M6.6 7.4V6.3a1.4 1.4 0 0 1 2.8 0v1.1" />
     </>
   ),
 }

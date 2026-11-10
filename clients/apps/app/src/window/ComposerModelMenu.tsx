@@ -30,6 +30,16 @@ const marks: Record<string, string> = {
   grok: new URL('../assets/providers/grok-mark.png', import.meta.url).href,
   simeon: new URL('../assets/providers/simeon-mark.svg', import.meta.url).href,
 }
+/** The API key providers' marks (10 November 2026; NOTICE), bare, in the ink: `Providers/<provider>-mark`. */
+const keyMarks = import.meta.glob<string>('../assets/providers/*-mark.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+function markURL(provider: string): string | undefined {
+  return marks[provider] ?? keyMarks[`../assets/providers/${provider}-mark.png`]
+}
 
 /**
  * A provider's mark, bare, as the composer shows it (`ProviderMark`; the
@@ -43,7 +53,7 @@ export function ProviderMark({
   provider?: string
   side?: number
 }) {
-  const url = marks[provider ?? 'simeon']
+  const url = markURL(provider ?? 'simeon')
   if (url === undefined) return null
   const style = { width: side, height: side }
   if (provider === 'claude')

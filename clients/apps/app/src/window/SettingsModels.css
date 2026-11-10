@@ -420,3 +420,35 @@
 .models-code-field:disabled {
   opacity: 0.6;
 }
+
+/* An API key provider's line under its name (where to connect its plan instead): the subtitle's grey, on as many lines as it takes. */
+.models-hint {
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* "Soon", where Connect would be (GitHub Copilot, Meta): 13, in the tertiary grey, as a pill's words without its pill. */
+.models-soon {
+  display: inline-block;
+  padding: 0 10px;
+  color: var(--ink-tertiary);
+  font-size: 13px;
+}
+
+/* A detail a provider needs besides the key (Azure's endpoint, Cloudflare's account): its name (12, secondary) over its field, a note under it; 10 under the field before it. */
+.models-key-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.models-key-detail-name {
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.models-key-detail-note {
+  color: var(--ink-tertiary);
+  font-size: 11px;
+}

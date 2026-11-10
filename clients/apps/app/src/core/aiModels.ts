@@ -20,6 +20,12 @@
 // to Claude Code (the computer's `claudeCodeSignIn…` commands); the server
 // then keeps only that Claude is connected, its e-mail and plan. Shared with
 // Settings' page (src/window/SettingsModels.tsx).
+//
+// API keys (10 November 2026, the founder: "Below subscription something
+// called api keys"): the person pastes their own key for one of the
+// providers the server lists (`keyProviders`, its order and pages); the
+// server tries it at the provider and keeps it sealed, never the app
+// (docs/your-own-models.md, section 7).
 
 import { SimeonAPIError } from './api'
 import { GatewayError } from './gatewayConnection'
@@ -38,6 +44,38 @@ export const providers = [chatGPT, claude, grok] as const
 export const signedInByCode: ReadonlySet<string> = new Set([chatGPT, grok])
 /** The name on the composer while the agents use Simeon's models (`AIModels.simeon`, the founder's "⌘ Simeon"). */
 export const simeon = 'Simeon'
+/**
+ * The providers of the person's own API keys, as people know them, by the
+ * server's slug (`AIModels.keyProviderNames`; `key_providers.PROVIDERS`).
+ * The list itself, its order and pages, is the server's (`keyProviders`).
+ */
+export const keyProviderNames: Readonly<Record<string, string>> = {
+  anthropic: 'Anthropic',
+  openai: 'OpenAI',
+  xai: 'SpaceXAI',
+  google: 'Google',
+  bedrock: 'Amazon Bedrock',
+  antling: 'Ant Ling',
+  azure: 'Azure OpenAI',
+  baseten: 'Baseten',
+  cerebras: 'Cerebras',
+  cloudflare: 'Cloudflare Workers AI',
+  deepseek: 'DeepSeek',
+  fireworks: 'Fireworks',
+  copilot: 'GitHub Copilot',
+  groq: 'Groq',
+  huggingface: 'Hugging Face',
+  meta: 'Meta',
+  minimax: 'MiniMax',
+  mistral: 'Mistral',
+  moonshot: 'Moonshot AI',
+  nvidia: 'NVIDIA',
+  opencode: 'OpenCode Go',
+  qwen: 'Qwen',
+  together: 'Together',
+  xiaomi: 'Xiaomi',
+  zai: 'Z.AI',
+}
 /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
 const claudeHosts = new Set([
   'claude.com',
@@ -53,7 +91,7 @@ export interface ModelAccount {
   id: string
   /** `chatgpt` for now. */
   provider: string
-  /** `subscription` (a sign-in) or, later, `api_key`. */
+  /** `subscription` (a sign-in) or `api_key` (the person's own key). */
   kind: string
   /** The account's e-mail, or the person's own name for it. */
   label: string
@@ -234,6 +272,8 @@ export function providerName(provider: string): string {
   if (provider === chatGPT) return 'ChatGPT'
   if (provider === claude) return 'Claude'
   if (provider === grok) return 'Grok'
+  const keyed = keyProviderNames[provider]
+  if (keyed !== undefined) return keyed
   return provider.slice(0, 1).toUpperCase() + provider.slice(1)
 }
 
@@ -274,14 +314,23 @@ export function accountDetail(account: ModelAccount): string {
 /** Its name on the page (`ModelAccount.shownName`): the provider's ("ChatGPT"), never the e-mail (the founder, 9 November 2026: "dont put emails"); the person's own once they renamed it. */
 export function shownName(account: ModelAccount): string {
   const named = account.label.trim()
-  return named === '' || named.includes('@')
+  return named === '' || named.includes('@') || keyEnding(account) !== undefined
     ? providerName(account.provider)
     : named
 }
 
+/** A key's last four characters as the server names it ("…a1b2"), until the person names it otherwise. */
+export function keyEnding(account: ModelAccount): string | undefined {
+  const named = account.label.trim()
+  return account.kind === 'api_key' && named.startsWith('…') ? named : undefined
+}
+
 /** What it is, the only words under its name while it works (`ModelAccount.kindName`; the founder, 9 November 2026: "just have subscription there"). */
 export function kindName(account: ModelAccount): string {
-  return account.kind === 'api_key' ? t('API key') : t('Subscription')
+  if (account.kind !== 'api_key') return t('Subscription')
+  // "API key …a1b2": two keys of one provider told apart.
+  const ending = keyEnding(account)
+  return ending === undefined ? t('API key') : `${t('API key')} ${ending}`
 }
 
 /** "4:00 PM" today, else "Thu 4:00 PM", in the app's language (`AIModels.time`). */
@@ -473,6 +522,118 @@ export function claudeStartProblem(status: number | undefined): string {
     : t("Couldn't reach Claude. Try again in a moment.")
 }
 
+// MARK: API keys
+
+/** One detail a provider needs besides the key (Azure's endpoint, Cloudflare's account), as the server names it. */
+export interface KeyField {
+  key: string
+  placeholder: string
+  /** What it holds until the person types otherwise (Bedrock's region). */
+  default?: string
+}
+
+/** A provider a person brings their own API key for, as the server lists it (`KeyProvider`). */
+export interface KeyProvider {
+  provider: string
+  name: string
+  /** Where the person makes a key: the provider's own page, over https. */
+  keyPage?: string
+  /** False: listed, "Soon" (GitHub Copilot, Meta). */
+  available: boolean
+  fields: KeyField[]
+}
+
+export function keyProvider(json: JSONValue): KeyProvider | undefined {
+  const provider = text(field(json, 'provider'))
+  if (provider === undefined || !/^[a-z0-9]{1,20}$/.test(provider))
+    return undefined
+  let keyPage: string | undefined
+  try {
+    const page = new URL(text(field(json, 'keyPage')) ?? '')
+    if (page.protocol === 'https:') keyPage = page.href
+  } catch {
+    keyPage = undefined
+  }
+  return {
+    provider,
+    name: text(field(json, 'name')) ?? providerName(provider),
+    ...(keyPage === undefined ? {} : { keyPage }),
+    available: field(json, 'available') !== false,
+    fields: (arr(field(json, 'fields')) ?? []).flatMap((one): KeyField[] => {
+      const key = text(field(one, 'key'))
+      if (key === undefined) return []
+      const fallback = text(field(one, 'default'))
+      return [
+        {
+          key,
+          placeholder: text(field(one, 'placeholder')) ?? '',
+          ...(fallback === undefined ? {} : { default: fallback }),
+        },
+      ]
+    }),
+  }
+}
+
+/** The line under a provider's name, for a person who has its plan rather than a key: connect the plan instead (the founder's "SuperGrok or X Premium+? Connect Grok under Subscriptions."). */
+export function keyHint(provider: string): string | undefined {
+  switch (provider) {
+    case 'xai':
+      return t('SuperGrok or X Premium+? Connect Grok under Subscriptions.')
+    case 'anthropic':
+      return t('Claude Pro or Max? Connect Claude under Subscriptions.')
+    case 'openai':
+      return t('ChatGPT Plus or Pro? Connect ChatGPT under Subscriptions.')
+    default:
+      return undefined
+  }
+}
+
+/** A detail's name over its field (`KeyField.name`). */
+export function keyFieldName(key: string): string {
+  switch (key) {
+    case 'endpoint':
+      return t('Endpoint')
+    case 'deployments':
+      return t('Deployments')
+    case 'account_id':
+      return t('Account ID')
+    case 'region':
+      return t('Region')
+    default:
+      return key
+  }
+}
+
+/** A detail's line under its field, where it needs one. */
+export function keyFieldNote(key: string): string | undefined {
+  return key === 'deployments'
+    ? t("Your deployments' names, separated by commas.")
+    : undefined
+}
+
+/** Why a key wasn't connected, in the person's words (`error.code` of `models/accounts/keys/<provider>`). */
+export function keyProblem(code: string | undefined, name: string): string {
+  switch (code) {
+    case 'invalid_key':
+      return t`That doesn't look like a ${name} key. Paste it again.`
+    case 'invalid_fields':
+      return t`Check the details ${name} needs.`
+    case 'key_refused':
+      return t`${name} didn't accept this key. Check it and try again.`
+    case 'provider_unavailable':
+      return t`Couldn't reach ${name}. Try again in a moment.`
+    case 'unknown_provider':
+      return t`${name} can't be connected yet.`
+    default:
+      return t`Couldn't connect ${name}. Try again.`
+  }
+}
+
+/** How a key went (`KeyConnect`). */
+export type KeyConnect =
+  | { kind: 'connected'; account: ModelAccount }
+  | { kind: 'refused'; problem: string }
+
 /** The menu's first choice: the agents on Simeon's own models. */
 export function simeonsModels(): string {
   return t("Simeon's models")
@@ -540,6 +701,8 @@ export class AIModelsModel {
   accounts: ModelAccount[] = []
   /** The models the person may choose (their accounts' signed-in providers'). */
   models: OwnModelChoice[] = []
+  /** The providers a person can bring a key for, in the server's order (the founder's). */
+  keyProviders: KeyProvider[] = []
   /** The model their agents use; none for Simeon's. */
   chosen?: string
   /** How hard it thinks (`low`, `medium`, `high`, `xhigh`, `max`); none on Simeon's. */
@@ -591,14 +754,27 @@ export class AIModelsModel {
     return providers.filter((provider) => !this.hasAccount(provider))
   }
 
+  /** The providers under API keys: those with no key yet (a connected one is under Connected, as a plan's). */
+  get unconnectedKeys(): KeyProvider[] {
+    return this.keyProviders.filter((one) => !this.hasAccount(one.provider))
+  }
+
+  /** A key provider by its slug. */
+  keyProvider(provider: string): KeyProvider | undefined {
+    return this.keyProviders.find((one) => one.provider === provider)
+  }
+
   /** The providers with models to choose, in the apps' order, each with its models: the composer's menu. */
   get choices(): { provider: string; models: OwnModelChoice[] }[] {
+    const keyed = this.keyProviders.map((one) => one.provider)
     const others = [...new Set(this.models.map((one) => one.provider))]
       .filter(
-        (provider) => !(providers as readonly string[]).includes(provider),
+        (provider) =>
+          !(providers as readonly string[]).includes(provider) &&
+          !keyed.includes(provider),
       )
       .sort()
-    return [...providers, ...others].flatMap((provider) => {
+    return [...providers, ...keyed, ...others].flatMap((provider) => {
       const offered = this.models.filter((one) => one.provider === provider)
       return offered.length === 0 ? [] : [{ provider, models: offered }]
     })
@@ -639,6 +815,9 @@ export class AIModelsModel {
       this.accounts = (arr(field(listed, 'accounts')) ?? [])
         .map(modelAccount)
         .filter((one): one is ModelAccount => one !== undefined)
+      this.keyProviders = (arr(field(listed, 'keyProviders')) ?? [])
+        .map(keyProvider)
+        .filter((one): one is KeyProvider => one !== undefined)
       this.read(own)
       this.loaded = true
       this.problem = undefined
@@ -833,6 +1012,45 @@ export class AIModelsModel {
     } catch {
       // The computer forgets an unfinished sign-in on its own.
     }
+  }
+
+  /**
+   * The person's own key for `provider`, with the details it needs: the
+   * server tries it at the provider and keeps it only when the provider
+   * takes it. Connected, the page is read again and the key's best model
+   * chosen when the person had none, so connecting is using.
+   */
+  async connectKey(
+    provider: string,
+    key: string,
+    fields: Record<string, string> = {},
+  ): Promise<KeyConnect> {
+    const name = this.keyProvider(provider)?.name ?? providerName(provider)
+    const pasted = key.trim()
+    if (pasted === '')
+      return { kind: 'refused', problem: keyProblem('invalid_key', name) }
+    let answer: JSONValue
+    try {
+      answer = await this.call(`models/accounts/keys/${provider}`, 'POST', {
+        key: pasted,
+        fields,
+      })
+    } catch (error) {
+      return {
+        kind: 'refused',
+        problem: keyProblem(
+          error instanceof SimeonAPIError ? error.code : undefined,
+          name,
+        ),
+      }
+    }
+    const account = modelAccount(field(answer, 'account'))
+    if (!account)
+      return { kind: 'refused', problem: keyProblem(undefined, name) }
+    await this.load()
+    const best = this.models.find((one) => one.provider === provider)
+    if (this.chosen === undefined && best) await this.choose(best.id)
+    return { kind: 'connected', account }
   }
 
   /** The person's own name for an account; an empty one is not sent. */

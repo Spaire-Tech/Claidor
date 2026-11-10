@@ -88,10 +88,16 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
   /** "ChatGPT". */
   public var providerName: String { AIModels.providerName(provider) }
 
-  /** Its name on the page: the provider's ("ChatGPT"), never the e-mail (the founder, 9 November 2026: "dont put emails"); the person's own once they renamed it. */
+  /** Its name on the page: the provider's ("ChatGPT"), never the e-mail (the founder, 9 November 2026: "dont put emails"), nor a key's last four; the person's own once they renamed it. */
   public var shownName: String {
     let named = label.trimmingCharacters(in: .whitespacesAndNewlines)
-    return named.isEmpty || named.contains("@") ? providerName : named
+    return named.isEmpty || named.contains("@") || keyEnding != nil ? providerName : named
+  }
+
+  /** A key's last four characters as the server names it ("…a1b2"), until the person names it otherwise. */
+  public var keyEnding: String? {
+    let named = label.trimmingCharacters(in: .whitespacesAndNewlines)
+    return kind == "api_key" && named.hasPrefix("…") ? named : nil
   }
 
   /** The line under its name: "Subscription · Plus". */
@@ -102,7 +108,10 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
 
   /** What it is, the only words under its name while it works (the founder, 9 November 2026: "just have subscription there"): "Subscription". */
   public var kindName: String {
-    kind == "api_key" ? L10n.text("API key") : L10n.text("Subscription")
+    guard kind == "api_key" else { return L10n.text("Subscription") }
+    // "API key …a1b2": two keys of one provider told apart.
+    guard let keyEnding else { return L10n.text("API key") }
+    return "\(L10n.text("API key")) \(keyEnding)"
   }
 
   /** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out". */
@@ -344,7 +353,9 @@ public enum AIModels {
     case chatGPT: return "ChatGPT"
     case claude: return "Claude"
     case grok: return "Grok"
-    default: return provider.prefix(1).uppercased() + provider.dropFirst()
+    default:
+      if let keyed = keyProviderNames[provider] { return keyed }
+      return provider.prefix(1).uppercased() + provider.dropFirst()
     }
   }
 
@@ -413,6 +424,8 @@ public final class AIModelsModel {
   public private(set) var accounts: [ModelAccount] = []
   /** The models the person may choose (their accounts' signed-in providers'). */
   public private(set) var models: [OwnModelChoice] = []
+  /** The providers a person can bring a key for, in the server's order (the founder's). */
+  public private(set) var keyProviders: [KeyProvider] = []
   /** The model their agents use; nil for Simeon's. */
   public private(set) var chosen: String?
   /** How hard it thinks (`low`, `medium`, `high`, `xhigh`, `max`); nil on Simeon's. */
@@ -470,9 +483,21 @@ public final class AIModelsModel {
     AIModels.providers.filter { !hasAccount($0) }
   }
 
+  /** The providers under API keys: those with no key yet (a connected one is under Connected, as a plan's). */
+  public var unconnectedKeys: [KeyProvider] {
+    keyProviders.filter { !hasAccount($0.provider) }
+  }
+
+  /** A key provider by its slug. */
+  public func keyProvider(_ provider: String) -> KeyProvider? {
+    keyProviders.first { $0.provider == provider }
+  }
+
   /** The providers with models to choose, in the apps' order, each with its models: the composer's menu. */
   public var choices: [ProviderModels] {
-    let known = AIModels.providers + Set(models.map(\.provider)).subtracting(AIModels.providers).sorted()
+    let keyed = keyProviders.map(\.provider)
+    let known = AIModels.providers + keyed
+      + Set(models.map(\.provider)).subtracting(AIModels.providers + keyed).sorted()
     return known.compactMap { provider in
       let offered = models.filter { $0.provider == provider }
       return offered.isEmpty ? nil : ProviderModels(provider: provider, models: offered)
@@ -501,6 +526,7 @@ public final class AIModelsModel {
       let listed = try await call("models/accounts", nil, nil)
       let own = try await call("models/own", nil, nil)
       accounts = (listed["accounts"]?.array ?? []).compactMap(ModelAccount.init(json:))
+      keyProviders = (listed["keyProviders"]?.array ?? []).compactMap(KeyProvider.init(json:))
       read(own)
       loaded = true
       problem = nil
@@ -652,6 +678,35 @@ public final class AIModelsModel {
   /** The sheet closed before the code: Claude Code's sign-in on the computer ends. */
   public func cancelClaude() async {
     _ = try? await command("claudeCodeSignInCancel", [:])
+  }
+
+  /**
+   * The person's own key for `provider`, with the details it needs: the
+   * server tries it at the provider and keeps it only when the provider
+   * takes it. Connected, the page is read again and the key's best model
+   * chosen when the person had none, so connecting is using.
+   */
+  public func connectKey(_ provider: String, key: String, fields: [String: String] = [:]) async -> KeyConnect {
+    let name = keyProvider(provider)?.name ?? AIModels.providerName(provider)
+    let pasted = key.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !pasted.isEmpty else { return .refused(AIModels.keyProblem(code: "invalid_key", name: name)) }
+    let answer: JSON
+    do {
+      answer = try await call(
+        "models/accounts/keys/\(provider)", "POST",
+        ["key": .string(pasted), "fields": .object(fields.mapValues(JSON.string))]
+      )
+    } catch let error as SimeonAPIError {
+      return .refused(AIModels.keyProblem(code: error.code, name: name))
+    } catch {
+      return .refused(AIModels.keyProblem(code: nil, name: name))
+    }
+    guard let account = ModelAccount(json: answer["account"]) else {
+      return .refused(AIModels.keyProblem(code: nil, name: name))
+    }
+    await load()
+    if chosen == nil, let best = models.first(where: { $0.provider == provider }) { await choose(best.id) }
+    return .connected(account)
   }
 
   /** The person's own name for an account; an empty one is not sent. */

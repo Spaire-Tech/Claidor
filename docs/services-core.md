@@ -1011,7 +1011,8 @@ shown signed out), and the plans' own `relay_refused`, `limited` and
 **Verified:** `server/tests/desktop/test_api_keys.py`,
 `test_chat_wire.py`, `test_messages_wire.py` (every provider stood in by
 respx), and the engine's own AI SDK reading both translators' output. **Not
-verified:** any provider with a real key; the apps' sheet comes next.
+verified:** any provider with a real key. The apps' API keys section and
+key sheet: `docs/your-own-models.md`, section 7.
 
 ### Settings on Render
 

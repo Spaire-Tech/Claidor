@@ -12,6 +12,15 @@
 // provider's name, never the e-mail, how it stands beside its `⋯` (a dot and
 // its words). One model for the window (`store.aiModels`).
 //
+// API keys (10 November 2026, the founder: "Below subscription something
+// called api keys"): under Subscriptions, every provider the server lists
+// in the founder's order, each its tile, its name (and, for those with a
+// plan of their own, where to connect the plan instead) and Connect, or
+// "Soon"; Connect asks as an app's does (`keyConsent`), then the key sheet:
+// 1, the provider's page to make a key on; 2, the key pasted (with the
+// details a provider needs); the server tries it before keeping it. A key
+// connected is under Connected, "API key …a1b2".
+//
 // The web's own ways: the code is copied with the window's clipboard
 // (clipboard.ts: the browser's, or the Windows app's); OpenAI's page opens
 // in a new tab (in the Windows app, the default browser); the sheet asks
@@ -31,10 +40,15 @@ import {
   type ChatGPTSignIn,
   type ClaudeConnect,
   type ClaudeSignIn,
+  type KeyConnect,
+  type KeyProvider,
   type AIModelsModel as Model,
   type ModelAccount,
   claude,
   grok,
+  keyFieldName,
+  keyFieldNote,
+  keyHint,
   kindName,
   planName,
   planPage,
@@ -50,7 +64,8 @@ import {
   usable,
   usageLine,
 } from '../core/aiModels'
-import { modelConsent } from '../core/connectConsent'
+import { providerIconURL } from '../core/connectCards'
+import { keyConsent, modelConsent } from '../core/connectConsent'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { classes } from './classes'
@@ -80,6 +95,8 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   /** The provider whose code sheet is open (ChatGPT's, Grok's). */
   const [connectingByCode, setConnectingByCode] = useState<string>()
   const [connectingClaude, setConnectingClaude] = useState(false)
+  /** The key provider whose key sheet is open. */
+  const [keying, setKeying] = useState<KeyProvider>()
   const [renaming, setRenaming] = useState<ModelAccount>()
   const [disconnecting, setDisconnecting] = useState<ModelAccount>()
   useEffect(() => {
@@ -121,14 +138,18 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                   divided={index > 0}
                   rename={() => setRenaming(account)}
                   addAnother={
-                    signedInByCode.has(account.provider)
-                      ? () => setConnectingByCode(account.provider)
-                      : undefined
+                    account.kind === 'api_key'
+                      ? () => setKeying(model.keyProvider(account.provider))
+                      : signedInByCode.has(account.provider)
+                        ? () => setConnectingByCode(account.provider)
+                        : undefined
                   }
                   connectAgain={() =>
-                    account.provider === claude
-                      ? setConnectingClaude(true)
-                      : setConnectingByCode(account.provider)
+                    account.kind === 'api_key'
+                      ? setKeying(model.keyProvider(account.provider))
+                      : account.provider === claude
+                        ? setConnectingClaude(true)
+                        : setConnectingByCode(account.provider)
                   }
                   disconnect={() => setDisconnecting(account)}
                 />
@@ -163,6 +184,40 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
               ))}
             </SettingsGroup>
           )}
+          {model.unconnectedKeys.length > 0 && (
+            <SettingsGroup
+              title={t('API keys')}
+              footer={t('Each provider bills the calls on your key.')}
+            >
+              {model.unconnectedKeys.map((one, index) => (
+                <ProviderLine
+                  key={one.provider}
+                  provider={one.provider}
+                  name={one.name}
+                  hint={keyHint(one.provider)}
+                  divided={index > 0}
+                >
+                  {one.available ? (
+                    <SettingsPill
+                      title={t('Connect')}
+                      onClick={() => {
+                        const open = async () => setKeying(one)
+                        // The consent an app's Connect shows, in a key's words, then the key sheet.
+                        if (connector)
+                          connector.ask(one.name, open, {
+                            signIn: false,
+                            consent: keyConsent(one.provider, one.name),
+                          })
+                        else void open()
+                      }}
+                    />
+                  ) : (
+                    <span className="models-soon">{t('Soon')}</span>
+                  )}
+                </ProviderLine>
+              ))}
+            </SettingsGroup>
+          )}
           {model.problem !== undefined && (
             <p className="models-problem" role="alert">
               {model.problem}
@@ -175,6 +230,13 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
           model={model}
           provider={connectingByCode}
           close={() => setConnectingByCode(undefined)}
+        />
+      )}
+      {keying && (
+        <KeyConnectSheet
+          model={model}
+          provider={keying}
+          close={() => setKeying(undefined)}
         />
       )}
       {connectingClaude && (
@@ -446,16 +508,33 @@ export function ProviderIcon({
   provider: string
   side: number
 }) {
+  // The provider's own tile (the API key providers' too, by their slug), else the connect cards' logo or letter.
+  const url = providerIconURL(provider)
+  if (url !== undefined)
+    return (
+      <span
+        className="app-icon"
+        style={{ width: side, height: side, borderRadius: side * 0.2237 }}
+        aria-hidden="true"
+      >
+        <img src={url} alt="" />
+      </span>
+    )
   return <AppLogoTile name={providerName(provider)} side={side} />
 }
 
-/** A provider not yet connected, under Subscriptions (`MacProviderLine`): its app's icon, its name, and Connect. */
+/** A provider not yet connected, under Subscriptions or API keys (`MacProviderLine`): its app's icon, its name (and a line under it, where it has one), and Connect. */
 function ProviderLine({
   provider,
+  name,
+  hint,
   divided,
   children,
 }: {
   provider: string
+  /** The server's name for a key provider; a plan's own otherwise. */
+  name?: string
+  hint?: string
   divided?: boolean
   children?: ReactNode
 }) {
@@ -463,7 +542,10 @@ function ProviderLine({
     <div className={divided ? 'models-line divided' : 'models-line'}>
       <ProviderIcon provider={provider} side={28} />
       <span className="models-words">
-        <span className="models-title">{providerName(provider)}</span>
+        <span className="models-title">{name ?? providerName(provider)}</span>
+        {hint !== undefined && (
+          <span className="models-subtitle models-hint">{hint}</span>
+        )}
       </span>
       {children != null && (
         <span className="models-provider-end">{children}</span>
@@ -855,6 +937,155 @@ function ClaudeConnectSheet({
         <PanelDisc symbol="xmark" label={t('Close')} onClick={shut} />
       </div>
       {body()}
+    </Sheet>
+  )
+}
+
+/**
+ * Connect a provider's API key (`MacKeyConnectSheet`; 10 November 2026):
+ * 1, the provider's own page to make a key on, with Open; 2, the key
+ * pasted, hidden as a password is, and the details the provider needs
+ * (Azure's endpoint and deployments, Cloudflare's account, Bedrock's
+ * region), each named; Connect. The server tries the key at the provider
+ * before keeping it, so a refused key is said here, in the provider's name,
+ * and the sheet stays to try again. Connected, the key's best model is
+ * chosen when the person had none.
+ */
+function KeyConnectSheet({
+  model,
+  provider,
+  close,
+}: {
+  model: Model
+  provider: KeyProvider
+  close: () => void
+}) {
+  const [key, setKey] = useState('')
+  const [fields, setFields] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      provider.fields.map((one) => [one.key, one.default ?? '']),
+    ),
+  )
+  const [checking, setChecking] = useState(false)
+  const [outcome, setOutcome] = useState<KeyConnect>()
+  const keyField = useRef<HTMLInputElement>(null)
+  const ready =
+    key.trim() !== '' &&
+    provider.fields.every((one) => (fields[one.key] ?? '').trim() !== '')
+
+  // The keys in the field once the sheet is up (the sheet takes them first), so ⌘V or Ctrl+V pastes at once, as on the Mac.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => keyField.current?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [])
+  // Refused, the field is enabled again, empty: the keys go back to it.
+  useEffect(() => {
+    if (!checking && outcome?.kind === 'refused') keyField.current?.focus()
+  }, [checking, outcome])
+
+  const connect = async (event?: FormEvent) => {
+    event?.preventDefault()
+    if (!ready || checking) return
+    setChecking(true)
+    const answer = await model.connectKey(provider.provider, key, fields)
+    setChecking(false)
+    setOutcome(answer)
+    // Refused, the key is cleared: it is pasted again, never kept here.
+    if (answer.kind === 'refused') setKey('')
+  }
+
+  const title = t`Connect ${provider.name}`
+  return (
+    <Sheet label={title} close={close} className="models-sheet">
+      <div className="models-sheet-head">
+        <ProviderIcon provider={provider.provider} side={36} />
+        <h2 className="models-sheet-title">{title}</h2>
+        <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
+      </div>
+      {outcome?.kind === 'connected' ? (
+        <ConnectedEnd provider={provider.provider} close={close} />
+      ) : (
+        <form
+          className="models-steps"
+          onSubmit={(event) => void connect(event)}
+        >
+          {provider.keyPage !== undefined && (
+            <ConnectStep
+              number={1}
+              title={t`Make a key on ${provider.name}'s page`}
+            >
+              <SettingsPill
+                title={t('Open')}
+                onClick={() => openPage(provider.keyPage ?? '')}
+              />
+            </ConnectStep>
+          )}
+          <ConnectStep
+            number={provider.keyPage !== undefined ? 2 : 1}
+            title={t('Paste your API key')}
+          >
+            {/* Hidden as a password is, never filled in by the browser. */}
+            <input
+              ref={keyField}
+              className="models-code-field"
+              type="password"
+              value={key}
+              placeholder={t('API key')}
+              aria-label={t('API key')}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              disabled={checking}
+              onChange={(event) => {
+                setKey(event.target.value)
+                if (outcome?.kind === 'refused') setOutcome(undefined)
+              }}
+            />
+            {provider.fields.map((one) => (
+              <label key={one.key} className="models-key-detail">
+                <span className="models-key-detail-name">
+                  {keyFieldName(one.key)}
+                </span>
+                <input
+                  className="models-code-field"
+                  value={fields[one.key] ?? ''}
+                  placeholder={one.placeholder}
+                  autoComplete="off"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  disabled={checking}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setFields((now) => ({ ...now, [one.key]: value }))
+                  }}
+                />
+                {keyFieldNote(one.key) !== undefined && (
+                  <span className="models-key-detail-note">
+                    {keyFieldNote(one.key)}
+                  </span>
+                )}
+              </label>
+            ))}
+          </ConnectStep>
+          {outcome?.kind === 'refused' && (
+            <p className="models-sheet-problem" role="alert">
+              {outcome.problem}
+            </p>
+          )}
+          <div className="models-sheet-end">
+            <button
+              type="submit"
+              className="models-wide"
+              disabled={!checking && !ready}
+            >
+              {checking && <span className="models-wheel" aria-hidden="true" />}
+              {checking ? t`Checking with ${provider.name}…` : t('Connect')}
+            </button>
+          </div>
+        </form>
+      )}
     </Sheet>
   )
 }

@@ -15,6 +15,13 @@ import UIKit
  * the composer (`ComposerModelMenu`), not here. The Mac's page
  * (mac/Simeon/SettingsModels.swift) and the web app's say the same; the
  * model is the shared core's, one for the app (`store.aiModels`).
+ *
+ * API keys (10 November 2026, the founder: "Below subscription something
+ * called api keys"): under Subscriptions, every provider the server lists in
+ * the founder's order, each its tile, its name (and, for those with a plan
+ * of their own, where to connect the plan instead) and Connect, or "Soon";
+ * Connect asks as an app's does, then the key sheet (`KeyConnectSheet`). A
+ * key connected is under Connected, "API key …a1b2".
  */
 struct AIModelsPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -27,6 +34,9 @@ struct AIModelsPage: View {
   /** The consent an app's Connect shows, before a provider's first sign-in; Connect on it marks `confirmed`. */
   @State private var asking: ConnectConsent?
   @State private var pending: String?
+  /** The key provider whose consent is up, then whose key sheet is open. */
+  @State private var pendingKey: KeyProvider?
+  @State private var keying: KeyProvider?
   @State private var confirmed = false
 
   var body: some View {
@@ -55,8 +65,12 @@ struct AIModelsPage: View {
               ModelAccountRow(
                 account: account,
                 rename: { newName = account.shownName; renaming = account },
-                addAnother: AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
-                connectAgain: { connect(account.provider) },
+                addAnother: account.kind == "api_key"
+                  ? { keying = model.keyProvider(account.provider) }
+                  : AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
+                connectAgain: {
+                  if account.kind == "api_key" { keying = model.keyProvider(account.provider) } else { connect(account.provider) }
+                },
                 disconnect: { disconnecting = account }
               )
             }
@@ -87,6 +101,36 @@ struct AIModelsPage: View {
           }
           .listRowBackground(Ink.groupedRow)
         }
+        let keys = model.unconnectedKeys
+        if !keys.isEmpty {
+          Section {
+            ForEach(keys) { one in
+              HStack(spacing: 14) {
+                ProviderIcon(provider: one.provider, size: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                  Text(verbatim: one.name).font(.system(size: 17)).foregroundStyle(Ink.primary)
+                  if let hint = one.hint {
+                    Text(hint).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+                  }
+                }
+                Spacer(minLength: 8)
+                if one.available {
+                  Button(String(localized: "Connect")) { askKey(one) }
+                    .foregroundStyle(Ink.link)
+                    .buttonStyle(.borderless)
+                } else {
+                  Text("Soon").font(.system(size: 15)).foregroundStyle(Ink.tertiary)
+                }
+              }
+              .padding(.vertical, 2)
+            }
+          } header: {
+            Text("API keys")
+          } footer: {
+            Text("Each provider bills the calls on your key.")
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
         if let problem = model.problem {
           Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
             .listRowBackground(Ink.groupedRow)
@@ -98,10 +142,15 @@ struct AIModelsPage: View {
     .inlineBarTitle()
     // The sign-in opens once the consent has gone, as an app's Connect does.
     .sheet(item: $asking, onDismiss: {
-      guard confirmed, let provider = pending else { return }
+      guard confirmed else { pending = nil; pendingKey = nil; return }
       confirmed = false
-      pending = nil
-      connect(provider)
+      if let key = pendingKey {
+        pendingKey = nil
+        keying = key
+      } else if let provider = pending {
+        pending = nil
+        connect(provider)
+      }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
@@ -110,6 +159,9 @@ struct AIModelsPage: View {
     }
     .sheet(isPresented: $connectingClaude) {
       NavigationStack { ClaudeConnectSheet(model: model) }
+    }
+    .sheet(item: $keying) { provider in
+      NavigationStack { KeyConnectSheet(model: model, provider: provider) }
     }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
@@ -143,6 +195,14 @@ struct AIModelsPage: View {
     confirmed = false
     pending = provider
     asking = ConnectConsent(modelProvider: provider)
+  }
+
+  /** A key provider's Connect: the consent in a key's words, then the key sheet. */
+  private func askKey(_ provider: KeyProvider) {
+    confirmed = false
+    pending = nil
+    pendingKey = provider
+    asking = ConnectConsent(keyProvider: provider.provider, name: provider.name)
   }
 
   /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
@@ -565,5 +625,125 @@ struct ClaudeConnectSheet: View {
     code = ""
     finishing = false
     outcome = answer
+  }
+}
+
+/**
+ * Connect a provider's API key (10 November 2026), as the Mac's sheet: "1.
+ * Make a key on its page" (Safari); "2. Paste your API key", hidden as a
+ * password is, and the details the provider needs (Azure's endpoint and
+ * deployments, Cloudflare's account, Bedrock's region), each named; Connect.
+ * The server tries the key at the provider before keeping it, so a refused
+ * key is said here, in the provider's name. Connected, the key's best model
+ * is chosen when the person had none.
+ */
+struct KeyConnectSheet: View {
+  let model: AIModelsModel
+  let provider: KeyProvider
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.openURL) private var openURL
+  @State private var key = ""
+  @State private var fields: [String: String] = [:]
+  @State private var checking = false
+  @State private var outcome: KeyConnect?
+  @FocusState private var keyFocused: Bool
+
+  var body: some View {
+    Form {
+      if case .connected = outcome {
+        Section {
+          Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
+          Text("You're now connected to \(provider.name).").foregroundStyle(Ink.primary)
+        }
+        .listRowBackground(Ink.groupedRow)
+      } else {
+        if let page = provider.keyPage {
+          Section {
+            Button {
+              openURL(page)
+            } label: {
+              HStack {
+                Text(verbatim: page.host ?? page.absoluteString).foregroundStyle(Ink.link)
+                Spacer()
+                Image(systemName: "arrow.up.right").foregroundStyle(Ink.secondary)
+              }
+            }
+          } header: {
+            Text("1. Make a key on \(provider.name)'s page")
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
+        Section {
+          SecureField(String(localized: "API key"), text: $key)
+            .font(.system(size: 17, design: .monospaced))
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .focused($keyFocused)
+            .disabled(checking)
+            .onSubmit { Task { await connect() } }
+          ForEach(provider.fields) { one in
+            VStack(alignment: .leading, spacing: 4) {
+              Text(one.name).font(.system(size: 13)).foregroundStyle(Ink.secondary)
+              TextField(one.placeholder, text: Binding(get: { fields[one.key] ?? "" }, set: { fields[one.key] = $0 }))
+                .font(.system(size: 17, design: .monospaced))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .disabled(checking)
+              if let note = one.note {
+                Text(note).font(.system(size: 12)).foregroundStyle(Ink.tertiary)
+              }
+            }
+          }
+        } header: {
+          Text(provider.keyPage == nil ? String(localized: "Paste your API key") : String(localized: "2. Paste your API key"))
+        }
+        .listRowBackground(Ink.groupedRow)
+        if case .refused(let problem) = outcome {
+          Section { Text(problem).foregroundStyle(Ink.danger) }
+            .listRowBackground(Ink.groupedRow)
+        }
+      }
+    }
+    .groupedGround()
+    .navigationTitle(String(localized: "Connect \(provider.name)"))
+    .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        if case .connected = outcome {
+          EmptyView()
+        } else {
+          Button("Cancel") { dismiss() }
+        }
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        if case .connected = outcome {
+          Button("Done") { dismiss() }
+        } else if checking {
+          ProgressView()
+        } else {
+          Button("Connect") { Task { await connect() } }
+            .disabled(!ready)
+        }
+      }
+    }
+    .onAppear {
+      fields = Dictionary(uniqueKeysWithValues: provider.fields.map { ($0.key, $0.defaultValue ?? "") })
+      keyFocused = true
+    }
+  }
+
+  private var ready: Bool {
+    !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      && provider.fields.allSatisfy { !(fields[$0.key] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+  }
+
+  /** The key tried at the provider through the server; refused, it is cleared, never kept here. */
+  private func connect() async {
+    guard ready, !checking else { return }
+    checking = true
+    let answer = await model.connectKey(provider.provider, key: key, fields: fields)
+    checking = false
+    outcome = answer
+    if case .refused = answer { key = ""; keyFocused = true }
   }
 }

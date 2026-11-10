@@ -3015,3 +3015,26 @@ names Grok 4.6 and its effort (Extra High is Grok 4.6's highest), and Usage
 Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
 and the core's tests ran on Linux. The web app's translation ran in Chromium.
 
+### API keys, under Subscriptions (10 November 2026)
+
+The founder: "Below subscription something called api keys", 25 providers
+in his order. AI Models has **API keys** under Subscriptions
+(`SettingsModels.swift`): each provider with its logo (`Providers/<slug>`,
+LobeHub's icons, `NOTICE`), its name, the plan's line where it has one
+(SpaceXAI, Anthropic, OpenAI), and Connect, or "Soon" (GitHub Copilot,
+Meta). Connect opens the consent (`ConnectConsent(keyProvider:name:)`,
+drawn with the provider's own logo through `consent.provider`), then
+`MacKeyConnectSheet`: Make a key on its page (Open), Paste your API key (a
+`SecureField` in the store's box, focused), the details it needs, Connect
+with "Checking with …" and the wheel; refused, the provider's words and the
+field cleared and focused again; connected, "You're now connected to …".
+The key shows under Connected as "API key …7f3a"; Add Another and Connect
+Again open the key sheet. The iPhone's `KeyConnectSheet` does the same in
+its Form ("1. Make a key on …'s page", "2. Paste your API key"); its
+consent sheet draws the provider's logo the same way. The composer's mark
+is `Providers/<slug>-mark`.
+
+Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
+and the core's tests ran on Linux (16). The web app's translation ran in
+Chromium, light, dark and French.
+

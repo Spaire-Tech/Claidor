@@ -94,6 +94,35 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     note = nil
   }
 
+  /**
+   * Connect on an API key's line (10 November 2026): the same page as a
+   * plan's, its words for a key the person pastes, which the provider bills.
+   */
+  public init(keyProvider provider: String, name title: String) {
+    id = "key:\(provider)"
+    self.title = title
+    summary = L10n.text("Your \(title) API key, for your agents.")
+    route = .unknown
+    points = [
+      Point(symbol: "square.stack.3d.up", title: L10n.text("Put \(title) to work"), body: L10n.text("Your agents work on \(title)'s models with your key, not on your Simeon credits.")),
+      Point(symbol: "lock.shield", title: L10n.text("Your key stays with Simeon"), body: L10n.text("It's kept encrypted on Simeon's server and sent only to \(title). Your agents never see it.")),
+      Point(symbol: "hand.raised", title: L10n.text("You stay in charge"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
+    ]
+    smallPrint = [
+      L10n.text("\(title) bills each call on your key, at its own prices."),
+      L10n.text("Voice calls, dictation and video still use your Simeon credits."),
+    ]
+    note = nil
+  }
+
+  /** The AI provider of a plan's or a key's consent (`model:` or `key:`), whose own logo the page shows (`Providers/<provider>`); none for an app, found by its name. */
+  public var provider: String? {
+    for prefix in ["model:", "key:"] where id.hasPrefix(prefix) {
+      return String(id.dropFirst(prefix.count))
+    }
+    return nil
+  }
+
   /** Who handles the sign-in, by the app's route. */
   static func signInLine(_ route: Route, title: String) -> String {
     switch route {

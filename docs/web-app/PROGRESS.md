@@ -839,6 +839,56 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: API keys, under Subscriptions
+
+The founder: "Below subscription something called api keys", with the
+list of 25 providers in his order, SpaceXAI's line ("SuperGrok or X
+Premium+? Connect Grok under Subscriptions."), "And all iframe guide, like
+subscriptions." AI Models now has **API keys** under Subscriptions: each
+provider with its logo and Connect, in the server's order (`keyProviders`
+of `models/accounts`), the footer "Each provider bills the calls on your
+key." GitHub Copilot and Meta say **Soon** (Copilot has no key API; Meta's
+terms forbid relaying a key). The same line for a plan was added to
+Anthropic ("Claude Pro or Max? Connect Claude under Subscriptions.") and
+OpenAI ("ChatGPT Plus or Pro? Connect ChatGPT under Subscriptions."), so
+nobody with a plan pays twice. Connect opens the consent, as a plan's, in
+a key's words ("Your key stays with Simeon": kept encrypted on Simeon's
+server, sent only to the provider, never seen by the agents; the provider
+bills each call), with the provider's own logo (`consentProvider`, so
+Amazon Bedrock and Z.AI are never a letter). Then the key sheet
+(`KeyConnectSheet`, the Mac's `MacKeyConnectSheet`): 1, "Make a key on
+DeepSeek's page" with Open (the provider's own page, over https only);
+2, "Paste your API key", hidden as a password, the keys in it at once;
+Azure's endpoint and deployments, Cloudflare's account ID and Bedrock's
+region under it, named, with a line under the deployments. Connect says
+"Checking with DeepSeek…" while the server tries the key at the provider;
+a refused key says why in the provider's name ("DeepSeek didn't accept this
+key. Check it and try again."), is cleared and the field takes the keys
+again. Connected: "You're now connected to DeepSeek.", the account under
+Connected as "DeepSeek, API key …7f3a" (Add Another and Connect Again open
+the key sheet), and when no model was chosen, the key's best one is, on
+the composer with the provider's mark. The 25 logos are LobeHub's icons
+(MIT, `NOTICE`), drawn once into `src/assets/providers/<slug>.png` (192,
+the tile) and `<slug>-mark.png` (64, the composer's mark); the Mac and the
+iPhone have the same in `Providers/`. The server's part:
+`docs/your-own-models.md`, section 7.
+
+Checked: the core's tests (16 in Swift on Linux, the consent's 6; vitest
+20 for AI Models, 12 for the consent, 1240 in all), tsc, ESLint, the
+words, the committed build, and Chromium against a stand-in server with
+the server's real catalogue (`catalogue_json()`) in light and dark, and in
+French up to the key sheet: the section (25 lines in order, three hints,
+two Soon), the consent with DeepSeek's logo, the sheet (the key field
+focused), Open (DeepSeek's page, caught), Checking, refused (cleared,
+focused again), connected, the row, Azure's sheet (Connect waits for the
+details), the composer ("DeepSeek V4 Pro · High"). No page error; nothing
+reached but the key page. Not checked: a real key at any provider, and the
+Mac and iPhone apps built and run (no Xcode here; their Swift parses).
+
+Next: the server deployed on Render (its migration adds the key's models),
+then a real key tried from the Mac; GitHub Copilot and Meta when the
+founder decides.
+
 ### 10 November 2026: Grok, on the person's own plan, like ChatGPT
 
 The founder: "now we need to bring meta and grok - both should be the same

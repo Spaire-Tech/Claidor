@@ -407,7 +407,7 @@ DeepSeek, Fireworks, GitHub Copilot, Groq, Hugging Face, Meta, MiniMax,
 Mistral, Moonshot AI, NVIDIA, OpenCode Go, Qwen, Together, Xiaomi, Z.AI.
 The reconstruction has none of them; everything here is new.
 
-**The server's part** (this pull request; the apps' sheet is the next):
+**The server's part:**
 
 - `server/simeon/desktop/key_providers.py`: one entry per provider, where
   its API is, how it reads a key (`Authorization: Bearer`, Azure's
@@ -474,10 +474,42 @@ plans** (Z.AI's GLM Coding Plan, Qwen's Coding Plan) are for their own
 tools only: the key here is the pay-as-you-go one. NVIDIA's free key is for
 trying models out.
 
+**The apps' part** (Mac, iPhone, web and Windows; `ios/SimeonCore`'s
+`KeyProviders.swift` and the web's `keyProviders` in `aiModels.ts`):
+
+- **API keys**, under Subscriptions in Settings › AI Models: each provider
+  with its logo and Connect, in the server's order; "Soon" where it isn't
+  offered. SpaceXAI, Anthropic and OpenAI carry one line more, for a person
+  who has the plan: connect the plan instead ("SuperGrok or X Premium+?
+  Connect Grok under Subscriptions.", Claude Pro or Max, ChatGPT Plus or
+  Pro), so nobody pays twice. The footer: "Each provider bills the calls on
+  your key."
+- **Connect** opens the consent, as a plan's, in a key's words (the key is
+  kept encrypted on Simeon's server and sent only to the provider; the
+  agents never see it; the provider bills each call), with the provider's
+  own logo. Then the key sheet: 1, make a key on the provider's page (Open,
+  https only); 2, paste it (hidden as a password; the keys in it at once),
+  and the details the provider needs, named (Azure's endpoint and
+  deployments, Cloudflare's account ID, Bedrock's region, filled with
+  us-east-1). "Checking with DeepSeek…" while the server tries it; a refused
+  key says why in the provider's name and is cleared, never kept in the app.
+  Connected, the key's best model is chosen when none was.
+- **The key's account** shows under Connected as the provider, "API key
+  …7f3a" (its last four); Add Another and Connect Again open the key sheet;
+  a name the person gives it replaces the provider's.
+- **Logos**: LobeHub's icons (github.com/lobehub/lobe-icons, MIT; credited in
+  `NOTICE`, each mark its owner's trademark), drawn once into tiles on the
+  brand's ground (192) and marks for the composer: the web's
+  `clients/apps/app/src/assets/providers/`, the Mac's and the iPhone's
+  `Providers/<slug>` and `Providers/<slug>-mark` (template).
+
 **Verified:** `server/tests/desktop/test_chat_wire.py` (23),
 `test_messages_wire.py` (10), `test_api_keys.py` (23, every provider stood in
-by respx), and the engine's SDK on both translators' output. **Not
-verified:** any provider with a real key.
+by respx), and the engine's SDK on both translators' output; the apps' core
+in Swift on Linux and in vitest, and the web app in Chromium against a
+stand-in server with the real catalogue (`docs/web-app/PROGRESS.md`, 10
+November 2026). **Not verified:** any provider with a real key; the Mac and
+iPhone apps built and run.
 
 ## 8. For the founder to decide
 

@@ -386,9 +386,18 @@ private struct ConnectConsentDialog: View {
       .padding(16)
   }
 
+  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter); an app by its icon or tile. */
+  @ViewBuilder private var logo: some View {
+    if let provider = consent.provider, let icon = NSImage(named: "Providers/\(provider)") {
+      AppIconImage(icon: icon, side: 64, look: look)
+    } else {
+      AppLogoTile(name: consent.title, look: look, side: 64)
+    }
+  }
+
   private var content: some View {
     VStack(spacing: 0) {
-      AppLogoTile(name: consent.title, look: look, side: 64)
+      logo
         .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
         .padding(.top, 36)
         .accessibilityHidden(true)

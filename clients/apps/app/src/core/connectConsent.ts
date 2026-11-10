@@ -31,6 +31,7 @@ export type ConsentSymbol =
   | 'square.stack.3d.up'
   | 'hand.raised'
   | 'checkmark.circle'
+  | 'lock.shield'
 
 export interface ConsentPoint {
   symbol: ConsentSymbol
@@ -147,6 +148,48 @@ export function modelConsent(provider: string): ConnectConsent {
       t('Voice calls, dictation and video still use your Simeon credits.'),
     ],
   }
+}
+
+/**
+ * Connect on an API key's line (`ConnectConsent(keyProvider:)`; 10 November
+ * 2026): the same page as a plan's, its words for a key the person pastes,
+ * which the provider bills.
+ */
+export function keyConsent(provider: string, title: string): ConnectConsent {
+  return {
+    id: `key:${provider}`,
+    title,
+    summary: t`Your ${title} API key, for your agents.`,
+    route: { kind: 'unknown' },
+    points: [
+      {
+        symbol: 'square.stack.3d.up',
+        title: t`Put ${title} to work`,
+        body: t`Your agents work on ${title}'s models with your key, not on your Simeon credits.`,
+      },
+      {
+        symbol: 'lock.shield',
+        title: t('Your key stays with Simeon'),
+        body: t`It's kept encrypted on Simeon's server and sent only to ${title}. Your agents never see it.`,
+      },
+      {
+        symbol: 'hand.raised',
+        title: t('You stay in charge'),
+        body: t(
+          "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.",
+        ),
+      },
+    ],
+    smallPrint: [
+      t`${title} bills each call on your key, at its own prices.`,
+      t('Voice calls, dictation and video still use your Simeon credits.'),
+    ],
+  }
+}
+
+/** The AI provider of a plan's or a key's consent (`model:` or `key:`), whose own logo the page shows; none for an app, found by its name (`ConnectConsent.provider`). */
+export function consentProvider(consent: ConnectConsent): string | undefined {
+  return /^(?:model|key):([a-z0-9]+)$/.exec(consent.id)?.[1]
 }
 
 /** Who handles the sign-in, by the app's route (`signInLine`). */
