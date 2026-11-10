@@ -908,6 +908,28 @@ client, run and held by our server (`server/simeon/desktop/link_wallet.py`, belo
      Log line:
      `[purchase] products card <agent>/<entry>: product N bought` (or `no longer buying (<state> at
      <domain>)`).
+     **Redrawn as a shop's own cards** (10 November 2026, after the founder's reference screenshots;
+     it replaces the opened sheet above). `ShowProducts` takes, per product, `take` (one short line,
+     about 60 characters, the agent's own comparison within the set: "Soft pink and white, cheapest
+     of the four"), `reasons` (one to three "why it fits" lines), `badge` (two words at most, on one
+     product of the card at most; a second is refused, as a longer one) and `store` (the store as
+     people know it; the site without it), and per card `replies` (up to three next steps in the
+     person's words). `description` is still taken: a card without a take shows its first sentence.
+     The brief's purchase step "0. Show" asks the agent to compare the set before writing them. In
+     the chat (the Mac, the web and Windows app, the iPhone) there is no frame round the products:
+     each is a card of its own (200 wide on the Mac and the web, 170 on the iPhone, 20 round) in one
+     row that scrolls sideways; the picture on white with the badge at its top left, then the name,
+     "price · take" in grey, and the store's icon (the site's own, as a saved login's) and name, with
+     Buying or Bought at their right. The replies are chips under the row while the person has sent
+     nothing after the card (SimeonCore's `settlingReplies`, the web's `productRepliesOpen`); one
+     pressed is sent as the person's own message. Chips are only for the products card (the
+     founder's decision). Opened, a product covers the chat area on the Mac and the web (the sidebar
+     stays; `ChatControl.productOpen`, the web's `chatCover` of kind `product`) and the whole screen
+     on the iPhone: the X at the top left, ‹ › for the card's other products (← → on the Mac and the
+     web, a swipe on the iPhone); the picture on white, "Why it fits" with a green check before each
+     reason, the store, the title, the price and "★ 5.0 (12)", the take, "Buy with <agent>" in the
+     blue capsule (Buy closes the page; Buying and Bought as before), "View at <store>", and "Sold
+     by". The description with See more, Reviews and More like this are gone.
      A product from Shop's search (it carries `shop_variant_id`) shows the price Shop's catalog
      gave, not the one the agent wrote (`withCatalogPrice` in `purchase-tool.ts`, from the prices
      `search_products` and `get_product` keep in `shop-wallet/catalog-prices.ts` for six hours),
