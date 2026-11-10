@@ -595,15 +595,23 @@ _PREFERRED = (
     "qwen3.7",
     "minimax-m3",
     "mimo",
+    "deepseek-r",
+    "qwen3",
     "claude-haiku",
     "gpt-oss-120b",
+    "llama-5",
     "llama-4",
     "nemotron",
     "mistral-large",
+    "mistral-medium",
     "gpt-oss-20b",
     "llama-3.3",
     "gemma",
 )
+#: Smaller than this (billions of parameters, read from its id), a hosted
+#: model is left out when the host lists bigger ones: an agent needs a model
+#: that calls its tools reliably, and the composer's menu stays short.
+SMALLEST_B = 14
 _WORDS = {
     "gpt": "GPT",
     "oss": "OSS",
@@ -616,23 +624,44 @@ _WORDS = {
     "llama": "Llama",
     "ai": "AI",
 }
+#: Words a host's id carries that say nothing to the person choosing.
+_NOISE = frozenset({"instruct", "it", "hf"})
 
 
 def pretty_name(slug: str) -> str:
     """A model's name from its id where the provider gives none:
-    `openai/gpt-oss-120b` is GPT OSS 120b."""
+    `openai/gpt-oss-120b` is GPT OSS 120B, `google/gemma-4-27b-it` Gemma 4
+    27B, `Qwen/Qwen3.5-235B-A22B-Instruct` Qwen3.5 235B A22B."""
     last = slug.rsplit("/", 1)[-1].split(":", 1)[0]
     words = [one for one in re.split(r"[-_ ]+", last) if one]
+    kept = [one for one in words if one.lower() not in _NOISE] or words
     shown = []
-    for word in words:
+    for word in kept:
         low = word.lower()
+        experts = re.fullmatch(r"(\d+)x(\d+(?:\.\d+)?)b", low)
         if low in _WORDS:
             shown.append(_WORDS[low])
-        elif re.fullmatch(r"\d+(\.\d+)?[bm]", low):
+        elif experts:
+            shown.append(f"{experts[1]}x{experts[2]}B")
+        elif re.fullmatch(r"a?\d+(\.\d+)?[bme]", low):
             shown.append(low.upper())
+        elif re.fullmatch(r"v\d+(\.\d+)*", low):
+            shown.append(low)
         else:
             shown.append(word[:1].upper() + word[1:])
     return " ".join(shown) or slug
+
+
+def _size(model_id: str) -> float | None:
+    """A model's size in billions of parameters, read from its id:
+    `qwen3.5-235b-a22b` is 235 (A22B is the part active at once),
+    `mixtral-8x22b` 176; None when the id doesn't say."""
+    low = model_id.lower()
+    experts = re.search(r"(?<![a-z0-9.])(\d+)x(\d+(?:\.\d+)?)b(?![a-z0-9])", low)
+    if experts:
+        return int(experts[1]) * float(experts[2])
+    sizes = re.findall(r"(?<![a-z0-9.])(\d+(?:\.\d+)?)b(?![a-z0-9])", low)
+    return max(float(one) for one in sizes) if sizes else None
 
 
 def _bare(model_id: str) -> str:
@@ -716,12 +745,20 @@ def listed(kind: ModelsKind, body: Any) -> list[dict[str, Any]]:
     return out
 
 
-def _rank(model_id: str) -> tuple[int, str]:
+def _rank(model_id: str) -> tuple[int, float, str]:
+    """Best first: the families agents do best with in their order, then
+    the others; within each, the bigger model first."""
     low = model_id.lower()
+    bigger = -(_size(low) or 0)
     for index, family in enumerate(_PREFERRED):
         if family in low:
-            return index, low
-    return len(_PREFERRED), low
+            return index, bigger, low
+    return len(_PREFERRED), bigger, low
+
+
+def _too_small(model_id: str) -> bool:
+    size = _size(model_id)
+    return size is not None and size < SMALLEST_B
 
 
 def _entry(model_id: str, name: str, context: int | None) -> dict[str, Any]:
@@ -754,18 +791,24 @@ def offered(
         return out
     taken = {entry["id"] for entry in out}
     taken |= {str(by_id[k.slug]["id"]) for k in one.known if k.slug in by_id}
+    others = [entry for entry in models if entry["id"] not in taken]
+    # The small ones only when the host lists nothing bigger.
+    sized = [entry for entry in others if not _too_small(str(entry["id"]))]
     rest = sorted(
-        (entry for entry in models if entry["id"] not in taken),
+        sized if sized or out else others,
         key=lambda entry: _rank(str(entry["id"])),
     )
-    for entry in rest[: max(0, MOST_OFFERED - len(out))]:
-        out.append(
-            _entry(
-                str(entry["id"]),
-                str(entry.get("name") or pretty_name(str(entry["id"]))),
-                entry.get("context"),
-            )
-        )
+    # One line per name in the composer's menu: the best of two the host
+    # lists under the same name.
+    names = {entry["name"] for entry in out}
+    for entry in rest:
+        if len(out) >= MOST_OFFERED:
+            break
+        name = str(entry.get("name") or pretty_name(str(entry["id"])))
+        if name in names:
+            continue
+        names.add(name)
+        out.append(_entry(str(entry["id"]), name, entry.get("context")))
     return out
 
 

@@ -452,7 +452,14 @@ The reconstruction has none of them; everything here is new.
   has, by their names (Claude Opus 5.5…, GPT-6 Astra…, DeepSeek V4 Pro…);
   for the hosts of many models (Together, Fireworks, Hugging Face, NVIDIA,
   Cloudflare, Bedrock, OpenCode Go, Baseten) others from the list too, the
-  families agents do best with first, 24 at most. The machinery (titles,
+  families agents do best with first and the bigger first within each,
+  nothing under 14B when the host lists bigger (an agent needs a model that
+  calls its tools reliably), one line per name, 24 at most; a host that
+  gives no name gets one read from the id ("Gemma 4 27B", "Qwen3.5 235B
+  A22B": no "Instruct" or "it"). This is the composer's menu: each provider
+  a line with its mark, its models in its submenu, the effort beside the
+  model only where the provider takes one (Anthropic's five; none for
+  DeepSeek, Groq or Together). The machinery (titles,
   summaries) runs on the provider's cheaper model where the key reaches one
   (Claude Haiku 5.5, GPT-6 Luna, Gemini 3.8 Flash, DeepSeek Flash…): the
   person's key pays for it.
