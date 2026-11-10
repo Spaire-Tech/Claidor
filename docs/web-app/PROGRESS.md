@@ -839,6 +839,43 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the question card asks several questions, one at a time
+
+The founder, with three pictures of another app's question card: "have the
+thing swipe when there's many questions instead of having the agent send one
+by one … i also wanna change our card style to this. but keep the round check
+and our blue color." The agent may now put two to four questions in one card
+(the widget's `questions`, the engine's `normalizeSandWidget`; its own prompt
+and options are always the first question's, so an older app still shows
+that one). The card (`Cards.tsx` `QuestionCardView`, as the Mac's and the
+iPhone's) shows one question at a time and slides to the next, the tallest
+question holding its height: the question 15 semibold, each choice a row
+with its letter on a 24 tile (A, B, C…) that becomes our blue round check
+once picked, "Something else" last when the agent allows the person's own
+words (the row opens a field that takes the typing); dots, Back, Skip and
+Next at the foot, Next (Send on the last) in the ink's own colour. A pick
+moves on by itself, and on the last question sends; several picks and the
+words typed go together. Skip on a card of one question declines it, as the
+X did. The answers go back as one reply, a line per question, the question
+then the answer, "(skipped)" for one skipped (`questionsReply`, the
+engine's `formatQuestionsReply`, Chat.swift's `QuestionCard.reply`: the same
+words); answered, the card shows each question in grey with its answer under
+the blue round check, Back and Next to look through several. The Mac's
+catalogue gained "Something else", "Next", "Send", "Skipped", "Question %lld
+of %lld", "Skip this question" and "Your own answer" in the ten languages
+(the iPhone's words where it had them).
+
+Checked in Chromium against a stand-in computer, light and dark: four
+questions (a pick moves on, Skip, Back, several picks with words typed, Send
+sends "Which city is she in? Toronto / Budget? (skipped) / What's the
+occasion? Just because / What does she like? Roses, Soft pinks and whites,
+Peonies" as one reply); one question (a pick sends its own value); an
+answered card of three paged with Next; a dismissed one; the card's height
+the same on every question; no console error. tsc, ESLint, the app's tests
+(1244), the words and the committed build. Not checked: the Mac and iPhone
+apps built and run (their Swift parses; the core's tests ran on Linux), a
+real agent sending such a card (it needs the next engine).
+
 ### 10 November 2026: the computer opens watching; Take control under the screen
 
 The founder, with a reference picture of another app's computer view: "the computer is designed in a way

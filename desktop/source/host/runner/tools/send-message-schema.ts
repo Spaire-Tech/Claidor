@@ -1,6 +1,6 @@
 import { isVoiceAddress } from "../../../shared/voice-call/main-loop-voice.js";
 import { z } from "zod";
-import { sandWidgetSchema } from "../../../shared/sand-widgets.js";
+import { MAX_CARD_QUESTIONS, normalizeSandWidget, sandWidgetSchema } from "../../../shared/sand-widgets.js";
 import { CHANNELS_COMING_SOON_SENTENCE, CLOUD_AGENTS_COMING_SOON_SENTENCE, isAnyChannelAvailable, isCloudAgentsServed } from "../../../shared/cloud-agents-availability.js";
 import { CONNECTOR_MANIFESTS } from "../../../shared/channels.js";
 export const SEND_MESSAGE_TYPES = ["text", "attachment", "widget", "cloud-agent", "secret-request"] as const;
@@ -55,7 +55,9 @@ function widgetOrUndefined(value: unknown): unknown {
   const options = Array.isArray(widget.options) ? widget.options as { label?: unknown }[] : [];
   const hasPrompt = !isBlankField(widget.prompt);
   const hasOption = options.some((option) => option != null && typeof option === "object" && !isBlankField(option.label));
-  return hasPrompt || hasOption ? value : undefined;
+  const hasQuestions = Array.isArray((widget as { questions?: unknown }).questions) && !isBlankField((widget as { questions?: unknown }).questions);
+  // Several questions in one card: the first is the card's own (`normalizeSandWidget`).
+  return hasPrompt || hasOption || hasQuestions ? normalizeSandWidget(value) : undefined;
 }
 function secretOrUndefined(value: unknown): unknown {
   if (value == null || typeof value !== "object" || Array.isArray(value)) return blankToUndefined(value);
@@ -105,7 +107,7 @@ export function followUpWidgetOf(input: unknown): unknown {
   if (input == null || typeof input !== "object" || Array.isArray(input)) return undefined;
   const record = input as { type?: unknown; widget?: unknown };
   if (record.type !== "text" || widgetOrUndefined(record.widget) === undefined) return undefined;
-  const parsed = sandWidgetSchema.safeParse(record.widget);
+  const parsed = sandWidgetSchema.safeParse(normalizeSandWidget(record.widget));
   if (!parsed.success) return undefined;
   const widget = parsed.data as { prompt?: unknown; options?: readonly { label?: unknown }[] };
   const prompt = typeof widget.prompt === "string" ? widget.prompt.trim() : "";
@@ -158,7 +160,7 @@ const objectSchema = z.object({
   final: z.boolean().optional().describe("Always set. true when this message finishes your turn: what you were asked is done (or you are now waiting on the person) and you will not call another tool; the turn ends with it. false for an acknowledgement or update you follow with more work."),
   reply_to: z.string().trim().optional().describe("Optional. Short address of the prior message this reply threads to (e.g. t3u for the user message in turn 3, t3s1 for your second SendMessage in turn 3). Omit when not threading."),
   channel: z.string().trim().optional().describe(isAnyChannelAvailable() ? "Optional. A connected messaging channel address to deliver this to instead of the in-app Simeon chat, shaped platform:chat, the address shown to you in an [inbound] wake. Omit to send to the in-app chat (the default). Only valid with type:text or type:attachment." : "Only to answer an open voice call: set it to the call's voice:<call> address, as the call's [inbound] message says. Messaging channels are coming soon in Simeon; otherwise omit it and the message goes to the in-app chat."),
-  widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.nullable().optional()).describe("Required when type is widget; null for every other type. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], multiSelect?, allowCustom?, dismissOnMoveOn? }. The user picks one option (or several with multiSelect: true, their values one per line); its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. style primary marks the path you recommend, danger a destructive one. The user can also dismiss the question without answering; you're told it was declined, so don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered."),
+  widget: z.preprocess(widgetOrUndefined, sandWidgetSchema.nullable().optional()).describe(`Required when type is widget; null for every other type. A question with selectable options: { prompt, helpText?, options: [{ label, value?, description?, style? }], multiSelect?, allowCustom?, dismissOnMoveOn? }. The user picks one option (or several with multiSelect: true, their values one per line); its value comes back as their reply, and the chat shows the resolved card with their selection checked under your prompt \u2014 so phrase the prompt as a natural question, not a menu instruction. style primary marks the path you recommend, danger a destructive one. The user can also dismiss the question without answering; you're told it was declined, so don't re-ask. Set allowCustom: true to also let the user type their own free-text answer instead of picking an option. Set dismissOnMoveOn: true only for low-stakes questions that become moot if the user moves on (it auto-dismisses once they send a newer message without answering); leave it off for real decisions you still need answered. To ask several things at once, put two to ${MAX_CARD_QUESTIONS} questions in questions (the whole set, first included, each { prompt, helpText?, options, multiSelect?, allowCustom? }): the user goes through them one at a time and sends them together, and their reply has one line per question, the question then the answer, "(skipped)" for one they skipped.`),
   bcId: z.string().trim().optional().describe("Required when type is cloud-agent. The bcId of the cloud agent to reference (e.g. bc-xxxxxxxx-...)."),
   secret: z.preprocess(secretOrUndefined, z.object({
     label: z.string().trim().min(1).describe('What credential to ask for, shown as the card title and echoed in the field placeholder ("Paste your \u2026"), e.g. "Slack bot token".'),

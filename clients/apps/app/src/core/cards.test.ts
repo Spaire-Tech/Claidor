@@ -16,7 +16,9 @@ import {
   draftCard,
   isOpenQuestion,
   proposedRule,
+  questionAnswers,
   questionCard,
+  questionsReply,
   redact,
   settledNote,
   shownAnswer,
@@ -234,6 +236,89 @@ describe('the question and draft cards', () => {
     ])
     expect(shownAnswer(several, several.answer!)).toBe('Refund, Delete')
     expect(shownAnswer(several, 'my own words')).toBe('my own words')
+  })
+
+  it('reads a card of several questions and writes their reply a line each, as the engine reads it', () => {
+    const card = questionCard(
+      entry({
+        kind: 'send-message',
+        id: 'q',
+        message: {
+          type: 'widget',
+          widget: {
+            prompt: 'Which city is she in?',
+            options: [{ label: 'Toronto' }, { label: 'Montreal' }],
+            allowCustom: true,
+            questions: [
+              {
+                prompt: 'Which city is she in?',
+                options: [{ label: 'Toronto' }, { label: 'Montreal' }],
+                allowCustom: true,
+              },
+              {
+                prompt: 'Budget?',
+                options: [
+                  { label: 'Under $75 CAD', value: 'Under $75' },
+                  { label: '$75–$125 CAD' },
+                ],
+              },
+              {
+                prompt: "What's the occasion",
+                options: [{ label: 'Birthday' }, { label: 'Just because' }],
+                multiSelect: true,
+              },
+            ],
+          },
+        },
+      }),
+    )!
+    expect(card.questions.map((question) => question.prompt)).toEqual([
+      'Which city is she in?',
+      'Budget?',
+      "What's the occasion",
+    ])
+    expect(card.questions[0]!.allowsOwnAnswer).toBe(true)
+    expect(card.questions[2]!.multiSelect).toBe(true)
+    const reply = questionsReply(card, [
+      'Toronto',
+      undefined,
+      'Birthday\nJust because',
+    ])!
+    expect(reply).toBe(
+      "Which city is she in? Toronto\nBudget? (skipped)\nWhat's the occasion: Birthday, Just because",
+    )
+    expect(questionAnswers(card, reply)).toEqual([
+      'Toronto',
+      undefined,
+      'Birthday, Just because',
+    ])
+    expect(
+      questionAnswers(card, questionsReply(card, [undefined, 'Under $75'])!),
+    ).toEqual([undefined, 'Under $75 CAD', undefined])
+    expect(questionsReply(card, [undefined, ' '])).toBeUndefined()
+    // An older app answers the card's own question only.
+    expect(questionAnswers(card, 'Toronto')).toEqual([
+      'Toronto',
+      undefined,
+      undefined,
+    ])
+    // A card of one: its answer as it is.
+    const one = questionCard(
+      entry({
+        kind: 'send-message',
+        id: 'one',
+        message: {
+          type: 'widget',
+          widget: {
+            prompt: 'Send it?',
+            options: [{ label: 'Yes', value: 'Yes, send it' }],
+          },
+        },
+      }),
+    )!
+    expect(one.questions).toHaveLength(1)
+    expect(questionsReply(one, ['Yes, send it'])).toBe('Yes, send it')
+    expect(questionAnswers(one, 'Yes, send it')).toEqual(['Yes'])
   })
 
   it('knows a reply from a new email, and names its files', () => {
