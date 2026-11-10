@@ -96,6 +96,10 @@
   "tests": 8
  },
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/ExternalAgentsTests.swift",
+  "tests": 5
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/FeedbackTests.swift",
   "tests": 9
  },
@@ -225,6 +229,10 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/SidebarSectionsTests.swift",
+  "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SimeonNetworkTests.swift",
   "tests": 3
  },
  {

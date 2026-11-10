@@ -13,6 +13,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { accountInitials } from '../core/accountInitials'
+import { providerIconURL } from '../core/connectCards'
+import { menuIcons } from '../core/externalAgents'
 import { t as coreT } from '../core/l10n'
 import type { AppStore } from '../core/store'
 import {
@@ -149,6 +151,14 @@ function AccountMenu({
   }
   items.push(
     {
+      // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
+      id: 'externalAgents',
+      label: t('External Agents'),
+      icon: <SettingsSymbol name="sparkles" size={14} />,
+      end: <BotMascots />,
+      action: () => model.openSettings('externalAgents'),
+    },
+    {
       id: 'settings',
       label: coreT('Settings'),
       icon: <SettingsSymbol name="gearshape" size={14} />,
@@ -184,6 +194,17 @@ function AccountMenu({
       close={close}
       label={coreT('Account')}
     />
+  )
+}
+
+/** The bots' mascots at External Agents' end (the reference's "Reason with" and its icons): 16 each, each over the last by 3, each round 4. */
+function BotMascots() {
+  return (
+    <span className="menu-mascots" aria-hidden="true">
+      {menuIcons.map((icon) => (
+        <img key={icon} src={providerIconURL(icon)} alt="" />
+      ))}
+    </span>
   )
 }
 

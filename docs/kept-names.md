@@ -79,7 +79,11 @@ names the agents that join it as the products they are: Cursor, the coding
 agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside
 Dots and Muse. Its rule (a **contract**) covers only the network's files (the
 server's network and MCP code and tests, and the website's network pages), and
-only the words `Cursor`, `Grok Bot` and the client name `"grok"` there.
+only the words `Cursor`, `Grok Bot` and the client name `"grok"` there. Settings › External Agents
+(11 November 2026), where the bots a person let in are listed and disconnected, names Grok Bot the
+same way: the Bots rule covers its files on the server, in SimeonCore, the three apps and their
+words, and the network's rule its server files' `Cursor` (Grok Bot signs in with Cursor's
+registration).
 
 ## The wire, for one release
 

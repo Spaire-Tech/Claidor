@@ -27,8 +27,8 @@ final class ExternalAgentsTests: XCTestCase {
   }
 
   func testLastUsedIsADate() throws {
-    let grok = try XCTUnwrap(ExternalAgent(json: ["id": "grok-bot", "kind": "grok-bot", "name": "Grok Bot", "lastUsedAt": 1_794_355_200_000]))
-    let words = try XCTUnwrap(grok.lastUsedWords(timeZone: TimeZone(identifier: "America/Los_Angeles")!))
+    let bot = try XCTUnwrap(ExternalAgent(json: ["id": "grok-bot", "kind": "grok-bot", "name": "Grok Bot", "lastUsedAt": 1_794_355_200_000]))
+    let words = try XCTUnwrap(bot.lastUsedWords(timeZone: TimeZone(identifier: "America/Los_Angeles")!))
     XCTAssertTrue(words.hasPrefix("Last used "), words)
     XCTAssertTrue(words.contains("2026"), words)
     XCTAssertNil(ExternalAgent(id: "x", kind: "agent", name: "X", lastUsedAt: nil).lastUsedWords())

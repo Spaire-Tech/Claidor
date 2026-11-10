@@ -25,6 +25,13 @@
   color: #ffffff;
 }
 
+/* Something of the owner's at an item's end (External Agents' mascots). */
+.menu-end {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
 /* A tick at an item's end, before its chevron (the one in use, its logo kept before it). */
 .menu-end-check {
   flex: none;

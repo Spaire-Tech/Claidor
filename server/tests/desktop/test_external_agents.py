@@ -75,13 +75,13 @@ class TestExternalAgents:
         )
 
         listed = await _listed(client, app)
-        (grok,) = listed
-        assert (grok["id"], grok["kind"], grok["name"]) == (
+        (bot,) = listed
+        assert (bot["id"], bot["kind"], bot["name"]) == (
             "grok-bot",
             "grok-bot",
             "Grok Bot",
         )
-        assert grok["lastUsedAt"] >= grok["connectedAt"] > 0
+        assert bot["lastUsedAt"] >= bot["connectedAt"] > 0
 
     async def test_disconnect_lets_the_bot_out(
         self,
