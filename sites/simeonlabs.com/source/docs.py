@@ -42,7 +42,7 @@ SITE = "https://simeonlabs.com"
 # The sidebar: each group and its pages, in order (the slug is the file's name; "overview" is /docs itself).
 PAGES = [
     ("Get started", ["overview", "get-started", "use-cases", "iphone"]),
-    ("Work with Simeon", ["agents", "messaging", "computer", "connectors", "routines", "credentials"]),
+    ("Work with Simeon", ["agents", "messaging", "network", "computer", "connectors", "routines", "credentials"]),
     ("Manage and protect", ["approvals", "billing"]),
     ("Help", ["faq"]),
 ]
@@ -263,6 +263,16 @@ def render(md):
             heads.append((level, hid, text))
             out.append(f'<h{level} id="{hid}">{inline(text)}</h{level}>')
             i += 1
+        elif line.startswith("```"):
+            # A block of code or a line to type (the Simeon Network's terminal lines), with Copy.
+            code, i = [], i + 1
+            while i < len(lines) and not lines[i].startswith("```"):
+                code.append(lines[i])
+                i += 1
+            i += 1
+            text = "\n".join(code)
+            out.append(f'<div class="code"><pre><code>{html.escape(text)}</code></pre>'
+                       f'<button type="button" class="copy-code" aria-label="Copy">{ICON["copy"]}<span>Copy</span></button></div>')
         elif line.strip() == ":::cards":
             cards, i = [], i + 1
             while i < len(lines) and lines[i].strip() != ":::":
@@ -297,7 +307,7 @@ def render(md):
             out.append(f"<{tag}>" + "".join(f"<li>{inline(x)}</li>" for x in items) + f"</{tag}>")
         else:
             para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"(#{2,3} |>|\||:::|-\s|\d+\.\s)", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"(#{2,3} |>|\||:::|```|-\s|\d+\.\s)", lines[i]):
                 para.append(lines[i].strip())
                 i += 1
             out.append(f"<p>{inline(' '.join(para))}</p>")
@@ -375,6 +385,12 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
+.words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
+.words .code pre{margin:0;padding:14px 96px 14px 16px;overflow-x:auto;white-space:pre}
+.words .code pre code{padding:0;background:none;border-radius:0;font:500 13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+.words .copy-code{position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:8px;background:#fff;color:var(--ink2);font:500 var(--t-small)/1 inherit;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.words .copy-code svg{width:14px;height:14px}
+.words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
 .words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
@@ -439,6 +455,15 @@ JS = r"""<script>
     b.addEventListener('click', function(){
       var md = document.getElementById('md').textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(md) : Promise.reject()).then(function(){ say('Copied for LLM'); }, function(){ say('Could not copy'); });
+    });
+  });
+  // A block of code: its Copy copies its lines
+  document.querySelectorAll('.copy-code').forEach(function(b){
+    b.addEventListener('click', function(){
+      var code = b.parentNode.querySelector('code').textContent, label = b.querySelector('span');
+      (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(function(){
+        label.textContent = 'Copied'; clearTimeout(b.t); b.t = setTimeout(function(){ label.textContent = 'Copy'; }, 1600);
+      }, function(){ say('Could not copy'); });
     });
   });
   // On this page: the line for the section you're reading darkens

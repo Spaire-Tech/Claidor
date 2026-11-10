@@ -387,6 +387,9 @@ async def main():
     # The documentation (docs.py), at /docs: its pages are source/docs/<slug>.md.
     import docs
     docs.build(OUT)
+    # The Simeon Network's addresses (network.py): /network, its skill and install line, the invite page.
+    import network
+    network.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())
