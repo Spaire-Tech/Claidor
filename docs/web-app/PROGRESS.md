@@ -842,6 +842,27 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: new logos for Grok, xAI, Amazon Bedrock and GitHub Copilot
+
+The founder, with four logos: "use these logos instead for the ai model section . also grab
+main and check the website. you'll see its there as well at / models - change it there too."
+Each is drawn once from the founder's picture into every copy: the 192 tile on white
+(`src/assets/providers/<id>.png`, the apps' `Providers/<id>`, the website's
+`img/provider-<id>.png`) and the composer's mark filling its square (`<id>-mark.png` at 64, the
+apps' `<id>-mark` at 32 and 48). Grok's and xAI's black marks become the ink's, as before;
+Bedrock's brain and Copilot's robot keep their colours, so they join Claude's in the marks
+drawn as they are (`colouredMarks` in `ComposerModelMenu.tsx`, `ProviderMark.coloured` on the
+Mac and the iPhone, `"template-rendering-intent": "original"` on their two assets). The website's
+/models pages were written again by `source/models.py` (python3.13) for the new `?v=`.
+`NOTICE` says these four are the providers' own logos, not LobeHub's.
+
+Checked in Chromium, light and dark: AI Models with Grok, SpaceXAI and Amazon Bedrock connected
+and Copilot under API keys ("Soon"), the model menu (Bedrock's mark in its colours, the others
+in the ink), every logo loaded, no console error, nothing outside the stand-ins reached; the
+website's /models and the four providers' pages, every logo loaded. The app's tests (1247), tsc,
+ESLint, the committed build, `check_names.py`, `check_translations.py`. Not checked: the Mac and
+iPhone apps built and run (their Swift parses).
+
 ### 10 November 2026: the sign-in form over the window, the secret and computer cards as the references
 
 The founder, with four pictures of another app's cards: "log in from the store card comes like
