@@ -842,6 +842,34 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: Bots with their own mascots and words; the Allow page as our login
+
+The founder: "these are the logos", "call it what it is. Grok Bot", "ChatGPT Dots", "be
+INTENTIONAL ... Give this to your Muse", and of the Allow page: "have it the same design as our
+log in web page". Done:
+
+- **The bots' mascots** (the founder's pictures) as tiles on a warm off-white, 192 square:
+  `assets/providers/{dots,muse,grokbot}.png`, the Mac's and iPhone's `Providers/<id>`, and the
+  web dashboard's `public/bots/`.
+- **Rows**: Dots ("Connect Simeon to ChatGPT Dots."), Muse, Grok Bot, then Add.
+- **Each bot's sheet** is its own: its mascot and its name, then "Give this to your Dot." /
+  "Give this to your Muse." / "Give this to your Bot."; Add keeps "Add a bot" and "Give this to
+  any bot that can add an MCP server." Simeon's tile stays white with a black mark in dark mode.
+- **Grok Bot** is named as it is: a narrow rule in `scripts/kept_names.json` for the Bots files
+  (xAI's assistant, not the upstream app, which stays a finding everywhere else).
+- **The Allow page** (`/oauth2/authorize`, `BotConsentPage.tsx`) in the login page's frame
+  (`AuthShell`, its 320 column, 24 heading, 52 round buttons): the bot's mascot, three dots and
+  Simeon's mark; "Connect Dots to Simeon" and "Dots will talk to your agents for you."; the
+  account as a card; what it can do (see your agents, message them for you, read their answers)
+  and "Nothing else in your account."; Allow and Deny; the Terms line. In the ten languages of
+  the sign-in (`@simeon/i18n`, `simeon.connectBot`). A bot is known by the name it registers
+  with; any other shows its own logo or initial.
+
+Checked in Chromium: the rows and the three kinds of sheet, light and dark; the Allow page for
+Dots and Grok Bot against a stand-in API. tsc and ESLint (app and dashboard), the i18n tests
+(22), the words and the committed build, `check_names.py`, `check_translations.py`. Not
+checked: the Mac and iPhone built and run (their Swift parses); a real bot through the page.
+
 ### 10 November 2026: Bots, so other agents talk to yours
 
 The founder, with another app's Bots section and its "Add a bot" as the reference: "i want it

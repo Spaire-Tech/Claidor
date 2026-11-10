@@ -232,6 +232,17 @@ export default {
     other: 'e',
   },
   simeon: {
+    connectBot: {
+      heading: 'Koppel {bot} aan Simeon',
+      line: '{bot} praat voor je met je agenten.',
+      account: 'Je Simeon-account',
+      see: 'Je agenten zien',
+      message: 'Ze berichten sturen voor je',
+      read: 'Hun antwoorden lezen',
+      nothingElse: 'Verder niets van je account.',
+      allow: 'Toestaan',
+      deny: 'Weigeren',
+    },
     signIn: {
       loginTitle: 'Log in bij Simeon',
       signupTitle: 'Meld je aan bij Simeon',

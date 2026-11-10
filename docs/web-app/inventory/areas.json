@@ -443,11 +443,11 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 5013,
+  "mac_lines": 5021,
   "core_lines": 3493,
   "views": 67,
   "files_needing_a_mac": 9,
-  "strings": 431,
+  "strings": 434,
   "strings_in_old_web_app": 169,
   "box_commands": [
    "claudeCodeSignInCancel",

@@ -4,6 +4,17 @@
  */
 export default {
   simeon: {
+    connectBot: {
+      heading: '{bot} ile Simeon’u bağla',
+      line: '{bot} senin yerine ajanlarınla konuşacak.',
+      account: 'Simeon hesabın',
+      see: 'Ajanlarını görmek',
+      message: 'Senin yerine onlara yazmak',
+      read: 'Yanıtlarını okumak',
+      nothingElse: 'Hesabının başka hiçbir yeri değil.',
+      allow: 'İzin ver',
+      deny: 'Reddet',
+    },
     signIn: {
       loginTitle: 'Simeon’a giriş yap',
       signupTitle: 'Simeon’a kaydol',

@@ -4,6 +4,17 @@
  */
 export default {
   simeon: {
+    connectBot: {
+      heading: 'Połącz {bot} z Simeonem',
+      line: '{bot} będzie rozmawiać z twoimi agentami za ciebie.',
+      account: 'Twoje konto Simeon',
+      see: 'Widzieć twoich agentów',
+      message: 'Pisać do nich za ciebie',
+      read: 'Czytać ich odpowiedzi',
+      nothingElse: 'Nic więcej z twojego konta.',
+      allow: 'Zezwól',
+      deny: 'Odmów',
+    },
     signIn: {
       loginTitle: 'Zaloguj się do Simeona',
       signupTitle: 'Zarejestruj się w Simeonie',

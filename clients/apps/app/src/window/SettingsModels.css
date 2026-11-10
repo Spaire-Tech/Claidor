@@ -506,14 +506,15 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: var(--ground);
-  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ink) 10%, transparent);
+  /* Simeon's tile stays white, its mark black, in dark mode too, as an app's icon does (the founder: "keep it how it is for that frame. white"). */
+  background: #fff;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 10%);
 }
 
 .bots-simeon-mark {
   width: 24px;
   height: 24px;
-  background: var(--ink);
+  background: #0d0d0d;
   mask: url('../assets/providers/simeon-mark.svg') center / contain no-repeat;
   -webkit-mask: url('../assets/providers/simeon-mark.svg') center / contain
     no-repeat;

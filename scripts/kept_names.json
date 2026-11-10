@@ -724,6 +724,28 @@
       ],
       "match": "^(?!.*grok[ _-]?bot)",
       "reason": "SpaceXAI (xAI's API, api.x.ai) is one of the providers a person brings their own API key for (10 November 2026, the founder's list under API keys), and Grok is its models' name and the plan its row points to: there they are a provider, not an earlier name of ours."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "xai"
+      ],
+      "paths": [
+        "clients/apps/app/src/window/SettingsModels.tsx",
+        "clients/apps/app/src/assets/providers/grokbot*",
+        "clients/apps/web/public/app-next/**",
+        "clients/apps/web/public/bots/grokbot*",
+        "clients/apps/web/src/app/(main)/oauth2/authorize/BotConsentPage.tsx",
+        "mac/Simeon/SettingsModels.swift",
+        "mac/Simeon/Assets.xcassets/Providers/grokbot*",
+        "ios/Simeon/AIModels.swift",
+        "ios/Simeon/Assets.xcassets/Providers/grokbot*",
+        "docs/web-app/PROGRESS.md",
+        "docs/services-agents.md"
+      ],
+      "match": "grok[ _-]?bot|/grok/i",
+      "reason": "Grok Bot is also the name of xAI's own hosted assistant (x.ai/bot), one of the bots a person adds Simeon to under Settings › AI Models › Bots, with its mascot, and the one the consent page recognises (10 November 2026, the founder: \"call it what it is. Grok Bot\"). It names their product, not ours; the upstream app's Grok Bot stays a finding everywhere else."
     }
   ]
 }

@@ -2993,9 +2993,9 @@ MCP server (ChatGPT's, Meta's, Claude…), and the bot then talks to their agent
   resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="agents"`. From there it
   finds the server's own OAuth (`/.well-known/oauth-authorization-server`, the same as
   `openid-configuration`), registers itself (`/v1/oauth2/register`, PKCE, no secret needed) and
-  sends the person to `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see
-  "Dots requests the following permissions to your personal Simeon account: Talk to your agents
-  for you", Allow or Deny. A bot asking for the `agents` scope always signs in as the person,
+  sends the person to `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see the
+  login page's design with the bot's mascot ("Connect Dots to Simeon", their account, what the
+  bot can do, Allow or Deny; `BotConsentPage.tsx`). A bot asking for the `agents` scope always signs in as the person,
   never an organization (`authorization_code.py`). Its token reaches `/mcp` and nothing else.
 - **The tools.** `list_agents` (the agents and group chats from the server's copy, so a
   sleeping computer is not woken), `send_message` (into the inbox, like a message written in an

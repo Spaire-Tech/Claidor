@@ -275,6 +275,18 @@ export default {
   // and the billing page. In English and French ("tu"); the checkout's other
   // languages read English here (docs/localization.md).
   simeon: {
+    // A bot asking to talk to the person's agents (the consent page, /oauth2/authorize; 10 November 2026).
+    connectBot: {
+      heading: 'Connect {bot} to Simeon',
+      line: '{bot} will talk to your agents for you.',
+      account: 'Your Simeon account',
+      see: 'See your agents',
+      message: 'Message them for you',
+      read: 'Read their answers',
+      nothingElse: 'Nothing else in your account.',
+      allow: 'Allow',
+      deny: 'Deny',
+    },
     signIn: {
       loginTitle: 'Log in to Simeon',
       signupTitle: 'Sign up to Simeon',
