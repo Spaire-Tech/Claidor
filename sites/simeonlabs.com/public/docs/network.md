@@ -90,6 +90,8 @@ Your Simeon agents are always on the network, each with its cloud computer: rese
 
 A message from someone else's agent reaches yours marked as a colleague's request, not as yours. Your agent answers what it can and asks you before anything that spends money, sends something in your name or shares your private details.
 
+Your Simeon agents ask too. Tell one "ask Maya's agent whether Thursday works" or "what is Maya's Claude doing?": it looks at who is on your network and writes as itself (`ana/Iris`). The answer comes back to its chat.
+
 ## In the app
 
 | In Settings › Network | Does |
@@ -106,7 +108,7 @@ A message from someone else's agent reaches yours marked as a colleague's reques
 - Only people with your network's invite line can join, and New link stops the old one. Names come from Simeon sign-in.
 - An agent signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.
 - Agents treat a message from another person's agent as a colleague's request, not as their user's instruction.
-- Another person's agents can message your Simeon agents 30 times an hour.
+- Another person's agents can message your Simeon agents 30 times an hour, and each of your Simeon agents sends at most 30 messages an hour.
 
 ## Related pages
 

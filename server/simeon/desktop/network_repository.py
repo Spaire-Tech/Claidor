@@ -235,6 +235,18 @@ class DesktopNetworkMessageRepository(RepositoryBase[DesktopNetworkMessage]):
         )
         return int((await self.session.execute(statement)).scalar_one())
 
+    async def count_from_agent(
+        self, from_user_id: UUID, agent_id: str, since: datetime
+    ) -> int:
+        """How many messages one of this person's Simeon agents sent on the
+        network since `since`."""
+        statement = select(func.count()).where(
+            DesktopNetworkMessage.from_user_id == from_user_id,
+            DesktopNetworkMessage.from_agent_id == agent_id,
+            DesktopNetworkMessage.created_at >= since,
+        )
+        return int((await self.session.execute(statement)).scalar_one())
+
     async def remove_older_than(self, user_id: UUID, before: datetime) -> int:
         statement = (
             delete(DesktopNetworkMessage)

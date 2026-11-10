@@ -71,6 +71,7 @@ import { createDraftExternalMessageTool, createMarkDraftDeliveredTool, type Draf
 import { createRequestUserFormTool, type UserFormToolDependencies } from "./user-form-tool.js";
 import { createOnePasswordTools, type OnePasswordToolDependencies } from "./onepassword-tools.js";
 import { createCredentialsStoreTools, type CredentialsStoreToolDependencies } from "./credentials-store-tools.js";
+import { createNetworkTools, type NetworkToolDependencies } from "./network-tools.js";
 import { createSearchFlightsTool, type FlightSearchDependencies } from "./flight-search-tool.js";
 import { createBookFlightTool, type BookFlightDependencies } from "./book-flight-tool.js";
 import { createMarkPurchaseDoneTool, createPayWithSavedCardTool, createRequestPurchaseTool, createShowProductsTool, type PurchaseToolDependencies } from "./purchase-tool.js";
@@ -568,6 +569,7 @@ export interface TurnToolFactories {
   userForm?(): TurnTool;
   onePassword?(): readonly TurnTool[];
   credentialsStore?(options: { readonly browser: boolean }): readonly TurnTool[];
+  network?(): readonly TurnTool[];
   purchases?(): readonly TurnTool[];
   flights?(): readonly TurnTool[];
   mcpMeta?(dynamicToolRegistry?: DynamicToolRegistry): readonly TurnTool[];
@@ -707,6 +709,7 @@ export interface TurnToolsetFactoryInputs {
   readonly userForm?: TurnUserFormToolFactoryInput;
   readonly onePassword?: TurnOnePasswordToolFactoryInput;
   readonly credentialsStore?: TurnCredentialsStoreToolFactoryInput;
+  readonly network?: TurnNetworkToolFactoryInput;
   readonly purchases?: TurnPurchaseToolFactoryInput;
   readonly flights?: TurnFlightToolFactoryInput;
   readonly generateImage?: TurnGenerateImageToolFactoryInput;
@@ -778,6 +781,10 @@ export interface TurnToolsetHostFactoryProvider {
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
   ) => TurnCredentialsStoreToolFactoryInput;
+  readonly createNetworkToolInputs?: (
+    turn: TurnToolsetTurnInput,
+    props: TurnToolsetBuildProps,
+  ) => TurnNetworkToolFactoryInput;
   readonly createPurchaseToolInputs?: (
     turn: TurnToolsetTurnInput,
     props: TurnToolsetBuildProps,
@@ -1045,6 +1052,16 @@ export function createTurnCredentialsStoreToolFactory(
   return (options) => createCredentialsStoreTools(input.dependencies, options).map((tool) => asTurnTool(tool));
 }
 
+export interface TurnNetworkToolFactoryInput {
+  readonly dependencies: NetworkToolDependencies;
+}
+
+export function createTurnNetworkToolFactory(
+  input: TurnNetworkToolFactoryInput,
+): () => readonly TurnTool[] {
+  return () => createNetworkTools(input.dependencies).map((tool) => asTurnTool(tool));
+}
+
 export interface TurnPurchaseToolFactoryInput {
   readonly dependencies: PurchaseToolDependencies;
 }
@@ -1204,7 +1221,7 @@ export function createTurnToolsetFactories(
 ): Pick<
   TurnToolFactories,
   "task" | "mcpMeta" | "computer" | "browser" | "openPage" | "screenshot"
-  | "fileTransfer" | "requestBoxHelp" | "drafts" | "userForm" | "onePassword" | "credentialsStore" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
+  | "fileTransfer" | "requestBoxHelp" | "drafts" | "userForm" | "onePassword" | "credentialsStore" | "network" | "purchases" | "flights" | "generateImage" | "webSearch" | "webFetch" | "externalAwait"
   | "boxAwait" | "externalShell" | "externalRead" | "boxShell" | "boxRead"
   | "sendMessage" | "sendToAgent" | "reaction" | "createAgent" | "updateAgent" | "updateState"
   | "subagentManagement"
@@ -1250,6 +1267,9 @@ export function createTurnToolsetFactories(
     ...(input.credentialsStore === undefined
       ? {}
       : { credentialsStore: createTurnCredentialsStoreToolFactory(input.credentialsStore) }),
+    ...(input.network === undefined
+      ? {}
+      : { network: createTurnNetworkToolFactory(input.network) }),
     ...(input.purchases === undefined
       ? {}
       : { purchases: createTurnPurchaseToolFactory(input.purchases) }),
@@ -1365,6 +1385,9 @@ export function createTurnToolsetFactoriesForTurn(
     ...(provider.createCredentialsStoreToolInputs === undefined
       ? {}
       : { credentialsStore: provider.createCredentialsStoreToolInputs(turn, props) }),
+    ...(provider.createNetworkToolInputs === undefined
+      ? {}
+      : { network: provider.createNetworkToolInputs(turn, props) }),
     ...(provider.createPurchaseToolInputs === undefined
       ? {}
       : { purchases: provider.createPurchaseToolInputs(turn, props) }),
@@ -1703,6 +1726,14 @@ export function buildTurnTools(
   if (!host.isSubagentRunner) {
     const credentialsStore = factories.credentialsStore?.({ browser: host.remoteBoxHasDesktop && host.getRemoteBoxAvailable() });
     if (credentialsStore !== undefined) tools.push(...credentialsStore);
+  }
+
+  // The Simeon Network (10 November 2026, network-tools.ts): who is on the
+  // person's network, and a message to a colleague's agent, in every turn of
+  // the agent's own (not a helper's).
+  if (!host.isSubagentRunner) {
+    const network = factories.network?.();
+    if (network !== undefined) tools.push(...network);
   }
 
   // The immutable builder only offers the MCP discovery/call pair when the

@@ -3039,7 +3039,20 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   Another person's agents may send a person's Simeon agents 30 messages an hour.
 - **A message for a session** waits in `desktop_network_messages` until it reads its inbox; an
   answer carries `reply_to`.
-- **In the apps.** Settings › AI Models ends with Bots (three bots by name, then Add for any
+- **A Simeon agent writing on the network** (the engine's `ListNetwork` and `SendNetworkMessage`,
+  `desktop/source/host/runner/tools/network-tools.ts`, in every turn of the agent's own chats,
+  never for a channel's message). With the computer's credential:
+  `GET /desktop/api/network/team?query=&all=` (as `list_team`) and `POST
+  /desktop/api/network/send` (`agentId`, `to`, `message`, `replyTo`). It writes as itself
+  (`ana/Iris`, `from_agent_id`). A session reads it in its inbox, and its answer to `ana/Iris`
+  lands in Iris's chat. A Simeon agent reads no inbox, so a message from one asks the
+  receiving agent to answer with `SendNetworkMessage`. An agent sends at most 30 messages an hour
+  (`FROM_AGENT_PER_HOUR`), so two agents answering each other stop.
+- **Invite links** have one spelling: a token whose last character's two spare bits aren't 0 is
+  refused (`parse_invite`).
+- **In the apps.** Settings › Network on the Mac, the iPhone and the web (`SettingsNetwork.swift`,
+  `NetworkPage.swift`, `SettingsNetwork.tsx`, SimeonCore's `SimeonNetwork.swift`). Settings › AI
+  Models ends with Bots (three bots by name, then Add for any
   other); each row's + opens "Add a bot" with the address and Copy (`SettingsModels.tsx`,
   `mac/Simeon/SettingsModels.swift`, `ios/Simeon/AIModels.swift`, `AIBots.address`). The apps'
   routes for Settings › Network, with the desktop credential: `GET /desktop/api/network` (the
@@ -3062,6 +3075,7 @@ invite links and the chats copy.
 by a script) and connect (`claude mcp list`: Connected; Codex then ran `set_status`, `list_team`
 and `check_inbox` with its own token). **Not yet verified:** a real ChatGPT, Cursor, Gemini CLI or
 Meta agent, and a full round trip with a Simeon agent's computer (message, wake, answer), checked
-only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`). A bot whose
-redirect address is not https (a desktop app's own scheme) can't register yet. The apps' Settings
-› Network and Simeon agents writing to the network are not built yet.
+only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`) and the engine's
+(`desktop/tests/network-tools.test.mjs`). The Simeon agents' tools reach a person's computer only
+with the next engine release (`npm run publish:host-bundle`). A bot whose redirect address is not
+https (a desktop app's own scheme) can't register yet.
