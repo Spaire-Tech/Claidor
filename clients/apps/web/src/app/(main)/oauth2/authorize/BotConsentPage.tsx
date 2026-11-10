@@ -1,9 +1,14 @@
 import AuthShell, { Legal } from '@/components/Auth/AuthShell'
 import { primary, provider } from '@/components/Auth/parts'
 import LogoIcon from '@/components/Brand/LogoIcon'
+import ClaudeCodeIcon from '@/components/Icons/frameworks/claude-code'
+import CodexIcon from '@/components/Icons/frameworks/codex'
+import CursorIcon from '@/components/Icons/frameworks/cursor'
+import GitHubCopilotIcon from '@/components/Icons/frameworks/github-copilot'
 import { getServerURL } from '@/utils/api'
 import { schemas } from '@simeon/client'
 import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
+import type { ReactNode } from 'react'
 
 // The consent a bot gets when a person adds Simeon to it (10 November 2026,
 // the founder: "have it the same design as our log in web page"): the login
@@ -12,36 +17,107 @@ import { getTranslator, type AcceptedLocale } from '@simeon/i18n'
 // as a card (the founder's reference, "Choose an account to continue");
 // what the bot can do and nothing more; Allow and Deny; the Terms line. The
 // bots of the Bots section are known by the name they register with and
-// shown by theirs, with their mascot (`/bots/<id>.png`); any other by its own.
+// shown by theirs, with their mascot (`/bots/<id>.png`). The coding agents
+// that join the same way (Claude Code, Codex, Cursor, Copilot, Gemini CLI)
+// show their own logo, from our files. Any other shows its initial: never a
+// logo the bot names itself (10 November 2026, the founder, of Cursor's
+// broken picture). The page's pictures come only from the sites it allows,
+// and a bot could name another's logo to look like it.
 
-/** The bots of Settings › AI Models › Bots, from the name a bot registers with. */
-const BOTS = [
-  { id: 'dots', name: 'Dots', match: /dots|chatgpt|openai/i },
-  { id: 'muse', name: 'Muse', match: /muse|meta/i },
-  { id: 'grokbot', name: 'Grok Bot', match: /grok/i },
+/** The bots and coding agents a person adds Simeon to, from the name each registers with (first match wins). */
+const BOTS: {
+  id: string
+  name: string
+  match: RegExp
+  picture: ReactNode
+}[] = [
+  {
+    id: 'claude-code',
+    name: 'Claude Code',
+    match: /claude[ _-]?code/i,
+    picture: <ClaudeCodeIcon size={56} />,
+  },
+  {
+    id: 'claude',
+    name: 'Claude',
+    match: /claude/i,
+    picture: <ClaudeCodeIcon size={56} />,
+  },
+  {
+    id: 'codex',
+    name: 'Codex',
+    match: /codex/i,
+    picture: <CodexIcon size={56} />,
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    match: /cursor/i,
+    picture: <CursorIcon size={56} />,
+  },
+  {
+    id: 'copilot',
+    name: 'GitHub Copilot',
+    match: /copilot/i,
+    picture: <GitHubCopilotIcon size={56} />,
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini CLI',
+    match: /gemini/i,
+    picture: <Picture src="/bots/gemini.svg" fit="contain" />,
+  },
+  {
+    id: 'dots',
+    name: 'Dots',
+    match: /dots|chatgpt|openai/i,
+    picture: <Picture src="/bots/dots.png" />,
+  },
+  {
+    id: 'muse',
+    name: 'Muse',
+    match: /muse|meta/i,
+    picture: <Picture src="/bots/muse.png" />,
+  },
+  {
+    id: 'grokbot',
+    name: 'Grok Bot',
+    match: /grok/i,
+    picture: <Picture src="/bots/grokbot.png" />,
+  },
 ]
 
 const tile =
   'flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.1)]'
 
-/** The bot beside Simeon: its mascot (or its own logo, or its initial), three dots, Simeon's mark on white. */
-const Marks = ({
-  bot,
-  logo,
-  name,
+/** A picture of ours filling the tile: a mascot, or a mark with room around it. */
+function Picture({
+  src,
+  fit = 'cover',
 }: {
-  bot?: string
-  logo?: string | null
-  name: string
-}) => {
-  const picture = bot ? `/bots/${bot}.png` : (logo ?? undefined)
+  src: string
+  fit?: 'cover' | 'contain'
+}) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      className={
+        fit === 'cover'
+          ? 'h-full w-full object-cover'
+          : 'h-full w-full object-contain p-3'
+      }
+    />
+  )
+}
+
+/** The bot beside Simeon: its mascot or logo (or its initial), three dots, Simeon's mark on white. */
+const Marks = ({ picture, name }: { picture?: ReactNode; name: string }) => {
   return (
     <div className="flex items-center gap-3" aria-hidden="true">
       <span className={tile}>
-        {picture ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={picture} alt="" className="h-full w-full object-cover" />
-        ) : (
+        {picture ?? (
           <span className="text-[22px] text-[#0d0d0d]">
             {name.slice(0, 1).toUpperCase()}
           </span>
@@ -94,7 +170,7 @@ const BotConsentPage = ({
   const email = sub?.email
   return (
     <AuthShell
-      mark={<Marks bot={known?.id} logo={client.logo_uri} name={name} />}
+      mark={<Marks picture={known?.picture} name={name} />}
       heading={t('simeon.connectBot.heading', { bot: name })}
       line={t('simeon.connectBot.line', { bot: name })}
     >
