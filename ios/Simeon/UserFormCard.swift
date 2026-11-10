@@ -6,7 +6,7 @@ import SimeonCore
  * a page on the agent's computer needs typed, drawn as the secret card is,
  * each with its name above it, and Fill. The values go to the computer and
  * are typed into the page there; the card forgets them as soon as Fill is
- * pressed. Once answered, each field says whether it went in. The X is a
+ * pressed. Once answered, each field says whether it went in. Not now is a
  * decline.
  */
 struct UserFormCardView: View {
@@ -35,15 +35,7 @@ struct UserFormCardView: View {
         Text(card.domain).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
       }
       Spacer(minLength: 0)
-      if card.state == .open {
-        // Not filling it is an answer too: the agent is told it was declined.
-        Button { run { await store.dismissUserForm(entryId, in: agentId) } } label: {
-          Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-            .frame(width: 32, height: 32).contentShape(Rectangle())
-        }
-        .buttonStyle(.tactile)
-        .accessibilityLabel("Dismiss")
-      } else if let status = card.statusLine {
+      if card.state != .open, let status = card.statusLine {
         StatusPill(text: status, dot: dot)
       }
     }
@@ -72,14 +64,20 @@ struct UserFormCardView: View {
       if card.submitsAfterFill {
         Text("It’s sent as soon as it’s typed in.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
       }
-      Button("Fill in") {
-        let sent = card.values(values)
-        // What was typed leaves the card now; only the computer holds it, and only to type it in.
-        values = [:]
-        run { refusal = await store.submitUserForm(sent, entryId: entryId, in: agentId) }
+      CardPills {
+        // Not filling it is an answer too: the agent is told it was declined (Not now replaced the X, 10 November 2026).
+        Button("Not now") { run { await store.dismissUserForm(entryId, in: agentId) } }
+          .buttonStyle(Tactile(look: CardPillStyle()))
+          .disabled(busy)
+        Button("Fill in") {
+          let sent = card.values(values)
+          // What was typed leaves the card now; only the computer holds it, and only to type it in.
+          values = [:]
+          run { refusal = await store.submitUserForm(sent, entryId: entryId, in: agentId) }
+        }
+        .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+        .disabled(busy || !card.canFill(values))
       }
-      .buttonStyle(Tactile(look: BlueButtonStyle()))
-      .disabled(busy || !card.canFill(values))
       if let refusal { Text(refusal).font(.system(size: 13)).foregroundStyle(Ink.danger) }
     }
   }

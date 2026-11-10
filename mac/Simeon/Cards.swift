@@ -7,8 +7,8 @@ import SimeonCore
  * The cards an agent sends into the chat, copied from the Electron
  * window's (measured from its Gallery chat, mac/STEPS.md step 2c). Every
  * card is as wide as a message may be (88% of the chat, 640, or the chat
- * less 82), grey like an agent's bubble, 16 round, padded 12, its parts 10
- * apart.
+ * less 82), grey like an agent's bubble, its parts 10 apart; 20 round and
+ * padded 14 by 16 since 10 November 2026, as the question card.
  */
 struct CardShell<Content: View>: View {
   let look: Look
@@ -19,10 +19,11 @@ struct CardShell<Content: View>: View {
     VStack(alignment: .leading, spacing: spacing) {
       content()
     }
-    .padding(12)
+    .padding(.vertical, 14)
+    .padding(.horizontal, 16)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
-    .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
@@ -54,29 +55,48 @@ struct StatusPill: View {
   }
 }
 
-/** The window's two button kinds on a card: the blue one and the plain one (14 on 22, 32 high, 8 round). */
+/**
+ * A card's buttons (10 November 2026, the question card's; the founder: "go for your suggestions"): pills 32 high, the
+ * main one (`prominent`) in the ink's own colour, the others grey, `danger` in red words, `money` the blue, kept for
+ * paying. A card puts them at its right, the main one last.
+ */
 struct CardButton: View {
+  enum Tone { case plain, danger, money }
   let title: String
   var prominent = false
+  var tone: Tone = .plain
   let look: Look
   let action: () -> Void
+  @Environment(\.isEnabled) private var enabled
+  @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 14))
-        .foregroundStyle(prominent ? Color.white : look.ink)
+        .font(.system(size: 13.5, weight: .medium))
+        .foregroundStyle(ink)
         .lineLimit(1)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         .frame(height: 32)
-        .background(prominent ? look.yours : look.wash, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-          if !prominent { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .background(fill, in: Capsule())
+        .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+    .opacity(enabled ? 1 : 0.4)
+    .onHover { hovering = $0 }
     .fixedSize()
+  }
+
+  private var ink: Color {
+    if tone == .money { return .white }
+    if prominent { return look.ground }
+    return tone == .danger ? look.danger : look.ink
+  }
+
+  private var fill: Color {
+    if tone == .money { return look.yours.opacity(hovering && enabled ? 0.88 : 1) }
+    if prominent { return look.ink.opacity(hovering && enabled ? 0.88 : 1) }
+    return look.ink.opacity(hovering && enabled ? (look.dark ? 0.12 : 0.10) : (look.dark ? 0.08 : 0.06))
   }
 }
 
@@ -635,10 +655,11 @@ struct DraftCardView: View {
       .clipShape(RoundedRectangle(cornerRadius: 10))
       if editable {
         HStack(spacing: 8) {
-          CardButton(title: card.kind == .email ? String(localized: "Send email") : String(localized: "Send message"), prominent: true, look: look, action: send)
+          Spacer(minLength: 0)
           CardButton(title: String(localized: "Discard"), look: look) {
             Task { await store.discardDraft(entryId, in: agentId) }
           }
+          CardButton(title: card.kind == .email ? String(localized: "Send email") : String(localized: "Send message"), prominent: true, look: look, action: send)
         }
       }
     }
@@ -974,9 +995,10 @@ struct ApprovalCardView: View {
       }
       if settled == "pending" {
         HStack(spacing: 8) {
-          CardButton(title: String(localized: "Allow once"), prominent: true, look: look) { resolve("approved") }
+          Spacer(minLength: 0)
+          CardButton(title: String(localized: "Deny"), tone: .danger, look: look) { resolve("denied") }
           CardButton(title: String(localized: "Always allow"), look: look) { resolve("always") }
-          CardButton(title: String(localized: "Deny"), look: look) { resolve("denied") }
+          CardButton(title: String(localized: "Allow once"), prominent: true, look: look) { resolve("approved") }
         }
         .disabled(answering)
       }
@@ -1172,45 +1194,39 @@ struct SecretCardView: View {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
         } else if dismissed {
           StatusPill(text: String(localized: "Dismissed"), look: look)
-        } else {
-          Button {
-            Task { await store.dismissQuestion(entryId, in: agentId) }
-          } label: {
-            Image(systemName: "xmark")
-              .font(.system(size: 11, weight: .medium))
-              .foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20)
-              .contentShape(RoundedRectangle(cornerRadius: 6))
-          }
-          .buttonStyle(.hand)
-          .help("Dismiss without giving it")
-          .accessibilityLabel("Dismiss request")
         }
       }
       if !(provided || dismissed) {
-        HStack(alignment: .top, spacing: 8) {
-          SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
-            .textFieldStyle(.plain)
-            .font(.system(size: 14))
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .frame(height: 32)
-            .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-            .onSubmit(save)
+        SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
+          .textFieldStyle(.plain)
+          .font(.system(size: 14))
+          .padding(.vertical, 6)
+          .padding(.horizontal, 10)
+          .frame(height: 32)
+          .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
+          .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+          .onSubmit(save)
+        HStack(alignment: .center, spacing: 8) {
+          HStack(alignment: .top, spacing: 4) {
+            Image(systemName: "lock.fill")
+              .font(.system(size: 9))
+              .frame(width: 12, height: 12)
+              .padding(.top, 3)
+            Text("Stored securely, never shown to your agent.")
+              .font(.system(size: 13))
+              .tracking(-0.08)
+          }
+          .foregroundStyle(look.inkTertiary)
+          Spacer(minLength: 8)
+          // Not now declines it, as the X did (10 November 2026).
+          CardButton(title: String(localized: "Not now"), look: look) {
+            Task { await store.dismissQuestion(entryId, in: agentId) }
+          }
+          .disabled(saving)
+          .help("Dismiss without giving it")
           CardButton(title: String(localized: "Save securely"), prominent: true, look: look, action: save)
             .disabled(saving || value.isEmpty)
         }
-        HStack(alignment: .top, spacing: 4) {
-          Image(systemName: "lock.fill")
-            .font(.system(size: 9))
-            .frame(width: 12, height: 12)
-            .padding(.top, 3)
-          Text("Stored securely, never shown to your agent.")
-            .font(.system(size: 13))
-            .tracking(-0.08)
-        }
-        .foregroundStyle(look.inkTertiary)
       }
     }
   }
@@ -1927,28 +1943,20 @@ struct ComputerHandoffCard: View {
         .accessibilityLabel("Take over the computer")
       }
       if waiting {
+        // The cards' pills (10 November 2026): Skip and I'm done grey, Take over the main one.
         HStack(spacing: 8) {
-          Button {
+          CardButton(title: String(localized: "Skip"), look: look) {
             Task { await store.handBackComputer(agentId, skip: true) }
-          } label: {
-            Text("Skip")
-              .font(.system(size: 13))
-              .foregroundStyle(grey)
-              .padding(.horizontal, 8)
-              .frame(height: 32)
-              .contentShape(Rectangle())
           }
-          .buttonStyle(.hand)
           .help("Cancel this request without doing the step; the agent continues without it")
           Spacer(minLength: 8)
-          pill(String(localized: "I’m done"), ground: fill, ink: ink) {
+          CardButton(title: String(localized: "I’m done"), look: look) {
             Task { await store.handBackComputer(agentId) }
           }
-          pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
+          CardButton(title: String(localized: "Take over"), prominent: true, look: look) { takeOver() }
         }
       } else {
-        pill(String(localized: "Open computer"), ground: fill, ink: ink) { takeOver() }
-          .fixedSize()
+        CardButton(title: String(localized: "Open computer"), look: look) { takeOver() }
       }
     }
     .tracking(-0.15)

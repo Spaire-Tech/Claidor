@@ -124,8 +124,8 @@ describe('the shop cards on the web', () => {
         url: `https://example.com/mug-${n}`,
         price: '$28.00',
         store: 'Example',
-        take: n === 1 ? 'The biggest of the three' : undefined,
-        badge: n === 1 ? 'Top rated' : undefined,
+        // Only the first has a take and a badge (a JSON value leaves a key out rather than holding undefined).
+        ...(n === 1 ? { take: 'The biggest of the three', badge: 'Top rated' } : {}),
       })),
     }
     const card = Entry.from({

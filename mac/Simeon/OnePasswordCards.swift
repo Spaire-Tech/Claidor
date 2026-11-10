@@ -36,8 +36,9 @@ struct CredentialCardView: View {
           Text(card.purpose).font(.system(size: 14)).tracking(-0.15).foregroundStyle(look.inkSecondary).cssLineHeight(22, size: 14).fixedSize(horizontal: false, vertical: true)
         }
         HStack(spacing: 8) {
-          CardButton(title: String(localized: "Fill with 1Password"), prominent: true, look: look, action: fill)
+          Spacer(minLength: 0)
           CardButton(title: String(localized: "Not now"), look: look) { run { refusal = await store.answerCredentialRequest(entryId, allow: false, in: agentId) } }
+          CardButton(title: String(localized: "Fill with 1Password"), prominent: true, look: look, action: fill)
         }
         .disabled(busy)
         if let refusal { Text(refusal).font(.system(size: 13)).foregroundStyle(look.danger) }
@@ -107,17 +108,7 @@ struct OnePasswordConnectCardView: View {
           .foregroundStyle(card.state == .dismissed ? look.inkSecondary : look.ink)
           .cssLineHeight(22, size: 14, weight: .medium)
           .frame(maxWidth: .infinity, alignment: .leading)
-        if card.state == .open {
-          Button {
-            run { await store.dismissOnePasswordConnect(entryId, in: agentId) }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .medium)).foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20).contentShape(RoundedRectangle(cornerRadius: 6))
-          }
-          .buttonStyle(.hand)
-          .help("Dismiss without connecting")
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
+        if card.state != .open, let status = card.statusLine {
           StatusPill(text: status, look: look, dot: card.state == .connected ? look.working : nil)
         }
       }
@@ -133,12 +124,19 @@ struct OnePasswordConnectCardView: View {
           }
           .labelsHidden().pickerStyle(.menu).frame(maxWidth: 360, alignment: .leading)
         }
+        // Not now declines it, as the X did; Connect the main one at the right (10 November 2026).
         HStack(spacing: 8) {
-          CardButton(title: busy ? String(localized: "Connecting…") : String(localized: "Connect"), prominent: true, look: look, action: connect)
-            .disabled(busy)
+          Spacer(minLength: 0)
           if failure?.needsSetup == true {
             CardButton(title: String(localized: "How to set it up"), look: look) { NSWorkspace.shared.open(MacOnePassword.setupURL) }
           }
+          CardButton(title: String(localized: "Not now"), look: look) {
+            run { await store.dismissOnePasswordConnect(entryId, in: agentId) }
+          }
+          .disabled(busy)
+          .help("Dismiss without connecting")
+          CardButton(title: busy ? String(localized: "Connecting…") : String(localized: "Connect"), prominent: true, look: look, action: connect)
+            .disabled(busy)
         }
         if let message = failure?.message ?? refusal {
           Text(message).font(.system(size: 13)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)

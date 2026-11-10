@@ -177,20 +177,19 @@ struct LocalAskDock: View {
             .fixedSize(horizontal: false, vertical: true)
         }
       }
+      // The cards' pills (10 November 2026): Never in red, Allow once grey, Always allow the main one at the right.
       HStack(spacing: 8) {
+        Spacer(minLength: 0)
+        CardButton(title: String(localized: "Never"), tone: .danger, look: look) { answer(.never) }
+          .disabled(!enabled)
+        CardButton(title: String(localized: "Allow once"), look: look) { answer(.allowOnce) }
+          .disabled(!enabled)
         // The disabled button's words still show on hover, as the window wraps it in a span.
         let always = enabled && alwaysBlocked == nil
         CardButton(title: String(localized: "Always allow"), prominent: true, look: look) { answer(.always) }
           .disabled(!always)
-          .opacity(always ? 1 : 0.56)
           .contentShape(Rectangle())
           .help(alwaysBlocked ?? "")
-        CardButton(title: String(localized: "Allow once"), look: look) { answer(.allowOnce) }
-          .disabled(!enabled)
-          .opacity(enabled ? 1 : 0.56)
-        CardButton(title: String(localized: "Never"), look: look) { answer(.never) }
-          .disabled(!enabled)
-          .opacity(enabled ? 1 : 0.56)
       }
     }
     .padding(12)

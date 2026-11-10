@@ -34,20 +34,7 @@ struct UserFormCardView: View {
             .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        if card.state == .open {
-          Button {
-            run { await store.dismissUserForm(entryId, in: agentId) }
-          } label: {
-            Image(systemName: "xmark")
-              .font(.system(size: 11, weight: .medium))
-              .foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20)
-              .contentShape(RoundedRectangle(cornerRadius: 6))
-          }
-          .buttonStyle(.hand)
-          .help("Dismiss without filling it in")
-          .accessibilityLabel("Dismiss form")
-        } else if let status = card.statusLine {
+        if card.state != .open, let status = card.statusLine {
           StatusPill(text: status, look: look, dot: dot)
         }
       }
@@ -82,12 +69,19 @@ struct UserFormCardView: View {
           input(field)
         }
       }
+      // Not now declines it, as the X did; Fill in the main one at the right (10 November 2026).
       HStack(spacing: 8) {
-        CardButton(title: String(localized: "Fill in"), prominent: true, look: look, action: fill)
-          .disabled(busy || !card.canFill(values))
         if card.submitsAfterFill {
           Text("It’s sent as soon as it’s typed in.").font(.system(size: 13)).tracking(-0.08).foregroundStyle(look.inkTertiary)
         }
+        Spacer(minLength: 0)
+        CardButton(title: String(localized: "Not now"), look: look) {
+          run { await store.dismissUserForm(entryId, in: agentId) }
+        }
+        .disabled(busy)
+        .help("Dismiss without filling it in")
+        CardButton(title: String(localized: "Fill in"), prominent: true, look: look, action: fill)
+          .disabled(busy || !card.canFill(values))
       }
       if let refusal {
         Text(refusal).font(.system(size: 13)).foregroundStyle(look.danger)

@@ -382,10 +382,11 @@ struct CloudAgentCard: View {
         card(info ?? .unavailable)
       }
     }
-    .padding(12)
+    // Every card's shape (10 November 2026): 22 round, padded 16.
+    .padding(16)
     .frame(width: min(ChatMetrics.bubbleMax(width), 400), alignment: .leading)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    .modifier(CardEdge(radius: 14))
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
     #if os(macOS)
     // A card has the message's actions, with no Copy.
     .contextMenu { MessageContextMenu(bubble: Bubble(id: entryId, text: "", fromPerson: false, author: nil, showsName: false, showsAvatar: false, reactions: [], isStreaming: false), agentId: agentId) }
@@ -451,12 +452,12 @@ struct CloudAgentCard: View {
         .font(.system(size: 12)).monospacedDigit()
       }
       if let pull {
-        HStack(spacing: 8) {
-          Button { openURL(pull) } label: { Label("View PR", systemImage: "arrow.up.right") }
+        // The cards' pills (10 November 2026): View PR the main one, at the right.
+        CardPills {
+          Button { openURL(pull) } label: { Label("View PR", systemImage: "arrow.up.right").labelStyle(TrailingIconLabel()) }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
             .help("Open the pull request")
         }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
       }
     }
   }
