@@ -36,6 +36,29 @@ public enum ExternalAgents {
     ]
   }
 
+  /**
+   * The card's picture, the same on every app (11 November 2026, the
+   * founder: "use simeon avatar if anything and by all means make it
+   * proportionate"): 320 by 200, Simeon's own face (64, round) at its
+   * middle, Grok Bot, Muse and Dots the same size (40) on a circle of 70
+   * around him, 120° apart, each joined to him by a line. He sits 118 down,
+   * so the four of them sit in the picture's middle.
+   */
+  public enum Picture {
+    public static let width = 320.0
+    public static let height = 200.0
+    public static let centerX = 160.0
+    public static let centerY = 118.0
+    public static let radius = 70.0
+    public static let simeon = 64.0
+    public static let bot = 40.0
+    /** Each bot's mascot and where its middle is. */
+    public static let bots: [(icon: String, x: Double, y: Double)] = [("grokbot", 90.0), ("muse", 210.0), ("dots", 330.0)].map { icon, angle in
+      let radians = angle * .pi / 180
+      return (icon, centerX + radius * cos(radians), centerY - radius * sin(radians))
+    }
+  }
+
   /** The mascots the account menu's row shows at its right (the reference's "Reason with" and its icons). */
   public static let menuIcons = ["grokbot", "muse", "dots"]
 

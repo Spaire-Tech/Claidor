@@ -34,7 +34,6 @@ struct ExternalAgentsPage: View {
       Section {
         VStack(alignment: .leading, spacing: 10) {
           ExternalAgentsPicture()
-            .frame(height: 176)
             .padding(.bottom, 6)
           Text(ExternalAgents.headline)
             .font(.system(size: 17, weight: .semibold))
@@ -164,55 +163,60 @@ private struct ExternalAgentLine: View {
 }
 
 /**
- * The card's picture: Simeon's tile in the middle, Grok Bot, Muse and Dots
- * around it on a faint orbit, on the website's grey (`--soft`, #f5f5f7;
- * #1c1c1e on dark). Simeon's tile stays white, as an app's icon does.
+ * The card's picture (SimeonCore's `ExternalAgents.Picture`): Simeon's own
+ * face in the middle, Grok Bot, Muse and Dots the same size around him,
+ * each joined to him by a line, on the website's grey (`--soft`, #f5f5f7;
+ * #1c1c1e on dark), as wide as the card, what it shows in its middle.
  */
 private struct ExternalAgentsPicture: View {
   @Environment(\.colorScheme) private var scheme
+  typealias P = ExternalAgents.Picture
 
   var body: some View {
-    GeometryReader { geometry in
-      let width = geometry.size.width
-      let height = geometry.size.height
-      let center = CGPoint(x: width / 2, y: height / 2)
-      let radiusX = min(width * 0.31, 110.0)
-      let radiusY = min(height * 0.34, 60.0)
+    ZStack {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
       ZStack {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-          .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
-        Ellipse()
-          .stroke(Ink.primary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
-          .frame(width: radiusX * 2, height: radiusY * 2)
-          .position(center)
-        mascot("grokbot", angle: 90, center: center, radiusX: radiusX, radiusY: radiusY, tilt: 6)
-        mascot("muse", angle: 210, center: center, radiusX: radiusX, radiusY: radiusY, tilt: -8)
-        mascot("dots", angle: 330, center: center, radiusX: radiusX, radiusY: radiusY, tilt: 8)
-        Image("Providers/simeon-mark")
-          .renderingMode(.template)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 34, height: 34)
-          .foregroundStyle(Color(red: 13 / 255, green: 13 / 255, blue: 13 / 255))
-          .frame(width: 72, height: 72)
-          .background(Color.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-          .overlay { RoundedRectangle(cornerRadius: 17, style: .continuous).strokeBorder(Color.black.opacity(0.08), lineWidth: 0.5) }
-          .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
-          .position(center)
+        Path { path in
+          path.addEllipse(in: CGRect(x: P.centerX - P.radius, y: P.centerY - P.radius, width: P.radius * 2, height: P.radius * 2))
+          for bot in P.bots {
+            path.move(to: CGPoint(x: P.centerX, y: P.centerY))
+            path.addLine(to: CGPoint(x: bot.x, y: bot.y))
+          }
+        }
+        .stroke(Ink.primary.opacity(0.1), lineWidth: 1)
+        ForEach(P.bots, id: \.icon) { bot in
+          ProviderIcon(provider: bot.icon, size: P.bot)
+            .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
+            .position(x: bot.x, y: bot.y)
+        }
+        simeon
+          .position(x: P.centerX, y: P.centerY)
       }
+      .frame(width: P.width, height: P.height)
     }
+    .frame(height: P.height)
+    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     .accessibilityElement()
     .accessibilityLabel(Text("Simeon with Grok Bot, Muse and Dots"))
   }
 
-  /** A mascot on the orbit, at `angle` degrees (0 at the right, 90 at the top). */
-  private func mascot(_ icon: String, angle: Double, center: CGPoint, radiusX: CGFloat, radiusY: CGFloat, tilt: Double) -> some View {
-    let radians = angle * .pi / 180
-    let point = CGPoint(x: center.x + radiusX * CGFloat(cos(radians)), y: center.y - radiusY * CGFloat(sin(radians)))
-    return ProviderIcon(provider: icon, size: 44)
-      .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
-      .rotationEffect(.degrees(tilt))
-      .position(point)
+  /** His face, round, on his own backdrop, a white ring of 3 and a soft shadow. */
+  private var simeon: some View {
+    let face = AgentFaces.simeon
+    return ZStack {
+      Circle().fill(face?.backdrop.map { Color(red: $0.r, green: $0.g, blue: $0.b) } ?? Color(red: 137 / 255, green: 172 / 255, blue: 188 / 255))
+      if let face, let image = AgentPictures.image(.face(face)) {
+        Image(uiImage: image)
+          .resizable()
+          .scaledToFill()
+          .scaleEffect(1.6, anchor: UnitPoint(x: 0.5, y: 0.32))
+      }
+    }
+    .frame(width: P.simeon, height: P.simeon)
+    .clipShape(Circle())
+    .overlay { Circle().strokeBorder(Color.white, lineWidth: 3).padding(-3) }
+    .shadow(color: .black.opacity(0.16), radius: 9, x: 0, y: 6)
   }
 }
 
