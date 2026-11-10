@@ -709,6 +709,7 @@
  "Starting the computer… %lld%%": "Bilgisayar başlatılıyor… %%%lld",
  "State or region": "Eyalet veya bölge",
  "Status IDs": "Durum kimlikleri",
+ "Stop": "Bırak",
  "Stop %@": "%@ sesini durdur",
  "Stop dictation": "Dikteyi durdur",
  "Stop task": "Görevi durdur",

@@ -564,6 +564,125 @@
   pointer-events: none;
 }
 
+/* Watching: over the screen, a click reaches nothing on it and swells the pill's Take control. */
+.computer-screen-watch {
+  position: absolute;
+  inset: 0;
+  cursor: default;
+}
+
+/* Who has the computer, 12 under the screen (the founder's reference picture, 10 November 2026): a dark capsule, a hairline, 4 in. */
+.control-pill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgb(28 28 30 / 0.94);
+  box-shadow:
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.1),
+    0 4px 24px rgb(0 0 0 / 0.35);
+  font-size: 13px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* The eye and "Watching" in white at 60%; the pointer and "You're in control" in white. */
+.control-pill-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 10px;
+  color: rgb(255 255 255 / 0.6);
+  transition: color 0.18s ease-out;
+}
+
+.control-pill.in-control .control-pill-state {
+  color: #fff;
+}
+
+/* Take control (white, the ink on it) or Stop (white at 12%): 30 high, round, 13 medium. */
+.control-pill-button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #141414;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease-out,
+    color 0.18s ease-out;
+}
+
+.control-pill-button:hover {
+  background: #e9e9eb;
+}
+
+.control-pill-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* A click on the screen while watching: Take control swells once, 0.36 s. */
+.control-pill-button.swell-0 {
+  animation: control-swell-0 0.36s ease-out;
+}
+
+.control-pill-button.swell-1 {
+  animation: control-swell-1 0.36s ease-out;
+}
+
+@keyframes control-swell-0 {
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes control-swell-1 {
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control-pill-button.swell-0,
+  .control-pill-button.swell-1 {
+    animation: none;
+  }
+}
+
+.control-pill.in-control .control-pill-button {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+
+.control-pill.in-control .control-pill-button:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.control-pill-button:focus-visible {
+  outline: 2px solid rgb(252 252 252 / 0.4);
+  outline-offset: 2px;
+}
+
+/* "{name} is paused while you're in control.": 12/16, white at 60%, 6 under the pill. */
+.computer-paused {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  padding-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(252 252 252 / 0.6);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* The helper shown, named under the screen (12/16, white at 60%, one line), 6 below it. */
 .computer-helper-name {
   flex: none;

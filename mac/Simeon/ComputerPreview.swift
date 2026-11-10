@@ -74,6 +74,13 @@ extension Look {
 struct ComputerScreenView: View {
   let vncUrl: String
   var interactive = false
+  /**
+   * The computer's window while the person only watches (10 November
+   * 2026): the page stays the window's (its keys and clipboard once they
+   * take control) but takes no click or key; switching is live, on the
+   * same connection (`simeonViewOnly`).
+   */
+  var watching = false
   @Binding var phase: String
   let events: ScreenEvents
   @Environment(AppStore.self) private var store
@@ -83,7 +90,7 @@ struct ComputerScreenView: View {
     Group {
       if let socket {
         // A new address is a new page: the old one would never say it connected again.
-        LiveScreen(socket: socket, viewOnly: !interactive, phase: $phase, events: events, interactive: interactive)
+        LiveScreen(socket: socket, viewOnly: !interactive || watching, phase: $phase, events: events, interactive: interactive)
           .id(socket)
       } else {
         Color.clear

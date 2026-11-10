@@ -258,12 +258,24 @@ function ComputerFullView({
   const focused = focusedHelper(helpers, asked)
   const helper = helpers.find((one) => one.subagentId === focused)
   const url = screenURL(status)
+  // A hand-off is open: the agent waits on the person (or taking control paused it).
+  const waiting = status?.handoff != null
   // A helper's screen is a new connection (`{stageKey}:{url}`).
   const stageKey = focused ?? 'setup'
   const [phase, setPhase] = useState('starting')
   const phaseRef = useRef(phase)
+  // The person has the computer (Take control); else they watch. It opens theirs while the agent waits on them.
+  const [control, setControl] = useState(waiting)
+  // Taking control paused the working agent: Stop, or closing the view, hands the computer back and resumes it.
+  const [paused, setPaused] = useState(false)
+  // A click on the screen while watching: the pill's Take control answers it.
+  const [nudge, setNudge] = useState(0)
+  const controlRef = useRef(control)
+  const pausedRef = useRef(paused)
   useLayoutEffect(() => {
     phaseRef.current = phase
+    controlRef.current = control
+    pausedRef.current = paused
   })
   const screen = useRef<LiveScreen>(undefined)
   const [clipboard] = useState(() => new ScreenClipboard())
@@ -284,16 +296,62 @@ function ComputerFullView({
     setPhase('starting')
   }, [stageKey])
 
-  // Once the screen is up it takes the keys (the window makes it the first responder when ready).
+  // Once the screen is up it takes the keys while the person has it (the window makes it the first responder when ready).
   useEffect(() => {
-    if (phase === 'connected') screen.current?.focus()
+    if (phase === 'connected' && controlRef.current) screen.current?.focus()
   }, [phase])
 
-  // The Windows app: this PC's words to the computer on a click in the screen, the window coming forward, or the screen coming up (`sendClipboard`).
+  // The agent hands the computer over and waits: it is the person's to use.
+  useEffect(() => {
+    if (waiting && !controlRef.current) setControl(true)
+  }, [waiting])
+
+  // Watching the screen takes no click or key, on the same connection (`setViewOnly`); in control it takes the keys and this computer's clipboard.
+  useEffect(() => {
+    const made = screen.current
+    made?.setViewOnly(!control)
+    if (control) {
+      if (phaseRef.current === 'connected') made?.focus()
+      sendClipboard.current()
+    } else if (made?.hasKeys) {
+      ;(document.activeElement as HTMLElement | null)?.blur()
+    }
+  }, [control])
+
+  // Closed while the agent was paused for the person: it has the computer back.
+  useEffect(
+    () => () => {
+      if (pausedRef.current) void store.handBackComputer(agentId)
+    },
+    [store, agentId],
+  )
+
+  // Take control: the screen is the person's at once; a working agent is paused meanwhile (`takeComputerControl`).
+  const takeControl = () => {
+    setControl(true)
+    // Back to watching later, the pill doesn't swell for an old click.
+    setNudge(0)
+    void store.takeComputerControl(agentId).then((started) => {
+      if (!started) return
+      // Stopped before the agent was paused: it has the computer back at once.
+      if (controlRef.current) setPaused(true)
+      else void store.handBackComputer(agentId)
+    })
+  }
+  // Stop: back to watching; an agent paused for the person has the computer back and goes on.
+  const stopControl = () => {
+    setControl(false)
+    if (!pausedRef.current) return
+    setPaused(false)
+    pausedRef.current = false
+    void store.handBackComputer(agentId)
+  }
+
+  // The Windows app: this PC's words to the computer on a click in the screen, the window coming forward, or the screen coming up (`sendClipboard`); watching, the screen takes none.
   const sendClipboard = useRef(() => {})
   useLayoutEffect(() => {
     sendClipboard.current = () => {
-      if (phaseRef.current === 'connected')
+      if (phaseRef.current === 'connected' && controlRef.current)
         void pcClipboard?.send(screen.current)
     }
   })
@@ -372,7 +430,8 @@ function ComputerFullView({
     >
       <ComputerTopBar exit={() => model.closeComputer()} />
       <div className="computer-body">
-        {status?.handoff && (
+        {/* The hand-off the agent asked for; the one taking control started is the pill's. */}
+        {status?.handoff && !paused && (
           <HandoffBanner
             name={name}
             instruction={status.handoff.instruction}
@@ -397,6 +456,8 @@ function ComputerFullView({
                 onPhase={setPhase}
                 onScreen={(made) => {
                   screen.current = made
+                  // Watching until the person takes control, from the first frame.
+                  made?.setViewOnly(!controlRef.current)
                 }}
                 // The arrows from inside the screen switch between helpers' screens too (`sand:vnc-host-key`).
                 onHostKey={(key) =>
@@ -422,6 +483,17 @@ function ComputerFullView({
                   screen.current?.pasteAndPress(clipboard.toBox(words), shift)
                 }}
               />
+              {/* Watching, a click on the screen reaches nothing on it: the pill's Take control answers it. */}
+              {!control && (
+                <div
+                  className="computer-screen-watch"
+                  aria-hidden="true"
+                  onPointerDown={(event) => {
+                    event.preventDefault()
+                    setNudge((count) => count + 1)
+                  }}
+                />
+              )}
             </div>
           ) : (
             copy && (
@@ -433,6 +505,20 @@ function ComputerFullView({
             )
           )}
         </div>
+        {url != null && (
+          <ControlPill
+            control={control}
+            enabled={phase === 'connected'}
+            nudge={nudge}
+            take={takeControl}
+            stop={stopControl}
+          />
+        )}
+        {url != null && control && paused && (
+          <div className="computer-paused">
+            {t`${name} is paused while you're in control.`}
+          </div>
+        )}
         {helper && <div className="computer-helper-name">{helper.title}</div>}
         {helpers.length > 1 && url != null && (
           <HelperStrip
@@ -509,6 +595,77 @@ function HandoffBanner({
         </button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Under the screen, who has the computer (`ControlPill`; the founder's
+ * reference picture, 10 November 2026): a dark capsule with the eye and
+ * "Watching" and Take control, or the pointer and "You're in control" and
+ * Stop. Take control waits for the picture; a click on the screen while
+ * watching swells it once.
+ */
+function ControlPill({
+  control,
+  enabled,
+  nudge,
+  take,
+  stop,
+}: {
+  control: boolean
+  enabled: boolean
+  nudge: number
+  take: () => void
+  stop: () => void
+}) {
+  // Each click swells it again: two like animations taken in turn, so the next starts afresh.
+  const swell = nudge > 0 && !control ? `swell-${nudge % 2}` : undefined
+  return (
+    <div className={classes('control-pill', control && 'in-control')}>
+      <span className="control-pill-state">
+        {control ? <ControlGlyph /> : <EyeGlyph />}
+        <span>{control ? t("You're in control") : t('Watching')}</span>
+      </span>
+      <button
+        type="button"
+        className={classes('control-pill-button', swell)}
+        disabled={!control && !enabled}
+        onClick={control ? stop : take}
+      >
+        {control ? t('Stop') : t('Take control')}
+      </button>
+    </div>
+  )
+}
+
+/** `eye`, 12 medium. */
+function EyeGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="8" r="2.1" fill="currentColor" />
+    </svg>
+  )
+}
+
+/** `cursorarrow`, 12 medium: the pointer's arrow outlined. */
+function ControlGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M3.5 2.2 12.6 8.4 8.6 9.2 10.9 13.6 9.4 14.3 7.1 9.9 4.2 12.6Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
 

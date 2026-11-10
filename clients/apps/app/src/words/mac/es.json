@@ -709,6 +709,7 @@
  "Starting the computer… %lld%%": "Iniciando la computadora… %lld%%",
  "State or region": "Estado o región",
  "Status IDs": "ID de estados",
+ "Stop": "Detener",
  "Stop %@": "Detener %@",
  "Stop dictation": "Detener dictado",
  "Stop task": "Detener tarea",

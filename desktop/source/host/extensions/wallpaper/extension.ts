@@ -3,6 +3,7 @@ import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 import { DOCK_ICONS_DIR, createDisplayWatch, dockLauncherDirs, refreshDocks, removeRefreshItems, writeFolderIcon } from "./box-folder-icon.js";
 import { X_SOCKET_DIR, createBoxWallpaperCommands, readLiveDisplays } from "./box-wallpaper-commands.js";
+import { boxChromeAtStartDeps, openChromeWhenScreenIsUp } from "./chrome-at-start.js";
 import { WallpaperToneScheduler } from "./wallpaper-service.js";
 
 interface WallpaperSettings { getSettingsPath(): string; subscribeToUserTimeZone(listener: () => void): () => void; }
@@ -44,6 +45,8 @@ export const wallpaperExtension = defineHostExtension<unknown, { log(message: st
     }
     // The desktop can come up after the host: paint again half a minute and three minutes in, or Simeon's wallpaper waits for the next tone.
     for (const delayMs of [30_000, 180_000]) later(delayMs, () => void commands.paint());
+    // Chrome open on the person's screen as soon as it is up, once per start of the computer (`chrome-at-start.ts`).
+    const stopChrome = openChromeWhenScreenIsUp(boxChromeAtStartDeps(log), later);
     // A screen that comes up later (an agent's own window) gets Simeon's wallpaper within seconds, not at the next tone, hours away.
     const watch = createDisplayWatch(() => readLiveDisplays(X_SOCKET_DIR));
     let stopped = false;
@@ -61,6 +64,7 @@ export const wallpaperExtension = defineHostExtension<unknown, { log(message: st
     look();
     context.onStop(() => {
       stopped = true;
+      stopChrome();
       scheduler.dispose();
       for (const wake of wakes) wake.dispose();
       wakes.clear();

@@ -295,12 +295,12 @@
    "mac/Simeon/ComputerStates.swift",
    "mac/Simeon/ComputerView.swift"
   ],
-  "mac_lines": 1895,
+  "mac_lines": 2061,
   "core_lines": 2500,
-  "views": 31,
+  "views": 32,
   "files_needing_a_mac": 3,
-  "strings": 145,
-  "strings_in_old_web_app": 119,
+  "strings": 150,
+  "strings_in_old_web_app": 120,
   "box_commands": [
    "createAgent",
    "ensureForeverBox",

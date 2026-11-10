@@ -3056,3 +3056,25 @@ Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
 and the core's tests ran on Linux (17). The web app's translation ran in
 Chromium, light, dark and French.
 
+
+### The computer opens watching; Take control under the screen (10 November 2026)
+
+The founder, with a reference picture of another app's computer view: "you can use the computer while its
+on use by the agent without much clicking anywhere to allow you. well thats
+not good … below it has a watching/take over picker. i want that. make it
+smooth." The computer's window (`ComputerView.swift`) opens watching: the
+screen takes no click or key (`ComputerScreenView(watching:)`, switched on
+the same connection by `simeonViewOnly`), and a click on it swells Take
+control once. Under the screen, 12 below it, `ControlPill`: a dark capsule
+(#1c1c1e at 94%, a hairline) with the eye and "Watching" and Take control
+(white), or the pointer and "You're in control" and Stop (white at 12%).
+Take control gives the screen the keys and this Mac's clipboard, and
+pauses a working agent (`takeComputerControl`, as the iPhone does), with
+"Iris is paused while you're in control." under the pill; Stop gives the
+keys back and hands the computer back, as closing the window does, which
+resumes the agent. While the agent waits on the person the window opens in
+control, with the hand-off's banner as before. "Stop" is new in the
+catalogue (ten languages); the rest were the iPhone's.
+
+Not yet built or run on a Mac: no Xcode here; the Swift parses. The web
+app's translation ran in Chromium against a stand-in computer.
