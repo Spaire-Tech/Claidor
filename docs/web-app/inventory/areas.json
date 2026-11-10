@@ -82,9 +82,9 @@
    "mac/Simeon/SimeonMacApp.swift",
    "mac/Simeon/WindowChrome.swift"
   ],
-  "mac_lines": 1358,
+  "mac_lines": 1398,
   "core_lines": 408,
-  "views": 4,
+  "views": 5,
   "files_needing_a_mac": 5,
   "strings": 20,
   "strings_in_old_web_app": 12,
@@ -119,7 +119,7 @@
    "mac/Simeon/SidebarState.swift",
    "mac/Simeon/StarterPackSheet.swift"
   ],
-  "mac_lines": 4471,
+  "mac_lines": 4440,
   "core_lines": 2133,
   "views": 59,
   "files_needing_a_mac": 9,
@@ -220,7 +220,7 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 4025,
+  "mac_lines": 4008,
   "core_lines": 1688,
   "views": 60,
   "files_needing_a_mac": 3,
@@ -395,7 +395,7 @@
    "mac/Simeon/PluginsModel.swift",
    "mac/Simeon/PluginsWindow.swift"
   ],
-  "mac_lines": 3257,
+  "mac_lines": 3247,
   "core_lines": 3865,
   "views": 50,
   "files_needing_a_mac": 3,
@@ -428,6 +428,7 @@
    "ios/SimeonCore/Sources/SimeonCore/ApplePlans.swift",
    "ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift",
    "ios/SimeonCore/Sources/SimeonCore/Feedback.swift",
+   "ios/SimeonCore/Sources/SimeonCore/FormEntry.swift",
    "ios/SimeonCore/Sources/SimeonCore/FreeMonth.swift",
    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift",
    "ios/SimeonCore/Sources/SimeonCore/Upgrade.swift",
@@ -441,12 +442,12 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 4459,
-  "core_lines": 2944,
+  "mac_lines": 4645,
+  "core_lines": 3245,
   "views": 64,
   "files_needing_a_mac": 9,
-  "strings": 385,
-  "strings_in_old_web_app": 160,
+  "strings": 394,
+  "strings_in_old_web_app": 161,
   "box_commands": [
    "claudeCodeSignInCancel",
    "claudeCodeSignInFinish",

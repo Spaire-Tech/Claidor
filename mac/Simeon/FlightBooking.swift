@@ -163,24 +163,7 @@ struct MacTravellersSheet: View {
         .padding(.bottom, 24)
       }
       VStack(spacing: 0) {
-        Button {
-          Task { await send() }
-        } label: {
-          HStack(spacing: 8) {
-            if sending { ProgressView().controlSize(.small).tint(.white) }
-            Text(FlightPassengersCard.next)
-          }
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(maxWidth: .infinity)
-          .frame(height: 36)
-        }
-        .prominentGlassButton()
-        .controlSize(.large)
-        .tint(look.yours)
-        .keyboardShortcut(.defaultAction)
-        .handCursor()
-        .disabled(sending)
+        SheetWideButton(title: FlightPassengersCard.next, busy: sending) { Task { await send() } }
       }
       .padding(.horizontal, 32)
       .padding(.top, 12)

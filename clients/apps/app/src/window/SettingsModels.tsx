@@ -609,7 +609,9 @@ function ChatGPTConnectSheet({
 
   const tryAgain = (
     <div className="models-sheet-end">
-      <SettingsPill title={t('Try Again')} onClick={again} />
+      <button type="button" className="models-wide" onClick={again}>
+        {t('Try Again')}
+      </button>
     </div>
   )
 
@@ -729,7 +731,9 @@ function ClaudeConnectSheet({
 
   const tryAgain = (
     <div className="models-sheet-end">
-      <SettingsPill title={t('Try Again')} onClick={again} />
+      <button type="button" className="models-wide" onClick={again}>
+        {t('Try Again')}
+      </button>
     </div>
   )
 
@@ -757,30 +761,33 @@ function ClaudeConnectSheet({
             />
           </ConnectStep>
           <ConnectStep number={2} title={t('Paste the code Claude shows')}>
-            <span className="models-code-row">
-              <input
-                className="models-code-field"
-                value={code}
-                placeholder={t('Code')}
-                aria-label={t('Code')}
-                autoComplete="off"
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                disabled={finishing}
-                onChange={(event) => setCode(event.target.value)}
-              />
-              {finishing ? (
-                <span className="settings-spinner" role="progressbar" />
-              ) : (
-                <SettingsPill
-                  title={t('Connect')}
-                  disabled={code.trim() === ''}
-                  onClick={() => void finish()}
-                />
-              )}
-            </span>
+            {/* The rows' box (the Credentials Store's), its ground darker than the sheet's in dark mode, so where to paste is plain; the keys in it at once, so ⌘V or Ctrl+V pastes the code. */}
+            <input
+              className="models-code-field"
+              value={code}
+              placeholder={t('Code')}
+              aria-label={t('Code')}
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              autoFocus
+              disabled={finishing}
+              onChange={(event) => setCode(event.target.value)}
+            />
           </ConnectStep>
+          <div className="models-sheet-end">
+            <button
+              type="submit"
+              className="models-wide"
+              disabled={!finishing && code.trim() === ''}
+            >
+              {finishing && (
+                <span className="models-wheel" aria-hidden="true" />
+              )}
+              {t('Connect')}
+            </button>
+          </div>
         </form>
       )
     if (model.problem !== undefined)
@@ -841,7 +848,7 @@ function ConnectedEnd({
         </span>
       </div>
       <div className="models-sheet-end">
-        <button type="button" className="models-done" onClick={close}>
+        <button type="button" className="models-wide" onClick={close}>
           {t('Done')}
         </button>
       </div>

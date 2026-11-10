@@ -249,8 +249,8 @@ public struct CredentialDraft: Equatable, Sendable {
 
   private func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-  /** Whether anything is written yet (Save stays off until then). */
-  public var isEmpty: Bool { fields.allSatisfy { trimmed($0.value).isEmpty } }
+  /** Whether anything is written yet (Save stays off until then); a contact's country, chosen for the person, is nothing written. */
+  public var isEmpty: Bool { fields.allSatisfy { trimmed($0.value).isEmpty || (kind == .contact && $0.key == "country") } }
 
   /** The first thing to fix before it is saved, as the server would refuse it; nil when it can be. */
   public var problem: String? {
@@ -260,15 +260,26 @@ public struct CredentialDraft: Equatable, Sendable {
       if trimmed(website).isEmpty && trimmed(name).isEmpty { return L10n.text("Add the website.") }
       if trimmed(username).isEmpty && password.isEmpty { return L10n.text("Add the username or the password.") }
     case .contact:
-      let details = fields.filter { $0.key != "name" && $0.key != "hints" }
+      let details = fields.filter { !["name", "hints", "country"].contains($0.key) }
       if details.allSatisfy({ trimmed($0.value).isEmpty }) { return L10n.text("Add at least one detail.") }
+      let mail = trimmed(email)
+      if !mail.isEmpty && !Self.looksLikeEmail(mail) { return L10n.text("Check the email.") }
     case .card:
       if !(hasSavedNumber && trimmed(number).isEmpty) && !CardNumber.isValid(number) { return L10n.text("Check the card number.") }
       if CardNumber.expiry(expiry) == nil { return L10n.text("Write the expiry like 08/28.") }
+      if CardNumber.isExpired(expiry) { return L10n.text("This card has expired.") }
       let code = trimmed(securityCode)
       if !code.isEmpty && !(code.allSatisfy(\.isNumber) && (3...4).contains(code.count)) { return L10n.text("The security code is 3 or 4 digits.") }
     }
     return nil
+  }
+
+  /** One @, something before it, a dot in what follows, no spaces: name@example.com. */
+  static func looksLikeEmail(_ text: String) -> Bool {
+    let parts = text.split(separator: "@", omittingEmptySubsequences: false)
+    guard parts.count == 2, !parts[0].isEmpty, !text.contains(where: \.isWhitespace) else { return false }
+    let domain = parts[1]
+    return domain.contains(".") && !domain.hasPrefix(".") && !domain.hasSuffix(".")
   }
 
   /** A new entry's body: every field of its kind. */

@@ -839,6 +839,48 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the store's forms written for the person; one wide button; Connect lighter
+
+The founder: "Help the user. dont confuse him. have the card number be
+number only. separate them … automatically, … add the / automatically. have
+the security code hidden, and a see icon … billing adress doesnt work. it
+stays at none … do the same for contacts. add flags, add area code like +1
+us"; "in dark mode you can see the save button … why you cant see anything
+in light mode?"; on Connect Claude: "this is not our button style … that
+iframe need to be ligher in dark mode, cause … the writing box is dark".
+
+- **Done (core, then the web the same: `FormEntry.swift`,
+  `core/formEntry.ts`):** a card's number is digits only, grouped as the
+  card prints them (4-4-4-4; American Express 4-6-5) and no longer than its
+  network's, its mark as soon as the first digits name it, red once whole
+  and not a card's; the expiry writes its own slash ("4" is "04/", no 13th
+  month); the security code is digits only, as long as the card's, hidden
+  with its own eye; an expired card and an email that isn't one are said
+  before Save. A phone has its country's flag and code in a menu and is
+  grouped as that country writes it (kept as "+33 6 12 34 56 78"; a home 0
+  left out); the country comes first in the address, with flags, and a new
+  contact info starts in the person's own country. Billing address: with
+  no saved address there was nothing to choose; now Add Address opens the
+  contact form over the card's (the name on the card in it) and the address
+  saved there is the card's. A problem found at Save is scrolled into view.
+- **Done (one wide button):** the sheets' wide button is one view on the Mac
+  (`SheetWideButton`, in all eight sheets): off, its words are the grey on
+  the grey in light and dark alike (it was white on light grey). The web's
+  Save and Connect sheets the same.
+- **Done (Connect Claude and ChatGPT, Mac and web):** the sheet is the rows'
+  grey, a step lighter than the window in dark mode, so the code's box (the
+  store's box, the window's ground) stands out; Connect, Done and Try Again
+  are the sheets' wide button; the code's box has the keys as it shows. The
+  iPhone's are iOS's grouped rows and stay.
+- **Checked:** the core's tests (16, in its own package on Linux), the web's
+  (1234), typecheck, lint, the build's check, translations; in Chromium,
+  light and dark, a card typed key by key (letters dropped, a digit deleted
+  and typed in the middle, the code cut at 3 and masked), an address added
+  from the card and set as its billing, a French number, an email refused,
+  Connect Claude's sheet; the Swift parsed.
+- **Not checked:** the Mac and iPhone apps built and run (the Swift was only
+  parsed; no Xcode here).
+
 ### 9 November 2026: paying with a card saved in the Credentials Store
 
 The founder: "actual cards there that the agent can use to make

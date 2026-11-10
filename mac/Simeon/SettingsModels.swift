@@ -385,7 +385,7 @@ struct MacChatGPTConnectSheet: View {
     }
     .padding(28)
     .frame(width: 460)
-    .background(look.groupedGround)
+    .background(look.groupedRow)
     .task(id: attempt) { await run() }
   }
 
@@ -437,7 +437,8 @@ struct MacChatGPTConnectSheet: View {
             .textSelection(.enabled)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(look.groupedRow))
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(look.groupedGround))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1))
           SettingsPill(title: copied ? String(localized: "Copied") : String(localized: "Copy"), look: look) {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(signIn.userCode, forType: .string)
@@ -456,27 +457,13 @@ struct MacChatGPTConnectSheet: View {
   }
 
   private func tryAgain(_ look: Look) -> some View {
-    HStack {
-      Spacer()
-      SettingsPill(title: String(localized: "Try Again"), look: look) { attempt += 1 }
-    }
+    SheetWideButton(title: String(localized: "Try Again")) { attempt += 1 }
+      .padding(.top, 4)
   }
 
   private func footer(_ look: Look, title: String) -> some View {
-    HStack {
-      Spacer()
-      Button { dismiss() } label: {
-        Text(title)
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(minWidth: 96)
-          .frame(height: 32)
-      }
-      .prominentGlassButton()
-      .tint(look.yours)
-      .keyboardShortcut(.defaultAction)
-      .handCursor()
-    }
+    SheetWideButton(title: title) { dismiss() }
+      .padding(.top, 4)
   }
 
   /** A code, then the wait for the person's approval; a new attempt starts afresh. Closing the sheet cancels it. */
@@ -511,6 +498,7 @@ struct MacClaudeConnectSheet: View {
   @State private var finishing = false
   @State private var outcome: ClaudeConnect?
   @State private var attempt = 0
+  @FocusState private var codeFocused: Bool
 
   var body: some View {
     let look = Look(scheme)
@@ -529,7 +517,7 @@ struct MacClaudeConnectSheet: View {
     }
     .padding(28)
     .frame(width: 460)
-    .background(look.groupedGround)
+    .background(look.groupedRow)
     .task(id: attempt) { await start() }
   }
 
@@ -546,20 +534,8 @@ struct MacClaudeConnectSheet: View {
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
       }
-      HStack {
-        Spacer()
-        Button { dismiss() } label: {
-          Text("Done")
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .frame(minWidth: 96)
-            .frame(height: 32)
-        }
-        .prominentGlassButton()
-        .tint(look.yours)
-        .keyboardShortcut(.defaultAction)
-        .handCursor()
-      }
+      SheetWideButton(title: String(localized: "Done")) { dismiss() }
+        .padding(.top, 4)
     case .some(.refused), .some(.failed):
       Text(outcome == .refused ? String(localized: "That code didn't work. Try again.") : (model.problem ?? String(localized: "That code didn't work. Try again.")))
         .font(PanelType.row)
@@ -587,30 +563,29 @@ struct MacClaudeConnectSheet: View {
         SettingsPill(title: String(localized: "Open"), look: look) { NSWorkspace.shared.open(signIn.url) }
       }
       MacConnectStep(number: 2, title: String(localized: "Paste the code Claude shows"), look: look) {
-        HStack(spacing: 12) {
-          TextField(String(localized: "Code"), text: $code)
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: 13, design: .monospaced))
-            .frame(width: 240)
-            .disabled(finishing)
-            .onSubmit { Task { await finish() } }
-          if finishing {
-            ProgressView().controlSize(.small)
-          } else {
-            SettingsPill(title: String(localized: "Connect"), disabled: code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, look: look) {
-              Task { await finish() }
-            }
-          }
-        }
+        // The rows' box (the Credentials Store's), its ground darker than the sheet's in dark mode, so where to paste is plain.
+        TextField(String(localized: "Code"), text: $code, prompt: Text("Code").foregroundStyle(look.inkTertiary))
+          .textFieldStyle(.plain)
+          .labelsHidden()
+          .font(.system(size: 13, design: .monospaced))
+          .foregroundStyle(look.ink)
+          .focused($codeFocused)
+          .disabled(finishing)
+          .onSubmit { Task { await finish() } }
+          .storeBox(width: nil, focused: codeFocused, look: look)
       }
+      SheetWideButton(title: String(localized: "Connect"), busy: finishing, enabled: finishing || !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+        Task { await finish() }
+      }
+      .padding(.top, 4)
     }
+    // Back from Claude's page with its code copied, ⌘V pastes it at once.
+    .onAppear { codeFocused = true }
   }
 
   private func tryAgain(_ look: Look) -> some View {
-    HStack {
-      Spacer()
-      SettingsPill(title: String(localized: "Try Again"), look: look) { attempt += 1 }
-    }
+    SheetWideButton(title: String(localized: "Try Again")) { attempt += 1 }
+      .padding(.top, 4)
   }
 
   /** Claude Code's sign-in started afresh on the computer. */
@@ -654,7 +629,7 @@ private struct MacConnectStep<Content: View>: View {
         .font(.system(size: 12, weight: .medium))
         .foregroundStyle(look.ink)
         .frame(width: 22, height: 22)
-        .background(Circle().fill(look.groupedRow))
+        .background(Circle().fill(look.groupedGround))
       VStack(alignment: .leading, spacing: 10) {
         Text(title)
           .font(PanelType.row)

@@ -187,6 +187,13 @@ struct CredentialEditor: View {
   @State private var opened: CredentialDraft
   @State private var passwordRead = false
   @State private var showsPassword = false
+  /** A card's security code shown (its own eye: hidden until asked, even while it's typed). */
+  @State private var showsCode = false
+  /** The address sheet over this one, opened from Billing address. */
+  @State private var addingAddress: CredentialDraft?
+  /** The phone's country and the digits after its code, kept as "+33 6 12 34 56 78". */
+  @State private var phoneCountry: String
+  @State private var phoneNational: String
   @State private var saving = false
   @State private var askingDelete = false
   @State private var problem: String?
@@ -197,6 +204,9 @@ struct CredentialEditor: View {
     let start = CredentialDraft(entry)
     _draft = State(initialValue: start)
     _opened = State(initialValue: start)
+    let phone = PhoneEntry.split(start.phone, preferring: start.country.isEmpty ? Countries.here : start.country)
+    _phoneCountry = State(initialValue: phone.country)
+    _phoneNational = State(initialValue: phone.national)
   }
 
   init(model: CredentialsStoreModel, newKind: StoredCredential.Kind) {
@@ -204,14 +214,20 @@ struct CredentialEditor: View {
   }
 
   /** A new entry, already filled (from the chat's store card). */
-  init(model: CredentialsStoreModel, filled start: CredentialDraft, onSaved: ((StoredCredential) -> Void)? = nil) {
+  init(model: CredentialsStoreModel, filled: CredentialDraft, onSaved: ((StoredCredential) -> Void)? = nil) {
     self.model = model
     self.onSaved = onSaved
+    var start = filled
+    // A new contact info is in the person's own country until another is chosen.
+    if start.kind == .contact, start.country.isEmpty { start.country = Countries.here }
     _entry = State(initialValue: nil)
     _draft = State(initialValue: start)
     _opened = State(initialValue: start)
     _passwordRead = State(initialValue: true)
     _showsPassword = State(initialValue: true)
+    let phone = PhoneEntry.split(start.phone, preferring: start.country.isEmpty ? Countries.here : start.country)
+    _phoneCountry = State(initialValue: phone.country)
+    _phoneNational = State(initialValue: phone.national)
   }
 
   private var isLogin: Bool { draft.kind == .login }
@@ -227,79 +243,85 @@ struct CredentialEditor: View {
   }
 
   var body: some View {
-    Form {
-      Section {
-        CredentialField(label: String(localized: "Name"), text: $draft.name, prompt: String(localized: "Optional"))
-        if isLogin {
-          CredentialField(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com")
-            .keyboardType(.URL).textContentType(.URL).typedAsIs().autocorrectionDisabled()
-          CredentialField(label: String(localized: "Username or email"), text: $draft.username, prompt: String(localized: "Required"))
-            .textContentType(.username).keyboardType(.emailAddress).typedAsIs().autocorrectionDisabled()
-          passwordRow
-        } else if isCard {
-          cardNumberRow
-          CredentialField(label: String(localized: "Expiry"), text: $draft.expiry, prompt: "MM/YY").keyboardType(.numbersAndPunctuation)
-          securityCodeRow
-          CredentialField(label: String(localized: "Name on card"), text: $draft.cardholder, prompt: String(localized: "Optional")).textContentType(.name)
-        } else {
-          CredentialField(label: String(localized: "Full name"), text: $draft.fullName, prompt: String(localized: "Optional")).textContentType(.name)
-          CredentialField(label: String(localized: "Email"), text: $draft.email, prompt: String(localized: "Optional"))
-            .textContentType(.emailAddress).keyboardType(.emailAddress).typedAsIs().autocorrectionDisabled()
-          CredentialField(label: String(localized: "Phone"), text: $draft.phone, prompt: String(localized: "Optional")).textContentType(.telephoneNumber).keyboardType(.phonePad)
-        }
-      }
-      .listRowBackground(Ink.groupedRow)
-      if isCard {
-        // The billing address: one of the person's contact info, by its address.
-        let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
+    ScrollViewReader { proxy in
+      Form {
         Section {
-          Picker("Billing address", selection: $draft.billingId) {
-            Text("None").tag("")
-            ForEach(addresses) { contact in Text("\(contact.title) · \(contact.addressLine)").tag(contact.id) }
-          }
-        }
-        .listRowBackground(Ink.groupedRow)
-      }
-      if !isLogin && !isCard {
-        Section {
-          CredentialField(label: String(localized: "Address"), text: $draft.addressLine1, prompt: String(localized: "Optional")).textContentType(.streetAddressLine1)
-          CredentialField(label: String(localized: "Address line 2"), text: $draft.addressLine2, prompt: String(localized: "Optional")).textContentType(.streetAddressLine2)
-          CredentialField(label: String(localized: "City"), text: $draft.city, prompt: String(localized: "Optional")).textContentType(.addressCity)
-          CredentialField(label: String(localized: "State or region"), text: $draft.region, prompt: String(localized: "Optional")).textContentType(.addressState)
-          CredentialField(label: String(localized: "Postal code"), text: $draft.postalCode, prompt: String(localized: "Optional")).textContentType(.postalCode)
-          Picker("Country", selection: $draft.country) {
-            Text("Choose").tag("")
-            ForEach(CountryName.all) { country in Text(country.name).tag(country.code) }
-          }
-        } header: {
-          Text("Address")
-        }
-        .listRowBackground(Ink.groupedRow)
-      }
-      Section {
-        TextField("Tell Simeon when to use this entry", text: $draft.hints, axis: .vertical)
-          .lineLimit(2...6)
-      } header: {
-        Text("Hints")
-      } footer: {
-        if let savedBy = entry?.savedBy { Text("Saved by \(savedBy) at a sign-up.") }
-      }
-      .listRowBackground(Ink.groupedRow)
-      if let problem {
-        Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
-          .listRowBackground(Ink.groupedRow)
-      }
-      if entry != nil {
-        Section {
-          Button(role: .destructive) { askingDelete = true } label: {
-            HStack(spacing: 10) {
-              Image(systemName: "trash")
-              Text(isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"))
+          CredentialField(label: String(localized: "Name"), text: $draft.name, prompt: String(localized: "Optional"))
+          if isLogin {
+            CredentialField(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com")
+              .keyboardType(.URL).textContentType(.URL).typedAsIs().autocorrectionDisabled()
+            CredentialField(label: String(localized: "Username or email"), text: $draft.username, prompt: String(localized: "Required"))
+              .textContentType(.username).keyboardType(.emailAddress).typedAsIs().autocorrectionDisabled()
+            passwordRow
+          } else if isCard {
+            cardNumberRow
+            LabeledContent("Expiry") {
+              EntryField(label: String(localized: "Expiry"), value: $draft.expiry, prompt: "MM/YY", kept: { CardNumber.typedExpiry(old: $0, new: $1) },
+                         keyboard: .numberPad, content: .creditCardExpiration, ink: CardNumber.isExpired(draft.expiry) ? Ink.danger : nil)
             }
-            .foregroundStyle(Ink.danger)
+            securityCodeRow
+            CredentialField(label: String(localized: "Name on card"), text: $draft.cardholder, prompt: String(localized: "Optional")).textContentType(.creditCardName)
+          } else {
+            CredentialField(label: String(localized: "Full name"), text: $draft.fullName, prompt: String(localized: "Optional")).textContentType(.name)
+            CredentialField(label: String(localized: "Email"), text: $draft.email, prompt: "name@example.com")
+              .textContentType(.emailAddress).keyboardType(.emailAddress).typedAsIs().autocorrectionDisabled()
+            phoneRow
           }
         }
         .listRowBackground(Ink.groupedRow)
+        if isCard {
+          billingSection
+        }
+        if !isLogin && !isCard {
+          // The country first: the rest of the address is written as it's written there.
+          Section {
+            Picker("Country", selection: $draft.country) {
+              Text("Choose").tag("")
+              ForEach(FormCountries.all) { country in Text(verbatim: "\(country.flag)  \(country.name)").tag(country.code) }
+            }
+            .pickerStyle(.navigationLink)
+            CredentialField(label: String(localized: "Address"), text: $draft.addressLine1, prompt: String(localized: "Optional")).textContentType(.streetAddressLine1)
+            CredentialField(label: String(localized: "Address line 2"), text: $draft.addressLine2, prompt: String(localized: "Optional")).textContentType(.streetAddressLine2)
+            CredentialField(label: String(localized: "City"), text: $draft.city, prompt: String(localized: "Optional")).textContentType(.addressCity)
+            CredentialField(label: String(localized: "State or region"), text: $draft.region, prompt: String(localized: "Optional")).textContentType(.addressState)
+            LabeledContent("Postal code") {
+              EntryField(label: String(localized: "Postal code"), value: $draft.postalCode, prompt: String(localized: "Optional"), kept: { $1.uppercased() },
+                         content: .postalCode)
+            }
+          } header: {
+            Text("Address")
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
+        Section {
+          TextField("Tell Simeon when to use this entry", text: $draft.hints, axis: .vertical)
+            .lineLimit(2...6)
+        } header: {
+          Text("Hints")
+        } footer: {
+          if let savedBy = entry?.savedBy { Text("Saved by \(savedBy) at a sign-up.") }
+        }
+        .listRowBackground(Ink.groupedRow)
+        if let problem {
+          Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger).id("problem") }
+            .listRowBackground(Ink.groupedRow)
+        }
+        if entry != nil {
+          Section {
+            Button(role: .destructive) { askingDelete = true } label: {
+              HStack(spacing: 10) {
+                Image(systemName: "trash")
+                Text(isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"))
+              }
+              .foregroundStyle(Ink.danger)
+            }
+          }
+          .listRowBackground(Ink.groupedRow)
+        }
+      }
+      // What to fix is brought into view, never left under the fold.
+      .onChange(of: problem) { _, now in
+        if now != nil { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("problem", anchor: .bottom) } }
       }
     }
     .groupedGround()
@@ -320,6 +342,17 @@ struct CredentialEditor: View {
       }
     }
     .interactiveDismissDisabled(saving || (entry == nil && !draft.isEmpty))
+    .onChange(of: phoneCountry) { _, _ in writePhone() }
+    .onChange(of: phoneNational) { _, _ in writePhone() }
+    // A phone not written yet follows the address's country.
+    .onChange(of: draft.country) { _, country in if phoneNational.isEmpty, !country.isEmpty { phoneCountry = country } }
+    .sheet(isPresented: Binding(get: { addingAddress != nil }, set: { if !$0 { addingAddress = nil } })) {
+      if let address = addingAddress {
+        NavigationStack {
+          CredentialEditor(model: model, filled: address) { saved in draft.billingId = saved.id }
+        }
+      }
+    }
     .alert(isLogin ? String(localized: "Delete this login?") : isCard ? String(localized: "Delete this card?") : String(localized: "Delete this contact info?"), isPresented: $askingDelete) {
       Button("Cancel", role: .cancel) {}
       Button("Delete", role: .destructive) {
@@ -357,44 +390,140 @@ struct CredentialEditor: View {
     }
   }
 
-  /** A card's number, its network's mark at its end; a saved one shows its last four until the eye is pressed and Face ID allows it, which shows the number and the code. */
+  /**
+   * A card's number: digits only, grouped as the card prints them while
+   * they're typed, its network's mark at its end as soon as the first digits
+   * name it, red once it's whole and can't be a card's. A saved one shows its
+   * last four until the eye is pressed and Face ID allows it.
+   */
   private var cardNumberRow: some View {
     LabeledContent("Card number") {
       HStack(spacing: 10) {
         let saved = entry?.last4 ?? ""
-        TextField("Card number", text: $draft.number, prompt: Text(saved.isEmpty ? String(localized: "Required") : "•••• \(saved)"))
-          .multilineTextAlignment(.trailing)
-          .keyboardType(.numberPad)
-          .textContentType(.creditCardNumber)
-          .monospacedDigit()
         let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
-        if !brand.isEmpty { PaymentMark(brand: brand).scaleEffect(0.66).frame(width: 29, height: 20) }
+        let whole = draft.number.count == CardNumber.maxDigits(brand)
+        EntryField(
+          label: String(localized: "Card number"),
+          value: $draft.number,
+          prompt: saved.isEmpty ? "1234 5678 9012 3456" : "•••• \(saved)",
+          shown: CardNumber.grouped,
+          kept: { CardNumber.typed(TypedDigits.of(before: $0, after: $1)) },
+          secure: entry != nil && passwordRead && !showsPassword,
+          keyboard: .numberPad,
+          content: .creditCardNumber,
+          ink: whole && !CardNumber.isValid(draft.number) ? Ink.danger : nil
+        )
+        if !brand.isEmpty { PaymentMark(brand: brand).scaleEffect(0.66).frame(width: 29, height: 20).transition(.opacity) }
         if entry != nil {
-          Button { Task { await revealCard() } } label: {
-            Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 15)).foregroundStyle(Ink.secondary)
-          }
-          .buttonStyle(.borderless)
-          .accessibilityLabel(showsPassword ? "Hide Card" : "Show Card")
+          eye(shown: showsPassword, show: String(localized: "Show Card"), hide: String(localized: "Hide Card")) { Task { await revealCard() } }
         }
+      }
+      .animation(.easeOut(duration: 0.15), value: draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number))
+    }
+  }
+
+  /** The security code: digits only, as many as the card's (4 on American Express), hidden until its eye is pressed. */
+  private var securityCodeRow: some View {
+    LabeledContent("Security code") {
+      HStack(spacing: 10) {
+        let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+        let hidden = entry?.hasSecurityCode == true && !passwordRead
+        EntryField(
+          label: String(localized: "Security code"),
+          value: $draft.securityCode,
+          prompt: hidden ? "•••" : brand == "amex" ? "1234" : "123",
+          kept: { CardNumber.typedCode($1, brand: brand) },
+          secure: !showsCode,
+          keyboard: .numberPad,
+          content: .creditCardSecurityCode
+        )
+        eye(shown: showsCode, show: String(localized: "Show Security Code"), hide: String(localized: "Hide Security Code")) { Task { await toggleCode() } }
       }
     }
   }
 
-  /** The security code: dots until shown, as the password's. */
-  private var securityCodeRow: some View {
-    LabeledContent("Security code") {
-      Group {
-        let hidden = entry?.hasSecurityCode == true && !passwordRead
-        if showsPassword {
-          TextField("Security code", text: $draft.securityCode, prompt: Text("123"))
-        } else {
-          SecureField("Security code", text: $draft.securityCode, prompt: Text(hidden ? "•••" : "123"))
+  /** The eye at a hidden field's end: shows it, or hides it again. */
+  private func eye(shown: Bool, show: String, hide: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: shown ? "eye.slash" : "eye").font(.system(size: 15)).foregroundStyle(Ink.secondary).frame(width: 22)
+    }
+    .buttonStyle(.borderless)
+    .accessibilityLabel(shown ? hide : show)
+  }
+
+  /** The code shown; a saved card's is read first, after Face ID. */
+  private func toggleCode() async {
+    if showsCode { showsCode = false; return }
+    if entry?.hasSecurityCode == true, !passwordRead {
+      await revealCard()
+      guard passwordRead else { return }
+    }
+    showsCode = true
+  }
+
+  /**
+   * The billing address: one of the person's contact info, by its address,
+   * or a new one written here (with no address saved there was nothing to
+   * choose). Add Address opens the contact info's form over this one, the
+   * name on the card already in it, and the address saved there is the card's.
+   */
+  @ViewBuilder
+  private var billingSection: some View {
+    let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
+    Section {
+      if !addresses.isEmpty {
+        Picker("Billing address", selection: $draft.billingId) {
+          Text("None").tag("")
+          ForEach(addresses) { contact in Text(verbatim: "\(contact.title) · \(contact.addressLine)").tag(contact.id) }
         }
       }
-      .multilineTextAlignment(.trailing)
-      .keyboardType(.numberPad)
-      .monospacedDigit()
+      CredentialAddRow(title: String(localized: "Add Address")) {
+        var address = CredentialDraft(kind: .contact)
+        address.fullName = draft.cardholder.trimmingCharacters(in: .whitespaces)
+        address.country = Countries.here
+        addingAddress = address
+      }
+    } header: {
+      if addresses.isEmpty { Text("Billing address") }
+    } footer: {
+      Text("The address your bank has for this card.")
     }
+    .listRowBackground(Ink.groupedRow)
+  }
+
+  /** The phone: its country's flag and code in a menu, then the number grouped as that country writes it. */
+  private var phoneRow: some View {
+    LabeledContent("Phone") {
+      HStack(spacing: 8) {
+        Menu {
+          ForEach(FormCountries.all) { country in
+            Button { phoneCountry = country.code } label: { Text(verbatim: "\(country.flag)  \(country.name)  \(country.dialLabel)") }
+          }
+        } label: {
+          HStack(spacing: 3) {
+            Text(verbatim: Countries.flag(phoneCountry))
+            Text(verbatim: Countries.country(phoneCountry)?.dialLabel ?? "+").monospacedDigit().foregroundStyle(Color.primary)
+            Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary)
+          }
+        }
+        .accessibilityLabel("Country code")
+        EntryField(
+          label: String(localized: "Phone"),
+          value: $phoneNational,
+          prompt: PhoneEntry.formatted(phoneCountry == "US" || phoneCountry == "CA" ? "4155550132" : "612345678", country: phoneCountry),
+          shown: { PhoneEntry.formatted($0, country: phoneCountry) },
+          kept: { PhoneEntry.national(TypedDigits.of(before: $0, after: $1), country: phoneCountry) },
+          keyboard: .phonePad,
+          content: .telephoneNumber
+        )
+      }
+    }
+  }
+
+  /** The phone as it's kept: its country's code, then its digits as that country groups them. */
+  private func writePhone() {
+    let written = PhoneEntry.joined(country: phoneCountry, national: phoneNational)
+    if written != draft.phone { draft.phone = written }
   }
 
   private func revealCard() async {
@@ -451,6 +580,60 @@ struct CredentialEditor: View {
       opened = now
       passwordRead = isCard ? cardKnown : known
       problem = nil
+    }
+  }
+}
+
+/** Every country with its flag and phone code, by its name in the person's language, read once. */
+enum FormCountries {
+  static let all = Countries.all()
+}
+
+/**
+ * A field that writes what's typed as it should be (the Mac's
+ * `MacStoreEntryBox`; the founder, 10 November 2026: "Help the user. dont
+ * confuse him"): a card's number in its groups, its expiry with its slash, a
+ * phone in its country's groups, a postal code in capitals. What's kept
+ * (`value`) and what's shown (`shown(value)`) are apart; every keystroke,
+ * what's kept is read from the field and the field written again from it.
+ */
+private struct EntryField: View {
+  let label: String
+  @Binding var value: String
+  var prompt: String
+  var shown: (String) -> String = { $0 }
+  var kept: (_ before: String, _ after: String) -> String = { $1 }
+  var secure = false
+  var keyboard: UIKeyboardType = .default
+  var content: UITextContentType? = nil
+  var ink: Color? = nil
+  @State private var text = ""
+
+  var body: some View {
+    Group {
+      if secure {
+        SecureField(label, text: $text, prompt: Text(prompt))
+      } else {
+        TextField(label, text: $text, prompt: Text(prompt))
+      }
+    }
+    .multilineTextAlignment(.trailing)
+    .keyboardType(keyboard)
+    .textContentType(content)
+    .typedAsIs()
+    .autocorrectionDisabled()
+    .monospacedDigit()
+    .foregroundStyle(ink ?? Color.primary)
+    .onAppear { text = shown(value) }
+    .onChange(of: text) { before, after in
+      let keep = kept(before, after)
+      let show = shown(keep)
+      if show != after { text = show }
+      if keep != value { value = keep }
+    }
+    // Written from elsewhere (a saved card read after Face ID): shown as it should be.
+    .onChange(of: value) { _, now in
+      if kept(text, text) != now { text = shown(now) }
     }
   }
 }

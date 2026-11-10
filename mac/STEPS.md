@@ -677,6 +677,19 @@ checked in the reference window. Pushed:
   (`MacCredentialEdit.filled`); saved, "Saved" in green as "Connected"
   (`answerStoreEntry`). A note of the same shape says when a saved login
   was used or saved.
+- **The store's forms written for the person** (10 November 2026, the
+  founder: "Help the user. dont confuse him"). `MacStoreEntryBox` writes
+  each field as it should be while it's typed: a card's number in its
+  groups with its mark, the expiry's slash, the security code hidden behind
+  its own eye, a phone after its country's flag and code (a menu of every
+  country), a postal code in capitals. The address's Country comes first,
+  with flags. Billing address offers Add Address, the contact info's sheet
+  over the card's. A problem found at Save is scrolled into view.
+- **One wide button in every sheet** (10 November 2026): `SheetWideButton`
+  (`Glass.swift`), white on the blue; off, the grey words on the grey, read
+  in light mode too ("why you cant see anything in light mode?"). Connect
+  Claude and ChatGPT use it, on the rows' grey, the code typed in the
+  store's box.
 - **A saved card pays at a checkout** (9 November 2026). The checkout card
   (`PurchaseCardView`, `Cards.swift`) names the saved card ("Travel •••• 4242"
   with its network's mark) over "Credentials Store", with no wallet's mark

@@ -29,6 +29,46 @@ extension View {
 }
 
 /**
+ * A sheet's one wide button (Save, Create, Send, Connect, Done), the same in
+ * every sheet: 36 high across the sheet, its words 14 semibold, white on the
+ * blue in glass. Until it can be pressed its words are the grey on the grey,
+ * read in light and dark alike (the founder, 10 November 2026: "in dark mode
+ * you can see the save button … why you cant see anything in light mode?";
+ * white on the light grey could not be read). While it works the blue stays
+ * under the spinner, and a second press does nothing.
+ */
+struct SheetWideButton: View {
+  let title: String
+  var busy = false
+  var enabled = true
+  var shortcut: KeyboardShortcut? = .defaultAction
+  let action: () -> Void
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    let look = Look(scheme)
+    Button {
+      if !busy { action() }
+    } label: {
+      HStack(spacing: 8) {
+        if busy { ProgressView().controlSize(.small).tint(.white) }
+        Text(title)
+      }
+      .font(.system(size: 14, weight: .semibold))
+      .foregroundStyle(enabled ? Color.white : look.inkSecondary)
+      .frame(maxWidth: .infinity)
+      .frame(height: 36)
+    }
+    .prominentGlassButton()
+    .controlSize(.large)
+    .tint(look.yours)
+    .keyboardShortcut(shortcut)
+    .handCursor()
+    .disabled(!enabled)
+  }
+}
+
+/**
  * A round button in glass, the window's own (the sidebar's Search and New
  * chat; the founder, 21 October 2026: "look at the whole mac app, and how
  * the buttons are design"): its symbol at 40% of its side, regular, in the

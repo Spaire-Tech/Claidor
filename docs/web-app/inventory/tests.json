@@ -112,6 +112,10 @@
   "tests": 7
  },
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/FormEntryTests.swift",
+  "tests": 9
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/FreeMonthTests.swift",
   "tests": 3
  },

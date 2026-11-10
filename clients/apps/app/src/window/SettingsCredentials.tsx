@@ -23,9 +23,12 @@
 // managers' marks (review of 2 November 2026).
 
 import {
+  type InputHTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -38,6 +41,7 @@ import {
   type StoredCredential,
   addressLine,
   cardBrand,
+  cardNumberValid,
   credentialSubtitle,
   credentialTitle,
   draftOf,
@@ -45,11 +49,29 @@ import {
   iconSite,
   newDraft,
 } from '../core/credentialsStore'
+import {
+  allCountries,
+  cardGrouped,
+  cardIsExpired,
+  cardMaxDigits,
+  cardTyped,
+  cardTypedCode,
+  cardTypedExpiry,
+  countryFlag,
+  country as countryOf,
+  hereCountry,
+  phoneFormatted,
+  phoneJoined,
+  phoneNational,
+  phoneSplit,
+  typedDigits,
+} from '../core/formEntry'
+import { currentLanguage } from '../core/language'
 import type { AppStore } from '../core/store'
 import { beep, useKeptSiteIcon } from '../desktop/native'
 import { t } from '../l10n'
 import { classes } from './classes'
-import countries from './countries.json'
+import { ContextMenu, type MenuLine } from './ContextMenu'
 import { Alert } from './Dialogs'
 import { useSiteIcon } from './MessageText'
 import { confirmPresence } from './presence'
@@ -419,6 +441,88 @@ const notTheirs = {
   'data-form-type': 'other',
 } as const
 
+/** A new contact info is in the person's own country until another is chosen. */
+function startingDraft(draft: CredentialDraft): CredentialDraft {
+  return draft.kind === 'contact' && draft.country === ''
+    ? { ...draft, country: hereCountry() }
+    : draft
+}
+
+/** How many letters and digits stand in `text`. */
+function significant(text: string): number {
+  return text.replace(/[^0-9A-Za-z]/g, '').length
+}
+
+/** Where the caret goes in `text` to follow its `count`th letter or digit. */
+function caretAfter(text: string, count: number): number {
+  if (count <= 0) return 0
+  let seen = 0
+  for (let index = 0; index < text.length; index += 1) {
+    if (/[0-9A-Za-z]/.test(text[index] ?? '')) seen += 1
+    if (seen === count) return index + 1
+  }
+  return text.length
+}
+
+/**
+ * A field that writes what's typed as it should be (the Mac's
+ * `MacStoreEntryBox`; the founder, 10 November 2026: "Help the user. dont
+ * confuse him"): a card's number in its groups, its expiry with its slash, a
+ * phone in its country's groups, a postal code in capitals. What's kept
+ * (`value`) and what's shown (`shown(value)`) are apart; every keystroke,
+ * what's kept is read from the field (`kept(before, after)`) and the field
+ * written again from it, the caret after as many digits as it followed, so a
+ * letter in a card's number never stays and a digit typed in the middle
+ * stays where it was typed.
+ */
+function EntryInput({
+  value,
+  shown = (kept) => kept,
+  kept = (_before, after) => after,
+  onValue,
+  ...rest
+}: {
+  value: string
+  shown?: (value: string) => string
+  kept?: (before: string, after: string) => string
+  onValue: (value: string) => void
+} & Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange' | 'defaultValue'
+>) {
+  const input = useRef<HTMLInputElement>(null)
+  const caret = useRef<number | undefined>(undefined)
+  const [, redraw] = useState(0)
+  const text = shown(value)
+  useLayoutEffect(() => {
+    const field = input.current
+    if (field === null || caret.current === undefined) return
+    if (document.activeElement === field)
+      field.setSelectionRange(caret.current, caret.current)
+    caret.current = undefined
+  })
+  return (
+    <input
+      ref={input}
+      {...rest}
+      value={text}
+      onChange={(event) => {
+        const after = event.target.value
+        const at = event.target.selectionStart ?? after.length
+        const keep = kept(text, after)
+        const next = shown(keep)
+        caret.current =
+          at >= after.length
+            ? next.length
+            : caretAfter(next, significant(after.slice(0, at)))
+        // Nothing kept changed (a letter in a card's number): the field is written again as it was.
+        if (keep === value) redraw((count) => count + 1)
+        else onValue(keep)
+      }}
+    />
+  )
+}
+
 /**
  * A login or contact info on a sheet, in the app's own parts
  * (`MacCredentialSheet`): the glass disc that closes it and its name at
@@ -449,9 +553,23 @@ export function CredentialSheet({
   const isLogin = kind === 'login'
   const isCard = kind === 'card'
   const [opened, setOpened] = useState<Fields>(() =>
-    fieldsOf(entry ? draftOf(entry) : (filled ?? newDraft(kind))),
+    fieldsOf(entry ? draftOf(entry) : startingDraft(filled ?? newDraft(kind))),
   )
   const [fields, setFields] = useState<Fields>(opened)
+  const language = currentLanguage()
+  const countryList = useMemo(() => allCountries(language), [language])
+  /** The phone's country and the digits after its code, kept as "+33 6 12 34 56 78". */
+  const [phone, setPhone] = useState(() =>
+    phoneSplit(opened.phone, opened.country || hereCountry()),
+  )
+  /** A card's security code shown (its own eye: hidden until asked, even while it's typed). */
+  const [showsCode, setShowsCode] = useState(false)
+  const codeAfterReveal = useRef(false)
+  /** The address sheet over this one, opened from Billing address. */
+  const [addingAddress, setAddingAddress] = useState<CredentialDraft>()
+  const [phoneMenu, setPhoneMenu] = useState<{ x: number; y: number }>()
+  const phoneButton = useRef<HTMLButtonElement>(null)
+
   // The password: only whether its field is blank and whether it differs from the one opened; never what it is.
   const password = useRef<HTMLInputElement>(null)
   const openedPassword = useRef('')
@@ -465,6 +583,15 @@ export function CredentialSheet({
   // Windows Hello asking (the Windows app): the eye waits.
   const helloAsking = useRef(false)
   const [problem, setProblem] = useState<string>()
+  const problemLine = useRef<HTMLParagraphElement>(null)
+  // What to fix is brought into view, never left under the fold.
+  useEffect(() => {
+    if (problem !== undefined)
+      problemLine.current?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth',
+      })
+  }, [problem])
   const [asking, setAsking] = useState<'reveal' | 'delete'>()
   const sheet = useRef<HTMLDivElement>(null)
   const [masks] = useState(masksText)
@@ -473,8 +600,12 @@ export function CredentialSheet({
   const menuAtPress = useRef(false)
 
   const unchanged = sameFields(fields, opened) && !passwordChanged
+  // A contact's country, chosen for the person, is nothing written.
   const empty =
-    Object.values(fields).every((value) => value.trim() === '') && passwordBlank
+    Object.entries(fields).every(
+      ([key, value]) =>
+        value.trim() === '' || (kind === 'contact' && key === 'country'),
+    ) && passwordBlank
   const canSave =
     !saving && !deleting && !empty && !(entry !== undefined && unchanged)
 
@@ -507,16 +638,21 @@ export function CredentialSheet({
     }
   }, [])
 
-  // Escape closes it (the × is its `cancelAction`), not while it saves, an alert is over it or its Country menu is open.
-  const latest = useRef({ close: leave, saving, asking })
+  // Escape closes it (the × is its `cancelAction`), not while it saves, an alert or the address sheet is over it or its Country menu is open.
+  const latest = useRef({ close: leave, saving, asking, adding: false })
   useEffect(() => {
-    latest.current = { close: leave, saving, asking }
+    latest.current = {
+      close: leave,
+      saving,
+      asking,
+      adding: addingAddress !== undefined || phoneMenu !== undefined,
+    }
   })
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.isComposing) return
       const now = latest.current
-      if (now.asking !== undefined) return
+      if (now.asking !== undefined || now.adding) return
       if (sheet.current?.querySelector('.context-menus')) return
       event.preventDefault()
       event.stopPropagation()
@@ -528,6 +664,43 @@ export function CredentialSheet({
 
   const set = (key: keyof Fields) => (value: string) =>
     setFields((now) => ({ ...now, [key]: value }))
+
+  /** The phone as it's kept: its country's code, then its digits as that country groups them. */
+  const writePhone = (next: { country: string; national: string }) => {
+    setPhone(next)
+    const written = phoneJoined(next.country, next.national)
+    setFields((now) =>
+      now.phone === written ? now : { ...now, phone: written },
+    )
+  }
+
+  /** The address's country; a phone not written yet follows it. */
+  const pickCountry = (code: string) => {
+    set('country')(code)
+    if (phone.national === '') setPhone({ country: code, national: '' })
+  }
+
+  /** Add Address: the contact info's sheet over this one, the name on the card already in it. */
+  const addAddress = () =>
+    setAddingAddress({
+      ...newDraft('contact'),
+      fullName: fields.cardholder.trim(),
+      country: hereCountry(),
+    })
+
+  /** The code shown; a saved card's is read first, once the person allows it. */
+  const toggleCode = () => {
+    if (showsCode) {
+      setShowsCode(false)
+      return
+    }
+    if (entry?.hasSecurityCode === true && !passwordRead) {
+      codeAfterReveal.current = true
+      togglePassword()
+      return
+    }
+    setShowsCode(true)
+  }
 
   /** The draft as it is now, the password read from its field at this moment. */
   const draft = (): CredentialDraft => ({
@@ -621,6 +794,8 @@ export function CredentialSheet({
         }))
         setPasswordRead(true)
         setShowsPassword(true)
+        if (codeAfterReveal.current) setShowsCode(true)
+        codeAfterReveal.current = false
         return
       }
       const read = await model.password(entry)
@@ -664,7 +839,18 @@ export function CredentialSheet({
   const brand =
     fields.number === '' ? (entry?.brand ?? '') : cardBrand(fields.number)
   const codeHidden = entry?.hasSecurityCode === true && !passwordRead
-  const codeShape = secretFieldShape(showsPassword, masks)
+  const codeShape = secretFieldShape(showsCode, masks)
+  const numberWhole = fields.number.length === cardMaxDigits(brand)
+  const addresses = model.contacts.filter(
+    (contact) => addressLine(contact) !== '',
+  )
+  const billing = addresses.find((contact) => contact.id === fields.billingId)
+  const phoneCountry = countryOf(phone.country, language)
+  const phoneItems: MenuLine[] = countryList.map((one) => ({
+    label: `${one.flag}  ${one.name}  +${one.dial}`,
+    checked: one.code === phone.country,
+    action: () => writePhone({ country: one.code, national: phone.national }),
+  }))
   const hidden = entry?.hasPassword === true && !passwordRead
 
   const row = (
@@ -782,9 +968,24 @@ export function CredentialSheet({
               <SettingsGroup>
                 <SettingsLine label={t('Card number')} divided={false}>
                   <span className="credential-password">
-                    <input
-                      className="credentials-field password card-number"
+                    <EntryInput
+                      className={classes(
+                        'credentials-field password card-number',
+                        // Read and hidden again: dots, as a password's.
+                        entry !== undefined &&
+                          passwordRead &&
+                          !showsPassword &&
+                          'masked',
+                        numberWhole &&
+                          !cardNumberValid(fields.number) &&
+                          'wrong',
+                      )}
                       value={fields.number}
+                      shown={cardGrouped}
+                      kept={(before, after) =>
+                        cardTyped(typedDigits(before, after))
+                      }
+                      onValue={set('number')}
                       placeholder={
                         entry?.last4
                           ? `•••• ${entry.last4}`
@@ -795,7 +996,6 @@ export function CredentialSheet({
                       autoComplete="off"
                       spellCheck={false}
                       {...notTheirs}
-                      onChange={(event) => set('number')(event.target.value)}
                       onKeyDown={onReturn}
                     />
                     {brand !== '' && (
@@ -819,57 +1019,103 @@ export function CredentialSheet({
                     )}
                   </span>
                 </SettingsLine>
-                {row('expiry', t('Expiry'), 'MM/YY', { mine: true })}
-                <SettingsLine label={t('Security code')} divided>
-                  <input
+                <SettingsLine label={t('Expiry')} divided>
+                  <EntryInput
                     className={classes(
-                      'credentials-field',
-                      codeShape.masked && 'masked',
+                      'credentials-field card-number',
+                      cardIsExpired(fields.expiry) && 'wrong',
                     )}
-                    type={codeShape.type}
-                    value={fields.securityCode}
-                    placeholder={codeHidden ? '•••' : '123'}
-                    aria-label={t('Security code')}
+                    value={fields.expiry}
+                    kept={cardTypedExpiry}
+                    onValue={set('expiry')}
+                    placeholder="MM/YY"
+                    aria-label={t('Expiry')}
                     inputMode="numeric"
-                    autoComplete={codeShape.autoComplete}
+                    autoComplete="off"
                     spellCheck={false}
                     {...notTheirs}
-                    onChange={(event) =>
-                      set('securityCode')(event.target.value)
-                    }
                     onKeyDown={onReturn}
                   />
+                </SettingsLine>
+                <SettingsLine label={t('Security code')} divided>
+                  <span className="credential-password">
+                    <EntryInput
+                      className={classes(
+                        'credentials-field password card-number',
+                        codeShape.masked && 'masked',
+                      )}
+                      type={codeShape.type}
+                      value={fields.securityCode}
+                      kept={(_before, after) => cardTypedCode(after, brand)}
+                      onValue={set('securityCode')}
+                      placeholder={
+                        codeHidden ? '•••' : brand === 'amex' ? '1234' : '123'
+                      }
+                      aria-label={t('Security code')}
+                      inputMode="numeric"
+                      autoComplete={codeShape.autoComplete}
+                      spellCheck={false}
+                      {...notTheirs}
+                      onKeyDown={onReturn}
+                    />
+                    <button
+                      type="button"
+                      className="credential-eye"
+                      title={
+                        showsCode
+                          ? t('Hide Security Code')
+                          : t('Show Security Code')
+                      }
+                      aria-label={
+                        showsCode
+                          ? t('Hide Security Code')
+                          : t('Show Security Code')
+                      }
+                      disabled={revealing || deleting}
+                      onClick={toggleCode}
+                    >
+                      <EyeSymbol slashed={showsCode} />
+                    </button>
+                  </span>
                 </SettingsLine>
                 {row('cardholder', t('Name on card'), undefined, {
                   mine: true,
                 })}
               </SettingsGroup>
-              <SettingsGroup>
-                <SettingsMenu
-                  label={t('Billing address')}
-                  options={[
-                    { value: '', label: t('None') },
-                    ...model.contacts
-                      .filter((contact) => addressLine(contact) !== '')
-                      .map((contact) => ({
+              {/* The billing address: one of the person's contact info, by its address, or a new one written here (with none saved there was nothing to choose: "it stays at none"). */}
+              <SettingsGroup
+                footer={t('The address your bank has for this card.')}
+              >
+                {addresses.length === 0 ? (
+                  <SettingsLine label={t('Billing address')}>
+                    <SettingsPill
+                      title={t('Add Address')}
+                      onClick={addAddress}
+                    />
+                  </SettingsLine>
+                ) : (
+                  <SettingsMenu
+                    label={t('Billing address')}
+                    options={[
+                      { value: '', label: t('None') },
+                      ...addresses.map((contact) => ({
                         value: contact.id,
                         label: `${credentialTitle(contact)} · ${addressLine(contact)}`,
                       })),
-                  ]}
-                  value={fields.billingId}
-                  shown={
-                    model.contacts.find(
-                      (contact) => contact.id === fields.billingId,
-                    ) === undefined
-                      ? t('None')
-                      : credentialTitle(
-                          model.contacts.find(
-                            (contact) => contact.id === fields.billingId,
-                          ) as StoredCredential,
-                        )
-                  }
-                  pick={set('billingId')}
-                />
+                      { value: '+add', label: t('Add Address…') },
+                    ]}
+                    value={fields.billingId}
+                    shown={
+                      billing === undefined
+                        ? t('None')
+                        : `${credentialTitle(billing)} · ${billing.addressLine1 || billing.city}`
+                    }
+                    pick={(value) => {
+                      if (value === '+add') addAddress()
+                      else set('billingId')(value)
+                    }}
+                  />
+                )}
               </SettingsGroup>
             </>
           ) : (
@@ -879,12 +1125,92 @@ export function CredentialSheet({
                   divided: false,
                   autoComplete: 'name',
                 })}
-                {row('email', t('Email'), undefined, { autoComplete: 'email' })}
-                {row('phone', t('Phone'), undefined, { autoComplete: 'tel' })}
+                {row('email', t('Email'), 'name@example.com', {
+                  autoComplete: 'email',
+                })}
+                {/* The phone: its country's flag and code in a menu, then the number grouped as that country writes it. */}
+                <SettingsLine label={t('Phone')} divided>
+                  <span className="credential-password credential-phone">
+                    <button
+                      ref={phoneButton}
+                      type="button"
+                      className="credential-phone-country"
+                      title={t('Country code')}
+                      aria-label={t('Country code')}
+                      aria-haspopup="menu"
+                      aria-expanded={phoneMenu !== undefined}
+                      onClick={() => {
+                        const box = phoneButton.current?.getBoundingClientRect()
+                        if (box)
+                          setPhoneMenu({ x: box.left, y: box.bottom + 4 })
+                      }}
+                    >
+                      <span className="credential-flag">
+                        {countryFlag(phone.country)}
+                      </span>
+                      <span>+{phoneCountry?.dial ?? ''}</span>
+                      <SettingsSymbol
+                        name="chevronDown"
+                        size={8}
+                        weight={1.6}
+                      />
+                    </button>
+                    <span
+                      className="credential-phone-rule"
+                      aria-hidden="true"
+                    />
+                    <EntryInput
+                      className="credentials-field password card-number"
+                      value={phone.national}
+                      shown={(national) =>
+                        phoneFormatted(national, phone.country)
+                      }
+                      kept={(before, after) =>
+                        phoneNational(typedDigits(before, after), phone.country)
+                      }
+                      onValue={(national) =>
+                        writePhone({ country: phone.country, national })
+                      }
+                      placeholder={phoneFormatted(
+                        phone.country === 'US' || phone.country === 'CA'
+                          ? '4155550132'
+                          : '612345678',
+                        phone.country,
+                      )}
+                      aria-label={t('Phone')}
+                      inputMode="tel"
+                      autoComplete="off"
+                      spellCheck={false}
+                      onKeyDown={onReturn}
+                    />
+                  </span>
+                  {phoneMenu && (
+                    <ContextMenu
+                      items={phoneItems}
+                      at={phoneMenu}
+                      close={() => setPhoneMenu(undefined)}
+                      label={t('Country code')}
+                    />
+                  )}
+                </SettingsLine>
               </SettingsGroup>
+              {/* The country first: the rest of the address is written as it's written there. */}
               <SettingsGroup title={t('Address')}>
+                <SettingsMenu
+                  label={t('Country')}
+                  options={countryList.map((one) => ({
+                    value: one.code,
+                    label: `${one.flag}  ${one.name}`,
+                  }))}
+                  value={fields.country}
+                  shown={
+                    fields.country === ''
+                      ? t('Choose')
+                      : `${countryFlag(fields.country)}  ${countryList.find((one) => one.code === fields.country)?.name ?? fields.country}`
+                  }
+                  pick={pickCountry}
+                />
                 {row('addressLine1', t('Address'), undefined, {
-                  divided: false,
                   autoComplete: 'address-line1',
                 })}
                 {row('addressLine2', t('Address line 2'), undefined, {
@@ -896,19 +1222,18 @@ export function CredentialSheet({
                 {row('region', t('State or region'), undefined, {
                   autoComplete: 'address-level1',
                 })}
-                {row('postalCode', t('Postal code'), undefined, {
-                  autoComplete: 'postal-code',
-                })}
-                <SettingsMenu
-                  label={t('Country')}
-                  divided
-                  options={(countries as [string, string][]).map(
-                    ([code, name]) => ({ value: code, label: name }),
-                  )}
-                  value={fields.country}
-                  shown={fields.country === '' ? t('Choose') : undefined}
-                  pick={set('country')}
-                />
+                <SettingsLine label={t('Postal code')} divided>
+                  <EntryInput
+                    className="credentials-field"
+                    value={fields.postalCode}
+                    kept={(_before, after) => after.toUpperCase()}
+                    onValue={set('postalCode')}
+                    aria-label={t('Postal code')}
+                    autoComplete="postal-code"
+                    spellCheck={false}
+                    onKeyDown={onReturn}
+                  />
+                </SettingsLine>
               </SettingsGroup>
             </>
           )}
@@ -933,7 +1258,7 @@ export function CredentialSheet({
             </SettingsLine>
           </SettingsGroup>
           {problem !== undefined && (
-            <p className="credential-problem" role="alert">
+            <p ref={problemLine} className="credential-problem" role="alert">
               {problem}
             </p>
           )}
@@ -967,6 +1292,14 @@ export function CredentialSheet({
           </button>
         </div>
       </div>
+      {addingAddress && (
+        <CredentialSheet
+          model={model}
+          edit={{ filled: addingAddress }}
+          close={() => setAddingAddress(undefined)}
+          onSaved={(saved) => set('billingId')(saved.id)}
+        />
+      )}
       {asking === 'reveal' && entry && (
         <Alert
           title={
