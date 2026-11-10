@@ -126,10 +126,10 @@ PHOTO = {
     },
 }
 
+#: Iris's routines as the computer keeps them: no agent on a routine itself.
 ROUTINES = [
     {
         "id": "r1",
-        "agentId": "iris",
         "name": "Morning brief",
         "prompt": "Send me today's flights.",
         "trigger": {"type": "cron", "schedule": "0 8 * * *"},
@@ -146,7 +146,15 @@ class Computer:
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, dict[str, Any]]] = []
-        self.routines = [dict(r) for r in ROUTINES]
+        self.routines: dict[str, list[dict[str, Any]]] = {
+            "iris": [dict(r) for r in ROUTINES],
+            "theo": [],
+        }
+        #: A computer whose engine predates 11 November 2026: a routine run now
+        #: runs, then the answer is an error ("reading 'mapped'").
+        self.throws_after_running = False
+        #: …or it throws before anything ran.
+        self.throws_before_running = False
 
     async def __call__(self, box: SandBox, method: str, args: dict[str, Any]) -> Any:
         self.calls.append((method, args))
@@ -156,16 +164,34 @@ class Computer:
         if method == "createAgent":
             return {"agent": {"id": "nora", "name": args["name"]}, "transcript": []}
         if method == "listAllAutomations":
-            return self.routines
+            # Each agent's routines as pairs (`listAllAutomationsFrom`).
+            return [
+                {"agentId": agent, "automation": routine}
+                for agent, routines in self.routines.items()
+                for routine in routines
+            ]
         if method == "getAgentAutomations":
-            return [r for r in self.routines if r["agentId"] == args["id"]]
+            return self.routines.get(args["id"], [])
         if method == "createAgentAutomation":
-            self.routines.append(
-                {"id": "r2", "agentId": args["id"], **args["spec"], "runs": []}
+            self.routines[args["id"]].append({"id": "r2", **args["spec"], "runs": []})
+            return self.routines[args["id"]]
+        if method == "runAgentAutomationNow":
+            if self.throws_before_running:
+                raise bot_tools.ComputerRefused("Automation not found")
+            routine = next(
+                r for r in self.routines[args["id"]] if r["id"] == args["automationId"]
             )
-            return [r for r in self.routines if r["agentId"] == args["id"]]
+            routine["runs"] = [
+                {"id": f"run{len(self.calls)}", "status": "ok", "at": NOW},
+                *routine.get("runs", []),
+            ]
+            if self.throws_after_running:
+                raise bot_tools.ComputerRefused(
+                    "Cannot read properties of undefined (reading 'mapped')"
+                )
+            return None
         if method == "setAgentAutomationEnabled":
-            return self.routines
+            return self.routines[args["id"]]
         if method == "readAttachmentText":
             return {
                 "kind": "text",
@@ -608,6 +634,12 @@ class TestRoutines:
         await _said(client, bot, "run_routine", agent="Iris", routine="morning brief")
         paused = await _said(client, bot, "pause_routine", agent="Iris", routine="r2")
         assert paused["paused"] is True
+        # Every agent's routines are named, the new one with them.
+        listed = (await _said(client, bot, "list_routines"))["routines"]
+        assert [(r["id"], r["name"], r["agent"]) for r in listed] == [
+            ("r1", "Morning brief", "Iris"),
+            ("r2", "Weekly", "Iris"),
+        ]
         assert [c for c in stand_in.calls if c[0] != "getAgentAutomations"] == [
             ("listAllAutomations", {}),
             (
@@ -627,7 +659,30 @@ class TestRoutines:
                 "setAgentAutomationEnabled",
                 {"id": "iris", "automationId": "r2", "isEnabled": False},
             ),
+            ("listAllAutomations", {}),
         ]
+
+    async def test_a_run_the_computer_errs_on_after_it_ran_is_started(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        stand_in: Computer,
+    ) -> None:
+        """A bot's test of the tools, 11 November 2026: the routine ran and posted, and
+        the bot was told "Cannot read properties of undefined (reading
+        'mapped')"."""
+        _, bot = await _setup(client, session, save_fixture, user)
+        await _box(save_fixture, user)
+        stand_in.throws_after_running = True
+        started = await _said(client, bot, "run_routine", agent="Iris", routine="r1")
+        assert started["started"] is True
+        stand_in.throws_after_running = False
+        stand_in.throws_before_running = True
+        refused = await _tool(client, bot, "run_routine", agent="Iris", routine="r1")
+        assert refused["isError"] is True
+        assert refused["content"][0]["text"] == "Automation not found"
 
 
 @pytest.mark.asyncio

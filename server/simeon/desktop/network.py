@@ -267,6 +267,24 @@ def kind_name(kind: str) -> str:
     return next((known.name for _, known in KINDS if known.kind == kind), kind)
 
 
+def named_for_its_kind(session: DesktopNetworkSession) -> bool:
+    """Whether a session still has the name its kind gave it (`cursor`,
+    `cursor-2`), not one it chose (`set_status`)."""
+    return bool(
+        re.fullmatch(rf"{re.escape(kind_name(session.kind))}(-\d+)?", session.name)
+    )
+
+
+def session_label(session: DesktopNetworkSession) -> str:
+    """How a session signs what it sends a Simeon agent: what it is (Claude
+    Code, Grok Bot), or the name it chose on the network. Grok Bot added at
+    `/mcp` signs in as Cursor; named `grok-bot`, it wrote "Cursor: …" in the
+    agent's chat all the same (11 November 2026)."""
+    if session.kind == "agent" or not named_for_its_kind(session):
+        return session.name
+    return label_of(session.kind)
+
+
 # MARK: Invite links
 
 
@@ -506,14 +524,17 @@ class Network:
         )
         mine = await self.sessions.of_person(self.user.id)
         if kind.kind in HOSTED and client_id is not None:
-            same = [s for s in mine if s.client_id == client_id]
+            # A person has one of each bot: a conversation that registered
+            # again (a new client id) is the same Grok Bot, not a second one.
+            same = [s for s in mine if s.client_id == client_id] or [
+                s for s in mine if s.kind == kind.kind
+            ]
             if same:
                 found = same[0]  # Newest first.
+                found.client_id = client_id
                 if found.kind != kind.kind:
                     # Named before it was known (Grok Bot as "cursor-3").
-                    if re.fullmatch(
-                        rf"{re.escape(kind_name(found.kind))}(-\d+)?", found.name
-                    ):
+                    if named_for_its_kind(found):
                         found.name = unique(
                             kind.name, {s.name for s in mine if s.id != found.id}, "-"
                         )[:SESSION_NAME_MAX]
@@ -854,7 +875,7 @@ class Network:
         network, _ = await self.membership()
         sender = await self.me()
         address = f"{sender.handle}/{me.name}"
-        label = label_of(me.kind) if me.kind != "agent" else me.name
+        label = session_label(me)
         targets = await self.resolve(to, me)
         sent: list[dict[str, Any]] = []
         for target in targets:
