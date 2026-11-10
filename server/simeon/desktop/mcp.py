@@ -272,12 +272,24 @@ def instructions() -> str:
 # MARK: Where the sign-in is found
 
 
-def resource_url() -> str:
-    return f"{settings.BASE_URL.rstrip('/')}{PATH}"
+#: A bot in its maker's cloud has an address of its own, `/mcp/grok-bot`
+#: (the Bots sheet in each app gives it): the server then knows which bot
+#: it is, whatever its sign-in says. Grok Bot signs in with Cursor's own
+#: registration and returns to Cursor's own page, so nothing else told them
+#: apart (10 November 2026: it showed as `bass/cursor`).
+BOT_PATHS = tuple(sorted(network_module.HOSTED))
 
 
-def resource_metadata_url() -> str:
-    return f"{settings.BASE_URL.rstrip('/')}/.well-known/oauth-protected-resource{PATH}"
+def _bot_path(bot: str | None = None) -> str:
+    return f"{PATH}/{bot}" if bot else PATH
+
+
+def resource_url(bot: str | None = None) -> str:
+    return f"{settings.BASE_URL.rstrip('/')}{_bot_path(bot)}"
+
+
+def resource_metadata_url(bot: str | None = None) -> str:
+    return f"{settings.BASE_URL.rstrip('/')}/.well-known/oauth-protected-resource{_bot_path(bot)}"
 
 
 #: The site the icons are on, and the server as a bot's screen shows it: its
@@ -328,12 +340,12 @@ for _path, (_file, _media) in _ICONS.items():
     _icon_route(_path, _file, _media)
 
 
-def protected_resource_metadata() -> dict[str, Any]:
+def protected_resource_metadata(bot: str | None = None) -> dict[str, Any]:
     """RFC 9728: what this endpoint is and which server signs its bots in."""
     from simeon.oauth2.constants import ISSUER
 
     return {
-        "resource": resource_url(),
+        "resource": resource_url(bot),
         "authorization_servers": [ISSUER],
         "scopes_supported": [Scope.agents.value],
         "bearer_methods_supported": ["header"],
@@ -349,10 +361,20 @@ async def resource_metadata() -> JSONResponse:
     return JSONResponse(protected_resource_metadata())
 
 
-def _unauthorized(error: str | None = None) -> Response:
+@router.get(
+    "/.well-known/oauth-protected-resource/mcp/{bot}",
+    name="mcp:resource_metadata_bot",
+)
+async def resource_metadata_bot(bot: str) -> Response:
+    if bot not in BOT_PATHS:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return JSONResponse(protected_resource_metadata(bot))
+
+
+def _unauthorized(error: str | None = None, bot: str | None = None) -> Response:
     """The 401 a bot starts its sign-in from (MCP's authorization spec)."""
     parts = [
-        f'resource_metadata="{resource_metadata_url()}"',
+        f'resource_metadata="{resource_metadata_url(bot)}"',
         f'scope="{Scope.agents.value}"',
     ]
     if error is not None:
@@ -372,17 +394,19 @@ def _bearer(request: Request) -> str | None:
     return value.strip()
 
 
-async def _signed_in(request: Request, session: AsyncSession) -> OAuth2Token | Response:
+async def _signed_in(
+    request: Request, session: AsyncSession, bot: str | None = None
+) -> OAuth2Token | Response:
     """The bot's token, when it is a person's, live and allowed to talk to
     their agents; the 401 otherwise."""
     value = _bearer(request)
     if value is None:
-        return _unauthorized()
+        return _unauthorized(bot=bot)
     token = await oauth2_token_service.get_by_access_token(session, value)
     if token is None or token.is_expired():
-        return _unauthorized("invalid_token")
+        return _unauthorized("invalid_token", bot)
     if not isinstance(token.sub, User):
-        return _unauthorized("invalid_token")
+        return _unauthorized("invalid_token", bot)
     if Scope.agents not in token.scopes:
         return JSONResponse(
             {"error": "insufficient_scope"},
@@ -390,7 +414,7 @@ async def _signed_in(request: Request, session: AsyncSession) -> OAuth2Token | R
             headers={
                 "WWW-Authenticate": (
                     f'Bearer error="insufficient_scope", scope="{Scope.agents.value}", '
-                    f'resource_metadata="{resource_metadata_url()}"'
+                    f'resource_metadata="{resource_metadata_url(bot)}"'
                 )
             },
         )
@@ -406,13 +430,39 @@ async def mcp_stream() -> Response:
     return Response(status_code=405, headers={"Allow": "POST"})
 
 
+@router.get(f"{PATH}/{{bot}}", name="mcp:stream_bot")
+async def mcp_stream_bot(bot: str) -> Response:
+    if bot not in BOT_PATHS:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return Response(status_code=405, headers={"Allow": "POST"})
+
+
 @router.post(PATH, name="mcp:post")
 async def mcp_post(
     request: Request,
     session: AsyncSession = Depends(get_db_session),
     redis: Redis = Depends(get_redis),
 ) -> Response:
-    signed_in = await _signed_in(request, session)
+    return await _post(request, session, redis, None)
+
+
+@router.post(f"{PATH}/{{bot}}", name="mcp:post_bot")
+async def mcp_post_bot(
+    bot: str,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    redis: Redis = Depends(get_redis),
+) -> Response:
+    """A bot's own address (`BOT_PATHS`): the same endpoint, and the bot it is."""
+    if bot not in BOT_PATHS:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    return await _post(request, session, redis, bot)
+
+
+async def _post(
+    request: Request, session: AsyncSession, redis: Redis, bot: str | None
+) -> Response:
+    signed_in = await _signed_in(request, session, bot)
     if isinstance(signed_in, Response):
         return signed_in
     token = signed_in
@@ -423,7 +473,7 @@ async def mcp_post(
 
     hello = isinstance(body, dict) and body.get("method") == "initialize"
     header = request.headers.get(SESSION_HEADER)
-    caller = Caller(token, session, redis, None if hello else header)
+    caller = Caller(token, session, redis, None if hello else header, bot=bot)
     if header and not hello and await caller.me() is None:
         # A session this server no longer knows: the agent starts a new one.
         return JSONResponse({"error": "unknown session"}, status_code=404)
@@ -483,8 +533,12 @@ class Caller:
         session: AsyncSession,
         redis: Redis,
         session_header: str | None = None,
+        *,
+        bot: str | None = None,
     ) -> None:
         self.token = token
+        #: The bot its address names (`/mcp/grok-bot`): what it is, before anything it says.
+        self.bot = bot
         assert isinstance(token.sub, User)
         self.user: User = token.sub
         self.user_id = token.sub.id
@@ -516,6 +570,7 @@ class Caller:
                     client_id=self.token.client_id,
                     client_name=self.client_name,
                     redirect_uri=self.token.redirect_uri,
+                    kind_hint=self.bot,
                 )
         return self.network_session
 
@@ -549,6 +604,7 @@ class Caller:
                 client_name=self.client_name,
                 info_name=info_name if isinstance(info_name, str) else None,
                 redirect_uri=self.token.redirect_uri,
+                kind_hint=self.bot,
             )
             # Who said hello, as it said it: what tells one bot from another
             # when two share a registration (Grok Bot and Cursor).
@@ -562,6 +618,7 @@ class Caller:
                 if info_version is not None
                 else None,
                 redirect=_redirect_shown(self.token.redirect_uri),
+                address=_bot_path(self.bot),
                 kind=self.network_session.kind,
                 session=self.network_session.name,
             )

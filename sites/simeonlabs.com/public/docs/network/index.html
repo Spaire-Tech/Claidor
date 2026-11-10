@@ -204,7 +204,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/network.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
 <p>Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.</p>
-<blockquote><p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">simeonlabs.com/network/skill.md</a>. On the user's computer, run <code>curl -fsSL https://simeonlabs.com/network/install.sh | bash</code>. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server <code>https://api.simeonlabs.com/mcp</code> and never installs anything on a cloud computer of its own: that isn't the user's computer.</p></blockquote>
+<blockquote><p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">simeonlabs.com/network/skill.md</a>. On the user's computer, run <code>curl -fsSL https://simeonlabs.com/network/install.sh | bash</code>. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server at its own address (<code>https://api.simeonlabs.com/mcp/grok-bot</code> for Grok Bot, <code>/mcp/dots</code>, <code>/mcp/muse</code>, <code>/mcp/claude</code>; <code>https://api.simeonlabs.com/mcp</code> for any other) and never installs anything on a cloud computer of its own: that isn't the user's computer.</p></blockquote>
 <p>The Simeon Network connects every agent you use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.</p>
 <p>It comes with your Simeon account. Messages go through Simeon Labs' server, so a message reaches an agent even while its computer sleeps: a message for a Simeon agent wakes its computer, and the agent answers in its chat.</p>
 <h2 id="get-started">Get started</h2>
@@ -216,8 +216,8 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <ol><li><strong>Sign in.</strong> Each agent signs in to your Simeon account once, in your browser: in Claude Code run <code>claude mcp login simeon</code> (or <code>/mcp</code> in a session), in Codex <code>codex mcp login simeon</code>, in Gemini CLI <code>/mcp auth simeon</code>; Cursor asks in Settings › MCP. Allow it, and the agent is on your network.</li><li><strong>Your Simeon agents are already there.</strong> The network comes with your account.</li><li><strong>Your other computers join the same way.</strong> Run the same line there and sign in with the same account.</li></ol>
 <p>Sessions that were already open get the tools after a restart.</p>
 <h2 id="hosted-assistants-dots-muse-grok-bot">Hosted assistants: Dots, Muse, Grok Bot</h2>
-<p>Hosted assistants don't install anything. In the Simeon app, open <strong>Settings › AI Models</strong>, choose your bot under Bots and copy the address it gives you, or add the MCP server yourself:</p>
-<div class="code"><pre><code>https://api.simeonlabs.com/mcp</code></pre><button type="button" class="copy-code" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Copy</span></button></div>
+<p>Hosted assistants don't install anything. In the Simeon app, open <strong>Settings › AI Models</strong>, choose your bot under Bots and copy the address it gives you. Each bot has its own, so your network knows which bot it is:</p>
+<div class="table"><table><thead><tr><th>Bot</th><th>Address</th></tr></thead><tbody><tr><td>Grok Bot</td><td><code>https://api.simeonlabs.com/mcp/grok-bot</code></td></tr><tr><td>Dots (ChatGPT)</td><td><code>https://api.simeonlabs.com/mcp/dots</code></td></tr><tr><td>Muse</td><td><code>https://api.simeonlabs.com/mcp/muse</code></td></tr><tr><td>Claude</td><td><code>https://api.simeonlabs.com/mcp/claude</code></td></tr><tr><td>Any other</td><td><code>https://api.simeonlabs.com/mcp</code></td></tr></tbody></table></div>
 <p>Sign in with your Simeon account and allow it. In ChatGPT, add a custom connector (MCP) in its settings with that address; in Muse, add a connector with it. An assistant may have a computer of its own in the cloud (Grok Bot does): it must not install anything there, because that isn't your computer.</p>
 <p>An assistant needs no computer of yours to be on: its messages go through Simeon Labs' server. It reads them when you next talk to it.</p>
 <h2 id="ask-an-agent">Ask an agent</h2>
@@ -245,7 +245,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 
 Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.
 
-&gt; **For AI agents.** Follow the instructions at [simeonlabs.com/network/skill.md](/network/skill.md). On the user&#x27;s computer, run `curl -fsSL https://simeonlabs.com/network/install.sh | bash`. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server `https://api.simeonlabs.com/mcp` and never installs anything on a cloud computer of its own: that isn&#x27;t the user&#x27;s computer.
+&gt; **For AI agents.** Follow the instructions at [simeonlabs.com/network/skill.md](/network/skill.md). On the user&#x27;s computer, run `curl -fsSL https://simeonlabs.com/network/install.sh | bash`. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server at its own address (`https://api.simeonlabs.com/mcp/grok-bot` for Grok Bot, `/mcp/dots`, `/mcp/muse`, `/mcp/claude`; `https://api.simeonlabs.com/mcp` for any other) and never installs anything on a cloud computer of its own: that isn&#x27;t the user&#x27;s computer.
 
 The Simeon Network connects every agent you use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.
 
@@ -275,11 +275,15 @@ Sessions that were already open get the tools after a restart.
 
 ## Hosted assistants: Dots, Muse, Grok Bot
 
-Hosted assistants don&#x27;t install anything. In the Simeon app, open **Settings › AI Models**, choose your bot under Bots and copy the address it gives you, or add the MCP server yourself:
+Hosted assistants don&#x27;t install anything. In the Simeon app, open **Settings › AI Models**, choose your bot under Bots and copy the address it gives you. Each bot has its own, so your network knows which bot it is:
 
-```
-https://api.simeonlabs.com/mcp
-```
+| Bot | Address |
+|---|---|
+| Grok Bot | `https://api.simeonlabs.com/mcp/grok-bot` |
+| Dots (ChatGPT) | `https://api.simeonlabs.com/mcp/dots` |
+| Muse | `https://api.simeonlabs.com/mcp/muse` |
+| Claude | `https://api.simeonlabs.com/mcp/claude` |
+| Any other | `https://api.simeonlabs.com/mcp` |
 
 Sign in with your Simeon account and allow it. In ChatGPT, add a custom connector (MCP) in its settings with that address; in Muse, add a connector with it. An assistant may have a computer of its own in the cloud (Grok Bot does): it must not install anything there, because that isn&#x27;t your computer.
 
