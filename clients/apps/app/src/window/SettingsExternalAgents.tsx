@@ -29,6 +29,7 @@ import {
   lastUsedWords,
   learnMore,
 } from '../core/externalAgents'
+import { faceById, faceURL, simeonFaceId } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { copyText } from './clipboard'
@@ -140,11 +141,15 @@ function ExternalAgentsHero() {
 }
 
 /**
- * The card's picture: Simeon's tile in the middle, Grok Bot, Muse and Dots
- * around it on a faint orbit, on the website's grey (`--soft`, #f5f5f7;
- * #1c1c1e on dark). Simeon's tile stays white, as an app's icon does.
+ * The card's picture (11 November 2026, the founder: "use simeon avatar if
+ * anything and by all means make it proportionate"): Simeon's own face in
+ * the middle, Grok Bot, Muse and Dots the same size around him, evenly
+ * spaced on a circle, each joined to him by a thin line, on the website's
+ * grey (`--soft`, #f5f5f7; #1c1c1e on dark).
  */
 function ExternalAgentsPicture() {
+  const simeon = faceById(simeonFaceId)
+  const face = simeon ? faceURL(simeon) : undefined
   return (
     <div
       className="agents-picture"
@@ -152,25 +157,42 @@ function ExternalAgentsPicture() {
       aria-label={t('Simeon with Grok Bot, Muse and Dots')}
     >
       <span className="agents-scene">
-        <svg className="agents-orbit" viewBox="0 0 320 180" aria-hidden="true">
-          <ellipse cx="160" cy="90" rx="99.2" ry="60" />
+        <svg className="agents-lines" viewBox="0 0 320 200" aria-hidden="true">
+          <circle cx="160" cy="118" r="70" />
+          {agentsAround.map(({ x, y }) => (
+            <line key={`${x}-${y}`} x1="160" y1="118" x2={x} y2={y} />
+          ))}
         </svg>
-        <span className="agents-mascot agents-mascot-top">
-          <ProviderIcon provider="grokbot" side={44} />
-        </span>
-        <span className="agents-mascot agents-mascot-left">
-          <ProviderIcon provider="muse" side={44} />
-        </span>
-        <span className="agents-mascot agents-mascot-right">
-          <ProviderIcon provider="dots" side={44} />
-        </span>
-        <span className="agents-simeon">
-          <span className="agents-simeon-mark" />
+        {agentsAround.map(({ icon, x, y }) => (
+          <span
+            key={icon}
+            className="agents-mascot"
+            style={{ left: x, top: y }}
+          >
+            <ProviderIcon provider={icon} side={40} />
+          </span>
+        ))}
+        <span
+          className="agents-simeon"
+          style={simeon?.backdrop ? { background: simeon.backdrop } : undefined}
+        >
+          {face && <img src={face} alt="" />}
         </span>
       </span>
     </div>
   )
 }
+
+/** Where the bots sit around Simeon (at 118 down the 320 by 200 picture, so the three and him sit in its middle): on a circle of 70, at the top and below either side, 120° apart. */
+const agentsAround = [
+  { icon: 'grokbot', angle: 90 },
+  { icon: 'muse', angle: 210 },
+  { icon: 'dots', angle: 330 },
+].map(({ icon, angle }) => ({
+  icon,
+  x: Math.round((160 + 70 * Math.cos((angle * Math.PI) / 180)) * 10) / 10,
+  y: Math.round((118 - 70 * Math.sin((angle * Math.PI) / 180)) * 10) / 10,
+}))
 
 /**
  * A bot's row (the reference's): its mascot, its name over "Last used Nov

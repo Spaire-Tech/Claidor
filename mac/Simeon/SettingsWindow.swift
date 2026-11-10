@@ -56,7 +56,7 @@ final class SettingsState {
       case .general: "gearshape"
       case .usage: "chart.bar"
       case .models: "brain"
-      case .externalAgents: "sparkles"
+      case .externalAgents: "bubble.left.and.bubble.right"
       case .network: "point.3.connected.trianglepath.dotted"
       case .wallet: "wallet.bifold"
       case .credentials: "key"

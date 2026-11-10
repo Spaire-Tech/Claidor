@@ -61,7 +61,7 @@ const pages: Record<
   general: { title: () => t('General'), symbol: 'gearshape' },
   usage: { title: () => t('Usage & Billing'), symbol: 'chartBar' },
   models: { title: () => t('AI Models'), symbol: 'brain' },
-  externalAgents: { title: () => t('External Agents'), symbol: 'sparkles' },
+  externalAgents: { title: () => t('External Agents'), symbol: 'bubbles' },
   network: { title: () => t('Network'), symbol: 'network' },
   wallet: { title: () => t('Wallet'), symbol: 'wallet' },
   credentials: { title: () => t('Credentials Store'), symbol: 'key' },

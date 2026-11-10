@@ -842,6 +842,19 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: External Agents' picture redone, its icon two speech bubbles
+
+The founder, of the card's picture: "Does this seems normal to you? Creative? Proportionate? Use
+simeon avatar if anything and by all means make it proportionate. I also dont want the sparkle
+icon." Now Simeon's own face (`clay-simeon`, round, 64, his backdrop, a white ring) sits in the
+middle. Grok Bot, Muse and Dots are the same size (40), 120° apart on a circle of 70 around him,
+each joined to him by a thin line, in a picture of 320 by 200 (SimeonCore's
+`ExternalAgents.Picture`, the same numbers on the Mac, the iPhone and here). The page's icon in
+Settings and the account menu is `bubble.left.and.bubble.right` (the web's `bubbles`), not
+`sparkles`. Checked: the committed build in Chromium, light and dark; the iPhone page drawn at
+iPhone size with the same pictures. Not checked: the Mac and iPhone apps built and run (their
+Swift parses; SimeonCore builds).
+
 ### 11 November 2026: Settings › External Agents, the bots on a page of their own
 
 The founder, with another app's Bots and Channels pages as the references: "i want the bots to have

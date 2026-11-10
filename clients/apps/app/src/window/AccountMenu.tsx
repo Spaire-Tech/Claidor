@@ -154,7 +154,7 @@ function AccountMenu({
       // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
       id: 'externalAgents',
       label: t('External Agents'),
-      icon: <SettingsSymbol name="sparkles" size={14} />,
+      icon: <SettingsSymbol name="bubbles" size={14} />,
       end: <BotMascots />,
       action: () => model.openSettings('externalAgents'),
     },
