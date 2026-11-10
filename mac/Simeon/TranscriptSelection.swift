@@ -155,6 +155,8 @@ final class TranscriptSelection {
       return bubble.fromPerson ? bubble.text : plain(Markdown.cachedBlocks(bubble.text))
     case .notice(_, let text):
       return text
+    case .modelChange(_, let change):
+      return change.text
     default:
       return nil
     }

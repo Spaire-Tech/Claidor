@@ -84,6 +84,7 @@ import {
   cardWidth,
 } from './Cards'
 import { Composer } from './Composer'
+import { ProviderMark } from './ComposerModelMenu'
 import { DiskBanner } from './ComputerStates'
 import { connectCardView } from './ConnectCards'
 import { ContextMenu } from './ContextMenu'
@@ -1154,6 +1155,29 @@ function RowContent({
       )
     case 'card':
       return <CardRow row={row} startsGroup={run.startsGroup} />
+    case 'modelChange':
+      // "Changed from ⌘ Simeon to ✳ Claude Opus 5.5": the notices' grey, each model's mark before its name.
+      return (
+        <div className="notice model-change" aria-label={row.change.text}>
+          {row.change.pieces.map((piece, index) =>
+            piece.kind === 'words' ? (
+              <span key={index} aria-hidden="true">
+                {piece.words}
+              </span>
+            ) : (
+              <span
+                key={index}
+                className="model-change-side"
+                aria-hidden="true"
+              >
+                <ProviderMark provider={piece.side.provider} side={11} />
+                {'\u2009'}
+                {piece.side.name}
+              </span>
+            ),
+          )}
+        </div>
+      )
   }
 }
 

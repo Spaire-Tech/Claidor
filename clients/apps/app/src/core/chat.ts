@@ -9,6 +9,7 @@
 // step 3 (docs/web-app/PROGRESS.md): until then each is a `card` row that
 // keeps its line, and the chat says it can't be shown in this version.
 
+import { providerName, simeon as simeonName } from './aiModels'
 import {
   isOneEmoji,
   isPictureOrVideo,
@@ -236,6 +237,82 @@ export type ChatRow =
   | { kind: 'thread'; id: string; rootId: string; count: number; side: Side }
   /** A card (step 3), with its line. */
   | { kind: 'card'; id: string; card: CardKind; entry: Entry }
+  /** "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (`model-changed`): the agent's turn on another model than its last. */
+  | { kind: 'modelChange'; id: string; change: ModelChange }
+
+/** One side of a model change: the provider's slug for its mark (none: Simeon's), and the model's name. */
+export interface ModelSide {
+  readonly provider?: string
+  readonly name: string
+}
+
+/** A piece of the sentence as the app's language orders it: words, or one of the two models. */
+export type ModelPiece =
+  | { readonly kind: 'words'; readonly words: string }
+  | { readonly kind: 'model'; readonly side: ModelSide }
+
+/**
+ * "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (Chat.swift's `ModelChange`,
+ * 10 November 2026): the line the engine writes in an agent's chat when its
+ * turn is on another model than its last (`turn-model.ts`), each model's mark
+ * before its name.
+ */
+export interface ModelChange {
+  readonly from: ModelSide
+  readonly to: ModelSide
+  /** The sentence in words ("Changed from Simeon to Claude Opus 5.5"): copied, searched, read aloud. */
+  readonly text: string
+  /** The same sentence in pieces, the two models where the app's language puts them. */
+  readonly pieces: readonly ModelPiece[]
+}
+
+function modelSide(value: JSONValue | undefined): ModelSide | undefined {
+  if (value == null || typeof value !== 'object' || Array.isArray(value))
+    return undefined
+  const slug = text(field(value, 'provider'))
+  const provider =
+    slug !== undefined && /^[a-z0-9]{1,20}$/.test(slug) ? slug : undefined
+  const named = text(field(value, 'name'))?.trim()
+  const name =
+    named !== undefined && named !== ''
+      ? named.slice(0, 80)
+      : provider !== undefined
+        ? providerName(provider)
+        : simeonName
+  return provider === undefined ? { name } : { provider, name }
+}
+
+/** The event's two sides (`model-changed`); undefined when one is missing or both are the same. */
+export function modelChange(event: JSONValue): ModelChange | undefined {
+  const from = modelSide(field(event, 'from'))
+  const to = modelSide(field(event, 'to'))
+  if (from === undefined || to === undefined) return undefined
+  if (from.provider === to.provider && from.name === to.name) return undefined
+  const words = t`Changed from ${from.name} to ${to.name}`
+  // The sentence with a stand-in for each model, then split around them: each language's own order.
+  const first = '\uE000'
+  const second = '\uE001'
+  const sentence = t`Changed from ${first} to ${second}`
+  const pieces: ModelPiece[] = []
+  let run = ''
+  for (const character of sentence) {
+    if (character !== first && character !== second) {
+      run += character
+      continue
+    }
+    if (run !== '') pieces.push({ kind: 'words', words: run })
+    run = ''
+    pieces.push({ kind: 'model', side: character === first ? from : to })
+  }
+  if (run !== '') pieces.push({ kind: 'words', words: run })
+  const models = pieces.filter((piece) => piece.kind === 'model').length
+  return {
+    from,
+    to,
+    text: words,
+    pieces: models === 2 ? pieces : [{ kind: 'words', words }],
+  }
+}
 
 /** Whose side the row sits on (`ChatRow.side`). */
 export function rowSide(row: ChatRow): Side {
@@ -1464,6 +1541,12 @@ export function rowFor(entry: Entry): ChatRow | undefined {
           const label = text(field(event, 'label'))
           return label != null
             ? { kind: 'notice', id: entry.id, text: t`Connected to ${label}` }
+            : undefined
+        }
+        case 'model-changed': {
+          const change = modelChange(event)
+          return change !== undefined
+            ? { kind: 'modelChange', id: entry.id, change }
             : undefined
         }
         case 'channel-disconnected': {

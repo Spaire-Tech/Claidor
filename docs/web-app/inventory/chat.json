@@ -21,7 +21,8 @@
   "purchase",
   "products",
   "flightPassengers",
-  "joined"
+  "joined",
+  "modelChange"
  ],
  "RequestCard": [
   "approval",

@@ -251,12 +251,15 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case flightPassengers(id: String, card: FlightPassengersCard)
   /** "Iris just joined your team" (`agent-joined`): an agent this one hired, Go to Chat and View Profile (JoinedCard.swift). */
   case joined(id: String, card: JoinedCard)
+  /** "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (`model-changed`): the agent's turn on another model than its last (ModelChange). */
+  case modelChange(id: String, change: ModelChange)
 
   public var id: String {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _): return id
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _),
+         .modelChange(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
   }
@@ -286,6 +289,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
     case .joined: return "joined"
+    case .modelChange: return "model-change"
     }
   }
 
@@ -312,6 +316,77 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   }
 
   public enum Side: Hashable, Sendable { case person, agent(String?), middle }
+}
+
+/**
+ * "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (`model-changed`, 10
+ * November 2026, the founder: "whenever a model is changed, i want this to
+ * fire in the chat. that at least tells us that it's working"): the line the
+ * engine writes in an agent's chat when its turn is on another model than its
+ * last (`desktop/source/host/extensions/inference/turn-model.ts`), drawn in
+ * the middle in grey, each model's provider mark before its name (Simeon's
+ * own for Simeon's).
+ */
+public struct ModelChange: Hashable, Sendable {
+  public struct Side: Hashable, Sendable {
+    /** The provider's slug (`anthropic`, `claude`, `deepseek`…; its mark `Providers/<provider>-mark`), nil for Simeon's. */
+    public let provider: String?
+    public let name: String
+
+    public init(provider: String?, name: String) {
+      self.provider = provider; self.name = name
+    }
+
+    init?(json: JSON?) {
+      guard let json, json.object != nil else { return nil }
+      let provider = json["provider"]?.text.flatMap { $0.range(of: "^[a-z0-9]{1,20}$", options: .regularExpression) == nil ? nil : $0 }
+      let named = json["name"]?.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+      let name = named.flatMap { $0.isEmpty ? nil : String($0.prefix(80)) } ?? provider.map(AIModels.providerName) ?? AIModels.simeon
+      self.init(provider: provider, name: name)
+    }
+  }
+
+  /** A piece of the sentence as the app's language orders it: words, or one of the two models. */
+  public enum Piece: Hashable, Sendable {
+    case words(String)
+    case model(Side)
+  }
+
+  public let from: Side
+  public let to: Side
+
+  public init(from: Side, to: Side) {
+    self.from = from; self.to = to
+  }
+
+  /** The event's two sides; nil when one is missing or both are the same. */
+  init?(event: JSON) {
+    guard let from = Side(json: event["from"]), let to = Side(json: event["to"]), from != to else { return nil }
+    self.init(from: from, to: to)
+  }
+
+  /** The sentence in words ("Changed from Simeon to Claude Opus 5.5"): copied, and what a screen reader says. */
+  public var text: String { L10n.text("Changed from \(from.name) to \(to.name)") }
+
+  /**
+   * The same sentence in pieces, the two models where the app's language puts
+   * them, so a mark can be drawn before each name. A translation that lost one
+   * reads as plain words.
+   */
+  public var pieces: [Piece] {
+    let first: Character = "\u{E000}", second: Character = "\u{E001}"
+    let sentence = L10n.text("Changed from \(String(first)) to \(String(second))")
+    var pieces: [Piece] = []
+    var words = ""
+    for character in sentence {
+      guard character == first || character == second else { words.append(character); continue }
+      if !words.isEmpty { pieces.append(.words(words)); words = "" }
+      pieces.append(.model(character == first ? from : to))
+    }
+    if !words.isEmpty { pieces.append(.words(words)) }
+    let models = pieces.filter { if case .model = $0 { return true }; return false }.count
+    return models == 2 ? pieces : [.words(text)]
+  }
 }
 
 public struct Bubble: Hashable, Sendable {
@@ -1210,6 +1285,8 @@ public enum Chat {
         return event["label"]?.text.map { .notice(id: entry.id, text: L10n.text("Connected to \($0)")) }
       case "channel-disconnected":
         return event["label"]?.text.map { .notice(id: entry.id, text: L10n.text("Disconnected from \($0)")) }
+      case "model-changed":
+        return ModelChange(event: event).map { .modelChange(id: entry.id, change: $0) }
       default:
         return nil
       }

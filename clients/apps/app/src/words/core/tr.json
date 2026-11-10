@@ -384,6 +384,7 @@
  "Change the background of this photo to a beach with FLUX.": "FLUX ile bu fotoğrafın arka planını bir plajla değiştir.",
  "Change the colors of our app in Lovable to match the new logo.": "Lovable’daki uygulamamızın renklerini yeni logoya uyacak şekilde değiştir.",
  "Change the price on the Pro plan entry in Contentful to $20.": "Contentful’daki Pro plan girdisinde fiyatı 20 $ yap.",
+ "Changed from %@ to %@": "Model değiştirildi: %@ → %@",
  "Changed routine": "Rutin değiştirildi",
  "Changed routines": "Rutinler değiştirildi",
  "Changes for a %@ fee": "Değişiklik ücreti: %@",

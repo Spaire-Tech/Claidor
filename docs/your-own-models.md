@@ -597,6 +597,54 @@ on x.ai):
 >
 > Simeon Labs
 
+## 10. The chat says when an agent's model changes (10 November 2026)
+
+The founder, with a picture of the line he wanted: "whenever a model is
+changed, i want this to fire in the chat. that at least tells us that it's
+working." So the chat says **Changed from ⌘ Simeon to ✳ Claude Opus
+5.5**: small and grey, centred, each model with its mark as on the
+composer.
+
+**When.** At the start of each of an agent's own turns (a message, a
+routine, a wake; not a subagent's, a box-scoped helper's or a shared
+room's), right after the engine reads the roles (`beforeTurn` in
+`turn-agent-composition.ts`), it works out which model the turn runs on
+(`turnModelOf`, `host/extensions/inference/turn-model.ts`):
+
+- Claude on the person's plan when the roles name the `claude-code` row
+  (`own:claude:…`, named as the server names it, e.g. Claude Opus 5.5);
+- else the person's own model when the primary is `own:<provider>:<model>`
+  (ChatGPT, Grok or a key's model), with the server's name for it, or the
+  model's id when the server gave none;
+- else **Simeon**: any of Simeon's own models is Simeon, so Simeon moving
+  from one GPT to another is never a line about the person's choice.
+
+It compares that with the model it last saw for the agent, kept in
+`model-seen.json` in the engine's data folder (mode 600). A different model
+writes one line; the same model, none; the same model under a better name
+is only kept. The first turn an agent has on an engine (a new agent, and
+every agent once this engine arrives) is only remembered, so nobody gets a
+line for a change nobody made.
+
+**How.** The line is an `event` in the chat's own lines,
+`{type: "model-changed", from: {model, name, provider}, to: {…}}`, written
+as the Claude line is (`transcript/chat-line.ts`, shared by both), into the
+open chat, a running one or one at rest. It is only for the person: it
+never reaches the model's conversation, never wakes the agent (it is not
+the timeline's path, which would run a turn for the agent to answer), and
+is never written in a group chat. Writing it waits a second at most and
+never fails a turn; the host log says `model-changed agent=… from=… to=…`
+(`docs/services-core.md`, "When it misbehaves").
+
+**The apps** (`ModelChange` in `SimeonCore/Chat.swift`, `modelChange` in
+the web app's `core/chat.ts`) draw it as a centred line, the sentence
+translated whole ("Changed from %@ to %@", the ten languages) so each
+language keeps its own order, with each model's mark and name in place of
+`%@`: Simeon's ⌘, Claude's ✳ in its colour, the others' marks in the ink.
+An old app that does not know the event leaves it out.
+
+It needs the engine published (a host bundle) and the apps rebuilt.
+
 ## Sources
 
 - Reason: reasonmachines.com/guides/use-all-your-ai-subscriptions;

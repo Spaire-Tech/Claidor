@@ -743,6 +743,13 @@ private struct TranscriptRow: View {
         .cssLineHeight(16, size: 12)
         .frame(minHeight: 24)
         .padding(.top, 8)
+    case .modelChange(_, let change):
+      // "Changed from ⌘ Simeon to ✳ Claude Opus 5.5": spaced and coloured as the notices above.
+      ModelChangeLine(change: change, look: look)
+        .multilineTextAlignment(.center)
+        .cssLineHeight(16, size: 12)
+        .frame(minHeight: 24)
+        .padding(.top, 8)
     case .failedSend(_, let nonce):
       FailedSend(nonce: nonce, agentId: agentId, look: look)
     case .queuedSend(_, let nonce):
@@ -832,7 +839,7 @@ private struct TranscriptRow: View {
 
   private var alignment: Alignment {
     switch row {
-    case .notice: return .center
+    case .notice, .modelChange: return .center
     default: break
     }
     switch row.side {
@@ -1560,5 +1567,37 @@ private struct FoldingText: View {
         .buttonStyle(.hand)
       }
     }
+  }
+}
+
+/**
+ * "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (`ModelChange`, 10 November
+ * 2026): the line when an agent's turn is on another model than its last, in
+ * the notices' grey, each model's mark before its name at the words' size
+ * (ChatGPT's and the keys' in the grey, Claude's in its orange, Simeon's own
+ * for Simeon's), the words in the person's language and order.
+ */
+struct ModelChangeLine: View {
+  let change: ModelChange
+  let look: Look
+
+  var body: some View {
+    change.pieces.reduce(Text(verbatim: "")) { line, piece in
+      switch piece {
+      case .words(let words): return line + Text(verbatim: words)
+      case .model(let side): return line + Self.mark(side.provider) + Text(verbatim: "\u{2009}" + side.name)
+      }
+    }
+    .font(.system(size: 12))
+    .foregroundStyle(look.inkSecondary)
+    .accessibilityLabel(change.text)
+  }
+
+  /** A provider's mark at the words' size (`Providers/<provider>-mark`; Simeon's for none); nothing when there is none. */
+  static func mark(_ provider: String?) -> Text {
+    guard let image = NSImage(named: provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")?.copy() as? NSImage else { return Text(verbatim: "") }
+    image.size = NSSize(width: 11, height: 11)
+    image.isTemplate = provider != AIModels.claude
+    return Text(Image(nsImage: image)).baselineOffset(-1)
   }
 }

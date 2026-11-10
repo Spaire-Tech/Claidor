@@ -1,5 +1,6 @@
 import { claudeCodeTurnHook } from "../claude-code/claude-code-agent-turn.js";
 import { refreshSimeonModelRolesBeforeTurn } from "../extensions/inference/simeon-model-roles.js";
+import { noteTurnModel } from "../extensions/inference/turn-model.js";
 import {
   buildTurnTools,
   type TurnTool,
@@ -322,10 +323,17 @@ export function createSandAgentStaticConfig(
     // The person's own Claude plan runs the agent's own turns through Claude Code (9 November 2026,
     // docs/your-own-models.md, section 6); never a subagent's, a box-scoped helper's or a shared room's.
     // Before each of them, the model and effort the person chose read again when the last read is old (a choice made
-    // on the composer applies to the next message, not five minutes later).
+    // on the composer applies to the next message, not five minutes later); then, when the agent's turn is on another
+    // model than its last, the chat's line says so ("Changed from Simeon to Claude Opus 5.5", `turn-model.ts`).
     ...(input.isSubagentRunner || input.isSharedRoomRunner || input.isBoxScopedSubagent
       ? {}
-      : { claudeCodeTurn: claudeCodeTurnHook(), beforeTurn: () => refreshSimeonModelRolesBeforeTurn() }),
+      : {
+          claudeCodeTurn: claudeCodeTurnHook(),
+          beforeTurn: async () => {
+            await refreshSimeonModelRolesBeforeTurn();
+            await noteTurnModel(input.conversationId);
+          },
+        }),
   };
 }
 

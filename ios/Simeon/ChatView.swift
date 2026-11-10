@@ -1303,6 +1303,15 @@ struct ChatRowView: View, Equatable {
       RoutinesLine(action: action, routines: routines) { id in if let open = actions?.openRoutine { open(id) } else { openPage() } }
     case .notice(_, let text):
       EventLine { Text(text) }
+    case .modelChange(_, let change):
+      // The events' grey and size, centred; two long names wrap rather than being cut.
+      ModelChangeLine(change: change)
+        .font(.system(size: 12))
+        .foregroundStyle(Ink.secondary)
+        .multilineTextAlignment(.center)
+        .lineLimit(2)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
     case .failedSend(_, let nonce):
       FailedSendRow(nonce: nonce, agentId: agentId)
     case .queuedSend(_, let nonce):
@@ -2508,5 +2517,36 @@ struct AccessNotice: View {
     .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshAccess(); await store.refreshUsage() } }) {
       PlansSheet(preselect: plansTier).presentationBackground(Ink.groupedGround)
     }
+  }
+}
+
+/**
+ * "Changed from ⌘ Simeon to ✳ Claude Opus 5.5" (`ModelChange`, 10 November
+ * 2026): the line when an agent's turn is on another model than its last, in
+ * the events' grey, each model's mark before its name at the words' size
+ * (ChatGPT's and the keys' in the grey, Claude's in its orange, Simeon's own
+ * for Simeon's), the words in the person's language and order.
+ */
+struct ModelChangeLine: View {
+  let change: ModelChange
+
+  var body: some View {
+    change.pieces.reduce(Text(verbatim: "")) { line, piece in
+      switch piece {
+      case .words(let words): return line + Text(verbatim: words)
+      case .model(let side): return line + Self.mark(side.provider) + Text(verbatim: "\u{2009}" + side.name)
+      }
+    }
+    .accessibilityLabel(change.text)
+  }
+
+  /** A provider's mark at the words' size (`Providers/<provider>-mark`; Simeon's for none); nothing when there is none. */
+  static func mark(_ provider: String?) -> Text {
+    guard let image = UIImage(named: provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark") else { return Text(verbatim: "") }
+    let side: CGFloat = 11
+    let sized = UIGraphicsImageRenderer(size: CGSize(width: side, height: side)).image { _ in
+      image.draw(in: CGRect(x: 0, y: 0, width: side, height: side))
+    }
+    return Text(Image(uiImage: provider == AIModels.claude ? sized : sized.withRenderingMode(.alwaysTemplate))).baselineOffset(-1)
   }
 }
