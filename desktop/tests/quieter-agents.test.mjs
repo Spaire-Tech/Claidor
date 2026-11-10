@@ -59,3 +59,13 @@ test("the brief keeps 'reply first' and 'deliver the result', and drops the cade
   const tool = await readFile(path.join(repoRoot, "source/host/runner/tools/send-message-tool.ts"), "utf8");
   assert.match(tool, /Leave out the play-by-play/);
 });
+
+test("the brief keeps helpers out of what the person reads (10 November 2026)", async () => {
+  // The founder, of Tessa's "I've sent a browser helper to check App Store Connect": "i'm not sure
+  // why it tells me about the helper. i dont think it should." The brief told agents to announce each dispatch.
+  const prompt = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
+  assert.equal(prompt.includes("Tell the user you've kicked it off (SendMessage)"), false);
+  assert.match(prompt, /Subagents are your own machinery, invisible to the user/);
+  assert.match(prompt, /not \\"I've sent a browser helper to check App Store Connect\\"/);
+  assert.match(prompt, /the helpers or subagents you send, the state of your own computer/);
+});
