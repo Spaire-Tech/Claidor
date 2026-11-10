@@ -146,6 +146,37 @@ class DesktopNetworkSessionRepository(RepositoryBase[DesktopNetworkSession]):
         )
         return await self.get_one_or_none(statement)
 
+    async def of_clients(
+        self, user_id: UUID, client_ids: Sequence[str]
+    ) -> list[DesktopNetworkSession]:
+        """The person's sessions opened through these OAuth clients, newest
+        first (Settings › External Agents)."""
+        if not client_ids:
+            return []
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopNetworkSession.user_id == user_id,
+                DesktopNetworkSession.client_id.in_(list(client_ids)),
+            )
+            .order_by(DesktopNetworkSession.last_seen_at.desc())
+        )
+        return list(await self.get_all(statement))
+
+    async def remove_clients(self, user_id: UUID, client_ids: Sequence[str]) -> int:
+        """A disconnected bot's sessions gone, and what was sent to them."""
+        if not client_ids:
+            return 0
+        statement = (
+            delete(DesktopNetworkSession)
+            .where(
+                DesktopNetworkSession.user_id == user_id,
+                DesktopNetworkSession.client_id.in_(list(client_ids)),
+            )
+            .returning(DesktopNetworkSession.id)
+        )
+        return len((await self.session.execute(statement)).all())
+
     async def touch(self, network_session: DesktopNetworkSession) -> None:
         network_session.last_seen_at = utc_now()
         self.session.add(network_session)

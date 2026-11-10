@@ -38,8 +38,6 @@ struct AIModelsPage: View {
   @State private var pendingKey: KeyProvider?
   @State private var keying: KeyProvider?
   @State private var confirmed = false
-  /** The bot whose "Add a bot" sheet is open ("any": Add, for any other). */
-  @State private var addingBot: String?
 
   var body: some View {
     let model = store.aiModels
@@ -133,40 +131,6 @@ struct AIModelsPage: View {
           }
           .listRowBackground(Ink.groupedRow)
         }
-        // Bots (10 November 2026, the founder, with another app's Bots as the reference): each other company's agent with a +, then Add for any other.
-        Section {
-          ForEach(AIBots.all, id: \.id) { bot in
-            HStack(spacing: 14) {
-              ProviderIcon(provider: bot.id, size: 30)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: bot.name).font(.system(size: 17)).foregroundStyle(Ink.primary)
-                Text(bot.line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
-              }
-              Spacer(minLength: 8)
-              Button { addingBot = bot.id } label: {
-                Image(systemName: "plus")
-                  .font(.system(size: 15, weight: .medium))
-                  .foregroundStyle(Ink.primary)
-                  .frame(width: 34, height: 34)
-                  .background(Ink.pillButton, in: Circle())
-              }
-              .buttonStyle(.borderless)
-              .accessibilityLabel(Text(verbatim: bot.name))
-            }
-            .padding(.vertical, 2)
-          }
-          Button { addingBot = AIBots.any } label: {
-            HStack {
-              Image(systemName: "plus").font(.system(size: 17)).frame(width: 30)
-              Spacer()
-              Text("Add").font(.system(size: 17))
-            }
-            .foregroundStyle(Ink.secondary)
-          }
-        } header: {
-          Text("Bots")
-        }
-        .listRowBackground(Ink.groupedRow)
         if let problem = model.problem {
           Section { Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger) }
             .listRowBackground(Ink.groupedRow)
@@ -198,9 +162,6 @@ struct AIModelsPage: View {
     }
     .sheet(item: $keying) { provider in
       NavigationStack { KeyConnectSheet(model: model, provider: provider) }
-    }
-    .sheet(isPresented: Binding(get: { addingBot != nil }, set: { if !$0 { addingBot = nil } })) {
-      PhoneAddBotSheet(bot: addingBot ?? AIBots.any)
     }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
@@ -250,40 +211,7 @@ struct AIModelsPage: View {
   }
 }
 
-// MARK: Bots
-
-/**
- * The bots a person can give Simeon to (10 November 2026, the founder, with
- * another app's Bots as the reference: "i want it to talk to other agents
- * like dots, muse etc"): each other company's agent under its maker's icon,
- * and the address they reach the person's agents at (the server's MCP
- * endpoint, `server/simeon/desktop/mcp.py`). Their names are theirs, never
- * translated.
- */
-enum AIBots {
-  static let address = "https://api.simeonlabs.com/mcp"
-  /**
-   * A bot's own address (`/mcp/grok-bot`): the server knows which bot it is
-   * whatever its sign-in says (Grok Bot signs in with Cursor's; 10 November
-   * 2026). Any other bot gets the plain one.
-   */
-  static func address(for id: String?) -> String {
-    switch id {
-    case "dots": return address + "/dots"
-    case "muse": return address + "/muse"
-    case "grokbot": return address + "/grok-bot"
-    default: return address
-    }
-  }
-  /** Add, for any other bot: the sheet shows Simeon's mark and "Add a bot". */
-  static let any = "any"
-  /** Each bot: its mascot (`Providers/<id>`, the founder's pictures), its name, its row's line and its sheet's words. Grok Bot is xAI's assistant (x.ai/bot), named as it is. */
-  static let all: [(id: String, name: String, line: LocalizedStringResource, give: LocalizedStringResource)] = [
-    ("dots", "Dots", "Connect Simeon to ChatGPT Dots.", "Give this to your Dot."),
-    ("muse", "Muse", "Connect Simeon to Meta Muse.", "Give this to your Muse."),
-    ("grokbot", "Grok Bot", "Connect Simeon to Grok.", "Give this to your Bot."),
-  ]
-}
+// MARK: Bots (Settings › External Agents, ExternalAgents.swift)
 
 /**
  * A bot's sheet (the reference): the round close; its mascot and its name,
@@ -300,7 +228,7 @@ struct PhoneAddBotSheet: View {
   @State private var details = false
 
   var body: some View {
-    let known = AIBots.all.first { $0.id == bot }
+    let known = ExternalAgents.known.first { $0.kind == bot }
     VStack(alignment: .leading, spacing: 18) {
       HStack {
         CloseDisc { dismiss() }
@@ -308,7 +236,7 @@ struct PhoneAddBotSheet: View {
       }
       HStack(spacing: 14) {
         if let known {
-          ProviderIcon(provider: known.id, size: 48)
+          ProviderIcon(provider: known.icon, size: 48)
         } else {
           Image("Providers/simeon-mark")
             .renderingMode(.template)
@@ -328,13 +256,13 @@ struct PhoneAddBotSheet: View {
         .accessibilityAddTraits(.isHeader)
       }
       Group {
-        if let known { Text(known.give) } else { Text("Give this to any bot that can add an MCP server.") }
+        if let known { Text(verbatim: known.give) } else { Text("Give this to any bot that can add an MCP server.") }
       }
       .font(.system(size: 17))
       .foregroundStyle(Ink.primary)
       .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 10) {
-        Text(verbatim: AIBots.address(for: known?.id))
+        Text(verbatim: ExternalAgents.address(for: known?.kind))
           .font(.system(size: 15, design: .monospaced))
           .foregroundStyle(Ink.primary)
           .lineLimit(1)
@@ -342,7 +270,7 @@ struct PhoneAddBotSheet: View {
           .textSelection(.enabled)
           .frame(maxWidth: .infinity, alignment: .leading)
         Button {
-          UIPasteboard.general.string = AIBots.address(for: known?.id)
+          UIPasteboard.general.string = ExternalAgents.address(for: known?.kind)
           copied = true
         } label: {
           Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
@@ -364,7 +292,7 @@ struct PhoneAddBotSheet: View {
       }
       .buttonStyle(.plain)
       if details {
-        Text("It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.")
+        Text("It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app.")
           .font(.system(size: 15))
           .foregroundStyle(Ink.secondary)
           .fixedSize(horizontal: false, vertical: true)

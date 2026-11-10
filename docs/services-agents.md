@@ -3105,10 +3105,8 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
 - **Invite links** have one spelling: a token whose last character's two spare bits aren't 0 is
   refused (`parse_invite`).
 - **In the apps.** Settings › Network on the Mac, the iPhone and the web (`SettingsNetwork.swift`,
-  `NetworkPage.swift`, `SettingsNetwork.tsx`, SimeonCore's `SimeonNetwork.swift`). Settings › AI
-  Models ends with Bots (three bots by name, then Add for any
-  other); each row's + opens "Add a bot" with the address and Copy (`SettingsModels.tsx`,
-  `mac/Simeon/SettingsModels.swift`, `ios/Simeon/AIModels.swift`, `AIBots.address`). The apps'
+  `NetworkPage.swift`, `SettingsNetwork.tsx`, SimeonCore's `SimeonNetwork.swift`). The bots have
+  their own page, Settings › External Agents (below). The apps'
   routes for Settings › Network, with the desktop credential: `GET /desktop/api/network` (the
   network, its invite line and link, each person with their agents and the sessions seen in the
   last day), `GET /desktop/api/network/invite?link=` (whose network a link is for, before joining),
@@ -3116,13 +3114,40 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   `/rename` (`name`), `/invite/new`.
 - **Delete Account** removes the person's messages either way, sessions, place on a network and a
   network they made that no one else is on (`account_repository.py`).
+- **Settings › External Agents** (11 November 2026, the founder, with another app's Bots and
+  Channels pages as the references: "i want the bots to have their own setting called External
+  Agents. which will also be in the menu as External Agents - and the agents icons"; "there is a
+  setting and a last used… the setting is just disconnect"). Out of AI Models into a page of its
+  own, after AI Models, on the Mac, the iPhone and the web and Windows app
+  (`mac/Simeon/SettingsExternalAgents.swift`, `ios/Simeon/ExternalAgents.swift`,
+  `SettingsExternalAgents.tsx`; what they show is SimeonCore's `ExternalAgents.swift`, the web's
+  `core/externalAgents.ts`). A card says in a line what it is, with Learn more
+  (`simeonlabs.com/docs/network`) and Simeon among Grok Bot, Muse and Dots on the website's grey;
+  then each bot let in, its mascot (its maker's mark for a coding agent), its name and "Last used
+  Nov 10, 2026", and a gear whose one item is Disconnect; then Dots, Muse and Grok Bot not let in
+  yet, each with its + and its sheet (the address and Copy); then Add, for any other. The account
+  menu has External Agents, the three mascots at its end (the iPhone's Settings row too).
+  - `GET /desktop/api/external-agents` (the desktop credential; `external_agents.py`): the OAuth
+    clients holding a live token with the `agents` scope for the person (a refresh token not
+    revoked, or an access token not revoked nor expired), one row per kind of bot, read from the
+    network sessions their sign-ins opened (`network.kind_of`): a hosted bot that registered again
+    for a conversation is still one row, and its older sign-in, left without a session, joins the
+    row of the client registered under the same name. A kind the server doesn't know is its
+    client's own row (`client:<id>`, named as it registered). `lastUsedAt` is the newest session's
+    last call, else the newest token's; `connectedAt` the first token's. Newest use first.
+  - `POST /desktop/api/external-agents/disconnect` (`{"id"}`): revokes the row's tokens (the
+    bot's next call is answered 401 and the person must Allow it again), removes its grants (the
+    consent asks again) and its network sessions with what was sent to them, and answers the list
+    as it now is; 404 "This bot isn't connected." for a row that isn't. Grok Bot signs in with
+    Cursor's registration, so disconnecting one disconnects every kind that one client opened.
+    Logged as `desktop.external_agents.disconnected` (the kind, clients, tokens, grants, sessions).
 
 **Settings.** None: it uses the server's OAuth keys (`SIMEON_JWKS`), `SIMEON_SECRET` for the
 invite links and the chats copy.
 
 **Log.** `mcp.tool` with the tool, the person and the agent's client id (never a message);
 `mcp.computer.command` (the command a bot had the computer run), `mcp.computer.asleep` (it was
-asked to start), `mcp.computer.unreachable` (with the error);
+asked to start), `mcp.computer.unreachable` (with the error); `desktop.external_agents.disconnected`;
 `desktop.network.made`, `.sent` (counts of Simeon agents and sessions reached), `.joined`, `.left`,
 `.new_link`. `desktop.chats.inbox.*` as for the apps' messages.
 

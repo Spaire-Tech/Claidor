@@ -743,10 +743,25 @@
         "ios/Simeon/AIModels.swift",
         "ios/Simeon/Assets.xcassets/Providers/grokbot*",
         "docs/web-app/PROGRESS.md",
-        "docs/services-agents.md"
+        "docs/services-agents.md",
+        "server/simeon/desktop/external_agents.py",
+        "server/tests/desktop/test_external_agents.py",
+        "ios/SimeonCore/Sources/SimeonCore/ExternalAgents.swift",
+        "ios/SimeonCore/Tests/SimeonCoreTests/ExternalAgentsTests.swift",
+        "ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings",
+        "ios/Simeon/ExternalAgents.swift",
+        "ios/Simeon/Localizable.xcstrings",
+        "mac/Simeon/SettingsExternalAgents.swift",
+        "mac/Simeon/Localizable.xcstrings",
+        "clients/apps/app/src/core/externalAgents.ts",
+        "clients/apps/app/src/core/externalAgents.test.ts",
+        "clients/apps/app/src/window/SettingsExternalAgents.tsx",
+        "clients/apps/app/src/window/SettingsExternalAgents.css",
+        "clients/apps/app/src/words/**",
+        "docs/web-app/inventory/*.json"
       ],
-      "match": "grok[ _-]?bot|/grok/i",
-      "reason": "Grok Bot is also the name of xAI's own hosted assistant (x.ai/bot), one of the bots a person adds Simeon to under Settings › AI Models › Bots, with its mascot, and the one the consent page recognises (10 November 2026, the founder: \"call it what it is. Grok Bot\"). It names their product, not ours; the upstream app's Grok Bot stays a finding everywhere else."
+      "match": "grok[ _-]?bot|/grok/i|Simeon to Grok\\.",
+      "reason": "Grok Bot is also the name of xAI's own hosted assistant (x.ai/bot), one of the bots a person adds Simeon to under Settings › External Agents (until 11 November 2026, AI Models › Bots), with its mascot, and the one that page lists as connected, and the one the consent page recognises (10 November 2026, the founder: \"call it what it is. Grok Bot\"). It names their product, not ours; the upstream app's Grok Bot stays a finding everywhere else."
     },
     {
       "kind": "contract",
@@ -781,7 +796,9 @@
         "clients/apps/app/src/window/botAddress.test.ts",
         "docs/web-app/PROGRESS.md",
         "ios/Simeon/AIModels.swift",
-        "mac/Simeon/SettingsModels.swift"
+        "mac/Simeon/SettingsModels.swift",
+        "server/simeon/desktop/external_agents.py",
+        "server/tests/desktop/test_external_agents.py"
       ],
       "match": "Cursor|[Gg]rok[ _-]?[Bb]ot|\"grok\"|grok\\.com|cursor\\.(com|sh)|x\\.ai",
       "reason": "The Simeon Network names the agents that join it as the products they are: Cursor, the coding agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside Dots and Muse; the server reads them from an MCP client's own name (the founder, 10 November 2026: \"do the reason network\"). Grok Bot signs in with Cursor's own registration (cursor.com/oauth/mcp-client.json), so the server and the consent page tell them apart by where the sign-in returned: grok.com, x.ai or cursor.com/bot/ (10 November 2026)."

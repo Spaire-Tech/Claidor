@@ -116,6 +116,11 @@ enum AccountActions {
     }
     show(AccountMenu.reading(store.usage, readAt: store.usageReadAt))
 
+    // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
+    let agentsItem = BlockMenuItem(String(localized: "External Agents")) { settings.open(.externalAgents) }
+    agentsItem.image = symbol("sparkles")
+    agentsItem.attributedTitle = ExternalAgentsMenuRow.title(width: 184)
+    menu.addItem(agentsItem)
     let settingsItem = BlockMenuItem(AccountMenu.settings) { settings.open(.general) }
     settingsItem.image = symbol("gearshape")
     menu.addItem(settingsItem)

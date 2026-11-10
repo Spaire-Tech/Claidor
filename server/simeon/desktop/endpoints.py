@@ -88,6 +88,7 @@ from .chats import router as chats_router
 from .composio import forward as composio_forward
 from .contact import router as contact_router
 from .credentials import router as credentials_router
+from .external_agents import router as external_agents_router
 from .feedback import (
     FeedbackBody,
     ScreenshotRefused,
@@ -1869,6 +1870,7 @@ router.include_router(packs_router)
 router.include_router(chats_router)
 # The Simeon Network's routes for Settings › Network (10 November 2026, `network.py`).
 router.include_router(network_router)
+router.include_router(external_agents_router)
 router.include_router(channel_bots_router)
 # The Credentials Store (`credentials.py`): logins and contact info for the agents' sign-ins and sign-ups.
 router.include_router(credentials_router)

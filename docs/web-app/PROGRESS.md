@@ -842,6 +842,39 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: Settings › External Agents, the bots on a page of their own
+
+The founder, with another app's Bots and Channels pages as the references: "i want the bots to have
+their own setting called External Agents. which will also be in the menu as External Agents - and
+the agents icons"; "use the design layout of screenshot 4. With simeon in the middle, and muse bots
+dots around it. the background is our website background grey. you're here will become Learn more";
+"there is a setting and a last used… the setting is just disconnect". Done on the Mac, the iPhone
+and here, from the server's new list (`GET /desktop/api/external-agents`, `POST
+…/external-agents/disconnect`; `docs/services-agents.md`, section 18).
+
+- Settings lists External Agents after AI Models (`sparkles`); AI Models has no Bots group any
+  more. The page (`SettingsExternalAgents.tsx`, the core's `core/externalAgents.ts`, SimeonCore's
+  `ExternalAgents.swift`): a card with its line, what it does and Learn more (the docs, in a new tab;
+  the default browser in the Windows app), and its picture, Simeon's white tile among Grok Bot, Muse
+  and Dots on a dashed orbit on the website's grey (#f5f5f7, #1c1c1e on dark), 320 by 180, under the
+  words and as wide as the card when the panel is narrow. Then the bots let in, each with "Last used
+  Nov 10, 2026" and a gear whose one item is Disconnect (asked first, as the Mac's alert); then Dots,
+  Muse and Grok Bot not let in yet, each with its + and its sheet (moved from AI Models, unchanged
+  but for its MCP details, which now say what a bot can do: message the agents, follow their work,
+  run their routines, with purchases and passwords staying in the app); then Add.
+- The account menu has External Agents above Settings, the three mascots at its end (a menu item's
+  new `end`), opening Settings on the page.
+- The words: the core's catalogue has the page's lines (and the bots' lines, moved there), the Mac's
+  External Agents, Learn more, the picture's label and the new MCP details; "Bots" is gone. `pnpm
+  words && pnpm build` run.
+
+Checked: the core's tests (`core/externalAgents.test.ts`, as SimeonCore's `ExternalAgentsTests`),
+the whole suite (1258), typecheck, eslint, the words; the committed build in Chromium against a
+stand-in server: the account menu's row and mascots, the page from it, the gear's Disconnect asked
+and the list as the server answers, a + opening Dots' sheet, AI Models without Bots, light, dark,
+French and a narrow window (no page errors, nothing outside asked). Not checked: the Windows app run,
+and the page against the real server with a real bot let in.
+
 ### 11 November 2026: an answered question card's thin blue tick again
 
 The founder: "before we had the blue check mark after answering a card question was a thin blue

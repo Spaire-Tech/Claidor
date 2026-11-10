@@ -48,6 +48,7 @@ export type SettingsSymbolName =
   | 'bubbleLeft'
   | 'terminal'
   | 'hexagonGrid'
+  | 'sparkles'
 
 const symbols: Record<SettingsSymbolName, ReactNode> = {
   gearshape: (
@@ -115,6 +116,13 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
   ),
   moon: <path d="M13 10.1A5.6 5.6 0 0 1 5.9 3a5.6 5.6 0 1 0 7.1 7.1Z" />,
   display: <path d="M2 3h12v8H2ZM6 14h4" />,
+  // `sparkles` (External Agents, as the Mac's): a four-point star and a small one above it.
+  sparkles: (
+    <>
+      <path d="M7 3.5c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z" />
+      <path d="M12.5 1.6c.2 1.1.6 1.5 1.7 1.7-1.1.2-1.5.6-1.7 1.7-.2-1.1-.6-1.5-1.7-1.7 1.1-.2 1.5-.6 1.7-1.7Z" />
+    </>
+  ),
   // `point.3.connected.trianglepath.dotted` (Network): three points, joined.
   network: (
     <>

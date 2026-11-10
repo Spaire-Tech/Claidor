@@ -99,8 +99,6 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   const [keying, setKeying] = useState<KeyProvider>()
   const [renaming, setRenaming] = useState<ModelAccount>()
   const [disconnecting, setDisconnecting] = useState<ModelAccount>()
-  /** The bot whose "Add a bot" sheet is open (`any`: Add, for any other). */
-  const [addingBot, setAddingBot] = useState<string>()
   useEffect(() => {
     void model.load()
   }, [model])
@@ -220,7 +218,6 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
               ))}
             </SettingsGroup>
           )}
-          <BotsGroup add={setAddingBot} />
           {model.problem !== undefined && (
             <p className="models-problem" role="alert">
               {model.problem}
@@ -247,9 +244,6 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
           model={model}
           close={() => setConnectingClaude(false)}
         />
-      )}
-      {addingBot !== undefined && (
-        <AddBotSheet bot={addingBot} close={() => setAddingBot(undefined)} />
       )}
       {renaming && (
         <RenameAccountAlert
@@ -278,156 +272,6 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
         />
       )}
     </div>
-  )
-}
-
-// MARK: Bots
-
-/** Where a bot reaches the person's agents (the server's MCP endpoint, `simeon/desktop/mcp.py`). */
-export const botsAddress = 'https://api.simeonlabs.com/mcp'
-
-/**
- * A bot's own address (`/mcp/grok-bot`): the server knows which bot it is
- * whatever its sign-in says (Grok Bot signs in with Cursor's; 10 November
- * 2026). Any other bot gets the plain one.
- */
-export function botAddress(id: string | undefined): string {
-  const own: Record<string, string> = {
-    dots: 'dots',
-    muse: 'muse',
-    grokbot: 'grok-bot',
-  }
-  const path = id == null ? undefined : own[id]
-  return path ? `${botsAddress}/${path}` : botsAddress
-}
-
-/**
- * The bots the person can give Simeon to (10 November 2026, the founder,
- * with another app's Bots as the reference: "i want it to talk to other
- * agents like dots, muse etc"), each with its own mascot (the founder's
- * pictures, `assets/providers/<id>.png`) and its own words in its sheet
- * ("Give this to your Muse."). Their names are theirs, never translated:
- * Grok Bot is xAI's assistant (x.ai/bot), named as it is (the founder: "call
- * it what it is").
- */
-const bots: readonly {
-  id: string
-  name: string
-  line: () => string
-  give: () => string
-}[] = [
-  {
-    id: 'dots',
-    name: 'Dots',
-    line: () => t('Connect Simeon to ChatGPT Dots.'),
-    give: () => t('Give this to your Dot.'),
-  },
-  {
-    id: 'muse',
-    name: 'Muse',
-    line: () => t('Connect Simeon to Meta Muse.'),
-    give: () => t('Give this to your Muse.'),
-  },
-  {
-    id: 'grokbot',
-    name: 'Grok Bot',
-    line: () => t('Connect Simeon to Grok.'),
-    give: () => t('Give this to your Bot.'),
-  },
-]
-
-/** Under API keys: each bot with a + at its end, then Add for any other (the reference's last row: a + and "Add" in grey). */
-function BotsGroup({ add }: { add: (bot: string) => void }) {
-  return (
-    <SettingsGroup title={t('Bots')}>
-      {bots.map((bot, index) => (
-        <div
-          key={bot.id}
-          className={index > 0 ? 'models-line divided' : 'models-line'}
-        >
-          <ProviderIcon provider={bot.id} side={28} />
-          <span className="models-words">
-            <span className="models-title">{bot.name}</span>
-            <span className="models-subtitle">{bot.line()}</span>
-          </span>
-          <PanelDisc
-            symbol="plus"
-            label={bot.name}
-            onClick={() => add(bot.id)}
-          />
-        </div>
-      ))}
-      <button
-        type="button"
-        className="models-line divided bots-any"
-        onClick={() => add('any')}
-      >
-        <span className="bots-any-plus">
-          <SettingsSymbol name="plus" size={14} weight={1.3} />
-        </span>
-        <span className="bots-any-words">{t('Add')}</span>
-      </button>
-    </SettingsGroup>
-  )
-}
-
-/**
- * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
- * and "Add a bot" for any other; the glass disc that closes it; who to give
- * the address to, in that bot's words ("Give this to your Muse."); the
- * address in its field with Copy inside it; MCP details, which open what the
- * bot can do once it is in.
- */
-function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
-  const [copied, setCopied] = useState(false)
-  const [details, setDetails] = useState(false)
-  const known = bots.find((one) => one.id === bot)
-  const title = known?.name ?? t('Add a bot')
-  const address = botAddress(known?.id)
-  const copy = async () => {
-    await copyText(address)
-    setCopied(true)
-  }
-  return (
-    <Sheet label={title} close={close} className="models-sheet bots-sheet">
-      <div className="models-sheet-head">
-        {known ? (
-          <ProviderIcon provider={known.id} side={44} />
-        ) : (
-          <span className="bots-simeon-tile" aria-hidden="true">
-            <span className="bots-simeon-mark" />
-          </span>
-        )}
-        <h2 className="models-sheet-title bots-title">{title}</h2>
-        <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
-      </div>
-      <p className="bots-words">
-        {known
-          ? known.give()
-          : t('Give this to any bot that can add an MCP server.')}
-      </p>
-      <div className="bots-address">
-        <span className="bots-address-text">{address}</span>
-        <button type="button" className="bots-copy" onClick={() => void copy()}>
-          {copied ? t('Copied') : t('Copy')}
-        </button>
-      </div>
-      <button
-        type="button"
-        className="bots-details-link"
-        aria-expanded={details}
-        onClick={() => setDetails(!details)}
-      >
-        {t('MCP details')}
-      </button>
-      {details && (
-        <p className="bots-details">
-          {t(
-            'It signs in to Simeon once, with your permission. Then it can list your agents, message them and read their answers, and nothing else of your account.',
-          )}
-        </p>
-      )}
-    </Sheet>
   )
 }
 
