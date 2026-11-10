@@ -15,3 +15,9 @@ The retired Electron Mac app (desktop/) carries its own notices:
 desktop/NOTICE.md. The Swift Mac app (mac/) updates itself with Sparkle
 (https://sparkle-project.org), Copyright the Sparkle Project contributors,
 under the MIT License.
+
+The AI providers' marks under Settings › AI Models (Providers/<provider>
+in the Mac and iPhone apps, clients/apps/app/src/assets/providers/) are
+drawn from LobeHub's icons (https://github.com/lobehub/lobe-icons),
+Copyright LobeHub, under the MIT License. Each mark is its owner's
+trademark, shown to name the provider a person connects.

@@ -29,6 +29,7 @@ import {
   unavailableCloudAgent,
   viewProfileWord,
   webPage,
+  type AppLogo,
   type CloudAgentInfo,
   type ConnectorsCard,
   type JoinedCard,
@@ -214,12 +215,16 @@ export function AppLogoTile({
   name,
   side = 40,
   id,
+  icon,
 }: {
   name: string
   side?: number
   id?: string
+  /** The icon itself, when the caller has it (an AI provider's own, `providerIconURL`); the name finds it otherwise. */
+  icon?: string
 }) {
-  const logo = appLogo(name, id)
+  const logo: AppLogo =
+    icon !== undefined ? { kind: 'icon', url: icon } : appLogo(name, id)
   if (logo.kind === 'icon')
     return (
       <span

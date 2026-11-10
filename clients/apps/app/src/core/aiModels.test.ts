@@ -10,6 +10,9 @@ import {
   chatGPTSignIn,
   claudeSignIn,
   effortName,
+  keyHint,
+  keyProblem,
+  keyProvider,
   kindName,
   modelAccount,
   planName,
@@ -683,5 +686,213 @@ describe('the effort beside the model', () => {
     await model.chooseEffort('extreme')
     await model.chooseEffort('xhigh')
     expect(puts).toHaveLength(1)
+  })
+})
+
+describe('API keys (10 November 2026)', () => {
+  const listed: JSONObject = {
+    accounts: [],
+    keyProviders: [
+      {
+        provider: 'anthropic',
+        name: 'Anthropic',
+        keyPage: 'https://platform.claude.com/settings/keys',
+        available: true,
+        fields: [],
+        hint: 'Claude Pro or Max? Connect Claude under Subscriptions.',
+      },
+      {
+        provider: 'azure',
+        name: 'Azure OpenAI',
+        keyPage: 'https://ai.azure.com',
+        available: true,
+        fields: [
+          {
+            key: 'endpoint',
+            placeholder: 'my-resource.openai.azure.com',
+            default: null,
+          },
+          { key: 'deployments', placeholder: 'gpt-6-astra', default: null },
+        ],
+      },
+      {
+        provider: 'deepseek',
+        name: 'DeepSeek',
+        keyPage: 'https://platform.deepseek.com/api_keys',
+        available: true,
+        fields: [],
+      },
+      {
+        provider: 'copilot',
+        name: 'GitHub Copilot',
+        keyPage: 'https://github.com/settings/copilot',
+        available: false,
+        fields: [],
+      },
+    ],
+  }
+
+  it('reads the providers as the server lists them, only their own pages over https', () => {
+    const azure = keyProvider(
+      listed.keyProviders && (listed.keyProviders as JSONValue[])[1],
+    )
+    expect(azure?.fields.map((one) => one.key)).toEqual([
+      'endpoint',
+      'deployments',
+    ])
+    expect(azure?.fields[0]?.default).toBeUndefined()
+    expect(
+      keyProvider({ provider: 'x', keyPage: 'http://plain.example', name: 'X' })
+        ?.keyPage,
+    ).toBeUndefined()
+    expect(keyProvider({ provider: '../etc', name: 'Bad' })).toBeUndefined()
+    expect(keyProvider({ provider: 'meta', available: false })?.available).toBe(
+      false,
+    )
+    expect(providerName('xai')).toBe('SpaceXAI')
+    expect(providerName('bedrock')).toBe('Amazon Bedrock')
+    expect(keyHint('xai')).toBe(
+      'SuperGrok or X Premium+? Connect Grok under Subscriptions.',
+    )
+    expect(keyHint('deepseek')).toBeUndefined()
+  })
+
+  it('names a key by its provider, told apart by its last four', () => {
+    const key = modelAccount({
+      id: 'k1',
+      provider: 'deepseek',
+      kind: 'api_key',
+      label: '…abcd',
+      status: 'available',
+    })
+    if (!key) throw new Error('read')
+    expect(shownName(key)).toBe('DeepSeek')
+    expect(kindName(key)).toBe('API key …abcd')
+    const named = { ...key, label: 'Work key' }
+    expect(shownName(named)).toBe('Work key')
+    expect(kindName(named)).toBe('API key')
+  })
+
+  it("says why a key was refused, in the provider's name", () => {
+    expect(keyProblem('key_refused', 'DeepSeek')).toBe(
+      "DeepSeek didn't accept this key. Check it and try again.",
+    )
+    expect(keyProblem('provider_unavailable', 'Groq')).toBe(
+      "Couldn't reach Groq. Try again in a moment.",
+    )
+    expect(keyProblem(undefined, 'Groq')).toBe(
+      "Couldn't connect Groq. Try again.",
+    )
+  })
+
+  it('connects a key, then chooses its best model when none was', async () => {
+    const sent: { path: string; body?: JSONValue }[] = []
+    let connected = false
+    const model = new AIModelsModel(
+      async (path, method, body): Promise<JSONValue> => {
+        sent.push({ path, body })
+        if (path === 'models/accounts')
+          return {
+            ...listed,
+            accounts: connected
+              ? [
+                  {
+                    id: 'k1',
+                    provider: 'deepseek',
+                    kind: 'api_key',
+                    label: '…abcd',
+                    status: 'available',
+                  },
+                ]
+              : [],
+          }
+        if (path === 'models/accounts/keys/deepseek') {
+          connected = true
+          return {
+            status: 'connected',
+            account: {
+              id: 'k1',
+              provider: 'deepseek',
+              kind: 'api_key',
+              label: '…abcd',
+              status: 'available',
+            },
+          }
+        }
+        const models = connected
+          ? [
+              {
+                modelId: 'own:deepseek:deepseek-v4-pro',
+                modelName: 'DeepSeek V4 Pro',
+                provider: 'deepseek',
+              },
+              {
+                modelId: 'own:deepseek:deepseek-flash',
+                modelName: 'DeepSeek Flash',
+                provider: 'deepseek',
+              },
+            ]
+          : []
+        if (path === 'models/own' && method === 'PUT')
+          return { model: 'own:deepseek:deepseek-v4-pro', models }
+        if (path === 'models/own') return { model: null, models }
+        throw new SimeonAPIError('not found', 404)
+      },
+    )
+    await model.load()
+    expect(model.unconnectedKeys.map((one) => one.provider)).toEqual([
+      'anthropic',
+      'azure',
+      'deepseek',
+      'copilot',
+    ])
+
+    const answer = await model.connectKey('deepseek', '  sk-test-abcd  ')
+
+    expect(answer.kind).toBe('connected')
+    expect(
+      sent.find((one) => one.path === 'models/accounts/keys/deepseek')?.body,
+    ).toEqual({
+      key: 'sk-test-abcd',
+      fields: {},
+    })
+    // Connecting is using: its best model chosen, and it is no longer under API keys.
+    expect(
+      sent.find(
+        (one) =>
+          one.path === 'models/own' && field(one.body, 'model') !== undefined,
+      )?.body,
+    ).toEqual({
+      model: 'own:deepseek:deepseek-v4-pro',
+    })
+    expect(model.unconnectedKeys.map((one) => one.provider)).not.toContain(
+      'deepseek',
+    )
+    expect(model.choices.map((one) => one.provider)).toEqual(['deepseek'])
+  })
+
+  it('a key the provider refused is said, and nothing is kept', async () => {
+    const model = new AIModelsModel(async (path) => {
+      if (path === 'models/accounts') return listed
+      if (path === 'models/own') return { model: null, models: [] }
+      throw new SimeonAPIError("DeepSeek didn't accept this key.", 400, {
+        code: 'key_refused',
+      })
+    })
+    await model.load()
+
+    const empty = await model.connectKey('deepseek', '   ')
+    const refused = await model.connectKey('deepseek', 'sk-wrong')
+
+    expect(empty).toEqual({
+      kind: 'refused',
+      problem: "That doesn't look like a DeepSeek key. Paste it again.",
+    })
+    expect(refused).toEqual({
+      kind: 'refused',
+      problem: "DeepSeek didn't accept this key. Check it and try again.",
+    })
+    expect(model.accounts).toEqual([])
+    expect(text(field(listed, 'missing'))).toBeUndefined()
   })
 })

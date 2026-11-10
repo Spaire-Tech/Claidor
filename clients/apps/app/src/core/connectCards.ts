@@ -297,6 +297,22 @@ const providerIcons: Record<string, string> = {
   grok: new URL('../assets/providers/grok.png', import.meta.url).href,
 }
 
+/** The API key providers' tiles (10 November 2026; NOTICE: LobeHub's marks on each brand's ground), by the provider's slug (`key_providers.PROVIDERS`). */
+const keyProviderIcons = import.meta.glob<string>('../assets/providers/*.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+/** A provider's own tile by its slug (`chatgpt`, `deepseek`…): the Mac's `Providers/<provider>`; none for one the app doesn't know. */
+export function providerIconURL(provider: string): string | undefined {
+  if (!/^[a-z0-9]+$/.test(provider)) return undefined
+  return (
+    providerIcons[provider] ??
+    keyProviderIcons[`../assets/providers/${provider}.png`]
+  )
+}
+
 export type AppLogo =
   | { kind: 'icon'; url: string }
   /** `mono`: a one-colour logo, which the Mac draws as a template, in the words' colour. */

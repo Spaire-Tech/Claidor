@@ -117,6 +117,59 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(grok.planPage?.absoluteString, "https://grok.com/supergrok")
   }
 
+  /** API keys (10 November 2026): the providers as the server lists them, a key named by its provider and its last four, refusals in the provider's name, and connecting that chooses the key's best model. */
+  @MainActor
+  func testAKeyIsTriedThenConnectedAndUsed() async throws {
+    let listedProviders: JSON = [
+      ["provider": "anthropic", "name": "Anthropic", "keyPage": "https://platform.claude.com/settings/keys", "available": true, "fields": []],
+      ["provider": "azure", "name": "Azure OpenAI", "keyPage": "https://ai.azure.com", "available": true,
+       "fields": [["key": "endpoint", "placeholder": "my-resource.openai.azure.com", "default": .null], ["key": "deployments", "placeholder": "gpt-6-astra", "default": .null]]],
+      ["provider": "deepseek", "name": "DeepSeek", "keyPage": "https://platform.deepseek.com/api_keys", "available": true, "fields": []],
+      ["provider": "copilot", "name": "GitHub Copilot", "keyPage": "http://not-https.example", "available": false, "fields": []],
+      ["provider": "../etc", "name": "Bad"],
+    ]
+    var connected = false
+    var sent: [String: JSON] = [:]
+    let key: JSON = ["id": "k1", "provider": "deepseek", "kind": "api_key", "label": "…abcd", "status": "available"]
+    let models: () -> JSON = {
+      connected ? [["modelId": "own:deepseek:deepseek-v4-pro", "modelName": "DeepSeek V4 Pro", "provider": "deepseek"]] : []
+    }
+    let model = AIModelsModel(call: { path, method, body in
+      sent["\(method ?? "GET") \(path)"] = body ?? .null
+      switch (method ?? "GET", path) {
+      case ("GET", "models/accounts"): return ["accounts": connected ? [key] : [], "keyProviders": listedProviders]
+      case ("POST", "models/accounts/keys/deepseek"):
+        if body?["key"]?.text == "sk-wrong" { throw SimeonAPIError(message: "no", status: 400, code: "key_refused") }
+        connected = true
+        return ["status": "connected", "account": key]
+      case ("PUT", "models/own"): return ["model": "own:deepseek:deepseek-v4-pro", "models": models()]
+      default: return ["model": .null, "models": models()]
+      }
+    }, sleep: { _ in })
+    await model.load()
+    XCTAssertEqual(model.unconnectedKeys.map(\.provider), ["anthropic", "azure", "deepseek", "copilot"], "the server's order; a slug that isn't one is left out")
+    XCTAssertEqual(model.keyProvider("azure")?.fields.map(\.name), ["Endpoint", "Deployments"])
+    XCTAssertNil(model.keyProvider("copilot")?.keyPage, "only a page over https is ever opened")
+    XCTAssertFalse(model.keyProvider("copilot")?.available ?? true)
+    XCTAssertEqual(model.keyProvider("anthropic")?.hint, "Claude Pro or Max? Connect Claude under Subscriptions.")
+    XCTAssertEqual(AIModels.providerName("xai"), "SpaceXAI")
+
+    let empty = await model.connectKey("deepseek", key: "   ")
+    XCTAssertEqual(empty, .refused("That doesn't look like a DeepSeek key. Paste it again."))
+    let refused = await model.connectKey("deepseek", key: "sk-wrong")
+    XCTAssertEqual(refused, .refused("DeepSeek didn't accept this key. Check it and try again."))
+    XCTAssertTrue(model.accounts.isEmpty)
+
+    let outcome = await model.connectKey("deepseek", key: "  sk-test-abcd ")
+    guard case .connected(let account) = outcome else { return XCTFail("not connected") }
+    XCTAssertEqual(sent["POST models/accounts/keys/deepseek"]?["key"]?.text, "sk-test-abcd")
+    XCTAssertEqual(account.shownName, "DeepSeek", "named by its provider, never its last four")
+    XCTAssertEqual(account.kindName, "API key …abcd")
+    XCTAssertEqual(sent["PUT models/own"]?["model"]?.text, "own:deepseek:deepseek-v4-pro", "connecting is using")
+    XCTAssertFalse(model.unconnectedKeys.map(\.provider).contains("deepseek"))
+    XCTAssertEqual(model.choices.map(\.provider), ["deepseek"])
+  }
+
   func testTheCodeAndWhereToEnterIt() throws {
     let signIn = try XCTUnwrap(ChatGPTSignIn(json: ["connectId": "c1", "userCode": "ABCD-1234", "verificationUrl": "https://auth.openai.com/codex/device", "interval": 3, "expiresIn": 900]))
     XCTAssertEqual(signIn.userCode, "ABCD-1234")
@@ -284,6 +337,19 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(consent.points.map(\.title), ["Put Claude to work", "You stay in charge", "When your plan runs out"])
     XCTAssertEqual(consent.smallPrint.first, "You'll sign in on Claude's own page. Simeon never sees your password.")
     XCTAssertNil(consent.note)
+  }
+
+  func testAKeysConsentSaysWhoKeepsTheKeyAndWhoBills() {
+    let consent = ConnectConsent(keyProvider: "deepseek", name: "DeepSeek")
+    XCTAssertEqual(consent.id, "key:deepseek")
+    XCTAssertEqual(consent.provider, "deepseek", "its page shows DeepSeek's own logo, not a letter")
+    XCTAssertEqual(ConnectConsent(keyProvider: "bedrock", name: "Amazon Bedrock").provider, "bedrock")
+    XCTAssertEqual(ConnectConsent(modelProvider: AIModels.claude).provider, AIModels.claude)
+    XCTAssertEqual(consent.title, "DeepSeek")
+    XCTAssertEqual(consent.points.map(\.title), ["Put DeepSeek to work", "Your key stays with Simeon", "You stay in charge"])
+    XCTAssertEqual(consent.points.map(\.symbol), ["square.stack.3d.up", "lock.shield", "hand.raised"])
+    XCTAssertEqual(consent.smallPrint.first, "DeepSeek bills each call on your key, at its own prices.")
+    XCTAssertNotEqual(consent, ConnectConsent(keyProvider: "groq", name: "Groq"))
   }
 
   @MainActor

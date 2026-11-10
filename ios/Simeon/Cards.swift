@@ -431,7 +431,7 @@ struct ConnectConsentSheet: View {
     VStack(spacing: 0) {
       ScrollView {
         VStack(spacing: 0) {
-          ConnectorTile(name: consent.title, size: 56)
+          logo
             .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
             .padding(.top, 30)
             .accessibilityHidden(true)
@@ -500,6 +500,22 @@ struct ConnectConsentSheet: View {
     }
     .presentationDetents([.large])
     .presentationDragIndicator(.visible)
+  }
+
+  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter), with an app icon's corners; an app by its tile. */
+  @ViewBuilder private var logo: some View {
+    if let provider = consent.provider, let icon = UIImage(named: "Providers/\(provider)") {
+      let shape = RoundedRectangle(cornerRadius: 56 * ConnectorLogo.iconCorner, style: .continuous)
+      Image(uiImage: icon)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: 56, height: 56)
+        .clipShape(shape)
+        .overlay(shape.stroke(Ink.tileEdge, lineWidth: 0.5))
+    } else {
+      ConnectorTile(name: consent.title, size: 56)
+    }
   }
 }
 

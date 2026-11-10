@@ -10,7 +10,13 @@ import {
   comingSoonNames,
   connectorIconId,
 } from './connectCards'
-import { connectConsent, consentTables } from './connectConsent'
+import {
+  connectConsent,
+  consentProvider,
+  consentTables,
+  keyConsent,
+  modelConsent,
+} from './connectConsent'
 
 function app(
   values: Partial<CatalogApp> & { id: string; title: string },
@@ -443,5 +449,28 @@ describe('each app’s part', () => {
       "You'll sign in on Acme's own page. Simeon never sees your password.",
     )
     expect(plain.note).toBeUndefined()
+  })
+})
+
+describe("a plan's or a key's consent (ConnectConsent(keyProvider:))", () => {
+  it('names who keeps the key and who bills, with the provider for its logo', () => {
+    const consent = keyConsent('deepseek', 'DeepSeek')
+    expect(consent.id).toBe('key:deepseek')
+    expect(consent.points.map((point) => point.title)).toEqual([
+      'Put DeepSeek to work',
+      'Your key stays with Simeon',
+      'You stay in charge',
+    ])
+    expect(consent.smallPrint[0]).toBe(
+      'DeepSeek bills each call on your key, at its own prices.',
+    )
+    // Its page shows the provider's own logo, never a letter, whatever its name.
+    expect(consentProvider(consent)).toBe('deepseek')
+    expect(consentProvider(keyConsent('bedrock', 'Amazon Bedrock'))).toBe(
+      'bedrock',
+    )
+    expect(consentProvider(modelConsent('claude'))).toBe('claude')
+    const stripe = app({ id: 'stripe', title: 'Stripe' })
+    expect(consentProvider(connectConsent(stripe, 'Stripe'))).toBeUndefined()
   })
 })
