@@ -66,6 +66,11 @@ rule (a **contract**: xAI's addresses and the headers its servers read, and
 Grok's name on the apps' pages) covers only the files of that feature, and
 never a line naming the upstream Grok Bot, which stays a finding everywhere.
 
+SpaceXAI (xAI's API) is also one of the providers a person brings their own
+API key for (10 November 2026, `docs/your-own-models.md`, section 7). Its
+own rule keeps `xai`, `spacex` and its models' name, Grok, in the files of
+that feature only, under the same condition.
+
 ## The wire, for one release
 
 Since 5 October 2026 the Connect services carry Simeon's names

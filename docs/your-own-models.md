@@ -397,14 +397,87 @@ chat website ... you can click on chatgpt and claude, like with connectors".
   the server deploys. Claude's need the new engine published
   (`npm run publish:host-bundle` on a Mac).
 
-## 7. Then: API keys
+## 7. API keys (10 November 2026)
 
-The "API keys" list, Reason's order. Connect asks for the key, checks it with
-one call, and keeps it sealed. Calls are billed by the provider. Most of these
-providers speak OpenAI's Chat Completions and not the Responses API the engine
-sends, so the relay will need a translation between the two, which it doesn't
-have today ("Nothing here translates between the two"). That's the main work
-of this step. Anthropic, OpenAI, Google and Bedrock keys need none.
+The founder: "these are all the keys i want our users to be able to use.
+Below subscription something called api keys." The list, in the founder's
+order, with Connect on each: Anthropic, OpenAI, SpaceXAI, Google, Amazon
+Bedrock, Ant Ling, Azure OpenAI, Baseten, Cerebras, Cloudflare Workers AI,
+DeepSeek, Fireworks, GitHub Copilot, Groq, Hugging Face, Meta, MiniMax,
+Mistral, Moonshot AI, NVIDIA, OpenCode Go, Qwen, Together, Xiaomi, Z.AI.
+The reconstruction has none of them; everything here is new.
+
+**The server's part** (this pull request; the apps' sheet is the next):
+
+- `server/simeon/desktop/key_providers.py`: one entry per provider, where
+  its API is, how it reads a key (`Authorization: Bearer`, Azure's
+  `api-key`, Anthropic's `x-api-key`), the wire the relay speaks to it, the
+  page where the person makes a key, the details it needs besides the key
+  (Azure's endpoint and deployments, Cloudflare's account id, Bedrock's
+  region, each checked before anything is sent: the server only sends a key
+  to the provider's own domains), and the models worth offering. Read from
+  each provider's documentation on 10 November 2026; not one was tried with
+  a real key.
+- **Three wires, no engine release.** Every `own:` call reaches the server
+  on OpenAI's Responses wire. OpenAI, SpaceXAI and Azure take it as it is.
+  Claude, and MiniMax (its recommended wire), get Claude's own Messages
+  (`messages_wire.py`): the brief cached at its end and the conversation's
+  last block cached, so each call reads the one before from the cache
+  (about a tenth of the price on the person's key), adaptive thinking
+  summarized, the effort as `output_config.effort`, no sampling settings
+  and no forced tool use. Every other provider gets Chat Completions
+  (`chat_wire.py`). Both write the answer back as the Responses events the
+  engine's SDK reads; checked by running the engine's own SDK
+  (`ai` 4.3.17, `@ai-sdk/openai` 1.3.24) on their output: words, thinking,
+  tool calls with their arguments, the finish and the cached tokens all
+  read back.
+- **What a provider wants back.** DeepSeek, Kimi, MiniMax, Xiaomi, GLM and
+  the hosts of those models want what the model thought back with its tool
+  calls; Gemini a signature on each call; Claude its thinking blocks,
+  signed. The engine's wire drops all of it, so the server keeps it six
+  hours by call id (Redis, `desktop:own-kept:<user>:<call>`) and gives it
+  back on the turn that made the calls. Claude's blocks go back where Claude
+  wrote them, between its words and its calls.
+- **A model that refuses the rest** (a 400 or 422: an effort, a usage
+  option, a picture it can't see) is sent the plain request once, and only
+  that for a day when it took it (`desktop.models.key_plain`).
+- **Connect** (`POST /desktop/api/models/accounts/keys/{provider}`): the
+  key is tried first, with the provider's model list (no cost) or, where
+  there is none (MiniMax, Azure's deployments), a one-word call (a few
+  tokens on the person's key). A key the provider refuses is never kept.
+  Kept sealed with its details and the models it reaches (a new `models`
+  column); its name is its last four characters. The same key again
+  replaces its row.
+- **Models offered**: the ones named in the catalogue that the key's list
+  has, by their names (Claude Opus 5.5…, GPT-6 Astra…, DeepSeek V4 Pro…);
+  for the hosts of many models (Together, Fireworks, Hugging Face, NVIDIA,
+  Cloudflare, Bedrock, OpenCode Go, Baseten) others from the list too, the
+  families agents do best with first, 24 at most. The machinery (titles,
+  summaries) runs on the provider's cheaper model where the key reaches one
+  (Claude Haiku 5.5, GPT-6 Luna, Gemini 3.8 Flash, DeepSeek Flash…): the
+  person's key pays for it.
+- **Efforts**: Anthropic's five (Medium until chosen: Anthropic's own
+  default), OpenAI's, Azure's, SpaceXAI's and Google's three, Kimi's Light,
+  High and Max. The others take none.
+- **Same rules as a plan's.** The person's other keys for the provider in
+  turn; a rate limit waits as the provider says (`retry-after`), credits run
+  out an hour; then Simeon's model on credits. A key the provider no longer
+  takes (401) shows signed out. A request the provider refuses (other 4xx)
+  goes back to the agent in the provider's words. Web search and pictures
+  stay on Simeon's for a key.
+
+**Not offered yet** ("Soon" in the list): **GitHub Copilot**, which has no
+API a key opens (only its own CLI's sign-in, and GitHub's terms bar sharing
+its tokens); **Meta**, whose Model API terms forbid a key passing through
+another's server (§3.1, §10.1; the founder: "Lets wait on meta"). **Coding
+plans** (Z.AI's GLM Coding Plan, Qwen's Coding Plan) are for their own
+tools only: the key here is the pay-as-you-go one. NVIDIA's free key is for
+trying models out.
+
+**Verified:** `server/tests/desktop/test_chat_wire.py` (23),
+`test_messages_wire.py` (10), `test_api_keys.py` (23, every provider stood in
+by respx), and the engine's SDK on both translators' output. **Not
+verified:** any provider with a real key.
 
 ## 8. For the founder to decide
 

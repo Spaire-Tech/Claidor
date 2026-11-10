@@ -83,6 +83,14 @@ plans xAI keeps pictures from (Free, X Basic) get Simeon's. How much of the
 plan is used is asked of xAI's billing after an answer, at most every few
 minutes (`GROK_USAGE_EVERY`).
 
+**API keys** (10 November 2026, the founder: "Below subscription something
+called api keys"). A person's own key for one of `key_providers.PROVIDERS`
+offers the models it reaches (`own:deepseek:deepseek-v4-pro`), as its
+provider listed them when the key was connected. Its calls go to the
+provider on the wire it speaks (below, "the person's own API keys"), cost
+no credits, and follow the plans' rules. Web search and pictures stay on
+Simeon's.
+
 **Not verified against chatgpt.com or grok.com.** For models it marks
 `use_responses_lite`, Codex sends the tools inside `input`
 (`additional_tools`), not in `tools`. This relay sends the standard
@@ -114,7 +122,7 @@ from simeon.models import DesktopModelAccount, DesktopSession, User
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
-from . import grok, model_accounts
+from . import chat_wire, grok, key_providers, messages_wire, model_accounts
 from .auth import ProxyCaller, get_desktop_session
 from .model_account_repository import ModelAccountRepository
 from .model_sign_in import RefreshUnavailable
@@ -153,9 +161,23 @@ EFFORTS: dict[str, tuple[str, ...]] = {
     # `OwnModel.efforts`).
     "grok": ("low", "medium", "high", "xhigh"),
 }
+# The providers of the person's own API keys, each with its own
+# (`key_providers.PROVIDERS`).
+EFFORTS.update(
+    {one.slug: one.efforts for one in key_providers.PROVIDERS if one.efforts}
+)
 #: Each provider's effort until the person chooses one (Claude Code's own,
-#: Codex's and Grok Build's).
-DEFAULT_EFFORT = {"claude": "high", "chatgpt": "medium", "grok": "high"}
+#: Codex's and Grok Build's; the key providers' own).
+DEFAULT_EFFORT = {
+    "claude": "high",
+    "chatgpt": "medium",
+    "grok": "high",
+    **{
+        one.slug: one.default_effort
+        for one in key_providers.PROVIDERS
+        if one.default_effort is not None
+    },
+}
 #: How often a Grok plan's usage is asked of xAI's billing, at most.
 GROK_USAGE_EVERY = timedelta(minutes=5)
 #: A limit ChatGPT reports without saying until when.
@@ -167,9 +189,11 @@ LIMIT_CODES = frozenset(
 )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class OwnModel:
-    """One model of a provider the person connects."""
+    """One model of a provider the person connects. Two are the same model
+    when their ids are: a key's model is named from its provider's list,
+    which may say it otherwise than here."""
 
     provider: str
     slug: str
@@ -180,9 +204,20 @@ class OwnModel:
     #: The efforts it takes, where fewer than its provider's.
     efforts: tuple[str, ...] = ()
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, OwnModel) and other.model_id == self.model_id
+
+    def __hash__(self) -> int:
+        return hash(self.model_id)
+
     @property
     def efforts_taken(self) -> tuple[str, ...]:
         return self.efforts or EFFORTS.get(self.provider, ())
+
+    @property
+    def on_key(self) -> bool:
+        """A model of the person's own API key (`key_providers.py`)."""
+        return self.provider in key_providers.SLUGS
 
     def on_plan(self, plan: str | None) -> bool:
         """Whether an account on `plan` may use it; an account whose plan
@@ -199,7 +234,9 @@ class OwnModel:
         return DesktopModel(
             model_id=self.model_id,
             model_name=self.name,
-            description=f"{self.name} on your {_PROVIDER_NAMES[self.provider]} plan",
+            description=f"{self.name} on your "
+            f"{model_accounts.provider_name(self.provider)} "
+            f"{'key' if self.on_key else 'plan'}",
             cost_multiplier=0.0,
             provider=DesktopProvider.openai,
             context_window=self.context_window,
@@ -215,12 +252,6 @@ class OwnModel:
             "contextWindow": self.context_window,
         }
 
-
-_PROVIDER_NAMES = {
-    model_accounts.PROVIDER_CHATGPT: "ChatGPT",
-    model_accounts.PROVIDER_CLAUDE: "Claude",
-    model_accounts.PROVIDER_GROK: "Grok",
-}
 
 #: ChatGPT's models for Codex, as Codex's own list names them (openai/codex,
 #: `codex-rs/models-manager/models.json`, the ones it shows, 8 November
@@ -308,7 +339,46 @@ def is_own(model_id: str) -> bool:
 
 def own_model(model_id: str) -> OwnModel | None:
     wanted = model_id.strip()
-    return _MODELS.get(_FORMER_IDS.get(wanted, wanted))
+    found = _MODELS.get(_FORMER_IDS.get(wanted, wanted))
+    return found if found is not None else _key_model(wanted)
+
+
+def _key_model(model_id: str) -> OwnModel | None:
+    """A model of a key provider (`own:deepseek:deepseek-v4-pro`), named as
+    here or from its id; which models a key reaches is its account's."""
+    _, _, rest = model_id.partition(OWN_PREFIX)
+    slug, _, model = rest.partition(":")
+    one = key_providers.provider(slug)
+    if not model_id.startswith(OWN_PREFIX) or one is None or not one.available:
+        return None
+    if not model or len(model) > 200:
+        return None
+    known = next((m for m in one.known if m.slug == model), None)
+    if known is not None:
+        return OwnModel(slug, model, known.name, known.context_window)
+    return OwnModel(
+        slug, model, key_providers.pretty_name(model), key_providers.DEFAULT_CONTEXT
+    )
+
+
+def _stored_models(account: DesktopModelAccount) -> list[OwnModel]:
+    """The models an API key reaches, as its provider listed them."""
+    out = []
+    for entry in account.models or []:
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str):
+            continue
+        context = entry.get("contextWindow")
+        out.append(
+            OwnModel(
+                account.provider,
+                entry["id"],
+                str(entry.get("name") or key_providers.pretty_name(entry["id"])),
+                context
+                if isinstance(context, int) and context > 0
+                else key_providers.DEFAULT_CONTEXT,
+            )
+        )
+    return out
 
 
 def chosen_model(user: User) -> OwnModel | None:
@@ -356,10 +426,16 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
         if not await _usable(session, user.id, chosen.provider):
             return []
         return [claude_code_row(chosen, chosen_effort(user))]
-    plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
+    usable = await _usable(session, user.id, chosen.provider)
+    plans = [one.plan for one in usable]
     if not any(chosen.on_plan(plan) for plan in plans):
         return []
-    cheap = own_model(_CHEAP.get(chosen.provider, ""))
+    if chosen.on_key:
+        # Named and sized as the key's provider listed it.
+        chosen = next(
+            (m for one in usable for m in _stored_models(one) if m == chosen), chosen
+        )
+    cheap = own_model(_CHEAP.get(chosen.provider, "")) or _key_cheap(chosen, usable)
     if cheap is None or not any(cheap.on_plan(plan) for plan in plans):
         # The machinery on the chosen model, where the plan has no cheap one.
         cheap = chosen
@@ -368,6 +444,21 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
         cheap.desktop_model(ModelRole.cheap).available(),
         chosen.desktop_model(ModelRole.computer).available(),
     ]
+
+
+def _key_cheap(
+    chosen: OwnModel, accounts: Sequence[DesktopModelAccount]
+) -> OwnModel | None:
+    """A key provider's cheaper model for the agents' machinery, where the
+    person's key reaches it: their key pays for every title and summary."""
+    one = key_providers.provider(chosen.provider)
+    if one is None or one.cheap is None:
+        return None
+    for account in accounts:
+        for model in _stored_models(account):
+            if model.slug == one.cheap:
+                return model
+    return None
 
 
 def claude_code_row(model: OwnModel, effort: str | None = None) -> dict[str, Any]:
@@ -709,6 +800,10 @@ async def relay(
     wants_stream = payload.get("stream") is True
     chosen = chosen_model(user)
     effort = chosen_effort(user) if chosen is not None and chosen == own else None
+    if own.on_key:
+        return await _on_keys(
+            request, caller, session, own, payload, wants_stream, reason, effort, simeon
+        )
     shaped = (
         grok_body(payload, own, effort)
         if own.provider == model_accounts.PROVIDER_GROK
@@ -770,7 +865,8 @@ async def _on_simeon(
     if stand_in is None:
         return _error(
             "api_error",
-            f"Your {_PROVIDER_NAMES[own.provider]} account can't answer right now.",
+            f"Your {model_accounts.provider_name(own.provider)} account can't "
+            "answer right now.",
             503,
         )
     log.info(
@@ -984,6 +1080,397 @@ async def _on_account(
         stream(),
         status_code=200,
         media_type=upstream.headers.get("content-type", "text/event-stream"),
+        headers={"cache-control": "no-store"},
+    )
+
+
+# --- the person's own API keys (10 November 2026) ---------------------------------
+#
+# The founder: "these are all the keys i want our users to be able to use".
+# A call on a key goes to its provider on the wire it speaks
+# (`key_providers.KeyProvider.wire`): the engine's Responses request as it
+# is (OpenAI, SpaceXAI, Azure), written for Chat Completions
+# (`chat_wire.py`), or for Claude's Messages (`messages_wire.py`), and its
+# answer written back as Responses events. Same rules as a plan's: the
+# person's other keys for the provider in turn, then Simeon's model on
+# credits when none can answer for now (a limit, a 5xx, the provider
+# unreachable, the key refused); the provider's refusal of the request
+# itself handed back as it came. A key the provider no longer takes (401)
+# shows as signed out in the apps.
+
+#: How long what a provider wants back with its tool calls is kept
+#: (`chat_wire.ResponsesWriter.kept`): a tool loop is minutes long.
+KEPT_FOR_S = 6 * 3600
+#: How long a model that took only the plain request is sent only that.
+PLAIN_FOR_S = 24 * 3600
+#: A rate limit that says nothing of when it ends.
+RATE_LIMIT_WAIT = timedelta(minutes=1)
+_KEPT_PREFIX = "desktop:own-kept:"
+_PLAIN_PREFIX = "desktop:own-plain:"
+#: The most calls whose kept things are looked up for one request.
+_MOST_KEPT = 64
+
+
+def _store(request: Request) -> Any:
+    """The app's Redis, where the request has one (the test client's has
+    none: nothing is kept)."""
+    return getattr(request.state, "redis", None)
+
+
+async def _recall_kept(
+    redis: Any, user_id: Any, call_ids: Sequence[str]
+) -> dict[str, dict[str, Any]]:
+    if redis is None or not call_ids:
+        return {}
+    wanted = list(call_ids)[-_MOST_KEPT:]
+    try:
+        found = await redis.mget([f"{_KEPT_PREFIX}{user_id}:{one}" for one in wanted])
+    except Exception:
+        log.exception("desktop.models.kept_not_read")
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for call_id, raw in zip(wanted, found, strict=True):
+        try:
+            value = json.loads(raw) if raw else None
+        except ValueError:
+            value = None
+        if isinstance(value, dict):
+            out[call_id] = value
+    return out
+
+
+async def _keep_kept(redis: Any, user_id: Any, kept: dict[str, dict[str, Any]]) -> None:
+    if redis is None or not kept:
+        return
+    try:
+        for call_id, value in kept.items():
+            await redis.set(
+                f"{_KEPT_PREFIX}{user_id}:{call_id}", json.dumps(value), ex=KEPT_FOR_S
+            )
+    except Exception:
+        log.exception("desktop.models.kept_not_written")
+
+
+def _plain_key(user_id: Any, own: OwnModel) -> str:
+    return f"{_PLAIN_PREFIX}{user_id}:{own.provider}:{own.slug}"
+
+
+async def _plain_known(redis: Any, user_id: Any, own: OwnModel) -> bool:
+    if redis is None:
+        return False
+    try:
+        return bool(await redis.get(_plain_key(user_id, own)))
+    except Exception:
+        return False
+
+
+async def _remember_plain(redis: Any, user_id: Any, own: OwnModel) -> None:
+    if redis is None:
+        return
+    try:
+        await redis.set(_plain_key(user_id, own), "1", ex=PLAIN_FOR_S)
+    except Exception:
+        log.exception("desktop.models.plain_not_kept")
+
+
+#: What the Responses request keeps on the way to OpenAI, SpaceXAI or Azure;
+#: the plain request only the first ones.
+_RESPONSES_PLAIN = (
+    "input",
+    "instructions",
+    "tools",
+    "tool_choice",
+    "max_output_tokens",
+)
+_RESPONSES_FIELDS = (
+    *_RESPONSES_PLAIN,
+    "parallel_tool_calls",
+    "reasoning",
+    "text",
+    "include",
+    "prompt_cache_key",
+    "temperature",
+    "top_p",
+)
+
+
+def responses_body(
+    payload: dict[str, Any], own: OwnModel, effort: str | None, *, plain: bool = False
+) -> dict[str, Any]:
+    """The engine's Responses request for a provider that speaks it: the
+    model the key's, nothing stored there, the person's effort on the
+    agent's real thinking."""
+    body: dict[str, Any] = {"model": own.slug, "stream": True, "store": False}
+    for key in _RESPONSES_PLAIN if plain else _RESPONSES_FIELDS:
+        if payload.get(key) is not None:
+            body[key] = payload[key]
+    reasoning = body.get("reasoning")
+    if isinstance(reasoning, dict):
+        asked = chat_wire.effort_of(payload, effort)
+        if asked in _NO_EFFORT:
+            asked = "low"
+        taken = own.efforts_taken
+        if asked is not None and taken and asked not in taken:
+            asked = taken[-1]
+        body["reasoning"] = {**reasoning, "effort": asked} if asked else reasoning
+    return body
+
+
+def _key_body(
+    one: key_providers.KeyProvider,
+    own: OwnModel,
+    payload: dict[str, Any],
+    effort: str | None,
+    kept: dict[str, dict[str, Any]],
+    plain: bool,
+) -> dict[str, Any]:
+    if one.wire == "responses":
+        return responses_body(payload, own, effort, plain=plain)
+    if one.wire == "messages":
+        return messages_wire.messages_request(
+            payload, own.slug, effort, kept=kept, plain=plain, thinking=one.thinking
+        )
+    return chat_wire.chat_request(
+        payload, own.slug, one.dialect, effort, kept=kept, plain=plain
+    )
+
+
+def _reader(
+    one: key_providers.KeyProvider, own: OwnModel
+) -> chat_wire.ResponsesWriter | None:
+    """What writes the provider's answer as Responses events; None when it
+    answers on them already."""
+    if one.wire == "messages":
+        return messages_wire.MessagesToResponses(model=own.slug)
+    if one.wire == "chat":
+        return chat_wire.ChatToResponses(model=own.slug)
+    return None
+
+
+def key_limit_until(
+    status: int, headers: Any, refusal: bytes, now: datetime
+) -> datetime | None:
+    """Until when a key waits: its credits run out (402, or a 429 saying
+    so) an hour; a rate limit what the provider says (`retry-after`), else
+    a minute. None for any other refusal."""
+    words = refusal[:2000].decode(errors="replace").lower()
+    if status == 402 or (
+        status == 429
+        and any(one in words for one in ("insufficient_quota", "billing", "credit"))
+    ):
+        return now + LIMIT_WITHOUT_END
+    if status != 429:
+        return None
+    try:
+        wait = float(str(headers.get("retry-after") or ""))
+    except ValueError:
+        wait = 0.0
+    if 0 < wait <= LIMIT_WITHOUT_END.total_seconds():
+        return now + timedelta(seconds=max(wait, 5.0))
+    return now + RATE_LIMIT_WAIT
+
+
+async def _on_keys(
+    request: Request,
+    caller: ProxyCaller,
+    session: AsyncSession,
+    own: OwnModel,
+    payload: dict[str, Any],
+    wants_stream: bool,
+    reason: str | None,
+    effort: str | None,
+    simeon: Callable[[dict[str, Any]], Awaitable[_Answer]],
+) -> _Answer:
+    """One of the agents' calls on the person's keys for its provider, in
+    turn; then Simeon's model."""
+    user = caller.user
+    one = key_providers.provider(own.provider)
+    if one is None or not one.available:
+        return await _on_simeon(own, payload, user, simeon)
+    now = utc_now()
+    accounts = [
+        account
+        for account in await _usable(session, user.id, own.provider)
+        if account.limited_until is None or account.limited_until <= now
+    ]
+    refused_request: _Refused | None = None
+    for account in accounts:
+        try:
+            return await _on_key_account(
+                request,
+                caller,
+                session,
+                one,
+                own,
+                account.id,
+                payload,
+                wants_stream,
+                reason,
+                effort,
+            )
+        except _Refused as refused:
+            log.warning(
+                "desktop.models.relay_refused",
+                user_id=str(user.id),
+                provider=own.provider,
+                model=own.slug,
+                status=refused.status,
+                preview=_preview(refused.body),
+            )
+            if refused.refuses_the_request:
+                refused_request = refused
+    if refused_request is not None:
+        return refused_request.answer()
+    return await _on_simeon(own, payload, user, simeon)
+
+
+async def _on_key_account(
+    request: Request,
+    caller: ProxyCaller,
+    session: AsyncSession,
+    one: key_providers.KeyProvider,
+    own: OwnModel,
+    account_id: Any,
+    payload: dict[str, Any],
+    wants_stream: bool,
+    reason: str | None,
+    effort: str | None,
+) -> _Answer:
+    """The call on one key. Raises `_Refused` when it did not answer, so the
+    next one can. A request the model refuses (400, 422) is sent once more
+    plain (`chat_wire.chat_request`'s `plain`), and that model is sent only
+    the plain one for a day when it took it."""
+    user_id = caller.user.id
+    grant = await _grant(request, session, user_id, account_id)
+    fields = dict(grant.fields)
+    redis = _store(request)
+    kept = await _recall_kept(redis, user_id, chat_wire.call_ids(payload))
+    plain = await _plain_known(redis, user_id, own)
+    went_plain = False
+    conversation = payload.get("prompt_cache_key")
+    headers = {
+        **one.auth_headers(grant.access_token),
+        "content-type": "application/json",
+        "accept": "text/event-stream",
+    }
+    if one.slug == "opencode" and isinstance(conversation, str) and conversation:
+        # OpenCode Go asks each client for a steady session id.
+        headers["x-opencode-session"] = conversation[:200]
+    client = httpx.AsyncClient(timeout=_timeout())
+    while True:
+        body = _key_body(one, own, payload, effort, kept, plain)
+        try:
+            upstream = await client.send(
+                client.build_request(
+                    "POST",
+                    one.call_url(fields),
+                    headers=headers,
+                    content=json.dumps(body).encode(),
+                ),
+                stream=True,
+            )
+        except httpx.HTTPError as error:
+            await client.aclose()
+            raise _Refused(None, type(error).__name__.encode()) from error
+        if upstream.status_code == 200:
+            break
+        refusal = await upstream.aread()
+        await upstream.aclose()
+        if upstream.status_code in (400, 422) and not plain:
+            log.info(
+                "desktop.models.key_plain",
+                user_id=str(user_id),
+                provider=own.provider,
+                model=own.slug,
+                preview=_preview(refusal),
+            )
+            plain = went_plain = True
+            continue
+        await client.aclose()
+        if upstream.status_code == 401:
+            await _in_own_session(
+                request,
+                session,
+                lambda fresh: model_accounts.key_refused(fresh, user_id, account_id),
+            )
+            raise _Refused(401, refusal)
+        until = key_limit_until(
+            upstream.status_code, upstream.headers, refusal, utc_now()
+        )
+        if until is not None:
+            await _mark_limited(request, session, user_id, account_id, until)
+        raise _Refused(upstream.status_code, refusal, limited=until is not None)
+    if went_plain:
+        await _remember_plain(redis, user_id, own)
+
+    reader = _reader(one, own)
+    model = own.desktop_model()
+
+    async def pieces() -> AsyncIterator[bytes]:
+        try:
+            async for chunk in upstream.aiter_bytes():
+                if reader is None:
+                    yield chunk
+                    continue
+                for piece in reader.feed(chunk):
+                    yield piece
+            if reader is not None:
+                for piece in reader.finish():
+                    yield piece
+        finally:
+            await upstream.aclose()
+            await client.aclose()
+
+    async def done(tally: _ResponseTally) -> None:
+        await _in_own_session(
+            request,
+            session,
+            lambda fresh: desktop.record_usage(
+                fresh,
+                user_id=user_id,
+                session_id=caller.session_id,
+                model=model,
+                usage=tally.finish(),
+                stream=wants_stream,
+                upstream_status=200,
+                reason=reason,
+                billed_by=own.provider,
+            ),
+        )
+        if reader is not None:
+            await _keep_kept(redis, user_id, reader.kept())
+
+    if not wants_stream:
+        tally = _ResponseTally()
+        async for piece in pieces():
+            tally.feed(piece)
+        await done(tally)
+        answer = tally.answer()
+        if answer is None:
+            said: dict[str, Any] = (reader.error if reader is not None else None) or {}
+            return _error(
+                "api_error",
+                str(said.get("message") or "The model answered with no response."),
+                502,
+            )
+        return JSONResponse(answer)
+
+    async def stream() -> AsyncIterator[bytes]:
+        tally = _ResponseTally()
+        try:
+            async for piece in pieces():
+                tally.feed(piece)
+                yield piece
+        finally:
+            try:
+                await done(tally)
+            except Exception:  # a lost usage row must not kill the stream's close
+                log.exception("desktop.proxy.usage_not_recorded")
+
+    return StreamingResponse(
+        stream(),
+        status_code=200,
+        media_type="text/event-stream",
         headers={"cache-control": "no-store"},
     )
 
@@ -1597,7 +2084,7 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
     signed_in = [
         one for one in accounts if one.status != model_accounts.STATUS_SIGNED_OUT
     ]
-    return [
+    offered = [
         model
         for model in ALL_MODELS
         if any(
@@ -1605,6 +2092,17 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
             for one in signed_in
         )
     ]
+    # Then each API key's models, as its provider listed them, in the order
+    # the keys were connected.
+    seen = set(offered)
+    for account in signed_in:
+        if account.kind != model_accounts.KIND_API_KEY:
+            continue
+        for model in _stored_models(account):
+            if model not in seen and key_providers.provider(model.provider) is not None:
+                seen.add(model)
+                offered.append(model)
+    return offered
 
 
 async def _choice_json(session: AsyncSession, user: User) -> dict[str, Any]:

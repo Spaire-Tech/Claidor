@@ -630,7 +630,7 @@ class TestDisconnect:
         }
         assert await _rows(session, user) == []
         listed = await client.get("/desktop/api/models/accounts", headers=headers)
-        assert listed.json() == {"accounts": []}
+        assert listed.json()["accounts"] == []
 
     async def test_openai_down_still_forgets(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
