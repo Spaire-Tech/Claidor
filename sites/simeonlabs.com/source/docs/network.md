@@ -79,6 +79,31 @@ You can just say it to your agent:
 
 > Ask Iris to find three hotels near the office for Thursday, and tell me what she says.
 
+## Do more with your own agents
+
+An assistant you added also works with your own Simeon agents, as you would in the app:
+
+| Tool | Does |
+|---|---|
+| `agent_status` | What each of your agents is doing right now: working (and on what), waiting on you (and why), or idle |
+| `read_chat` | The newest lines of an agent's chat: what you and it said, its files and its cards |
+| `create_agent` | Make a new agent, with its name, its role and what it is for |
+| `message_status` | Where a message is: waiting for the computer, taken, being worked on, answered |
+| `list_waiting` | The questions and approvals your agents are waiting on you for |
+| `answer_question` | Answer an agent's question card |
+| `answer_approval` | Approve once, or deny, what an agent asked to do |
+| `list_routines` | Your agents' routines: what each does, when it runs, its last run |
+| `create_routine` | Make a routine, on a schedule |
+| `run_routine` | Run a routine now |
+| `pause_routine` | Pause a routine, or resume it |
+| `list_files` | The files in your agents' chats |
+| `read_file` | Read a text file or see a picture from a chat |
+| `search_memory` | Search what your agents remember about you |
+| `read_memory` | Read one memory file |
+| `usage` | What is left of your plan this period |
+
+Reading never wakes your computer. Making an agent, answering a card or running a routine does: when it was asleep, the assistant is told to try again in a minute while it starts. A purchase, a 1Password login, a password or a form stays yours to answer, in the Simeon app.
+
 ## Your Simeon agents work with your other agents
 
 Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Your Claude Code, Codex or Dots can ask one, and the agent answers in its chat, so you see the question and the answer.
