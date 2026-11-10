@@ -1344,3 +1344,54 @@ class TestOAuth2Token:
         access_token = json["access_token"]
         assert access_token.startswith("simeon_at_o_")
         assert "refresh_token" not in json
+
+
+@pytest.mark.asyncio
+class TestBotsSignIn:
+    """A bot added to talk to the person's agents (`simeon/desktop/mcp.py`)."""
+
+    async def test_the_metadata_is_where_mcp_clients_look_first(
+        self, client: AsyncClient
+    ) -> None:
+        found = (await client.get("/.well-known/oauth-authorization-server")).json()
+        assert found == (await client.get("/.well-known/openid-configuration")).json()
+        assert found["issuer"] == "https://api.simeonlabs.com"
+        assert "S256" in found["code_challenge_methods_supported"]
+        assert "none" in found["token_endpoint_auth_methods_supported"]
+        assert "agents" in found["scopes_supported"]
+
+    @pytest.mark.auth
+    async def test_asking_for_the_agents_signs_in_as_the_person(
+        self, client: AsyncClient, save_fixture: SaveFixture
+    ) -> None:
+        # Registered as MCP clients do: no sub_type, so an organization by
+        # default, and the bot doesn't say one when it asks.
+        bot = OAuth2Client(
+            client_id="simeon_ci_bot",
+            client_secret="simeon_cs_bot",
+            registration_access_token="simeon_crt_bot",
+            user=None,
+        )
+        bot.set_client_metadata(
+            {
+                "client_name": "Dots",
+                "redirect_uris": ["http://127.0.0.1:8000/docs/oauth2-redirect"],
+                "token_endpoint_auth_method": "none",
+                "grant_types": ["authorization_code", "refresh_token"],
+                "response_types": ["code"],
+                "scope": "openid agents",
+                "default_sub_type": "organization",
+            }
+        )
+        await save_fixture(bot)
+        params = {
+            "client_id": bot.client_id,
+            "response_type": "code",
+            "redirect_uri": "http://127.0.0.1:8000/docs/oauth2-redirect",
+            "scope": "agents",
+        }
+        response = await client.get("/v1/oauth2/authorize", params=params)
+
+        assert response.status_code == 200, response.text
+        assert response.json()["sub_type"] == "user"
+        assert response.json()["scopes"] == ["agents"]
