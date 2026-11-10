@@ -86,14 +86,18 @@ export function claudeCodeEnding(calls: readonly string[], text: string, at: num
 
 /**
  * The words to send the person after a turn they started, which Claude Code
- * ran: its last words, when nothing reached them (`owed`) or when it worked
- * on after its last message (an "On it", then the result in its own words).
- * None when there are no words, or when its last message came after its work.
+ * ran: its last words, only when nothing reached them (`owed`). Once it sent
+ * them a message, its words after it are its scratchpad, as its brief says,
+ * and stay its own. Until 10 November 2026 they were also sent when it worked
+ * on after its last message, and its notes to itself reached the person
+ * ("I told Bass I'll use Nov 15…", after "Got it, Nov 15"; the founder: "the
+ * fact that it talks about me is an issue"). The brief now tells it to send
+ * what came of that work itself (`claudeCodeBriefNote`).
  */
 export function claudeCodeReplyToSend(ending: ClaudeCodeEnding, owed: boolean): string | undefined {
   const text = ending.text.trim();
   if (text === "") return undefined;
-  return owed || ending.workedAfterSpeaking ? text : undefined;
+  return owed ? text : undefined;
 }
 
 /**
@@ -169,6 +173,7 @@ export function claudeCodeBriefNote(): string {
     `Run shell commands with \`mcp__${SIMEON_MCP_SERVER}__Shell\`: it carries the person's safety review, and your own Bash is off. Files, web search and web fetch are your own tools.`,
     `Ask the person a question with a question card, \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` with type widget, as the brief says: your own AskUserQuestion is off, because the person would never see it.`,
     "When you answer the person's message and end your turn without having sent them the answer, your final words are sent to them as your reply: write them to the person, not as notes to yourself.",
+    `Once you have sent them a message, nothing you write after it reaches them. When you go on working after a message, send what came of it with \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` before you end your turn, written to them: never about them.`,
   ].join("\n");
 }
 
