@@ -1,0 +1,477 @@
+{
+ "about": "How to get each provider's API key, or each plan, for the website's AI models pages (models.py). Researched on 10 November 2026 on the providers' own documentation, consoles and help pages (third-party guides only where a label couldn't be read there); each guide keeps the pages read and how sure the reading was. Check a guide again when its provider changes its console.",
+ "guides": {
+  "anthropic": {
+   "need": "A Claude Console account with prepaid credits. Only an Admin or Billing role can buy them.",
+   "steps": [
+    "Sign in at platform.claude.com, or create an account.",
+    "Open Billing, click Buy credits and enter an amount.",
+    "Open API keys and click Create key.",
+    "Name the key, choose an expiration and pick a workspace for it.",
+    "Copy the key (it starts with sk-ant-). It's shown only once."
+   ],
+   "extra": "Pick a workspace: a key without one is refused.",
+   "sources": [
+    "https://platform.claude.com/docs/en/get-api-key",
+    "https://platform.claude.com/docs/en/manage-claude/authentication",
+    "https://platform.claude.com/docs/en/api/overview",
+    "https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-claude-api-usage"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "openai": {
+   "need": "An OpenAI API platform account with prepaid credits ($5 minimum).",
+   "steps": [
+    "Sign in at platform.openai.com.",
+    "Open Settings › Billing and add to your credit balance.",
+    "Go to API keys and click Create new secret key.",
+    "Name the key, choose a project and keep permissions on All.",
+    "Create the key and copy it. It's shown only once."
+   ],
+   "extra": "Some models need a verified organization: Settings › Organization › General › Verify Organization.",
+   "sources": [
+    "https://developers.openai.com/api/docs/quickstart",
+    "https://developers.openai.com/api/docs/guides/production-best-practices",
+    "https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key",
+    "https://help.openai.com/en/articles/8264644-setting-up-and-managing-prepaid-api-billing"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "xai": {
+   "need": "A console.x.ai account with prepaid credits on the key's team.",
+   "steps": [
+    "Sign in at console.x.ai and check the right team is selected.",
+    "Buy prepaid credits on the Billing page.",
+    "Open API Keys in the sidebar and click Create API Key.",
+    "Name the key and allow all endpoints and models.",
+    "Copy the key. It's shown only once."
+   ],
+   "extra": "A key with no endpoints or models allowed fails every request.",
+   "sources": [
+    "https://docs.x.ai/docs/tutorial",
+    "https://docs.x.ai/developers/quickstart",
+    "https://docs.x.ai/developers/faq/security",
+    "https://docs.x.ai/console/billing",
+    "https://docs.x.ai/console/faq/billing"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "google": {
+   "need": "A Google account. The free tier covers some models with low limits; paid use needs billing on the key's project ($5 minimum prepay).",
+   "steps": [
+    "Sign in at aistudio.google.com and accept the terms.",
+    "Open API keys.",
+    "Click Create API key and choose a project.",
+    "Copy the key.",
+    "For paid models or higher limits, click Set up billing in the project's Billing Tier column."
+   ],
+   "sources": [
+    "https://aistudio.google.com/docs/api-key",
+    "https://aistudio.google.com/docs/billing",
+    "https://ai.google.dev/gemini-api/docs/api-key"
+   ],
+   "confidence": "medium-high",
+   "checked": "2026-11-10"
+  },
+  "bedrock": {
+   "need": "An AWS account with a payment method, signed in as a user who can use Bedrock and create IAM users.",
+   "steps": [
+    "Sign in to the AWS console and open Amazon Bedrock.",
+    "Choose API keys in the left pane.",
+    "On the Long-term API keys tab, choose Generate long-term API keys.",
+    "Pick when the key expires under API key expiration, then choose Generate.",
+    "Copy the key."
+   ],
+   "extra": "Region: where your models run, us-east-1 by default. It must be one where Bedrock's API keys work, such as us-east-1, us-west-2, eu-west-1 or ap-northeast-1.",
+   "sources": [
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-generate.html",
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html",
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html",
+    "https://docs.aws.amazon.com/bedrock/latest/userguide/bedrock-mantle.html"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "antling": {
+   "need": "An Ant Ling account, signed in with a phone code and linked to Alipay. 500,000 tokens a day are free; beyond that, use is paid from an Alipay balance.",
+   "steps": [
+    "Open the API console at chat.ant-ling.com/open and switch to English at the top if you want.",
+    "Enter your phone number, request the code (获取验证码) and sign in (登录 / 注册).",
+    "Link your Alipay account when the console asks.",
+    "Select Create Token.",
+    "Copy the API key."
+   ],
+   "sources": [
+    "https://chat.ant-ling.com/open",
+    "https://developer.ant-ling.com/en/docs/getting-started/prerequisites/",
+    "https://developer.ant-ling.com/en/docs/faq/",
+    "https://developer.ant-ling.com/en/docs/getting-started/quickstart/"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "azure": {
+   "need": "An Azure subscription with billing set up, a Microsoft Foundry or Azure OpenAI resource, and at least one deployed model.",
+   "steps": [
+    "Sign in at ai.azure.com and create a project if you don't have one.",
+    "Go to Build › Catalog › Model Catalog, pick a model and select Deploy › Default settings.",
+    "Select Manage at the top right, then Resource details, then Manage this resource in the Azure portal.",
+    "In the Azure portal, open Resource Management › Keys and Endpoint.",
+    "Copy KEY 1, and the URL on the OpenAI tab (https://<resource>.openai.azure.com/)."
+   ],
+   "extra": "Endpoint: the URL on the OpenAI tab of Keys and Endpoint, entered as my-resource.openai.azure.com. Deployments: their names under Build › Models in Foundry (with default settings, the model's name), separated by commas.",
+   "sources": [
+    "https://learn.microsoft.com/en-us/azure/foundry/tutorials/quickstart-create-foundry-resources",
+    "https://learn.microsoft.com/en-us/azure/foundry/concepts/manage-costs",
+    "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/endpoints",
+    "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/create-resource"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "baseten": {
+   "need": "A Baseten account. New workspaces get starting credits; after that, add a payment method under Settings › Billing.",
+   "steps": [
+    "Sign in at app.baseten.co and open API keys under Organization settings.",
+    "Select Create API key and enter a name (lowercase letters, numbers and hyphens).",
+    "Choose Personal with an expiration, or Team with the Call Model APIs permission.",
+    "Select Create API key.",
+    "Copy the key now. Baseten shows it only once."
+   ],
+   "sources": [
+    "https://docs.baseten.co/organization/api-keys",
+    "https://docs.baseten.co/quickstart",
+    "https://docs.baseten.co/development/model-apis/overview",
+    "https://docs.baseten.co/organization/billing.md"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "cerebras": {
+   "need": "A Cerebras Cloud account with a verified payment method; the API stays off until you add one. You then get $5 of trial credit for 30 days.",
+   "steps": [
+    "Sign in at cloud.cerebras.ai and add a payment method if asked.",
+    "Select API Keys in the left navigation.",
+    "On a paid account, choose the project for the key first.",
+    "Select Generate API Key, name it and confirm.",
+    "Copy the key with the copy icon beside it."
+   ],
+   "sources": [
+    "https://inference-docs.cerebras.ai/console/api-keys.md",
+    "https://inference-docs.cerebras.ai/quickstart",
+    "https://www.cerebras.ai/pricing"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "cloudflare": {
+   "need": "A Cloudflare account. The Free plan includes 10,000 Neurons a day; beyond that you need Workers Paid.",
+   "steps": [
+    "In the Cloudflare dashboard, open Workers AI.",
+    "Select Use REST API.",
+    "Select Create a Workers AI API Token, check the details, then select Create API Token.",
+    "Select Copy API Token."
+   ],
+   "extra": "Account ID: on the same Use REST API page, under Get Account ID. A custom token needs both Workers AI - Read and Workers AI - Edit.",
+   "sources": [
+    "https://developers.cloudflare.com/workers-ai/get-started/rest-api/",
+    "https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/",
+    "https://developers.cloudflare.com/workers-ai/platform/pricing/"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "deepseek": {
+   "need": "A DeepSeek Platform account with a topped-up balance. You can create a key with no balance, but every call fails with 402 Insufficient Balance until you top up.",
+   "steps": [
+    "Sign in at platform.deepseek.com.",
+    "Open Top up and add funds to your balance.",
+    "Open API keys in the sidebar and click Create new API key.",
+    "Name the key and confirm.",
+    "Copy the key now. DeepSeek shows it only once."
+   ],
+   "sources": [
+    "https://api-docs.deepseek.com/",
+    "https://api-docs.deepseek.com/quick_start/error_codes",
+    "https://cdn.deepseek.com/policies/en-US/deepseek-open-platform-terms-of-service.html",
+    "https://developer.puter.com/tutorials/how-to-get-deepseek-api-key/",
+    "https://deepseekai.guide/api/deepseek-api-key-setup/"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "fireworks": {
+   "need": "A Fireworks AI account. New accounts get a $1 starter credit; after that, add a payment method and buy prepaid credits.",
+   "steps": [
+    "Sign in at app.fireworks.ai.",
+    "Open the API keys page in your account settings.",
+    "Click Create API key.",
+    "Copy the key now. Fireworks shows it only at creation.",
+    "To keep using the API after the starter credit, add a payment method and credits on the billing page."
+   ],
+   "extra": "Keys expire one year after creation by default.",
+   "sources": [
+    "https://docs.fireworks.ai/getting-started/quickstart",
+    "https://docs.fireworks.ai/api-reference/create-api-key",
+    "https://docs.fireworks.ai/faq/billing-pricing-usage/billing/billing-management",
+    "https://fireworks.ai/pricing"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "groq": {
+   "need": "A free GroqCloud account. The Free tier needs no payment method.",
+   "steps": [
+    "Sign in at console.groq.com.",
+    "If you have more than one project, select the project the key is for. Keys only work within their project.",
+    "Open API Keys and click Create API Key.",
+    "Enter a display name and click Submit.",
+    "Copy the key now. Groq shows it only once."
+   ],
+   "sources": [
+    "https://console.groq.com/docs/quickstart",
+    "https://console.groq.com/docs/billing-faqs",
+    "https://console.groq.com/docs/projects",
+    "https://docs.n8n.io/integrations/builtin/credentials/groq.md",
+    "https://palewi.re/docs/first-llm-classifier/groq.html"
+   ],
+   "confidence": "medium-high",
+   "checked": "2026-11-10"
+  },
+  "huggingface": {
+   "need": "A Hugging Face account with credits. Free accounts must buy credits first; PRO and Team or Enterprise seats include $2 a month.",
+   "steps": [
+    "Sign in at huggingface.co, go to Access Tokens and click Create new token.",
+    "Choose Fine-grained and enter a token name.",
+    "Under Inference, tick Make calls to Inference Providers.",
+    "Click Create token at the bottom of the page.",
+    "Click Copy and save the token now. It is shown only once."
+   ],
+   "extra": "Without the Make calls to Inference Providers permission, calls are rejected. Buy credits or add PRO on huggingface.co/settings/billing.",
+   "page": "https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained",
+   "sources": [
+    "https://huggingface.co/docs/inference-providers/index",
+    "https://huggingface.co/docs/inference-providers/pricing",
+    "https://huggingface.co/docs/hub/en/security-tokens",
+    "https://palewi.re/docs/first-llm-classifier/huggingface.html"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "minimax": {
+   "need": "A MiniMax account (platform.minimax.io) with a paid M Plan (Go, Explore or Build) or a credit pack.",
+   "steps": [
+    "Sign in at platform.minimax.io.",
+    "Open Plan Details.",
+    "Choose a tier and complete payment.",
+    "Copy your M Plan API key from Plan Details."
+   ],
+   "extra": "The M Plan key and a pay-as-you-go key aren't interchangeable. A pay-as-you-go key (API Keys › Create new secret key) draws on your balance instead.",
+   "sources": [
+    "https://platform.minimax.io/docs/guides/quickstart",
+    "https://platform.minimax.io/docs/m-plan/intro.md",
+    "https://platform.minimax.io/docs/m-plan/quickstart.md",
+    "https://platform.minimax.io/docs/m-plan/faq.md"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "mistral": {
+   "need": "A Mistral account with an organization. Free mode has no API access: you need a payment method, credits and pay-as-you-go turned on.",
+   "steps": [
+    "Sign in at console.mistral.ai, or create an account and name your organization.",
+    "In Admin Panel › Subscriptions › Billing, click Add payment method, then Add credits.",
+    "In Admin Panel › Subscription, turn on pay-as-you-go.",
+    "In the console, open API Keys and select New key.",
+    "Enter a name and an expiration date, and create the key.",
+    "Copy the key now. It's shown only once."
+   ],
+   "extra": "Billing takes 2 to 3 minutes to start. A key made sooner can show as inactive until then.",
+   "sources": [
+    "https://docs.mistral.ai/getting-started/quickstarts/studio/activate-and-generate-api-key.md",
+    "https://docs.mistral.ai/admin/identity-access/api-keys.md",
+    "https://docs.mistral.ai/admin/billing-usage/subscriptions.md",
+    "https://docs.mistral.ai/admin/billing-usage/billing.md"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "moonshot": {
+   "need": "An account on the Kimi API Platform (platform.kimi.ai) with at least $1 recharged. Kimi membership and Kimi Code plans don't count.",
+   "steps": [
+    "Sign in at platform.kimi.ai.",
+    "On Account Overview, click Recharge and pay at least $1.",
+    "Open API Keys and click Create API Key.",
+    "Enter a name, select a project and confirm.",
+    "Copy the key now. It's shown only once."
+   ],
+   "extra": "Only a key from platform.kimi.ai works. Keys from the Chinese platform or Kimi Code are refused.",
+   "sources": [
+    "https://platform.kimi.ai/docs/get-your-api-key.md",
+    "https://platform.kimi.ai/docs/pricing/limits.md",
+    "https://platform.kimi.ai/docs/guide/troubleshooting.md",
+    "https://platform.kimi.ai/docs/guide/org-best-practice.md"
+   ],
+   "confidence": "medium-high",
+   "checked": "2026-11-10"
+  },
+  "nvidia": {
+   "need": "A free NVIDIA account, verified with a code sent to your phone. The free hosted models need no payment.",
+   "steps": [
+    "Click Login at build.nvidia.com and sign in, or create an NVIDIA account.",
+    "When asked, click Verify, enter your phone number and the code you receive.",
+    "Open API Keys and click Generate API Key, then Generate Key.",
+    "Click Copy Key. It's shown only once."
+   ],
+   "extra": "If you see API Access Unavailable, switch to your personal account in the profile menu.",
+   "sources": [
+    "https://docs.api.nvidia.com/nim/docs/api-quickstart",
+    "https://docs.api.nvidia.com/nim/docs/authentication",
+    "https://build.nvidia.com/settings/api-keys"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "opencode": {
+   "need": "An OpenCode Console account with an OpenCode Go plan: Go ($10 a month), Go Plus ($40) or Go Teams ($20 per member).",
+   "steps": [
+    "Sign in at opencode.ai/console.",
+    "Open Go and subscribe to Go, Go Plus or Go Teams.",
+    "Open Account from the account menu, find Personal API keys and click Add API key.",
+    "Choose the workspace that has Go, name the key and click Create.",
+    "Copy the key now (it starts with oc_sk_). It's shown only once."
+   ],
+   "extra": "A key works only in the workspace chosen when it was made. A workspace with several members needs Go Teams.",
+   "sources": [
+    "https://opencode.ai/docs/go/",
+    "https://opencode.ai/docs/console/",
+    "https://opencode.ai/docs/console/api/",
+    "https://opencode.ai/docs/console/billing/"
+   ],
+   "confidence": "medium-high",
+   "checked": "2026-11-10"
+  },
+  "qwen": {
+   "need": "An Alibaba Cloud international account with Model Studio activated in Singapore. It comes with a 90-day free quota, then you pay as you go.",
+   "steps": [
+    "Sign in at alibabacloud.com and complete your account information.",
+    "Open the Model Studio console, accept the Model Management Service Agreement and click Confirm Activation.",
+    "Open API Key, check Singapore is selected at the top right, and click Create API Key.",
+    "Keep the default workspace, set Permissions to All and click OK.",
+    "Copy the key now. It's shown only once."
+   ],
+   "extra": "Make the key in Singapore. A key from another region, such as China (Beijing) or US (Virginia), won't work.",
+   "sources": [
+    "https://www.alibabacloud.com/help/en/model-studio/get-api-key",
+    "https://www.alibabacloud.com/help/en/model-studio/activate-alibaba-cloud-model-studio",
+    "https://www.alibabacloud.com/help/en/model-studio/new-free-quota",
+    "https://www.alibabacloud.com/help/en/model-studio/regions"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "together": {
+   "need": "A Together AI account with prepaid credits ($15 for your first purchase). The API stops when the balance reaches zero.",
+   "steps": [
+    "Go to together.ai, select Get Started and sign in with Google or GitHub.",
+    "In billing settings, select Add credits on the Credit balance card.",
+    "Open API keys in Settings.",
+    "Select Create API Key, name it and select Create.",
+    "Copy the key now. It's shown only once."
+   ],
+   "sources": [
+    "https://docs.together.ai/docs/api-keys-authentication",
+    "https://docs.together.ai/docs/billing-credits",
+    "https://docs.together.ai/docs/account-management",
+    "https://docs.together.ai/docs/quickstart",
+    "https://support.together.ai/articles/4999040689-where-to-find-your-api-key"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "xiaomi": {
+   "need": "A Xiaomi account (outside China: email, Google or Facebook) with money added to its balance.",
+   "steps": [
+    "Sign in at platform.xiaomimimo.com, or create a Xiaomi account there.",
+    "In the Console, open Account Balance and add money by card, Apple Pay or Google Pay.",
+    "Open API Keys and create a key.",
+    "Copy the key now. It's shown only once."
+   ],
+   "extra": "Use a pay-as-you-go key (it starts with sk-). Token Plan keys (tp- or ttp-) are a separate subscription.",
+   "sources": [
+    "https://mimo.mi.com/static/docs/quick-start/summary/first-api-call.md",
+    "https://mimo.mi.com/static/docs/quick-start/faq/account.md",
+    "https://mimo.mi.com/static/docs/quick-start/faq/payment.md",
+    "https://mimo.mi.com/static/docs/quick-start/faq/api-integration.md"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "zai": {
+   "need": "A Z.AI account with money added to its balance. Only a few Flash models are free.",
+   "steps": [
+    "Register or log in at z.ai/model-api.",
+    "Open Billing and top up your balance.",
+    "Open API Keys and create a key under Standard API Key.",
+    "Copy the key."
+   ],
+   "extra": "Use a Standard API Key. GLM Coding Plan keys are separate and only work in coding tools.",
+   "sources": [
+    "https://docs.z.ai/guides/overview/quick-start",
+    "https://docs.z.ai/devpack/notice/api-key-management",
+    "https://docs.z.ai/api-reference/introduction",
+    "https://docs.z.ai/help/faq"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "chatgpt": {
+   "need": "ChatGPT Plus or Pro.",
+   "steps": [
+    "Sign in at chatgpt.com.",
+    "Click your profile icon and select Upgrade plan, or go to chatgpt.com/pricing.",
+    "Choose Plus or Pro and pay."
+   ],
+   "sources": [
+    "https://help.openai.com/en/articles/6950777-what-is-chatgpt-plus",
+    "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  },
+  "claude": {
+   "need": "Claude Pro or Max.",
+   "steps": [
+    "Sign in at claude.ai.",
+    "Click your name in the lower-left corner, then Settings › Billing.",
+    "For Pro, click Upgrade plan and subscribe. For Max, select Upgrade to Max."
+   ],
+   "sources": [
+    "https://support.claude.com/en/articles/8325609-how-to-sign-up-for-the-pro-plan",
+    "https://support.claude.com/en/articles/11049752",
+    "https://support.claude.com/en/articles/11145838-use-claude-code-with-your-pro-max-or-ultra-plan"
+   ],
+   "confidence": "high",
+   "checked": "2026-11-10"
+  },
+  "grok": {
+   "need": "SuperGrok or X Premium+.",
+   "steps": [
+    "Go to x.ai/pricing and sign in with your Grok or X account.",
+    "Choose a plan and check out.",
+    "Check your plan at grok.com/dashboard/billing."
+   ],
+   "sources": [
+    "https://x.ai/news/x-subscription",
+    "https://docs.x.ai/x-subscription/overview",
+    "https://docs.x.ai/x-subscription/manage",
+    "https://docs.x.ai/x-subscription/do-i-have-to-switch"
+   ],
+   "confidence": "medium",
+   "checked": "2026-11-10"
+  }
+ }
+}

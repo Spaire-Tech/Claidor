@@ -263,7 +263,7 @@ def information(rows):
 def available(models, logo, soon=False):
     """The models it gives, on the site's grey."""
     if soon:
-        rows, said = "", "<p>Coming soon to Settings › AI Models.</p>"
+        rows, said = "", "<p>Coming soon.</p>"
     elif models:
         rows, said = "<ul>" + "".join(f"<li>{logo}{esc(m)}</li>" for m in models) + "</ul>", ""
     else:
@@ -327,6 +327,10 @@ def build(out=OUT):
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page, out))
     css = home_css + connector_pages.PAGE_CSS + PAGE_CSS + GUIDE_CSS
     told = guides()
+    missing = [x["id"] for x in SUBS] + [p["id"] for p in keys if p["available"]]
+    missing = [i for i in missing if not told.get(i, {}).get("steps")]
+    if missing:
+        sys.exit(f"models.py: no guide in model_guides.json for {', '.join(missing)}")
     ids = [s["id"] for s in SUBS] + [p["id"] for p in keys]
     taken = {i for i in ids if ids.count(i) > 1 or i == "img"}
     if taken:
@@ -345,8 +349,8 @@ def build(out=OUT):
         info = [("Type", "Subscription", False), ("Plans", esc(s["plans"]), False), ("Models", esc(", ".join(models)), True),
                 ("Billing", f"Your {esc(s['name'])} plan", False), ("Website", link(s["site"]), False)]
         g = told.get(s["id"], {})
-        how = guide(s["name"], esc(g.get("need") or f"{s['plans']}."), "Get the plan", [esc(x) for x in g.get("steps", [])] or
-                    [f"Subscribe to {esc(s['plans'])}."], None, s["site"], sub_steps(s))
+        how = guide(s["name"], None, "Get the plan", [esc(x) for x in g.get("steps", [])] or
+                    [f"Subscribe to {esc(s['plans'])}."], esc(g["extra"]) if g.get("extra") else None, g.get("page") or s["site"], sub_steps(s))
         write(s["id"], s["name"], about, page_body(s["id"], mark(s["mark"]), s["name"], f"Subscription · {esc(s['plans'])}", esc(about), note,
                                                    available(models, small_logo(s["mark"])), how, info, ctas, close))
     for p in keys:
@@ -355,7 +359,8 @@ def build(out=OUT):
         if p["available"]:
             about = f"Your agents use {name}'s models with your key. {name} bills each call at its own prices."
             how = guide(name, esc(g.get("need") or ""), "Get your API key", [esc(x) for x in g.get("steps", [])] or
-                        [f"Create a key on {esc(name)}'s page and copy it."], esc(g["extra"]) if g.get("extra") else None, p["page"], key_steps(p))
+                        [f"Create a key on {esc(name)}'s page and copy it."], esc(g["extra"]) if g.get("extra") else None, g.get("page") or p["page"],
+                        key_steps(p))
         else:
             about = f"{name} can't be connected yet."
             how = ""

@@ -219,9 +219,9 @@ footer{margin-top:0} /* the closing call above leaves the room, as on the Market
     <div class="avail"><h2>Models</h2><p>The models on your account. Simeon reads them when you connect your key.</p></div>
   </div>
   <section class="guide" aria-labelledby="guide-title">
-    <div class="trust-top"><h2 id="guide-title">How to connect Amazon Bedrock</h2></div>
+    <div class="trust-top"><h2 id="guide-title">How to connect Amazon Bedrock</h2><p>An AWS account with a payment method, signed in as a user who can use Bedrock and create IAM users.</p></div>
     <div class="g-parts">
-      <div class="g-part"><h3><i>1</i>Get your API key</h3><ol><li>Create a key on Amazon Bedrock's page and copy it.</li></ol><a class="open-page" href="https://console.aws.amazon.com/bedrock/home#/api-keys" rel="noopener">Open Amazon Bedrock's page<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div class="g-part"><h3><i>1</i>Get your API key</h3><ol><li>Sign in to the AWS console and open Amazon Bedrock.</li><li>Choose API keys in the left pane.</li><li>On the Long-term API keys tab, choose Generate long-term API keys.</li><li>Pick when the key expires under API key expiration, then choose Generate.</li><li>Copy the key.</li></ol><p class="extra">Region: where your models run, us-east-1 by default. It must be one where Bedrock’s API keys work, such as us-east-1, us-west-2, eu-west-1 or ap-northeast-1.</p><a class="open-page" href="https://console.aws.amazon.com/bedrock/home#/api-keys" rel="noopener">Open Amazon Bedrock's page<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
       <div class="g-part"><h3><i>2</i>Connect it in Simeon</h3><ol><li>In Simeon, open Settings › AI Models.</li><li>Under API keys, choose Connect next to Amazon Bedrock and paste the key. Then enter your region (us-east-1 unless yours differs).</li><li>Simeon checks the key with Amazon Bedrock. Its models then appear in the message field.</li></ol></div>
     </div>
   </section>

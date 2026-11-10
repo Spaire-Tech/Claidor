@@ -219,9 +219,9 @@ footer{margin-top:0} /* the closing call above leaves the room, as on the Market
     <div class="avail"><h2>Models</h2><p>The models on your account. Simeon reads them when you connect your key.</p></div>
   </div>
   <section class="guide" aria-labelledby="guide-title">
-    <div class="trust-top"><h2 id="guide-title">How to connect Cloudflare Workers AI</h2></div>
+    <div class="trust-top"><h2 id="guide-title">How to connect Cloudflare Workers AI</h2><p>A Cloudflare account. The Free plan includes 10,000 Neurons a day; beyond that you need Workers Paid.</p></div>
     <div class="g-parts">
-      <div class="g-part"><h3><i>1</i>Get your API key</h3><ol><li>Create a key on Cloudflare Workers AI's page and copy it.</li></ol><a class="open-page" href="https://dash.cloudflare.com/?to=/:account/ai/workers-ai" rel="noopener">Open Cloudflare Workers AI's page<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div class="g-part"><h3><i>1</i>Get your API key</h3><ol><li>In the Cloudflare dashboard, open Workers AI.</li><li>Select Use REST API.</li><li>Select Create a Workers AI API Token, check the details, then select Create API Token.</li><li>Select Copy API Token.</li></ol><p class="extra">Account ID: on the same Use REST API page, under Get Account ID. A custom token needs both Workers AI - Read and Workers AI - Edit.</p><a class="open-page" href="https://dash.cloudflare.com/?to=/:account/ai/workers-ai" rel="noopener">Open Cloudflare Workers AI's page<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
       <div class="g-part"><h3><i>2</i>Connect it in Simeon</h3><ol><li>In Simeon, open Settings › AI Models.</li><li>Under API keys, choose Connect next to Cloudflare Workers AI and paste the key. Then enter your account ID.</li><li>Simeon checks the key with Cloudflare Workers AI. Its models then appear in the message field.</li></ol></div>
     </div>
   </section>
