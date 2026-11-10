@@ -233,12 +233,9 @@ class TestProtocol:
         assert note.status_code == 202
         tools = (await _rpc(client, bot, "tools/list"))["result"]["tools"]
         # Joining someone else's network waits until people are on (`network.PEOPLE`).
-        assert [t["name"] for t in tools] == [
-            "list_team",
-            "send_message",
-            "check_inbox",
-            "set_status",
-        ]
+        names = [t["name"] for t in tools]
+        assert names[:4] == ["list_team", "send_message", "check_inbox", "set_status"]
+        assert "join_network" not in names
         assert "colleague" not in hello["result"]["instructions"]
         refused = await _rpc(
             client, bot, "tools/call", name="join_network", arguments={"link": "x"}

@@ -188,6 +188,17 @@ class DesktopNetworkMessageRepository(RepositoryBase[DesktopNetworkMessage]):
         )
         return list(await self.get_all(statement))
 
+    async def sent_by(
+        self, user_id: UUID, message_id: UUID
+    ) -> DesktopNetworkMessage | None:
+        """One message the person's side sent (`message_status`); another
+        person's ids are not found."""
+        statement = self.get_base_statement().where(
+            DesktopNetworkMessage.id == message_id,
+            DesktopNetworkMessage.from_user_id == user_id,
+        )
+        return await self.get_one_or_none(statement)
+
     async def count_unread(self, session_id: UUID) -> int:
         statement = select(func.count()).where(
             DesktopNetworkMessage.to_session_id == session_id,

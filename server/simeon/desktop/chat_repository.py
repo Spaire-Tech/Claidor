@@ -265,6 +265,13 @@ class DesktopChatInboxRepository(RepositoryBase[DesktopChatInbox]):
         statement = select(func.count()).where(DesktopChatInbox.user_id == user_id)
         return int((await self.session.execute(statement)).scalar_one())
 
+    async def is_waiting(self, user_id: UUID, nonce: str) -> bool:
+        """Whether this message still waits for the computer (`message_status`)."""
+        statement = select(func.count()).where(
+            DesktopChatInbox.user_id == user_id, DesktopChatInbox.nonce == nonce
+        )
+        return int((await self.session.execute(statement)).scalar_one()) > 0
+
     async def waiting(self, user_id: UUID, limit: int) -> list[DesktopChatInbox]:
         """The person's waiting messages, oldest first: the order they were
         written in."""

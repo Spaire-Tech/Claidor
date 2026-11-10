@@ -3044,6 +3044,23 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   doing, busy), `join_network` (the invite line; marked destructive so the agent's app asks the
   person first). The first Bots release's `list_agents` and `read_messages` still answer, as
   `list_team` and `check_inbox`.
+- **The person's own tools** (10 November 2026, the founder, after another network's bot listed
+  171 tools: "ok go for all"; `server/simeon/desktop/bot_tools.py`). On the person's own agents
+  only, never a colleague's: `agent_status`, `read_chat`, `create_agent`, `message_status`,
+  `list_waiting`, `answer_question`, `answer_approval` (approve once or deny; never "always", which
+  would change the person's settings), `list_routines`, `create_routine` (five-field cron),
+  `run_routine`, `pause_routine`, `list_files`, `read_file` (text up to 100,000 characters, a
+  picture up to 5 MB as MCP image content), `search_memory`, `read_memory`, `usage`. Reading is
+  from the server's copy (`desktop_chat_agents`, `desktop_chat_lines`, `desktop_memory_files`, the
+  plan's `quota`) and never wakes the computer; what an agent is doing this moment is not in the
+  copy (`chats.MOMENT_FIELDS`, it would go stale), so `agent_status` asks an awake computer
+  (`listAgents`) and calls everyone idle while it sleeps. Doing goes to the computer's gateway as
+  the apps' buttons do (`POST /api/<method>` with the gateway token and the E2B traffic token),
+  only the commands in `bot_tools.COMMANDS`; a computer asleep (or not answering) is asked to
+  start (`sand.box.wake`, once per 30 seconds) and the bot is told to call again in a minute, so
+  no request waits on a start. Purchases (`answerPurchase`), 1Password logins, secrets, forms,
+  Credentials Store entries and travellers' details are listed by `list_waiting` with "answer in
+  the Simeon app" and never answered by a bot.
 - **Addresses.** `maya/claude`, `maya/Nora` (a Simeon agent by name, letter case and spaces
   aside), `claude` (when unique on the network), `maya/*`, `repo:api` (the repository or its last
   part), `*`. Messages to many reach live sessions only, never a Simeon agent: each message to one
@@ -3094,6 +3111,8 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
 invite links and the chats copy.
 
 **Log.** `mcp.tool` with the tool, the person and the agent's client id (never a message);
+`mcp.computer.command` (the command a bot had the computer run), `mcp.computer.asleep` (it was
+asked to start), `mcp.computer.unreachable` (with the error);
 `desktop.network.made`, `.sent` (counts of Simeon agents and sessions reached), `.joined`, `.left`,
 `.new_link`. `desktop.chats.inbox.*` as for the apps' messages.
 
@@ -3103,6 +3122,8 @@ by a script) and connect (`claude mcp list`: Connected; Codex then ran `set_stat
 and `check_inbox` with its own token). **Not yet verified:** a real ChatGPT, Cursor, Gemini CLI or
 Meta agent, and a full round trip with a Simeon agent's computer (message, wake, answer), checked
 only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`) and the engine's
-(`desktop/tests/network-tools.test.mjs`). The Simeon agents' tools reach a person's computer only
+(`desktop/tests/network-tools.test.mjs`). The person's own tools were checked in the server's
+tests against a stand-in computer (`tests/desktop/test_bot_tools.py`), not yet against a real
+one or a real bot. The Simeon agents' tools reach a person's computer only
 with the next engine release (`npm run publish:host-bundle`). A bot whose redirect address is not
 https (a desktop app's own scheme) can't register yet.
