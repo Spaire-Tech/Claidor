@@ -766,7 +766,10 @@
         "sites/simeonlabs.com/public/docs/network*",
         "sites/simeonlabs.com/public/docs/search.json",
         "sites/simeonlabs.com/public/network/**",
-        "sites/simeonlabs.com/source/network.py"
+        "sites/simeonlabs.com/source/network.py",
+        "clients/apps/app/src/window/SettingsNetwork.tsx",
+        "ios/Simeon/NetworkPage.swift",
+        "mac/Simeon/SettingsNetwork.swift"
       ],
       "match": "Cursor|[Gg]rok[ _-]?[Bb]ot|\"grok\"",
       "reason": "The Simeon Network names the agents that join it as the products they are: Cursor, the coding agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside Dots and Muse; the server reads them from an MCP client's own name (the founder, 10 November 2026: \"do the reason network\")."

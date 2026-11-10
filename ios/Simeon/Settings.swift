@@ -59,6 +59,8 @@ struct SettingsSheet: View {
           }
           // The person's own AI subscription (8 November 2026), after Usage as the Mac lists it (AIModels.swift).
           NavigationLink { AIModelsPage() } label: { Text("AI Models").foregroundStyle(Ink.primary) }
+          // The Simeon Network (10 November 2026, NetworkPage.swift), after AI Models as the Mac lists it.
+          NavigationLink { NetworkPage() } label: { Text("Network").foregroundStyle(Ink.primary) }
         }
         .listRowBackground(Ink.groupedRow)
         Section {

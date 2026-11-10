@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { currentLanguage } from './core/language'
+import { keepAskedJoin } from './core/network'
 import { loadWords } from './core/words'
 import { CallWindowPage } from './desktop/CallWindow'
 import { desktop } from './desktop/desktop'
@@ -38,6 +39,8 @@ async function start() {
       )
     return
   }
+  // The website's join page's invite (`#network-join=`), kept through a sign-in; Settings › Network asks about it once the window is up.
+  keepAskedJoin()
   const session = new WebSession(host ? desktopSessionOptions(host) : {})
   if (host) listenForQuitting(host)
   // Windows' caption buttons in the page's colours, following the theme (src/desktop/windowLook.ts).
