@@ -11,8 +11,10 @@ to connect it on the blue picture where a connector's page has its messages; the
 
 Nothing here is written twice: the key providers, their key pages, the details they need and their models are the
 server's (server/simeon/desktop/key_providers.py), the plans' models too (own_models.py), read here; the steps are
-the apps' own words (Settings › AI Models: mac/Simeon/SettingsModels.swift, ConnectConsent.swift). The marks are
-LobeHub's icons (MIT, NOTICE), as img/model-<key>.svg. It rewrites public/models/ from scratch; build.py calls it
+the apps' own words (Settings › AI Models: mac/Simeon/SettingsModels.swift, ConnectConsent.swift). The logos are
+the providers' own, full, as the apps draw them (Providers/<id>, from LobeHub's icons: MIT, NOTICE), as
+img/provider-<id>.png (the founder, 10 November 2026: "use the real logo. no white background"). The lists' heads
+are the site's sections': the title on the left, its line on the right. It rewrites public/models/ from scratch; build.py calls it
 after connectors.py, and it runs alone too, needing nothing but Python:
 
     python3 models.py
@@ -33,7 +35,7 @@ MARKS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "img")
 # The subscriptions, as the apps list them under Subscriptions: the plans each takes (the apps' words: the keys'
 # hints and Grok's barred plan), its maker's site, and how it signs in (a code shown, or Claude's own page).
 SUBS = (
-    {"id": "chatgpt", "name": "ChatGPT", "plans": "ChatGPT Plus or Pro", "site": "https://chatgpt.com", "mark": "openai",
+    {"id": "chatgpt", "name": "ChatGPT", "plans": "ChatGPT Plus or Pro", "site": "https://chatgpt.com", "mark": "chatgpt",
      "models": "CHATGPT_MODELS", "sign_in": "code"},
     {"id": "claude", "name": "Claude", "plans": "Claude Pro or Max", "site": "https://claude.ai", "mark": "claude",
      "models": "CLAUDE_MODELS", "sign_in": "claude"},
@@ -43,13 +45,13 @@ SUBS = (
 # A key provider's plan, where it has one: its line points there (the apps' hint, "Claude Pro or Max? Connect Claude
 # under Subscriptions.").
 PLAN_OF = {"anthropic": "claude", "openai": "chatgpt", "xai": "grok"}
-# The mark each key provider wears (img/model-<mark>.svg).
-MARK_OF = {"openai": "openai", "google": "google"}
+# A key provider whose logo is another's (img/provider-<id>.png); none today.
+MARK_OF = {}
 # The marks drifting beside the opening's headline: (mark, across %, down %, seconds); `side` ones stay off a phone.
 FLOAT = [
-    ("claude", 56, 28, 7.0, False), ("openai", 67, 12, 8.5, False), ("gemini", 81, 26, 9.4, False),
+    ("claude", 56, 28, 7.0, False), ("chatgpt", 67, 12, 8.5, False), ("google", 81, 26, 9.4, False),
     ("mistral", 95, 13, 7.6, True), ("deepseek", 61, 66, 7.8, False), ("grok", 75, 54, 9.0, True),
-    ("huggingface", 90, 49, 7.2, False), ("qwen", 72, 82, 8.2, False), ("kimi", 87, 78, 8.8, True),
+    ("huggingface", 90, 49, 7.2, False), ("qwen", 72, 82, 8.2, False), ("moonshot", 87, 78, 8.8, True),
     ("meta", 99, 74, 7.5, True),
 ]
 # The details a provider needs besides its key, as the apps name them (AIModels.keyFieldName).
@@ -106,12 +108,12 @@ def plan_models():
 
 # The pieces
 
-def mark(key, cls="app mark"):
-    """A provider's mark on a white tile, as a connector's mark is drawn."""
-    src = f"{MARKS}/model-{key}.svg"
+def mark(key):
+    """A provider's own logo, full, as the apps draw it under Settings › AI Models (Providers/<id>)."""
+    src = f"{MARKS}/provider-{key}.png"
     if not os.path.isfile(src):
-        sys.exit(f"models.py: no mark img/model-{key}.svg")
-    return f'<span class="{cls}"><img src="/img/model-{key}.svg?v={teams._version(src)}" alt="" loading="lazy"></span>'
+        sys.exit(f"models.py: no logo img/provider-{key}.png")
+    return f'<span class="app icon"><img src="/img/provider-{key}.png?v={teams._version(src)}" alt="" loading="lazy"></span>'
 
 
 def link(url):
@@ -136,13 +138,8 @@ def card(href, tile, name, line, soon=False):
 
 PAGE_CSS = """
 /* Two lists, as Find an app's: each with its title and one line; the plans' three cards, then the keys'. */
-.kind{padding:clamp(48px,5*var(--vw,1vw),100px) 0 0}
-.kind h2{font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em}
-.kind .lead{margin-top:10px;font-size:var(--t-lead);letter-spacing:-.01em;color:var(--ink2)}
-.kind .list{margin-top:clamp(24px,2.4*var(--vw,1vw),40px)}
-.app.mark{background:#fff}
-.app.mark img{width:58%;height:58%;object-fit:contain}
-.float .app.mark img{width:56%;height:56%}
+.kind{padding:clamp(56px,5.6*var(--vw,1vw),110px) 0 0}
+.kind .list{margin-top:clamp(28px,2.8*var(--vw,1vw),52px)}
 """
 
 
@@ -165,15 +162,13 @@ def lists(keys):
                    for p in keys)
     return f"""<section class="kind" id="subscriptions" aria-labelledby="subs-title">
   <div class="wrap">
-    <h2 id="subs-title">Subscriptions</h2>
-    <p class="lead">Use a plan you already pay for.</p>
+    <div class="trust-top"><h2 id="subs-title">Subscriptions</h2><p>Use a plan you already pay for.</p></div>
     <ul class="list">{subs}</ul>
   </div>
 </section>
 <section class="kind" id="keys" aria-labelledby="keys-title">
   <div class="wrap">
-    <h2 id="keys-title">API keys</h2>
-    <p class="lead">Each provider bills the calls on your key.</p>
+    <div class="trust-top"><h2 id="keys-title">API keys</h2><p>Each provider bills the calls on your key.</p></div>
     <ul class="list">{rows}</ul>
   </div>
 </section>"""
