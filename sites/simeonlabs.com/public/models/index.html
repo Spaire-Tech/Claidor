@@ -144,6 +144,9 @@ footer{margin-top:clamp(80px,8*var(--vw,1vw),140px)} /* the footer itself is sit
 
 /* Two lists, as Find an app's: each with its title and one line; the plans' three cards, then the keys'. */
 .kind{padding:clamp(56px,5.6*var(--vw,1vw),110px) 0 0}
+/* the section titles as the site's (.trust h2): regular, the headline's size, never bold */
+.kind .trust-top h2,.guide .trust-top h2{margin:0;font-weight:var(--w-display);font-size:var(--t-display);line-height:1.1;letter-spacing:-.025em;max-width:var(--title-max);text-wrap:pretty}
+@media (max-width:734px){.kind .trust-top h2,.guide .trust-top h2{max-width:13em;text-wrap:balance}}
 .kind .list{margin-top:clamp(28px,2.8*var(--vw,1vw),52px)}
 
 /* From the home page (source/page.html): the section titles, the pricing, the questions and the closing call. */
