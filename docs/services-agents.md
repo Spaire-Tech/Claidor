@@ -2983,6 +2983,15 @@ Jasper (Busy Professionals) times the airport rides with Google Maps.
 
 ## 18. Bots and the Simeon Network (MCP)
 
+**Other people are off for now** (10 November 2026, the founder: "that plus other people - is
+what we don't need for now. can we hide that"). One switch per part, everything for people still
+built behind it: the server's `network.PEOPLE` (invites and joining refused with "Inviting people
+to a Simeon Network isn't open yet.", no invite line in `list_team`, bots not offered
+`join_network`, their instructions about their user's own agents), the apps' Settings › Network
+(SimeonCore's `NetworkInvite.listed`, the web app's `networkListed`), the website's
+`/network/join/` (`network.py`'s `PEOPLE`: on to the documentation). While off, a person's network
+is theirs alone: their Simeon agents, bots and coding agents, which still ask each other.
+
 The founder, 10 November 2026, with another app's "Add a bot" as the reference: "i want it to
 talk to other agents like dots, muse etc"; the same day, with Reason Network as the reference:
 "do the reason network". Simeon is an MCP server at **`https://api.simeonlabs.com/mcp`**. Any

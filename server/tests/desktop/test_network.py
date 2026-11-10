@@ -33,6 +33,15 @@ def published(mocker: MockerFixture) -> Any:
     return mocker.patch.object(network, "publish", new=mocker.AsyncMock())
 
 
+@pytest.fixture(autouse=True)
+def people_on(request: pytest.FixtureRequest, mocker: MockerFixture) -> None:
+    """Other people on a network are off for now (`network.PEOPLE`); these
+    tests keep what is built for them working, with the switch on, except
+    the class that checks it as it ships (`people_off = True`)."""
+    if not getattr(request.cls, "people_off", False):
+        mocker.patch.object(network, "PEOPLE", True)
+
+
 async def _named(save_fixture: SaveFixture, user: User, name: str) -> User:
     user.meta = {**(user.meta or {}), "preferred_name": name}
     await save_fixture(user)
@@ -599,3 +608,49 @@ class TestFromSimeonAgents:
             "Iris: One\n\n(To answer, send it to ana/Iris with SendNetworkMessage: "
             "your reply in this chat stays here.)"
         )
+
+
+@pytest.mark.asyncio
+class TestWithPeopleOff:
+    """The switch as it ships (10 November 2026): a person's network is
+    theirs alone. Invites and joining are refused; bots see no invite line
+    and are offered no `join_network`; their own agents still talk."""
+
+    people_off = True
+
+    async def test_no_one_joins_and_no_invite_is_shown(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        user_second: User,
+        published: Any,
+    ) -> None:
+        assert network.PEOPLE is False
+        await _named(save_fixture, user, "Ana")
+        await _named(save_fixture, user_second, "Maya")
+        ana_app, ana_box = await _signed_in_with_box(client, session, user)
+        maya_app, _ = await _signed_in_with_box(client, session, user_second)
+        link = (await _get(client, ana_app))["network"]["link"]
+        refused = await _post(client, maya_app, "/join", 400, link=link)
+        assert refused["message"] == network.PEOPLE_OFF
+        response = await client.get(
+            NETWORK + "/invite", params={"link": link}, headers=maya_app
+        )
+        assert response.status_code == 400
+        assert (await _get(client, maya_app))["people"][0]["handle"] == "maya"
+
+        # Her own bot and her own Simeon agent still talk.
+        await _copy(client, ana_box, agents=[{"id": "iris", "name": "Iris"}])
+        dots = await _hello(
+            client,
+            await _bot(save_fixture, user, ["agents"], token="simeon_at_dots"),
+            "openai-mcp",
+        )
+        team = await _said(client, dots, "list_team")
+        assert "invite" not in team["network"]
+        assert [p["handle"] for p in team["people"]] == ["ana"]
+        sent = await _said(client, dots, "send_message", to="ana/Iris", message="Hi")
+        assert [s["to"] for s in sent["sent"]] == ["ana/Iris"]
+        assert (await _get(client, ana_box, "/team"))["network"].get("invite") is None

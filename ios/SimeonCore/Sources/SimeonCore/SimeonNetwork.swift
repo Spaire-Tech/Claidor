@@ -135,6 +135,14 @@ public struct NetworkInvitePreview: Equatable, Sendable {
 }
 
 public enum NetworkInvite {
+  /**
+   * Settings › Network is listed only once other people can be on a network
+   * (the server's `network.PEOPLE`). Off since 10 November 2026, the founder:
+   * "that plus other people - is what we don't need for now. can we hide
+   * that". The page stays built: this turns it back on.
+   */
+  public static let listed = false
+
   /** What `curl … | bash` installs, said on the page beside the MCP address. */
   public static let install = "curl -fsSL https://simeonlabs.com/network/install.sh | bash"
   public static let mcp = "https://api.simeonlabs.com/mcp"

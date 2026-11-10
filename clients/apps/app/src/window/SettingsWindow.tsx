@@ -21,7 +21,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { shownName } from '../core/aiModels'
 import { t as coreT } from '../core/l10n'
-import { askedJoin } from '../core/network'
+import { askedJoin, networkListed } from '../core/network'
 import type { AppStore } from '../core/store'
 import { desktop } from '../desktop/desktop'
 import { desktopUpdates } from '../desktop/updates'
@@ -96,6 +96,8 @@ export function listed(store: AppStore): SettingsPage[] {
   return order.filter(
     (page) =>
       (page !== 'usage' || store.usageListed) &&
+      // Network: hidden while other people on a network are off (`networkListed`).
+      (page !== 'network' || networkListed) &&
       // Updates: the Windows app's own, not a Store install's (the Store updates it).
       (page !== 'updates' ||
         (desktop() !== undefined && desktop()?.facts.store !== true)),
@@ -343,7 +345,7 @@ export function SettingsLayer({
   const page = open ? overlay.page : undefined
   // The website's join page handed an invite over (`#network-join=`): Settings opens on Network, which asks whose network it is for.
   useEffect(() => {
-    if (askedJoin()) model.openSettings('network')
+    if (networkListed && askedJoin()) model.openSettings('network')
   }, [model])
   // Usage & Billing gone from the list while it is shown (an enterprise team, the summary gone): back to General.
   const usageGone = page === 'usage' && !store.usageListed

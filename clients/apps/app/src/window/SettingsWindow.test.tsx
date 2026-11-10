@@ -1,7 +1,9 @@
 // Settings' list of pages (SettingsWindow.tsx's `listed`): Updates only in the
-// Windows app, and not in a Microsoft Store install, which the Store updates.
+// Windows app, and not in a Microsoft Store install, which the Store updates;
+// Network not while other people on a network are off (`networkListed`).
 
 import { afterEach, describe, expect, it } from 'vitest'
+import { networkListed } from '../core/network'
 import { AppStore } from '../core/store'
 import { FakeDesktop } from '../desktop/testing'
 import { listed } from './SettingsWindow'
@@ -26,5 +28,12 @@ describe('Settings’ pages', () => {
     const pages = listed(new AppStore())
     expect(pages).not.toContain('updates')
     expect(pages).toContain('help')
+  })
+
+  it('leaves Network out while other people on a network are off', () => {
+    expect(networkListed).toBe(false)
+    const pages = listed(new AppStore())
+    expect(pages).not.toContain('network')
+    expect(pages).toContain('models')
   })
 })

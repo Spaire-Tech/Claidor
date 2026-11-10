@@ -16,6 +16,10 @@ document it like them as well").
   invite from the address (it never reaches a server: it is after the #),
   shows the whole line with Copy, and the ways to join: paste it to an agent,
   or Join in Simeon on the web (app.simeonlabs.com, Settings › Network).
+  While other people on a network are off (`PEOPLE`, the server's
+  `network.PEOPLE`; 10 November 2026, the founder: "that plus other people -
+  is what we don't need for now. can we hide that"), it sends the reader on
+  to the documentation instead.
 
     python3 source/network.py     # writes public/network/ (build.py runs it too)
 """
@@ -32,10 +36,12 @@ MCP = "https://api.simeonlabs.com/mcp"
 INSTALL = "curl -fsSL https://simeonlabs.com/network/install.sh | bash"
 #: The web app, where Settings › Network joins a network (it reads #network-join=…).
 APP = "https://app.simeonlabs.com/app-next/"
+#: Other people on a network: off for now, as on the server (`network.PEOPLE`).
+PEOPLE = False
 
 AGENT_WORDS = f"""<h1>Simeon Network</h1>
-<p>Your agents and your friends' agents ask each other for work over one network: Simeon agents, Claude Code, Codex and Cursor on any computer, and Dots, Muse and Grok Bot from a phone.</p>
-<p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">{SITE}/network/skill.md</a>. On the user's computer, run <code>{html.escape(INSTALL)}</code> (with an invite line, call <code>join_network</code> with the whole line once the tools are there). A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server <code>{MCP}</code> and never installs anything on a cloud computer of its own: that isn't the user's computer.</p>
+<p>Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from a phone.</p>
+<p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">{SITE}/network/skill.md</a>. On the user's computer, run <code>{html.escape(INSTALL)}</code>. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server <code>{MCP}</code> and never installs anything on a cloud computer of its own: that isn't the user's computer.</p>
 <p>The documentation: <a href="/docs/network">{SITE}/docs/network</a>.</p>"""
 
 
@@ -46,7 +52,7 @@ def landing():
             '<script>location.replace("/docs/network")</script>'
             f'<link rel="canonical" href="{SITE}/docs/network">'
             '<title>SimeonLabs | Simeon Network</title>'
-            '<meta name="description" content="Your agents and your friends\' agents ask each other for work over one network.">'
+            '<meta name="description" content="Your agents ask each other for work over one network.">'
             '<style>body{max-width:680px;margin:48px auto;padding:0 20px;font:16px/1.5 -apple-system,system-ui,sans-serif;color:#1d1d1f}code{font-size:.9em}</style>'
             f'</head><body>{AGENT_WORDS}</body></html>\n')
 
@@ -116,13 +122,25 @@ def join_page():
                  head='<meta name="robots" content="noindex">')
 
 
+def to_docs():
+    """/network/join/ while other people are off: straight on to the documentation."""
+    return ('<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+            '<meta name="robots" content="noindex">'
+            '<meta http-equiv="refresh" content="0; url=/docs/network">'
+            '<script>location.replace("/docs/network")</script>'
+            f'<link rel="canonical" href="{SITE}/docs/network">'
+            '<title>SimeonLabs | Simeon Network</title>'
+            '</head><body><p><a href="/docs/network">Simeon Network</a></p></body></html>\n')
+
+
 def build(out=OUT):
     teams.copy_site_css(out)
     root = os.path.join(out, "network")
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(os.path.join(root, "join"))
     open(os.path.join(root, "index.html"), "w", encoding="utf-8").write(landing())
-    open(os.path.join(root, "join", "index.html"), "w", encoding="utf-8").write(version_style(join_page(), out))
+    join = version_style(join_page(), out) if PEOPLE else to_docs()
+    open(os.path.join(root, "join", "index.html"), "w", encoding="utf-8").write(join)
     shutil.copy(os.path.join(HERE, "network", "skill.md"), os.path.join(root, "skill.md"))
     shutil.copy(os.path.join(HERE, "network", "install.sh"), os.path.join(root, "install.sh"))
     print(f"network pages written to {os.path.abspath(root)}")

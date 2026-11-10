@@ -842,6 +842,16 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: Settings › Network hidden while other people are off
+
+The founder: "that plus other people - is what we don't need for now. can we hide that". Settings
+no longer lists Network (`networkListed` in `core/network.ts`, false; the Mac and iPhone read
+SimeonCore's `NetworkInvite.listed`), and the website's invite hand-over no longer opens it. The
+page and its model stay built: the switch turns them back on, with the server's `network.PEOPLE`.
+Bots still connect from AI Models › Bots. Checked: `SettingsWindow.test.tsx` (Network not listed),
+`network.test.ts`, tsc, ESLint, the committed build, one Chromium look at Settings. Not checked:
+the Mac and iPhone built and run (their Swift parses).
+
 ### 10 November 2026: Settings › Network, the Simeon Network
 
 The founder: "ok do the reason network. document it like them as well." The server side is the

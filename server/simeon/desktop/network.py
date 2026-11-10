@@ -110,6 +110,13 @@ FANOUT_MAX = 50
 #: Messages one person's agents may send another person's Simeon agents in
 #: an hour: each wakes a computer and runs a turn on the other's plan.
 TO_AGENTS_PER_HOUR = 30
+#: Other people on a network (invite links, joining someone's network): off
+#: for now (10 November 2026, the founder: "that plus other people - is what
+#: we don't need for now. can we hide that"). Off, a person's network is
+#: theirs alone: their Simeon agents, their bots and their coding agents.
+#: Everything for people stays built: this switch turns it back on.
+PEOPLE = False
+PEOPLE_OFF = "Inviting people to a Simeon Network isn't open yet."
 #: A Simeon agent's own messages on the network in an hour: two agents
 #: answering each other stop here rather than running turns for ever.
 FROM_AGENT_PER_HOUR = 30
@@ -583,7 +590,10 @@ class Network:
                 or needle in names.get(a["address"].split("/", 1)[0], "")
             ]
         found: dict[str, Any] = {
-            "network": {"name": network.name, "invite": invite_line(network)},
+            "network": {
+                "name": network.name,
+                **({"invite": invite_line(network)} if PEOPLE else {}),
+            },
             "people": [
                 {
                     "handle": p.handle,
@@ -999,6 +1009,8 @@ class Network:
     # MARK: Joining, leaving
 
     async def preview(self, link: str) -> tuple[DesktopNetwork, list[Person]]:
+        if not PEOPLE:
+            raise NetworkRefusal(PEOPLE_OFF)
         parsed = parse_invite(link)
         if parsed is None:
             raise NetworkRefusal("This isn't a Simeon Network invite link.")

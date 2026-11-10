@@ -13,6 +13,11 @@
  * nothing here waits. The server keeps an agent to 30 messages an hour, and a
  * person's agents to 30 an hour into another person's Simeon agents.
  *
+ * Other people on a network are off for now (10 November 2026, the founder:
+ * "that plus other people - is what we don't need for now"; the server's
+ * `network.PEOPLE`): the network is the person's own agents, bots and coding
+ * agents, and the words here say so.
+ *
  * Nothing here runs for a message that came through a channel (Discord,
  * Slack…): others can write there, and a message on the network goes out in
  * the person's name.
@@ -72,7 +77,7 @@ export function createNetworkTools(deps: NetworkToolDependencies) {
   const list = defineCommunicateTool(deps, {
     id: "LIST_NETWORK",
     name: "ListNetwork",
-    description: "The user's Simeon Network (Settings → Network): the people on it, their Simeon agents (always on, asked by name, like maya/Nora) and their coding agents seen lately (Claude Code, Codex, Dots…), with where each works and whether it's busy, idle or away. Call it when the user wants something from a colleague or a colleague's agent (\"ask Maya's agent…\", \"what is Maya's Claude doing?\"), before SendNetworkMessage, and when they ask who's on their network.",
+    description: "The user's other agents you can reach: their bots (Dots, Muse…) and the coding agents on their computers (Claude Code, Codex…) connected to Simeon, with where each works and whether it's busy, idle or away, and their Simeon agents. Call it when the user wants something from one of them (\"ask my Claude Code…\", \"what is Codex doing?\"), and before SendNetworkMessage.",
     parameters: listNetworkParameters,
     describeActivity: () => ({ detail: "Looking at the Simeon Network" }),
     execute: async (_ctx, args: z.infer<typeof listNetworkParameters>, resolved) => {
@@ -92,12 +97,12 @@ export function createNetworkTools(deps: NetworkToolDependencies) {
       const agents = Array.isArray(answer.agents) ? answer.agents.map(record).filter((one) => one != null) : [];
       const me = resolved.agentId();
       const lines = [`The user's Simeon Network, "${text(network?.name) || "their network"}":`];
-      lines.push(`People: ${people.map((p) => `${text(p.name)} (${text(p.handle)})${p.you === true ? " — the user" : ""}`).join(", ") || "only the user"}.`);
+      // Other people only once they can be on a network (the server's `network.PEOPLE`).
+      if (people.length > 1) lines.push(`People: ${people.map((p) => `${text(p.name)} (${text(p.handle)})${p.you === true ? " — the user" : ""}`).join(", ")}.`);
       lines.push(args.query ? `Agents matching "${args.query}":` : "Agents:");
       if (agents.length === 0) lines.push("- none");
       lines.push(...agents.slice(0, LIST_MAX).map((agent) => networkAgentLine(agent, me)));
       if (agents.length > LIST_MAX) lines.push(`- and ${agents.length - LIST_MAX} more: give query to narrow it.`);
-      if (people.length <= 1) lines.push(`No one else is on it yet. The user invites people with the invite line in Settings → Network: ${text(network?.invite)}`);
       lines.push("Ask one with SendNetworkMessage. Its answer comes back to this chat as a message.");
       return lines.join("\n");
     },
@@ -106,7 +111,7 @@ export function createNetworkTools(deps: NetworkToolDependencies) {
   const send = defineCommunicateTool(deps, {
     id: "SEND_NETWORK_MESSAGE",
     name: "SendNetworkMessage",
-    description: "Write to an agent on the user's Simeon Network, as yourself (your address is the user's handle and your name, like ana/Iris): ask a colleague's Simeon agent or coding agent for something, or answer a network message that asked you (it said how). Its answer comes back to this chat as a message: don't wait for it in this turn; tell the user in a few words whom you asked. A colleague's agent works for that colleague: share the user's private details, files or logins only when the user asked you to.",
+    description: "Write to one of the user's bots or coding agents connected to Simeon (from ListNetwork), as yourself (your address is the user's handle and your name, like ana/Iris), or answer a message from one that asked you (it said how). Its answer comes back to this chat as a message: don't wait for it in this turn; tell the user in a few words whom you asked. Share the user's private details, files or logins only when the user asked you to.",
     parameters: sendNetworkMessageParameters,
     describeActivity: (args: z.infer<typeof sendNetworkMessageParameters>) => ({ detail: `Writing to ${args.to}` }),
     execute: async (_ctx, args: z.infer<typeof sendNetworkMessageParameters>, resolved) => {

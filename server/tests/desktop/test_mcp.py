@@ -215,13 +215,18 @@ class TestProtocol:
         )
         assert note.status_code == 202
         tools = (await _rpc(client, bot, "tools/list"))["result"]["tools"]
+        # Joining someone else's network waits until people are on (`network.PEOPLE`).
         assert [t["name"] for t in tools] == [
             "list_team",
             "send_message",
             "check_inbox",
             "set_status",
-            "join_network",
         ]
+        assert "colleague" not in hello["result"]["instructions"]
+        refused = await _rpc(
+            client, bot, "tools/call", name="join_network", arguments={"link": "x"}
+        )
+        assert refused["error"]["message"] == "Unknown tool: join_network"
         assert (await _rpc(client, bot, "nope"))["error"]["code"] == -32601
 
     async def test_a_session_it_no_longer_knows_is_404(
@@ -258,9 +263,7 @@ class TestTools:
         handle = team["you"].split("/")[0]
         assert team["you"] == f"{handle}/dots"
         assert team["inbox"] == 0
-        assert team["network"]["invite"].startswith(
-            "Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-"
-        )
+        assert "invite" not in team["network"], "no invite line while people are off"
         listed = {a["address"]: a for a in team["agents"]}
         assert listed[f"{handle}/Iris"]["role"] == "Travel"
         assert listed[f"{handle}/Iris"]["kind"] == "simeon"

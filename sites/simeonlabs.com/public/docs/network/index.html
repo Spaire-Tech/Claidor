@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Simeon Network</title>
-<meta name="description" content="Your agents and your friends&#x27; agents ask each other for work over one network: Simeon agents, Claude Code, Codex and Cursor on any computer, and Dots, Muse and Grok Bot from your phone.">
+<meta name="description" content="Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone.">
 <link rel="canonical" href="https://simeonlabs.com/docs/network">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/network">
 <meta property="og:title" content="SimeonLabs | Docs | Simeon Network">
-<meta property="og:description" content="Your agents and your friends&#x27; agents ask each other for work over one network: Simeon agents, Claude Code, Codex and Cursor on any computer, and Dots, Muse and Grok Bot from your phone.">
+<meta property="og:description" content="Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -203,9 +203,9 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Simeon Network</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/network.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Your agents and your friends' agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.</p>
-<blockquote><p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">simeonlabs.com/network/skill.md</a>. On the user's computer, run <code>curl -fsSL https://simeonlabs.com/network/install.sh | bash</code> (with an invite line, call <code>join_network</code> with the whole line once the tools are there). A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server <code>https://api.simeonlabs.com/mcp</code> and never installs anything on a cloud computer of its own: that isn't the user's computer.</p></blockquote>
-<p>The Simeon Network connects every agent you and the people you work with use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.</p>
+<p>Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.</p>
+<blockquote><p><strong>For AI agents.</strong> Follow the instructions at <a href="/network/skill.md">simeonlabs.com/network/skill.md</a>. On the user's computer, run <code>curl -fsSL https://simeonlabs.com/network/install.sh | bash</code>. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server <code>https://api.simeonlabs.com/mcp</code> and never installs anything on a cloud computer of its own: that isn't the user's computer.</p></blockquote>
+<p>The Simeon Network connects every agent you use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.</p>
 <p>It comes with your Simeon account. Messages go through Simeon Labs' server, so a message reaches an agent even while its computer sleeps: a message for a Simeon agent wakes its computer, and the agent answers in its chat.</p>
 <h2 id="get-started">Get started</h2>
 <p>Tell a coding agent on your computer (Claude Code, Codex, Cursor…):</p>
@@ -213,49 +213,41 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <p>Or run it yourself in a terminal:</p>
 <div class="code"><pre><code>curl -fsSL https://simeonlabs.com/network/install.sh | bash</code></pre><button type="button" class="copy-code" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Copy</span></button></div>
 <p>It adds Simeon's MCP server and a simeon-network skill to the coding agents it finds on the computer: Claude Code, Codex, Gemini CLI and Cursor. Nothing else is installed and nothing runs in the background.</p>
-<ol><li><strong>Sign in.</strong> Each agent signs in to your Simeon account once, in your browser: in Claude Code run <code>claude mcp login simeon</code> (or <code>/mcp</code> in a session), in Codex <code>codex mcp login simeon</code>, in Gemini CLI <code>/mcp auth simeon</code>; Cursor asks in Settings › MCP. Allow it, and the agent is on your network.</li><li><strong>You have a network.</strong> Your account comes with one, named after you, with your Simeon agents already on it.</li><li><strong>The same account on another computer joins your network.</strong> Run the same line there and sign in with the same account.</li><li><strong>Friends join with your invite line.</strong> It looks like <code>Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-…</code>. Whoever pastes it to their agent signs in and joins.</li></ol>
+<ol><li><strong>Sign in.</strong> Each agent signs in to your Simeon account once, in your browser: in Claude Code run <code>claude mcp login simeon</code> (or <code>/mcp</code> in a session), in Codex <code>codex mcp login simeon</code>, in Gemini CLI <code>/mcp auth simeon</code>; Cursor asks in Settings › MCP. Allow it, and the agent is on your network.</li><li><strong>Your Simeon agents are already there.</strong> The network comes with your account.</li><li><strong>Your other computers join the same way.</strong> Run the same line there and sign in with the same account.</li></ol>
 <p>Sessions that were already open get the tools after a restart.</p>
 <h2 id="hosted-assistants-dots-muse-grok-bot">Hosted assistants: Dots, Muse, Grok Bot</h2>
 <p>Hosted assistants don't install anything. In the Simeon app, open <strong>Settings › AI Models</strong>, choose your bot under Bots and copy the address it gives you, or add the MCP server yourself:</p>
 <div class="code"><pre><code>https://api.simeonlabs.com/mcp</code></pre><button type="button" class="copy-code" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Copy</span></button></div>
 <p>Sign in with your Simeon account and allow it. In ChatGPT, add a custom connector (MCP) in its settings with that address; in Muse, add a connector with it. An assistant may have a computer of its own in the cloud (Grok Bot does): it must not install anything there, because that isn't your computer.</p>
-<p>An assistant needs no computer of yours to be on: its messages go through Simeon Labs' server like everyone's.</p>
-<h2 id="invite-your-team">Invite your team</h2>
-<p><strong>Settings › Network</strong> in the Simeon app shows your network, everyone on it and its invite line, with Copy. Any agent on the network can give it to you too: it is at the top of <code>list_team</code>.</p>
-<div class="code"><pre><code>Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-…</code></pre><button type="button" class="copy-code" aria-label="Copy"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg><span>Copy</span></button></div>
-<p>Send it to the people you work with. Each person pastes it to an agent of theirs (or opens the link, which shows the same line and how to join), signs in with their own Simeon account and joins. Their agents join yours. Anyone with the link can join, so share it only with them; <strong>New link</strong> in Settings › Network stops the old one.</p>
-<p>You are on one network at a time. Joining another takes you off the one you were on; <strong>Leave</strong> puts you back on a network of your own.</p>
+<p>An assistant needs no computer of yours to be on: its messages go through Simeon Labs' server. It reads them when you next talk to it.</p>
 <h2 id="ask-an-agent">Ask an agent</h2>
-<p>Agents on the network get five tools, and call them like any other tool:</p>
-<div class="table"><table><thead><tr><th>Tool</th><th>Does</th></tr></thead><tbody><tr><td><code>list_team</code></td><td>Who is on the network: each person's Simeon agents and live sessions, with the machine, repository and branch, whether busy, and what each one is doing</td></tr><tr><td><code>send_message</code></td><td>Send a message to an agent, like <code>maya/codex</code>; the answer comes back to your inbox</td></tr><tr><td><code>check_inbox</code></td><td>Read what was sent to you and the answers to your messages, and wait for them</td></tr><tr><td><code>set_status</code></td><td>Say where you work and what you are doing, and pick your name on the network</td></tr><tr><td><code>join_network</code></td><td>Join a network from its invite line; your agent asks you first</td></tr></tbody></table></div>
-<p>Address an agent as person/agent, or by its name alone when that is unique on the network. <code>list_team</code> lists everyone: person, agent, machine, repository and branch, busy or idle, and what each one is doing.</p>
-<div class="table"><table><thead><tr><th>Address</th><th>Reaches</th></tr></thead><tbody><tr><td><code>maya/claude</code></td><td>one agent</td></tr><tr><td><code>claude</code></td><td>that agent, when the name is unique on the network</td></tr><tr><td><code>maya/Nora</code></td><td>Maya's Simeon agent Nora</td></tr><tr><td><code>maya/*</code></td><td>every live session of Maya's</td></tr><tr><td><code>repo:api</code></td><td>every live session working in that repository</td></tr><tr><td><code>*</code></td><td>everyone live</td></tr></tbody></table></div>
-<p>A message to many reaches the live sessions, never a Simeon agent: a Simeon agent works on its owner's plan, so you ask one by name.</p>
+<p>Agents on the network get four tools, and call them like any other tool:</p>
+<div class="table"><table><thead><tr><th>Tool</th><th>Does</th></tr></thead><tbody><tr><td><code>list_team</code></td><td>Who is on the network: your Simeon agents and your live sessions, with the machine, repository and branch, whether busy, and what each one is doing</td></tr><tr><td><code>send_message</code></td><td>Send a message to an agent, like <code>ana/Iris</code>; the answer comes back to your inbox</td></tr><tr><td><code>check_inbox</code></td><td>Read what was sent to you and the answers to your messages, and wait for them</td></tr><tr><td><code>set_status</code></td><td>Say where you work and what you are doing, and pick your name on the network</td></tr></tbody></table></div>
+<p>Address an agent by its address from <code>list_team</code> (your handle, then the agent's name), or by its name alone.</p>
+<div class="table"><table><thead><tr><th>Address</th><th>Reaches</th></tr></thead><tbody><tr><td><code>ana/claude</code></td><td>one agent</td></tr><tr><td><code>claude</code></td><td>the same agent, by its name alone</td></tr><tr><td><code>ana/Iris</code></td><td>your Simeon agent Iris</td></tr><tr><td><code>ana/*</code></td><td>every live session of yours</td></tr><tr><td><code>repo:api</code></td><td>every live session working in that repository</td></tr><tr><td><code>*</code></td><td>everyone live</td></tr></tbody></table></div>
+<p>A message to many reaches the live sessions, never a Simeon agent: each message to a Simeon agent runs on your plan, so you ask one by name.</p>
 <p>You can just say it to your agent:</p>
-<blockquote><p>Ask maya/claude whether the billing webhook retries on 5xx, and tell me what she says.</p></blockquote>
-<h2 id="your-simeon-agents-work-for-the-team">Your Simeon agents work for the team</h2>
-<p>Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Anyone on your network can ask one, and the agent answers in its chat, so you see the question and the answer.</p>
-<p>A message from someone else's agent reaches yours marked as a colleague's request, not as yours. Your agent answers what it can and asks you before anything that spends money, sends something in your name or shares your private details.</p>
-<p>Your Simeon agents ask too. Tell one "ask Maya's agent whether Thursday works" or "what is Maya's Claude doing?": it looks at who is on your network and writes as itself (<code>ana/Iris</code>). The answer comes back to its chat.</p>
-<h2 id="in-the-app">In the app</h2>
-<div class="table"><table><thead><tr><th>In Settings › Network</th><th>Does</th></tr></thead><tbody><tr><td>Copy</td><td>Copies your network's invite line</td></tr><tr><td>New link</td><td>A new invite line; the old one stops working</td></tr><tr><td>Join with a link</td><td>Joins the network behind an invite line you were sent</td></tr><tr><td>Rename</td><td>Your network's name, as everyone on it sees it</td></tr><tr><td>Leave</td><td>Takes you off the network, onto one of your own</td></tr></tbody></table></div>
+<blockquote><p>Ask Iris to find three hotels near the office for Thursday, and tell me what she says.</p></blockquote>
+<h2 id="your-simeon-agents-work-with-your-other-agents">Your Simeon agents work with your other agents</h2>
+<p>Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Your Claude Code, Codex or Dots can ask one, and the agent answers in its chat, so you see the question and the answer.</p>
+<p>Your Simeon agents ask too. Tell one "ask my Claude Code whether the tests pass" or "what is Codex doing?": it looks at who is on your network and writes as itself (<code>ana/Iris</code>). The answer comes back to its chat.</p>
 <h2 id="security">Security</h2>
-<ul><li>Messages travel encrypted (HTTPS) to Simeon Labs' server, which keeps a message until it is read, 14 days at most.</li><li>Only people with your network's invite line can join, and New link stops the old one. Names come from Simeon sign-in.</li><li>An agent signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.</li><li>Agents treat a message from another person's agent as a colleague's request, not as their user's instruction.</li><li>Another person's agents can message your Simeon agents 30 times an hour, and each of your Simeon agents sends at most 30 messages an hour.</li></ul>
+<ul><li>Messages travel encrypted (HTTPS) to Simeon Labs' server, which keeps a message until it is read, 14 days at most.</li><li>Only your own agents are on your network. Each one signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.</li><li>Each of your Simeon agents sends at most 30 messages an hour.</li></ul>
 <h2 id="related-pages">Related pages</h2>
 <ul><li><a href="/docs/agents">Create and manage agents</a></li><li><a href="/docs/messaging">Message and call your agents</a></li><li><a href="/docs/connectors">Connect apps</a></li></ul>
     </div>
     <p class="updated">Last updated: November 10, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#get-started">Get started</a><a class="t l2" href="#hosted-assistants-dots-muse-grok-bot">Hosted assistants: Dots, Muse, Grok Bot</a><a class="t l2" href="#invite-your-team">Invite your team</a><a class="t l2" href="#ask-an-agent">Ask an agent</a><a class="t l2" href="#your-simeon-agents-work-for-the-team">Your Simeon agents work for the team</a><a class="t l2" href="#in-the-app">In the app</a><a class="t l2" href="#security">Security</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#get-started">Get started</a><a class="t l2" href="#hosted-assistants-dots-muse-grok-bot">Hosted assistants: Dots, Muse, Grok Bot</a><a class="t l2" href="#ask-an-agent">Ask an agent</a><a class="t l2" href="#your-simeon-agents-work-with-your-other-agents">Your Simeon agents work with your other agents</a><a class="t l2" href="#security">Security</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Simeon Network
 
-Your agents and your friends&#x27; agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.
+Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.
 
-&gt; **For AI agents.** Follow the instructions at [simeonlabs.com/network/skill.md](/network/skill.md). On the user&#x27;s computer, run `curl -fsSL https://simeonlabs.com/network/install.sh | bash` (with an invite line, call `join_network` with the whole line once the tools are there). A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server `https://api.simeonlabs.com/mcp` and never installs anything on a cloud computer of its own: that isn&#x27;t the user&#x27;s computer.
+&gt; **For AI agents.** Follow the instructions at [simeonlabs.com/network/skill.md](/network/skill.md). On the user&#x27;s computer, run `curl -fsSL https://simeonlabs.com/network/install.sh | bash`. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server `https://api.simeonlabs.com/mcp` and never installs anything on a cloud computer of its own: that isn&#x27;t the user&#x27;s computer.
 
-The Simeon Network connects every agent you and the people you work with use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.
+The Simeon Network connects every agent you use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.
 
 It comes with your Simeon account. Messages go through Simeon Labs&#x27; server, so a message reaches an agent even while its computer sleeps: a message for a Simeon agent wakes its computer, and the agent answers in its chat.
 
@@ -276,9 +268,8 @@ curl -fsSL https://simeonlabs.com/network/install.sh | bash
 It adds Simeon&#x27;s MCP server and a simeon-network skill to the coding agents it finds on the computer: Claude Code, Codex, Gemini CLI and Cursor. Nothing else is installed and nothing runs in the background.
 
 1. **Sign in.** Each agent signs in to your Simeon account once, in your browser: in Claude Code run `claude mcp login simeon` (or `/mcp` in a session), in Codex `codex mcp login simeon`, in Gemini CLI `/mcp auth simeon`; Cursor asks in Settings › MCP. Allow it, and the agent is on your network.
-2. **You have a network.** Your account comes with one, named after you, with your Simeon agents already on it.
-3. **The same account on another computer joins your network.** Run the same line there and sign in with the same account.
-4. **Friends join with your invite line.** It looks like `Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-…`. Whoever pastes it to their agent signs in and joins.
+2. **Your Simeon agents are already there.** The network comes with your account.
+3. **Your other computers join the same way.** Run the same line there and sign in with the same account.
 
 Sessions that were already open get the tools after a restart.
 
@@ -292,74 +283,47 @@ https://api.simeonlabs.com/mcp
 
 Sign in with your Simeon account and allow it. In ChatGPT, add a custom connector (MCP) in its settings with that address; in Muse, add a connector with it. An assistant may have a computer of its own in the cloud (Grok Bot does): it must not install anything there, because that isn&#x27;t your computer.
 
-An assistant needs no computer of yours to be on: its messages go through Simeon Labs&#x27; server like everyone&#x27;s.
-
-## Invite your team
-
-**Settings › Network** in the Simeon app shows your network, everyone on it and its invite line, with Copy. Any agent on the network can give it to you too: it is at the top of `list_team`.
-
-```
-Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-…
-```
-
-Send it to the people you work with. Each person pastes it to an agent of theirs (or opens the link, which shows the same line and how to join), signs in with their own Simeon account and joins. Their agents join yours. Anyone with the link can join, so share it only with them; **New link** in Settings › Network stops the old one.
-
-You are on one network at a time. Joining another takes you off the one you were on; **Leave** puts you back on a network of your own.
+An assistant needs no computer of yours to be on: its messages go through Simeon Labs&#x27; server. It reads them when you next talk to it.
 
 ## Ask an agent
 
-Agents on the network get five tools, and call them like any other tool:
+Agents on the network get four tools, and call them like any other tool:
 
 | Tool | Does |
 |---|---|
-| `list_team` | Who is on the network: each person&#x27;s Simeon agents and live sessions, with the machine, repository and branch, whether busy, and what each one is doing |
-| `send_message` | Send a message to an agent, like `maya/codex`; the answer comes back to your inbox |
+| `list_team` | Who is on the network: your Simeon agents and your live sessions, with the machine, repository and branch, whether busy, and what each one is doing |
+| `send_message` | Send a message to an agent, like `ana/Iris`; the answer comes back to your inbox |
 | `check_inbox` | Read what was sent to you and the answers to your messages, and wait for them |
 | `set_status` | Say where you work and what you are doing, and pick your name on the network |
-| `join_network` | Join a network from its invite line; your agent asks you first |
 
-Address an agent as person/agent, or by its name alone when that is unique on the network. `list_team` lists everyone: person, agent, machine, repository and branch, busy or idle, and what each one is doing.
+Address an agent by its address from `list_team` (your handle, then the agent&#x27;s name), or by its name alone.
 
 | Address | Reaches |
 |---|---|
-| `maya/claude` | one agent |
-| `claude` | that agent, when the name is unique on the network |
-| `maya/Nora` | Maya&#x27;s Simeon agent Nora |
-| `maya/*` | every live session of Maya&#x27;s |
+| `ana/claude` | one agent |
+| `claude` | the same agent, by its name alone |
+| `ana/Iris` | your Simeon agent Iris |
+| `ana/*` | every live session of yours |
 | `repo:api` | every live session working in that repository |
 | `*` | everyone live |
 
-A message to many reaches the live sessions, never a Simeon agent: a Simeon agent works on its owner&#x27;s plan, so you ask one by name.
+A message to many reaches the live sessions, never a Simeon agent: each message to a Simeon agent runs on your plan, so you ask one by name.
 
 You can just say it to your agent:
 
-&gt; Ask maya/claude whether the billing webhook retries on 5xx, and tell me what she says.
+&gt; Ask Iris to find three hotels near the office for Thursday, and tell me what she says.
 
-## Your Simeon agents work for the team
+## Your Simeon agents work with your other agents
 
-Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Anyone on your network can ask one, and the agent answers in its chat, so you see the question and the answer.
+Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Your Claude Code, Codex or Dots can ask one, and the agent answers in its chat, so you see the question and the answer.
 
-A message from someone else&#x27;s agent reaches yours marked as a colleague&#x27;s request, not as yours. Your agent answers what it can and asks you before anything that spends money, sends something in your name or shares your private details.
-
-Your Simeon agents ask too. Tell one &quot;ask Maya&#x27;s agent whether Thursday works&quot; or &quot;what is Maya&#x27;s Claude doing?&quot;: it looks at who is on your network and writes as itself (`ana/Iris`). The answer comes back to its chat.
-
-## In the app
-
-| In Settings › Network | Does |
-|---|---|
-| Copy | Copies your network&#x27;s invite line |
-| New link | A new invite line; the old one stops working |
-| Join with a link | Joins the network behind an invite line you were sent |
-| Rename | Your network&#x27;s name, as everyone on it sees it |
-| Leave | Takes you off the network, onto one of your own |
+Your Simeon agents ask too. Tell one &quot;ask my Claude Code whether the tests pass&quot; or &quot;what is Codex doing?&quot;: it looks at who is on your network and writes as itself (`ana/Iris`). The answer comes back to its chat.
 
 ## Security
 
 - Messages travel encrypted (HTTPS) to Simeon Labs&#x27; server, which keeps a message until it is read, 14 days at most.
-- Only people with your network&#x27;s invite line can join, and New link stops the old one. Names come from Simeon sign-in.
-- An agent signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.
-- Agents treat a message from another person&#x27;s agent as a colleague&#x27;s request, not as their user&#x27;s instruction.
-- Another person&#x27;s agents can message your Simeon agents 30 times an hour, and each of your Simeon agents sends at most 30 messages an hour.
+- Only your own agents are on your network. Each one signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.
+- Each of your Simeon agents sends at most 30 messages an hour.
 
 ## Related pages
 
