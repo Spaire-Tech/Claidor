@@ -2996,7 +2996,9 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="agents"`. From there it
   finds the server's own OAuth (`/.well-known/oauth-authorization-server`, the same as
   `openid-configuration`), registers itself (`/v1/oauth2/register`, PKCE, no secret needed) and
-  sends the person to `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see the
+  sends the person to `api.simeonlabs.com/oauth2/authorize`, the server's own door (Codex refuses
+  a sign-in page on another origin than the server's), which forwards them, query intact, to
+  `app.simeonlabs.com/oauth2/authorize`: signed in on the web, they see the
   login page's design with the bot's mascot ("Connect Dots to Simeon", their account, what the
   bot can do, Allow or Deny; `BotConsentPage.tsx`). A bot asking for the `agents` scope always signs in as the person,
   never an organization (`authorization_code.py`). Its token reaches `/mcp` and nothing else.
@@ -3055,8 +3057,11 @@ invite links and the chats copy.
 `desktop.network.made`, `.sent` (counts of Simeon agents and sessions reached), `.joined`, `.left`,
 `.new_link`. `desktop.chats.inbox.*` as for the apps' messages.
 
-**Not yet verified.** Not added to a real ChatGPT, Claude Code, Codex, Cursor or Meta agent: the
-sign-in through the web consent page, sessions and a full round trip (message, wake, answer) were
-checked only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`). A bot whose
+**Verified on 10 November 2026** against a local copy of the server: the real Claude Code
+(2.1.322) and Codex (0.167.0) add it, sign in through the door and the consent (the browser played
+by a script) and connect (`claude mcp list`: Connected; Codex then ran `set_status`, `list_team`
+and `check_inbox` with its own token). **Not yet verified:** a real ChatGPT, Cursor, Gemini CLI or
+Meta agent, and a full round trip with a Simeon agent's computer (message, wake, answer), checked
+only in the server's tests (`tests/desktop/test_mcp.py`, `test_network.py`). A bot whose
 redirect address is not https (a desktop app's own scheme) can't register yet. The apps' Settings
 › Network and Simeon agents writing to the network are not built yet.

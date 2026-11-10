@@ -46,6 +46,7 @@ from simeon.middlewares import (
     PathRewriteMiddleware,
     SandboxResponseHeaderMiddleware,
 )
+from simeon.oauth2.endpoints.well_known import authorize_page_router
 from simeon.oauth2.endpoints.well_known import router as well_known_router
 from simeon.oauth2.exception_handlers import OAuth2Error, oauth2_error_exception_handler
 from simeon.observability.http_middleware import HttpMetricsMiddleware
@@ -291,6 +292,7 @@ def create_app() -> FastAPI:
 
     # /.well-known
     app.include_router(well_known_router)
+    app.include_router(authorize_page_router)
 
     # /mcp: a bot the person added talks to their agents (and its
     # /.well-known/oauth-protected-resource)
