@@ -1785,10 +1785,11 @@ button {
   height: 20px;
 }
 
+/* The draft's own box, rounded as every writing box (10 November 2026). */
 .draft-box {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--ground);
   overflow: hidden;
 }

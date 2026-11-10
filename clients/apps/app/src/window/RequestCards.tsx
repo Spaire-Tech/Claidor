@@ -17,7 +17,7 @@
 import { useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { CardKind } from '../core/chat'
-import { CredentialsStoreModel } from '../core/credentialsStore'
+import { CredentialsStoreModel, newDraft } from '../core/credentialsStore'
 import {
   type ComputerCard,
   type CredentialCard,
@@ -33,6 +33,7 @@ import {
   credentialConfirmReason,
   credentialOutcomeLine,
   credentialStatusLine,
+  formLogin,
   formOutcomeLine,
   formPartlyFailed,
   formStatusLine,
@@ -69,7 +70,12 @@ import './ConnectCards.css'
 import { Alert } from './Dialogs'
 import { confirmPresence } from './presence'
 import './RequestCards.css'
-import { CredentialSheet, SiteIconTile } from './SettingsCredentials'
+import {
+  CredentialSheet,
+  EyeSymbol,
+  SiteIconTile,
+} from './SettingsCredentials'
+import { PanelDisc } from './SettingsParts'
 import { PaymentMark } from './ShopCards'
 import { useWindowModel } from './windowModel'
 
@@ -173,6 +179,82 @@ function LockLine({ words }: { words: string }) {
   )
 }
 
+/**
+ * A card's kind at its top, as the founder's references put it (10
+ * November 2026): a small tile with the kind's mark, its name ("Secrets",
+ * "Computer"), and what happened in a pill at the right.
+ */
+function KindHead({
+  mark,
+  name,
+  end,
+}: {
+  mark: React.ReactNode
+  name: string
+  end?: React.ReactNode
+}) {
+  return (
+    <div className="kind-head">
+      <span className="kind-tile" aria-hidden="true">
+        {mark}
+      </span>
+      <span className="kind-name">{name}</span>
+      {end}
+    </div>
+  )
+}
+
+/** `key.horizontal`: a key lying down, its ring at the right. */
+function KeyMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11.25" cy="8" r="2.75" />
+        <path d="M8.5 8H1.75M3.5 8v2.25M5.75 8v1.75" />
+      </g>
+    </svg>
+  )
+}
+
+/** `laptopcomputer`: a screen on its base. */
+function LaptopMark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.3">
+        <rect x="3" y="3.25" width="10" height="7.25" rx="1.25" />
+        <path d="M1.25 12.75h13.5" strokeLinecap="round" />
+      </g>
+    </svg>
+  )
+}
+
+/** `checkmark.shield` and its line (13), at 40%: kept safe, never shown to the agent. */
+function ShieldLine({ words }: { words: string }) {
+  return (
+    <div className="ask-lock shield">
+      <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.15"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M7 1.4 2.6 3v3.4c0 2.8 1.9 4.8 4.4 5.8 2.5-1 4.4-3 4.4-5.8V3Z" />
+          <path d="m5.1 6.9 1.35 1.35L9 5.7" />
+        </g>
+      </svg>
+      <span>{words}</span>
+    </div>
+  )
+}
+
 /** A card's head: its title (14 on 22, 500) and the line under it, the X or the pill at the right, 8 apart. */
 function AskHead({
   title,
@@ -249,12 +331,14 @@ const onReturn =
 // MARK: Secrets
 
 /**
- * A secret the agent asks for (`sand-secret-request`): its name and why;
- * a field ("Paste your <name>", on the ground with a 15% edge, 32 high) and
- * Save securely in the blue; under them a lock and "Stored securely, never
- * shown to your agent." Once the computer has kept it: "Saved securely and
- * kept private." and a "Saved" pill; declined with the X: a "Dismissed"
- * pill. What was pasted leaves the page as Save is pressed.
+ * A secret the agent asks for (`sand-secret-request`), as the founder's
+ * reference draws it (10 November 2026): "Secrets" at the top with a key;
+ * the secret's name and why; the variable it is kept under over its field
+ * when the agent named one ("AWS_ACCESS_KEY_ID"); the field, 36 high and 12
+ * round; then a shield and "Stored securely, never shown to your agent."
+ * with Not now and Save securely at the right. Once the computer has kept
+ * it: "Saved securely and kept private." and a "Saved" pill; declined: a
+ * "Dismissed" pill. What was pasted leaves the page as Save is pressed.
  */
 function SecretCardView({
   entryId,
@@ -263,6 +347,7 @@ function SecretCardView({
   store,
 }: ViewProps<SecretCard>) {
   const field = useRef<HTMLInputElement>(null)
+  const fieldId = useId()
   // Only whether something is in the field, for Save; never what.
   const [typed, setTyped] = useState(false)
   const [saving, run] = useBusy()
@@ -283,9 +368,9 @@ function SecretCardView({
   const prompt = t`Paste your ${card.label}`
   return (
     <CardShell>
-      <AskHead
-        title={card.label}
-        line={line}
+      <KindHead
+        mark={<KeyMark />}
+        name={t('Secrets')}
         end={
           card.provided ? (
             <AskPill words={t('Saved')} dot="green" />
@@ -294,19 +379,33 @@ function SecretCardView({
           ) : null
         }
       />
+      <div className="ask-words">
+        <div className={classes('ask-heading', card.dismissed && 'quiet')}>
+          {card.label}
+        </div>
+        {line !== '' && <div className="ask-line">{line}</div>}
+      </div>
       {open && (
         <>
-          <input
-            ref={field}
-            {...secretField}
-            className="ask-input"
-            placeholder={prompt}
-            aria-label={prompt}
-            onChange={(event) => setTyped(event.target.value !== '')}
-            onKeyDown={onReturn(save)}
-          />
+          <div className="form-field">
+            {card.variable !== undefined && (
+              <label className="form-label variable" htmlFor={fieldId}>
+                {card.variable}
+              </label>
+            )}
+            <input
+              id={fieldId}
+              ref={field}
+              {...secretField}
+              className="ask-input"
+              placeholder={prompt}
+              aria-label={prompt}
+              onChange={(event) => setTyped(event.target.value !== '')}
+              onKeyDown={onReturn(save)}
+            />
+          </div>
           <div className="card-foot">
-            <LockLine
+            <ShieldLine
               words={t('Stored securely, never shown to your agent.')}
             />
             <div className="card-buttons">
@@ -332,16 +431,15 @@ function SecretCardView({
 // MARK: The computer handed over
 
 /**
- * The agent hands the person its computer (`simeon-handoff`, 20 round,
- * padded 16, its parts 14 apart): a tile (44, 12 round) with a screen,
- * "Your turn on the computer" (15, 600) over "Waiting for you" beside a
- * breathing blue dot; the agent's instruction (15 on 21); while it waits,
- * the screen's picture when the computer sent one (16:10, 12 round, a
- * hairline); then Skip quiet at the left, I'm done and Take over in the
- * blue at the right. Once settled: "Computer" with what happened in a pill
- * (Done and Answered in green, Skipped in blue, Canceled in red), the
- * instruction in grey, and Open computer. The picture, Take over and Open
- * computer open the computer over the window (step 5b), which starts it.
+ * The agent hands the person its computer (`simeon-handoff`), as the
+ * founder's reference draws it (10 November 2026): "Computer" at the top
+ * with a laptop; "Action needed" over the agent's instruction in grey;
+ * while it waits, the screen's picture when the computer sent one, across
+ * the whole card; then Skip, I'm done and Take over (our blue) at the
+ * right. Once settled: what happened in a pill at the top (Done and
+ * Answered in green, Skipped in blue, Canceled in red), the instruction,
+ * and Open computer. The picture, Take over and Open computer open the
+ * computer over the window (step 5b), which starts it.
  *
  * It waits while the computer's status carries this request or while its
  * line has no answer yet (`HandoffCardState`).
@@ -367,42 +465,11 @@ function ComputerHandoffCard({
           : t`Computer, ${state.outcome}`
       }
     >
-      <div className="handoff-head">
-        <span className="handoff-tile">
-          {/* `display`, 18, regular: a screen on a short stand. */}
-          <svg width="22" height="18" viewBox="0 0 22 18" aria-hidden="true">
-            <rect
-              x="0.95"
-              y="0.95"
-              width="20.1"
-              height="12.6"
-              rx="2.3"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M11 13.6v3.2M7.2 17h7.6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </span>
-        {state.waiting ? (
-          <div className="handoff-words">
-            <div className="handoff-title">
-              {t('Your turn on the computer')}
-            </div>
-            <div className="handoff-waiting">
-              <span className="handoff-dot" />
-              {t('Waiting for you')}
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="handoff-title settled">{t('Computer')}</div>
+      <KindHead
+        mark={<LaptopMark />}
+        name={t('Computer')}
+        end={
+          !state.waiting && (
             <span
               className={classes(
                 'status-pill large handoff-outcome',
@@ -413,12 +480,19 @@ function ComputerHandoffCard({
               <span className="status-dot" />
               {state.outcome}
             </span>
-          </>
-        )}
-      </div>
-      {words !== '' && <div className="handoff-instruction">{words}</div>}
+          )
+        }
+      />
+      {(state.waiting || words !== '') && (
+        <div className="handoff-words">
+          {state.waiting && (
+            <div className="handoff-title">{t('Action needed')}</div>
+          )}
+          {words !== '' && <div className="handoff-instruction">{words}</div>}
+        </div>
+      )}
       {snapshot && (
-        // The screen when the agent asked; a click takes over.
+        // The screen when the agent asked, across the card; a click takes over.
         <button
           type="button"
           className="handoff-snapshot"
@@ -428,41 +502,26 @@ function ComputerHandoffCard({
           <img src={snapshot} alt="" draggable={false} />
         </button>
       )}
-      {state.waiting ? (
-        <div className="handoff-buttons">
-          <button
-            type="button"
-            className="handoff-skip"
-            title={t(
-              'Cancel this request without doing the step; the agent continues without it',
-            )}
-            onClick={() => void store.handBackComputer(agentId, true)}
-          >
-            {t('Skip')}
-          </button>
-          <span className="handoff-spacer" />
-          <button
-            type="button"
-            className="handoff-pill"
-            onClick={() => void store.handBackComputer(agentId)}
-          >
-            {t('I’m done')}
-          </button>
-          <button
-            type="button"
-            className="handoff-pill blue"
-            onClick={takeOver}
-          >
-            {t('Take over')}
-          </button>
-        </div>
-      ) : (
-        <div className="handoff-buttons">
-          <button type="button" className="handoff-pill" onClick={takeOver}>
-            {t('Open computer')}
-          </button>
-        </div>
-      )}
+      <div className="card-buttons">
+        {state.waiting ? (
+          <>
+            <CardButton
+              title={t('Skip')}
+              help={t(
+                'Cancel this request without doing the step; the agent continues without it',
+              )}
+              onClick={() => void store.handBackComputer(agentId, true)}
+            />
+            <CardButton
+              title={t('I’m done')}
+              onClick={() => void store.handBackComputer(agentId)}
+            />
+            <CardButton title={t('Take over')} prominent onClick={takeOver} />
+          </>
+        ) : (
+          <CardButton title={t('Open computer')} onClick={takeOver} />
+        )}
+      </div>
     </div>
   )
 }
@@ -477,11 +536,13 @@ function picture(address: string | undefined): string | undefined {
 // MARK: The in-chat form
 
 /**
- * The in-chat form, as the secret card draws its request: the title and
- * the site, the X while it waits, each field with its name above it, and
- * Fill in. The values go to the computer, which types them into the page;
- * the card forgets them as soon as Fill in is pressed. Once answered, each
- * field says whether it went in.
+ * The in-chat form, as the founder's reference has it (10 November 2026):
+ * a row (the site's icon, the form's title, "Opens a secure form") with
+ * Open at its right, which opens the form in a dialog over the window
+ * (`SecureFormDialog`). The values go to the computer, which types them
+ * into the page; for a sign-in, the dialog also offers to keep the login in
+ * the Credentials Store. Once answered, the row says how it went and each
+ * field whether it went in.
  */
 function UserFormCardView({
   entryId,
@@ -489,16 +550,10 @@ function UserFormCardView({
   card,
   store,
 }: ViewProps<UserFormCard>) {
-  // What is typed in the plain fields; the secret ones are the browser's (`secretField`).
-  const [values, setValues] = useState<Record<string, string>>({})
-  const secrets = useRef(new Map<string, HTMLInputElement>())
-  // Only whether each secret field has something in it, for Fill in; never what.
-  const [secretsTyped, setSecretsTyped] = useState<Record<string, string>>({})
-  const [busy, run] = useBusy()
-  const [refusal, setRefusal] = useState<string>()
-  const ids = useId()
+  const [showing, setShowing] = useState(false)
   const open = card.state === 'open'
   const status = formStatusLine(card)
+  const login = formLogin(card)
   const dot: Dot | undefined =
     card.state === 'filled'
       ? formPartlyFailed(card)
@@ -509,26 +564,173 @@ function UserFormCardView({
         : card.state === 'filling'
           ? 'blue'
           : undefined
-  const fillable = canFill(card, { ...values, ...secretsTyped })
-  const fill = () => {
+  /** A sign-in kept in the store first when asked (a store that refuses it stops here), then typed into the page. */
+  const submit = async (
+    typed: Record<string, string>,
+    keep: boolean,
+  ): Promise<string | undefined> => {
+    if (keep && login) {
+      const model = new CredentialsStoreModel(store.credentialsCall)
+      const saved = await model.save({
+        ...newDraft('login'),
+        website: card.domain,
+        username: typed[login.username.id] ?? '',
+        password: typed[login.password.id] ?? '',
+      })
+      if (!saved) return model.problem ?? t("That didn't work.")
+    }
+    return store.submitUserForm(formValues(card, typed), entryId, agentId)
+  }
+  return (
+    <CardShell>
+      <div className="connector-row">
+        {/* The site's icon; its first letter, not the title's ("Sign in to …"), while it has none. */}
+        <SiteIconTile
+          site={card.domain}
+          title={card.domain}
+          contact={false}
+          side={40}
+        />
+        <div className="connector-words">
+          <span
+            className={classes(
+              'connector-title',
+              card.state === 'dismissed' && 'quiet',
+            )}
+          >
+            {card.title}
+          </span>
+          <span className="connector-line">
+            {open ? t('Opens a secure form') : card.domain}
+          </span>
+        </div>
+        {open ? (
+          <CardButton title={t('Open')} onClick={() => setShowing(true)} />
+        ) : (
+          status != null && <AskPill words={status} dot={dot} />
+        )}
+      </div>
+      {card.state === 'filled' || card.state === 'filling' ? (
+        <div className="form-outcomes">
+          {card.fields.map((one, index) => {
+            const line = formOutcomeLine(card, one)
+            return (
+              <div key={index} className="form-outcome">
+                <span className="form-outcome-label">{one.label}</span>
+                <span className="form-outcome-gap" />
+                {line && (
+                  <span
+                    className={classes(
+                      'form-outcome-line',
+                      card.outcomes.get(one.id) === 'fillFailed' && 'failed',
+                    )}
+                  >
+                    {line}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        card.state === 'failed' &&
+        card.note && <div className="ask-said">{card.note}</div>
+      )}
+      {showing && open && (
+        <SecureFormDialog
+          title={card.title}
+          line={card.instruction}
+          fields={card.fields}
+          site={card.domain}
+          keepLabel={login && t('Save to your Credentials Store')}
+          sends={card.submitsAfterFill}
+          submitTitle={t('Fill in')}
+          close={() => setShowing(false)}
+          decline={() => store.dismissUserForm(entryId, agentId)}
+          submit={submit}
+        />
+      )}
+    </CardShell>
+  )
+}
+
+/**
+ * A secure form over the window (the founder's reference, 10 November
+ * 2026: "open, then an iframe"): the title and the X, why it's asked, each
+ * field with its name over it (36 high, 12 round; a password's eye shows
+ * it), for a sign-in "Save to your Credentials Store" (checked), then a
+ * shield and where it goes ("Never shown to your agent. Only filled on
+ * acme.com.") with Not now and the main button at the right. A secret
+ * field's words stay the browser's, read once as the form is sent. A
+ * refusal stays in the dialog with what was typed; once it went, the
+ * dialog closes. The X, Escape or a click outside only close it; Not now
+ * declines.
+ */
+function SecureFormDialog({
+  title,
+  line,
+  fields,
+  site,
+  keepLabel,
+  sends = false,
+  submitTitle,
+  close,
+  decline,
+  submit,
+}: {
+  title: string
+  line?: string
+  fields: readonly FormField[]
+  /** The site it goes to ("acme.com"). */
+  site?: string
+  /** A sign-in's "Save to your Credentials Store", checked until unchecked. */
+  keepLabel?: string
+  /** Enter is pressed once it's in (a lone one-time code). */
+  sends?: boolean
+  submitTitle: string
+  close: () => void
+  decline: () => Promise<unknown>
+  /** What was typed and whether to keep the login; a refusal to show, or none once it went. */
+  submit: (
+    typed: Record<string, string>,
+    keep: boolean,
+  ) => Promise<string | undefined>
+}) {
+  // What is typed in the plain fields; the secret ones are the browser's (`secretField`).
+  const [values, setValues] = useState<Record<string, string>>({})
+  const secrets = useRef(new Map<string, HTMLInputElement>())
+  // Only whether each secret field has something in it, for the button; never what.
+  const [secretsTyped, setSecretsTyped] = useState<Record<string, string>>({})
+  const [shown, setShown] = useState<Record<string, boolean>>({})
+  const [keep, setKeep] = useState(true)
+  const [busy, run] = useBusy()
+  const [refusal, setRefusal] = useState<string>()
+  const ids = useId()
+  const fillable = canFill({ fields: [...fields] }, { ...values, ...secretsTyped })
+  const send = () => {
     if (busy || !fillable) return
     const typed: Record<string, string> = { ...values }
-    for (const one of card.fields)
+    for (const one of fields)
       if (one.secret) typed[one.id] = secrets.current.get(one.id)?.value ?? ''
-    const sent = formValues(card, typed)
-    // What was typed leaves the card now; only the computer holds it, and only to type it in.
-    setValues({})
-    setSecretsTyped({})
-    for (const box of secrets.current.values()) box.value = ''
-    run(async () =>
-      setRefusal(await store.submitUserForm(sent, entryId, agentId)),
-    )
+    run(async () => {
+      const said = await submit(typed, keepLabel !== undefined && keep)
+      if (said !== undefined) {
+        setRefusal(said)
+        return
+      }
+      // What was typed leaves the dialog now; only the computer holds it, and only to type it in.
+      for (const box of secrets.current.values()) box.value = ''
+      close()
+    })
+  }
+  const leave = () => {
+    if (!busy) close()
   }
   const value = (one: FormField) =>
     Object.hasOwn(values, one.id) ? values[one.id]! : ''
   const set = (one: FormField, next: string) =>
     setValues((now) => ({ ...now, [one.id]: next }))
-  const input = (one: FormField, id: string) => {
+  const input = (one: FormField, id: string, first: boolean) => {
     switch (one.kind) {
       case 'checkbox':
         return (
@@ -582,34 +784,52 @@ function UserFormCardView({
             minLines={3}
             maxLines={6}
             lineHeight={17}
+            focusOnOpen={first}
           />
         )
       default:
-        if (one.secret)
+        if (one.secret) {
+          const showing = shown[one.id] === true
           return (
-            <input
-              id={id}
-              ref={(box) => {
-                if (box) secrets.current.set(one.id, box)
-                else secrets.current.delete(one.id)
-              }}
-              {...secretField}
-              // A code from a message may be offered by the browser; never a saved login.
-              autoComplete={
-                one.kind === 'otp' ? 'one-time-code' : 'new-password'
-              }
-              className="ask-input"
-              placeholder={one.placeholder}
-              onChange={(event) => {
-                const something = trimmedSpaces(event.target.value) !== ''
-                setSecretsTyped((now) => ({
-                  ...now,
-                  [one.id]: something ? 'typed' : '',
-                }))
-              }}
-              onKeyDown={onReturn(fill)}
-            />
+            <span className="secure-field">
+              <input
+                id={id}
+                ref={(box) => {
+                  if (box) secrets.current.set(one.id, box)
+                  else secrets.current.delete(one.id)
+                }}
+                {...secretField}
+                type={showing ? 'text' : 'password'}
+                // A code from a message may be offered by the browser; never a saved login.
+                autoComplete={
+                  one.kind === 'otp' ? 'one-time-code' : 'new-password'
+                }
+                className="ask-input"
+                placeholder={one.placeholder}
+                autoFocus={first}
+                onChange={(event) => {
+                  const something = trimmedSpaces(event.target.value) !== ''
+                  setSecretsTyped((now) => ({
+                    ...now,
+                    [one.id]: something ? 'typed' : '',
+                  }))
+                }}
+                onKeyDown={onReturn(send)}
+              />
+              <button
+                type="button"
+                className="secure-eye"
+                title={showing ? t('Hide Password') : t('Show Password')}
+                aria-label={showing ? t('Hide Password') : t('Show Password')}
+                onClick={() =>
+                  setShown((now) => ({ ...now, [one.id]: !showing }))
+                }
+              >
+                <EyeSymbol slashed={showing} />
+              </button>
+            </span>
           )
+        }
         return (
           <input
             id={id}
@@ -621,26 +841,45 @@ function UserFormCardView({
             autoComplete={autoComplete(one)}
             autoCapitalize="none"
             spellCheck={one.kind === 'text'}
+            autoFocus={first}
             onChange={(event) => set(one, event.target.value)}
-            onKeyDown={onReturn(fill)}
+            onKeyDown={onReturn(send)}
           />
         )
     }
   }
-  return (
-    <CardShell>
-      <AskHead
-        title={card.title}
-        quiet={card.state === 'dismissed'}
-        site={card.domain}
-        end={!open && status != null && <AskPill words={status} dot={dot} />}
-      />
-      {open ? (
-        <>
-          {card.instruction !== '' && (
-            <div className="ask-line">{card.instruction}</div>
-          )}
-          {card.fields.map((one, index) => {
+  return createPortal(
+    <div
+      className="sheet-scrim"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) leave()
+      }}
+    >
+      <div
+        className="secure-form"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape') return
+          event.stopPropagation()
+          leave()
+        }}
+      >
+        <div className="secure-form-head">
+          <h2 className="secure-form-title">{title}</h2>
+          <PanelDisc
+            symbol="xmark"
+            label={t('Close')}
+            disabled={busy}
+            onClick={leave}
+          />
+        </div>
+        {line !== undefined && line !== '' && (
+          <p className="secure-form-line">{line}</p>
+        )}
+        <div className="secure-form-fields">
+          {fields.map((one, index) => {
             const id = `${ids}-${index}`
             return (
               <div key={index} className="form-field">
@@ -649,70 +888,61 @@ function UserFormCardView({
                     {one.label}
                   </label>
                 )}
-                {input(one, id)}
-              </div>
-            )
-          })}
-          <div className="form-actions">
-            {card.submitsAfterFill && (
-              <span className="form-sends">
-                {t('It’s sent as soon as it’s typed in.')}
-              </span>
-            )}
-            <div className="card-buttons">
-              <CardButton
-                title={t('Not now')}
-                disabled={busy}
-                onClick={() =>
-                  run(() => store.dismissUserForm(entryId, agentId))
-                }
-              />
-              <CardButton
-                title={t('Fill in')}
-                prominent
-                disabled={busy || !fillable}
-                onClick={fill}
-              />
-            </div>
-          </div>
-          {refusal && (
-            <div className="ask-refusal" role="alert">
-              {refusal}
-            </div>
-          )}
-          <LockLine
-            words={t(
-              "Typed into the page on Simeon's computer, never shown to your agent.",
-            )}
-          />
-        </>
-      ) : card.state === 'filled' || card.state === 'filling' ? (
-        <div className="form-outcomes">
-          {card.fields.map((one, index) => {
-            const line = formOutcomeLine(card, one)
-            return (
-              <div key={index} className="form-outcome">
-                <span className="form-outcome-label">{one.label}</span>
-                <span className="form-outcome-gap" />
-                {line && (
-                  <span
-                    className={classes(
-                      'form-outcome-line',
-                      card.outcomes.get(one.id) === 'fillFailed' && 'failed',
-                    )}
-                  >
-                    {line}
-                  </span>
-                )}
+                {input(one, id, index === 0)}
               </div>
             )
           })}
         </div>
-      ) : (
-        card.state === 'failed' &&
-        card.note && <div className="ask-said">{card.note}</div>
-      )}
-    </CardShell>
+        {keepLabel !== undefined && (
+          <label className="form-check secure-form-keep">
+            <input
+              type="checkbox"
+              checked={keep}
+              onChange={(event) => setKeep(event.target.checked)}
+            />
+            <span>{keepLabel}</span>
+          </label>
+        )}
+        {sends && (
+          <p className="form-sends">
+            {t('It’s sent as soon as it’s typed in.')}
+          </p>
+        )}
+        {refusal !== undefined && (
+          <div className="ask-refusal" role="alert">
+            {refusal}
+          </div>
+        )}
+        <div className="card-foot secure-form-foot">
+          <ShieldLine
+            words={
+              site !== undefined && site !== ''
+                ? t`Never shown to your agent. Only filled on ${site}.`
+                : t('Stored securely, never shown to your agent.')
+            }
+          />
+          <div className="card-buttons">
+            <CardButton
+              title={t('Not now')}
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await decline()
+                  close()
+                })
+              }
+            />
+            <CardButton
+              title={submitTitle}
+              prominent
+              disabled={busy || !fillable}
+              onClick={send}
+            />
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -1024,12 +1254,14 @@ function OnePasswordConnecting({
 
 /**
  * The Credentials Store's card (`StoreEntryCardView`), drawn as the
- * connector card (ConnectCards.tsx; the founder, 10 November 2026: "Can
- * you respect our design"): the site's icon (a card's mark, a person for
- * contact info) on its 40 tile, its name over one line, and at its right
- * Save (a login) or Add in the grey capsule, which opens the store's own
- * sheet over the chat already filled; once saved, "Saved" in green as
- * "Connected".
+ * connector card (ConnectCards.tsx): the site's icon (a card's mark, a
+ * person for contact info) on its 40 tile, its name over one line, and its
+ * button at the right; once saved, "Saved" in green as "Connected". A login
+ * asked for reads as the founder's reference (10 November 2026): "Sign in
+ * to Amazon", "Opens a secure form" and Open, which opens the secure form
+ * over the window (`SecureFormDialog`): the email or username and the
+ * password, saved in the store. A card or contact info has Add, which
+ * opens the store's own sheet over the chat, filled.
  */
 function StoreEntryCardView({
   entryId,
@@ -1039,14 +1271,38 @@ function StoreEntryCardView({
 }: ViewProps<StoreEntryCard>) {
   const [model, setModel] = useState<CredentialsStoreModel>()
   const [editing, setEditing] = useState(false)
-  const line = storeLine(card)
+  const asks = storeAsks(card)
+  const signIn = card.kind === 'login' && asks
+  const line = signIn ? t('Opens a secure form') : storeLine(card)
+  const made = () => {
+    const one = model ?? new CredentialsStoreModel(store.credentialsCall)
+    setModel(one)
+    return one
+  }
   const open = () => {
-    const made = model ?? new CredentialsStoreModel(store.credentialsCall)
-    setModel(made)
+    const one = made()
     setEditing(true)
     // A card's billing address is chosen from the saved contact info.
-    if (card.kind === 'card') void made.load()
+    if (card.kind === 'card') void one.load()
   }
+  const loginFields: FormField[] = [
+    {
+      id: 'username',
+      label: t('Email or username'),
+      kind: 'text',
+      secret: false,
+      required: false,
+      options: [],
+    },
+    {
+      id: 'password',
+      label: t('Password'),
+      kind: 'password',
+      secret: true,
+      required: true,
+      options: [],
+    },
+  ]
   return (
     <CardShell>
       <div className="connector-row">
@@ -1061,7 +1317,9 @@ function StoreEntryCardView({
           />
         )}
         <div className="connector-words">
-          <span className="connector-title">{card.title}</span>
+          <span className="connector-title">
+            {signIn ? t`Sign in to ${card.title}` : card.title}
+          </span>
           {line !== undefined && (
             <span className="connector-line" title={line}>
               {line}
@@ -1071,20 +1329,45 @@ function StoreEntryCardView({
         {storeIsSaved(card) ? (
           <span className="connector-connected">{t('Saved')}</span>
         ) : (
-          storeAsks(card) && (
-            <button type="button" className="connector-connect" onClick={open}>
-              {card.kind === 'login' ? t('Save') : t('Add')}
-            </button>
+          asks && (
+            <CardButton
+              title={signIn ? t('Open') : t('Add')}
+              onClick={open}
+            />
           )
         )}
       </div>
-      {editing && model && (
-        <CredentialSheet
-          model={model}
-          edit={{ filled: storeDraft(card) }}
+      {editing && signIn ? (
+        <SecureFormDialog
+          title={t`Sign in to ${card.title}`}
+          line={card.reason}
+          fields={loginFields}
+          site={card.website}
+          submitTitle={t('Save')}
           close={() => setEditing(false)}
-          onSaved={() => void store.answerStoreEntry(entryId, agentId, true)}
+          decline={() => store.answerStoreEntry(entryId, agentId, false)}
+          submit={async (typed) => {
+            const one = made()
+            const saved = await one.save({
+              ...storeDraft(card),
+              username: typed.username ?? '',
+              password: typed.password ?? '',
+            })
+            if (!saved) return one.problem ?? t("That didn't work.")
+            await store.answerStoreEntry(entryId, agentId, true)
+            return undefined
+          }}
         />
+      ) : (
+        editing &&
+        model && (
+          <CredentialSheet
+            model={model}
+            edit={{ filled: storeDraft(card) }}
+            close={() => setEditing(false)}
+            onSaved={() => void store.answerStoreEntry(entryId, agentId, true)}
+          />
+        )
       )}
     </CardShell>
   )

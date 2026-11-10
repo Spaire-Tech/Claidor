@@ -3105,4 +3105,13 @@ The iPhone has the same in its own sizes: `CardPillStyle` (38 high) in `CardPill
 
 The same day the founder had the main pills made our blue ("make them our blue"): `prominent` and the question card's Next and Send are `look.yours` with white words; the iPhone's `.main` is `Ink.bubbleMine`. The Slack/GitHub Connect is a `CardButton` now.
 
+
+### The sign-in form, the secret and the computer, as the founder's references (10 November 2026)
+
+- **`CardKindHead`**: a card's kind at its top (a 28 tile with its symbol, its name), used by the secret ("Secrets", `key.horizontal`) and the computer ("Computer", `laptopcomputer`) cards. `CardShieldLine` is the shield and its line.
+- **`cardField`**: every writing box on a card or a secure form, 36 high and 12 round (the draft's box is 14 round).
+- **The in-chat form** (`UserFormCard.swift`) is a row with Open; Open shows `MacSecureFormSheet` (title and X, fields, a password's eye, "Save to your Credentials Store" for a sign-in, the shield, Not now and Fill in). The store's login card opens the same sheet, saved in the store.
+- **The computer card**: "Action needed" over the instruction in grey, the screen across the whole card, Skip, I'm done and Take over at the right.
+
+The iPhone has the same: `CardKindHead`, `CardShieldLine` and `cardField()` (44 high, 14 round) in `Cards.swift`, `PhoneSecureFormSheet` in `UserFormCard.swift`. Not yet built or run on a Mac or an iPhone: the files parse and the core's tests ran on Linux.
 Not yet built or run on a Mac or an iPhone: no Xcode here. The files parse. The web app's cards ran in Chromium against a stand-in computer, light and dark.

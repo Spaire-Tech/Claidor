@@ -166,6 +166,68 @@ struct CardPills<Leading: View, Content: View>: View {
   }
 }
 
+/**
+ * A card's kind at its top, as the founder's references put it (10
+ * November 2026): a 32 tile (9 round, the ink at 6%, a hairline) with the
+ * kind's symbol, its name (16), and what happened in a pill at the right.
+ */
+struct CardKindHead<End: View>: View {
+  let symbol: String
+  let name: String
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: symbol)
+        .font(.system(size: 15, weight: .regular))
+        .foregroundStyle(Ink.secondary)
+        .frame(width: 32, height: 32)
+        .background(Ink.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(Ink.primary.opacity(0.14), lineWidth: 0.5))
+        .accessibilityHidden(true)
+      Text(name).font(.system(size: 16)).foregroundStyle(Ink.primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      end()
+    }
+  }
+}
+
+extension CardKindHead where End == EmptyView {
+  init(symbol: String, name: String) {
+    self.init(symbol: symbol, name: name) { EmptyView() }
+  }
+}
+
+/** `checkmark.shield` and its line (13), in grey: kept safe, never shown to the agent. */
+struct CardShieldLine: View {
+  let words: String
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 5) {
+      Image(systemName: "checkmark.shield").font(.system(size: 13)).padding(.top, 1)
+      Text(words).font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
+    }
+    .foregroundStyle(Ink.secondary)
+  }
+}
+
+extension View {
+  /**
+   * A field on a card or a secure form: 17, 44 high, padded 14 at the
+   * sides, 14 round with its edge (the founder, 10 November 2026: "all
+   * writing boxes should be rounded too").
+   */
+  func cardField(height: CGFloat? = 44) -> some View {
+    self
+      .font(.system(size: 17))
+      .padding(.horizontal, 14)
+      .padding(.vertical, height == nil ? 11 : 0)
+      .frame(height: height)
+      .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+  }
+}
+
 /** The round glass close at a sheet's top left, as the phone design puts it. */
 struct CloseDisc: View {
   let action: () -> Void
@@ -1358,7 +1420,8 @@ struct DraftCardView: View {
             .padding(.horizontal, 10).padding(.vertical, 9)
           }
         }
-        .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // Rounded as every writing box (10 November 2026).
+        .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         if editable {
           // The cards' pills (10 November 2026): Discard grey, Send the main one, last.
           CardPills {
@@ -1825,8 +1888,8 @@ struct RequestCardView: View {
       switch card {
       case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
         approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
-      case .secret(let label, let description, let provided, let dismissed):
-        secretCard(label: label, description: description, provided: provided, dismissed: dismissed)
+      case .secret(let label, let description, let variable, let provided, let dismissed):
+        secretCard(label: label, description: description, variable: variable, provided: provided, dismissed: dismissed)
       case .computer(let requestId, let instruction, let resolution):
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
       case .form(let form):
@@ -1912,24 +1975,38 @@ struct RequestCardView: View {
     Task { await work(); busy = false }
   }
 
-  private func secretCard(label: String, description: String, provided: Bool, dismissed: Bool) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 8) {
-        Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
-        Spacer(minLength: 0)
+  /**
+   * A secret the agent asks for, as the founder's reference draws it (10
+   * November 2026): "Secrets" at the top with a key; the secret's name and
+   * why; the variable it is kept under over its field when the agent named
+   * one ("AWS_ACCESS_KEY_ID"); the field, rounded; then a shield and
+   * "Stored securely, never shown to your agent." with Not now and Save
+   * securely at the right.
+   */
+  private func secretCard(label: String, description: String, variable: String?, provided: Bool, dismissed: Bool) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      CardKindHead(symbol: "key.horizontal", name: String(localized: "Secrets")) {
         if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
         else if dismissed { StatusPill(text: String(localized: "Dismissed")) }
       }
-      if !description.isEmpty && !dismissed { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      VStack(alignment: .leading, spacing: 3) {
+        Text(label).font(.system(size: 18, weight: .semibold)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
+          .fixedSize(horizontal: false, vertical: true)
+        let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
+        if !line.isEmpty { Text(line).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      }
       if !provided && !dismissed {
-        SecureField("Paste your \(label)", text: $secret)
-          .font(.system(size: 17))
-          .typedAsIs().autocorrectionDisabled()
-          .padding(.horizontal, 12).frame(height: 38)
-          .background(Ink.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.edge, lineWidth: 1))
+        VStack(alignment: .leading, spacing: 6) {
+          if let variable {
+            Text(verbatim: variable).font(.system(size: 13)).tracking(0.2).foregroundStyle(Ink.secondary).textSelection(.enabled)
+          }
+          SecureField("Paste your \(label)", text: $secret)
+            .typedAsIs().autocorrectionDisabled()
+            .cardField()
+        }
         CardPills {
+          CardShieldLine(words: String(localized: "Stored securely, never shown to your agent."))
+        } content: {
           // Not giving it is an answer too: the agent is told it was declined (Not now replaced the X, 10 November 2026).
           Button("Not now") { run { await store.dismissQuestion(entryId, in: agentId) } }
             .buttonStyle(Tactile(look: CardPillStyle()))
@@ -1948,9 +2025,12 @@ struct RequestCardView: View {
   }
 
   /**
-   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a computer
-   * tile, the status, the instruction, the screen as it was when
-   * the agent asked, Take over / I'm done / Skip. It waits while the
+   * The agent hands the person its computer, as the founder's reference
+   * draws it (10 November 2026): "Computer" at the top with a laptop;
+   * "Action needed" over the agent's instruction in grey; while it waits,
+   * the screen as it was when the agent asked, across the whole card; then
+   * Skip, I'm done and Take over (our blue). Settled: what happened in a
+   * pill at the top, the instruction, and Open computer. It waits while the
    * computer says this request is pending (`Obn`); before its status is
    * read, while the line has no answer yet.
    */
@@ -1958,64 +2038,52 @@ struct RequestCardView: View {
     let pending = store.computer.status(agentId)?.handoff
     let known = store.computer.readState(agentId) == .known
     let waiting = known ? pending?.requestId == requestId : resolution == nil
-    let shownInstruction = waiting ? (pending?.instruction ?? instruction) : instruction
+    let shownInstruction = (waiting ? (pending?.instruction ?? instruction) : instruction).trimmingCharacters(in: .whitespacesAndNewlines)
     let ending = HandoffOutcome(resolution: resolution)
     let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
-    return VStack(alignment: .leading, spacing: 12) {
-      HStack(spacing: 12) {
-        // The cards' own tile, light or dark with the theme (15 October 2026: on a fixed white tile
-        // the monitor, drawn in the theme's ink, vanished in the dark).
-        Image(systemName: "display").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
-          .frame(width: 44, height: 44)
-          .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Ink.tileEdge, lineWidth: 0.5))
-        if waiting {
-          VStack(alignment: .leading, spacing: 2) {
-            Text("Your turn on the computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-            HStack(spacing: 6) {
-              PulsingDot(active: true)
-              Text("Waiting for you").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-          Spacer(minLength: 0)
-        } else {
-          // Settled: what happened in a pill at the right, as the email card has its state (16 October 2026):
+    return VStack(alignment: .leading, spacing: 14) {
+      CardKindHead(symbol: "laptopcomputer", name: String(localized: "Computer")) {
+        if !waiting {
+          // Settled: what happened in a pill, as the email card has its state (16 October 2026):
           // Done and Answered in green, Skipped in blue, Canceled in red.
-          Text("Computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
           let tint = Self.tint(ending)
           StatusPill(text: ending.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
         }
       }
-      if !shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 15)).foregroundStyle(waiting ? Ink.primary : Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      if waiting || !shownInstruction.isEmpty {
+        VStack(alignment: .leading, spacing: 3) {
+          if waiting { Text("Action needed").font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary) }
+          if !shownInstruction.isEmpty {
+            Text(shownInstruction).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+          }
+        }
       }
       if let snapshot {
+        // The screen when the agent asked, across the whole card; a tap takes over.
         Button(action: openComputer) {
           Image(uiImage: snapshot).resizable().aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fill)
             .frame(maxWidth: .infinity)
             .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipped()
+            .overlay(alignment: .top) { Rectangle().fill(Ink.hairline).frame(height: 0.5) }
+            .overlay(alignment: .bottom) { Rectangle().fill(Ink.hairline).frame(height: 0.5) }
         }
         .buttonStyle(.tactile)
+        .padding(.horizontal, -16)
         .accessibilityLabel("Take over the computer")
       }
-      if waiting {
-        // The cards' pills, as on the Mac (10 November 2026): Skip at the left, I'm done grey, Take over the main one.
-        CardPills {
+      CardPills {
+        if waiting {
           Button("Skip") { run { await store.handBackComputer(agentId, skip: true) } }
             .buttonStyle(Tactile(look: CardPillStyle()))
             .disabled(busy)
             .help("Cancel this request without doing the step; the agent continues without it")
-        } content: {
           Button("I’m done") { run { await store.handBackComputer(agentId) } }
             .buttonStyle(Tactile(look: CardPillStyle()))
             .disabled(busy)
           Button("Take over", action: openComputer)
             .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
-        }
-      } else {
-        CardPills {
+        } else {
           Button("Open computer", action: openComputer).buttonStyle(Tactile(look: CardPillStyle()))
         }
       }

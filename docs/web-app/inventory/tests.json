@@ -245,7 +245,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/UserFormTests.swift",
-  "tests": 3
+  "tests": 5
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonMacCoreTests/LocalExecTests.swift",

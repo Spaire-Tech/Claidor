@@ -1343,7 +1343,7 @@ export function CredentialSheet({
 }
 
 /** `eye` and `eye.slash` (13, the grey). */
-function EyeSymbol({ slashed }: { slashed: boolean }) {
+export function EyeSymbol({ slashed }: { slashed: boolean }) {
   return (
     <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true">
       <g

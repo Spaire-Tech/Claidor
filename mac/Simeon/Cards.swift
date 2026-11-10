@@ -649,8 +649,9 @@ struct DraftCardView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
         }
       }
-      .background(look.ground, in: RoundedRectangle(cornerRadius: 10))
-      .clipShape(RoundedRectangle(cornerRadius: 10))
+      // Rounded as every writing box (the founder, 10 November 2026).
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
       if editable {
         HStack(spacing: 8) {
           Spacer(minLength: 0)
@@ -1137,25 +1138,104 @@ struct ListenerConnectCardView: View {
   }
 }
 
+// MARK: The parts the asking cards share
+
+/**
+ * A card's kind at its top, as the founder's references put it (10 November
+ * 2026): a 28 tile (8 round, the ink at 6%, a hairline) with the kind's
+ * symbol, its name (14), and what happened in a pill at the right.
+ */
+struct CardKindHead<End: View>: View {
+  let symbol: String
+  let name: String
+  let look: Look
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: symbol)
+        .font(.system(size: 13, weight: .regular))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .background(look.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.14), lineWidth: 0.5) }
+        .accessibilityHidden(true)
+      Text(name)
+        .font(.system(size: 14))
+        .tracking(-0.15)
+        .foregroundStyle(look.ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      end()
+    }
+    .frame(minHeight: 28)
+  }
+}
+
+extension CardKindHead where End == EmptyView {
+  init(symbol: String, name: String, look: Look) {
+    self.init(symbol: symbol, name: name, look: look) { EmptyView() }
+  }
+}
+
+/** `checkmark.shield` and its line (13), at 40%: kept safe, never shown to the agent. */
+struct CardShieldLine: View {
+  let words: String
+  let look: Look
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 5) {
+      Image(systemName: "checkmark.shield")
+        .font(.system(size: 12))
+        .padding(.top, 1)
+      Text(words)
+        .font(.system(size: 13))
+        .tracking(-0.08)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .foregroundStyle(look.inkTertiary)
+  }
+}
+
+extension View {
+  /**
+   * A field on a card or a secure form: 14, 36 high, padded 12 at the
+   * sides, on the ground, 12 round with a line at 15% (the founder, 10
+   * November 2026: "all writing boxes should be rounded too").
+   */
+  func cardField(_ look: Look, height: CGFloat? = 36) -> some View {
+    self
+      .textFieldStyle(.plain)
+      .font(.system(size: 14))
+      .padding(.horizontal, 12)
+      .padding(.vertical, height == nil ? 9 : 0)
+      .frame(height: height)
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+  }
+}
+
 // MARK: Secrets
 
 /**
- * A secret the agent asks for (`sand-secret-request`): its name (14 on 22,
- * 500) and why (60%); a field ("Paste your <name>", on the ground with a
- * 15% edge, 32 high) and Save securely in the blue; under them a lock and
- * "Stored securely, never shown to your agent." (13, 40%). Once the
- * computer says it has it (the entry's `secretProvided`, as the window's
- * card reads `isProvided`): "Saved securely and kept private." and a
- * "Saved" pill. A save on its way only greys Save securely; one the
- * computer didn't keep leaves the field and Save securely there.
+ * A secret the agent asks for (`sand-secret-request`), as the founder's
+ * reference draws it (10 November 2026): "Secrets" at the top with a key;
+ * the secret's name (15, 600) and why; the variable it is kept under over
+ * its field when the agent named one ("AWS_ACCESS_KEY_ID"); the field, 36
+ * high and 12 round; then a shield and "Stored securely, never shown to
+ * your agent." with Not now and Save securely at the right. Once the
+ * computer says it has it (the entry's `secretProvided`): "Saved securely
+ * and kept private." and a "Saved" pill. A save on its way only greys Save
+ * securely; one the computer didn't keep leaves the field there.
  */
 struct SecretCardView: View {
   let entryId: String
   let agentId: String
   let label: String
   let description: String
+  /** The variable it is kept under on the computer, when the agent named one. */
+  var variable: String? = nil
   let provided: Bool
-  /** Dismissed with its X: a decline the agent is told (`dismissWidget`). */
+  /** Dismissed with Not now: a decline the agent is told (`dismissWidget`). */
   var dismissed = false
   let look: Look
   @Environment(AppStore.self) private var store
@@ -1163,51 +1243,45 @@ struct SecretCardView: View {
   @State private var saving = false
 
   var body: some View {
-    CardShell(look: look) {
-      HStack(alignment: .top, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(label)
-            .font(.system(size: 14, weight: .medium))
-            .tracking(-0.15)
-            .foregroundStyle(look.ink)
-            .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
-          if !line.isEmpty {
-            Text(line)
-              .font(.system(size: 14))
-              .tracking(-0.15)
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(22, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    CardShell(look: look, spacing: 12) {
+      CardKindHead(symbol: "key.horizontal", name: String(localized: "Secrets"), look: look) {
         if provided {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
         } else if dismissed {
           StatusPill(text: String(localized: "Dismissed"), look: look)
         }
       }
+      VStack(alignment: .leading, spacing: 2) {
+        Text(label)
+          .font(.system(size: 15, weight: .semibold))
+          .tracking(-0.2)
+          .foregroundStyle(dismissed ? look.inkSecondary : look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+        let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
+        if !line.isEmpty {
+          Text(line)
+            .font(.system(size: 14))
+            .tracking(-0.15)
+            .foregroundStyle(look.inkSecondary)
+            .cssLineHeight(20, size: 14)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
       if !(provided || dismissed) {
-        SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
-          .textFieldStyle(.plain)
-          .font(.system(size: 14))
-          .padding(.vertical, 6)
-          .padding(.horizontal, 10)
-          .frame(height: 32)
-          .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
-          .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-          .onSubmit(save)
-        HStack(alignment: .center, spacing: 8) {
-          HStack(alignment: .top, spacing: 4) {
-            Image(systemName: "lock.fill")
-              .font(.system(size: 9))
-              .frame(width: 12, height: 12)
-              .padding(.top, 3)
-            Text("Stored securely, never shown to your agent.")
+        VStack(alignment: .leading, spacing: 6) {
+          if let variable {
+            Text(verbatim: variable)
               .font(.system(size: 13))
-              .tracking(-0.08)
+              .tracking(0.2)
+              .foregroundStyle(look.inkSecondary)
+              .textSelection(.enabled)
           }
-          .foregroundStyle(look.inkTertiary)
+          SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
+            .cardField(look)
+            .onSubmit(save)
+        }
+        HStack(alignment: .center, spacing: 8) {
+          CardShieldLine(words: String(localized: "Stored securely, never shown to your agent."), look: look)
           Spacer(minLength: 8)
           // Not now declines it, as the X did (10 November 2026).
           CardButton(title: String(localized: "Not now"), look: look) {
@@ -1845,20 +1919,17 @@ struct AirlineMark: View {
 
 /**
  * The agent hands the person its computer (`simeon-handoff`, at most 520
- * wide on a Mac, 20 round, padded 16, its parts 14 apart): a white tile (44,
- * 12 round) with a screen, "Your turn on the computer" (15, 600) over
- * "Waiting for you" beside a pulsing blue dot; the agent's instruction (15
- * on 21); then a Mac's row of buttons (21 October 2026, the founder: the
- * cards were an iPhone's, "and not a mac"): Skip quiet at the left, a grey
- * I'm done and Take over in the blue at the right, each as wide as its
- * words. Once settled: "Computer" with what happened in a pill at
- * its right, as the email card has its state (Done and Answered in green,
- * Skipped in blue, Canceled in red; the founder, 16 October 2026), the
- * instruction in grey, and Open computer. While it
- * waits, the screen's snapshot (when the computer sent one) sits over the
- * buttons; it, Take over and Open computer open the computer over the
- * window (step 13). It waits while the computer carries this request or
- * while the request has no answer yet (decision 3, `HandoffCardState`).
+ * wide on a Mac, 20 round, padded 16, its parts 14 apart), as the
+ * founder's reference draws it (10 November 2026): "Computer" at the top
+ * with a laptop; "Action needed" (16, 600) over the agent's instruction in
+ * grey; while it waits, the screen's snapshot (when the computer sent one)
+ * across the whole card; then Skip, I'm done and Take over (our blue) at
+ * the right. Once settled: what happened in a pill at the top (Done and
+ * Answered in green, Skipped in blue, Canceled in red; the founder, 16
+ * October 2026), the instruction, and Open computer. The snapshot, Take
+ * over and Open computer open the computer over the window (step 13). It
+ * waits while the computer carries this request or while the request has
+ * no answer yet (decision 3, `HandoffCardState`).
  */
 struct ComputerHandoffCard: View {
   let agentId: String
@@ -1873,49 +1944,37 @@ struct ComputerHandoffCard: View {
   private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
   private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
   private var fill: Color { look.dark ? Color(hex: 0x3a3a3c) : Color.white }
-  private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
 
   var body: some View {
     let state = HandoffCardState.of(requestId: requestId, instruction: instruction, resolution: resolution, status: store.computer.status(agentId))
     let waiting = state.waiting
     let words = state.instruction.trimmingCharacters(in: .whitespacesAndNewlines)
     VStack(alignment: .leading, spacing: 14) {
-      HStack(spacing: 12) {
-        Image(systemName: "display")
-          .font(.system(size: 18, weight: .regular))
-          .foregroundStyle(ink)
-          .frame(width: 44, height: 44)
-          .background(fill, in: RoundedRectangle(cornerRadius: 12))
-        if waiting {
-          VStack(alignment: .leading, spacing: 1) {
-            Text("Your turn on the computer")
-              .font(.system(size: 15, weight: .semibold))
-              .foregroundStyle(ink)
-            HStack(spacing: 6) {
-              HandoffDot(waiting: true, blue: blue, grey: grey)
-              Text("Waiting for you")
-                .font(.system(size: 13))
-                .foregroundStyle(grey)
-            }
-          }
-        } else {
-          Text("Computer")
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(ink)
-            .frame(maxWidth: .infinity, alignment: .leading)
+      CardKindHead(symbol: "laptopcomputer", name: String(localized: "Computer"), look: look) {
+        if !waiting {
           let tint = Self.tint(state.ending, look: look)
           StatusPill(text: state.outcome, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1), large: true)
         }
       }
-      if !words.isEmpty {
-        Text(words)
-          .font(.system(size: 15))
-          .foregroundStyle(waiting ? ink : grey)
-          .cssLineHeight(21, size: 15)
-          .fixedSize(horizontal: false, vertical: true)
+      if waiting || !words.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          if waiting {
+            Text("Action needed")
+              .font(.system(size: 16, weight: .semibold))
+              .tracking(-0.2)
+              .foregroundStyle(ink)
+          }
+          if !words.isEmpty {
+            Text(words)
+              .font(.system(size: 15))
+              .foregroundStyle(grey)
+              .cssLineHeight(21, size: 15)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
       }
       if waiting, let snapshot = state.snapshotDataUrl.flatMap(Self.picture) {
-        // The screen when the agent asked (16:10, 12 round, a hairline); a click takes over.
+        // The screen when the agent asked (16:10), across the whole card, a hairline over and under; a click takes over.
         Button { takeOver() } label: {
           Image(nsImage: snapshot)
             .resizable()
@@ -1925,35 +1984,38 @@ struct ComputerHandoffCard: View {
             .frame(maxWidth: .infinity)
             .aspectRatio(16 / 10, contentMode: .fit)
             .background(fill)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06), lineWidth: 1))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipped()
+            .overlay(alignment: .top) { Rectangle().fill(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)).frame(height: 1) }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.hand)
         .onHover { snapshotHover = $0 }
+        .padding(.horizontal, -16)
         .accessibilityLabel("Take over the computer")
       }
-      if waiting {
-        // The cards' pills (10 November 2026): Skip and I'm done grey, Take over the main one.
-        HStack(spacing: 8) {
+      HStack(spacing: 8) {
+        Spacer(minLength: 0)
+        if waiting {
+          // The cards' pills, as the founder's reference has them: Skip and I'm done grey, Take over the main one, last.
           CardButton(title: String(localized: "Skip"), look: look) {
             Task { await store.handBackComputer(agentId, skip: true) }
           }
           .help("Cancel this request without doing the step; the agent continues without it")
-          Spacer(minLength: 8)
           CardButton(title: String(localized: "I’m done"), look: look) {
             Task { await store.handBackComputer(agentId) }
           }
           CardButton(title: String(localized: "Take over"), prominent: true, look: look) { takeOver() }
+        } else {
+          CardButton(title: String(localized: "Open computer"), look: look) { takeOver() }
         }
-      } else {
-        CardButton(title: String(localized: "Open computer"), look: look) { takeOver() }
       }
     }
     .tracking(-0.15)
     .padding(16)
     .frame(maxWidth: 520, alignment: .leading)
-    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
+    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer, \(state.outcome)")
   }
@@ -1977,53 +2039,6 @@ struct ComputerHandoffCard: View {
     guard let comma = dataURL.firstIndex(of: ","), dataURL.hasPrefix("data:"),
           let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]), options: .ignoreUnknownCharacters) else { return nil }
     return NSImage(data: data)
-  }
-
-  /** A Mac's pill (21 October 2026): as wide as its words (at least 88), 32 high. */
-  private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 14, weight: .medium))
-        .foregroundStyle(ink)
-        .lineLimit(1)
-        .padding(.horizontal, 16)
-        .frame(minWidth: 88)
-        .frame(height: 32)
-        .background(ground, in: Capsule())
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.hand)
-    .fixedSize()
-  }
-}
-
-/**
- * The card's dot, blue with a ring that breathes while it waits. The ring's
- * animation is its own (`.animation(_:value:)`), as the iPhone's
- * `PulsingDot`. Until 16 October 2026 it started with `withAnimation(…
- * .repeatForever)` in the card's `onAppear`, which repeats whatever else
- * changes in that update too: in the founder's recording the rows above the
- * card kept moving and vanishing, from the card's arrival on.
- */
-private struct HandoffDot: View {
-  let waiting: Bool
-  let blue: Color
-  let grey: Color
-  @State private var pulse = false
-
-  var body: some View {
-    Circle()
-      .fill(waiting ? blue : grey)
-      .frame(width: 7, height: 7)
-      .background {
-        if waiting {
-          Circle()
-            .stroke(blue.opacity(pulse ? 0 : 0.35), lineWidth: pulse ? 10 : 0)
-            .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
-        }
-      }
-      .onAppear { if waiting { pulse = true } }
-      .onChange(of: waiting) { _, now in if now { pulse = true } }
   }
 }
 
