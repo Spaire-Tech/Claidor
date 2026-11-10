@@ -189,21 +189,43 @@ QA = [
 
 # /models/<id>
 
-STEPS_CSS = """
-/* The steps, where a connector's page has its messages: numbered, each on a light pill. */
-.steps{counter-reset:step;align-items:stretch}
-.steps li{position:relative;max-width:none;padding:14px 22px 14px 56px;text-align:left;counter-increment:step}
-.steps li::before{content:counter(step);position:absolute;left:16px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:600;letter-spacing:0}
-.steps a{color:var(--blue);text-decoration:none}
-.steps a:hover{text-decoration:underline}
-.steps code{font:inherit;font-weight:500}
+GUIDE_CSS = """
+/* The models available, where a connector's page has its messages: on the site's grey, a row each. */
+.avail{align-self:stretch;display:flex;flex-direction:column;justify-content:center;min-height:clamp(260px,22*var(--vw,1vw),400px);padding:clamp(24px,2.6*var(--vw,1vw),48px);border-radius:clamp(22px,1.8*var(--vw,1vw),30px);background:var(--soft)}
+.avail h2{font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:0;color:#86868b}
+.avail ul{margin:12px 0 0;padding:0;list-style:none}
+.avail li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #e3e3e8;font-size:var(--t-head);letter-spacing:-.015em}
+.avail li:first-child{border-top:0}
+.avail li img{width:24px;height:24px;border-radius:6px}
+.avail p{margin-top:12px;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
 .conn-head .note{margin-top:12px;max-width:34em;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
-.conn-head .note a{color:var(--blue);text-decoration:none}
-.conn-head .note a:hover{text-decoration:underline}
+.conn-head .note a,.guide a{color:var(--blue);text-decoration:none}
+.conn-head .note a:hover,.guide a:hover{text-decoration:underline}
+/* How to connect: the site's section head (the title left, what you need right), then its two parts side by side. */
+.guide{margin-top:clamp(56px,5*var(--vw,1vw),96px)}
+.g-parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:clamp(28px,2.8*var(--vw,1vw),48px)}
+.g-part{padding:clamp(24px,2.6*var(--vw,1vw),44px);border-radius:28px;background:#fafafb}
+.g-part h3{display:flex;align-items:center;gap:12px;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em}
+.g-part h3 i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px;font-style:normal;font-weight:600;letter-spacing:0}
+.g-part ol{margin:20px 0 0;padding:0;list-style:none;counter-reset:s}
+.g-part li{position:relative;padding:12px 0 12px 34px;border-top:1px solid #ececf0;font-size:var(--t-body);line-height:1.45;letter-spacing:-.01em;counter-increment:s}
+.g-part li:first-child{border-top:0}
+.g-part li::before{content:counter(s) ".";position:absolute;left:2px;top:12px;color:#86868b;font-variant-numeric:tabular-nums}
+.g-part .extra{margin-top:14px;font-size:var(--t-small);line-height:1.45;color:var(--ink2)}
+.g-part .open-page{display:inline-flex;align-items:center;gap:4px;margin-top:18px;font-size:var(--t-body)}
+.g-part .open-page svg{width:.7em;height:.7em}
 .info dd.wrap-dd{white-space:normal}
-@media (max-width:734px){.steps li{padding:14px 18px 14px 52px}.steps li::before{left:14px}}
+@media (max-width:860px){.g-parts{grid-template-columns:minmax(0,1fr);gap:14px}}
 """
 OPEN = "In Simeon, open Settings › AI Models."
+# Each one's guide to getting its key or plan, researched on the provider's own pages (model_guides.json: what the
+# person needs first, the steps, anything else the key needs, the sources read and when).
+GUIDES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_guides.json")
+
+
+def guides():
+    import json
+    return json.load(open(GUIDES, encoding="utf-8"))["guides"] if os.path.isfile(GUIDES) else {}
 
 
 def sub_steps(sub):
@@ -224,10 +246,9 @@ def key_steps(p):
         said = [("your " + FIELD_NAMES.get(k, k)) for k in details]
         region = next((f["default"] for f in p["fields"] if f["key"] == "region" and f["default"]), None)
         if region:
-            said = [s + f" ({region} unless yours differs)" if s == "your region" else s for s in said]
+            said = [x + f" ({region} unless yours differs)" if x == "your region" else x for x in said]
         paste += " Then enter " + " and ".join(said) + "."
-    return [f'Make a key on <a href="{html.escape(p["page"])}" rel="noopener">{name}\'s page</a>.', OPEN, paste,
-            f"Simeon checks the key with {name}, then its models appear in the message field."]
+    return [OPEN, paste, f"Simeon checks the key with {name}. Its models then appear in the message field."]
 
 
 def information(rows):
@@ -239,10 +260,35 @@ def information(rows):
   </section>"""
 
 
-def page_body(pid, tile, name, by, about, note, steps, info, ctas, hero_url, close):
-    items = "".join(f"<li>{s}</li>" for s in steps)
-    say = (f'<ol class="says steps" style="background-image:url({hero_url})" aria-label="How to connect {esc(name)}">{items}</ol>' if steps
-           else f'<ul class="says" style="background-image:url({hero_url})"><li>Coming soon to Settings › AI Models.</li></ul>')
+def available(models, logo, soon=False):
+    """The models it gives, on the site's grey."""
+    if soon:
+        rows, said = "", "<p>Coming soon to Settings › AI Models.</p>"
+    elif models:
+        rows, said = "<ul>" + "".join(f"<li>{logo}{esc(m)}</li>" for m in models) + "</ul>", ""
+    else:
+        rows, said = "", "<p>The models on your account. Simeon reads them when you connect your key.</p>"
+    return f'<div class="avail"><h2>Models</h2>{rows}{said}</div>'
+
+
+def guide(name, need, first_title, first_steps, extra, page, simeon_steps):
+    """How to connect: getting the key (or the plan) at the provider, then connecting it in Simeon."""
+    first = "".join(f"<li>{x}</li>" for x in first_steps)
+    second = "".join(f"<li>{x}</li>" for x in simeon_steps)
+    extra_html = f'<p class="extra">{extra}</p>' if extra else ""
+    open_page = (f'<a class="open-page" href="{html.escape(page)}" rel="noopener">Open {esc(name)}\'s page'
+                 f'{connector_pages.OUT_ARROW}</a>') if page else ""
+    need_html = f"<p>{need}</p>" if need else ""
+    return f"""<section class="guide" aria-labelledby="guide-title">
+    <div class="trust-top"><h2 id="guide-title">How to connect {esc(name)}</h2>{need_html}</div>
+    <div class="g-parts">
+      <div class="g-part"><h3><i>1</i>{first_title}</h3><ol>{first}</ol>{extra_html}{open_page}</div>
+      <div class="g-part"><h3><i>2</i>Connect it in Simeon</h3><ol>{second}</ol></div>
+    </div>
+  </section>"""
+
+
+def page_body(pid, tile, name, by, about, note, side, how, info, ctas, close):
     return f"""<section class="conn-page" aria-labelledby="{pid}-title"><div class="wrap">
   <a class="back" href="/models">{CHEVRON}All models</a>
   <div class="conn-top">
@@ -254,12 +300,17 @@ def page_body(pid, tile, name, by, about, note, steps, info, ctas, hero_url, clo
       {note}
       {ctas}
     </div>
-    {say}
+    {side}
   </div>
-  {information(info)}
+  {how}
 </div></section>
 
 {close}"""
+
+
+def small_logo(key):
+    src = f"{MARKS}/provider-{key}.png"
+    return f'<img src="/img/provider-{key}.png?v={teams._version(src)}" alt="">'
 
 
 def build(out=OUT):
@@ -274,9 +325,8 @@ def build(out=OUT):
     page = frame("AI models", f"Connect your ChatGPT, Claude or Grok plan, or an API key from {len(keys)} providers, to your Simeon agents.",
                  "/models", body, hero_css + connectors.CONN_CSS + PAGE_CSS + home_css, current="models")
     open(f"{root}/index.html", "w", encoding="utf-8").write(version_style(page, out))
-    assets = teams.Assets(root, "/models")
-    hero_url = assets._copy(connector_pages.HERO, "img", "connector-hero.jpg")
-    css = home_css + connector_pages.PAGE_CSS + PAGE_CSS + STEPS_CSS
+    css = home_css + connector_pages.PAGE_CSS + PAGE_CSS + GUIDE_CSS
+    told = guides()
     ids = [s["id"] for s in SUBS] + [p["id"] for p in keys]
     taken = {i for i in ids if ids.count(i) > 1 or i == "img"}
     if taken:
@@ -294,16 +344,21 @@ def build(out=OUT):
                 if s["sign_in"] == "claude" else "")
         info = [("Type", "Subscription", False), ("Plans", esc(s["plans"]), False), ("Models", esc(", ".join(models)), True),
                 ("Billing", f"Your {esc(s['name'])} plan", False), ("Website", link(s["site"]), False)]
+        g = told.get(s["id"], {})
+        how = guide(s["name"], esc(g.get("need") or f"{s['plans']}."), "Get the plan", [esc(x) for x in g.get("steps", [])] or
+                    [f"Subscribe to {esc(s['plans'])}."], None, s["site"], sub_steps(s))
         write(s["id"], s["name"], about, page_body(s["id"], mark(s["mark"]), s["name"], f"Subscription · {esc(s['plans'])}", esc(about), note,
-                                                   sub_steps(s), info, ctas, hero_url, close))
+                                                   available(models, small_logo(s["mark"])), how, info, ctas, close))
     for p in keys:
         name = p["name"]
+        g = told.get(p["id"], {})
         if p["available"]:
             about = f"Your agents use {name}'s models with your key. {name} bills each call at its own prices."
-            steps = key_steps(p)
+            how = guide(name, esc(g.get("need") or ""), "Get your API key", [esc(x) for x in g.get("steps", [])] or
+                        [f"Create a key on {esc(name)}'s page and copy it."], esc(g["extra"]) if g.get("extra") else None, p["page"], key_steps(p))
         else:
             about = f"{name} can't be connected yet."
-            steps = []
+            how = ""
         plan = next((s for s in SUBS if s["id"] == PLAN_OF.get(p["id"])), None)
         note = (f'<p class="note">Have {esc(plan["plans"])}? <a href="/models/{plan["id"]}/">Connect {esc(plan["name"])}</a> instead.</p>'
                 if plan else "")
@@ -313,8 +368,9 @@ def build(out=OUT):
         if p["fields"]:
             info.append(("Also needs", esc(", ".join(FIELD_TITLES.get(f["key"], f["key"]) for f in p["fields"])), False))
         by = "API key" + (' <span class="soon">Coming soon</span>' if not p["available"] else "")
-        write(p["id"], name, about, page_body(p["id"], mark(MARK_OF.get(p["id"], p["id"])), name, by, esc(about), note, steps, info,
-                                              ctas, hero_url, close))
+        key = MARK_OF.get(p["id"], p["id"])
+        write(p["id"], name, about, page_body(p["id"], mark(key), name, by, esc(about), note, available(p["models"], small_logo(key), not p["available"]),
+                                              how, info, ctas, close))
     print(f"models pages written to {os.path.abspath(root)}: {len(SUBS)} subscription(s), {len(keys)} key provider(s)")
 
 

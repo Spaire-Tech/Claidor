@@ -162,18 +162,32 @@ footer{margin-top:0} /* the closing call above leaves the room, as on the Market
 .kind{padding:clamp(56px,5.6*var(--vw,1vw),110px) 0 0}
 .kind .list{margin-top:clamp(28px,2.8*var(--vw,1vw),52px)}
 
-/* The steps, where a connector's page has its messages: numbered, each on a light pill. */
-.steps{counter-reset:step;align-items:stretch}
-.steps li{position:relative;max-width:none;padding:14px 22px 14px 56px;text-align:left;counter-increment:step}
-.steps li::before{content:counter(step);position:absolute;left:16px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:600;letter-spacing:0}
-.steps a{color:var(--blue);text-decoration:none}
-.steps a:hover{text-decoration:underline}
-.steps code{font:inherit;font-weight:500}
+/* The models available, where a connector's page has its messages: on the site's grey, a row each. */
+.avail{align-self:stretch;display:flex;flex-direction:column;justify-content:center;min-height:clamp(260px,22*var(--vw,1vw),400px);padding:clamp(24px,2.6*var(--vw,1vw),48px);border-radius:clamp(22px,1.8*var(--vw,1vw),30px);background:var(--soft)}
+.avail h2{font-size:var(--t-small);font-weight:var(--w-title);letter-spacing:0;color:#86868b}
+.avail ul{margin:12px 0 0;padding:0;list-style:none}
+.avail li{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #e3e3e8;font-size:var(--t-head);letter-spacing:-.015em}
+.avail li:first-child{border-top:0}
+.avail li img{width:24px;height:24px;border-radius:6px}
+.avail p{margin-top:12px;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
 .conn-head .note{margin-top:12px;max-width:34em;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
-.conn-head .note a{color:var(--blue);text-decoration:none}
-.conn-head .note a:hover{text-decoration:underline}
+.conn-head .note a,.guide a{color:var(--blue);text-decoration:none}
+.conn-head .note a:hover,.guide a:hover{text-decoration:underline}
+/* How to connect: the site's section head (the title left, what you need right), then its two parts side by side. */
+.guide{margin-top:clamp(56px,5*var(--vw,1vw),96px)}
+.g-parts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:clamp(28px,2.8*var(--vw,1vw),48px)}
+.g-part{padding:clamp(24px,2.6*var(--vw,1vw),44px);border-radius:28px;background:#fafafb}
+.g-part h3{display:flex;align-items:center;gap:12px;font-size:var(--t-head);font-weight:var(--w-title);letter-spacing:-.015em}
+.g-part h3 i{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px;font-style:normal;font-weight:600;letter-spacing:0}
+.g-part ol{margin:20px 0 0;padding:0;list-style:none;counter-reset:s}
+.g-part li{position:relative;padding:12px 0 12px 34px;border-top:1px solid #ececf0;font-size:var(--t-body);line-height:1.45;letter-spacing:-.01em;counter-increment:s}
+.g-part li:first-child{border-top:0}
+.g-part li::before{content:counter(s) ".";position:absolute;left:2px;top:12px;color:#86868b;font-variant-numeric:tabular-nums}
+.g-part .extra{margin-top:14px;font-size:var(--t-small);line-height:1.45;color:var(--ink2)}
+.g-part .open-page{display:inline-flex;align-items:center;gap:4px;margin-top:18px;font-size:var(--t-body)}
+.g-part .open-page svg{width:.7em;height:.7em}
 .info dd.wrap-dd{white-space:normal}
-@media (max-width:734px){.steps li{padding:14px 18px 14px 52px}.steps li::before{left:14px}}
+@media (max-width:860px){.g-parts{grid-template-columns:minmax(0,1fr);gap:14px}}
 </style>
 </head>
 <body>
@@ -202,11 +216,14 @@ footer{margin-top:0} /* the closing call above leaves the room, as on the Market
       
       <div class="ctas"><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download for macOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a><a class="btn ghost" href="/contact">Request a demo&nbsp;→</a><span class="btn go"><svg class="apl" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>Download for iOS<svg class="dl" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
     </div>
-    <ol class="says steps" style="background-image:url(/models/img/connector-hero.jpg?v=921dd502)" aria-label="How to connect Google"><li>Make a key on <a href="https://aistudio.google.com/apikey" rel="noopener">Google's page</a>.</li><li>In Simeon, open Settings › AI Models.</li><li>Under API keys, choose Connect next to Google and paste the key.</li><li>Simeon checks the key with Google, then its models appear in the message field.</li></ol>
+    <div class="avail"><h2>Models</h2><ul><li><img src="/img/provider-google.png?v=d4547a04" alt="">Gemini 4 Argon</li><li><img src="/img/provider-google.png?v=d4547a04" alt="">Gemini 3.8 Flash</li></ul></div>
   </div>
-  <section class="info" aria-labelledby="info-title">
-    <h2 id="info-title">Information</h2>
-    <dl><div><dt>Type</dt><dd>API key</dd></div><div><dt>Models</dt><dd class="wrap-dd">Gemini 4 Argon, Gemini 3.8 Flash</dd></div><div><dt>Billing</dt><dd>Google, per call</dd></div><div><dt>Key page</dt><dd><a href="https://aistudio.google.com/apikey" rel="noopener">aistudio.google.com<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></dd></div></dl>
+  <section class="guide" aria-labelledby="guide-title">
+    <div class="trust-top"><h2 id="guide-title">How to connect Google</h2></div>
+    <div class="g-parts">
+      <div class="g-part"><h3><i>1</i>Get your API key</h3><ol><li>Create a key on Google's page and copy it.</li></ol><a class="open-page" href="https://aistudio.google.com/apikey" rel="noopener">Open Google's page<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3.5 8.5l5-5M4.5 3.5h4v4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+      <div class="g-part"><h3><i>2</i>Connect it in Simeon</h3><ol><li>In Simeon, open Settings › AI Models.</li><li>Under API keys, choose Connect next to Google and paste the key.</li><li>Simeon checks the key with Google. Its models then appear in the message field.</li></ol></div>
+    </div>
   </section>
 </div></section>
 
