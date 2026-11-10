@@ -66,10 +66,10 @@ struct GreyButtonStyle: ButtonStyle {
 /**
  * A card's button, one style on every card (10 November 2026, the question
  * card's; the founder: "go for your suggestions"): a capsule 38 high, 15
- * medium. The main action (`main`) in the ink's own colour, black in light
- * and white in dark; the others grey; a refusal (`danger`) in red words; and
- * our blue kept for money (`money`: buy, book, pay). A card sets them in
- * `CardPills`, at its right, the main one last.
+ * medium. The main action (`main`) in our blue (the founder: "make them our
+ * blue"); the others grey; a refusal (`danger`) in red words; `money` (buy,
+ * book, pay) the same blue. A card sets them in `CardPills`, at its right,
+ * the main one last.
  */
 struct CardPillStyle: ButtonStyle {
   enum Tone { case plain, main, danger, money }
@@ -105,8 +105,7 @@ struct CardPillStyle: ButtonStyle {
 
     private var ink: Color {
       switch tone {
-      case .main: Ink.ground
-      case .money: Ink.mineText
+      case .main, .money: Ink.mineText
       case .danger: Ink.danger
       case .plain: Ink.primary
       }
@@ -114,8 +113,7 @@ struct CardPillStyle: ButtonStyle {
 
     private var fill: Color {
       switch tone {
-      case .main: Ink.primary
-      case .money: Ink.bubbleMine
+      case .main, .money: Ink.bubbleMine
       case .plain, .danger: Ink.primary.opacity(0.08)
       }
     }

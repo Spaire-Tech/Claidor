@@ -419,7 +419,7 @@
   gap: 8px;
 }
 
-/* Skip, I'm done and Take over: the cards' pills (10 November 2026), Take over the main one in the ink's own colour. */
+/* Skip, I'm done and Take over: the cards' pills (10 November 2026), Take over the main one in our blue. */
 .handoff-skip,
 .handoff-pill {
   flex: none;
@@ -443,12 +443,12 @@
 }
 
 .handoff-pill.blue {
-  background: var(--ink);
-  color: var(--ground);
+  background: var(--yours);
+  color: #ffffff;
 }
 
 .handoff-pill.blue:hover {
-  background: color-mix(in srgb, var(--ink) 88%, var(--ground));
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
 }
 
 .handoff-spacer {

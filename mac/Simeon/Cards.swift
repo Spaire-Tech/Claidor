@@ -57,8 +57,8 @@ struct StatusPill: View {
 
 /**
  * A card's buttons (10 November 2026, the question card's; the founder: "go for your suggestions"): pills 32 high, the
- * main one (`prominent`) in the ink's own colour, the others grey, `danger` in red words, `money` the blue, kept for
- * paying. A card puts them at its right, the main one last.
+ * main one (`prominent`) in our blue (the founder: "make them our blue"), the others grey, `danger` in red words;
+ * `money` is the same blue, for paying. A card puts them at its right, the main one last.
  */
 struct CardButton: View {
   enum Tone { case plain, danger, money }
@@ -88,14 +88,12 @@ struct CardButton: View {
   }
 
   private var ink: Color {
-    if tone == .money { return .white }
-    if prominent { return look.ground }
+    if prominent || tone == .money { return .white }
     return tone == .danger ? look.danger : look.ink
   }
 
   private var fill: Color {
-    if tone == .money { return look.yours.opacity(hovering && enabled ? 0.88 : 1) }
-    if prominent { return look.ink.opacity(hovering && enabled ? 0.88 : 1) }
+    if prominent || tone == .money { return look.yours.opacity(hovering && enabled ? 0.88 : 1) }
     return look.ink.opacity(hovering && enabled ? (look.dark ? 0.12 : 0.10) : (look.dark ? 0.08 : 0.06))
   }
 }
@@ -517,7 +515,7 @@ private struct QuestionDots: View {
   }
 }
 
-/** The card's buttons: grey capsules, Next and Send in the ink's own colour. */
+/** The card's buttons: grey capsules, Next and Send in our blue. */
 private struct QuestionPill: View {
   let title: String
   var prominent = false
@@ -529,11 +527,11 @@ private struct QuestionPill: View {
     Button(action: action) {
       Text(title)
         .font(.system(size: 13.5, weight: .medium))
-        .foregroundStyle(prominent ? look.ground : look.ink)
+        .foregroundStyle(prominent ? Color.white : look.ink)
         .lineLimit(1)
         .padding(.horizontal, 16)
         .frame(height: 32)
-        .background(prominent ? look.ink : look.ink.opacity(look.dark ? 0.08 : 0.06), in: Capsule())
+        .background(prominent ? look.yours : look.ink.opacity(look.dark ? 0.08 : 0.06), in: Capsule())
         .contentShape(Capsule())
     }
     .buttonStyle(.hand)
@@ -1113,21 +1111,14 @@ struct ListenerConnectCardView: View {
             Text("Connected").font(.system(size: 12, weight: .medium)).foregroundStyle(look.ink)
           }
         } else if connected == false {
-          Button {
+          // The cards' main pill, in our blue (10 November 2026).
+          CardButton(title: String(localized: "Connect"), prominent: true, look: look) {
             opening = true
             Task {
               if let url = await store.listenerConnectURL(platform) { NSWorkspace.shared.open(url) }
               opening = false
             }
-          } label: {
-            Text("Connect")
-              .font(.system(size: 13, weight: .medium))
-              .foregroundStyle(look.dark ? Color.black : Color.white)
-              .padding(.horizontal, 10)
-              .frame(height: 24)
-              .background(look.ink, in: RoundedRectangle(cornerRadius: 6))
           }
-          .buttonStyle(.hand)
           .disabled(opening)
         } else {
           ProgressView().controlSize(.small)

@@ -3097,10 +3097,12 @@ Not yet built or run on a Mac or an iPhone: no Xcode here. Both files parse. The
 
 The founder: "Where else (cards) can we bring this design. To avoid inconsistency?", then "go for your suggestions."
 - **The shape.** `CardShell` is 20 round and padded 14 by 16, as the question card.
-- **The buttons.** `CardButton` is a pill 32 high, 13.5 medium. `prominent` is the main action, in the ink's own colour. The others are grey; `tone: .danger` is a refusal in red words; `tone: .money` keeps our blue for paying. The checkout card's own Deny and Allow stay as they were.
+- **The buttons.** `CardButton` is a pill 32 high, 13.5 medium. `prominent` is the main action, in our blue (it was the ink's own colour at first). The others are grey; `tone: .danger` is a refusal in red words; `tone: .money` keeps our blue for paying. The checkout card's own Deny and Allow stay as they were.
 - **The order.** Buttons sit at the card's right, the main one last: Discard, Send; Deny, Always allow, Allow once; Never, Allow once, Always allow (`MacLocalPermission`); Not now, Fill in; Skip at the left of I'm done and Take over.
 - **Not now replaces the X** on the secret, form and 1Password connect cards. Once answered, the status pill takes the corner.
 
 The iPhone has the same in its own sizes: `CardPillStyle` (38 high) in `CardPills`, which puts the buttons one under the other when they don't fit across, and `.card()` 22 round, padded 16.
+
+The same day the founder had the main pills made our blue ("make them our blue"): `prominent` and the question card's Next and Send are `look.yours` with white words; the iPhone's `.main` is `Ink.bubbleMine`. The Slack/GitHub Connect is a `CardButton` now.
 
 Not yet built or run on a Mac or an iPhone: no Xcode here. The files parse. The web app's cards ran in Chromium against a stand-in computer, light and dark.
