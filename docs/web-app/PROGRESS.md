@@ -842,6 +842,24 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the cards' main buttons in our blue
+
+The founder, looking at the cards' new pills: "now you see all those
+buttons. send, take over, allow once etc.. make them our blue". The main
+pill of every card (Send, Allow once, Take over, Save securely, Fill in,
+Fill with 1Password, Connect, View PR, the question card's Next and Send) is
+now our blue with white words (`--yours`; the Mac's `look.yours`; the
+iPhone's `Ink.bubbleMine`), in light and dark, instead of the ink's own
+colour. The others stay grey and Deny red; paying was already this blue. On
+the Mac the Slack/GitHub Connect, a small black box until now, is the card's
+main pill too.
+
+Checked in Chromium against a stand-in computer, light and dark: every card
+of the last entry and the question card, no console error; the app's tests
+(1246), tsc, ESLint, the committed build, `check_names.py`,
+`check_translations.py`. Not checked: the Mac and iPhone apps built and run
+(their Swift parses).
+
 ### 10 November 2026: one style for every card's buttons
 
 The founder, after the question card's new style: "Where else (cards) can we

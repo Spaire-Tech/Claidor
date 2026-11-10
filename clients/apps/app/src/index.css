@@ -1358,10 +1358,9 @@ button {
   background: var(--working);
 }
 
-/* The two buttons: 14, 32 high, 12 at the sides, 8 round; plain is the grey with a line at 15%, prominent the person's blue. */
 /*
  * A card's buttons (10 November 2026, the question card's): at the card's right, the main one last, all pills 32 high;
- * the main one in the ink's own colour, the others grey, red words for one that destroys, the blue kept for paying.
+ * the main one in our blue (the founder: "make them our blue"), the others grey, red words for one that refuses.
  */
 .card-buttons {
   display: flex;
@@ -1406,12 +1405,12 @@ button {
 }
 
 .card-button.prominent {
-  background: var(--ink);
-  color: var(--ground);
+  background: var(--yours);
+  color: #ffffff;
 }
 
 .card-button.prominent:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 88%, var(--ground));
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
 }
 
 .card-button.danger {
@@ -1482,7 +1481,7 @@ button {
  * A question card (10 November 2026, the Mac's `QuestionCardView`): the agent's grey, 20 round; the question 15
  * semibold; each choice a row 12 round with its letter on a 24 tile that becomes the blue round check once picked;
  * "Something else" last; one question at a time, sliding in, the tallest holding the card's height; dots, Back, Skip
- * and Next (Send) at the foot, Next in the ink's own colour.
+ * and Next (Send) at the foot, Next in our blue.
  */
 .qcard {
   display: flex;
@@ -1721,12 +1720,12 @@ button {
 }
 
 .qcard-pill.prominent {
-  background: var(--ink);
-  color: var(--ground);
+  background: var(--yours);
+  color: #ffffff;
 }
 
 .qcard-pill.prominent:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 88%, var(--ground));
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
 }
 
 .qcard-pill:disabled {

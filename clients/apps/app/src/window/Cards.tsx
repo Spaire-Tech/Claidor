@@ -96,7 +96,7 @@ export function CardButton({
   onClick,
 }: {
   title: string
-  /** The card's main action: a pill in the ink's own colour. */
+  /** The card's main action: a pill in our blue. */
   prominent?: boolean
   /** `danger`: a grey pill in red words; `money`: the blue pill, kept for paying. */
   tone?: 'danger' | 'money'
