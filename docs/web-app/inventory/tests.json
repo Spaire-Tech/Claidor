@@ -193,7 +193,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ProductsCardTests.swift",
-  "tests": 5
+  "tests": 7
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/PurchaseCardTests.swift",

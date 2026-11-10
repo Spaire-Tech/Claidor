@@ -73,6 +73,12 @@ struct ChatPane: View {
         CallChatView(agent: agent, call: call, look: look)
       }
     }
+    // A product of a products card, opened over the chat and its field (Cards.swift's `MacProductPage`), the same way.
+    .overlay {
+      if let open = control.productOpen {
+        MacProductPage(agentId: agentId, open: open, look: look)
+      }
+    }
     // Find's bar, 8 under the head and 16 from the right, over everything (`z-index: 4`).
     .overlay(alignment: .topTrailing) {
       if control.findOpen {
@@ -120,6 +126,7 @@ struct ChatPane: View {
       // Another agent opened over an exchange: its Escape flag goes with it.
       if control.exchangePeer != nil { control.closeExchange() }
       if control.callOpen != nil { control.closeCall() }
+      if control.productOpen != nil { control.closeProduct() }
     }
     // Search closed: the message field takes the keys back (under the To: line, the line takes them).
     .onReceive(NotificationCenter.default.publisher(for: WindowState.composerFocusNote)) { _ in
@@ -791,8 +798,9 @@ private struct TranscriptRow: View {
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .products(let id, let card):
+      // Six cards of 200 side by side, 10 apart (10 November 2026): the row runs to the column's edge and scrolls sideways when the chat is narrower.
       ProductsCardView(entryId: id, agentId: agentId, card: card, look: look)
-        .frame(maxWidth: limit(640), alignment: .leading)
+        .frame(maxWidth: max(0, min(width, 1250)), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
     case .flightPassengers(let id, let card):
       FlightPassengersCardView(entryId: id, agentId: agentId, card: card, look: look)

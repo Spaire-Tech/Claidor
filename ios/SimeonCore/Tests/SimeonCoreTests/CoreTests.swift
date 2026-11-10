@@ -658,7 +658,7 @@ final class ChatTests: XCTestCase {
       default: return "other"
       }
     }
-    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "products:2", "purchase:ncvss.com:review", "purchase:ncvss.com:ordered", "travellers:Seattle to Los Angeles:open", "flight-checkout:Seattle to Los Angeles:ordered", "file:Payouts September.pdf"])
+    XCTAssertEqual(kinds, ["me", "them", "question", "question-answered", "question-dismissed", "draft:email:Ready to send", "draft:slack:Ready to send", "flights:4", "flights:2", "connector:Linear:To read the launch tickets.", "listener:slack:so this routine can fire", "approval:Delete 3 files in ~/Downloads:pending", "secret:Stripe API key", "computer:waiting", "cloud-agent:bc-1", "products:3", "purchase:ncvss.com:review", "purchase:ncvss.com:ordered", "travellers:Seattle to Los Angeles:open", "flight-checkout:Seattle to Los Angeles:ordered", "file:Payouts September.pdf"])
     guard case .flights(_, let flights) = rows.first(where: { if case .flights = $0 { return true }; return false })! else { return XCTFail() }
     XCTAssertEqual(flights.title, "Seattle to Los Angeles")
     XCTAssertEqual(flights.offers[3].legs.count, 2)

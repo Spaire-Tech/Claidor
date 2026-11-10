@@ -8,6 +8,15 @@
 // purchase does, to the checkout card (`purchase-card.ts`). Once that
 // purchase is ordered the product is marked bought (`productsBought`, 18
 // October 2026, the founder: "then bought … once that is done - in green").
+//
+// Redrawn as a shop's own cards (10 November 2026, after the founder's
+// reference): each product a tall card of its own, in a row, its picture on
+// white over its name, its price and the agent's take on it, and its store.
+// The agent compares the set: each product's `take` (one short line, how it
+// stands against the others), its `reasons` (why it fits, shown opened under
+// "Why it fits"), and a `badge` on one at most ("Top rated"). The card's
+// `replies` are next steps in the person's own words, chips under the row:
+// one tapped is sent as the person's own message.
 
 import { say } from "../../say.js";
 
@@ -25,8 +34,16 @@ export interface ProductCardItem {
   readonly seller?: string;
   /** The product's own picture on the shop (https). */
   readonly imageUrl?: string;
-  /** What it is, in a few sentences (the opened product's page shows the first lines, then See more); `**bold**` for the key facts. */
+  /** What it is, in a few sentences, from its page; `**bold**` for the key facts. An app from before the take shows it; the apps after it show its first sentence as the take of a card that has none. */
   readonly description?: string;
+  /** The store as people know it: "Best Buy" (the card shows the site, `domain`, without it). */
+  readonly store?: string;
+  /** The agent's own line on it against the others on the card, about 60 characters: "Soft pink and white, cheapest of the four". */
+  readonly take?: string;
+  /** Why it fits what the person asked, one to three short lines: "Lowest price, still highly rated". */
+  readonly reasons?: readonly string[];
+  /** Two words at most, on one product of the card at most: "Top rated", "Best value". */
+  readonly badge?: string;
   /**
    * The price before a sale, as the shop shows it struck through: "$119.99".
    * With the star rating and how many reviews, for the opened product's page
@@ -51,6 +68,8 @@ export interface ProductsCardMessage {
   /** The card in words, for an app from before the card. */
   readonly content: string;
   readonly products: readonly ProductCardItem[];
+  /** Up to three next steps in the person's own words ("Get Love Blossoms", "Show me roses"), chips under the card until the person sends anything after it; one tapped is sent as their message. */
+  readonly replies?: readonly string[];
 }
 
 /** The entry's own fields: the product the person pressed Buy on (its index) while it is being bought, and those bought. */

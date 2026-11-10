@@ -77,6 +77,8 @@ export type ComputerAsk =
 export type ChatCover =
   | { kind: 'call'; agentId: string; lineId: string }
   | { kind: 'exchange'; agentId: string; peerId: string }
+  /** A product of a products card opened over the chat (ShopCards.tsx's `ProductPage`), by its place on the card. */
+  | { kind: 'product'; agentId: string; entryId: string; index: number }
 
 /**
  * Settings' pages (SettingsWindow.swift's `SettingsState.Page`), in the
@@ -709,7 +711,7 @@ export class WindowModel {
 
   // MARK: Step 5d's covers over the chat (`callOpen`, `exchangePeer`)
 
-  /** A call's lines or two agents' exchange over the chat and its field; another agent opened closes it. */
+  /** A call's lines, two agents' exchange or a product opened, over the chat and its field; another agent opened closes it. */
   chatCover?: ChatCover
 
   coverChat(cover: ChatCover | undefined): void {

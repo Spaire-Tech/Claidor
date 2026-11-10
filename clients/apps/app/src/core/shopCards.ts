@@ -13,7 +13,7 @@
 // the entry carries the one being bought (`productsBuying`) and those bought
 // (`productsBought`).
 
-import { type ChatImage, chatImageFrom } from './chat'
+import { type ChatImage, type ChatRow, chatImageFrom, rowSide } from './chat'
 import type { Entry } from './entry'
 import { type BookedFlight, bookedFlight } from './flightCards'
 import {
@@ -507,9 +507,9 @@ export function purchaseStatus(
             ? t('In progress')
             : link
               ? t('Approve with Link')
-          : card.isShopCheckout
-            ? t("Finish on the store's page")
-            : t('Approve it in the Shop app'),
+              : card.isShopCheckout
+                ? t("Finish on the store's page")
+                : t('Approve it in the Shop app'),
         kind: 'working',
       }
     case 'approved':
@@ -624,8 +624,6 @@ export function approvalReason(card: PurchaseCard): string {
 
 // MARK: The products card
 
-export type Star = 'full' | 'half' | 'empty'
-
 export interface Product {
   /** Its place on the card: what Buy sends back. */
   index: number
@@ -638,18 +636,28 @@ export interface Product {
   price?: string
   seller?: string
   imageURL?: string
-  /** What it is, in a few sentences; `**bold**` marks the key facts. */
+  /** What it is, in a few sentences; `**bold**` marks the key facts. Its first sentence is the take of a card from before takes. */
   detail?: string
-  /** The price before a sale, struck through after the price: "$119.99". */
+  /** The price before a sale, as the shop shows it struck through: "$119.99". */
   listPrice?: string
   /** Stars out of five: 4.5. */
   rating?: number
   /** How many reviews the stars are from: 153. */
   reviewCount?: number
+  /** The store as the agent named it: "Canada Flowers". */
+  store?: string
+  /** The agent's own line on it against the others: "Soft pink and white, cheapest of the four". */
+  take?: string
+  /** Why it fits, one to three lines, under "Why it fits" once opened. */
+  reasons: string[]
+  /** "Top rated", on one product of a card at most. */
+  badge?: string
 }
 
-/** A product as the core makes one: no struck price equal to the price, stars only from 0 to 5, a review count only with stars. */
-export function product(fields: Product): Product {
+/** A product as the core makes one: no struck price equal to the price, stars only from 0 to 5, a review count only with stars, three reasons at most. */
+export function product(
+  fields: Omit<Product, 'reasons'> & { reasons?: string[] },
+): Product {
   const rating =
     fields.rating != null && fields.rating > 0 && fields.rating <= 5
       ? fields.rating
@@ -665,6 +673,7 @@ export function product(fields: Product): Product {
       rating != null && fields.reviewCount != null && fields.reviewCount > 0
         ? fields.reviewCount
         : undefined,
+    reasons: (fields.reasons ?? []).slice(0, 3),
   }
 }
 
@@ -674,11 +683,19 @@ export interface ProductsCard {
   buying?: number
   /** The products bought from this card. */
   bought: ReadonlySet<number>
+  /** The agent's next steps in the person's words, chips under the card: "Get Love Blossoms", "Show me roses". */
+  replies: string[]
+}
+
+/** A field's lines trimmed, none empty. */
+function lines(value: JSONValue | undefined): string[] {
+  return (arr(value) ?? []).map(trimmed).filter((one) => one !== '')
 }
 
 /** A products card, or none when no product has its name and its own https page. */
 export function productsCard(entry: Entry): ProductsCard | undefined {
   const rows = arr(field(entry.message, 'products')) ?? []
+  let badged = false
   const products = rows.flatMap((row: JSONValue, index): Product[] => {
     const title = trimmed(field(row, 'title'))
     const url = httpsAddress(trimmed(field(row, 'url')))
@@ -689,6 +706,9 @@ export function productsCard(entry: Entry): ProductsCard | undefined {
     } catch {
       host = ''
     }
+    // One badge on a card: the first.
+    const badge = badged ? undefined : present(trimmed(field(row, 'badge')))
+    if (badge != null) badged = true
     return [
       product({
         index,
@@ -702,6 +722,10 @@ export function productsCard(entry: Entry): ProductsCard | undefined {
         listPrice: present(trimmed(field(row, 'listPrice'))),
         rating: num(field(row, 'rating')),
         reviewCount: int(field(row, 'reviewCount')),
+        store: present(trimmed(field(row, 'store'))),
+        take: present(trimmed(field(row, 'take'))),
+        reasons: lines(field(row, 'reasons')),
+        badge,
       }),
     ]
   })
@@ -716,6 +740,7 @@ export function productsCard(entry: Entry): ProductsCard | undefined {
     products,
     bought,
     buying: buying != null && !bought.has(buying) ? buying : undefined,
+    replies: lines(field(entry.message, 'replies')).slice(0, 3),
   }
 }
 
@@ -731,15 +756,35 @@ export function shownProducts(
     !card.products.some((one) => one.index === pressed)
   )
     return card
-  return { products: card.products, buying: pressed, bought: card.bought }
+  return { ...card, buying: pressed }
 }
 
-/** "More like this" under an opened product: the card's other products, in the card's order. */
-export function otherProducts(card: ProductsCard, of: Product): Product[] {
-  return card.products.filter((one) => one.index !== of.index)
+/**
+ * Whether the card's replies still show: nothing of the person's after it
+ * in the chat's rows (a message, a file, one waiting to go), as the core's
+ * `settlingReplies` marks them (10 November 2026: the chips are the card's
+ * next steps, gone once used or moved past).
+ */
+export function productRepliesOpen(
+  rows: readonly ChatRow[],
+  id: string,
+): boolean {
+  const at = rows.findIndex((row) => row.id === id)
+  if (at < 0) return false
+  return !rows.slice(at + 1).some((row) => rowSide(row) === 'person')
 }
 
-/** A product's pill on the right of its row: blue while it is being bought, green once it is (as the computer card's ending). */
+/** The product before (-1) or after (1) this one on the card, for the opened product's ‹ and ›; none at either end. */
+export function neighbourProduct(
+  card: ProductsCard,
+  of: Product,
+  step: number,
+): Product | undefined {
+  const at = card.products.findIndex((one) => one.index === of.index)
+  return at < 0 ? undefined : card.products[at + step]
+}
+
+/** A product's mark once Buy was pressed: blue while it is being bought, green once it is (as the computer card's ending). */
 export type ProductStatus = 'buying' | 'bought'
 
 /** Where one product is: being bought, bought, or neither. */
@@ -761,14 +806,58 @@ export function buyLabel(agent: string): string {
   return who === '' ? t('Buy') : t`Buy with ${who}`
 }
 
-/** The line under the name: the seller, else the shop. */
-export function byline(of: Product): string {
-  return of.seller ?? of.domain
+/** The store's name: as the agent named it, else its site. */
+export function storeName(of: Product): string {
+  return of.store ?? of.domain
 }
 
-/** "Sold by: Office Depot", over the name. */
-export function soldBy(of: Product): string {
-  return t`Sold by: ${byline(of)}`
+/** Who sells it, "Sold by"'s value: the seller, else the store. */
+export function byline(of: Product): string {
+  return of.seller ?? storeName(of)
+}
+
+/**
+ * A description's first sentence, its bold marks taken out and its last
+ * full stop left off (`ProductsCard.firstSentence`): a sentence ends at a
+ * full stop, "!" or "?" before a space or the end, or at a line's end.
+ */
+export function firstSentence(words: string): string | undefined {
+  const plain = [...words.replaceAll('**', '')]
+  let end = plain.length
+  for (let at = 0; at < plain.length; at++) {
+    const here = plain[at]!
+    if (here === '\n') {
+      end = at
+      break
+    }
+    const next = plain[at + 1]
+    if ('.!?'.includes(here) && (next == null || /\s/.test(next))) {
+      end = at + 1
+      break
+    }
+  }
+  let sentence = plain.slice(0, end).join('').trim()
+  if (sentence.endsWith('.') && !sentence.endsWith('..'))
+    sentence = sentence.slice(0, -1)
+  return sentence === '' ? undefined : sentence
+}
+
+/** The line after the price: the agent's take, else (a card from before takes) its description's first sentence. */
+export function shownTake(of: Product): string | undefined {
+  return of.take ?? (of.detail == null ? undefined : firstSentence(of.detail))
+}
+
+/** "CA$53.00 · Soft pink and white, cheapest of the four", under the name on the card. */
+export function priceLine(of: Product): string | undefined {
+  const parts = [of.price, shownTake(of)].filter(
+    (one): one is string => one != null,
+  )
+  return parts.length === 0 ? undefined : parts.join(' · ')
+}
+
+/** "View at Canada Flowers", the opened product's plain button. */
+export function viewAt(of: Product): string {
+  return t`View at ${storeName(of)}`
 }
 
 /**
@@ -789,7 +878,7 @@ function oneDecimal(value: number): string {
   return value.toFixed(1)
 }
 
-/** "4.5" (or "4,5" in French), by the stars (`String(format: "%.1f", locale: L10n.locale(), …)`). */
+/** "4.5" (or "4,5" in French), after the star (`String(format: "%.1f", locale: L10n.locale(), …)`). */
 export function ratingText(of: Product): string | undefined {
   if (of.rating == null) return undefined
   const digits = oneDecimal(of.rating)
@@ -806,34 +895,22 @@ export function reviewsText(of: Product): string | undefined {
   return of.reviewCount != null ? `(${of.reviewCount})` : undefined
 }
 
-/** The five stars, to the nearest half: 4.5 is four full and a half. */
-export function stars(of: Product): Star[] {
-  if (of.rating == null) return []
-  const halves = Math.round(of.rating * 2)
-  return [0, 1, 2, 3, 4].map((place) =>
-    halves >= (place + 1) * 2
-      ? 'full'
-      : halves === place * 2 + 1
-        ? 'half'
-        : 'empty',
-  )
+/** "★ 5.0 (12)", after the price on the opened product: one star, the rating, the reviews. */
+export function ratingLine(of: Product): string | undefined {
+  const rating = ratingText(of)
+  if (rating == null) return undefined
+  const reviews = reviewsText(of)
+  return reviews == null ? `★ ${rating}` : `★ ${rating} ${reviews}`
 }
 
 /** The products card's own words (`ProductsCard`'s static words). */
 export const productWords = {
-  get viewWebsite() {
-    return t('View website')
+  /** The opened product's heading over the agent's reasons. */
+  get whyItFits() {
+    return t('Why it fits')
   },
-  get seeMore() {
-    return t('See more')
-  },
-  get seeLess() {
-    return t('See less')
-  },
-  get reviews() {
-    return t('Reviews')
-  },
-  get moreLikeThis() {
-    return t('More like this')
+  /** The opened product's last row: "Sold by", the seller at its right. */
+  get soldBy() {
+    return t('Sold by')
   },
 }
