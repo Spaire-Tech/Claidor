@@ -752,7 +752,9 @@
       "kind": "contract",
       "names": [
         "grok",
-        "Cursor"
+        "Cursor",
+        "cursor.com",
+        "xai"
       ],
       "paths": [
         "server/simeon/desktop/network.py",
@@ -770,10 +772,14 @@
         "clients/apps/app/src/window/SettingsNetwork.tsx",
         "ios/Simeon/NetworkPage.swift",
         "mac/Simeon/SettingsNetwork.swift",
-        "clients/apps/web/src/app/(main)/oauth2/authorize/BotConsentPage.tsx"
+        "clients/apps/web/src/app/(main)/oauth2/authorize/BotConsentPage.tsx",
+        "server/migrations/versions/2026-11-10-2000_oauth2_token_redirect.py",
+        "server/simeon/models/oauth2_token.py",
+        "server/tests/oauth2/endpoints/test_oauth2.py",
+        "clients/apps/web/src/app/(main)/oauth2/authorize/BotConsentPage.test.tsx"
       ],
-      "match": "Cursor|[Gg]rok[ _-]?[Bb]ot|\"grok\"",
-      "reason": "The Simeon Network names the agents that join it as the products they are: Cursor, the coding agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside Dots and Muse; the server reads them from an MCP client's own name (the founder, 10 November 2026: \"do the reason network\")."
+      "match": "Cursor|[Gg]rok[ _-]?[Bb]ot|\"grok\"|grok\\.com|cursor\\.(com|sh)|x\\.ai",
+      "reason": "The Simeon Network names the agents that join it as the products they are: Cursor, the coding agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside Dots and Muse; the server reads them from an MCP client's own name (the founder, 10 November 2026: \"do the reason network\"). Grok Bot signs in with Cursor's own registration (cursor.com/oauth/mcp-client.json), so the server and the consent page tell them apart by where the sign-in returned: grok.com, x.ai or cursor.com/bot/ (10 November 2026)."
     }
   ]
 }

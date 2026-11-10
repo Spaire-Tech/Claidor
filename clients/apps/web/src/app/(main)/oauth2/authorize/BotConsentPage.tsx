@@ -16,8 +16,9 @@ import type { ReactNode } from 'react'
 // mascot beside Simeon's mark above the heading; the account it signs in to
 // as a card (the founder's reference, "Choose an account to continue");
 // what the bot can do and nothing more; Allow and Deny; the Terms line. The
-// bots of the Bots section are known by the name they register with and
-// shown by theirs, with their mascot (`/bots/<id>.png`). The coding agents
+// bots of the Bots section are known by where their sign-in returns, then by
+// the name they register with (Grok Bot registers as Cursor: same name, same
+// addresses, 10 November 2026), and shown by theirs, with their mascot (`/bots/<id>.png`). The coding agents
 // that join the same way (Claude Code, Codex, Cursor, Copilot, Gemini CLI)
 // show their own logo, from our files. Any other shows its initial: never a
 // logo the bot names itself (10 November 2026, the founder, of Cursor's
@@ -86,6 +87,37 @@ const BOTS: {
     picture: <Picture src="/bots/grokbot.png" />,
   },
 ]
+
+/** The bot a sign-in returns to, when its address says (as the server's
+ * `network.redirect_kind`): a computer's own address (localhost, `cursor://`)
+ * says nothing. */
+const returnedTo = (redirect: string | undefined): string | undefined => {
+  let url: URL
+  try {
+    url = new URL(redirect ?? '')
+  } catch {
+    return undefined
+  }
+  if (url.protocol !== 'https:') return undefined
+  const host = url.hostname.toLowerCase().replace(/\.$/, '')
+  const under = (...domains: string[]) =>
+    domains.some((d) => host === d || host.endsWith(`.${d}`))
+  if (under('grok.com', 'x.ai', 'x.com')) return 'grokbot'
+  if (under('cursor.com', 'cursor.sh'))
+    return url.pathname.startsWith('/bot/') ? 'grokbot' : 'cursor'
+  if (under('chatgpt.com', 'openai.com')) return 'dots'
+  if (under('claude.ai', 'claude.com', 'anthropic.com')) return 'claude'
+  if (under('meta.ai', 'meta.com')) return 'muse'
+  return undefined
+}
+
+export const knownBot = (name: string | undefined, redirect?: string) => {
+  const id = returnedTo(redirect)
+  return (
+    BOTS.find((one) => one.id === id) ??
+    BOTS.find((one) => one.match.test(name ?? ''))
+  )
+}
 
 const tile =
   'flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.1)]'
@@ -164,7 +196,10 @@ const BotConsentPage = ({
   locale: AcceptedLocale
 }) => {
   const t = getTranslator(locale)
-  const known = BOTS.find((one) => one.match.test(client.client_name ?? ''))
+  const known = knownBot(
+    client.client_name ?? undefined,
+    searchParams.redirect_uri,
+  )
   const name = known?.name ?? client.client_name ?? client.client_id
   const actionURL = `${getServerURL()}/v1/oauth2/consent?${new URLSearchParams(searchParams)}`
   const email = sub?.email

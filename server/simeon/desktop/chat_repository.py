@@ -170,6 +170,23 @@ class DesktopChatLineRepository(RepositoryBase[DesktopChatLine]):
         rows = list(await self.get_all(statement))
         return list(reversed(rows[:limit])), len(rows) > limit
 
+    async def with_nonce(
+        self, user_id: UUID, agent_id: str, nonce: str
+    ) -> DesktopChatLine | None:
+        """The line a message sent through the server became (its
+        `clientNonce`), wherever the computer's clock put it."""
+        statement = (
+            self.get_base_statement()
+            .where(
+                DesktopChatLine.user_id == user_id,
+                DesktopChatLine.agent_id == agent_id,
+                DesktopChatLine.entry["clientNonce"].astext == nonce,
+            )
+            .order_by(DesktopChatLine.at_ms)
+            .limit(1)
+        )
+        return await self.get_one_or_none(statement)
+
     async def since(
         self, user_id: UUID, agent_id: str, at_ms: int, limit: int
     ) -> list[DesktopChatLine]:

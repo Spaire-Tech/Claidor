@@ -3,6 +3,7 @@ from datetime import timedelta
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import select
 
 from simeon.auth.scope import Scope
 from simeon.auth.service import USER_SESSION_TOKEN_PREFIX
@@ -13,6 +14,7 @@ from simeon.kit.utils import utc_now
 from simeon.models import (
     OAuth2Client,
     OAuth2Grant,
+    OAuth2Token,
     Organization,
     User,
     UserOrganization,
@@ -1015,6 +1017,58 @@ class TestOAuth2Token:
         assert access_token.startswith("simeon_at_o_")
         refresh_token = json["refresh_token"]
         assert refresh_token.startswith("simeon_rt_o_")
+
+    async def test_a_token_keeps_where_its_sign_in_returned(
+        self,
+        save_fixture: SaveFixture,
+        client: AsyncClient,
+        sync_session: Session,
+        user: User,
+        oauth2_client: OAuth2Client,
+    ) -> None:
+        """A bot's registration can be shared (Grok Bot signs in with
+        Cursor's): where its sign-in returned says which it is, kept on the
+        token and on each token refreshed from it."""
+        returned = "https://grok.com/connectors-oauth-exchange-code/"
+        await create_oauth2_authorization_code(
+            save_fixture,
+            client=oauth2_client,
+            code="CODE",
+            scopes=["openid", "profile", "email"],
+            redirect_uri=returned,
+            user=user,
+        )
+        response = await client.post(
+            "/v1/oauth2/token",
+            data={
+                "grant_type": "authorization_code",
+                "code": "CODE",
+                "client_id": oauth2_client.client_id,
+                "client_secret": oauth2_client.client_secret,
+                "redirect_uri": returned,
+            },
+        )
+        assert response.status_code == 200, response.text
+        response = await client.post(
+            "/v1/oauth2/token",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": response.json()["refresh_token"],
+                "client_id": oauth2_client.client_id,
+                "client_secret": oauth2_client.client_secret,
+            },
+        )
+        assert response.status_code == 200, response.text
+        tokens = (
+            sync_session.execute(
+                select(OAuth2Token).where(
+                    OAuth2Token.client_id == oauth2_client.client_id
+                )
+            )
+            .unique()
+            .scalars()
+        )
+        assert [t.redirect_uri for t in tokens] == [returned, returned]
 
     async def test_refresh_token_sub_user(
         self,

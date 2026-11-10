@@ -12,10 +12,11 @@ from typing import Any
 import httpx
 import pytest
 from pytest_mock import MockerFixture
+from sqlalchemy import select
 
 from simeon.desktop import mcp, network
 from simeon.desktop.chat_repository import DesktopChatInboxRepository
-from simeon.models import OAuth2Client, User
+from simeon.models import OAuth2Client, OAuth2Token, User
 from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 from tests.oauth2.conftest import create_oauth2_token
@@ -37,10 +38,14 @@ async def _bot(
     *,
     name: str = "Dots",
     token: str = TOKEN,
+    redirect_uris: list[str] | None = None,
+    returned: str | None = None,
+    key: str | None = None,
 ) -> dict[str, str]:
     """An agent signed in as the person with these scopes, registered
-    under `name` (as ChatGPT or Claude Code registers itself)."""
-    key = "".join(c for c in name.lower() if c.isalnum())
+    under `name` (as ChatGPT or Claude Code registers itself), its sign-in
+    returned to `returned`."""
+    key = key or "".join(c for c in name.lower() if c.isalnum())
     client = OAuth2Client(
         client_id=f"simeon_ci_{key}",
         client_secret=f"simeon_cs_{key}",
@@ -50,7 +55,8 @@ async def _bot(
     client.set_client_metadata(
         {
             "client_name": name,
-            "redirect_uris": ["https://chatgpt.com/connector_platform_oauth_redirect"],
+            "redirect_uris": redirect_uris
+            or ["https://chatgpt.com/connector_platform_oauth_redirect"],
             "token_endpoint_auth_method": "none",
             "grant_types": ["authorization_code", "refresh_token"],
             "response_types": ["code"],
@@ -58,7 +64,7 @@ async def _bot(
         }
     )
     await save_fixture(client)
-    await create_oauth2_token(
+    signed = await create_oauth2_token(
         save_fixture,
         client=client,
         access_token=token,
@@ -66,6 +72,9 @@ async def _bot(
         scopes=scopes,
         user=user,
     )
+    if returned is not None:
+        signed.redirect_uri = returned
+        await save_fixture(signed)
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -373,6 +382,54 @@ class TestTools:
         assert [m["text"] for m in later["messages"]] == ["Seats 3A and 3B."]
         assert (await _said(client, bot, "check_inbox"))["messages"] == []
 
+    async def test_the_answer_is_found_when_the_computers_clock_is_behind(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        published: Any,
+    ) -> None:
+        """A computer just woken can run minutes behind this server (10
+        November 2026: Nora's answer showed above Grok Bot's question and
+        never reached its inbox). The computer stamps both, so the answer
+        follows the question, and it is found wherever they sit."""
+        _, box = await _signed_in_with_box(client, session, user)
+        await _copy(client, box, agents=AGENTS)
+        bot = await _hello(
+            client, await _bot(save_fixture, user, ["agents"]), "openai-mcp"
+        )
+        await _said(client, bot, "send_message", to="iris", message="Thursday?")
+        (waiting,) = await DesktopChatInboxRepository.from_session(session).waiting(
+            user.id, 10
+        )
+        assert "composedAtMs" not in waiting.message, "the computer stamps it"
+
+        behind = int(time.time() * 1000) - 10 * 60_000
+        await _copy(
+            client,
+            box,
+            lines=[
+                {
+                    "agentId": "iris",
+                    "entry": _line(
+                        "u1", "Dots: Thursday?", behind, clientNonce=waiting.nonce
+                    ),
+                },
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "send-message",
+                        "id": "a1",
+                        "message": {"type": "text", "content": "Thursday works."},
+                        "timestampMs": behind + 30_000,
+                    },
+                },
+            ],
+        )
+        read = await _said(client, bot, "check_inbox")
+        assert [m["text"] for m in read["messages"]] == ["Thursday works."]
+
     async def test_the_first_tools_names_still_answer(
         self,
         client: httpx.AsyncClient,
@@ -436,3 +493,113 @@ class TestTools:
         assert me["agent"] == "Claude Code"
         assert (me["repo"], me["branch"], me["status"]) == ("acme/api", "main", "busy")
         assert me["doing"] == "Edit billing webhook"
+
+
+#: Cursor's one registration, which Grok Bot signs in with too
+#: (https://cursor.com/oauth/mcp-client.json, 10 November 2026).
+CURSORS = [
+    "https://www.cursor.com/agents/mcp/oauth/callback",
+    "https://www.cursor.com/bot/mcp/oauth/callback",
+    "https://grok.com/connectors-oauth-exchange-code/",
+    "http://localhost:8787/callback",
+    "http://127.0.0.1:8787/callback",
+]
+
+
+@pytest.mark.asyncio
+class TestWhichBot:
+    """What an agent is on the network: where its sign-in returned, then
+    its hello, then its registration (10 November 2026: Grok Bot, signed in
+    with Cursor's registration, showed as `cursor-3` and wrote as "Cursor")."""
+
+    async def test_grok_bot_is_grok_bot_though_it_registers_as_cursor(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        hosted = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            token="simeon_at_hosted",
+            redirect_uris=CURSORS,
+            returned="https://grok.com/connectors-oauth-exchange-code/",
+        )
+        team = await _said(client, await _hello(client, hosted, "Cursor"), "list_team")
+        handle = team["you"].split("/")[0]
+        assert team["you"] == f"{handle}/grok-bot"
+        me = {a["address"]: a for a in team["agents"]}[team["you"]]
+        assert me["agent"] == "Grok Bot"
+
+        # The same registration on the person's computer is Cursor.
+        cursor = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            key="desk",
+            token="simeon_at_cursor",
+            redirect_uris=CURSORS,
+            returned="http://localhost:8787/callback",
+        )
+        mine = await _said(
+            client, await _hello(client, cursor, "cursor-vscode"), "list_team"
+        )
+        assert mine["you"] == f"{handle}/cursor"
+
+    async def test_every_conversation_of_a_bot_is_one_agent(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        hosted = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            token="simeon_at_hosted",
+            redirect_uris=CURSORS,
+            returned="https://www.cursor.com/bot/mcp/oauth/callback",
+        )
+        first = await _hello(client, hosted, "Cursor")
+        second = await _hello(client, hosted, "Cursor")
+        assert first["Mcp-Session-Id"] == second["Mcp-Session-Id"]
+        team = await _said(client, second, "list_team")
+        assert [a["address"] for a in team["agents"] if a.get("you")] == [team["you"]]
+        assert sum(1 for a in team["agents"] if a["kind"] == "grok-bot") == 1
+
+    async def test_a_bot_named_before_it_was_known_takes_its_name(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        # Signed in before the server kept where sign-ins return: "cursor".
+        headers = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            token="simeon_at_hosted",
+            redirect_uris=CURSORS,
+        )
+        before = await _said(
+            client, await _hello(client, headers, "Cursor"), "list_team"
+        )
+        assert before["you"].endswith("/cursor")
+        # Signed in again: Grok Bot, in the same session, renamed.
+        token = (
+            (
+                await session.execute(
+                    select(OAuth2Token).where(
+                        OAuth2Token.client_id == "simeon_ci_cursor"
+                    )
+                )
+            )
+            .unique()
+            .scalar_one()
+        )
+        token.redirect_uri = "https://grok.com/connectors-oauth-exchange-code/"
+        await save_fixture(token)
+        after_hello = await _hello(client, headers, "Cursor")
+        after = await _said(client, after_hello, "list_team")
+        assert after["you"] == before["you"].replace("/cursor", "/grok-bot")
+        assert not any(a["address"] == before["you"] for a in after["agents"])

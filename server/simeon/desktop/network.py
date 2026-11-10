@@ -40,11 +40,11 @@ import base64
 import hashlib
 import hmac
 import re
-import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import structlog
@@ -102,8 +102,6 @@ SESSIONS_KEPT = timedelta(days=14)
 MESSAGES_KEPT = timedelta(days=14)
 #: A Simeon agent's answer is read from its chat this long after the message.
 ANSWERS_READ_FOR = timedelta(days=2)
-#: How far before a message's own time its line is looked for (clocks differ).
-LINE_SLACK_MS = 120_000
 ANSWER_LINES_MAX = 300
 BODY_MAX_CHARS = 20_000
 FANOUT_MAX = 50
@@ -195,11 +193,59 @@ KINDS: tuple[tuple[tuple[str, ...], Kind], ...] = (
 )
 
 
-def kind_of(*names: str | None) -> Kind:
-    text = " ".join(name for name in names if name).casefold()
-    for keys, kind in KINDS:
-        if any(key in text for key in keys):
-            return kind
+#: Bots that live in their maker's cloud (a chat on grok.com, chatgpt.com,
+#: claude.ai…): one of them is one agent, whichever of its conversations
+#: says hello, so it keeps one session per sign-in (`open_session`).
+HOSTED = frozenset({"dots", "muse", "grok-bot", "claude"})
+
+
+def _host_kind(host: str, path: str) -> str | None:
+    def under(*domains: str) -> bool:
+        return any(host == d or host.endswith(f".{d}") for d in domains)
+
+    if under("grok.com", "x.ai", "x.com"):
+        return "grok-bot"
+    if under("cursor.com", "cursor.sh"):
+        # Grok Bot signs in with Cursor's registration and returns to its
+        # bot page (cursor.com/oauth/mcp-client.json lists both).
+        return "grok-bot" if path.startswith("/bot/") else "cursor"
+    if under("chatgpt.com", "openai.com"):
+        return "dots"
+    if under("claude.ai", "claude.com", "anthropic.com"):
+        return "claude"
+    if under("meta.ai", "meta.com"):
+        return "muse"
+    return None
+
+
+def redirect_kind(redirect_uri: str | None) -> Kind | None:
+    """The bot a sign-in returned to, when its address says: what tells
+    Grok Bot from Cursor, which share one registration. A computer's own
+    address (localhost, `cursor://`) says nothing."""
+    if not redirect_uri:
+        return None
+    try:
+        parts = urlsplit(redirect_uri.strip())
+    except ValueError:
+        return None
+    if parts.scheme != "https" or not parts.hostname:
+        return None
+    found = _host_kind(parts.hostname.casefold().rstrip("."), parts.path or "/")
+    return next((kind for _, kind in KINDS if kind.kind == found), None)
+
+
+def kind_of(*names: str | None, redirect_uri: str | None = None) -> Kind:
+    """What an agent is: where its sign-in returned first, then each name in
+    turn (the client's hello before its registration: Grok Bot registers as
+    "Cursor")."""
+    found = redirect_kind(redirect_uri)
+    if found is not None:
+        return found
+    for name in names:
+        text = (name or "").casefold()
+        for keys, kind in KINDS:
+            if any(key in text for key in keys):
+                return kind
     label = next((" ".join(n.split())[:40] for n in names if n and n.strip()), "")
     return Kind("agent", slug(label) or "agent", label or "Agent")
 
@@ -209,6 +255,11 @@ def label_of(kind: str) -> str:
         if known.kind == kind:
             return known.label
     return "Agent"
+
+
+def kind_name(kind: str) -> str:
+    """A kind's own name on the network (`claude-code` → `claude`)."""
+    return next((known.name for _, known in KINDS if known.kind == kind), kind)
 
 
 # MARK: Invite links
@@ -429,16 +480,40 @@ class Network:
     # MARK: Sessions
 
     async def open_session(
-        self, *, client_id: str | None, client_name: str | None, info_name: str | None
+        self,
+        *,
+        client_id: str | None,
+        client_name: str | None,
+        info_name: str | None,
+        redirect_uri: str | None = None,
     ) -> DesktopNetworkSession:
-        """A session for an MCP client that just said hello: the person's
-        last session of the same kind when it is no longer live (it keeps
-        its name and what was sent to it), or a new one."""
+        """A session for an MCP client that just said hello. A bot in its
+        maker's cloud (Grok Bot, Dots…) is one agent: each of its
+        conversations lands in its one session. A coding agent gets the
+        person's last session of its kind when that is no longer live (it
+        keeps its name and what was sent to it), or a new one."""
         await self.membership()
         now = utc_now()
         await self.sessions.remove_older_than(self.user.id, now - SESSIONS_KEPT)
-        kind = kind_of(info_name, client_name)
+        kind = kind_of(info_name, client_name, redirect_uri=redirect_uri)
         mine = await self.sessions.of_person(self.user.id)
+        if kind.kind in HOSTED and client_id is not None:
+            same = [s for s in mine if s.client_id == client_id]
+            if same:
+                found = same[0]  # Newest first.
+                if found.kind != kind.kind:
+                    # Named before it was known (Grok Bot as "cursor-3").
+                    if re.fullmatch(
+                        rf"{re.escape(kind_name(found.kind))}(-\d+)?", found.name
+                    ):
+                        found.name = unique(
+                            kind.name, {s.name for s in mine if s.id != found.id}, "-"
+                        )[:SESSION_NAME_MAX]
+                    found.kind = kind.kind
+                found.busy = False
+                found.last_seen_at = now
+                self.session.add(found)
+                return found
         idle = [s for s in mine if s.kind == kind.kind and now - s.last_seen_at > LIVE]
         idle.sort(key=lambda s: (s.client_id != client_id, -s.last_seen_at.timestamp()))
         if idle:
@@ -469,7 +544,11 @@ class Network:
         return found
 
     async def session_of_client(
-        self, *, client_id: str | None, client_name: str | None
+        self,
+        *,
+        client_id: str | None,
+        client_name: str | None,
+        redirect_uri: str | None = None,
     ) -> DesktopNetworkSession:
         """For a client that keeps no session id: its last session, or one."""
         found = await self.sessions.last_of_client(self.user.id, client_id)
@@ -477,7 +556,10 @@ class Network:
             await self.sessions.touch(found)
             return found
         return await self.open_session(
-            client_id=client_id, client_name=client_name, info_name=None
+            client_id=client_id,
+            client_name=client_name,
+            info_name=None,
+            redirect_uri=redirect_uri,
         )
 
     async def address_of(self, session: DesktopNetworkSession) -> str:
@@ -908,15 +990,18 @@ class Network:
             raise NetworkRefusal("This message is too long.")
         await self.messages.create(row, flush=True)
         row.nonce = f"net-{row.id}"
-        sent_at = int(time.time() * 1000)
         await inbox.add(
             owner,
             agent_id=str(target.agent["id"]),  # type: ignore[index]
             nonce=row.nonce,
             kind="prompt",
             message={
+                # No `composedAtMs`: the computer stamps the message with its
+                # own clock as it takes it, as it stamps the answer, so the
+                # answer always follows it. A computer just woken can run
+                # minutes behind this server; stamped here, the answer showed
+                # above the question and was never found (10 November 2026).
                 "prompt": prompt,
-                "composedAtMs": sent_at,
                 # For the apps and the engine to tell a network message from the
                 # person's own (they read `prompt` today).
                 "network": {
@@ -945,11 +1030,15 @@ class Network:
         ):
             if asked.to_agent_id is None or asked.nonce is None:
                 continue
+            # From the message's own line, on the computer's clock: this
+            # server's time says nothing about where it sits in the chat.
+            question = await lines.with_nonce(
+                asked.to_user_id, asked.to_agent_id, asked.nonce
+            )
+            if question is None:
+                continue  # Not taken by the computer yet.
             rows = await lines.since(
-                asked.to_user_id,
-                asked.to_agent_id,
-                ms(asked.created_at) - LINE_SLACK_MS,
-                ANSWER_LINES_MAX,
+                asked.to_user_id, asked.to_agent_id, question.at_ms, ANSWER_LINES_MAX
             )
             start = next(
                 (
