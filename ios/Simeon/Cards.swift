@@ -2511,44 +2511,55 @@ struct CardChooserSheet: View {
 // MARK: - Products
 
 /**
- * The products card (14 October 2026; SimeonCore's `ProductsCard`), as Muse
- * shows what it is about to buy: each product's picture, name, seller and
- * price in a row of the agent's card. A tap opens it, with "Buy with
- * <agent>" (the agent is woken to buy exactly that one, through the checkout
- * card) and "View website".
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`), as a
+ * shop's own cards (10 November 2026, after the founder's reference, the
+ * iPhone's in its own sizes): each product a card of its own, 170 wide and
+ * 20 round, side by side in one row that scrolls sideways. On each, the
+ * picture on white (170 by 204, fitted, padded 14) with the badge at its top
+ * left, then on the card's grey the name (15, semibold, one line), "price ·
+ * take" in grey (two lines at most) and the store's icon and name at the
+ * bottom, Buying in blue or Bought in green at their right. Under the row,
+ * the agent's replies as chips (36 high, the card's grey) until the person
+ * sends anything after the card; one tapped is sent as their own message. A
+ * tap opens the product full screen (`ProductPages`), where a swipe, or ‹
+ * and ›, goes to the card's others.
  */
 struct ProductsCardView: View {
   let entryId: String
   let agentId: String
   let card: ProductsCard
   @Environment(AppStore.self) private var store
-  @Environment(\.chatWidth) private var width
   @State private var open: ProductsCard.Product?
 
   var body: some View {
     let shown = card.shown(pressed: store.pressedProducts[entryId])
-    VStack(spacing: 0) {
-      ForEach(shown.products) { product in
-        Button { Haptics.tap(); open = product } label: {
-          ProductRow(product: product, agentId: agentId, status: shown.status(of: product))
+    VStack(alignment: .leading, spacing: 12) {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .top, spacing: 10) {
+          ForEach(shown.products) { product in
+            Button { Haptics.tap(); open = product } label: {
+              ProductCard(product: product, agentId: agentId, status: shown.status(of: product))
+            }
+            .buttonStyle(.tactile)
+          }
         }
-        .buttonStyle(.tactile)
-        if product.index != shown.products.last?.index {
-          Rectangle().fill(Ink.hairline).frame(height: 1).padding(.leading, 14)
+      }
+      // The cards go on past the chat's margin as they scroll.
+      .scrollClipDisabled()
+      if !shown.shownReplies.isEmpty {
+        ProductReplies(replies: shown.shownReplies, paused: store.isSendingPaused) { reply in
+          Haptics.tap()
+          Task { await store.send(reply, to: agentId) }
         }
       }
     }
-    .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    .modifier(CardEdge(radius: 22))
-    .sheet(item: $open) { product in
-      ProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, current: product) { chosen in
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .fullScreenCover(item: $open) { product in
+      ProductPages(entryId: entryId, agentId: agentId, card: card, start: product.index) { chosen in
         Haptics.press()
         open = nil
         Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
       }
-      .presentationDetents([.large])
-      .presentationDragIndicator(.visible)
     }
   }
 
@@ -2561,62 +2572,133 @@ struct ProductsCardView: View {
   }
 }
 
-/**
- * One product in the card: its picture, its name on two lines, who sells it,
- * its price, and at the right of the price a pill once Buy was pressed:
- * Buying in blue, then Bought in green once the order is placed (18 October
- * 2026, the founder: "make it blue, and on the right, like the take over
- * computer card"; it had been a grey pill beside the price).
- */
-private struct ProductRow: View {
+/** One product in the row: the picture on white with its badge, its name, "price · take" and its store. */
+private struct ProductCard: View {
   let product: ProductsCard.Product
   let agentId: String
   let status: ProductsCard.Status?
+  static let width: CGFloat = 170
 
   var body: some View {
-    HStack(alignment: .center, spacing: 14) {
+    VStack(alignment: .leading, spacing: 0) {
       ProductPicture(url: product.imageURL, agentId: agentId)
-        .frame(width: 96, height: 96)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-      VStack(alignment: .leading, spacing: 3) {
-        Text(product.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.theirsText).lineLimit(2).multilineTextAlignment(.leading)
-        Text(product.byline).font(.system(size: 14)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-        HStack(spacing: 8) {
-          if let price = product.price { Text(price).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).monospacedDigit() }
-          Spacer(minLength: 0)
-          if let status {
-            let tint = ProductsCardView.tint(status)
-            StatusPill(text: status.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
-          }
+        .padding(14)
+        .frame(width: Self.width, height: 204)
+        .background(Color.white)
+        .overlay(alignment: .topLeading) {
+          if let badge = product.badge { ProductBadge(text: badge).padding(8) }
         }
+      VStack(alignment: .leading, spacing: 0) {
+        Text(product.title)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(Ink.theirsText)
+          .lineLimit(1)
+        // Two lines kept, so every card's store sits at its bottom.
+        Text(product.priceLine ?? "")
+          .font(.system(size: 13))
+          .foregroundStyle(Ink.fineGrey)
+          .lineLimit(2, reservesSpace: true)
+          .multilineTextAlignment(.leading)
+          .padding(.top, 2)
+        ProductStoreLine(product: product, status: status)
+          .padding(.top, 10)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(EdgeInsets(top: 10, leading: 12, bottom: 12, trailing: 12))
+      .frame(width: Self.width, alignment: .leading)
     }
-    .padding(14)
-    .contentShape(Rectangle())
+    .background(Ink.bubbleTheirs)
+    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .modifier(CardEdge(radius: 20))
+    .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     .accessibilityElement(children: .combine)
-    .accessibilityHint("Opens it, with Buy and View website")
   }
 }
 
-/** A product's own picture from its shop, filling its frame; a bag while it loads or when the shop gave none. */
+/** The badge: a small grey pill, see-through, white words (12, medium). */
+private struct ProductBadge: View {
+  let text: String
+
+  var body: some View {
+    Text(text)
+      .font(.system(size: 12, weight: .medium))
+      .foregroundStyle(Color.white)
+      .lineLimit(1)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 3)
+      .background(Color(.sRGB, red: 60 / 255, green: 60 / 255, blue: 67 / 255, opacity: 0.55), in: Capsule())
+  }
+}
+
+/** The store: its site's icon (as a saved login's, the letter until it comes) and its name in grey, 8 apart; Buying or Bought at the right. */
+private struct ProductStoreLine: View {
+  let product: ProductsCard.Product
+  var status: ProductsCard.Status? = nil
+  var side: CGFloat = 16
+  var size: CGFloat = 13
+
+  var body: some View {
+    HStack(spacing: 8) {
+      SiteIconTile(site: LinkIcons.site(of: product.url), title: product.storeName, size: side)
+      Text(product.storeName)
+        .font(.system(size: size))
+        .foregroundStyle(Ink.fineGrey)
+        .lineLimit(1)
+        .truncationMode(.tail)
+      Spacer(minLength: 0)
+      if let status {
+        let tint = ProductsCardView.tint(status)
+        StatusPill(text: status.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
+      }
+    }
+  }
+}
+
+/** The replies under the row: chips 36 high on the card's grey (15), 8 apart, scrolling sideways when they don't fit. */
+private struct ProductReplies: View {
+  let replies: [String]
+  let paused: Bool
+  let send: (String) -> Void
+
+  var body: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 8) {
+        ForEach(replies, id: \.self) { reply in
+          Button { send(reply) } label: {
+            Text(reply)
+              .font(.system(size: 15))
+              .foregroundStyle(Ink.theirsText)
+              .lineLimit(1)
+              .padding(.horizontal, 16)
+              .frame(height: 36)
+              .background(Ink.bubbleTheirs, in: Capsule())
+              .contentShape(Capsule())
+          }
+          .buttonStyle(.tactile)
+          .disabled(paused)
+          .opacity(paused ? 0.5 : 1)
+        }
+      }
+    }
+    .scrollClipDisabled()
+  }
+}
+
+/** A product's own picture from its shop, fitted on white; a bag while it loads or when the shop gave none. */
 private struct ProductPicture: View {
   let url: URL?
   let agentId: String
-  var fit = false
   @Environment(AppStore.self) private var store
   @State private var loaded: UIImage?
 
   var body: some View {
     ZStack {
-      Rectangle().fill(Ink.field)
+      Color.white
       if let loaded {
-        if fit { Image(uiImage: loaded).resizable().scaledToFit() } else { Image(uiImage: loaded).resizable().scaledToFill() }
+        Image(uiImage: loaded).resizable().scaledToFit()
       } else {
-        Image(systemName: "bag").font(.system(size: 22)).foregroundStyle(Ink.tertiary)
+        Image(systemName: "bag").font(.system(size: 22)).foregroundStyle(Color(.sRGB, red: 142 / 255, green: 142 / 255, blue: 147 / 255, opacity: 1))
       }
     }
-    .clipped()
     .accessibilityHidden(true)
     .task(id: url) {
       guard let url else { return }
@@ -2631,92 +2713,171 @@ private struct ProductPicture: View {
 }
 
 /**
- * One product, opened, as a store's page (18 October 2026, the founder's
- * screenshots of Muse: "inside i want it to be like this. like a store"):
- * its picture large under the close button, "Sold by", its name and price,
- * "Buy with <agent>" in a light blue capsule and View website under it, what
- * it is in three lines with See more, its stars under Reviews, and the
- * card's other products under More like this, each opening in place.
+ * The products opened, full screen (10 November 2026, after the founder's
+ * reference, in the iPhone's one column): a page for each product of the
+ * card, side by side, swiped between, with the X at the top left and ‹ and
+ * › at the top right (our glass discs). The card is read afresh from the
+ * chat, so Buying and Bought show as they come.
  */
-private struct ProductSheet: View {
+private struct ProductPages: View {
   let entryId: String
   let agentId: String
-  let agentName: String
+  /** The card as it was opened: the one shown if the chat no longer has it. */
   let card: ProductsCard
-  @State var current: ProductsCard.Product
   let buy: (ProductsCard.Product) -> Void
+  @State private var selection: Int
   @Environment(AppStore.self) private var store
-  @Environment(\.openURL) private var openURL
   @Environment(\.dismiss) private var dismiss
 
+  init(entryId: String, agentId: String, card: ProductsCard, start: Int, buy: @escaping (ProductsCard.Product) -> Void) {
+    self.entryId = entryId; self.agentId = agentId; self.card = card; self.buy = buy
+    _selection = State(initialValue: start)
+  }
+
   var body: some View {
-    let shown = card.shown(pressed: store.pressedProducts[entryId])
-    let product = shown.products.first { $0.index == current.index } ?? current
-    let status = shown.status(of: product)
-    let others = shown.others(than: product)
-    ScrollViewReader { reader in
-      ScrollView {
-        VStack(alignment: .leading, spacing: 0) {
-          ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-            .frame(maxWidth: .infinity)
-            .frame(height: 320)
-            .id("top")
-          VStack(alignment: .leading, spacing: 0) {
-            Text(product.soldBy).font(.system(size: 16)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-            Text(product.title).font(.system(size: 26)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true).padding(.top, 6)
-            if let price = product.price {
-              ProductPrice(price: price, listPrice: product.listPrice, size: 19).padding(.top, 8)
-            }
-            ProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status) { buy(product) }
-              .padding(.top, 22)
-            Button { openURL(product.url) } label: {
-              Text(ProductsCard.viewWebsite).font(.system(size: 18)).foregroundStyle(Ink.primary)
-                .frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
-            }
-            .buttonStyle(.tactile)
-            .padding(.top, 8)
-            if let detail = product.detail {
-              ProductDescription(text: detail).padding(.top, 26).id("about-\(product.index)")
-            }
-            if !product.stars.isEmpty {
-              Text(ProductsCard.reviews).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary).padding(.top, 34)
-              Button { openURL(product.url) } label: { ProductReviewsRow(product: product, agentId: agentId) }
-                .buttonStyle(.tactile)
-                .padding(.top, 14)
-                .accessibilityHint("Opens the reviews on the shop's page")
-            }
-          }
-          .padding(.horizontal, 16)
-          .padding(.top, 20)
-          if !others.isEmpty {
-            Text(ProductsCard.moreLikeThis).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary)
-              .padding(.horizontal, 16).padding(.top, 34)
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(alignment: .top, spacing: 16) {
-                ForEach(others) { other in
-                  Button { Haptics.tap(); current = other } label: { ProductTile(product: other, agentId: agentId) }
-                    .buttonStyle(.tactile)
-                }
-              }
-              .padding(.horizontal, 16)
-            }
-            .padding(.top, 14)
-          }
-        }
-        .padding(.bottom, 32)
+    let shown = fresh.shown(pressed: store.pressedProducts[entryId])
+    let current = shown.products.first { $0.index == selection }
+    TabView(selection: $selection) {
+      ForEach(shown.products) { product in
+        ProductPage(product: product, agentId: agentId, status: shown.status(of: product), agentName: store.agent(agentId)?.name ?? "") { buy(product) }
+          .tag(product.index)
       }
-      .onChange(of: current.index) { withAnimation(.snappy) { reader.scrollTo("top", anchor: .top) } }
     }
+    .tabViewStyle(.page(indexDisplayMode: .never))
     .background(Ink.groupedGround.ignoresSafeArea())
-    .overlay(alignment: .topTrailing) {
-      Button { dismiss() } label: {
-        Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-          .frame(width: 36, height: 36).contentShape(Circle())
+    .overlay(alignment: .top) {
+      HStack(spacing: 10) {
+        disc("xmark", label: "Close") { dismiss() }
+        Spacer(minLength: 0)
+        let previous = current.flatMap { shown.neighbour(of: $0, by: -1) }
+        let next = current.flatMap { shown.neighbour(of: $0, by: 1) }
+        disc("chevron.left", label: "Previous product") { if let previous { step(to: previous) } }
+          .disabled(previous == nil)
+          .opacity(previous == nil ? 0.4 : 1)
+        disc("chevron.right", label: "Next product") { if let next { step(to: next) } }
+          .disabled(next == nil)
+          .opacity(next == nil ? 0.4 : 1)
       }
-      .buttonStyle(.tactile)
-      .glassEffect(.regular, in: .circle)
-      .padding(14)
-      .accessibilityLabel("Close")
+      .padding(.horizontal, 14)
+      .padding(.top, 6)
+    }
+  }
+
+  /** The chat's own copy of the card, else the one it was opened with. */
+  private var fresh: ProductsCard {
+    for row in store.rows(for: agentId) {
+      if case .products(let id, let card) = row, id == entryId { return card }
+    }
+    return card
+  }
+
+  private func step(to product: ProductsCard.Product) {
+    Haptics.tap()
+    withAnimation(.snappy) { selection = product.index }
+  }
+
+  private func disc(_ symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: symbol).font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+        .frame(width: 36, height: 36).contentShape(Circle())
+    }
+    .buttonStyle(.tactile)
+    .glassEffect(.regular, in: .circle)
+    .accessibilityLabel(label)
+  }
+}
+
+/**
+ * One product, opened, in one column: the picture on a white square (16
+ * round), the store's icon and name (15, grey), the title (26, semibold),
+ * the price (20) and "★ 5.0 (12)" (15, grey), the take (15, grey), "Buy
+ * with <agent>" in our blue capsule (48 high), "View at <store>", a
+ * hairline, "Sold by" with the seller at its right, then "Why it fits" (19,
+ * semibold) with each reason after a round green check.
+ */
+private struct ProductPage: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let status: ProductsCard.Status?
+  let agentName: String
+  let buy: () -> Void
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 0) {
+        Color.white
+          .aspectRatio(1, contentMode: .fit)
+          .overlay { ProductPicture(url: product.imageURL, agentId: agentId).padding(24) }
+          .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+          .modifier(CardEdge(radius: 16))
+        ProductStoreLine(product: product, side: 18, size: 15)
+          .padding(.top, 18)
+        Text(product.title)
+          .font(.system(size: 26, weight: .semibold))
+          .foregroundStyle(Ink.primary)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, 6)
+        if product.price != nil || product.ratingLine != nil {
+          HStack(alignment: .firstTextBaseline, spacing: 10) {
+            if let price = product.price { ProductPrice(price: price, listPrice: product.listPrice, size: 20) }
+            if let rating = product.ratingLine {
+              Text(rating)
+                .font(.system(size: 15))
+                .foregroundStyle(Ink.fineGrey)
+                .monospacedDigit()
+                .accessibilityLabel([product.ratingText.map { String(localized: "\($0) out of 5 stars") }, product.reviewCount.map { String(localized: "\($0) reviews") }].compactMap { $0 }.joined(separator: ", "))
+            }
+          }
+          .padding(.top, 8)
+        }
+        if let take = product.shownTake {
+          Text(take)
+            .font(.system(size: 15))
+            .foregroundStyle(Ink.fineGrey)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 10)
+        }
+        ProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, action: buy)
+          .padding(.top, 20)
+        Button { openURL(product.url) } label: {
+          Text(product.viewAt).font(.system(size: 17)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity).frame(height: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.tactile)
+        .padding(.top, 4)
+        Rectangle().fill(Ink.hairline).frame(height: 1).padding(.top, 10)
+        HStack(alignment: .firstTextBaseline, spacing: 16) {
+          Text(ProductsCard.soldBy).foregroundStyle(Ink.fineGrey)
+          Spacer(minLength: 0)
+          Text(product.byline).foregroundStyle(Ink.primary).lineLimit(1).truncationMode(.tail)
+        }
+        .font(.system(size: 16))
+        .padding(.top, 14)
+        if !product.reasons.isEmpty {
+          Text(ProductsCard.whyItFits)
+            .font(.system(size: 19, weight: .semibold))
+            .foregroundStyle(Ink.primary)
+            .padding(.top, 30)
+          VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(product.reasons.enumerated()), id: \.offset) { _, reason in
+              HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "checkmark.circle")
+                  .font(.system(size: 16))
+                  .foregroundStyle(Ink.success)
+                Text(reason)
+                  .font(.system(size: 16))
+                  .foregroundStyle(Ink.primary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+            }
+          }
+          .padding(.top, 12)
+        }
+      }
+      .padding(.horizontal, 20)
+      .padding(.top, 60)
+      .padding(.bottom, 32)
     }
   }
 }
@@ -2743,27 +2904,6 @@ private struct ProductBuyButton: View {
   }
 }
 
-/** The Reviews row: the product's picture in a framed square, its name, its stars. */
-private struct ProductReviewsRow: View {
-  let product: ProductsCard.Product
-  let agentId: String
-
-  var body: some View {
-    HStack(spacing: 14) {
-      ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-        .frame(width: 58, height: 58)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
-      VStack(alignment: .leading, spacing: 4) {
-        Text(product.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-        ProductStars(product: product)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .contentShape(Rectangle())
-  }
-}
-
 /** A price, and the price before the sale struck through after it in grey: "$99.99 ~~$119.99~~". */
 private struct ProductPrice: View {
   let price: String
@@ -2771,7 +2911,7 @@ private struct ProductPrice: View {
   var size: CGFloat = 15
 
   var body: some View {
-    HStack(spacing: 5) {
+    HStack(spacing: 6) {
       Text(price).foregroundStyle(Ink.primary)
       if let listPrice { Text(listPrice).strikethrough().foregroundStyle(Ink.fineGrey) }
     }
@@ -2780,85 +2920,6 @@ private struct ProductPrice: View {
     .lineLimit(1)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(listPrice.map { String(localized: "\(price), was \($0)") } ?? price)
-  }
-}
-
-/** Five stars to the nearest half, then "4.5" and "(153)". */
-private struct ProductStars: View {
-  let product: ProductsCard.Product
-
-  var body: some View {
-    HStack(spacing: 6) {
-      HStack(spacing: 1) {
-        ForEach(Array(product.stars.enumerated()), id: \.offset) { _, star in
-          Image(systemName: star == .full ? "star.fill" : star == .half ? "star.leadinghalf.filled" : "star")
-            .font(.system(size: 15))
-            .foregroundStyle(Ink.stars)
-        }
-      }
-      if let rating = product.ratingText { Text(rating).foregroundStyle(Ink.secondary) }
-      if let reviews = product.reviewsText { Text(reviews).foregroundStyle(Ink.fineGrey) }
-    }
-    .font(.system(size: 16))
-    .monospacedDigit()
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel([product.ratingText.map { String(localized: "\($0) out of 5 stars") }, product.reviewCount.map { String(localized: "\($0) reviews") }].compactMap { $0 }.joined(separator: ", "))
-  }
-}
-
-/** What the product is, in three lines with See more under them when there is more; `**bold**` drawn bold. */
-private struct ProductDescription: View {
-  let text: String
-  @State private var open = false
-  @State private var whole: CGFloat = 0
-  @State private var shown: CGFloat = 0
-
-  var body: some View {
-    let words = (try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
-    VStack(alignment: .leading, spacing: 6) {
-      Text(words)
-        .font(.system(size: 17))
-        .foregroundStyle(Ink.primary)
-        .lineLimit(open ? nil : 3)
-        .fixedSize(horizontal: false, vertical: true)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown = $0 }
-        .background(alignment: .topLeading) {
-          // The whole text, unseen, to know whether three lines hide some of it.
-          Text(words).font(.system(size: 17)).fixedSize(horizontal: false, vertical: true).hidden()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { whole = $0 }
-        }
-      if open || whole > shown + 1 {
-        Button { withAnimation(.snappy) { open.toggle() } } label: {
-          Text(open ? ProductsCard.seeLess : ProductsCard.seeMore).font(.system(size: 17)).foregroundStyle(Ink.fineGrey)
-        }
-        .buttonStyle(.tactile)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-/** One of More like this: its picture in a framed square, its name, who sells it, its price (the sale's list price struck through). */
-private struct ProductTile: View {
-  let product: ProductsCard.Product
-  let agentId: String
-  static let side: CGFloat = 136
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 3) {
-      ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-        .frame(width: Self.side, height: Self.side)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
-        .padding(.bottom, 7)
-      Text(product.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
-      Text(product.byline).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-      if let price = product.price { ProductPrice(price: price, listPrice: product.listPrice) }
-    }
-    .frame(width: Self.side, alignment: .leading)
-    .contentShape(Rectangle())
-    .accessibilityElement(children: .combine)
-    .accessibilityHint("Opens it here")
   }
 }
 

@@ -109,7 +109,7 @@ import {
 } from './MessageText'
 import { requestCardView } from './RequestCards'
 import { useSearchReveal } from './SearchPanel'
-import { shopCardView } from './ShopCards'
+import { ProductCover, shopCardView } from './ShopCards'
 import { useOpenMedia } from './Viewers'
 import { classes } from './classes'
 import { copyText } from './clipboard'
@@ -510,6 +510,8 @@ export function ChatPane({
         agentId={agentId}
         head={agent && <ChatHeader store={store} agent={agent} />}
       />
+      {/* A product of a products card, opened over the chat and its field (ShopCards.tsx). */}
+      <ProductCover store={store} agentId={agentId} />
     </section>
   )
 }
@@ -1199,7 +1201,8 @@ const cardCaps: Record<CardKind, number> = {
   flights: 680,
   flightPassengers: 520,
   purchase: 520,
-  products: 640,
+  // Six cards of 200 side by side, 10 apart: the row scrolls sideways when the chat is narrower.
+  products: 1250,
 }
 
 /** A card in its place: as wide as a message may be, at most its own cap. */
@@ -1231,7 +1234,13 @@ function CardRow({
   return (
     <div
       className={classes('card-row', startsGroup && 'starts-group')}
-      style={{ maxWidth: cardWidth(control.column, cardCaps[row.card]) }}
+      style={{
+        // The products' row runs to the column's edge, scrolling sideways (ShopCards.tsx).
+        maxWidth:
+          row.card === 'products'
+            ? Math.min(control.column, cardCaps.products)
+            : cardWidth(control.column, cardCaps[row.card]),
+      }}
     >
       {view}
     </div>

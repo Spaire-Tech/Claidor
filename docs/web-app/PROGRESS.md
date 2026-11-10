@@ -258,6 +258,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 7 November 2026 | In the Windows app the sidebar's words are a size up: names 15, previews 14, times 13 at the previews' grey (not the lighter one), title tags 12.5, section names 13, as measured in the other app (its names 15, previews 14, sections 13); its pictures stay 46 | The founder: the sidebar is "either too small, or too light"; measured: as dark, a size smaller |
 | 7 November 2026 | In the Windows app a message's words are 16 on 22 (the Mac's 14 on 20, 21 for the person's), as the other Windows chat app the founder compared: only the words grow, the gaps and a bubble's padding stay the Mac's | The founder, comparing the two apps side by side; the sizes measured by the session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
+| 10 November 2026 | The products card is redrawn after the founder's reference: each product its own card in a sideways row, the agent's take, reasons and badge, reply chips under it; a product opened covers the chat area (not a sheet), the sidebar staying; the iPhone's opened page is full screen, in one column | The founder |
+| 10 November 2026 | Reply chips are only for the products card, not for other messages; the opened product's button keeps "Buy with <agent>", in our blue capsule | The founder |
+| 10 November 2026 | A product's store is named by the agent (`store`, new and optional in `ShowProducts`), else its site; the store's icon is its site's own, as a saved login's (the letter until it comes). Buy on the opened page closes it on the chat, as Buy closed the sheet. ← and → step between products, Escape closes, and Return on the page itself buys, as Return did in the sheet | The session |
 
 ## For Windows
 
@@ -838,6 +841,81 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 10 November 2026: the products card as a shop's own cards; a product opened over the chat
+
+The founder, with reference screenshots of another app's shopping card (a
+row of tall product cards, reply chips under it, a product opened in the
+chat's place with "Why it fits"). Done in the engine, the shared core, the
+Mac, the iPhone and the web and Windows app:
+
+- **The engine:** `ShowProducts` takes per product `take` (the agent's own
+  line against the others, about 60 characters), `reasons` (one to three),
+  `badge` (two words, one product of the card at most: a second is
+  refused) and `store` (the store as people know it), and per card
+  `replies` (three at most). `description` stays, optional. The brief's
+  purchase step "0. Show" has the agent compare the set and offer replies.
+- **The core** (`ProductsCard.swift`): the new fields; `priceLine` ("price ·
+  take"), `shownTake` (a card from before takes: its description's first
+  sentence, no "Why it fits"), `ratingLine` ("★ 5.0 (12)"), `viewAt`,
+  `neighbour(of:by:)` for ‹ ›; `repliesOpen`, set as the chat's rows are
+  laid out (`settlingReplies`): the chips show until anything of the
+  person's comes after the card. The web's `shopCards.ts` is the same
+  (`productRepliesOpen` reads the rows on screen). Gone: Reviews, More like
+  this, See more, the five stars.
+- **The web** (`ShopCards.tsx`, `.css`): no frame round the products; each a
+  card 200 wide, 20 round, in one row that scrolls sideways and runs to the
+  column's edge (`ChatPane.tsx`): the picture on white (240 high, fitted,
+  padded 16) with the badge at its top left, the name, "price · take" in
+  grey (two lines), the store's icon (its site's own, as a saved login's)
+  and name, Buying or Bought at their right; the replies as chips under the
+  row, one pressed sent as the person's own message. A product opened is a
+  cover over the chat and its field (`chatCover` of kind `product`, as a
+  call's lines), the sidebar staying: the X at the top left, ‹ › at the top
+  right (← → too); two columns (one in a narrow chat, by a container
+  query): the picture on a white square, "Why it fits" with green checks;
+  the store, the title (28), the price and "★ 5.0 (12)", the take, "Buy with
+  <agent>" in our blue capsule, "View at <store>", a hairline, "Sold by".
+  Buy closes it on the chat, as Buy closed the sheet. In light, a hairline
+  round the cards and the picture, whose white would melt into the ground.
+- **The Mac** (`Cards.swift`, `ChatPane.swift`, `MessageActions.swift`): the
+  same, the page as an exchange or a call's lines open
+  (`ChatControl.productOpen`). **The iPhone** (`ios/Simeon/Cards.swift`): the
+  cards 170 wide; the page full screen in one column, swiped between, ‹ ›
+  and the X at the top.
+- Words: "Why it fits", "Sold by", "View at %@" in the core's catalogue;
+  "Previous product", "Next product" in the Mac's and the iPhone's; the ten
+  languages each, then `pnpm words` and the committed build.
+- Fixed on the way: the core's gallery test expected two products on the
+  demo's card, which has had three (it never ran on Linux, below).
+
+**Checked:** in Chromium (deviceScaleFactor 2), the app on Vite's dev
+server with the Windows app's stand-in server and computer behind its
+proxy (`windows/test/standIn.mjs`), every outside address answered by the
+check (drawn pictures, a store's icon; a proxy that answers nothing behind
+it), dark, light and French: the row, the badge, Bought on an older card
+(its description's first sentence as the take, no "Why it fits"), the
+page opened, ›, Escape, a 900-wide window (one column; the row cut at the
+column's edge and scrolling), a chip sending "Get Love Blossoms" as the
+person's message (`sendPrompt`) and the chips gone, Buy on the page sending
+`buyProduct` (index 1) and Buying on the card; no page errors. vitest (1245,
+128 files), tsc, ESLint and Prettier (`shopCards.ts`'s old warning fixed),
+the words', brands', pages' and committed build's checks; the engine's
+suite (1049: 1026 pass, 22 skipped, the one known failure the renderer
+asset not built here) and its type check; the core's products, purchase,
+chat and computer-store tests in Swift on Linux (212, in a package of
+their own: the core's own `swift test` stops at test discovery on Linux on
+the `@MainActor` test classes, as before; one fails there for a path, the
+voices' test reading the engine's file next to it); `check_names.py`,
+`check_translations.py`, `web_app_inventory.py`.
+
+**Not checked:** the Mac and iPhone apps built and run (no Xcode here; every
+Swift file changed parses, and the SwiftUI was read again by hand); a real
+agent writing takes, reasons and replies; a real store's pictures and icon.
+
+Next: the Mac and the iPhone built and looked at against the reference;
+the engine published (a host bundle), with the founder's go, so agents
+write the new fields.
 
 ### 10 November 2026: the computer opens watching; Take control under the screen
 

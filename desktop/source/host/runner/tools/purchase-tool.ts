@@ -108,14 +108,22 @@ export const showProductsParameters = z.object({
     price: z.string().trim().max(40).optional().describe("The price exactly as the shop shows it, with its currency: \"$2.23\". Leave out when the page shows none."),
     seller: z.string().trim().max(120).optional().describe("Who makes or sells it, as the page names them."),
     image_url: z.string().trim().optional().describe("The product's own picture from its page (https; og:image or the main product photo, or Shop's image_url), never a made-up or generic one."),
-    description: z.string().trim().max(600).optional().describe("What it is and why it fits, in two or three sentences from its page (the opened product shows the first lines, then See more); **bold** the one or two facts that matter most: \"It has a **100Hz refresh rate** that makes scrolling feel smooth.\""),
+    store: z.string().trim().max(60).optional().describe("The store as people know it, \"Best Buy\", \"Canada Flowers\": shown with its icon, and on View at. Leave out to show its site."),
+    take: z.string().trim().max(100).optional().describe("Your own line on it against the others on the card, about 60 characters at most, shown after its price: \"Soft pink and white, cheapest of the four\". Compare; don't describe it alone."),
+    reasons: z.array(z.string().trim().max(80)).max(3).optional().describe("One to three short lines on why it fits what they asked, shown under \"Why it fits\" when it's opened: \"Lowest price, still highly rated\"."),
+    badge: z.string().trim().max(24).optional().describe("Two words at most, on one product of the card at most, only when it clearly earns it: \"Top rated\", \"Best value\"."),
+    description: z.string().trim().max(600).optional().describe("Optional: what it is, in a sentence or two from its page. The card shows your take instead; a card without a take shows this one's first sentence."),
     list_price: z.string().trim().max(40).optional().describe("Only when it's on sale: the price before the sale, as the shop shows it struck through (\"$119.99\"), or Shop's was."),
     rating: z.number().min(0).max(5).optional().describe("Its stars out of five, as the shop or Shop's rating shows them (4.5). Leave out when the page shows none."),
     review_count: z.number().int().min(0).optional().describe("How many reviews that rating is from (153)."),
     shop_variant_id: z.string().trim().optional().describe("For a product from Shop's search_products: its variant_id, so Buy can check out through Shop."),
     shop: z.string().trim().optional().describe("For a product from Shop's search_products: its shop (the store's Shopify domain)."),
   })).min(1).max(6).describe("What you found, best first: one product when there is one to buy, up to six to choose from."),
+  replies: z.array(z.string().trim().max(40)).max(3).optional().describe("Up to three next steps in the person's own words, chips under the card: \"Get Love Blossoms\", \"Show me roses\". One tapped comes to you as their own message."),
 });
+
+/** "Top rated", not "The best rated one": a badge is two words at most. */
+const BADGE_WORDS = 2;
 
 /** One product as the card carries it: https addresses only, the shop's site named. */
 export function productFromArgs(product: z.infer<typeof showProductsParameters>["products"][number]): ProductCardItem | string {
@@ -127,6 +135,9 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
   const variantId = product.shop_variant_id ?? "", shop = (product.shop ?? "").replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase();
   const listPrice = product.list_price ?? "";
   const rating = product.rating != null && product.rating > 0 ? Math.round(product.rating * 10) / 10 : undefined;
+  const store = product.store ?? "", take = product.take ?? "", badge = product.badge ?? "";
+  const reasons = (product.reasons ?? []).filter((reason) => reason.length > 0);
+  if (badge.split(/\s+/).filter(Boolean).length > BADGE_WORDS) return `"${product.title}": badge is two words at most ("Top rated", "Best value").`;
   return {
     title: product.title,
     url,
@@ -135,6 +146,10 @@ export function productFromArgs(product: z.infer<typeof showProductsParameters>[
     ...(seller.length > 0 ? { seller } : {}),
     ...(/^https:\/\/\S+$/i.test(image) ? { imageUrl: image } : {}),
     ...(description.length > 0 ? { description } : {}),
+    ...(store.length > 0 ? { store } : {}),
+    ...(take.length > 0 ? { take } : {}),
+    ...(reasons.length > 0 ? { reasons } : {}),
+    ...(badge.length > 0 ? { badge } : {}),
     ...(listPrice.length > 0 && listPrice !== price ? { listPrice } : {}),
     ...(rating === undefined ? {} : { rating, ...(product.review_count != null && product.review_count > 0 ? { reviewCount: product.review_count } : {}) }),
     ...(variantId.length > 0 && shop.length > 0 ? { shop: { variantId, domain: shop } } : {}),
@@ -167,7 +182,7 @@ export function createShowProductsTool(deps: PurchaseToolDependencies) {
   return defineCommunicateTool(deps, {
     id: "SHOW_PRODUCTS",
     name: "ShowProducts",
-    description: "Show the person products to buy as cards, before any checkout: each one's picture, name, seller and price, as its shop shows them. They open one and press Buy (you're told exactly which, and you then buy it through the checkout card) or View website. Use it whenever they want to buy something and you've found it on a shop's own pages: one product, or up to six to choose from. Don't list the products again in text.",
+    description: "Show the person products to buy as cards, side by side, before any checkout: each one's picture, name, price and store, as its shop shows them, with your take on it against the others; opened, your reasons it fits under \"Why it fits\", its stars, Buy with you and View at the store. Compare the set first: a take for each, one to three reasons, a badge (\"Top rated\") on one at most, and up to three replies (next steps in their words) as chips under the card. They open one and press Buy (you're told exactly which, and you then buy it through the checkout card), or tap a reply (it comes to you as their message). Use it whenever they want to buy something and you've found it on a shop's own pages: one product, or up to six to choose from. Don't list the products again in text.",
     parameters: showProductsParameters,
     describeActivity: (args: z.infer<typeof showProductsParameters>) => ({ detail: args.products.length === 1 ? `Showing ${args.products[0]?.title ?? "a product"}` : `Showing ${args.products.length} products` }),
     execute: async (_ctx, args: z.infer<typeof showProductsParameters>, resolved) => {
@@ -180,10 +195,15 @@ export function createShowProductsTool(deps: PurchaseToolDependencies) {
         if (priced.correction != null) corrected.push(priced.correction);
         products.push(priced.product);
       }
-      const message: ProductsCardMessage = { type: PRODUCTS_MESSAGE_TYPE, content: productsCardText(products, deps.language?.()), products };
+      const badged = products.filter((product) => product.badge != null);
+      if (badged.length > 1) return `Only one product of the card can have a badge; ${badged.map((product) => `"${product.title}"`).join(", ")} each have one. Keep it on the one that earns it most.`;
+      const replies = [...new Set((args.replies ?? []).filter((reply) => reply.length > 0))];
+      const message: ProductsCardMessage = { type: PRODUCTS_MESSAGE_TYPE, content: productsCardText(products, deps.language?.()), products, ...(replies.length > 0 ? { replies } : {}) };
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
       const prices = corrected.length === 0 ? "" : ` The card shows the prices Shop's catalog gave, not the ones you wrote: ${corrected.join("; ")}. Quote those.`;
-      return `The products card is in the chat${entryId == null ? "" : ` (entry ${entryId})`}.${prices} The person opens one and presses Buy (you're woken with which one, to buy it through the checkout card) or View website. Don't list them again in text; at most one short line on which you'd pick and why, then stop.`;
+      const untaken = products.length > 1 && products.some((product) => product.take == null) ? " Next time give each product a take: the card shows it after the price." : "";
+      const chips = replies.length === 0 ? "" : ` Your replies are chips under it until they send anything; one tapped comes to you as their own message.`;
+      return `The products card is in the chat${entryId == null ? "" : ` (entry ${entryId})`}.${prices} The person opens one and presses Buy (you're woken with which one, to buy it through the checkout card) or View at the store.${chips}${untaken} Don't list them or your takes again in text; at most one short line on which you'd pick and why, then stop.`;
     },
   });
 }

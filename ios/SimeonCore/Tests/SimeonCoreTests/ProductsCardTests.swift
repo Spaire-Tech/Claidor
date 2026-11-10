@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import SimeonCore
 
-/** The products card (14 October 2026): what the agent found to buy, each with Buy and View website, as Muse shows it. */
+/** The products card (14 October 2026): what the agent found to buy, each with Buy and View at its store, as Muse shows it; the agent's comparison on it (10 November 2026). */
 final class ProductsCardTests: XCTestCase {
   private static let message: JSON = ["type": "products", "content": "Practice Book \"The Ways Of Water\" · $2.23", "products": [
     ["title": "Practice Book \"The Ways Of Water\": Draw Water Features And Improve Your Skills", "url": "https://daribodrawing.gumroad.com/l/water", "domain": "daribodrawing.gumroad.com", "price": "$2.23", "seller": "Daria Bogdanova", "imageUrl": "https://public-files.gumroad.com/water.png"],
@@ -31,6 +31,8 @@ final class ProductsCardTests: XCTestCase {
     XCTAssertNil(card.buying)
     XCTAssertEqual(ProductsCard.buyLabel(agent: "Muse"), "Buy with Muse")
     XCTAssertEqual(ProductsCard.buyLabel(agent: " "), "Buy")
+    XCTAssertEqual(card.replies, [], "a card from before replies has none")
+    XCTAssertNil(book.badge)
     XCTAssertEqual(Chat.cardText(Self.message), "Practice Book \"The Ways Of Water\" · $2.23")
   }
 
@@ -43,25 +45,69 @@ final class ProductsCardTests: XCTestCase {
     let raw: JSON = ["id": "t9s1", "kind": "send-message", "timestampMs": 1, "message": message]
     guard case .products(_, let card) = try XCTUnwrap(Chat.row(for: Entry(raw)!)) else { return XCTFail("not a products card") }
     let monitor = card.products[0]
-    XCTAssertEqual(monitor.soldBy, "Sold by: Office Depot")
+    XCTAssertEqual(monitor.byline, "Office Depot", "Sold by's value")
     XCTAssertEqual(monitor.listPrice, "$119.99")
     XCTAssertEqual(monitor.ratingText, "4.5")
     XCTAssertEqual(monitor.reviewsText, "(153)")
-    XCTAssertEqual(monitor.stars, [.full, .full, .full, .full, .half])
-    XCTAssertEqual(monitor.detail, "A reliable choice. It has a **100Hz refresh rate**.", "the bold stays for the page to draw")
+    XCTAssertEqual(monitor.ratingLine, "★ 4.5 (153)", "one star, no row of five")
+    XCTAssertEqual(monitor.detail, "A reliable choice. It has a **100Hz refresh rate**.")
+    XCTAssertNil(monitor.take)
+    XCTAssertEqual(monitor.shownTake, "A reliable choice", "a card from before takes: its description's first sentence")
+    XCTAssertEqual(monitor.priceLine, "$99.99 · A reliable choice")
+    XCTAssertEqual(monitor.reasons, [], "no Why it fits")
+    XCTAssertEqual(monitor.storeName, "officedepot.com", "the site, when the agent named no store")
+    XCTAssertEqual(monitor.viewAt, "View at officedepot.com")
     XCTAssertNil(card.products[1].listPrice, "no struck price equal to the price")
     XCTAssertNil(card.products[1].rating)
-    XCTAssertNil(card.products[1].reviewsText, "no review count without stars")
-    XCTAssertEqual(card.products[1].soldBy, "Sold by: Element")
-    XCTAssertEqual(card.products[2].ratingText, "4.0")
-    XCTAssertNil(card.products[2].reviewsText)
-    XCTAssertEqual(card.products[2].stars, [.full, .full, .full, .full, .empty])
-    XCTAssertEqual(ProductsCard.Product(index: 0, title: "x", url: URL(string: "https://a.com")!, domain: "a.com", rating: 4.2).stars, [.full, .full, .full, .full, .empty])
-    XCTAssertEqual(ProductsCard.Product(index: 0, title: "x", url: URL(string: "https://a.com")!, domain: "a.com", rating: 0.7).stars, [.half, .empty, .empty, .empty, .empty])
-    XCTAssertEqual(card.others(than: monitor).map(\.index), [1, 2], "More like this: the card's other products")
-    XCTAssertEqual(ProductsCard.moreLikeThis, "More like this")
-    XCTAssertEqual(ProductsCard.reviews, "Reviews")
-    XCTAssertEqual(ProductsCard.seeMore, "See more")
+    XCTAssertNil(card.products[1].ratingLine, "no review count without stars")
+    XCTAssertEqual(card.products[1].priceLine, "$123.84")
+    XCTAssertEqual(card.products[2].ratingLine, "★ 4.0")
+    XCTAssertEqual(card.neighbour(of: monitor, by: 1)?.index, 1, "› goes to the next")
+    XCTAssertNil(card.neighbour(of: monitor, by: -1), "‹ stops at the first")
+    XCTAssertEqual(card.neighbour(of: card.products[2], by: -1)?.index, 1)
+    XCTAssertNil(card.neighbour(of: card.products[2], by: 1), "› stops at the last")
+    XCTAssertEqual(ProductsCard.whyItFits, "Why it fits")
+    XCTAssertEqual(ProductsCard.soldBy, "Sold by")
+  }
+
+  func testTheAgentsComparisonOnTheCard() throws {
+    let message: JSON = ["type": "products", "content": "Possibly Pink · CA$62.00; Love Blossoms · CA$53.00", "replies": ["Get Possibly Pink", " ", "Get Love Blossoms", "Show me roses", "A fourth"], "products": [
+      ["title": "Possibly Pink (Teleflora)", "url": "https://www.canadaflowers.ca/p/pink", "domain": "canadaflowers.ca", "price": "CA$62.00", "store": "Canada Flowers", "take": "Pink, mauve, peach and lavender in a pink vase", "reasons": ["Best-reviewed of the four", ""], "badge": "Top rated", "rating": 5, "reviewCount": 33],
+      ["title": "Love Blossoms", "url": "https://www.canadaflowers.ca/p/love", "domain": "canadaflowers.ca", "price": "CA$53.00", "store": "Canada Flowers", "take": "Soft pink and white, cheapest of the four", "reasons": ["Lowest price, still highly rated"], "badge": "Best value", "description": "Ignored. The take wins."],
+    ]]
+    let raw: JSON = ["id": "t9s2", "kind": "send-message", "timestampMs": 1, "message": message]
+    guard case .products(_, let card) = try XCTUnwrap(Chat.row(for: Entry(raw)!)) else { return XCTFail("not a products card") }
+    let pink = card.products[0], blossoms = card.products[1]
+    XCTAssertEqual(pink.badge, "Top rated")
+    XCTAssertNil(blossoms.badge, "one badge on a card: the first")
+    XCTAssertEqual(pink.reasons, ["Best-reviewed of the four"], "an empty reason is left out")
+    XCTAssertEqual(pink.storeName, "Canada Flowers")
+    XCTAssertEqual(pink.viewAt, "View at Canada Flowers")
+    XCTAssertEqual(pink.byline, "Canada Flowers", "Sold by: the store when no seller is named")
+    XCTAssertEqual(pink.ratingLine, "★ 5.0 (33)")
+    XCTAssertEqual(blossoms.priceLine, "CA$53.00 · Soft pink and white, cheapest of the four", "the take wins over the description")
+    XCTAssertEqual(card.replies, ["Get Possibly Pink", "Get Love Blossoms", "Show me roses"], "three at most, none empty")
+    XCTAssertEqual(card.shownReplies, card.replies)
+    XCTAssertEqual(card.shown(pressed: 1).replies, card.replies, "Buy keeps the replies")
+    XCTAssertEqual(ProductsCard.firstSentence("It costs $2.23 today! More."), "It costs $2.23 today!")
+    XCTAssertEqual(ProductsCard.firstSentence("A **bold** start.\nThen more."), "A bold start")
+    XCTAssertEqual(ProductsCard.firstSentence("No full stop"), "No full stop")
+    XCTAssertNil(ProductsCard.firstSentence("  "))
+  }
+
+  func testRepliesGoOnceThePersonSendsAnythingAfterTheCard() throws {
+    let card: JSON = ["type": "products", "content": "Love Blossoms", "replies": ["Get Love Blossoms"], "products": [["title": "Love Blossoms", "url": "https://www.canadaflowers.ca/p/love"]]]
+    let entry = { (id: String, at: Double, message: JSON) -> Entry in Entry(["id": .string(id), "kind": "send-message", "timestampMs": .number(at), "message": message])! }
+    let said = { (id: String, at: Double, role: String, text: String) -> Entry in Entry(["id": .string(id), "kind": "message", "role": .string(role), "content": .string(text), "timestampMs": .number(at)])! }
+    func replies(_ entries: [Entry]) -> [String]? {
+      for row in Chat.rows(entries) { if case .products(_, let shown) = row { return shown.shownReplies } }
+      return nil
+    }
+    let products = entry("t1", 1000, card)
+    XCTAssertEqual(replies([products]), ["Get Love Blossoms"], "under the card while nothing follows")
+    XCTAssertEqual(replies([products, said("a2", 2000, "assistant", "I'd pick Love Blossoms.")]), ["Get Love Blossoms"], "the agent's own line after it keeps them")
+    XCTAssertEqual(replies([products, said("u3", 3000, "user", "Get Love Blossoms")]), [], "a reply tapped, or anything the person sends: gone")
+    XCTAssertEqual(replies([said("u0", 500, "user", "Find flowers"), products]), ["Get Love Blossoms"], "what came before doesn't count")
   }
 
   func testBuyShowsAtOnceAndTheComputersCopyWins() throws {

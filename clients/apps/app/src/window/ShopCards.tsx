@@ -17,7 +17,6 @@
 import {
   type ReactNode,
   useEffect,
-  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -25,14 +24,13 @@ import {
 import { createPortal } from 'react-dom'
 import type { CardKind } from '../core/chat'
 import { type BookedFlight, whenLine } from '../core/flightCards'
-import { inlineRuns } from '../core/markdown'
+import { siteOf } from '../core/linkIcons'
 import {
   type CardChoice,
   type Product,
   type ProductStatus,
   type ProductsCard,
   type PurchaseCard,
-  type Star,
   type StatusKind,
   approvalReason,
   buyLabel,
@@ -44,9 +42,11 @@ import {
   flightHeadline,
   itemsLine,
   needsCard,
+  neighbourProduct,
   openWalletLabel,
-  otherProducts,
   payingLine,
+  priceLine,
+  productRepliesOpen,
   productStatus,
   productStatusLabel,
   productWords,
@@ -55,13 +55,13 @@ import {
   purchaseDetail,
   purchaseHeading,
   purchaseStatus,
-  ratingText,
+  ratingLine,
   reviewNote,
-  reviewsText,
   shownProducts,
   shownPurchase,
-  soldBy,
-  stars,
+  shownTake,
+  storeName,
+  viewAt,
   waitsOnBank,
   waitsOnPerson,
   walletApp,
@@ -69,13 +69,16 @@ import {
 } from '../core/shopCards'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
-import { type CardProps, StatusPill, cardWidth } from './Cards'
+import { useCoverKeys } from './Call'
+import { type CardProps, StatusPill } from './Cards'
 import { classes } from './classes'
 import { openComputerView } from './ComputerView'
-import { Alert, Sheet } from './Dialogs'
+import { Alert } from './Dialogs'
 import { AirlineMark } from './FlightCards'
 import { confirmPresence } from './presence'
+import { SiteIconTile } from './SettingsCredentials'
 import './ShopCards.css'
+import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
 
 type ShopKind = Extract<CardKind, 'purchase' | 'products'>
@@ -93,9 +96,7 @@ export function shopCardView(kind: ShopKind, card: CardProps): React.ReactNode {
     return read && <PurchaseCardView {...props} card={read} />
   }
   const read = productsCard(card.entry)
-  return (
-    read && <ProductsCardView {...props} card={read} column={card.column} />
-  )
+  return read && <ProductsCardView {...props} card={read} />
 }
 
 /** Opens a page in a new tab (in the Windows app, the default browser). */
@@ -985,108 +986,79 @@ function PurchaseFooter({
 
 // MARK: The products card
 
-/** A tile's square picture, the tile padded 8, and the grid's 4 between and 8 round it. */
-const tileSide = 168
-const tilesAcross = (count: number) => Math.min(3, Math.max(1, count))
-/** The tiles' width: three to a line (`Grid` padded 8, its tiles 4 apart, each padded 8). */
-function tilesWidth(count: number): number {
-  const across = tilesAcross(count)
-  return across * (tileSide + 16) + (across - 1) * 4 + 16
-}
-
 /**
- * The products card (14 October 2026; SimeonCore's `ProductsCard`): each
- * product's picture, name, seller and price; a click opens it, with "Buy
- * with <agent>" and "View website". On a Mac's chat the products stand side
- * by side as a shop shows them, three to a line, each a square picture over
- * its name, seller and price, Buying or Bought at the right of the price; a
- * chat too narrow for them has the iPhone's rows (`ViewThatFits`).
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`), as a
+ * shop's own cards (10 November 2026, after the founder's reference): no
+ * frame round them, each product a card of its own, 200 wide and 20 round,
+ * side by side in one row that scrolls sideways when they don't fit. On
+ * each, the picture on white (200 by 240, fitted, padded 16) with the badge
+ * at its top left, then on the card's colour the name (15, 600, one line),
+ * "price · take" in grey (two lines at most) and, at the bottom, the store's
+ * icon (16, rounded) and its name in grey, Buying or Bought at its right.
+ * Under the row, the agent's replies as chips (36 high, the card's colour)
+ * until the person sends anything after the card; one pressed is sent as
+ * their message. A click opens the product over the chat (`ProductPage`).
  */
 function ProductsCardView({
   entryId,
   agentId,
   card,
   store,
-  column,
 }: {
   entryId: string
   agentId: string
   card: ProductsCard
   store: AppStore
-  column: number
 }) {
-  const [open, setOpen] = useState<number>()
+  const model = useWindowModel()
   const shown = shownProducts(card, store.pressedProducts[entryId])
-  const tiles = tilesWidth(shown.products.length) <= cardWidth(column, 640)
-  const opened = shown.products.find((one) => one.index === open)
+  // The replies go once the person sends anything after the card (the core's `settlingReplies`).
+  const replies = productRepliesOpen(store.rows(agentId), entryId)
+    ? shown.replies
+    : []
   return (
-    <>
-      {tiles ? (
-        <div className="shop-card products-card tiles">
-          <div
-            className="product-grid"
-            style={{
-              gridTemplateColumns: `repeat(${tilesAcross(shown.products.length)}, auto)`,
-            }}
-          >
-            {shown.products.map((one) => (
-              <ProductTile
-                key={one.index}
-                product={one}
-                status={productStatus(shown, one)}
-                open={() => setOpen(one.index)}
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="shop-card products-card rows">
-          {shown.products.map((one, index) => (
-            <ProductRow
-              key={one.index}
-              product={one}
-              status={productStatus(shown, one)}
-              last={index === shown.products.length - 1}
-              open={() => setOpen(one.index)}
-            />
+    <div className="products-card">
+      <div className="product-cards" role="list">
+        {shown.products.map((one) => (
+          <ProductCard
+            key={one.index}
+            product={one}
+            status={productStatus(shown, one)}
+            open={() =>
+              model.coverChat({
+                kind: 'product',
+                agentId,
+                entryId,
+                index: one.index,
+              })
+            }
+          />
+        ))}
+      </div>
+      {replies.length > 0 && (
+        <div className="product-replies">
+          {replies.map((reply) => (
+            <button
+              key={reply}
+              type="button"
+              className="product-reply"
+              disabled={store.isSendingPaused}
+              onClick={() => void store.send(reply, agentId)}
+            >
+              {reply}
+            </button>
           ))}
         </div>
       )}
-      {opened &&
-        createPortal(
-          <ProductSheet
-            card={shown}
-            current={opened}
-            agentName={store.agent(agentId)?.name ?? ''}
-            show={(other) => setOpen(other.index)}
-            buy={(chosen) => {
-              setOpen(undefined)
-              void store.buyProduct(entryId, chosen.index, agentId)
-            }}
-            close={() => setOpen(undefined)}
-          />,
-          document.body,
-        )}
-    </>
+    </div>
   )
 }
 
 /** Buying (the link's blue) or Bought (the green), in their own wash, the dot their colour. */
-function ProductPill({
-  status,
-  large = false,
-}: {
-  status: ProductStatus
-  large?: boolean
-}) {
+function ProductPill({ status }: { status: ProductStatus }) {
   return (
     <span
-      className={classes(
-        'status-pill',
-        'product-pill',
-        status,
-        large && 'large',
-      )}
+      className={classes('status-pill', 'product-pill', status)}
       role="status"
     >
       <span className="status-dot" />
@@ -1095,32 +1067,17 @@ function ProductPill({
   )
 }
 
-/** A price, and the price before the sale struck through after it in grey. */
-function Price({ product }: { product: Product }) {
-  return (
-    <span className="product-price">
-      <span>{product.price}</span>
-      {product.listPrice && <s>{product.listPrice}</s>}
-    </span>
-  )
-}
-
-/** A product's own picture from its shop; a bag while it loads or when the shop gave none (filling its square, or fitted in it). */
+/** A product's own picture from its shop, fitted on white; a bag while it loads or when the shop gave none. */
 function ProductPicture({
   url,
-  fit = false,
   className,
 }: {
   url?: string
-  fit?: boolean
   className: string
 }) {
   const [loaded, setLoaded] = useState<string>()
   return (
-    <span
-      className={classes('product-picture', fit && 'fit', className)}
-      aria-hidden="true"
-    >
+    <span className={classes('product-picture', className)} aria-hidden="true">
       {(url == null || loaded !== url) && <Bag />}
       {url && (
         // The shop's own picture, fetched from it as the Mac does; it is not told the app's address.
@@ -1140,8 +1097,32 @@ function ProductPicture({
   )
 }
 
-/** A product side by side with the others: its square picture (168, 12 round), its name on two lines (13, 500), the seller (12, grey), the price and, at its right, Buying or Bought. */
-function ProductTile({
+/** The store's icon (its site's own, as a saved login's) and its name in grey. */
+function StoreLine({
+  product,
+  side,
+  children,
+}: {
+  product: Product
+  side: number
+  children?: ReactNode
+}) {
+  return (
+    <span className="product-store">
+      <SiteIconTile
+        site={siteOf(product.url)}
+        title={storeName(product)}
+        contact={false}
+        side={side}
+      />
+      <span className="product-store-name">{storeName(product)}</span>
+      {children}
+    </span>
+  )
+}
+
+/** One product in the row: the picture on white with its badge, its name, "price · take" and its store. */
+function ProductCard({
   product,
   status,
   open,
@@ -1150,62 +1131,84 @@ function ProductTile({
   status?: ProductStatus
   open: () => void
 }) {
+  const line = priceLine(product)
   return (
-    <button type="button" className="product-tile" onClick={open}>
-      <ProductPicture url={product.imageURL} className="tile-picture" />
-      <span className="tile-words">
-        <span className="tile-title">{product.title}</span>
-        <span className="tile-byline">{byline(product)}</span>
-        <span className="tile-foot">
-          {product.price && <Price product={product} />}
+    <button
+      type="button"
+      className="product-card"
+      role="listitem"
+      onClick={open}
+    >
+      <span className="product-card-picture">
+        <ProductPicture url={product.imageURL} className="card-picture" />
+        {product.badge && (
+          <span className="product-badge">{product.badge}</span>
+        )}
+      </span>
+      <span className="product-card-words">
+        <span className="product-card-title">{product.title}</span>
+        <span className="product-card-line">{line}</span>
+        <StoreLine product={product} side={16}>
           {status && <ProductPill status={status} />}
-        </span>
+        </StoreLine>
       </span>
     </button>
   )
 }
 
-/** The iPhone's rows, for a narrow chat: the picture (72, 10 round), the name on two lines (14, semibold), the seller, the price and its pill. */
-function ProductRow({
-  product,
-  status,
-  last,
-  open,
+/**
+ * The product opened over the chat (`chatCover` of kind `product`), when it
+ * is this chat's: the products card's own page, its card read afresh.
+ */
+export function ProductCover({
+  store,
+  agentId,
 }: {
-  product: Product
-  status?: ProductStatus
-  last: boolean
-  open: () => void
-}) {
+  store: AppStore
+  agentId: string
+}): ReactNode {
+  const model = useWindowModel()
+  useWatched(model)
+  useWatched(store)
+  const cover = model.chatCover
+  if (cover?.kind !== 'product' || cover.agentId !== agentId) return null
+  const entry = (store.transcripts[agentId] ?? []).find(
+    (line) => line.id === cover.entryId,
+  )
+  const read = entry && productsCard(entry)
+  const card = read && shownProducts(read, store.pressedProducts[cover.entryId])
+  const current = card?.products.find((one) => one.index === cover.index)
+  if (!card || !current) return null
   return (
-    <>
-      <button type="button" className="product-row" onClick={open}>
-        <ProductPicture url={product.imageURL} className="row-picture" />
-        <span className="row-words">
-          <span className="row-title">{product.title}</span>
-          <span className="row-byline">{byline(product)}</span>
-          <span className="row-foot">
-            {product.price && (
-              <span className="row-price">{product.price}</span>
-            )}
-            {status && <ProductPill status={status} large />}
-          </span>
-        </span>
-      </button>
-      {!last && <div className="product-rule" />}
-    </>
+    <ProductPage
+      card={card}
+      current={current}
+      agentName={store.agent(agentId)?.name ?? ''}
+      show={(other) => model.coverChat({ ...cover, index: other.index })}
+      buy={(chosen) => {
+        model.coverChat(undefined)
+        void store.buyProduct(cover.entryId, chosen.index, agentId)
+      }}
+      close={() => model.coverChat(undefined)}
+    />
   )
 }
 
 /**
- * One product, opened, as a store's page (780 by 600): its picture at the
- * left (340, fitted, 16 round) and at its right "Sold by", its name (22),
- * its price (16), "Buy with <agent>" in the blue capsule (38 high) and View
- * website, what it is in three lines with See more, its stars under
- * Reviews; under them the card's other products under More like this, each
- * opening in place. Return buys; Escape, a click outside or the X closes it.
+ * One product opened, over the whole chat (not a sheet: the sidebar stays),
+ * after the founder's reference: the X (our glass disc) at the top left, ‹
+ * and › at the top right for the card's other products. Two columns, 32
+ * apart, at most 880 wide: at the left the picture on a white square (16
+ * round), and under it "Why it fits" (17, 600) with each reason after a
+ * round green check; at the right the store's icon and name (15, grey), the
+ * title (28, 600), the price (20) and "★ 5.0 (12)" (15, grey), the take
+ * (15, grey), "Buy with <agent>" in our blue capsule (38 high, full width),
+ * "View at <store>" as plain words, a hairline, and "Sold by" with the
+ * seller at its right. One column in a narrow chat, the reasons last.
+ * Escape or the X closes it; ← and → step as ‹ and ›; Return on the page
+ * itself buys, as the sheet's did.
  */
-function ProductSheet({
+function ProductPage({
   card,
   current,
   agentName,
@@ -1220,30 +1223,25 @@ function ProductSheet({
   buy: (product: Product) => void
   close: () => void
 }) {
-  const scroller = useRef<HTMLDivElement>(null)
+  useCoverKeys(close, false)
   const status = productStatus(card, current)
-  const others = otherProducts(card, current)
-  const rating = stars(current)
-  // Another product opened in place: back to the top.
-  const first = useRef(true)
+  const previous = neighbourProduct(card, current, -1)
+  const next = neighbourProduct(card, current, 1)
+  const take = shownTake(current)
+  const rating = ratingLine(current)
+  const scroller = useRef<HTMLDivElement>(null)
+  // Another product: back to the top.
   useEffect(() => {
-    if (first.current) {
-      first.current = false
-      return
-    }
-    scroller.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    scroller.current?.scrollTo({ top: 0 })
   }, [current.index])
-  // Return presses Buy, as a Mac's default button: when the keys are on the
-  // sheet itself, not on one of its buttons, links or fields (which take
-  // their own Return, as a browser's do), and never from outside the sheet.
-  const latest = useRef({ status, buy, current })
+  // ← and → step, and Return buys, from the page itself: not from a button, a link or a field (which take their own keys).
+  const latest = useRef({ status, buy, current, previous, next, show })
   useEffect(() => {
-    latest.current = { status, buy, current }
+    latest.current = { status, buy, current, previous, next, show }
   })
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (
-        event.key !== 'Enter' ||
         event.isComposing ||
         event.shiftKey ||
         event.altKey ||
@@ -1252,7 +1250,17 @@ function ProductSheet({
       )
         return
       const target = event.target instanceof Element ? event.target : null
-      if (!target?.closest('.product-sheet')) return
+      if (!target?.closest('.product-page')) return
+      const now = latest.current
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        if (target.closest('input, textarea, select, [contenteditable="true"]'))
+          return
+        const to = event.key === 'ArrowLeft' ? now.previous : now.next
+        event.preventDefault()
+        if (to) now.show(to)
+        return
+      }
+      if (event.key !== 'Enter') return
       if (
         target.closest(
           'button, a[href], input, textarea, select, [contenteditable="true"]',
@@ -1260,29 +1268,36 @@ function ProductSheet({
       )
         return
       event.preventDefault()
-      const now = latest.current
       if (now.status == null) now.buy(now.current)
     }
     window.addEventListener('keydown', key, true)
     return () => window.removeEventListener('keydown', key, true)
   }, [])
   return (
-    <Sheet label={current.title} close={close} className="product-sheet">
-      <div ref={scroller} className="product-scroll">
-        <div className="product-top">
-          <ProductPicture
-            url={current.imageURL}
-            fit
-            className="sheet-picture"
-          />
-          <div className="product-facts">
-            <div className="product-sold-by">{soldBy(current)}</div>
-            <div className="product-title">{current.title}</div>
-            {current.price && (
-              <div className="product-sheet-price">
-                <Price product={current} />
+    <div
+      className="chat-cover product-page"
+      role="dialog"
+      aria-label={current.title}
+      tabIndex={-1}
+    >
+      <div ref={scroller} className="product-page-scroll">
+        <div className="product-page-columns">
+          <ProductPicture url={current.imageURL} className="page-picture" />
+          <div className="product-page-facts">
+            <StoreLine product={current} side={18} />
+            <h2 className="product-page-title">{current.title}</h2>
+            {(current.price || rating) && (
+              <div className="product-page-price">
+                {current.price && (
+                  <span className="product-price">
+                    <span>{current.price}</span>
+                    {current.listPrice && <s>{current.listPrice}</s>}
+                  </span>
+                )}
+                {rating && <span className="product-rating">{rating}</span>}
               </div>
             )}
+            {take && <p className="product-page-take">{take}</p>}
             <button
               type="button"
               className={classes('buy-button', status)}
@@ -1293,69 +1308,35 @@ function ProductSheet({
             </button>
             <button
               type="button"
-              className="view-website"
+              className="view-at"
               onClick={() => openPage(current.url)}
             >
-              {productWords.viewWebsite}
+              {viewAt(current)}
             </button>
-            {current.detail && (
-              <Description key={current.index} words={current.detail} />
-            )}
-            {rating.length > 0 && (
-              <>
-                <div className="product-heading reviews">
-                  {productWords.reviews}
-                </div>
-                <button
-                  type="button"
-                  className="reviews-row"
-                  title={t("Opens the reviews on the shop's page")}
-                  onClick={() => openPage(current.url)}
-                >
-                  <ProductPicture
-                    url={current.imageURL}
-                    fit
-                    className="reviews-picture"
-                  />
-                  <span className="reviews-words">
-                    <span className="reviews-title">{current.title}</span>
-                    <Stars product={current} rating={rating} />
-                  </span>
-                </button>
-              </>
-            )}
+            <div className="product-page-rule" />
+            <div className="product-sold-by">
+              <span className="sold-by-label">{productWords.soldBy}</span>
+              <span className="sold-by-seller">{byline(current)}</span>
+            </div>
           </div>
+          {current.reasons.length > 0 && (
+            <div className="product-why">
+              <h3 className="product-why-heading">{productWords.whyItFits}</h3>
+              <ul className="product-reasons">
+                {current.reasons.map((reason, index) => (
+                  <li key={index}>
+                    <CheckCircle />
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-        {others.length > 0 && (
-          <>
-            <div className="product-heading more">
-              {productWords.moreLikeThis}
-            </div>
-            <div className="more-like-this">
-              {others.map((other) => (
-                <button
-                  key={other.index}
-                  type="button"
-                  className="more-tile"
-                  onClick={() => show(other)}
-                >
-                  <ProductPicture
-                    url={other.imageURL}
-                    fit
-                    className="more-picture"
-                  />
-                  <span className="more-title">{other.title}</span>
-                  <span className="more-byline">{byline(other)}</span>
-                  {other.price && <Price product={other} />}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
       </div>
       <button
         type="button"
-        className="sheet-close glass-disc"
+        className="product-page-close glass-disc"
         title={t('Close')}
         aria-label={t('Close')}
         onClick={close}
@@ -1370,104 +1351,74 @@ function ProductSheet({
           />
         </svg>
       </button>
-    </Sheet>
+      <div className="product-page-steps">
+        <button
+          type="button"
+          className="glass-disc"
+          title={t('Previous product')}
+          aria-label={t('Previous product')}
+          disabled={previous == null}
+          onClick={() => previous && show(previous)}
+        >
+          <Chevron left />
+        </button>
+        <button
+          type="button"
+          className="glass-disc"
+          title={t('Next product')}
+          aria-label={t('Next product')}
+          disabled={next == null}
+          onClick={() => next && show(next)}
+        >
+          <Chevron />
+        </button>
+      </div>
+    </div>
   )
 }
 
-/** Five stars to the nearest half (12, Apple's orange), then "4.5" and "(153)". */
-function Stars({ product, rating }: { product: Product; rating: Star[] }) {
-  const shownRating = ratingText(product)
-  const reviews = reviewsText(product)
+/** ‹ or › (SF Symbols' chevron, 13). */
+function Chevron({ left = false }: { left?: boolean }) {
   return (
-    <span className="product-stars">
-      <span className="stars">
-        {rating.map((star, index) => (
-          <StarMark key={index} star={star} />
-        ))}
-      </span>
-      {shownRating && <span className="stars-rating">{shownRating}</span>}
-      {reviews && <span className="stars-count">{reviews}</span>}
-    </span>
-  )
-}
-
-const starPath =
-  'M8 1.2l1.9 4.1 4.5.5-3.4 3.1.9 4.4L8 11.1l-3.9 2.2.9-4.4L1.6 5.8l4.5-.5L8 1.2Z'
-
-function StarMark({ star }: { star: Star }) {
-  // An id fit for `url(#…)`, whatever React's own looks like.
-  const lead = `star-${useId().replace(/[^\w-]/g, '')}`
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-      {star === 'half' && (
-        <clipPath id={lead}>
-          <rect x="0" y="0" width="8" height="16" />
-        </clipPath>
-      )}
+    <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
       <path
-        d={starPath}
-        fill={star === 'full' ? 'currentColor' : 'none'}
+        d={left ? 'M10.5 2.5 5 8l5.5 5.5' : 'M5.5 2.5 11 8l-5.5 5.5'}
+        fill="none"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="1.6"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {star === 'half' && (
-        <path d={starPath} fill="currentColor" clipPath={`url(#${lead})`} />
-      )}
     </svg>
   )
 }
 
-/** What the product is, in three lines with See more when there is more; `**bold**` drawn bold. */
-function Description({ words }: { words: string }) {
-  const [open, setOpen] = useState(false)
-  const [more, setMore] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    const element = box.current
-    if (!element || open) return
-    const measure = () =>
-      setMore(element.scrollHeight > element.clientHeight + 1)
-    measure()
-    const watcher = new ResizeObserver(measure)
-    watcher.observe(element)
-    return () => watcher.disconnect()
-  }, [words, open])
+/** A reason's mark: a check in a circle, in the green (`checkmark.circle`, 16). */
+function CheckCircle() {
   return (
-    <div className="product-description">
-      <div
-        ref={box}
-        className={classes('description-words', !open && 'folded')}
-      >
-        {words.split('\n').map((line, number) => (
-          <span key={number}>
-            {number > 0 && '\n'}
-            {inlineRuns(line).map((run, index) => {
-              let node: ReactNode = run.text
-              if (run.code) node = <code>{node}</code>
-              if (run.bold) node = <strong>{node}</strong>
-              if (run.italic) node = <em>{node}</em>
-              if (run.struck) node = <s>{node}</s>
-              if (run.link)
-                node = (
-                  <a href={run.link} target="_blank" rel="noopener noreferrer">
-                    {node}
-                  </a>
-                )
-              return <span key={index}>{node}</span>
-            })}
-          </span>
-        ))}
-      </div>
-      {(open || more) && (
-        <button
-          type="button"
-          className="see-more"
-          onClick={() => setOpen((now) => !now)}
-        >
-          {open ? productWords.seeLess : productWords.seeMore}
-        </button>
-      )}
-    </div>
+    <svg
+      className="reason-check"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+    >
+      <circle
+        cx="8"
+        cy="8"
+        r="6.9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <path
+        d="M5.2 8.2l1.9 1.9 3.8-4.1"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }

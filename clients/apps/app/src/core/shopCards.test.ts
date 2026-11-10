@@ -5,7 +5,7 @@
 // shopCardsStore.test.ts.
 
 import { afterEach, describe, expect, it } from 'vitest'
-import { aspect, cardText, rowFor } from './chat'
+import { aspect, cardText, chatRows, rowFor } from './chat'
 import { Entry } from './entry'
 import { clock, initials, whenLine } from './flightCards'
 import type { JSONObject, JSONValue } from './json'
@@ -20,13 +20,16 @@ import {
   checkoutHeadline,
   checkoutWords,
   choiceLine,
+  firstSentence,
   flightHeadline,
   itemsLine,
   needsCard,
+  neighbourProduct,
   openWalletLabel,
-  otherProducts,
   payingLine,
+  priceLine,
   product,
+  productRepliesOpen,
   productStatus,
   productStatusLabel,
   productWords,
@@ -36,13 +39,15 @@ import {
   purchaseHeading,
   purchaseListLine,
   purchaseStatus,
+  ratingLine,
   ratingText,
   reviewNote,
   reviewsText,
   shownProducts,
   shownPurchase,
-  soldBy,
-  stars,
+  shownTake,
+  storeName,
+  viewAt,
   waitsOnBank,
   waitsOnPerson,
   walletApp,
@@ -615,6 +620,9 @@ describe('the products card', () => {
     expect(read.buying).toBeUndefined()
     expect(buyLabel('Muse')).toBe('Buy with Muse')
     expect(buyLabel(' ')).toBe('Buy')
+    // A card from before replies has none, nor a badge.
+    expect(read.replies).toEqual([])
+    expect(book.badge).toBeUndefined()
     expect(cardText(message)).toBe('Practice Book "The Ways Of Water" · $2.23')
     // None at all: the chat says its words.
     expect(
@@ -675,30 +683,32 @@ describe('the products card', () => {
       })!,
     )!
     const monitor = read.products[0]!
-    expect(soldBy(monitor)).toBe('Sold by: Office Depot')
+    // Sold by's value.
+    expect(byline(monitor)).toBe('Office Depot')
     expect(monitor.listPrice).toBe('$119.99')
     expect(ratingText(monitor)).toBe('4.5')
     expect(reviewsText(monitor)).toBe('(153)')
-    expect(stars(monitor)).toEqual(['full', 'full', 'full', 'full', 'half'])
-    // The bold stays for the page to draw.
+    // One star, no row of five.
+    expect(ratingLine(monitor)).toBe('★ 4.5 (153)')
     expect(monitor.detail).toBe(
       'A reliable choice. It has a **100Hz refresh rate**.',
     )
+    expect(monitor.take).toBeUndefined()
+    // A card from before takes: its description's first sentence.
+    expect(shownTake(monitor)).toBe('A reliable choice')
+    expect(priceLine(monitor)).toBe('$99.99 · A reliable choice')
+    // No Why it fits.
+    expect(monitor.reasons).toEqual([])
+    // The site, when the agent named no store.
+    expect(storeName(monitor)).toBe('officedepot.com')
+    expect(viewAt(monitor)).toBe('View at officedepot.com')
     // No struck price equal to the price.
     expect(read.products[1]!.listPrice).toBeUndefined()
     expect(read.products[1]!.rating).toBeUndefined()
     // No review count without stars.
-    expect(reviewsText(read.products[1]!)).toBeUndefined()
-    expect(soldBy(read.products[1]!)).toBe('Sold by: Element')
-    expect(ratingText(read.products[2]!)).toBe('4.0')
-    expect(reviewsText(read.products[2]!)).toBeUndefined()
-    expect(stars(read.products[2]!)).toEqual([
-      'full',
-      'full',
-      'full',
-      'full',
-      'empty',
-    ])
+    expect(ratingLine(read.products[1]!)).toBeUndefined()
+    expect(priceLine(read.products[1]!)).toBe('$123.84')
+    expect(ratingLine(read.products[2]!)).toBe('★ 4.0')
     const at = (rating: number) =>
       product({
         index: 0,
@@ -707,16 +717,132 @@ describe('the products card', () => {
         domain: 'a.com',
         rating,
       })
-    expect(stars(at(4.2))).toEqual(['full', 'full', 'full', 'full', 'empty'])
-    expect(stars(at(0.7))).toEqual(['half', 'empty', 'empty', 'empty', 'empty'])
-    expect(stars(at(5.5))).toEqual([])
-    // More like this: the card's other products.
-    expect(otherProducts(read, monitor).map((one) => one.index)).toEqual([1, 2])
-    expect(productWords.moreLikeThis).toBe('More like this')
-    expect(productWords.reviews).toBe('Reviews')
-    expect(productWords.seeMore).toBe('See more')
-    expect(productWords.seeLess).toBe('See less')
-    expect(productWords.viewWebsite).toBe('View website')
+    expect(ratingText(at(5.5))).toBeUndefined()
+    // ‹ and ›: the card's products in order, stopping at either end.
+    expect(neighbourProduct(read, monitor, 1)?.index).toBe(1)
+    expect(neighbourProduct(read, monitor, -1)).toBeUndefined()
+    expect(neighbourProduct(read, read.products[2]!, -1)?.index).toBe(1)
+    expect(neighbourProduct(read, read.products[2]!, 1)).toBeUndefined()
+    expect(productWords.whyItFits).toBe('Why it fits')
+    expect(productWords.soldBy).toBe('Sold by')
+  })
+
+  it('reads the agent’s comparison on the card', () => {
+    const read = productsCard(
+      Entry.from({
+        id: 't9s2',
+        kind: 'send-message',
+        timestampMs: 1,
+        message: {
+          type: 'products',
+          content: 'Possibly Pink · CA$62.00; Love Blossoms · CA$53.00',
+          replies: [
+            'Get Possibly Pink',
+            ' ',
+            'Get Love Blossoms',
+            'Show me roses',
+            'A fourth',
+          ],
+          products: [
+            {
+              title: 'Possibly Pink (Teleflora)',
+              url: 'https://www.canadaflowers.ca/p/pink',
+              domain: 'canadaflowers.ca',
+              price: 'CA$62.00',
+              store: 'Canada Flowers',
+              take: 'Pink, mauve, peach and lavender in a pink vase',
+              reasons: ['Best-reviewed of the four', ''],
+              badge: 'Top rated',
+              rating: 5,
+              reviewCount: 33,
+            },
+            {
+              title: 'Love Blossoms',
+              url: 'https://www.canadaflowers.ca/p/love',
+              domain: 'canadaflowers.ca',
+              price: 'CA$53.00',
+              store: 'Canada Flowers',
+              take: 'Soft pink and white, cheapest of the four',
+              reasons: ['Lowest price, still highly rated'],
+              badge: 'Best value',
+              description: 'Ignored. The take wins.',
+            },
+          ],
+        },
+      })!,
+    )!
+    const [pink, blossoms] = read.products
+    expect(pink!.badge).toBe('Top rated')
+    // One badge on a card: the first.
+    expect(blossoms!.badge).toBeUndefined()
+    // An empty reason is left out.
+    expect(pink!.reasons).toEqual(['Best-reviewed of the four'])
+    expect(storeName(pink!)).toBe('Canada Flowers')
+    expect(viewAt(pink!)).toBe('View at Canada Flowers')
+    // Sold by: the store when no seller is named.
+    expect(byline(pink!)).toBe('Canada Flowers')
+    expect(ratingLine(pink!)).toBe('★ 5.0 (33)')
+    // The take wins over the description.
+    expect(priceLine(blossoms!)).toBe(
+      'CA$53.00 · Soft pink and white, cheapest of the four',
+    )
+    // Three at most, none empty.
+    expect(read.replies).toEqual([
+      'Get Possibly Pink',
+      'Get Love Blossoms',
+      'Show me roses',
+    ])
+    // Buy keeps the replies.
+    expect(shownProducts(read, 1).replies).toEqual(read.replies)
+    expect(firstSentence('It costs $2.23 today! More.')).toBe(
+      'It costs $2.23 today!',
+    )
+    expect(firstSentence('A **bold** start.\nThen more.')).toBe('A bold start')
+    expect(firstSentence('No full stop')).toBe('No full stop')
+    expect(firstSentence('  ')).toBeUndefined()
+  })
+
+  it('keeps its replies until the person sends anything after it', () => {
+    const products = Entry.from({
+      id: 't1',
+      kind: 'send-message',
+      timestampMs: 1000,
+      message: {
+        type: 'products',
+        content: 'Love Blossoms',
+        replies: ['Get Love Blossoms'],
+        products: [
+          {
+            title: 'Love Blossoms',
+            url: 'https://www.canadaflowers.ca/p/love',
+          },
+        ],
+      },
+    })!
+    const said = (id: string, at: number, role: string, words: string) =>
+      Entry.from({
+        id,
+        kind: 'message',
+        role,
+        content: words,
+        timestampMs: at,
+      })!
+    const open = (entries: Entry[]) =>
+      productRepliesOpen(chatRows(entries), 't1')
+    // Under the card while nothing follows.
+    expect(open([products])).toBe(true)
+    // The agent's own line after it keeps them.
+    expect(
+      open([products, said('a2', 2000, 'assistant', 'I’d pick this.')]),
+    ).toBe(true)
+    // A reply tapped, or anything the person sends: gone.
+    expect(
+      open([products, said('u3', 3000, 'user', 'Get Love Blossoms')]),
+    ).toBe(false)
+    // What came before doesn't count.
+    expect(open([said('u0', 500, 'user', 'Find flowers'), products])).toBe(true)
+    // A card not in the rows shows none.
+    expect(productRepliesOpen(chatRows([]), 't1')).toBe(false)
   })
 
   it('shows Buy at once, and the computer’s copy wins', () => {
@@ -754,19 +880,21 @@ describe('the products card', () => {
     await loadWords('fr')
     const read = card()
     expect(buyLabel('Muse')).toBe('Acheter avec Muse')
-    expect(soldBy(read.products[0]!)).toBe('Vendu par\u202f: Daria Bogdanova')
+    expect(productWords.whyItFits).toBe('Pourquoi ce choix')
+    expect(viewAt(read.products[1]!)).toBe('Voir chez gumroad.com')
     expect(productStatusLabel('buying')).toBe('Achat en cours')
     expect(
-      ratingText(
+      ratingLine(
         product({
           index: 0,
           title: 'x',
           url: 'https://a.com',
           domain: 'a.com',
           rating: 4.46,
+          reviewCount: 9,
         }),
       ),
-    ).toBe('4,5')
+    ).toBe('★ 4,5 (9)')
   })
 
   it('rounds the rating as the core’s "%.1f" does: the stored number, not its decimal', () => {

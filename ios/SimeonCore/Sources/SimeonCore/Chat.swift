@@ -989,6 +989,8 @@ public enum Chat {
     }
     rows = quoted(rows, quoting ?? entries)
     rows = unique(rows)
+    // A products card's replies, until the person sends anything after it.
+    rows = ProductsCard.settlingReplies(rows)
     return isGroup ? markRuns(rows) : rows
   }
 
