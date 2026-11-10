@@ -87,11 +87,12 @@ export function StatusPill({
   )
 }
 
-/** The window's two button kinds on a card: the blue one and the plain one (14, 32 high, 8 round). */
+/** A card's button: a pill 32 high, grey, or our blue for the main one (`prominent`). */
 export function CardButton({
   title,
   prominent = false,
   tone,
+  help,
   disabled,
   onClick,
 }: {
@@ -100,6 +101,8 @@ export function CardButton({
   prominent?: boolean
   /** `danger`: a grey pill in red words; `money`: the blue pill, kept for paying. */
   tone?: 'danger' | 'money'
+  /** What it does, under the pointer. */
+  help?: string
   disabled?: boolean
   onClick: () => void
 }) {
@@ -107,6 +110,7 @@ export function CardButton({
     <button
       type="button"
       className={classes('card-button', prominent && 'prominent', tone)}
+      title={help}
       disabled={disabled}
       onClick={onClick}
     >

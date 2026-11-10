@@ -263,7 +263,8 @@ public enum RequestCard: Hashable, Sendable {
   /** `auto-review-approval`: Allow once, Always allow, Deny (`resolveAutoReviewApproval`); what it is about (`surface`) and the rule Always allow would add (`proposedRule`). */
   case approval(requestId: String, summary: String, reason: String, command: String?, status: String, surface: String?, proposedRule: String?)
   /** `secret-request`: a password field and Save securely (`submitSecret`), or the X (`dismissWidget`), a decline. */
-  case secret(label: String, description: String, provided: Bool, dismissed: Bool)
+  /** `variable`: the environment variable it is kept under on the computer ("AWS_ACCESS_KEY_ID"), when the agent named one; shown over its field (10 November 2026). */
+  case secret(label: String, description: String, variable: String?, provided: Bool, dismissed: Bool)
   /** A message with `boxRequestId`: "Your turn on the computer" (`handBackForeverBox`). */
   case computer(requestId: String, instruction: String, resolution: String?)
   /** `user-form`: fields the page needs the person to type, typed in by the computer (`submitUserForm`), or the X (`dismissUserForm`), a decline. */
@@ -1316,7 +1317,8 @@ public enum Chat {
         return .request(id: entry.id, card: .approval(requestId: approval["requestId"]?.string ?? "", summary: approval["summary"]?.string ?? "", reason: approval["reason"]?.string ?? "", command: approval["command"]?.string, status: approval["status"]?.string ?? "pending", surface: approval["surface"]?.string, proposedRule: approval["proposedRule"]?.string))
       case "secret-request":
         guard let secret = message["secretRequest"] else { return nil }
-        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", provided: entry["secretProvided"]?.bool ?? false, dismissed: entry["widgetDismissed"]?.bool ?? false))
+        let variable = secret["target"]?["kind"]?.string == "box-secret" ? secret["target"]?["name"]?.text : nil
+        return .request(id: entry.id, card: .secret(label: secret["label"]?.string ?? L10n.text("A secret"), description: secret["description"]?.string ?? "", variable: variable, provided: entry["secretProvided"]?.bool ?? false, dismissed: entry["widgetDismissed"]?.bool ?? false))
       case "user-form":
         if let card = UserFormCard(message: message, entry: entry) { return .request(id: entry.id, card: .form(card)) }
         return .notice(id: entry.id, text: notShown)

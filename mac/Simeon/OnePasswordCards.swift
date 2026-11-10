@@ -178,13 +178,15 @@ struct OnePasswordConnectCardView: View {
 }
 
 /**
- * The Credentials Store's card (9 November 2026, SimeonCore's
- * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`; 10
- * November 2026, the founder: "Can you respect our design"): the site's
- * icon (a card's mark, a person for contact info) on its 40 tile, its name
- * (13, 500) over one line (13 at 60%), and at its right Save (a login) or
- * Add in the grey capsule, which opens the store's own sheet over the chat
- * already filled; once saved, "Saved" in green as "Connected".
+ * The Credentials Store's card (SimeonCore's `StoreEntryCard`), drawn as
+ * the connector card: the site's icon (a card's mark, a person for contact
+ * info) on its 40 tile, its name over one line, and its button at the
+ * right; once saved, "Saved" in green as "Connected". A login asked for
+ * reads as the founder's reference (10 November 2026): "Sign in to
+ * Amazon", "Opens a secure form" and Open, which opens the secure form in
+ * a sheet (`MacSecureFormSheet`): the email or username and the password,
+ * saved in the store. A card or contact info has Add, which opens the
+ * store's own sheet, filled.
  */
 struct StoreEntryCardView: View {
   let entryId: String
@@ -194,6 +196,9 @@ struct StoreEntryCardView: View {
   @Environment(AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var editing: MacCredentialEdit?
+  @State private var signingIn = false
+
+  private var signIn: Bool { card.kind == .login && card.asks }
 
   var body: some View {
     CardShell(look: look) {
@@ -204,13 +209,13 @@ struct StoreEntryCardView: View {
           MacSiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, side: 40, look: look)
         }
         VStack(alignment: .leading, spacing: 0) {
-          Text(card.title)
+          Text(signIn ? String(localized: "Sign in to \(card.title)") : card.title)
             .font(.system(size: 13, weight: .medium))
             .tracking(-0.08)
             .foregroundStyle(look.ink)
             .lineLimit(1)
             .frame(height: 18)
-          if let line = card.line {
+          if let line = signIn ? String(localized: "Opens a secure form") : card.line {
             Text(line)
               .font(.system(size: 13))
               .tracking(-0.08)
@@ -231,17 +236,7 @@ struct StoreEntryCardView: View {
             .padding(.horizontal, 12)
             .background(look.addedWash, in: Capsule())
         } else if card.asks {
-          Button(action: open) {
-            Text(card.kind == .login ? String(localized: "Save") : String(localized: "Add"))
-              .font(.system(size: 13))
-              .foregroundStyle(look.ink)
-              .padding(.horizontal, 13)
-              .frame(height: 32)
-              .background(look.wash, in: Capsule())
-              .overlay { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-              .contentShape(Capsule())
-          }
-          .buttonStyle(.hand)
+          CardButton(title: signIn ? String(localized: "Open") : String(localized: "Add"), look: look, action: open)
         }
       }
     }
@@ -252,13 +247,43 @@ struct StoreEntryCardView: View {
         }
       }
     }
+    .sheet(isPresented: $signingIn) {
+      MacSecureFormSheet(
+        title: String(localized: "Sign in to \(card.title)"),
+        line: card.reason,
+        fields: [
+          UserFormCard.Field(id: "username", label: String(localized: "Email or username"), kind: .text, required: false),
+          UserFormCard.Field(id: "password", label: String(localized: "Password"), kind: .password, secret: true),
+        ],
+        site: card.website,
+        submitTitle: String(localized: "Save"),
+        decline: { await store.answerStoreEntry(entryId, in: agentId, saved: false) },
+        submit: saveLogin
+      )
+    }
   }
 
-  /** The store's sheet, filled; the saved contacts read for a card's billing address. */
+  /** A login asked for: the secure form; anything else: the store's sheet, filled (the saved contacts read for a card's billing address). */
   private func open() {
     let made = model ?? CredentialsStoreModel(store: store)
     model = made
+    if signIn {
+      signingIn = true
+      return
+    }
     editing = .filled(card.draft)
     if card.kind == .card { Task { await made.load() } }
+  }
+
+  /** The login saved in the store; the agent is told once it's there. */
+  private func saveLogin(_ typed: [String: String], _ keep: Bool) async -> String? {
+    let made = model ?? CredentialsStoreModel(store: store)
+    model = made
+    var draft = card.draft
+    draft.username = typed["username"] ?? ""
+    draft.password = typed["password"] ?? ""
+    guard await made.save(draft) != nil else { return made.problem ?? String(localized: "That didn't work.") }
+    await store.answerStoreEntry(entryId, in: agentId, saved: true)
+    return nil
   }
 }

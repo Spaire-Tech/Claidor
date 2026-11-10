@@ -44,6 +44,34 @@ final class UserFormTests: XCTestCase {
     XCTAssertEqual(sent, ["email": "ada@example.com", "password": "pw", "remember": "true", "country": ""])
   }
 
+  func testASignInOffersToKeepTheLogin() throws {
+    let card = try card()
+    XCTAssertEqual(card.login?.username.id, "email")
+    XCTAssertEqual(card.login?.password.id, "password")
+    func form(_ fields: [JSON]) -> UserFormCard? {
+      let raw: JSON = ["id": "f", "kind": "send-message", "timestampMs": 1, "message": ["type": "user-form", "form": ["title": "Sign in", "domain": "acme.com", "fields": .array(fields)]]]
+      guard case .request(_, .form(let card))? = Chat.row(for: Entry(raw)!) else { return nil }
+      return card
+    }
+    let named = try XCTUnwrap(form([["id": "user", "label": "Username", "type": "text"], ["id": "pass", "label": "Password", "type": "password"]]))
+    XCTAssertEqual(named.login?.username.id, "user")
+    // A code alone, a password with nothing before it, or a new password twice is no sign-in.
+    XCTAssertNil(try XCTUnwrap(form([["id": "code", "label": "Code", "type": "otp"]])).login)
+    XCTAssertNil(try XCTUnwrap(form([["id": "password", "label": "Password", "type": "password"]])).login)
+    XCTAssertNil(try XCTUnwrap(form([["id": "email", "label": "Email", "type": "email"], ["id": "new", "label": "New", "type": "password"], ["id": "again", "label": "Again", "type": "password"]])).login)
+  }
+
+  /** The secret card shows the variable it's kept under over its field (the founder's reference, 10 November 2026); a connector's field has none. */
+  func testASecretShowsTheVariableItIsKeptUnder() throws {
+    func variable(_ target: JSON) -> String?? {
+      let raw: JSON = ["id": "s", "kind": "send-message", "timestampMs": 1, "message": ["type": "secret-request", "secretRequest": ["label": "AWS access key ID", "target": target]]]
+      guard case .request(_, .secret(_, _, let variable, _, _))? = Chat.row(for: Entry(raw)!) else { return .none }
+      return .some(variable)
+    }
+    XCTAssertEqual(variable(["kind": "box-secret", "name": "AWS_ACCESS_KEY_ID"]), .some("AWS_ACCESS_KEY_ID"))
+    XCTAssertEqual(variable(["kind": "channel-credential", "platform": "slack", "field": "bot_token"]), .some(nil))
+  }
+
   func testAnAnsweredFormSaysWhatWentIn() throws {
     let filled = try card(["formState": "filled", "formOutcomes": ["email": "filled", "password": "fillFailed", "remember": "notFilled", "country": "notFilled"]])
     XCTAssertEqual(filled.statusLine, "Partly filled")

@@ -1509,6 +1509,9 @@ history). What changed to match them:
     (`widgetReplyPreview`). Skip on a card of one question declines it. **Not yet verified** with a
     real agent on the Mac: it needs the next engine published.
 * **The secret request.**
+  * The card reads as the founder's reference (10 November 2026): "Secrets" at the top, the
+    secret's name and why, the variable it is kept under over the field when the agent named one
+    (`target.name`, shown by the apps), a shield line, Not now and Save securely.
   * It can be dismissed (Not now, beside Save securely, in every app), and the agent hears at once that it was declined,
     as for a question. It could not be dismissed before.
   * The agent may name the variable it wants (`name`, as `RENDER_API_KEY`) instead of a
@@ -1535,9 +1538,14 @@ history). What changed to match them:
 
 **For the person.** When a page on the agent's computer needs them to type something (a
 sign-in, a one-time code, an address, a phone), the agent asks with a form in the chat
-instead of handing over the computer. They type in the card and press Fill in; the computer
-types it into the page. The card then says, field by field, whether it went in. The X is a
-decline. A password or a code is masked, and nothing they typed is ever shown to the agent.
+instead of handing over the computer. The card is a row ("Sign in to Acme", "Opens a secure
+form", Open); Open shows the form over the window (a sheet on the Mac and the iPhone), where
+they type and press Fill in; the computer types it into the page. The card then says, field by
+field, whether it went in. Not now is a decline. A password or a code is masked (its eye shows
+it), and nothing they typed is ever shown to the agent. For a sign-in (one password with the
+email or name before it, `UserFormCard.login`), the form offers "Save to your Credentials
+Store", on until turned off: the apps save the login with the server first, then fill (10
+November 2026, the founder's reference).
 
 **How it works.**
 
@@ -1649,7 +1657,10 @@ before.
   named to the agent instead of a card. The apps answer with the gateway's `answerStoreEntry`
   (`{ agentId, entryId, saved }`, `host/extensions/transcript/store-cards.ts`): the entry is
   stamped `storeState` `saved` or `dismissed` and the agent woken (a dismissal may stay
-  silent; the apps' card has no X since 10 November 2026, as the connector card has none). `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
+  silent; the apps' card has no X since 10 November 2026, as the connector card has none). A
+  login asked for reads "Sign in to Instagram", "Opens a secure form", Open: the apps' secure
+  form (the email or username and the password), saved in the store; its Not now is the
+  `saved: false` answer. `FillStoredLogin` posts a `used` note once a turn for each login, `FillNewPassword`
   and `SaveStoredLogin` a `saved` one; the tools then tell the agent not to repeat it. Nothing
   saved passes through the computer: the apps save it with the server.
 - **A saved card pays** (`shared/node/credentials-store/card-wallet.ts`, a third wallet beside

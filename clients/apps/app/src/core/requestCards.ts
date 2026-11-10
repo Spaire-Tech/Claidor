@@ -52,6 +52,8 @@ export function trimmedSpaces(value: string): string {
 export interface SecretCard {
   label: string
   description: string
+  /** The variable it is kept under on the computer ("AWS_ACCESS_KEY_ID"), when the agent named one; shown over the field. */
+  variable?: string
   /** The computer kept it (`secretProvided`). */
   provided: boolean
   /** Dismissed with its X (`widgetDismissed`). */
@@ -61,9 +63,15 @@ export interface SecretCard {
 export function secretCard(entry: Entry): SecretCard | undefined {
   const secret = field(entry.message, 'secretRequest')
   if (secret == null) return undefined
+  const target = field(secret, 'target')
+  const variable =
+    trimmed(field(target, 'kind')) === 'box-secret'
+      ? trimmed(field(target, 'name'))
+      : ''
   return {
     label: str(field(secret, 'label')) ?? t('A secret'),
     description: str(field(secret, 'description')) ?? '',
+    ...(variable !== '' ? { variable } : {}),
     provided: bool(entry.get('secretProvided')) ?? false,
     dismissed: bool(entry.get('widgetDismissed')) ?? false,
   }
@@ -280,6 +288,24 @@ export function formField(
   }
 }
 
+/**
+ * A sign-in: one password field and the name or email before it. Its
+ * dialog then offers to keep the login in the Credentials Store too
+ * (10 November 2026, the founder's reference: "Securely save to … vault").
+ */
+export function formLogin(
+  card: UserFormCard,
+): { username: FormField; password: FormField } | undefined {
+  const passwords = card.fields.filter((one) => one.kind === 'password')
+  if (passwords.length !== 1) return undefined
+  const password = passwords[0]!
+  const before = card.fields.slice(0, card.fields.indexOf(password))
+  const username =
+    before.find((one) => one.kind === 'email') ??
+    before.find((one) => one.kind === 'text')
+  return username && { username, password }
+}
+
 /** The form, or none when it lacks a title, a site or a field it can read: the chat then says it can't be shown. */
 export function userFormCard(entry: Entry): UserFormCard | undefined {
   const form = field(entry.message, 'form')
@@ -333,7 +359,7 @@ export function userFormCard(entry: Entry): UserFormCard | undefined {
 
 /** Fill in is pressed only once every field it needs has something in it. */
 export function canFill(
-  card: UserFormCard,
+  card: Pick<UserFormCard, 'fields'>,
   values: Readonly<Record<string, string>>,
 ): boolean {
   return card.fields.every(

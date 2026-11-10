@@ -642,7 +642,7 @@ final class ChatTests: XCTestCase {
       case .request(_, let card):
         switch card {
         case .approval(_, let summary, _, _, let status, _, _): return "approval:\(summary):\(status)"
-        case .secret(let label, _, _, _): return "secret:\(label)"
+        case .secret(let label, _, _, _, _): return "secret:\(label)"
         case .computer(_, _, let resolution): return "computer:\(resolution ?? "waiting")"
         case .form(let form): return "form:\(form.title)"
         case .credential(let card): return "credential:\(card.title)"
@@ -1075,7 +1075,7 @@ final class StoreTests: XCTestCase {
    */
   func testASecretIsSavedOnlyOnceTheComputerSaysSo() async throws {
     func provided(_ store: AppStore) -> Bool? {
-      guard case .request(_, .secret(_, _, let provided, _))? = store.rows(for: "cards").first(where: { $0.id == "x10" }) else { return nil }
+      guard case .request(_, .secret(_, _, _, let provided, _))? = store.rows(for: "cards").first(where: { $0.id == "x10" }) else { return nil }
       return provided
     }
     let store = AppStore()

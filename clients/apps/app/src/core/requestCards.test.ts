@@ -16,6 +16,7 @@ import {
   credentialConfirmReason,
   credentialOutcomeLine,
   credentialStatusLine,
+  formLogin,
   formOutcomeLine,
   formStatusLine,
   formValues,
@@ -320,6 +321,43 @@ describe('the in-chat form', () => {
       expect(kindOf(made)).toBe('form')
       expect(userFormCard(made)).toBeUndefined()
     }
+  })
+})
+
+describe('a sign-in form', () => {
+  const form = (fields: JSONValue[]) =>
+    userFormCard(
+      line('f', {
+        type: 'user-form',
+        form: { title: 'Sign in to Acme', domain: 'acme.com', fields },
+      }),
+    )!
+  it('is one password with the email or name before it; its dialog offers to keep the login', () => {
+    const signIn = form([
+      { id: 'email', label: 'Email', type: 'email' },
+      { id: 'password', label: 'Password', type: 'password' },
+    ])
+    expect(formLogin(signIn)?.username.id).toBe('email')
+    expect(formLogin(signIn)?.password.id).toBe('password')
+    const named = form([
+      { id: 'user', label: 'Username', type: 'text' },
+      { id: 'pass', label: 'Password', type: 'password' },
+    ])
+    expect(formLogin(named)?.username.id).toBe('user')
+    // A code alone, a password with nothing before it, or two passwords (a new one twice) is no sign-in.
+    expect(formLogin(form([{ id: 'code', label: 'Code', type: 'otp' }]))).toBeUndefined()
+    expect(
+      formLogin(form([{ id: 'password', label: 'Password', type: 'password' }])),
+    ).toBeUndefined()
+    expect(
+      formLogin(
+        form([
+          { id: 'email', label: 'Email', type: 'email' },
+          { id: 'new', label: 'New password', type: 'password' },
+          { id: 'again', label: 'Again', type: 'password' },
+        ]),
+      ),
+    ).toBeUndefined()
   })
 })
 
@@ -715,6 +753,23 @@ describe('the secret and the hand-off, as the Mac draws them', () => {
       { widgetDismissed: true },
     )
     expect(secretCard(declined)?.dismissed).toBe(true)
+    // The variable it's kept under, over its field (the founder's reference, 10 November 2026); a connector's field has none.
+    const named = line('n', {
+      type: 'secret-request',
+      secretRequest: {
+        label: 'AWS access key ID',
+        target: { kind: 'box-secret', name: 'AWS_ACCESS_KEY_ID' },
+      },
+    })
+    expect(secretCard(named)?.variable).toBe('AWS_ACCESS_KEY_ID')
+    const channel = line('c', {
+      type: 'secret-request',
+      secretRequest: {
+        label: 'Bot token',
+        target: { kind: 'channel-credential', platform: 'slack', field: 'bot_token' },
+      },
+    })
+    expect(secretCard(channel)?.variable).toBeUndefined()
     expect(
       cardText({ type: 'secret-request', secretRequest: { label: 'Key' } }),
     ).toBe('Key')

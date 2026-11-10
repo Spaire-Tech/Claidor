@@ -842,6 +842,42 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the sign-in form over the window, the secret and computer cards as the references
+
+The founder, with four pictures of another app's cards: "log in from the store card comes like
+this. open, then an iframe. all writing boxes should be rounded too. ours are squared ish,
+which is off design. computer like this. api key like this." Done in the web and Windows app,
+the Mac and the iPhone (and the shared core):
+
+- **Sign-in.** The in-chat form and the store's login card are a row: the site's icon, "Sign
+  in to Acme" (the store's: "Sign in to Instagram"), "Opens a secure form", and Open. Open
+  shows the form over the window (`SecureFormDialog` here, 480 wide, 24 round, the window
+  dimmed; `MacSecureFormSheet`, `PhoneSecureFormSheet`): the title and the X, why, each field
+  with its name over it, a password's eye, then a shield and "Never shown to your agent. Only
+  filled on acme.com." with Not now and Fill in (the store's: Save). For a sign-in form
+  (`formLogin`, `UserFormCard.login`), "Save to your Credentials Store", checked: the login is
+  saved with the server first, then typed into the page. The X, Escape or a click outside only
+  close the form; Not now declines. A refusal stays in the form with what was typed.
+- **Secrets.** "Secrets" at the top with a key on a small tile; the secret's name (15, 600)
+  and why; the variable it's kept under over the field when the agent named one (the engine's
+  `target.name`, read as `SecretCard.variable` and the core's `.secret(variable:)`); a shield
+  line, Not now and Save securely.
+- **Computer.** "Computer" at the top with a laptop; "Action needed" over the instruction in
+  grey; the screen's picture across the whole card; Skip, I'm done and Take over at the right.
+  Settled: the outcome's pill at the top.
+- **Writing boxes** are 36 high and 12 round on the web and the Mac (`.ask-input`,
+  `cardField`), 44 and 14 on the iPhone; the draft's box 14 round.
+
+Checked in Chromium against a stand-in computer, light and dark: the secret with its variable,
+the computer card with a picture, the form and store rows, both secure forms opened (their
+fields, the store checkbox on the form only, the note, Fill in and Save waiting on the
+password), Escape closing them, no console error. The app's tests (1247; new ones for the
+variable and `formLogin`), tsc, ESLint, the words and the committed build; the core's
+`UserFormTests` (the sign-in and the variable) ran on Linux; `check_names.py`,
+`check_translations.py`, the engine's tests that read the apps' Swift. Not checked: the Mac
+and iPhone apps built and run (their Swift parses, the core type-checks); saving a login from
+the form against the real server.
+
 ### 10 November 2026: the cards' main buttons in our blue
 
 The founder, looking at the cards' new pills: "now you see all those
