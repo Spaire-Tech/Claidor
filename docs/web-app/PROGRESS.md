@@ -839,6 +839,42 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: the computer opens watching; Take control under the screen
+
+The founder, with a reference picture of another app's computer view: "the computer is designed in a way
+that you can use the computer while its on use by the agent without much
+clicking anywhere to allow you. well thats not good … below it has a
+watching/take over picker. i want that. make it smooth." The full view
+(`ComputerView.tsx`, as the Mac's `ComputerView.swift`) now opens
+**watching**: the screen takes no click or key (`setViewOnly`, on the same
+connection), and a click on it swells Take control once. Under the screen,
+12 below it, a dark capsule: the eye and "Watching" with **Take control**
+(white), or the pointer and "You're in control" with **Stop** (white at
+12%). Take control pauses a working agent (`takeComputerControl`, the
+iPhone's since October) and says "Iris is paused while you're in control."
+under the pill; Stop, or closing the view, hands the computer back
+(`handBackComputer`), which resumes it. While the agent waits on the person
+(a hand-off it asked for) the view opens in control, with the hand-off's
+banner as before; the hand-off taking control started shows no banner.
+In control the clipboard goes both ways as before; watching, nothing is
+sent. "Stop" was added to the Mac's catalogue in the ten languages; the
+other words were the iPhone's already.
+
+Checked in Chromium against the stand-in computer (step 5b's RFB server),
+light, dark and French: watching, a click and two keys reach nothing (0
+pointer events, 0 keys) and Take control swells; Take control sends
+`takeComputerControl`, the pill and the paused line change, and clicks and
+keys reach the computer on the same connection; Stop sends one hand-back
+and nothing reaches it again; Theo's waiting hand-off opens in control with
+its banner. tsc, ESLint, the window's tests (178), the words and the
+committed build. Not checked: the Mac and iPhone apps built and run (the
+Mac's Swift parses), a real computer.
+
+Also: the computer's wallpaper is the founder's lake at dusk
+(`box/wallpapers`, carried by the engine), and the engine opens Chrome on
+the computer's screen as soon as it is up, once per start of the computer
+(`chrome-at-start.ts`). Both need the engine published.
+
 ### 10 November 2026: the chat says when an agent's model changes
 
 The founder, with a picture of the line: "whenever a model is changed, i
