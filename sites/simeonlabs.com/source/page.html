@@ -1111,7 +1111,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
         if (id !== run) return;
         const W = row.clientWidth, H = row.clientHeight;
         if (W && H) {
-          const t = Math.min(W * 0.2, H * 0.62), size = t * 0.5, gap = t * 1.05, lane = gap * orbs.length;
+          const t = Math.min(W * 0.2, H * 0.62), size = t * 0.32, gap = t * 0.82, lane = gap * orbs.length;   // the marks smaller than the connector card's (the founder, 10 November 2026: "too big")
           if (t0 == null) t0 = now;
           const period = 2600, move = 550, k = still ? 0 : (now - t0) / period, step = Math.floor(k), f = Math.min(1, (k - step) * period / move);
           const ease = f < 0.5 ? 4 * f * f * f : 1 - Math.pow(-2 * f + 2, 3) / 2;
