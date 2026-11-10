@@ -16,6 +16,7 @@ import base64
 import dataclasses
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, nullcontext
+from datetime import timedelta
 from typing import Any, cast
 from uuid import UUID, uuid4
 
@@ -39,6 +40,7 @@ from simeon.sand import box_hosts, box_proxy, box_service
 from simeon.sand.box_hosts import (
     BOX_HOST_UNAVAILABLE_SENTENCE,
     BoxBlocked,
+    BoxHostError,
     BoxSpec,
     ProvisionedBox,
 )
@@ -1108,6 +1110,111 @@ class TestBackups:
         assert backups.cleared == [str(user.id)]
         assert _restore_of(host.created[-1]) is None
         assert host.created[-1].extra_env["SAND_BOX_STORE_SYNC"] == "1"
+
+
+class FakeInPlaceHost(FakeBoxHost):
+    """A host whose computers keep their files on their own disk and can
+    have their engine swapped while they run (E2B, `E2BBoxHost`)."""
+
+    keeps_files = False
+
+    def __init__(self) -> None:
+        super().__init__(name="docker")
+        self.updates: list[str] = []
+        self.update_works = True
+
+    async def update_in_place(self, provider_box_id: str) -> dict[str, str]:
+        self.updates.append(provider_box_id)
+        if not self.update_works:
+            raise BoxHostError("could not update its engine in place: not-running")
+        self.boxes[provider_box_id]["host_sha256"] = self.expected_host_sha256
+        return {"workers": "image"}
+
+
+@pytest.fixture
+def in_place_host() -> Any:
+    fake = FakeInPlaceHost()
+    fake.expected_host_sha256 = "engine-1"
+    box_hosts.set_box_host_for_tests(fake)
+    yield fake
+    box_hosts.set_box_host_for_tests(None)
+    box_service.set_health_check_for_tests(None)
+
+
+@pytest.mark.asyncio
+class TestEngineInPlace:
+    """11 November 2026: a computer woken after a new engine was published
+    asked for its backup first, and a backup it could not finish put the
+    update off on every wake; its engine then never answered again."""
+
+    async def test_a_new_engine_goes_in_without_a_backup(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        in_place_host: FakeInPlaceHost,
+        backups: Any,
+    ) -> None:
+        box_service.set_health_check_for_tests(lambda url, token, **_: _true())
+        access, _ = await _signed_in(client, session, user)
+        first = (await _ensure(client, access)).json()
+        (computer,) = in_place_host.boxes
+        # A new engine is published, and the computer cannot finish a backup.
+        in_place_host.expected_host_sha256 = "engine-2"
+        backups.flushed = False
+        again = await _ensure(client, access)
+        assert again.status_code == 200, again.text
+        assert again.json()["podId"] == first["podId"]
+        assert in_place_host.updates == [computer]
+        assert backups.flushes == []
+        assert in_place_host.removed == []
+        assert len(in_place_host.created) == 1
+        assert in_place_host.boxes[computer]["host_sha256"] == "engine-2"
+
+    async def test_an_engine_that_does_not_answer_is_restarted_once(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        in_place_host: FakeInPlaceHost,
+        mocker: MockerFixture,
+    ) -> None:
+        mocker.patch.object(settings, "BOX_READY_TIMEOUT", timedelta(seconds=0.05))
+        mocker.patch.object(box_service.broker, "ready_poll", 0.01)
+        answers = {"engine": True}
+
+        async def health(url: str, token: str, **_: Any) -> bool:
+            return answers["engine"]
+
+        box_service.set_health_check_for_tests(health)
+        access, _ = await _signed_in(client, session, user)
+        await _ensure(client, access)
+        (computer,) = in_place_host.boxes
+
+        # Woken, its engine does not answer: restarted in place, it does.
+        answers["engine"] = False
+        original = in_place_host.update_in_place
+
+        async def restart(provider_box_id: str) -> dict[str, str]:
+            facts = await original(provider_box_id)
+            answers["engine"] = True
+            return facts
+
+        in_place_host.update_in_place = restart  # type: ignore[method-assign]
+        woken = await _ensure(client, access)
+        assert woken.status_code == 200, woken.text
+        assert in_place_host.updates == [computer]
+        assert answers["engine"] is True
+
+        # Silent again minutes later: not restarted on every wake.
+        answers["engine"] = False
+        await _ensure(client, access)
+        assert in_place_host.updates == [computer]
+        assert in_place_host.removed == []
+
+
+async def _true() -> bool:
+    return True
 
 
 @pytest.mark.asyncio
