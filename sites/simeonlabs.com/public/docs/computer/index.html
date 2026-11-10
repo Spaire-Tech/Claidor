@@ -122,6 +122,12 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
+.words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
+.words .code pre{margin:0;padding:14px 96px 14px 16px;overflow-x:auto;white-space:pre}
+.words .code pre code{padding:0;background:none;border-radius:0;font:500 13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink)}
+.words .copy-code{position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:8px;background:#fff;color:var(--ink2);font:500 var(--t-small)/1 inherit;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.words .copy-code svg{width:14px;height:14px}
+.words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
 .words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
@@ -191,7 +197,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 
 <main>
 <div class="docs">
-  <nav class="side" aria-label="Documentation"><div class="find" role="search"><input type="search" id="docs-search" placeholder="Search the docs" aria-label="Search the docs" autocomplete="off" spellcheck="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div class="hits" hidden></div></div><details class="pages" open><summary>The computer<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="group"><span class="group-name">Get started</span><a href="/docs">Overview</a><a href="/docs/get-started">Get started</a><a href="/docs/use-cases">Use cases</a><a href="/docs/iphone">Simeon for iPhone</a></div><div class="group"><span class="group-name">Work with Simeon</span><a href="/docs/agents">Create and manage agents</a><a href="/docs/messaging">Message and call</a><a href="/docs/computer" aria-current=page>The computer</a><a href="/docs/connectors">Connect apps</a><a href="/docs/routines">Routines and skills</a><a href="/docs/credentials">Credentials Store</a></div><div class="group"><span class="group-name">Manage and protect</span><a href="/docs/approvals">Approvals, security, and privacy</a><a href="/docs/billing">Plans and billing</a></div><div class="group"><span class="group-name">Help</span><a href="/docs/faq">FAQ</a></div></details></nav>
+  <nav class="side" aria-label="Documentation"><div class="find" role="search"><input type="search" id="docs-search" placeholder="Search the docs" aria-label="Search the docs" autocomplete="off" spellcheck="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div class="hits" hidden></div></div><details class="pages" open><summary>The computer<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="group"><span class="group-name">Get started</span><a href="/docs">Overview</a><a href="/docs/get-started">Get started</a><a href="/docs/use-cases">Use cases</a><a href="/docs/iphone">Simeon for iPhone</a></div><div class="group"><span class="group-name">Work with Simeon</span><a href="/docs/agents">Create and manage agents</a><a href="/docs/messaging">Message and call</a><a href="/docs/network">Simeon Network</a><a href="/docs/computer" aria-current=page>The computer</a><a href="/docs/connectors">Connect apps</a><a href="/docs/routines">Routines and skills</a><a href="/docs/credentials">Credentials Store</a></div><div class="group"><span class="group-name">Manage and protect</span><a href="/docs/approvals">Approvals, security, and privacy</a><a href="/docs/billing">Plans and billing</a></div><div class="group"><span class="group-name">Help</span><a href="/docs/faq">FAQ</a></div></details></nav>
   <article class="page">
     <p class="eyebrow">Work with Simeon</p>
     <h1>The agent&#x27;s computer</h1>
@@ -271,6 +277,15 @@ Your agents&#x27; computers are in the cloud, so [routines](/docs/routines) keep
     b.addEventListener('click', function(){
       var md = document.getElementById('md').textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(md) : Promise.reject()).then(function(){ say('Copied for LLM'); }, function(){ say('Could not copy'); });
+    });
+  });
+  // A block of code: its Copy copies its lines
+  document.querySelectorAll('.copy-code').forEach(function(b){
+    b.addEventListener('click', function(){
+      var code = b.parentNode.querySelector('code').textContent, label = b.querySelector('span');
+      (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(function(){
+        label.textContent = 'Copied'; clearTimeout(b.t); b.t = setTimeout(function(){ label.textContent = 'Copy'; }, 1600);
+      }, function(){ say('Could not copy'); });
     });
   });
   // On this page: the line for the section you're reading darkens

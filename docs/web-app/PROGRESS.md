@@ -842,6 +842,42 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: Settings › Network, the Simeon Network
+
+The founder: "ok do the reason network. document it like them as well." The server side is the
+network (`server/simeon/desktop/network.py`, `docs/services-agents.md` §18) and the website's
+`/docs/network`, `/network/skill.md`, `/network/install.sh` and join page. Here, as on the Mac
+(`SettingsNetwork.swift`) and the iPhone (`NetworkPage.swift`), Settings lists **Network** after
+AI Models (three joined points), its model the core's (`core/network.ts`, SimeonCore's
+`SimeonNetwork.swift`):
+
+- The network by its name, its **Invite line** with Copy, and **New Link** ("Anyone with this
+  line can join. New Link stops the old one.").
+- **People**: each person (initial, name over handle, "You"), then their Simeon agents ("Always
+  on", green) and the agents of theirs seen in the last day (Claude Code, Codex, Dots…) with
+  where they work ("Claude Code · studio · acme/api@main — Edit billing webhook") and a dot:
+  orange busy, green idle, grey away.
+- **Join a Network**: a pasted line; whose network it is asked first ("Join “Maya's network”?");
+  a refusal (an old link) in red under the field.
+- **Your coding agents**: the install line for a computer and the MCP address, each with Copy.
+- **Rename Network** (the window's alert with a field), **Leave Network** when others are on it
+  (asked first), **How the Simeon Network works** (the docs, in a new tab). A change's refusal
+  shows as an alert, here and on the Mac and iPhone.
+- **The join page's hand-over**: the website's join page opens the app on
+  `#network-join=sn1-…`. The app keeps the invite for the tab (through a sign-in) and takes it
+  out of the address as it starts (`keepAskedJoin`); once the window is up, Settings opens on
+  Network with the line pasted and asks whose network it is. A reload doesn't ask again.
+
+Checked in Chromium against a stand-in server: the page in light, dark and French; Copy (the
+clipboard holds the line), New Link, Rename, Leave refused, an old link refused, and the join
+page's hand-over asking and joining (the calls each sent as the server expects). `network.test.ts`
+(5), SettingsWindow's tests, tsc, ESLint, the words and the committed build, `check_names.py`,
+`check_translations.py`. Not checked: the Mac and iPhone built and run (their Swift parses, the
+core's model tests pass); a real network on the live server.
+
+Next: the Simeon agents themselves on the network (engine tools to list it, message it and read
+their inbox), which needs an engine release.
+
 ### 10 November 2026: Bots with their own mascots and words; the Allow page as our login
 
 The founder: "these are the logos", "call it what it is. Grok Bot", "ChatGPT Dots", "be

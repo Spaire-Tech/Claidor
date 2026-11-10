@@ -1,0 +1,192 @@
+/*
+ * Settings › Network (SettingsNetwork.tsx, mac/Simeon/SettingsNetwork.swift):
+ * its line and groups 22 apart; a person's initial on a faint disc (28),
+ * their name (13) over their handle (12), "You" at the end; their agents
+ * under them, inset 16 more, each its symbol, name over where it works and
+ * its state with a dot (green idle and always on, orange busy, grey away);
+ * the pasted line's field with Join; the rename's field.
+ */
+:root {
+  /* The rename's field (`TextField` in an alert): white with a faint ring, the row's grey on dark. */
+  --network-field: #ffffff;
+  --network-field-ring: rgb(20 30 60 / 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --network-field: rgb(119 119 119 / 0.173);
+    --network-field-ring: transparent;
+  }
+}
+
+.network-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.network-lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.network-loading {
+  display: flex;
+  justify-content: center;
+}
+
+/* A person and their agents, a line above when another came before. */
+.network-person {
+  position: relative;
+  padding-bottom: 6px;
+}
+
+.network-person.divided::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 0.5px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.network-person-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 18px;
+  box-sizing: border-box;
+}
+
+.network-initial {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.network-words {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.network-name {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.network-detail {
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.network-you {
+  flex: none;
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+/* An agent under its person: inset 16 more, 8 above and below. */
+.network-agent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px 8px 34px;
+}
+
+.network-agent-symbol {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  color: var(--ink-secondary);
+}
+
+.network-status {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+  font-size: 12px;
+}
+
+.network-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-tertiary);
+}
+
+.network-dot.idle {
+  background: var(--settings-green);
+}
+
+.network-dot.busy {
+  background: #ff9500;
+}
+
+/* The pasted line and Join: a row's own size, the field as plain as the Mac's. */
+.network-join {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 14px 18px;
+  box-sizing: border-box;
+}
+
+.network-join-field {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.network-join-field::placeholder {
+  color: var(--ink-tertiary);
+}
+
+/* The rename's field in the window's alert: the alert's width, 24 high, 5 round, 7 in; the blue edge with the keys. */
+.network-alert-field {
+  box-sizing: border-box;
+  align-self: stretch;
+  height: 24px;
+  margin-top: 12px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--network-field);
+  box-shadow: inset 0 0 0 0.5px var(--network-field-ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.network-alert-field:focus {
+  box-shadow: inset 0 0 0 1px var(--unread);
+}

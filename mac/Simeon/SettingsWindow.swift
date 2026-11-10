@@ -27,7 +27,7 @@ import SimeonCore
 @Observable
 final class SettingsState {
   enum Page: Equatable, CaseIterable {
-    case general, usage, models, wallet, credentials, permissions, computer, updates, help, legal, account
+    case general, usage, models, network, wallet, credentials, permissions, computer, updates, help, legal, account
     /** One connected AI account's page, under Usage & Billing (`SettingsState.modelAccount`). */
     case modelAccount
 
@@ -36,6 +36,7 @@ final class SettingsState {
       case .general: String(localized: "General")
       case .usage: String(localized: "Usage & Billing")
       case .models: String(localized: "AI Models")
+      case .network: String(localized: "Network")
       case .wallet: String(localized: "Wallet")
       case .credentials: String(localized: "Credentials Store")
       case .permissions: String(localized: "Permissions")
@@ -53,6 +54,7 @@ final class SettingsState {
       case .general: "gearshape"
       case .usage: "chart.bar"
       case .models: "brain"
+      case .network: "point.3.connected.trianglepath.dotted"
       case .wallet: "wallet.bifold"
       case .credentials: "key"
       case .permissions: "hand.raised"
@@ -197,6 +199,7 @@ private struct SettingsPanel: View {
             case .general: SettingsGeneralPage(look: look)
             case .usage: SettingsUsagePage(look: look)
             case .models: SettingsModelsPage(look: look)
+            case .network: SettingsNetworkPage(look: look)
             case .wallet: SettingsWalletPage(look: look)
             case .credentials: SettingsCredentialsPage(look: look)
             case .permissions: SettingsPermissionsPage(look: look)

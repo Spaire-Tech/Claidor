@@ -89,6 +89,7 @@ export type SettingsPage =
   | 'general'
   | 'usage'
   | 'models'
+  | 'network'
   | 'wallet'
   | 'credentials'
   | 'permissions'
