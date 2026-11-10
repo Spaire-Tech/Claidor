@@ -35,7 +35,11 @@ a pack changes and commit what it writes. `source/connectors.py` writes
 `public/connectors/`, with a page for each connector at `/connectors/<id>`
 (`source/connector_pages.py`: the apps' connector page, its words and links read
 from `ios/SimeonCore/.../ConnectorPages.swift`, so run it again when those
-change), `source/pricing.py` writes `public/pricing/` and
+change), `source/models.py` writes `public/models/`, the AI models pages
+(/models: Subscriptions and API keys as two lists; /models/<id>: each one's steps
+to connect and Information), read from the server's `key_providers.py` and
+`own_models.py`, so run it again when a provider or a plan's models change; its
+marks are `source/img/model-*.svg` (LobeHub's, MIT, NOTICE), `source/pricing.py` writes `public/pricing/` and
 `source/contact.py` writes `public/contact/` the same way (its form posts to the
 API, `server/simeon/desktop/contact.py`, which e-mails each message to the
 founder). `source/newsroom.py` writes `public/newsroom/`, the blog, in Apple Stories'
