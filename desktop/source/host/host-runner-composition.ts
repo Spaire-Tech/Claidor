@@ -2492,6 +2492,21 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 },
               };
             },
+            // The Simeon Network (10 November 2026, network-tools.ts): who is on the person's
+            // network, and a message as this agent to a colleague's; never for a channel's message.
+            createNetworkToolInputs: () => ({
+              dependencies: {
+                call: async (path, request) => await simeonApiData(serverAuth, path, {
+                  ...(request?.method === undefined ? {} : { method: request.method }),
+                  ...(request?.json === undefined ? {} : { json: request.json }),
+                  signal: AbortSignal.timeout(20_000),
+                  language: userLanguage(),
+                }),
+                agentId: () => session.id,
+                requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
+                log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
+              },
+            }),
             // ListCredentials, request_credential_fill, request_1password_connect (28 October 2026).
             // The tools see the vault's name, never its key.
             createOnePasswordToolInputs: turn => ({
