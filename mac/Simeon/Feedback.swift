@@ -300,25 +300,10 @@ struct MacFeedbackSheet: View {
    * Return makes a new line.
    */
   private func wideButton(_ title: String, enabled: Bool, underText: Bool = false, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      HStack(spacing: 8) {
-        if sending { ProgressView().controlSize(.small).tint(.white) }
-        Text(title)
-      }
-      .font(.system(size: 14, weight: .semibold))
-      .foregroundStyle(enabled ? Color.white : look.inkSecondary)
-      .frame(maxWidth: .infinity)
-      .frame(height: 36)
-    }
-    .prominentGlassButton()
-    .controlSize(.large)
-    .tint(look.yours)
-    .keyboardShortcut(underText ? KeyboardShortcut(.return, modifiers: .command) : .defaultAction)
-    .handCursor()
-    .disabled(!enabled)
-    .padding(.horizontal, 32)
-    .padding(.top, 28)
-    .padding(.bottom, 24)
+    SheetWideButton(title: title, busy: sending, enabled: enabled || sending, shortcut: underText ? KeyboardShortcut(.return, modifiers: .command) : KeyboardShortcut.defaultAction, action: action)
+      .padding(.horizontal, 32)
+      .padding(.top, 28)
+      .padding(.bottom, 24)
   }
 
   private func send() {

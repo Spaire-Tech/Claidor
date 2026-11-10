@@ -1532,7 +1532,12 @@ the website, the username or email, the password, and hints, "Tell Simeon when t
 entry"), Cards (9 November 2026: the number, expiry, security code, name on the card and a
 billing address, all sealed) and Contact info (a name, their full name, email, phone and
 address). Each login shows its site's icon. A saved password or card number shows only after
-Face ID or Touch ID.
+Face ID or Touch ID. The forms write each field as it should be while it's typed (10 November
+2026, the founder: "Help the user. dont confuse him"): a card's number in its groups with its
+network's mark, the expiry's slash, the security code hidden behind its own eye; a phone after its
+country's flag and code, kept as "+33 6 12 34 56 78"; the country first in an address. A card's
+billing address is one of the saved addresses, or one added there (Add Address)
+(`FormEntry.swift`, `clients/apps/app/src/core/formEntry.ts`).
 
 The agent knows the store in every turn of the person's own chats (9 November 2026, the
 founder: "the agent is just not aware of the credential store... the agent needs to know. and

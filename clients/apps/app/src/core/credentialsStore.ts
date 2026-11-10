@@ -12,6 +12,7 @@
 // server and reflected at once. Shared with Settings' page
 // (src/window/SettingsCredentials.tsx).
 
+import { cardIsExpired } from './formEntry'
 import {
   type JSONObject,
   type JSONValue,
@@ -333,9 +334,23 @@ export function draftFields(kind: CredentialKind): DraftField[] {
       ]
 }
 
-/** Whether anything is written yet (Save stays off until then). */
+/** Whether anything is written yet (Save stays off until then); a contact's country, chosen for the person, is nothing written. */
 export function draftIsEmpty(draft: CredentialDraft): boolean {
-  return draftFields(draft.kind).every((key) => draft[key].trim() === '')
+  return draftFields(draft.kind).every(
+    (key) =>
+      draft[key].trim() === '' ||
+      (draft.kind === 'contact' && key === 'country'),
+  )
+}
+
+/** One @, something before it, a dot in what follows, no spaces: name@example.com. */
+export function looksLikeEmail(text: string): boolean {
+  const parts = text.split('@')
+  if (parts.length !== 2 || parts[0] === '' || /\s/.test(text)) return false
+  const domain = parts[1] ?? ''
+  return (
+    domain.includes('.') && !domain.startsWith('.') && !domain.endsWith('.')
+  )
 }
 
 /** The first thing to fix before it is saved, as the server would refuse it; none when it can be. */
@@ -357,16 +372,19 @@ export function draftProblem(draft: CredentialDraft): string | undefined {
       return t('Check the card number.')
     if (cardExpiry(draft.expiry) === undefined)
       return t('Write the expiry like 08/28.')
+    if (cardIsExpired(draft.expiry)) return t('This card has expired.')
     const code = draft.securityCode.trim()
     if (code !== '' && !/^\d{3,4}$/.test(code))
       return t('The security code is 3 or 4 digits.')
     return undefined
   }
   const details = draftFields('contact').filter(
-    (key) => key !== 'name' && key !== 'hints',
+    (key) => key !== 'name' && key !== 'hints' && key !== 'country',
   )
   if (details.every((key) => draft[key].trim() === ''))
     return t('Add at least one detail.')
+  const email = draft.email.trim()
+  if (email !== '' && !looksLikeEmail(email)) return t('Check the email.')
   return undefined
 }
 

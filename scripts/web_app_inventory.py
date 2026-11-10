@@ -60,7 +60,7 @@ AREAS = [
   "Plugins PluginsOverlay PluginCalls ConnectorPages ConnectConsent Connecting ConnectorIcons AppAccounts GeneratedAppIcons GeneratedBrands"),
  ("settings", "Settings, the account menu, usage and billing, AI Models, Wallet, Credentials Store, feedback",
   "SettingsWindow SettingsParts SettingsGeneral SettingsUsage SettingsModels SettingsPages SettingsCredentials Feedback Account",
-  "AccountSettings AccountMenu StoreSettings AIModels CredentialsStore Feedback Upgrade ApplePlans FreeMonth"),
+  "AccountSettings AccountMenu StoreSettings AIModels CredentialsStore FormEntry Feedback Upgrade ApplePlans FreeMonth"),
  ("plumbing", "Talking to the server and the computer, and what is kept on the device", "",
   "Backend Gateway HTTP JSON SimeonAPI SHA256 Store StoreSaved SavedChats SavedGateway Demo"),
  ("mac-only", "The Mac's own: hands on this computer, local permission, 1Password app, notifications, Dock, menu bar, updates, links",

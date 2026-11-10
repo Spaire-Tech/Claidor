@@ -226,6 +226,13 @@ struct MacCredentialSheet: View {
   @State private var opened: CredentialDraft
   @State private var passwordRead: Bool
   @State private var showsPassword: Bool
+  /** A card's security code shown (its own eye: hidden until asked, even while it's typed). */
+  @State private var showsCode = false
+  /** The address sheet over this one, opened from Billing address. */
+  @State private var addingAddress: CredentialDraft?
+  /** The phone's country and the digits after its code, kept as "+33 6 12 34 56 78". */
+  @State private var phoneCountry: String
+  @State private var phoneNational: String
   @State private var saving = false
   @State private var problem: String?
 
@@ -236,17 +243,26 @@ struct MacCredentialSheet: View {
   init(model: CredentialsStoreModel, edit: MacCredentialEdit, onSaved: ((StoredCredential) -> Void)? = nil) {
     self.model = model
     self.onSaved = onSaved
+    let draft: CredentialDraft = switch edit {
+    case .new(let kind): CredentialDraft(kind: kind)
+    case .filled(let filled): filled
+    case .entry(let saved): CredentialDraft(saved)
+    }
+    let phone = PhoneEntry.split(draft.phone, preferring: draft.country.isEmpty ? Countries.here : draft.country)
+    _phoneCountry = State(initialValue: phone.country)
+    _phoneNational = State(initialValue: phone.national)
     switch edit {
     case .new, .filled:
-      let start: CredentialDraft
-      if case .filled(let filled) = edit { start = filled } else if case .new(let kind) = edit { start = CredentialDraft(kind: kind) } else { start = CredentialDraft(kind: .login) }
+      var start = draft
+      // A new contact info is in the person's own country until another is chosen.
+      if start.kind == .contact, start.country.isEmpty { start.country = Countries.here }
       _entry = State(initialValue: nil)
       _draft = State(initialValue: start)
       _opened = State(initialValue: start)
       _passwordRead = State(initialValue: true)
       _showsPassword = State(initialValue: true)
     case .entry(let saved):
-      let start = CredentialDraft(saved)
+      let start = draft
       _entry = State(initialValue: saved)
       _draft = State(initialValue: start)
       _opened = State(initialValue: start)
@@ -283,104 +299,188 @@ struct MacCredentialSheet: View {
       .padding(.horizontal, 16)
       .padding(.top, 16)
       .padding(.bottom, 8)
-      ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-          if isLogin {
-            SettingsGroup(look: look) {
-              MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, divided: false, look: look)
-              MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look)
-              passwordRow
+      ScrollViewReader { proxy in
+        ScrollView {
+          VStack(alignment: .leading, spacing: 24) {
+            if isLogin {
+              SettingsGroup(look: look) {
+                MacStoreTextRow(label: String(localized: "Website"), text: $draft.website, prompt: "acme.com", content: .URL, divided: false, look: look)
+                MacStoreTextRow(label: String(localized: "Username or email"), text: $draft.username, content: .username, look: look)
+                passwordRow
+              }
+            } else if isCard {
+              SettingsGroup(look: look) {
+                cardNumberRow
+                SettingsLine(label: String(localized: "Expiry"), divided: true, look: look) {
+                  MacStoreEntryBox(value: $draft.expiry, prompt: "MM/YY", kept: { CardNumber.typedExpiry(old: $0, new: $1) }, content: .creditCardExpiration,
+                                   digits: true, ink: CardNumber.isExpired(draft.expiry) ? look.danger : nil, look: look) { EmptyView() }
+                }
+                securityCodeRow
+                MacStoreTextRow(label: String(localized: "Name on card"), text: $draft.cardholder, content: .creditCardName, look: look)
+              }
+              billingGroup
+            } else {
+              SettingsGroup(look: look) {
+                MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, content: .name, divided: false, look: look)
+                MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, prompt: "name@example.com", content: .emailAddress, look: look)
+                phoneRow
+              }
+              // The country first: the rest of the address is written as it's written there.
+              SettingsGroup(title: String(localized: "Address"), look: look) {
+                SettingsMenu(
+                  label: String(localized: "Country"),
+                  options: MacCountries.all.map { (value: $0.code, label: "\($0.flag)  \($0.name)") },
+                  value: draft.country,
+                  shown: draft.country.isEmpty ? String(localized: "Choose") : nil,
+                  look: look
+                ) { draft.country = $0 }
+                MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, look: look)
+                MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look)
+                MacStoreTextRow(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look)
+                MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look)
+                SettingsLine(label: String(localized: "Postal code"), divided: true, look: look) {
+                  MacStoreEntryBox(value: $draft.postalCode, kept: { $1.uppercased() }, content: .postalCode, look: look) { EmptyView() }
+                }
+              }
             }
-          } else if isCard {
-            SettingsGroup(look: look) {
-              cardNumberRow
-              MacStoreTextRow(label: String(localized: "Expiry"), text: $draft.expiry, prompt: "MM/YY", look: look)
-              securityCodeRow
-              MacStoreTextRow(label: String(localized: "Name on card"), text: $draft.cardholder, content: .name, look: look)
+            // What the entry is called and when to use it, last (the founder, 9 November 2026).
+            SettingsGroup(footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
+              MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, divided: false, look: look)
+              MacStoreTextRow(label: String(localized: "Hints"), text: $draft.hints, prompt: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
             }
-            // The billing address: one of the person's contact info, by its address.
-            let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
-            SettingsGroup(look: look) {
-              SettingsMenu(
-                label: String(localized: "Billing address"),
-                options: [(value: "", label: String(localized: "None"))] + addresses.map { (value: $0.id, label: "\($0.title) · \($0.addressLine)") },
-                value: draft.billingId,
-                shown: addresses.first { $0.id == draft.billingId }.map(\.title) ?? String(localized: "None"),
-                look: look
-              ) { draft.billingId = $0 }
+            if let problem {
+              Text(problem)
+                .font(PanelType.detail)
+                .foregroundStyle(look.danger)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+                .id("problem")
             }
-          } else {
-            SettingsGroup(look: look) {
-              MacStoreTextRow(label: String(localized: "Full name"), text: $draft.fullName, content: .name, divided: false, look: look)
-              MacStoreTextRow(label: String(localized: "Email"), text: $draft.email, content: .emailAddress, look: look)
-              MacStoreTextRow(label: String(localized: "Phone"), text: $draft.phone, content: .telephoneNumber, look: look)
-            }
-            SettingsGroup(title: String(localized: "Address"), look: look) {
-              MacStoreTextRow(label: String(localized: "Address"), text: $draft.addressLine1, content: .streetAddressLine1, divided: false, look: look)
-              MacStoreTextRow(label: String(localized: "Address line 2"), text: $draft.addressLine2, content: .streetAddressLine2, look: look)
-              MacStoreTextRow(label: String(localized: "City"), text: $draft.city, content: .addressCity, look: look)
-              MacStoreTextRow(label: String(localized: "State or region"), text: $draft.region, content: .addressState, look: look)
-              MacStoreTextRow(label: String(localized: "Postal code"), text: $draft.postalCode, content: .postalCode, look: look)
-              SettingsMenu(
-                label: String(localized: "Country"),
-                divided: true,
-                options: MacCountryName.all.map { (value: $0.code, label: $0.name) },
-                value: draft.country,
-                shown: draft.country.isEmpty ? String(localized: "Choose") : nil,
-                look: look
-              ) { draft.country = $0 }
-            }
-          }
-          // What the entry is called and when to use it, last (the founder, 9 November 2026).
-          SettingsGroup(footer: entry?.savedBy.map { String(localized: "Saved by \($0) at a sign-up.") }, look: look) {
-            MacStoreTextRow(label: String(localized: "Name"), text: $draft.name, divided: false, look: look)
-            MacStoreTextRow(label: String(localized: "Hints"), text: $draft.hints, prompt: String(localized: "Tell Simeon when to use this entry"), grows: true, look: look)
-          }
-          if let problem {
-            Text(problem)
-              .font(PanelType.detail)
-              .foregroundStyle(look.danger)
-              .fixedSize(horizontal: false, vertical: true)
-              .padding(.horizontal, 8)
-          }
-          if entry != nil {
-            SettingsGroup(look: look) {
-              SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
+            if entry != nil {
+              SettingsGroup(look: look) {
+                SettingsActionRow(title: isLogin ? String(localized: "Delete Login") : isCard ? String(localized: "Delete Card") : String(localized: "Delete Contact Info"), destructive: true, look: look) { askToDelete() }
+              }
             }
           }
+          .padding(.horizontal, 32)
+          .padding(.top, 8)
+          .padding(.bottom, 24)
         }
-        .padding(.horizontal, 32)
-        .padding(.top, 8)
-        .padding(.bottom, 24)
+        // What to fix is brought into view, never left under the fold.
+        .onChange(of: problem) { _, now in
+          if now != nil { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("problem", anchor: .bottom) } }
+        }
       }
-      VStack(spacing: 0) {
-        Button {
-          Task { await save() }
-        } label: {
-          HStack(spacing: 8) {
-            if saving { ProgressView().controlSize(.small).tint(.white) }
-            Text("Save")
-          }
-          .font(.system(size: 14, weight: .semibold))
-          .foregroundStyle(Color.white)
-          .frame(maxWidth: .infinity)
-          .frame(height: 36)
-        }
-        .prominentGlassButton()
-        .controlSize(.large)
-        .tint(look.yours)
-        .keyboardShortcut(.defaultAction)
-        .handCursor()
-        .disabled(saving || draft.isEmpty || (entry != nil && draft == opened))
+      SheetWideButton(title: String(localized: "Save"), busy: saving, enabled: saving || !(draft.isEmpty || (entry != nil && draft == opened))) {
+        Task { await save() }
       }
       .padding(.horizontal, 32)
       .padding(.top, 12)
       .padding(.bottom, 24)
     }
-    .frame(width: 560, height: isLogin ? 560 : isCard ? 680 : 720)
+    .frame(width: 560, height: isLogin ? 560 : isCard ? 700 : 760)
     .background(look.groupedGround)
     .interactiveDismissDisabled(saving)
-    .closesOnClickOutside { if !saving && draft == opened { dismiss() } }
+    .closesOnClickOutside { if !saving && draft == opened && addingAddress == nil { dismiss() } }
+    .onChange(of: phoneCountry) { _, _ in writePhone() }
+    .onChange(of: phoneNational) { _, _ in writePhone() }
+    // A phone not written yet follows the address's country.
+    .onChange(of: draft.country) { _, country in if phoneNational.isEmpty, !country.isEmpty { phoneCountry = country } }
+    .sheet(isPresented: Binding(get: { addingAddress != nil }, set: { if !$0 { addingAddress = nil } })) {
+      if let address = addingAddress {
+        MacCredentialSheet(model: model, edit: .filled(address)) { saved in draft.billingId = saved.id }
+      }
+    }
+  }
+
+  /** The phone as it's kept: its country's code, then its digits as that country groups them. */
+  private func writePhone() {
+    let written = PhoneEntry.joined(country: phoneCountry, national: phoneNational)
+    if written != draft.phone { draft.phone = written }
+  }
+
+  /**
+   * The billing address: one of the person's contact info, by its address,
+   * or a new one written here (the founder, 10 November 2026: "billing
+   * adress doesnt work. it stays at none": with no address saved there was
+   * nothing to choose). Add Address opens the contact info's sheet over
+   * this one, the name on the card already in it, and the address saved
+   * there is the card's.
+   */
+  private var billingGroup: some View {
+    let addresses = model.contacts.filter { !$0.addressLine.isEmpty }
+    let chosen = addresses.first { $0.id == draft.billingId }
+    return SettingsGroup(footer: String(localized: "The address your bank has for this card."), look: look) {
+      SettingsLine(label: String(localized: "Billing address"), look: look) {
+        if addresses.isEmpty {
+          SettingsPill(title: String(localized: "Add Address"), look: look) { addAddress() }
+        } else {
+          Menu {
+            Toggle(String(localized: "None"), isOn: Binding(get: { chosen == nil }, set: { _ in draft.billingId = "" }))
+            ForEach(addresses) { contact in
+              Toggle(isOn: Binding(get: { contact.id == draft.billingId }, set: { _ in draft.billingId = contact.id })) {
+                Text(verbatim: "\(contact.title) · \(contact.addressLine)")
+              }
+            }
+            Divider()
+            Button(String(localized: "Add Address…")) { addAddress() }
+          } label: {
+            SettingsMenuLabel(text: chosen.map { "\($0.title) · \($0.addressLine1.isEmpty ? $0.city : $0.addressLine1)" } ?? String(localized: "None"), look: look)
+          }
+          .menuStyle(.button)
+          .buttonStyle(.borderless)
+          .menuIndicator(.hidden)
+          .fixedSize()
+          .handCursor()
+          .accessibilityLabel(String(localized: "Billing address"))
+        }
+      }
+    }
+  }
+
+  private func addAddress() {
+    var address = CredentialDraft(kind: .contact)
+    address.fullName = draft.cardholder.trimmingCharacters(in: .whitespaces)
+    address.country = Countries.here
+    addingAddress = address
+  }
+
+  /** The phone: its country's flag and code in a menu, then the number grouped as that country writes it. */
+  private var phoneRow: some View {
+    SettingsLine(label: String(localized: "Phone"), divided: true, look: look) {
+      MacStoreEntryBox(
+        value: $phoneNational,
+        prompt: PhoneEntry.formatted(phoneCountry == "US" || phoneCountry == "CA" ? "4155550132" : "612345678", country: phoneCountry),
+        shown: { PhoneEntry.formatted($0, country: phoneCountry) },
+        kept: { PhoneEntry.national(TypedDigits.of(before: $0, after: $1), country: phoneCountry) },
+        content: .telephoneNumber,
+        digits: true,
+        look: look
+      ) {
+        EmptyView()
+      } leading: {
+        Menu {
+          ForEach(MacCountries.all) { country in
+            Button { phoneCountry = country.code } label: { Text(verbatim: "\(country.flag)  \(country.name)  \(country.dialLabel)") }
+          }
+        } label: {
+          HStack(spacing: 4) {
+            Text(verbatim: Countries.flag(phoneCountry)).font(.system(size: 14))
+            Text(verbatim: Countries.country(phoneCountry)?.dialLabel ?? "+").font(PanelType.row.monospacedDigit()).foregroundStyle(look.ink)
+            Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold)).foregroundStyle(look.inkTertiary)
+          }
+          .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.borderless)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .handCursor()
+        .help(String(localized: "Country code"))
+        .accessibilityLabel(String(localized: "Country code"))
+        Rectangle().fill(look.ink.opacity(0.12)).frame(width: 1, height: 16)
+      }
+    }
   }
 
   /** The password: dots, or the words once shown, in the rows' box; a saved one is read only after Touch ID. */
@@ -411,52 +511,77 @@ struct MacCredentialSheet: View {
   }
 
   /**
-   * A card's number: as typed, its network's mark at the end; a saved one
-   * shows its last four until the eye is pressed and Touch ID allows it,
-   * which shows the number and the security code.
+   * A card's number: digits only, grouped as the card prints them while
+   * they're typed (4242 4242 4242 4242), its network's mark at the end as
+   * soon as the first digits name it, red once it's whole and can't be a
+   * card's. A saved one shows its last four until the eye is pressed and
+   * Touch ID allows it.
    */
   private var cardNumberRow: some View {
     SettingsLine(label: String(localized: "Card number"), divided: false, look: look) {
-      HStack(spacing: 8) {
-        let saved = entry?.last4 ?? ""
-        TextField("Card number", text: $draft.number, prompt: Text(saved.isEmpty ? "1234 5678 9012 3456" : "•••• \(saved)").foregroundStyle(look.inkTertiary))
-          .textFieldStyle(.plain)
-          .labelsHidden()
-          .font(PanelType.row.monospacedDigit())
-          .foregroundStyle(look.ink)
-        let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+      let saved = entry?.last4 ?? ""
+      let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+      let whole = draft.number.count == CardNumber.maxDigits(brand)
+      MacStoreEntryBox(
+        value: $draft.number,
+        prompt: saved.isEmpty ? "1234 5678 9012 3456" : "•••• \(saved)",
+        shown: CardNumber.grouped,
+        kept: { CardNumber.typed(TypedDigits.of(before: $0, after: $1)) },
+        secure: entry != nil && passwordRead && !showsPassword,
+        content: .creditCardNumber,
+        digits: true,
+        ink: whole && !CardNumber.isValid(draft.number) ? look.danger : nil,
+        look: look
+      ) {
         if !brand.isEmpty {
           MacPaymentMark(brand: brand, edge: look.ink.opacity(look.dark ? 0.16 : 0.12)).scaleEffect(0.7).frame(width: 28, height: 19)
+            .transition(.opacity)
         }
         if entry != nil {
-          Button { Task { await revealCard() } } label: {
-            Image(systemName: showsPassword ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary)
-          }
-          .buttonStyle(.hand)
-          .help(showsPassword ? String(localized: "Hide Card") : String(localized: "Show Card"))
+          eye(shown: showsPassword, show: String(localized: "Show Card"), hide: String(localized: "Hide Card")) { Task { await revealCard() } }
         }
       }
-      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
+      .animation(.easeOut(duration: 0.15), value: brand)
     }
   }
 
-  /** The security code: dots until shown, as the password's. */
+  /** The security code: digits only, as many as the card's (4 on American Express), hidden until its eye is pressed. */
   private var securityCodeRow: some View {
     SettingsLine(label: String(localized: "Security code"), divided: true, look: look) {
-      Group {
-        let hidden = entry?.hasSecurityCode == true && !passwordRead
-        if showsPassword {
-          TextField("Security code", text: $draft.securityCode, prompt: Text("123").foregroundStyle(look.inkTertiary))
-        } else {
-          SecureField("Security code", text: $draft.securityCode, prompt: hidden ? Text("•••").foregroundStyle(look.inkTertiary) : Text("123").foregroundStyle(look.inkTertiary))
-        }
+      let brand = draft.number.isEmpty ? (entry?.brand ?? "") : CardNumber.brand(draft.number)
+      let hidden = entry?.hasSecurityCode == true && !passwordRead
+      MacStoreEntryBox(
+        value: $draft.securityCode,
+        prompt: hidden ? "•••" : brand == "amex" ? "1234" : "123",
+        kept: { CardNumber.typedCode($1, brand: brand) },
+        secure: !showsCode,
+        content: .creditCardSecurityCode,
+        digits: true,
+        look: look
+      ) {
+        eye(shown: showsCode, show: String(localized: "Show Security Code"), hide: String(localized: "Hide Security Code")) { Task { await toggleCode() } }
       }
-      .textFieldStyle(.plain)
-      .labelsHidden()
-      .font(PanelType.row.monospacedDigit())
-      .foregroundStyle(look.ink)
-      .storeBox(width: MacStoreTextRow.width, focused: false, look: look)
     }
+  }
+
+  /** The eye at a hidden field's end: shows it, or hides it again. */
+  private func eye(shown: Bool, show: String, hide: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: shown ? "eye.slash" : "eye").font(.system(size: 13)).foregroundStyle(look.inkSecondary).frame(width: 18)
+    }
+    .buttonStyle(.hand)
+    .help(shown ? hide : show)
+    .accessibilityLabel(shown ? hide : show)
+  }
+
+  /** The code shown; a saved card's is read first, after Touch ID. */
+  private func toggleCode() async {
+    if showsCode { showsCode = false; return }
+    if entry?.hasSecurityCode == true, !passwordRead {
+      await revealCard()
+      guard passwordRead else { return }
+    }
+    showsCode = true
   }
 
   private func revealCard() async {
@@ -520,6 +645,106 @@ struct MacCredentialSheet: View {
   }
 }
 
+/** Every country with its flag and phone code, by its name in the person's language, read once. */
+enum MacCountries {
+  static let all = Countries.all()
+}
+
+/**
+ * A field in the rows' box that writes what's typed as it should be (the
+ * founder, 10 November 2026: "Help the user. dont confuse him"): a card's
+ * number in its groups, its expiry with its slash, a phone in its country's
+ * groups, a postal code in capitals. What's kept (`value`) and what's shown
+ * (`shown(value)`) are apart; every keystroke, what's kept is read from the
+ * field (`kept(before, after)`) and the field written again from it, so a
+ * letter in a card's number never stays. `secure` shows dots (a security
+ * code until its eye is pressed); `ink` colours what's typed (red once a
+ * card's number is whole and can't be one). What leads the field (a phone's
+ * country) and ends it (a card's mark, the eye) sit in the box with it.
+ */
+private struct MacStoreEntryBox<Accessory: View, Leading: View>: View {
+  @Binding var value: String
+  let prompt: String?
+  let shown: (String) -> String
+  let kept: (_ before: String, _ after: String) -> String
+  let secure: Bool
+  let content: NSTextContentType?
+  let digits: Bool
+  let ink: Color?
+  let width: CGFloat?
+  let look: Look
+  let accessory: () -> Accessory
+  let leading: () -> Leading
+  @State private var text = ""
+  @FocusState private var focused: Bool
+
+  init(
+    value: Binding<String>, prompt: String? = nil, shown: @escaping (String) -> String = { $0 },
+    kept: @escaping (_ before: String, _ after: String) -> String = { $1 }, secure: Bool = false, content: NSTextContentType? = nil,
+    digits: Bool = false, ink: Color? = nil, width: CGFloat? = MacStoreTextRow.width, look: Look,
+    @ViewBuilder accessory: @escaping () -> Accessory, @ViewBuilder leading: @escaping () -> Leading
+  ) {
+    _value = value
+    self.prompt = prompt
+    self.shown = shown
+    self.kept = kept
+    self.secure = secure
+    self.content = content
+    self.digits = digits
+    self.ink = ink
+    self.width = width
+    self.look = look
+    self.accessory = accessory
+    self.leading = leading
+  }
+
+  var body: some View {
+    HStack(spacing: 8) {
+      leading()
+      Group {
+        let prompted = prompt.map { Text($0).foregroundStyle(look.inkTertiary) }
+        if secure {
+          SecureField("", text: $text, prompt: prompted)
+        } else {
+          TextField("", text: $text, prompt: prompted)
+        }
+      }
+      .textFieldStyle(.plain)
+      .labelsHidden()
+      .font(digits ? PanelType.row.monospacedDigit() : PanelType.row)
+      .foregroundStyle(ink ?? look.ink)
+      .textContentType(content)
+      .focused($focused)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      accessory()
+    }
+    .storeBox(width: width, focused: focused, look: look)
+    .onAppear { text = shown(value) }
+    .onChange(of: text) { before, after in
+      let keep = kept(before, after)
+      let show = shown(keep)
+      if show != after { text = show }
+      if keep != value { value = keep }
+    }
+    // Written from elsewhere (a saved card read after Touch ID): shown as it should be.
+    .onChange(of: value) { _, now in
+      if kept(text, text) != now { text = shown(now) }
+    }
+  }
+}
+
+extension MacStoreEntryBox where Leading == EmptyView {
+  init(
+    value: Binding<String>, prompt: String? = nil, shown: @escaping (String) -> String = { $0 },
+    kept: @escaping (_ before: String, _ after: String) -> String = { $1 }, secure: Bool = false, content: NSTextContentType? = nil,
+    digits: Bool = false, ink: Color? = nil, width: CGFloat? = MacStoreTextRow.width, look: Look,
+    @ViewBuilder accessory: @escaping () -> Accessory
+  ) {
+    self.init(value: value, prompt: prompt, shown: shown, kept: kept, secure: secure, content: content, digits: digits, ink: ink, width: width, look: look,
+              accessory: accessory, leading: { EmptyView() })
+  }
+}
+
 /**
  * A row with a field: the label on the left, its box on the right (the
  * Account page's Name box: the page's ground, 8 round, a line of the ink at
@@ -559,12 +784,13 @@ private struct MacStoreTextRow: View {
   }
 }
 
-private extension View {
-  /** The rows' box, as the Account page's Name field. */
-  func storeBox(width: CGFloat, focused: Bool, look: Look) -> some View {
+extension View {
+  /** The rows' box, as the Account page's Name field (`width` nil: as wide as it's given). */
+  func storeBox(width: CGFloat?, focused: Bool, look: Look) -> some View {
     padding(.horizontal, 10)
       .padding(.vertical, 6)
       .frame(width: width, alignment: .leading)
+      .frame(maxWidth: width == nil ? .infinity : nil, alignment: .leading)
       .frame(minHeight: 30)
       .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(look.groupedGround))
       .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(focused ? 0.25 : 0.1), lineWidth: 1))

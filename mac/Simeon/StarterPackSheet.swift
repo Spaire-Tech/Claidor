@@ -221,27 +221,12 @@ private struct StarterPackDialog: View {
   }
 
   private func button(_ pack: StarterPack) -> some View {
-    Button(action: add) {
-      HStack(spacing: 8) {
-        if ask.adding {
-          ProgressView().controlSize(.small).tint(.white)
-          Text("Adding…")
-        } else if added {
-          Text("Open “\(pack.folder)”")
-        } else {
-          Text("Add to Simeon")
-        }
-      }
-      .font(.system(size: 14, weight: .semibold))
-      .foregroundStyle(Color.white)
-      .frame(maxWidth: .infinity)
-      .frame(height: 36)
-    }
-    .prominentGlassButton()
-    .controlSize(.large)
-    .tint(look.yours)
-    .handCursor()
-    .disabled(ask.adding)
+    SheetWideButton(
+      title: ask.adding ? String(localized: "Adding…") : added ? String(localized: "Open “\(pack.folder)”") : String(localized: "Add to Simeon"),
+      busy: ask.adding,
+      shortcut: nil,
+      action: add
+    )
     .padding(.horizontal, 48)
     .padding(.top, 16)
     .padding(.bottom, 28)

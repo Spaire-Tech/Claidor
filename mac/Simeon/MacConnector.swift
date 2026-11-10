@@ -451,17 +451,7 @@ private struct ConnectConsentDialog: View {
   }
 
   private var buttons: some View {
-    Button(action: connect) {
-      Text("Connect")
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(Color.white)
-        .frame(maxWidth: .infinity)
-        .frame(height: 36)
-    }
-    .prominentGlassButton()
-    .controlSize(.large)
-    .tint(look.yours)
-    .handCursor()
+    SheetWideButton(title: String(localized: "Connect"), shortcut: nil, action: connect)
     .padding(.horizontal, 48)
     .padding(.top, 16)
     .padding(.bottom, 28)
