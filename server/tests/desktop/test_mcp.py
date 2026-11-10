@@ -498,6 +498,38 @@ class TestTools:
         assert (me["repo"], me["branch"], me["status"]) == ("acme/api", "main", "busy")
         assert me["doing"] == "Edit billing webhook"
 
+    async def test_a_session_with_a_name_of_its_own_signs_with_it(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        published: Any,
+    ) -> None:
+        """Grok Bot added at `/mcp` signs in as Cursor; it named itself
+        `grok-bot` and still wrote "Cursor: …" in the agent's chat (11
+        November 2026). A name it chose is how it signs."""
+        _, box = await _signed_in_with_box(client, session, user)
+        await _copy(client, box, agents=AGENTS)
+        bot = await _hello(
+            client,
+            await _bot(
+                save_fixture,
+                user,
+                ["agents"],
+                name="Cursor",
+                redirect_uris=CURSORS,
+                returned="https://www.cursor.com/agents/mcp/oauth/callback",
+            ),
+            "Cursor",
+        )
+        await _said(client, bot, "send_message", to="iris", message="First")
+        await _said(client, bot, "set_status", name="grok-bot")
+        await _said(client, bot, "send_message", to="iris", message="Second")
+        inbox = DesktopChatInboxRepository.from_session(session)
+        prompts = [w.message["prompt"] for w in await inbox.waiting(user.id, 10)]
+        assert prompts == ["Cursor: First", "grok-bot: Second"]
+
 
 #: Cursor's one registration, which Grok Bot signs in with too
 #: (https://cursor.com/oauth/mcp-client.json, 10 November 2026).
@@ -567,6 +599,27 @@ class TestWhichBot:
         assert first["Mcp-Session-Id"] == second["Mcp-Session-Id"]
         team = await _said(client, second, "list_team")
         assert [a["address"] for a in team["agents"] if a.get("you")] == [team["you"]]
+        assert sum(1 for a in team["agents"] if a["kind"] == "grok-bot") == 1
+
+    async def test_a_bot_that_registers_again_is_the_same_bot(
+        self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
+    ) -> None:
+        """A conversation of Grok Bot's that registers a client of its own is
+        the same Grok Bot (11 November 2026: a second idle `bass/cursor`)."""
+        sessions = []
+        for key in ("one", "two"):
+            headers = await _bot(
+                save_fixture,
+                user,
+                ["agents"],
+                name="Cursor",
+                token=f"simeon_at_{key}",
+                redirect_uris=CURSORS,
+                key=f"hosted{key}",
+            )
+            sessions.append(await _hello(client, headers, "Cursor", "/mcp/grok-bot"))
+        assert sessions[0]["Mcp-Session-Id"] == sessions[1]["Mcp-Session-Id"]
+        team = await _said(client, sessions[1], "list_team")
         assert sum(1 for a in team["agents"] if a["kind"] == "grok-bot") == 1
 
     async def test_a_bot_named_before_it_was_known_takes_its_name(

@@ -101,10 +101,16 @@ NO_COMPUTER = (
     "message first (send_message), then try again."
 )
 UNREACHABLE = "Your Simeon computer didn't answer: try again in a minute."
+SLOW = "Your Simeon computer is still on it: check again in a minute."
 
 
 class ComputerRefused(ToolRefusal):
     """The computer answered the command with an error of its own."""
+
+
+class ComputerSlow(ToolRefusal):
+    """The computer took the command and did not answer in time: a routine
+    run now is answered only once it has run (`fireAutomation`)."""
 
 
 #: `(box, method, args)` → the command's answer; replaced in tests.
@@ -190,6 +196,12 @@ async def computer(
         answer = await _send(box, method, args)
     except ComputerRefused:
         raise
+    except httpx.ReadTimeout as error:
+        # It took the request and is still on it, or its host froze it
+        # mid-answer: asked to start as well, which leaves a running one be.
+        await _ask_wake(redis, user_id)
+        log.warning("mcp.computer.slow", user_id=str(user_id), method=method)
+        raise ComputerSlow(SLOW) from error
     except httpx.HTTPError as error:
         # Frozen by its host since the row last heard of it: woken as well.
         await _ask_wake(redis, user_id)
@@ -1247,9 +1259,19 @@ class BotTools:
                 if isinstance(r, dict)
             ]
         else:
+            # Each agent's routines as pairs, `{agentId, automation}`
+            # (`listAllAutomationsFrom`, `agent-session.ts`): read flat, every
+            # routine came back without a name or an id (11 November 2026).
             records = await self._computer("listAllAutomations", {})
             found = [
-                self._routine(r, names) for r in records or [] if isinstance(r, dict)
+                self._routine(
+                    {**r["automation"], "agentId": r.get("agentId")}
+                    if isinstance(r.get("automation"), dict)
+                    else r,
+                    names,
+                )
+                for r in records or []
+                if isinstance(r, dict)
             ]
         answer: dict[str, Any] = {"routines": found}
         if not found:
@@ -1327,16 +1349,39 @@ class BotTools:
     async def run_routine(self, arguments: dict[str, Any]) -> dict[str, Any]:
         row = await self._agent(arguments)
         routine = await self._routine_of(row, arguments)
-        await self._computer(
-            "runAgentAutomationNow",
-            {"id": str(row["id"]), "automationId": str(routine["id"])},
-        )
+        before = self._last_run(routine)
+        try:
+            await self._computer(
+                "runAgentAutomationNow",
+                {"id": str(row["id"]), "automationId": str(routine["id"])},
+            )
+        except (ComputerRefused, ComputerSlow):
+            # The computer answers once the run is over, so a long one outlasts
+            # the wait; and an engine before 11 November 2026 throws once the
+            # run has happened (its telemetry lost its `this`: "Cannot read
+            # properties of undefined (reading 'mapped')"). A run newer than
+            # the one before is the run asked for.
+            after = await self._routine_of(row, {"routine": str(routine["id"])})
+            if self._last_run(after) == before:
+                raise
+            log.info(
+                "mcp.computer.ran_despite_error",
+                user_id=str(self.user.id),
+                method="runAgentAutomationNow",
+            )
         return {
             "started": True,
             "routine": _text(routine.get("name")) or str(routine["id"]),
             "agent": str(row.get("name")).strip(),
             "next": "It runs in the agent's chat: read_chat or agent_status to follow it.",
         }
+
+    @staticmethod
+    def _last_run(routine: dict[str, Any]) -> tuple[Any, Any]:
+        """A routine's newest run as the computer lists it: its id and start."""
+        runs = [r for r in routine.get("runs") or [] if isinstance(r, dict)]
+        newest = runs[0] if runs else {}
+        return newest.get("id"), newest.get("at") or routine.get("lastRunAt")
 
     async def pause_routine(self, arguments: dict[str, Any]) -> dict[str, Any]:
         row = await self._agent(arguments)

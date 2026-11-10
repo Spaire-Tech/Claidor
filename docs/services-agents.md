@@ -3060,7 +3060,17 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   start (`sand.box.wake`, once per 30 seconds) and the bot is told to call again in a minute, so
   no request waits on a start. Purchases (`answerPurchase`), 1Password logins, secrets, forms,
   Credentials Store entries and travellers' details are listed by `list_waiting` with "answer in
-  the Simeon app" and never answered by a bot.
+  the Simeon app" and never answered by a bot. A routine run now is answered by the computer only
+  once it has run, and an engine before 11 November 2026 then threw "Cannot read properties of
+  undefined (reading 'mapped')" (its telemetry called unbound, `analytics-service.ts`; Grok Bot's
+  test): `run_routine` takes a refusal or a slow answer as started when the routine's newest run
+  changed (`mcp.computer.ran_despite_error`). `listAllAutomations` answers `{agentId, automation}`
+  pairs, read as such.
+- **How a session signs.** What a session sends a Simeon agent starts with what it is ("Claude
+  Code: …"), or with the name it chose with `set_status` when it chose one (`session_label`):
+  Grok Bot added at `/mcp` signs in as Cursor and wrote "Cursor: …" though named `grok-bot` (11
+  November 2026). A bot at its own address (`/mcp/grok-bot`) is one session per person even when a
+  conversation registers a client of its own.
 - **Addresses.** `maya/claude`, `maya/Nora` (a Simeon agent by name, letter case and spaces
   aside), `claude` (when unique on the network), `maya/*`, `repo:api` (the repository or its last
   part), `*`. Messages to many reach live sessions only, never a Simeon agent: each message to one
