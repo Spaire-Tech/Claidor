@@ -839,6 +839,35 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 10 November 2026: Grok, on the person's own plan, like ChatGPT
+
+The founder: "now we need to bring meta and grok - both should be the same
+as chat gpt", "No api key. Sign in.", then "lets do grok. we'll decide on
+meta later". AI Models lists Grok under Subscriptions with its own icon
+(grok.com's, black with the white mark). Connect opens the consent ("Put
+Grok to work"…), then the same sheet as ChatGPT's (`ChatGPTConnectSheet`
+with `provider`): "Copy this code", "Enter it on accounts.x.ai/oauth2/device
+and approve" with Open, "Waiting for you to approve…". A plan xAI doesn't let
+in (Free) gets its words, "Grok didn't allow this account to sign in here.
+It needs SuperGrok or X Premium.", with **See Grok Plans** (the wide button,
+grok.com/supergrok) and Try Again under it. Connected, the composer says
+"Grok 4.6 · High" with Grok's mark, the menu lists Grok, and Usage & Billing
+shows its credits as "Monthly limit 34%" (or Weekly), with its page and
+Manage Plan. The core gained `ChatGPTPoll.notAllowed`, `AIModels.plansPage`,
+the `monthly` window and Grok's plan names (SuperGrok Heavy, X Premium+…).
+The server's part: `docs/services-core.md`, "Grok".
+
+Checked: the core's tests (14 in Swift on Linux, 15 in vitest), the server's
+(26 new, xAI stood in), the web build, and Chromium against a stand-in
+server in light and dark: the list, the consent, the code, the barred plan
+(See Grok Plans opened grok.com), connected, Usage & Billing, Grok's page,
+the composer and its menu. Not checked: a real sign-in at xAI, and the Mac
+and iPhone apps built and run (no Xcode here; their Swift parses).
+
+Next: the founder signs in with a real SuperGrok account once the server is
+deployed; xAI's answer to the e-mail in `docs/your-own-models.md`, section
+9; Meta, when the founder decides.
+
 ### 10 November 2026: the store's forms written for the person; one wide button; Connect lighter
 
 The founder: "Help the user. dont confuse him. have the card number be

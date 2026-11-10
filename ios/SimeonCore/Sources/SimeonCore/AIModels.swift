@@ -75,11 +75,12 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
     return lines.map { "\($0.title) \($0.meter.valueLabel)" }.joined(separator: " · ")
   }
 
-  /** The provider's own page for the plan's usage and the plan (9 November 2026): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
+  /** The provider's own page for the plan's usage and the plan (9 November 2026): Codex's usage page on chatgpt.com, Claude's on claude.ai, Grok's plans on grok.com. */
   public var planPage: URL? {
     switch provider {
     case AIModels.chatGPT: return URL(string: "https://chatgpt.com/codex/settings/usage")
     case AIModels.claude: return URL(string: "https://claude.ai/settings/usage")
+    case AIModels.grok: return AIModels.plansPage(AIModels.grok)
     default: return nil
     }
   }
@@ -131,14 +132,17 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
  * and billing"), as its provider last said: ChatGPT with each answer,
  * Claude from Claude Code on the computer (server/simeon/desktop/
  * model_accounts.py). Each window its share used and when it resets: the
- * 5-hour one, then the week's. Never guessed: a window whose reset has
- * passed reads as unused until the provider says again.
+ * 5-hour one, then the week's (and a Grok plan's month, 10 November 2026:
+ * its credits are counted by the week or the month). Never guessed: a
+ * window whose reset has passed reads as unused until the provider says
+ * again.
  */
 public struct PlanUsage: Equatable, Sendable {
   public struct Window: Equatable, Sendable {
     public enum Kind: String, Sendable {
       case fiveHour = "five_hour"
       case weekly
+      case monthly
     }
 
     public let kind: Kind
@@ -181,15 +185,20 @@ public struct PlanUsage: Equatable, Sendable {
     return Date(timeIntervalSince1970: ms / 1000)
   }
 
-  /** "5-hour limit" and "Weekly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
+  /** "5-hour limit", "Weekly limit" and "Monthly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
   public func lines(now: Date = Date(), timeZone: TimeZone = .current) -> [Line] {
-    let order: [Window.Kind] = [.fiveHour, .weekly]
+    let order: [Window.Kind] = [.fiveHour, .weekly, .monthly]
     return order.compactMap { kind in
       guard let window = windows.first(where: { $0.kind == kind }) else { return nil }
       let reset = window.resetsAt.flatMap { $0 > now ? $0 : nil }
       let passed = window.resetsAt != nil && reset == nil
       let used = passed ? 0 : window.usedPercent
-      let title = kind == .fiveHour ? L10n.text("5-hour limit") : L10n.text("Weekly limit")
+      let title: String
+      switch kind {
+      case .fiveHour: title = L10n.text("5-hour limit")
+      case .weekly: title = L10n.text("Weekly limit")
+      case .monthly: title = L10n.text("Monthly limit")
+      }
       let resets = reset.map { L10n.text("Resets \(PlanUsage.time($0, now: now, timeZone: timeZone))") }
       return Line(title: title, meter: UsageMeters.Meter(valueLabel: UsageMeters.percent(used), barPercent: max(0, min(100, used)), resetLabel: resets))
     }
@@ -240,8 +249,14 @@ public struct ProviderModels: Identifiable, Equatable, Sendable {
   }
 }
 
-/** A ChatGPT sign-in waiting for the person: the code, where to enter it, how often to ask. */
+/**
+ * A sign-in by code waiting for the person (ChatGPT's, and Grok's since 10
+ * November 2026, the founder: "lets do grok", as Reason does): the code,
+ * where to enter it, how often to ask, and whose it is.
+ */
 public struct ChatGPTSignIn: Equatable, Sendable {
+  /** `chatgpt` or `grok`: the server's route for it (`models/accounts/<provider>/…`). */
+  public let provider: String
   public let connectId: String
   public let userCode: String
   public let verificationURL: URL
@@ -250,15 +265,16 @@ public struct ChatGPTSignIn: Equatable, Sendable {
   /** Seconds the code lasts (OpenAI's 15 minutes). */
   public let expiresIn: Int
 
-  public init(connectId: String, userCode: String, verificationURL: URL, interval: Int, expiresIn: Int) {
+  public init(provider: String = AIModels.chatGPT, connectId: String, userCode: String, verificationURL: URL, interval: Int, expiresIn: Int) {
+    self.provider = provider
     self.connectId = connectId; self.userCode = userCode; self.verificationURL = verificationURL
     self.interval = interval; self.expiresIn = expiresIn
   }
 
-  init?(json: JSON) {
+  init?(json: JSON, provider: String = AIModels.chatGPT) {
     guard let connectId = json["connectId"]?.text, let code = json["userCode"]?.text,
           let url = json["verificationUrl"]?.text.flatMap(URL.init(string:)) else { return nil }
-    self.init(connectId: connectId, userCode: code, verificationURL: url,
+    self.init(provider: provider, connectId: connectId, userCode: code, verificationURL: url,
               interval: max(1, json["interval"]?.int ?? 5), expiresIn: max(60, json["expiresIn"]?.int ?? 900))
   }
 
@@ -276,8 +292,10 @@ public enum ChatGPTPoll: Equatable, Sendable {
   case connected(ModelAccount)
   /** The code ran out, or was used already: the person starts again. */
   case expired
-  /** OpenAI refused the sign-in. */
+  /** The provider refused the sign-in. */
   case failed
+  /** Signed in, but the plan may not be used here (Grok's Free plan, 10 November 2026): said in the provider's words (`startProblem("not_allowed")`). */
+  case notAllowed
 }
 
 /** Claude's sign-in started in Claude Code on the computer: Anthropic's page to approve on. */
@@ -309,8 +327,12 @@ public enum ClaudeConnect: Equatable, Sendable {
 public enum AIModels {
   public static let chatGPT = "chatgpt"
   public static let claude = "claude"
+  /** Grok, on the person's SuperGrok or X Premium plan (10 November 2026), signed in to by code as ChatGPT is. */
+  public static let grok = "grok"
   /** The providers a person can connect, in the order the apps list them. */
-  public static let providers = [chatGPT, claude]
+  public static let providers = [chatGPT, claude, grok]
+  /** The providers signed in to with a code on their own page (the ChatGPT sheet), not on the computer (Claude's). */
+  public static let signedInByCode: Set<String> = [chatGPT, grok]
   /** The name on the composer while the agents use Simeon's models (the founder's "⌘ Simeon"). */
   public static let simeon = "Simeon"
   /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
@@ -321,19 +343,30 @@ public enum AIModels {
     switch provider {
     case chatGPT: return "ChatGPT"
     case claude: return "Claude"
+    case grok: return "Grok"
     default: return provider.prefix(1).uppercased() + provider.dropFirst()
     }
   }
 
-  /** ChatGPT's plan as people know it: "plus" is Plus, "prolite" is Pro Lite. */
+  /** A plan as people know it: ChatGPT's "plus" is Plus, "prolite" Pro Lite; Grok's "supergrok_heavy" SuperGrok Heavy, "x_premium_plus" X Premium+. */
   public static func planName(_ plan: String) -> String {
     switch plan.lowercased() {
     case "prolite": return "Pro Lite"
     case "promax": return "Pro Max"
     case "edu": return "Edu"
+    case "supergrok": return "SuperGrok"
+    case "supergrok_heavy": return "SuperGrok Heavy"
+    case "supergrok_lite": return "SuperGrok Lite"
+    case "supergrok_plus": return "SuperGrok Plus"
+    case "x_premium_plus": return "X Premium+"
     default:
       return plan.split(separator: "_").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ")
     }
+  }
+
+  /** Where a provider sells its plans, for an account whose plan it doesn't let in here (Grok's Free: SuperGrok's page). */
+  public static func plansPage(_ provider: String) -> URL? {
+    provider == grok ? URL(string: "https://grok.com/supergrok") : nil
   }
 
   /** "4:00 PM" today, else "Thu 4:00 PM", in the app's language. */
@@ -347,8 +380,15 @@ public enum AIModels {
     return format.string(from: date)
   }
 
-  /** What the server's refusal of a sign-in means, in the person's words (`error.code` of `models/accounts/chatgpt/start`). */
-  public static func startProblem(code: String?) -> String {
+  /** What the server's refusal of a sign-in means, in the person's words (`error.code` of `models/accounts/<provider>/start`). */
+  public static func startProblem(code: String?, provider: String = chatGPT) -> String {
+    if provider == grok {
+      switch code {
+      case "not_allowed": return L10n.text("Grok didn't allow this account to sign in here. It needs SuperGrok or X Premium.")
+      case "device_code_off": return L10n.text("Grok isn't letting apps sign in with a code right now. Try again later.")
+      default: return L10n.text("Couldn't reach Grok. Try again in a moment.")
+      }
+    }
     switch code {
     case "device_code_off": return L10n.text("ChatGPT didn't allow signing in with a code. Check your ChatGPT security settings, then try again.")
     default: return L10n.text("Couldn't reach ChatGPT. Try again in a moment.")
@@ -480,24 +520,29 @@ public final class AIModelsModel {
   public var effortName: String? { effort.map(AIModels.effortName) }
 
   /** A ChatGPT sign-in started: the code to show; nil (and `problem`) when none could be had. */
-  public func startChatGPT() async -> ChatGPTSignIn? {
+  public func startChatGPT() async -> ChatGPTSignIn? { await startCodeSignIn(AIModels.chatGPT) }
+
+  /** A sign-in by code started for `provider` (ChatGPT, Grok): the code to show; nil (and `problem`) when none could be had. */
+  public func startCodeSignIn(_ provider: String) async -> ChatGPTSignIn? {
     do {
-      let answer = try await call("models/accounts/chatgpt/start", "POST", [:])
-      guard let signIn = ChatGPTSignIn(json: answer) else { throw SimeonAPIError(message: AIModels.startProblem(code: nil), status: 0) }
+      let answer = try await call("models/accounts/\(provider)/start", "POST", [:])
+      guard let signIn = ChatGPTSignIn(json: answer, provider: provider) else {
+        throw SimeonAPIError(message: AIModels.startProblem(code: nil, provider: provider), status: 0)
+      }
       problem = nil
       return signIn
     } catch let error as SimeonAPIError {
-      problem = AIModels.startProblem(code: error.code)
+      problem = AIModels.startProblem(code: error.code, provider: provider)
       return nil
     } catch {
-      problem = AIModels.startProblem(code: nil)
+      problem = AIModels.startProblem(code: nil, provider: provider)
       return nil
     }
   }
 
   /** One question to the server: has the person approved? */
   public func poll(_ signIn: ChatGPTSignIn) async -> ChatGPTPoll {
-    guard let answer = try? await call("models/accounts/chatgpt/poll", "POST", ["connectId": .string(signIn.connectId)]) else {
+    guard let answer = try? await call("models/accounts/\(signIn.provider)/poll", "POST", ["connectId": .string(signIn.connectId)]) else {
       // The server not reached this time: asked again at the next turn.
       return .waiting
     }
@@ -506,7 +551,7 @@ public final class AIModelsModel {
       guard let account = ModelAccount(json: answer["account"]) else { return .failed }
       return .connected(account)
     case "expired": return .expired
-    case "failed": return .failed
+    case "failed": return answer["reason"]?.string == "not_allowed" ? .notAllowed : .failed
     default: return .waiting
     }
   }
@@ -528,11 +573,11 @@ public final class AIModelsModel {
       case .waiting: continue
       case .connected:
         await load()
-        if chosen == nil, let best = models.first(where: { $0.provider == AIModels.chatGPT }) {
+        if chosen == nil, let best = models.first(where: { $0.provider == signIn.provider }) {
           await choose(best.id)
         }
         return answer
-      case .expired, .failed:
+      case .expired, .failed, .notAllowed:
         return answer
       }
     }

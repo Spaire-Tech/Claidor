@@ -2998,3 +2998,20 @@ Claude's sign-in now survives an engine published (the server swaps the
 engine on the same computer: `docs/services-core.md`).
 
 The core's test ran in Swift on Linux. Not yet built or run on a Mac.
+
+### Grok, connected like ChatGPT (10 November 2026)
+
+The founder: "lets do grok". AI Models lists Grok with grok.com's own icon
+(`Providers/grok`) and its mark on the composer (`Providers/grok-mark`, a
+template drawn in the ink, as ChatGPT's). Connect opens the consent, then
+`MacChatGPTConnectSheet(model:provider:)`: Grok's code and
+accounts.x.ai's page, the same steps as ChatGPT's. A plan xAI doesn't let in
+says so in its words, with **See Grok Plans** (the sheet's wide button,
+grok.com/supergrok) and a Try Again pill under it. The iPhone's
+`ChatGPTConnectSheet` does the same in its Form. Connected, the composer
+names Grok 4.6 and its effort (Extra High is Grok 4.6's highest), and Usage
+& Billing shows its credits by the week or the month.
+
+Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
+and the core's tests ran on Linux. The web app's translation ran in Chromium.
+

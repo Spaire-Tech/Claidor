@@ -33,16 +33,19 @@ import {
   type ClaudeSignIn,
   type AIModelsModel as Model,
   type ModelAccount,
-  chatGPT,
   claude,
+  grok,
   kindName,
   planName,
   planPage,
   planUsageLines,
   planUsageUpdated,
+  plansPage,
   providerName,
   shownAddress,
   shownName,
+  signedInByCode,
+  startProblem,
   statusWords,
   usable,
   usageLine,
@@ -74,7 +77,8 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   const model = store.aiModels
   useWatched(model)
   const connector = useConnector()
-  const [connectingChatGPT, setConnectingChatGPT] = useState(false)
+  /** The provider whose code sheet is open (ChatGPT's, Grok's). */
+  const [connectingByCode, setConnectingByCode] = useState<string>()
   const [connectingClaude, setConnectingClaude] = useState(false)
   const [renaming, setRenaming] = useState<ModelAccount>()
   const [disconnecting, setDisconnecting] = useState<ModelAccount>()
@@ -117,14 +121,14 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                   divided={index > 0}
                   rename={() => setRenaming(account)}
                   addAnother={
-                    account.provider === chatGPT
-                      ? () => setConnectingChatGPT(true)
+                    signedInByCode.has(account.provider)
+                      ? () => setConnectingByCode(account.provider)
                       : undefined
                   }
                   connectAgain={() =>
                     account.provider === claude
                       ? setConnectingClaude(true)
-                      : setConnectingChatGPT(true)
+                      : setConnectingByCode(account.provider)
                   }
                   disconnect={() => setDisconnecting(account)}
                 />
@@ -145,7 +149,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
                       const open = async () =>
                         provider === claude
                           ? setConnectingClaude(true)
-                          : setConnectingChatGPT(true)
+                          : setConnectingByCode(provider)
                       // The consent an app's Connect shows, then the sign-in (9 November 2026, the founder: "have it like when you connect an app").
                       if (connector)
                         connector.ask(providerName(provider), open, {
@@ -166,10 +170,11 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
           )}
         </>
       )}
-      {connectingChatGPT && (
+      {connectingByCode !== undefined && (
         <ChatGPTConnectSheet
           model={model}
-          close={() => setConnectingChatGPT(false)}
+          provider={connectingByCode}
+          close={() => setConnectingByCode(undefined)}
         />
       )}
       {connectingClaude && (
@@ -575,9 +580,12 @@ function openPage(url: string): void {
  */
 function ChatGPTConnectSheet({
   model,
+  provider,
   close,
 }: {
   model: Model
+  /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
+  provider: string
   close: () => void
 }) {
   const [signIn, setSignIn] = useState<ChatGPTSignIn>()
@@ -590,7 +598,7 @@ function ChatGPTConnectSheet({
     const ending = new AbortController()
     model.clearProblem()
     void (async () => {
-      const started = await model.startChatGPT()
+      const started = await model.startCodeSignIn(provider)
       if (ending.signal.aborted || !started) return
       setSignIn(started)
       const answer = await model.waitForApproval(started, ending.signal)
@@ -598,7 +606,7 @@ function ChatGPTConnectSheet({
       setOutcome(answer)
     })()
     return () => ending.abort()
-  }, [model, attempt])
+  }, [model, attempt, provider])
 
   const again = () => {
     setSignIn(undefined)
@@ -617,18 +625,45 @@ function ChatGPTConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return <ConnectedEnd provider={chatGPT} close={close} />
+      return <ConnectedEnd provider={provider} close={close} />
     if (outcome?.kind === 'expired' || outcome?.kind === 'failed')
       return (
         <>
           <p className="models-sheet-problem" role="alert">
             {outcome.kind === 'expired'
               ? t('The code expired. Try again.')
-              : t("ChatGPT didn't connect. Try again.")}
+              : provider === grok
+                ? t("Grok didn't connect. Try again.")
+                : t("ChatGPT didn't connect. Try again.")}
           </p>
           {tryAgain}
         </>
       )
+    if (outcome?.kind === 'notAllowed') {
+      // Signed in, on a plan xAI doesn't let in here: why, and where to get one that is.
+      const plans = plansPage(provider)
+      return (
+        <>
+          <p className="models-sheet-words" role="alert">
+            {startProblem('not_allowed', provider)}
+          </p>
+          {plans !== undefined && (
+            <div className="models-sheet-end">
+              <button
+                type="button"
+                className="models-wide"
+                onClick={() => openPage(plans)}
+              >
+                {t('See Grok Plans')}
+              </button>
+            </div>
+          )}
+          <div className="models-sheet-again">
+            <SettingsPill title={t('Try Again')} onClick={again} />
+          </div>
+        </>
+      )
+    }
     if (signIn)
       return (
         <ConnectSteps
@@ -660,10 +695,16 @@ function ChatGPTConnectSheet({
   }
 
   return (
-    <Sheet label={t('Connect ChatGPT')} close={close} className="models-sheet">
+    <Sheet
+      label={t`Connect ${providerName(provider)}`}
+      close={close}
+      className="models-sheet"
+    >
       <div className="models-sheet-head">
-        <ProviderIcon provider={chatGPT} side={36} />
-        <h2 className="models-sheet-title">{t('Connect ChatGPT')}</h2>
+        <ProviderIcon provider={provider} side={36} />
+        <h2 className="models-sheet-title">
+          {t`Connect ${providerName(provider)}`}
+        </h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
       </div>
       {body()}

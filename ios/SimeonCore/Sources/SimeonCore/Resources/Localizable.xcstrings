@@ -9526,6 +9526,238 @@
         }
       }
     },
+    "Couldn't reach Grok. Try again in a moment." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok ist nicht erreichbar. Versuch es gleich noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conectar con Grok. Vuelve a intentarlo en un momento."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de joindre Grok. Réessaie dans un instant."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile raggiungere Grok. Riprova tra un attimo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok is niet bereikbaar. Probeer het zo opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się połączyć z Grok. Spróbuj ponownie za chwilę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível falar com o Grok. Tente de novo em instantes."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att nå Grok. Försök igen om en stund."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok’ye ulaşılamadı. Birazdan tekrar dene."
+          }
+        }
+      }
+    },
+    "Grok didn't allow this account to sign in here. It needs SuperGrok or X Premium." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok hat die Anmeldung mit diesem Konto hier nicht erlaubt. Dafür brauchst du SuperGrok oder X Premium."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok no permitió iniciar sesión aquí con esta cuenta. Necesitas SuperGrok o X Premium."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok n'a pas autorisé ce compte à se connecter ici. Il te faut SuperGrok ou X Premium."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok non ha consentito l'accesso qui con questo account. Ti serve SuperGrok o X Premium."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok stond niet toe dat dit account hier inlogt. Je hebt SuperGrok of X Premium nodig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok nie pozwolił zalogować się tutaj tym kontem. Potrzebujesz SuperGrok lub X Premium."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Grok não permitiu que esta conta entrasse aqui. Você precisa do SuperGrok ou do X Premium."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok tillät inte det här kontot att logga in här. Du behöver SuperGrok eller X Premium."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok bu hesabın burada oturum açmasına izin vermedi. SuperGrok veya X Premium gerekiyor."
+          }
+        }
+      }
+    },
+    "Grok isn't letting apps sign in with a code right now. Try again later." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok lässt Apps gerade keine Anmeldung mit einem Code zu. Versuch es später noch mal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora mismo Grok no permite que las apps inicien sesión con un código. Vuelve a intentarlo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok ne laisse pas les apps se connecter avec un code pour le moment. Réessaie plus tard."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al momento Grok non consente alle app di accedere con un codice. Riprova più tardi."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok laat apps nu niet inloggen met een code. Probeer het later opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok nie pozwala teraz aplikacjom logować się kodem. Spróbuj ponownie później."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Grok não está deixando apps entrarem com um código agora. Tente de novo mais tarde."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok låter inte appar logga in med en kod just nu. Försök igen senare."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grok şu anda uygulamaların kodla oturum açmasına izin vermiyor. Daha sonra tekrar dene."
+          }
+        }
+      }
+    },
+    "Monthly limit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monatslimit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Límite mensual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite mensuelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite mensile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maandlimiet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limit miesięczny"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite mensal"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Månadsgräns"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aylık sınır"
+          }
+        }
+      }
+    },
     "This card has expired." : {
       "extractionState" : "manual",
       "localizations" : {

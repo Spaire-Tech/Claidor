@@ -111,7 +111,7 @@ describe('an account as the server lists it', () => {
             usedPercent: 93,
             resetsAt: +now + 2 * 3_600_000,
           },
-          { kind: 'monthly', usedPercent: 5 },
+          { kind: 'daily', usedPercent: 5 },
         ],
         at: +now,
       },
@@ -157,6 +157,11 @@ describe('an account as the server lists it', () => {
     expect(planName('pro')).toBe('Pro')
     expect(planName('prolite')).toBe('Pro Lite')
     expect(planName('free_workspace')).toBe('Free Workspace')
+    // Grok's plans, as xAI names them (server/simeon/desktop/grok.py, `TIERS`).
+    expect(planName('supergrok')).toBe('SuperGrok')
+    expect(planName('supergrok_heavy')).toBe('SuperGrok Heavy')
+    expect(planName('x_premium')).toBe('X Premium')
+    expect(planName('x_premium_plus')).toBe('X Premium+')
   })
 })
 
@@ -353,7 +358,7 @@ describe('the page’s model', () => {
       noWait,
     )
     await model.load()
-    expect(model.unconnected).toEqual(['chatgpt'])
+    expect(model.unconnected).toEqual(['chatgpt', 'grok'])
     expect(model.hasAccount('claude')).toBe(true)
     expect(model.choices.map((one) => one.provider)).toEqual(['claude'])
     expect(model.choices[0]?.models.map((one) => one.name)).toEqual([
@@ -385,6 +390,7 @@ describe('the page’s model', () => {
       "ChatGPT didn't allow signing in with a code. Check your ChatGPT security settings, then try again.",
     )
     const outcome = await model.waitForApproval({
+      provider: 'chatgpt',
       connectId: 'c1',
       userCode: 'X',
       verificationURL: 'https://auth.openai.com/codex/device',
@@ -394,6 +400,62 @@ describe('the page’s model', () => {
     expect(outcome.kind).toBe('failed')
   })
 
+  it('Grok signs in on its own routes, and a plan xAI bars is said in its words', async () => {
+    const asked: string[] = []
+    const model = new AIModelsModel(
+      async (path, method): Promise<JSONValue> => {
+        asked.push(`${method ?? 'GET'} ${path}`)
+        if (path === 'models/accounts/grok/start')
+          return {
+            connectId: 'g1',
+            userCode: 'WXYZ-1234',
+            verificationUrl:
+              'https://accounts.x.ai/oauth2/device?user_code=WXYZ-1234',
+            interval: 1,
+            expiresIn: 600,
+          }
+        return { status: 'failed', reason: 'not_allowed' }
+      },
+      noWait,
+    )
+    const signIn = await model.startCodeSignIn('grok')
+    expect(signIn?.provider).toBe('grok')
+    expect(signIn && shownAddress(signIn)).toBe('accounts.x.ai/oauth2/device')
+    const outcome = signIn && (await model.waitForApproval(signIn))
+    expect(outcome?.kind).toBe('notAllowed')
+    expect(asked).toEqual([
+      'POST models/accounts/grok/start',
+      'POST models/accounts/grok/poll',
+    ])
+    expect(startProblem('not_allowed', 'grok')).toBe(
+      "Grok didn't allow this account to sign in here. It needs SuperGrok or X Premium.",
+    )
+    expect(startProblem('device_code_off', 'grok')).toBe(
+      "Grok isn't letting apps sign in with a code right now. Try again later.",
+    )
+
+    const now = new Date(1_800_000_000_000)
+    const account = modelAccount({
+      id: 'g1',
+      provider: 'grok',
+      plan: 'supergrok',
+      usage: {
+        windows: [
+          {
+            kind: 'monthly',
+            usedPercent: 30,
+            resetsAt: +now + 20 * 86_400_000,
+          },
+        ],
+        at: +now,
+      },
+    })
+    expect(account && providerName(account.provider)).toBe('Grok')
+    expect(account && accountDetail(account)).toBe('Subscription · SuperGrok')
+    expect(account && usageLine(account, { now })).toBe('Monthly limit 30%')
+    expect(account && planPage(account)).toBe('https://grok.com/supergrok')
+  })
+
   it('a code that runs out ends the wait', async () => {
     let asked = 0
     const model = new AIModelsModel(async () => {
@@ -401,6 +463,7 @@ describe('the page’s model', () => {
       return { status: 'waiting' }
     }, noWait)
     const outcome = await model.waitForApproval({
+      provider: 'chatgpt',
       connectId: 'c1',
       userCode: 'X',
       verificationURL: 'https://auth.openai.com/codex/device',
@@ -426,6 +489,7 @@ describe('the page’s model', () => {
     )
     const outcome = await model.waitForApproval(
       {
+        provider: 'chatgpt',
         connectId: 'c1',
         userCode: 'X',
         verificationURL: 'https://auth.openai.com/codex/device',
@@ -446,6 +510,7 @@ describe('the page’s model', () => {
       return { status: 'expired' }
     }, noWait)
     const outcome = await model.waitForApproval({
+      provider: 'chatgpt',
       connectId: 'c1',
       userCode: 'X',
       verificationURL: 'https://auth.openai.com/codex/device',

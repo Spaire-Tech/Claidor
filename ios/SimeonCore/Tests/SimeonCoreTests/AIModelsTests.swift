@@ -42,7 +42,7 @@ final class AIModelsTests: XCTestCase {
     let account = try XCTUnwrap(ModelAccount(json: ["id": "c1", "provider": "claude", "usage": ["windows": [
       ["kind": "weekly", "usedPercent": 12.4, "resetsAt": ms(now.addingTimeInterval(3 * 86_400))],
       ["kind": "five_hour", "usedPercent": 93, "resetsAt": ms(now.addingTimeInterval(2 * 3600))],
-      ["kind": "monthly", "usedPercent": 5],
+      ["kind": "daily", "usedPercent": 5],
     ], "at": ms(now)]]))
     let usage = try XCTUnwrap(account.usage)
     XCTAssertEqual(usage.windows.count, 2, "a window it doesn't know is left out")
@@ -75,6 +75,46 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(AIModels.planName("pro"), "Pro")
     XCTAssertEqual(AIModels.planName("prolite"), "Pro Lite")
     XCTAssertEqual(AIModels.planName("free_workspace"), "Free Workspace")
+    // Grok's plans, as xAI names them (server/simeon/desktop/grok.py, `TIERS`).
+    XCTAssertEqual(AIModels.planName("supergrok"), "SuperGrok")
+    XCTAssertEqual(AIModels.planName("supergrok_heavy"), "SuperGrok Heavy")
+    XCTAssertEqual(AIModels.planName("x_premium"), "X Premium")
+    XCTAssertEqual(AIModels.planName("x_premium_plus"), "X Premium+")
+  }
+
+  /** Grok (10 November 2026): its own routes, the code on xAI's page, a plan xAI bars said in its words, its credits by the month. */
+  @MainActor
+  func testGrokSignsInByCodeOnItsOwnRoutes() async throws {
+    var asked: [String] = []
+    let model = AIModelsModel(call: { path, method, _ in
+      asked.append("\(method ?? "GET") \(path)")
+      switch path {
+      case "models/accounts/grok/start":
+        return ["connectId": "g1", "userCode": "WXYZ-1234", "verificationUrl": "https://accounts.x.ai/oauth2/device?user_code=WXYZ-1234", "interval": 1, "expiresIn": 600]
+      case "models/accounts/grok/poll": return ["status": "failed", "reason": "not_allowed"]
+      default: return [:]
+      }
+    }, sleep: { _ in })
+    let started = await model.startCodeSignIn(AIModels.grok)
+    let signIn = try XCTUnwrap(started)
+    XCTAssertEqual(signIn.provider, "grok")
+    XCTAssertEqual(signIn.shownAddress, "accounts.x.ai/oauth2/device")
+    let outcome = await model.waitForApproval(signIn)
+    XCTAssertEqual(outcome, .notAllowed)
+    XCTAssertEqual(asked, ["POST models/accounts/grok/start", "POST models/accounts/grok/poll"])
+    XCTAssertEqual(AIModels.startProblem(code: "not_allowed", provider: AIModels.grok), "Grok didn't allow this account to sign in here. It needs SuperGrok or X Premium.")
+    XCTAssertEqual(AIModels.startProblem(code: "device_code_off", provider: AIModels.grok), "Grok isn't letting apps sign in with a code right now. Try again later.")
+    XCTAssertEqual(AIModels.startProblem(code: nil, provider: AIModels.grok), "Couldn't reach Grok. Try again in a moment.")
+
+    let now = Date(timeIntervalSince1970: 1_800_000_000)
+    let grok = try XCTUnwrap(ModelAccount(json: [
+      "id": "g1", "provider": "grok", "plan": "supergrok",
+      "usage": ["windows": [["kind": "monthly", "usedPercent": 30, "resetsAt": .number((now.timeIntervalSince1970 + 86_400 * 20) * 1000)]], "at": .number(now.timeIntervalSince1970 * 1000)],
+    ]))
+    XCTAssertEqual(grok.providerName, "Grok")
+    XCTAssertEqual(grok.detail, "Subscription · SuperGrok")
+    XCTAssertEqual(grok.usageLine(now: now), "Monthly limit 30%")
+    XCTAssertEqual(grok.planPage?.absoluteString, "https://grok.com/supergrok")
   }
 
   func testTheCodeAndWhereToEnterIt() throws {
@@ -192,7 +232,7 @@ final class AIModelsTests: XCTestCase {
       }
     }, sleep: { _ in })
     await model.load()
-    XCTAssertEqual(model.unconnected, ["chatgpt"], "Claude only under Connected")
+    XCTAssertEqual(model.unconnected, ["chatgpt", "grok"], "Claude only under Connected")
     XCTAssertTrue(model.hasAccount("claude"))
     XCTAssertEqual(model.choices.map(\.provider), ["claude"])
     XCTAssertEqual(model.choices.first?.models.map(\.name), ["Claude Sonnet", "Claude Opus"], "the server's order")

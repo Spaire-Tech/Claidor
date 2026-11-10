@@ -180,7 +180,7 @@ async def _expiring(session: AsyncSession, user: User, *, left: timedelta) -> No
 @pytest.mark.asyncio
 class TestTheClaims:
     async def test_the_id_token_names_the_account_its_email_and_plan(self) -> None:
-        tokens = accounts.ChatGptTokens(
+        tokens = accounts.SignInTokens(
             id_token=_id_token("acct_x", "x@example.com", "pro"),
             access_token="opaque",
             refresh_token="rt",
@@ -194,7 +194,7 @@ class TestTheClaims:
                 accounts._AUTH_CLAIM: {"chatgpt_account_id": "acct_p"},
             }
         )
-        tokens = accounts.ChatGptTokens(None, token, "rt")
+        tokens = accounts.SignInTokens(None, token, "rt")
         assert accounts.identity(tokens) == ("acct_p", "p@example.com", None)
 
     async def test_nonsense_is_no_claims(self) -> None:
@@ -418,12 +418,12 @@ class TestConnect:
             await accounts.keep_sign_in(
                 session,
                 user.id,
-                accounts.ChatGptTokens(_jwt({"email": "x@example.com"}), "at", "rt"),
+                accounts.SignInTokens(_jwt({"email": "x@example.com"}), "at", "rt"),
             )
         assert no_account.value.code == "no_account"
         with pytest.raises(accounts.ChatGptError) as no_refresh:
             await accounts.keep_sign_in(
-                session, user.id, accounts.ChatGptTokens(_id_token(), "at", None)
+                session, user.id, accounts.SignInTokens(_id_token(), "at", None)
             )
         assert no_refresh.value.code == "no_refresh_token"
 
@@ -575,7 +575,7 @@ class TestAccess:
         await _expiring(session, user, left=-timedelta(minutes=1))
         with respx.mock(assert_all_called=True) as mock:
             mock.post(TOKEN_URL).mock(return_value=httpx.Response(500))
-            with pytest.raises(accounts.ChatGptUnavailable):
+            with pytest.raises(accounts.RefreshUnavailable):
                 await accounts.access_for(session, user.id, _id(account))
         [row] = await _rows(session, user)
         assert row.status == accounts.STATUS_AVAILABLE
