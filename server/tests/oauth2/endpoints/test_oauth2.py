@@ -1360,6 +1360,29 @@ class TestBotsSignIn:
         assert "none" in found["token_endpoint_auth_methods_supported"]
         assert "agents" in found["scopes_supported"]
 
+    async def test_the_sign_in_page_is_reached_from_the_servers_own_address(
+        self, client: AsyncClient
+    ) -> None:
+        # Codex refuses an authorization endpoint on another origin than the
+        # server's: the metadata names the server's door, which sends the
+        # browser on to the page on app.simeonlabs.com with the query intact.
+        found = (await client.get("/.well-known/oauth-authorization-server")).json()
+        assert found["authorization_endpoint"].endswith("/oauth2/authorize")
+        assert "/v1/" not in found["authorization_endpoint"]
+        door = await client.get(
+            "/oauth2/authorize",
+            params={
+                "client_id": "simeon_ci_bot",
+                "scope": "openid agents",
+                "state": "a b",
+            },
+        )
+        assert door.status_code == 302
+        assert door.headers["location"] == (
+            f"{settings.FRONTEND_BASE_URL}/oauth2/authorize"
+            "?client_id=simeon_ci_bot&scope=openid+agents&state=a+b"
+        )
+
     @pytest.mark.auth
     async def test_asking_for_the_agents_signs_in_as_the_person(
         self, client: AsyncClient, save_fixture: SaveFixture

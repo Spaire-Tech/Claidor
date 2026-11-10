@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from simeon.auth.scope import SCOPES_SUPPORTED
-from simeon.config import settings
 
 from . import constants
 
@@ -79,7 +78,9 @@ def get_server_metadata(
 ) -> OpenIDProviderMetadata:
     return OpenIDProviderMetadata(
         issuer=constants.ISSUER,
-        authorization_endpoint=f"{settings.FRONTEND_BASE_URL}/oauth2/authorize",
+        # The server's own door to the page on app.simeonlabs.com (well_known.py):
+        # an MCP client wants the authorization endpoint on the issuer's origin.
+        authorization_endpoint=url_for("oauth2:authorize_page"),
         token_endpoint=url_for("oauth2:request_token"),
         jwks_uri=url_for("well_known.jwks"),
         userinfo_endpoint=url_for("oauth2:userinfo"),
