@@ -12,10 +12,13 @@ import { Fragment, type ReactNode } from 'react'
 // here, so this is the page people see between the app and "Continue as …".
 // In the page's language (`pageLocale`, 20 October 2026).
 const AuthShell = ({
+  mark,
   heading,
   line,
   children,
 }: {
+  /** Above the heading: the bot and Simeon on the consent page. */
+  mark?: ReactNode
   heading: string
   line?: string
   children: ReactNode
@@ -26,6 +29,7 @@ const AuthShell = ({
     </div>
     <main className="flex w-full grow flex-col items-center justify-center py-10">
       <div className="flex w-full max-w-[320px] flex-col items-center">
+        {mark ? <div className="mb-7">{mark}</div> : null}
         <h1 className="text-center text-[24px] leading-[1.25] font-normal tracking-[-0.01em] text-balance">
           {heading}
         </h1>

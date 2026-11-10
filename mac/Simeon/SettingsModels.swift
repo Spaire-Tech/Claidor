@@ -175,12 +175,13 @@ struct SettingsModelsPage: View {
  */
 enum AIBots {
   static let address = "https://api.simeonlabs.com/mcp"
-  /** Add, for any other bot: the sheet shows Simeon's mark. */
+  /** Add, for any other bot: the sheet shows Simeon's mark and "Add a bot". */
   static let any = "any"
-  static let all: [(provider: String, name: String, line: LocalizedStringResource)] = [
-    (AIModels.chatGPT, "Dots", "Connect Simeon to ChatGPT dots."),
-    ("meta", "Muse", "Connect Simeon to Meta Muse."),
-    (AIModels.grok, "Grok", "Connect Simeon to Grok."),
+  /** Each bot: its mascot (`Providers/<id>`, the founder's pictures), its name, its row's line and its sheet's words. Grok Bot is xAI's assistant (x.ai/bot), named as it is. */
+  static let all: [(id: String, name: String, line: LocalizedStringResource, give: LocalizedStringResource)] = [
+    ("dots", "Dots", "Connect Simeon to ChatGPT Dots.", "Give this to your Dot."),
+    ("muse", "Muse", "Connect Simeon to Meta Muse.", "Give this to your Muse."),
+    ("grokbot", "Grok Bot", "Connect Simeon to Grok.", "Give this to your Bot."),
   ]
 }
 
@@ -192,15 +193,15 @@ private struct MacBotsGroup: View {
 
   var body: some View {
     SettingsGroup(title: String(localized: "Bots"), look: look) {
-      ForEach(Array(AIBots.all.enumerated()), id: \.element.provider) { index, bot in
+      ForEach(Array(AIBots.all.enumerated()), id: \.element.id) { index, bot in
         HStack(spacing: 12) {
-          MacProviderIcon(provider: bot.provider, look: look, side: 28)
+          MacProviderIcon(provider: bot.id, look: look, side: 28)
           VStack(alignment: .leading, spacing: 2) {
             Text(verbatim: bot.name).font(PanelType.row).foregroundStyle(look.ink)
             Text(bot.line).font(PanelType.detail).foregroundStyle(look.inkSecondary).lineLimit(1)
           }
           .frame(maxWidth: .infinity, alignment: .leading)
-          GlassDiscButton(symbol: "plus", help: String(localized: "Add a bot"), size: 32) { add(bot.provider) }
+          GlassDiscButton(symbol: "plus", help: bot.name, size: 32) { add(bot.id) }
         }
         .padding(.horizontal, SettingsRowSize.inset)
         .padding(.vertical, 10)
@@ -228,10 +229,12 @@ private struct MacBotsGroup: View {
 }
 
 /**
- * "Add a bot" (the reference): the bot's icon (Simeon's mark for any
- * other), the title and the glass disc that closes it; what to do with the
- * address; the address in its field with Copy inside it; MCP details, which
- * open what the bot can do once it is in.
+ * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
+ * and "Add a bot" for any other; the glass disc that closes it; who to give
+ * the address to, in that bot's words ("Give this to your Muse."); the
+ * address in its field with Copy inside it; MCP details, which open what the
+ * bot can do once it is in. Simeon's tile stays white in dark mode too, as
+ * an app's icon does (the founder: "keep it how it is for that frame. white").
  */
 struct MacAddBotSheet: View {
   let bot: String
@@ -242,35 +245,40 @@ struct MacAddBotSheet: View {
 
   var body: some View {
     let look = Look(scheme)
+    let known = AIBots.all.first { $0.id == bot }
     VStack(alignment: .leading, spacing: 18) {
       HStack(spacing: 14) {
-        if bot == AIBots.any {
+        if let known {
+          MacProviderIcon(provider: known.id, look: look, side: 44)
+        } else {
           Image("Providers/simeon-mark")
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
             .frame(width: 24, height: 24)
-            .foregroundStyle(look.ink)
+            .foregroundStyle(Color(hex: 0x0d0d0d))
             .frame(width: 44, height: 44)
-            .background(look.ground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 0.5) }
-        } else {
-          MacProviderIcon(provider: bot, look: look, side: 44)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5) }
         }
-        Text("Add a bot")
-          .font(.system(size: 22))
-          .tracking(-0.3)
-          .foregroundStyle(look.ink)
-          .accessibilityAddTraits(.isHeader)
+        Group {
+          if let known { Text(verbatim: known.name) } else { Text("Add a bot") }
+        }
+        .font(.system(size: 22))
+        .tracking(-0.3)
+        .foregroundStyle(look.ink)
+        .accessibilityAddTraits(.isHeader)
         Spacer(minLength: 0)
         GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
           .keyboardShortcut(.cancelAction)
       }
-      Text("Give this to any bot that can add an MCP server.")
-        .font(.system(size: 15))
-        .foregroundStyle(look.ink)
-        .fixedSize(horizontal: false, vertical: true)
-        .padding(.top, 4)
+      Group {
+        if let known { Text(known.give) } else { Text("Give this to any bot that can add an MCP server.") }
+      }
+      .font(.system(size: 15))
+      .foregroundStyle(look.ink)
+      .fixedSize(horizontal: false, vertical: true)
+      .padding(.top, 4)
       HStack(spacing: 12) {
         Text(verbatim: AIBots.address)
           .font(.system(size: 14, design: .monospaced))

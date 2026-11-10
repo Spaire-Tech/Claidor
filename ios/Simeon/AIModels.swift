@@ -135,15 +135,15 @@ struct AIModelsPage: View {
         }
         // Bots (10 November 2026, the founder, with another app's Bots as the reference): each other company's agent with a +, then Add for any other.
         Section {
-          ForEach(AIBots.all, id: \.provider) { bot in
+          ForEach(AIBots.all, id: \.id) { bot in
             HStack(spacing: 14) {
-              ProviderIcon(provider: bot.provider, size: 30)
+              ProviderIcon(provider: bot.id, size: 30)
               VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: bot.name).font(.system(size: 17)).foregroundStyle(Ink.primary)
                 Text(bot.line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
               }
               Spacer(minLength: 8)
-              Button { addingBot = bot.provider } label: {
+              Button { addingBot = bot.id } label: {
                 Image(systemName: "plus")
                   .font(.system(size: 15, weight: .medium))
                   .foregroundStyle(Ink.primary)
@@ -151,7 +151,7 @@ struct AIModelsPage: View {
                   .background(Ink.pillButton, in: Circle())
               }
               .buttonStyle(.borderless)
-              .accessibilityLabel(Text("Add a bot"))
+              .accessibilityLabel(Text(verbatim: bot.name))
             }
             .padding(.vertical, 2)
           }
@@ -262,20 +262,23 @@ struct AIModelsPage: View {
  */
 enum AIBots {
   static let address = "https://api.simeonlabs.com/mcp"
-  /** Add, for any other bot: the sheet shows Simeon's mark. */
+  /** Add, for any other bot: the sheet shows Simeon's mark and "Add a bot". */
   static let any = "any"
-  static let all: [(provider: String, name: String, line: LocalizedStringResource)] = [
-    (AIModels.chatGPT, "Dots", "Connect Simeon to ChatGPT dots."),
-    ("meta", "Muse", "Connect Simeon to Meta Muse."),
-    (AIModels.grok, "Grok", "Connect Simeon to Grok."),
+  /** Each bot: its mascot (`Providers/<id>`, the founder's pictures), its name, its row's line and its sheet's words. Grok Bot is xAI's assistant (x.ai/bot), named as it is. */
+  static let all: [(id: String, name: String, line: LocalizedStringResource, give: LocalizedStringResource)] = [
+    ("dots", "Dots", "Connect Simeon to ChatGPT Dots.", "Give this to your Dot."),
+    ("muse", "Muse", "Connect Simeon to Meta Muse.", "Give this to your Muse."),
+    ("grokbot", "Grok Bot", "Connect Simeon to Grok.", "Give this to your Bot."),
   ]
 }
 
 /**
- * "Add a bot" (the reference): the round close, the bot's icon (Simeon's
- * mark for any other) and the title; what to do with the address; the
- * address in its field with Copy inside it; MCP details, which open what the
- * bot can do once it is in.
+ * A bot's sheet (the reference): the round close; its mascot and its name,
+ * or Simeon's mark and "Add a bot" for any other; who to give the address
+ * to, in that bot's words ("Give this to your Muse."); the address in its
+ * field with Copy inside it; MCP details, which open what the bot can do
+ * once it is in. Simeon's tile stays white in dark mode too, as an app's icon
+ * does (the founder: "keep it how it is for that frame. white").
  */
 struct PhoneAddBotSheet: View {
   let bot: String
@@ -284,34 +287,39 @@ struct PhoneAddBotSheet: View {
   @State private var details = false
 
   var body: some View {
+    let known = AIBots.all.first { $0.id == bot }
     VStack(alignment: .leading, spacing: 18) {
       HStack {
         CloseDisc { dismiss() }
         Spacer()
       }
       HStack(spacing: 14) {
-        if bot == AIBots.any {
+        if let known {
+          ProviderIcon(provider: known.id, size: 48)
+        } else {
           Image("Providers/simeon-mark")
             .renderingMode(.template)
             .resizable()
             .scaledToFit()
             .frame(width: 26, height: 26)
-            .foregroundStyle(Ink.primary)
+            .foregroundStyle(Color(red: 13 / 255, green: 13 / 255, blue: 13 / 255))
             .frame(width: 48, height: 48)
-            .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Ink.tileEdge, lineWidth: 0.5) }
-        } else {
-          ProviderIcon(provider: bot, size: 48)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5) }
         }
-        Text("Add a bot")
-          .font(.system(size: 24))
-          .foregroundStyle(Ink.primary)
-          .accessibilityAddTraits(.isHeader)
-      }
-      Text("Give this to any bot that can add an MCP server.")
-        .font(.system(size: 17))
+        Group {
+          if let known { Text(verbatim: known.name) } else { Text("Add a bot") }
+        }
+        .font(.system(size: 24))
         .foregroundStyle(Ink.primary)
-        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityAddTraits(.isHeader)
+      }
+      Group {
+        if let known { Text(known.give) } else { Text("Give this to any bot that can add an MCP server.") }
+      }
+      .font(.system(size: 17))
+      .foregroundStyle(Ink.primary)
+      .fixedSize(horizontal: false, vertical: true)
       HStack(spacing: 10) {
         Text(verbatim: AIBots.address)
           .font(.system(size: 15, design: .monospaced))

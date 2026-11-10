@@ -289,28 +289,35 @@ export const botsAddress = 'https://api.simeonlabs.com/mcp'
 /**
  * The bots the person can give Simeon to (10 November 2026, the founder,
  * with another app's Bots as the reference: "i want it to talk to other
- * agents like dots, muse etc"): each other company's agent under its
- * maker's icon. Their names are theirs, never translated.
+ * agents like dots, muse etc"), each with its own mascot (the founder's
+ * pictures, `assets/providers/<id>.png`) and its own words in its sheet
+ * ("Give this to your Muse."). Their names are theirs, never translated:
+ * Grok Bot is xAI's assistant (x.ai/bot), named as it is (the founder: "call
+ * it what it is").
  */
 const bots: readonly {
-  provider: string
+  id: string
   name: string
   line: () => string
+  give: () => string
 }[] = [
   {
-    provider: 'chatgpt',
+    id: 'dots',
     name: 'Dots',
-    line: () => t('Connect Simeon to ChatGPT dots.'),
+    line: () => t('Connect Simeon to ChatGPT Dots.'),
+    give: () => t('Give this to your Dot.'),
   },
   {
-    provider: 'meta',
+    id: 'muse',
     name: 'Muse',
     line: () => t('Connect Simeon to Meta Muse.'),
+    give: () => t('Give this to your Muse.'),
   },
   {
-    provider: grok,
-    name: 'Grok',
+    id: 'grokbot',
+    name: 'Grok Bot',
     line: () => t('Connect Simeon to Grok.'),
+    give: () => t('Give this to your Bot.'),
   },
 ]
 
@@ -320,18 +327,18 @@ function BotsGroup({ add }: { add: (bot: string) => void }) {
     <SettingsGroup title={t('Bots')}>
       {bots.map((bot, index) => (
         <div
-          key={bot.provider}
+          key={bot.id}
           className={index > 0 ? 'models-line divided' : 'models-line'}
         >
-          <ProviderIcon provider={bot.provider} side={28} />
+          <ProviderIcon provider={bot.id} side={28} />
           <span className="models-words">
             <span className="models-title">{bot.name}</span>
             <span className="models-subtitle">{bot.line()}</span>
           </span>
           <PanelDisc
             symbol="plus"
-            label={t('Add a bot')}
-            onClick={() => add(bot.provider)}
+            label={bot.name}
+            onClick={() => add(bot.id)}
           />
         </div>
       ))}
@@ -350,15 +357,17 @@ function BotsGroup({ add }: { add: (bot: string) => void }) {
 }
 
 /**
- * "Add a bot" (the reference): the bot's icon (Simeon's for any other),
- * the title and the glass disc that closes it; what to do with the address;
- * the address in its field with Copy inside it; MCP details, which open what
- * the bot can do once it is in.
+ * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
+ * and "Add a bot" for any other; the glass disc that closes it; who to give
+ * the address to, in that bot's words ("Give this to your Muse."); the
+ * address in its field with Copy inside it; MCP details, which open what the
+ * bot can do once it is in.
  */
 function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
   const [copied, setCopied] = useState(false)
   const [details, setDetails] = useState(false)
-  const title = t('Add a bot')
+  const known = bots.find((one) => one.id === bot)
+  const title = known?.name ?? t('Add a bot')
   const copy = async () => {
     await copyText(botsAddress)
     setCopied(true)
@@ -366,18 +375,20 @@ function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
   return (
     <Sheet label={title} close={close} className="models-sheet bots-sheet">
       <div className="models-sheet-head">
-        {bot === 'any' ? (
+        {known ? (
+          <ProviderIcon provider={known.id} side={44} />
+        ) : (
           <span className="bots-simeon-tile" aria-hidden="true">
             <span className="bots-simeon-mark" />
           </span>
-        ) : (
-          <ProviderIcon provider={bot} side={44} />
         )}
         <h2 className="models-sheet-title bots-title">{title}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
       </div>
       <p className="bots-words">
-        {t('Give this to any bot that can add an MCP server.')}
+        {known
+          ? known.give()
+          : t('Give this to any bot that can add an MCP server.')}
       </p>
       <div className="bots-address">
         <span className="bots-address-text">{botsAddress}</span>
