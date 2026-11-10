@@ -41,6 +41,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -278,6 +279,54 @@ def resource_metadata_url() -> str:
     return f"{settings.BASE_URL.rstrip('/')}/.well-known/oauth-protected-resource{PATH}"
 
 
+#: The site the icons are on, and the server as a bot's screen shows it: its
+#: name, "Simeon", and Simeon's mark (MCP 2025-11-25 `icons`), so a bot's list
+#: of connectors (Grok Bot's "Let Grok Bot use …") shows the mark, not a
+#: letter (10 November 2026, the founder: "why dont we have a logo there?").
+SITE = "https://simeonlabs.com"
+SERVER_INFO: dict[str, Any] = {
+    "name": "Simeon",
+    "title": "Simeon",
+    "version": "2.0.0",
+    "websiteUrl": SITE,
+    "icons": [
+        {"src": f"{SITE}/favicon.svg", "mimeType": "image/svg+xml", "sizes": ["any"]},
+        {
+            "src": f"{SITE}/apple-touch-icon.png",
+            "mimeType": "image/png",
+            "sizes": ["180x180"],
+        },
+    ],
+}
+
+#: Simeon's mark at this server's own address too (copies of the website's in
+#: `brand/`): a screen that shows a connector takes the icon of the address it
+#: was given, `api.simeonlabs.com`, which had none.
+_BRAND = Path(__file__).parent / "brand"
+_ICONS = {
+    "/favicon.ico": ("favicon.ico", "image/x-icon"),
+    "/favicon.svg": ("favicon.svg", "image/svg+xml"),
+    "/apple-touch-icon.png": ("apple-touch-icon.png", "image/png"),
+}
+
+
+def _icon_route(path: str, file: str, media_type: str) -> None:
+    body = (_BRAND / file).read_bytes()
+
+    async def icon() -> Response:
+        return Response(
+            body,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    router.add_api_route(path, icon, methods=["GET", "HEAD"], name=f"mcp:icon:{file}")
+
+
+for _path, (_file, _media) in _ICONS.items():
+    _icon_route(_path, _file, _media)
+
+
 def protected_resource_metadata() -> dict[str, Any]:
     """RFC 9728: what this endpoint is and which server signs its bots in."""
     from simeon.oauth2.constants import ISSUER
@@ -490,11 +539,7 @@ class Caller:
                 {
                     "protocolVersion": version,
                     "capabilities": {"tools": {"listChanged": False}},
-                    "serverInfo": {
-                        "name": "simeon",
-                        "title": "Simeon Network",
-                        "version": "2.0.0",
-                    },
+                    "serverInfo": SERVER_INFO,
                     "instructions": instructions(),
                 },
             )

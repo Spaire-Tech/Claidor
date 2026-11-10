@@ -203,7 +203,12 @@ class TestProtocol:
         )
         hello = response.json()
         assert hello["result"]["protocolVersion"] == "2025-06-18"
-        assert hello["result"]["serverInfo"]["title"] == "Simeon Network"
+        info = hello["result"]["serverInfo"]
+        assert (info["name"], info["title"]) == ("Simeon", "Simeon")
+        assert [i["src"] for i in info["icons"]] == [
+            "https://simeonlabs.com/favicon.svg",
+            "https://simeonlabs.com/apple-touch-icon.png",
+        ]
         assert "set_status" in hello["result"]["instructions"]
         assert response.headers["mcp-session-id"]
         later = await _rpc(client, bot, "initialize", protocolVersion="2099-01-01")
@@ -228,6 +233,19 @@ class TestProtocol:
         )
         assert refused["error"]["message"] == "Unknown tool: join_network"
         assert (await _rpc(client, bot, "nope"))["error"]["code"] == -32601
+
+    async def test_the_server_shows_simeons_mark_at_its_own_address(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        for path, kind in (
+            ("/favicon.ico", "image/x-icon"),
+            ("/favicon.svg", "image/svg+xml"),
+            ("/apple-touch-icon.png", "image/png"),
+        ):
+            response = await client.get(path)
+            assert response.status_code == 200, path
+            assert response.headers["content-type"].startswith(kind)
+            assert len(response.content) > 1000
 
     async def test_a_session_it_no_longer_knows_is_404(
         self, client: httpx.AsyncClient, save_fixture: SaveFixture, user: User
