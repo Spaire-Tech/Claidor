@@ -74,6 +74,13 @@ own rule keeps `xai`, `spacex` and its models' name, Grok, in the files of
 that feature only (the website's AI models pages and SpaceXAI's mark
 included), under the same condition.
 
+The Simeon Network (10 November 2026, `docs/services-agents.md`, section 18)
+names the agents that join it as the products they are: Cursor, the coding
+agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside
+Dots and Muse. Its rule (a **contract**) covers only the network's files (the
+server's network and MCP code and tests, and the website's network pages), and
+only the words `Cursor`, `Grok Bot` and the client name `"grok"` there.
+
 ## The wire, for one release
 
 Since 5 October 2026 the Connect services carry Simeon's names

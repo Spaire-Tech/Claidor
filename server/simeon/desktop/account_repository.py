@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, or_, select
 
 from simeon.models import (
     DesktopAuthCode,
@@ -23,6 +23,10 @@ from simeon.models import (
     DesktopCredential,
     DesktopLinkWallet,
     DesktopMemoryFile,
+    DesktopNetwork,
+    DesktopNetworkMember,
+    DesktopNetworkMessage,
+    DesktopNetworkSession,
     DesktopSession,
     DesktopShareEvent,
     DesktopShareJoinRequest,
@@ -138,6 +142,25 @@ class AccountDeletionRepository:
             ),
             "share_rooms": delete(DesktopShareRoom).where(
                 DesktopShareRoom.host_user_id == user_id
+            ),
+            # The Simeon Network (`network.py`): their messages either way,
+            # their agents' sessions, their place on a network, and a network
+            # they made that no one else is on.
+            "network_messages": delete(DesktopNetworkMessage).where(
+                or_(
+                    DesktopNetworkMessage.from_user_id == user_id,
+                    DesktopNetworkMessage.to_user_id == user_id,
+                )
+            ),
+            "network_sessions": delete(DesktopNetworkSession).where(
+                DesktopNetworkSession.user_id == user_id
+            ),
+            "network_members": delete(DesktopNetworkMember).where(
+                DesktopNetworkMember.user_id == user_id
+            ),
+            "networks": delete(DesktopNetwork).where(
+                DesktopNetwork.created_by == user_id,
+                ~DesktopNetwork.id.in_(select(DesktopNetworkMember.network_id)),
             ),
             "cloud_agents": delete(SandCloudAgent).where(
                 SandCloudAgent.user_id == user_id
