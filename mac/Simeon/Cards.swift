@@ -83,14 +83,19 @@ struct CardButton: View {
 // MARK: Questions
 
 /**
- * A question (`sand-widget--choices`): the question (14 on 20, 500) and its
- * help under it (60%), the X that dismisses it at the right; the choices in
- * one box, each with an empty ring, its label and its line under it, a
- * hairline between; then "Type your own answer" when the agent allows one,
- * with Submit once something is written. Answered, the card keeps the
- * question and the answer with a blue tick; dismissed, the question at 60%
- * and a "Dismissed" pill. The iPhone's card, at the Mac's sizes (the founder,
- * 27 October 2026: the lettered rings and the grey tick were the window's).
+ * A question card (10 November 2026, the founder's reference: "change our
+ * card style to this. but keep the round check and our blue color"): the
+ * question in bold, its help under it; each choice in a row with its letter
+ * on a small tile (A, B, C…) that becomes our blue round check once picked;
+ * "Something else" last when the agent allows an answer of the person's own,
+ * which opens a field in its row. A card may ask several questions ("have
+ * the thing swipe when there's many questions"): one shows at a time and
+ * slides to the next, dots at the foot say where the person is, and Back,
+ * Skip and Next (Send on the last) carry them through; the answers go
+ * together, a line each (`QuestionCard.reply`). A pick moves on by itself,
+ * and on the last question sends. Skip on a card of one question declines
+ * it, as the X did. Answered, the card keeps each question in grey with its
+ * answer under a blue round check, Back and Next to look through several.
  */
 struct QuestionCardView: View {
   let entryId: String
@@ -98,171 +103,436 @@ struct QuestionCardView: View {
   let card: QuestionCard
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var own = ""
-  /** Several picked at once (`multiSelect`), sent together with Submit. */
-  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
     if card.isDismissed || card.isSkipped || pending == "" {
-      CardShell(look: look) {
+      VStack(alignment: .leading, spacing: 10) {
         Text(card.prompt)
-          .font(.system(size: 14, weight: .medium))
+          .font(.system(size: 15, weight: .semibold))
           .foregroundStyle(look.inkSecondary)
-          .cssLineHeight(20, size: 14, weight: .medium)
+          .fixedSize(horizontal: false, vertical: true)
         StatusPill(text: String(localized: "Dismissed"), look: look)
       }
+      .padding(.horizontal, 8)
+      .questionCard(look)
     } else if let answer = card.answer ?? pending {
-      CardShell(look: look) {
-        Text(card.prompt)
-          .font(.system(size: 14, weight: .medium))
-          .foregroundStyle(look.ink)
-          .cssLineHeight(20, size: 14, weight: .medium)
-        HStack(spacing: 8) {
-          Image(systemName: "checkmark")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(look.blue)
-            .frame(width: 18, height: 18)
-          Text(card.shown(answer))
-            .font(.system(size: 14))
-            .foregroundStyle(look.ink)
-            .cssLineHeight(20, size: 14)
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your answer: \(card.shown(answer))")
-      }
+      AnsweredQuestionsView(card: card, answer: answer, look: look)
     } else {
-      open
+      AskingQuestionsView(entryId: entryId, agentId: agentId, card: card, look: look)
     }
-  }
-
-  private var open: some View {
-    CardShell(look: look) {
-      HStack(alignment: .top, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(card.prompt)
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(look.ink)
-            .cssLineHeight(20, size: 14, weight: .medium)
-          if let help = card.help, !help.isEmpty {
-            Text(help)
-              .font(.system(size: 14))
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(20, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        Button {
-          Task { await store.dismissQuestion(entryId, in: agentId) }
-        } label: {
-          Image(systemName: "xmark")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(look.inkSecondary)
-            .frame(width: 20, height: 20)
-            .contentShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.hand)
-        .help("Dismiss without answering")
-        .accessibilityLabel("Dismiss question")
-      }
-      if !card.options.isEmpty {
-        VStack(spacing: 0) {
-          ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
-            if index > 0 { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
-            // Picking sends the option's own reply (`value`); several picked go together with Submit.
-            OptionRow(option: option, look: look, picked: picked.contains(index)) {
-              if card.multiSelect {
-                if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
-              } else {
-                Task { await store.answer(option.value, card: entryId, in: agentId) }
-              }
-            }
-          }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-      }
-      if card.multiSelect && !picked.isEmpty {
-        CardButton(title: String(localized: "Submit"), prominent: true, look: look) {
-          let values = picked.sorted().map { card.options[$0].value }.joined(separator: "\n")
-          Task { await store.answer(values, card: entryId, in: agentId) }
-        }
-      }
-      if card.allowsOwnAnswer {
-        HStack(alignment: .top, spacing: 8) {
-          TextField("", text: $own, prompt: Text("Type your own answer").foregroundStyle(look.placeholder), axis: .vertical)
-            .textFieldStyle(.plain)
-            .font(.system(size: 14))
-            .lineLimit(1...6)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 10)
-            .frame(minHeight: 30)
-            .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-            .onSubmit(submit)
-            .accessibilityLabel("Custom answer")
-          if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            CardButton(title: String(localized: "Submit"), look: look, action: submit)
-          }
-        }
-      }
-    }
-  }
-
-  private func submit() {
-    let words = own.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !words.isEmpty else { return }
-    own = ""
-    Task { await store.answer(words, card: entryId, in: agentId) }
   }
 }
 
-/**
- * One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's (a blue tick once picked
- * for a several-at-once answer), its label (14 on 20; blue for the recommended path, red for a destructive one) and
- * line under it (60%).
- */
-private struct OptionRow: View {
-  let option: QuestionOption
+/** The questions being asked, one at a time. */
+private struct AskingQuestionsView: View {
+  let entryId: String
+  let agentId: String
+  let card: QuestionCard
   let look: Look
-  var picked = false
+  @Environment(AppStore.self) private var store
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+  /** The options picked, by question. */
+  @State private var picks: [Int: Set<Int>] = [:]
+  /** The words typed under "Something else", by question. */
+  @State private var own: [Int: String] = [:]
+  /** The question whose "Something else" field is open. */
+  @State private var writing: Int?
+  @State private var sending = false
+  @FocusState private var typing: Int?
+
+  private var questions: [QuestionCard.Question] { card.questions }
+  private var isLast: Bool { index >= questions.count - 1 }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      ZStack(alignment: .topLeading) {
+        // Every question, unseen, holds the card at the tallest one's height, so it never jumps as it slides.
+        ForEach(questions.indices, id: \.self) { at in
+          page(at, live: false).hidden().accessibilityHidden(true)
+        }
+        page(index, live: true)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      footer
+    }
+    .questionCard(look)
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  private func page(_ at: Int, live: Bool) -> some View {
+    let question = questions[at]
+    return VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(question.prompt)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+        if let help = question.help, !help.isEmpty {
+          Text(help)
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .padding(.horizontal, 8)
+      VStack(spacing: 2) {
+        ForEach(Array(question.options.enumerated()), id: \.offset) { place, option in
+          LetteredOptionRow(letter: Self.letter(place), option: option, picked: picks[at, default: []].contains(place), look: look) {
+            choose(place, in: at)
+          }
+        }
+        if question.allowsOwnAnswer { ownRow(at, live: live) }
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  /** "Something else": its letter and grey words, a field in the row once clicked. */
+  private func ownRow(_ at: Int, live: Bool) -> some View {
+    let words = own[at, default: ""]
+    let open = writing == at || !words.isEmpty
+    let given = !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    return QuestionRowFrame(picked: given, look: look) {
+      QuestionTile(letter: Self.letter(questions[at].options.count), picked: given, look: look)
+      if open {
+        TextField("", text: Binding(get: { own[at, default: ""] }, set: { typed in
+          own[at] = typed
+          // One answer to a question of one: the words replace a pick.
+          if !questions[at].multiSelect && !typed.isEmpty { picks[at] = [] }
+        }), prompt: Text("Something else").foregroundStyle(look.placeholder), axis: .vertical)
+          .textFieldStyle(.plain)
+          .font(.system(size: 14.5))
+          .foregroundStyle(look.ink)
+          .lineLimit(1...4)
+          .focused($typing, equals: live ? at : -1 - at)
+          .onSubmit(next)
+          .accessibilityLabel("Your own answer")
+      } else {
+        Text("Something else")
+          .font(.system(size: 14.5))
+          .foregroundStyle(look.placeholder)
+      }
+    } action: {
+      writing = at
+      // The field appears with this change; it takes the typing on the next beat, once it is there.
+      Task { typing = at }
+    }
+  }
+
+  private var footer: some View {
+    HStack(spacing: 8) {
+      if questions.count > 1 { QuestionDots(count: questions.count, at: index, look: look) }
+      Spacer(minLength: 0)
+      if index > 0 {
+        QuestionPill(title: String(localized: "Back"), look: look) { move(to: index - 1) }
+      }
+      QuestionPill(title: String(localized: "Skip"), look: look, action: skip)
+        .help(questions.count > 1 ? String(localized: "Skip this question") : String(localized: "Dismiss without answering"))
+      QuestionPill(title: isLast ? String(localized: "Send") : String(localized: "Next"), prominent: true, look: look, action: next)
+        .disabled(answer(index) == nil || sending)
+    }
+    .padding(.horizontal, 8)
+  }
+
+  static func letter(_ place: Int) -> String {
+    let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    return String(letters[max(0, min(place, letters.count - 1))])
+  }
+
+  /** The answer given to one question: the options picked (one per line), else, or with them for several, the words typed. */
+  private func answer(_ at: Int) -> String? {
+    guard questions.indices.contains(at) else { return nil }
+    let question = questions[at]
+    let words = own[at, default: ""].trimmingCharacters(in: .whitespacesAndNewlines)
+    // Each pick sends the option's own reply (`value`), never its label.
+    let chosen = picks[at, default: []].sorted().compactMap { place in question.options.indices.contains(place) ? question.options[place] : nil }.map { option in option.value }
+    let all = question.multiSelect ? chosen + (words.isEmpty ? [] : [words]) : (words.isEmpty ? chosen : [words])
+    return all.isEmpty ? nil : all.joined(separator: "\n")
+  }
+
+  private func choose(_ place: Int, in at: Int) {
+    guard !sending else { return }
+    if questions[at].multiSelect {
+      var now = picks[at, default: []]
+      if now.contains(place) { now.remove(place) } else { now.insert(place) }
+      picks[at] = now
+      return
+    }
+    picks[at] = [place]
+    own[at] = ""
+    writing = nil
+    // A pick moves on by itself once its check has shown: to the next question, or, on the last, sends.
+    Task {
+      try? await Task.sleep(for: .milliseconds(220))
+      if index == at, picks[at, default: []] == Set([place]) { next() }
+    }
+  }
+
+  private func move(to target: Int) {
+    guard questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    writing = nil
+    typing = nil
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+
+  private func next() {
+    guard !sending, answer(index) != nil else { return }
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  /** Skip: this question goes unanswered; on a card of one, the card is declined. */
+  private func skip() {
+    guard !sending else { return }
+    picks[index] = []
+    own[index] = ""
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  private func send() {
+    sending = true
+    let reply = card.reply(questions.indices.map(answer))
+    Task {
+      if let reply { await store.answer(reply, card: entryId, in: agentId) } else { await store.dismissQuestion(entryId, in: agentId) }
+      sending = false
+    }
+  }
+}
+
+/** The answers given: each question in grey with its answer under a blue round check, one at a time for several. */
+private struct AnsweredQuestionsView: View {
+  let card: QuestionCard
+  let answer: String
+  let look: Look
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+
+  var body: some View {
+    let answers = card.answers(answer)
+    VStack(alignment: .leading, spacing: 12) {
+      ZStack(alignment: .topLeading) {
+        ForEach(card.questions.indices, id: \.self) { at in
+          page(at, answers).hidden().accessibilityHidden(true)
+        }
+        page(index, answers)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      if card.asksSeveral {
+        HStack(spacing: 8) {
+          QuestionDots(count: card.questions.count, at: index, look: look)
+          Spacer(minLength: 0)
+          QuestionPill(title: String(localized: "Back"), look: look) { move(to: index - 1) }
+            .disabled(index == 0)
+          QuestionPill(title: String(localized: "Next"), look: look) { move(to: index + 1) }
+            .disabled(index >= card.questions.count - 1)
+        }
+        .padding(.horizontal, 8)
+      }
+    }
+    .questionCard(look)
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  private func page(_ at: Int, _ answers: [String?]) -> some View {
+    let given = at < answers.count ? answers[at] : nil
+    return VStack(alignment: .leading, spacing: 10) {
+      Text(card.questions[at].prompt)
+        .font(.system(size: 15, weight: .semibold))
+        .foregroundStyle(look.inkSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: 12) {
+        if let given {
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 22))
+            .foregroundStyle(look.blue)
+            .frame(width: 24, height: 24)
+          Text(given)
+            .font(.system(size: 14.5))
+            .foregroundStyle(look.ink)
+            .fixedSize(horizontal: false, vertical: true)
+        } else {
+          Text("Skipped")
+            .font(.system(size: 14.5))
+            .foregroundStyle(look.inkTertiary)
+        }
+        Spacer(minLength: 0)
+      }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(given.map { String(localized: "Your answer: \($0)") } ?? String(localized: "Skipped"))
+    }
+    .padding(.horizontal, 8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func move(to target: Int) {
+    guard card.questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+}
+
+/** One choice: its letter on a tile (our blue round check once picked), its label (blue for the recommended path, red for a destructive one) and its line under it. */
+private struct LetteredOptionRow: View {
+  let letter: String
+  let option: QuestionOption
+  let picked: Bool
+  let look: Look
+  let action: () -> Void
+
+  var body: some View {
+    QuestionRowFrame(picked: picked, look: look) {
+      QuestionTile(letter: letter, picked: picked, look: look)
+      VStack(alignment: .leading, spacing: 1) {
+        Text(option.label)
+          .font(.system(size: 14.5, weight: option.style == .primary ? .medium : .regular))
+          .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
+          .multilineTextAlignment(.leading)
+          .fixedSize(horizontal: false, vertical: true)
+        if let line = option.description, !line.isEmpty {
+          Text(line)
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkSecondary)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+    } action: {
+      action()
+    }
+    .accessibilityAddTraits(picked ? .isSelected : [])
+  }
+}
+
+/** A choice's row: 12 round, the hover's grey, a lighter grey once picked. */
+private struct QuestionRowFrame<Content: View>: View {
+  let picked: Bool
+  let look: Look
+  @ViewBuilder let content: () -> Content
   let action: () -> Void
   @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 8) {
-        if picked {
-          Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 16))
-            .foregroundStyle(look.blue)
-            .frame(width: 18, height: 18)
-        } else {
-          Circle()
-            .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
-            .frame(width: 18, height: 18)
-        }
-        VStack(alignment: .leading, spacing: 0) {
-          Text(option.label)
-            .font(.system(size: 14, weight: option.style == .primary ? .medium : .regular))
-            .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
-            .cssLineHeight(20, size: 14)
-          if let line = option.description, !line.isEmpty {
-            Text(line)
-              .font(.system(size: 14))
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(20, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+      HStack(alignment: .center, spacing: 12) {
+        content()
+        Spacer(minLength: 0)
       }
-      .padding(8)
-      .background(hovering ? look.rowHover : Color.clear)
-      .contentShape(Rectangle())
+      .padding(.vertical, 7)
+      .padding(.horizontal, 8)
+      .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(picked ? look.ink.opacity(look.dark ? 0.08 : 0.06) : hovering ? look.rowHover : Color.clear))
+      .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
+  }
+}
+
+/** A choice's letter on a small tile, or our blue round check once picked. */
+private struct QuestionTile: View {
+  let letter: String
+  let picked: Bool
+  let look: Look
+
+  var body: some View {
+    ZStack {
+      if picked {
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: 22))
+          .foregroundStyle(look.blue)
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
+      } else {
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
+          .fill(look.ink.opacity(look.dark ? 0.06 : 0.04))
+          .overlay { RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1) }
+          .overlay {
+            Text(letter)
+              .font(.system(size: 12, weight: .medium))
+              .foregroundStyle(look.inkSecondary)
+          }
+          .transition(.opacity)
+      }
+    }
+    .frame(width: 24, height: 24)
+    .animation(.spring(response: 0.25, dampingFraction: 0.8), value: picked)
+    .accessibilityHidden(true)
+  }
+}
+
+/** Where the person is among a card's questions. */
+private struct QuestionDots: View {
+  let count: Int
+  let at: Int
+  let look: Look
+
+  var body: some View {
+    HStack(spacing: 6) {
+      ForEach(0..<count, id: \.self) { place in
+        Circle()
+          .fill(look.ink.opacity(place == at ? 0.5 : 0.14))
+          .frame(width: 7, height: 7)
+      }
+    }
+    .animation(.easeOut(duration: 0.2), value: at)
+    .accessibilityElement()
+    .accessibilityLabel(Text("Question \(at + 1) of \(count)"))
+  }
+}
+
+/** The card's buttons: grey capsules, Next and Send in the ink's own colour. */
+private struct QuestionPill: View {
+  let title: String
+  var prominent = false
+  let look: Look
+  let action: () -> Void
+  @Environment(\.isEnabled) private var enabled
+
+  var body: some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 13.5, weight: .medium))
+        .foregroundStyle(prominent ? look.ground : look.ink)
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .frame(height: 32)
+        .background(prominent ? look.ink : look.ink.opacity(look.dark ? 0.08 : 0.06), in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .opacity(enabled ? 1 : 0.4)
+    .fixedSize()
+  }
+}
+
+private extension View {
+  /** A question card's ground: the agent's grey, 20 round. */
+  func questionCard(_ look: Look) -> some View {
+    self
+      .padding(.horizontal, 10)
+      .padding(.top, 14)
+      .padding(.bottom, 12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+      .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
 

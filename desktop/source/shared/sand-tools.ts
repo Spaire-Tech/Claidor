@@ -5,7 +5,7 @@ import { isAbsolute, resolve } from "node:path";
 
 import { SAND_SEND_MESSAGE_TOOL_DESCRIPTION } from "../host/runner/tools/send-message-tool.js";
 import { SAND_BOX_TOOLS, SAND_HOST_TOOL_NAMES } from "./sand-box-tools.js";
-import { sandWidgetSchema } from "./sand-widgets.js";
+import { normalizeSandWidget, sandWidgetSchema } from "./sand-widgets.js";
 
 const CREATE_AGENT_DESCRIPTION = "Create a new agent (a new teammate assistant) for your user, with a name and an optional persona/description. Returns the new agent's id so you can immediately message it with SendToAgent. Use this to spin up a focused teammate for a job. You have no tool to delete an agent, so only create one when it is genuinely useful; the user can delete an agent themselves from the sidebar (right-click the agent → \"Delete\").";
 
@@ -240,7 +240,7 @@ export function sendMessageFromToolArgs(args: unknown): Record<string, unknown> 
     return { type: "text", content };
   }
   if (type === "widget") {
-    const widget = asRecord(record.widget);
+    const widget = asRecord(normalizeSandWidget(record.widget));
     if (widget == null || typeof widget.prompt !== "string" || widget.prompt.trim().length === 0) {
       return { error: "widget is required when type is widget" };
     }

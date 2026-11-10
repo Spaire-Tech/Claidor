@@ -1469,12 +1469,22 @@ history). What changed to match them:
     picks from. Now (`host/runner/system-prompt.ts`, "Asking the user" and "Autonomy";
     SendMessage's description): what only the person knows (who a gift is for, the occasion,
     their taste, a budget, a date) is asked before the agent searches or picks, one card at a
-    time (a card is one question and ends the turn), the question that matters most first,
-    usually two to four; the usual answers as options with `allowCustom`; never the questions
-    written out in a message; always cards when the person says "ask me". How to do the work
+    time at first, then (same day, the founder: "have the thing swipe when there's many
+    questions") in one card of two to four questions (`questions`), the question that matters most
+    first; the usual answers as options with `allowCustom`; never the questions written out in a
+    message; always cards when the person says "ask me". How to do the work
     stays the agent's call, and low-stakes choices are still not asked. On a Claude turn,
     Claude Code's own `AskUserQuestion` is off (no app shows it), and the brief's note points to
-    the card. Tests: `desktop/tests/asking-with-cards.test.mjs`. **Not yet verified** with a
+    the card. Tests: `desktop/tests/asking-with-cards.test.mjs`.
+  * **Several questions in one card** (10 November 2026). The widget's `questions` holds two to
+    four, the whole set; the engine makes its own prompt and options the first's
+    (`normalizeSandWidget` in `shared/sand-widgets.ts`), so an older app shows that one and its
+    answer comes back alone (the brief: then ask the rest). The apps show one question at a time,
+    sliding to the next, with letter tiles, "Something else", dots, Back, Skip and Next, and send
+    the answers together as one reply, a line each: the question, then the answer, `(skipped)` for
+    one skipped (`formatQuestionsReply`; Chat.swift's `QuestionCard.reply` and the web app's
+    `questionsReply` write the same). The chat list shows the answers joined with " · "
+    (`widgetReplyPreview`). Skip on a card of one question declines it. **Not yet verified** with a
     real agent on the Mac: it needs the next engine published.
 * **The secret request.**
   * It can be dismissed (the X on both apps), and the agent hears at once that it was declined,

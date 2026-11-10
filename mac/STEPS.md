@@ -3078,3 +3078,17 @@ catalogue (ten languages); the rest were the iPhone's.
 
 Not yet built or run on a Mac: no Xcode here; the Swift parses. The web
 app's translation ran in Chromium against a stand-in computer.
+
+### The question card: several questions, one at a time (10 November 2026)
+
+`Cards.swift` `QuestionCardView`, in the style of the founder's reference
+picture ("keep the round check and our blue color"):
+- **Layout.** The question 15 semibold. Each choice is a row with its letter on a 24 tile (A, B, C…). The tile becomes the blue round check once picked. "Something else" comes last; clicking it opens a field in its row.
+- **Several questions** (the widget's `questions`, two to four). One shows at a time and slides to the next, and the card holds the tallest one's height. The foot has dots, Back, Skip and Next (Send on the last).
+- **Answering.** A pick moves on by itself; on the last question it sends. The answers go as one reply, a line each (`QuestionCard.reply` in SimeonCore).
+- **Answered.** Each question shows in grey with its answer under the blue round check.
+- **Skip on a card of one question** declines it, as the X did.
+
+The iPhone's card is the same in its own sizes, and a sideways swipe moves between its questions. New words are in both catalogues (ten languages).
+
+Not yet built or run on a Mac or an iPhone: no Xcode here. Both files parse. The core's new tests ran on Linux (`QuestionCardTests`, with `ChatTests.testQuestionCardsAndConnectors`). The web app's card ran in Chromium against a stand-in computer.

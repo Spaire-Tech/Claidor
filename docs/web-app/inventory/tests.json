@@ -200,6 +200,10 @@
   "tests": 9
  },
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/QuestionCardTests.swift",
+  "tests": 3
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ReactionsTests.swift",
   "tests": 3
  },

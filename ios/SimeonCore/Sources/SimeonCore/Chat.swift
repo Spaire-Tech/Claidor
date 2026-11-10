@@ -19,14 +19,46 @@ public struct QuestionOption: Hashable, Sendable {
   }
 }
 
-/** A question card (`send-message` of type `widget`), with the answer once given. */
+/**
+ * A question card (`send-message` of type `widget`), with the answer once given.
+ *
+ * It may ask several questions (10 November 2026, the founder: "have the
+ * thing swipe when there's many questions instead of having the agent send
+ * one by one"): `questions` holds two to four, which the person goes through
+ * one at a time and sends together, a line each (`reply(_:)`, the engine's
+ * `formatQuestionsReply`). The card's own prompt and options are its first
+ * question's, as the engine writes them.
+ */
 public struct QuestionCard: Hashable, Sendable {
+  /** One question of the card. */
+  public struct Question: Hashable, Sendable {
+    public let prompt: String
+    public let help: String?
+    public let options: [QuestionOption]
+    public let allowsOwnAnswer: Bool
+    /** Several options may be picked (`multiSelect`). */
+    public let multiSelect: Bool
+
+    public init(prompt: String, help: String? = nil, options: [QuestionOption], allowsOwnAnswer: Bool = false, multiSelect: Bool = false) {
+      self.prompt = prompt; self.help = help; self.options = options; self.allowsOwnAnswer = allowsOwnAnswer; self.multiSelect = multiSelect
+    }
+
+    /** An answer as the person reads it: each picked option by its label (several joined with commas), else the words they typed. */
+    public func shown(_ answer: String) -> String {
+      let lines = answer.split(whereSeparator: { $0 == "\n" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+      let named = lines.map { line in options.first(where: { $0.value == line })?.label ?? line }
+      return named.joined(separator: ", ")
+    }
+  }
+
   public let prompt: String
   public let help: String?
   public let options: [QuestionOption]
   public let allowsOwnAnswer: Bool
   /** Several options may be picked (`multiSelect`); their values go back one per line. */
   public let multiSelect: Bool
+  /** Every question of the card, its own first; one for a card that asks one. */
+  public let questions: [Question]
   /** What the person answered (`respondedValue`); nil while it waits. */
   public let answer: String?
   public let isDismissed: Bool
@@ -35,17 +67,58 @@ public struct QuestionCard: Hashable, Sendable {
 
   public var labels: [String] { options.map(\.label) }
   public var isOpen: Bool { answer == nil && !isDismissed && !isSkipped }
+  /** The card asks several questions, one at a time. */
+  public var asksSeveral: Bool { questions.count > 1 }
 
-  public init(prompt: String, help: String?, options: [QuestionOption], allowsOwnAnswer: Bool, multiSelect: Bool = false, answer: String?, isDismissed: Bool, isSkipped: Bool) {
+  public init(prompt: String, help: String?, options: [QuestionOption], allowsOwnAnswer: Bool, multiSelect: Bool = false, questions: [Question] = [], answer: String?, isDismissed: Bool, isSkipped: Bool) {
     self.prompt = prompt; self.help = help; self.options = options; self.allowsOwnAnswer = allowsOwnAnswer
     self.multiSelect = multiSelect; self.answer = answer; self.isDismissed = isDismissed; self.isSkipped = isSkipped
+    let own = Question(prompt: prompt, help: help, options: options, allowsOwnAnswer: allowsOwnAnswer, multiSelect: multiSelect)
+    self.questions = questions.count > 1 ? questions : [own]
   }
 
   /** An answer as the person reads it: each picked option by its label (one per line for several), else the words they typed. */
   public func shown(_ answer: String) -> String {
-    let lines = answer.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
-    let named = lines.map { line in options.first(where: { $0.value == line })?.label ?? line }
-    return named.joined(separator: ", ")
+    questions[0].shown(answer)
+  }
+
+  /** What a skipped question of a several-question card says in the reply (the engine's `SKIPPED_ANSWER`). */
+  public static let skippedAnswer = "(skipped)"
+
+  /**
+   * The reply a card sends: for one question, its answer as it is; for
+   * several, a line each, the question then its answer ("Budget? Under $75
+   * CAD"), `(skipped)` for one skipped. Nil when nothing was answered.
+   */
+  public func reply(_ answers: [String?]) -> String? {
+    let given = questions.indices.map { index -> String? in
+      let answer = index < answers.count ? answers[index]?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+      return answer?.isEmpty == false ? answer : nil
+    }
+    guard given.contains(where: { $0 != nil }) else { return nil }
+    guard asksSeveral else { return given[0] }
+    return zip(questions, given).map { question, answer in
+      let words = answer.map { $0.split(whereSeparator: { $0 == "\n" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: ", ") } ?? Self.skippedAnswer
+      let head = question.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+      let joint = head.last.map { "?:？：".contains($0) } == true ? " " : ": "
+      return head + joint + words
+    }.joined(separator: "\n")
+  }
+
+  /** Each question's answer read back from the reply, as the person reads it (nil when skipped, or not there: an older app answers the first only). */
+  public func answers(_ reply: String) -> [String?] {
+    guard asksSeveral else { return [shown(reply)] }
+    let lines = reply.split(whereSeparator: { $0 == "\n" }).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+    return questions.indices.map { index -> String? in
+      guard index < lines.count else { return nil }
+      let line = lines[index]
+      let head = questions[index].prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+      var answer = line.hasPrefix(head) ? String(line.dropFirst(head.count)) : line
+      answer = answer.trimmingCharacters(in: .whitespaces)
+      if answer.first == ":" || answer.first == "：" { answer = String(answer.dropFirst()).trimmingCharacters(in: .whitespaces) }
+      guard !answer.isEmpty, answer != Self.skippedAnswer else { return nil }
+      return questions[index].shown(answer)
+    }
   }
 }
 
@@ -1203,15 +1276,26 @@ public enum Chat {
         return .file(id: entry.id, name: message["file_name"]?.text ?? fileName(ofURL: url), url: url, fromPerson: false)
       case "widget":
         guard let widget = message["widget"], let prompt = widget["prompt"]?.text else { return nil }
-        let options = (widget["options"]?.array ?? []).compactMap { option -> QuestionOption? in
-          guard let label = option["label"]?.text ?? option.text else { return nil }
-          return QuestionOption(label: label, description: option["description"]?.text, value: option["value"]?.text,
-                                style: option["style"]?.string.flatMap(QuestionOption.Style.init(rawValue:)) ?? .plain)
+        func options(of question: JSON) -> [QuestionOption] {
+          (question["options"]?.array ?? []).compactMap { option -> QuestionOption? in
+            guard let label = option["label"]?.text ?? option.text else { return nil }
+            return QuestionOption(label: label, description: option["description"]?.text, value: option["value"]?.text,
+                                  style: option["style"]?.string.flatMap(QuestionOption.Style.init(rawValue:)) ?? .plain)
+          }
+        }
+        // Several questions in one card (`questions`, 10 November 2026): each with its prompt and options.
+        let questions = (widget["questions"]?.array ?? []).compactMap { question -> QuestionCard.Question? in
+          guard let words = question["prompt"]?.text else { return nil }
+          let choices = options(of: question)
+          guard !choices.isEmpty else { return nil }
+          return QuestionCard.Question(prompt: words, help: question["helpText"]?.text, options: choices,
+                                       allowsOwnAnswer: question["allowCustom"]?.bool ?? false, multiSelect: question["multiSelect"]?.bool ?? false)
         }
         return .question(id: entry.id, card: QuestionCard(
-          prompt: prompt, help: widget["helpText"]?.text, options: options,
+          prompt: prompt, help: widget["helpText"]?.text, options: options(of: widget),
           allowsOwnAnswer: widget["allowCustom"]?.bool ?? false,
           multiSelect: widget["multiSelect"]?.bool ?? false,
+          questions: questions,
           answer: entry["respondedValue"]?.text, isDismissed: entry["widgetDismissed"]?.bool ?? false,
           isSkipped: entry["widgetSkipped"]?.bool ?? false))
       case "email-draft", "slack-draft":
