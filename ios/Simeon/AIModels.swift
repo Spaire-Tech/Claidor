@@ -238,14 +238,17 @@ struct ProviderIcon: View {
   }
 }
 
-/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink, Claude's in its orange; no provider is Simeon's. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own colours (10 November 2026, the founder's logos); no provider is Simeon's. */
 struct ProviderMark: View {
   let provider: String?
   var side: CGFloat = 16
 
+  /** The marks drawn in their own colours, not the ink. */
+  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot"]
+
   var body: some View {
     Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
-      .renderingMode(provider == AIModels.claude ? .original : .template)
+      .renderingMode(provider.map(ProviderMark.coloured.contains) == true ? .original : .template)
       .resizable()
       .interpolation(.high)
       .scaledToFit()
