@@ -18,7 +18,8 @@ import UIKit
  */
 struct AIModelsPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
-  @State private var connectingChatGPT = false
+  /** The provider whose code sheet is open (ChatGPT's, Grok's). */
+  @State private var connectingByCode: String?
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
   @State private var newName = ""
@@ -54,7 +55,7 @@ struct AIModelsPage: View {
               ModelAccountRow(
                 account: account,
                 rename: { newName = account.shownName; renaming = account },
-                addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
+                addAnother: AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
                 connectAgain: { connect(account.provider) },
                 disconnect: { disconnecting = account }
               )
@@ -104,8 +105,8 @@ struct AIModelsPage: View {
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
-    .sheet(isPresented: $connectingChatGPT) {
-      NavigationStack { ChatGPTConnectSheet(model: model) }
+    .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
+      NavigationStack { ChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT) }
     }
     .sheet(isPresented: $connectingClaude) {
       NavigationStack { ClaudeConnectSheet(model: model) }
@@ -146,7 +147,7 @@ struct AIModelsPage: View {
 
   /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
   private func connect(_ provider: String) {
-    if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
+    if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
   }
 }
 
@@ -313,6 +314,8 @@ private struct ModelAccountRow: View {
  */
 struct ChatGPTConnectSheet: View {
   let model: AIModelsModel
+  /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
+  var provider: String = AIModels.chatGPT
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var signIn: ChatGPTSignIn?
@@ -326,13 +329,23 @@ struct ChatGPTConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("You're now connected to \(AIModels.providerName(AIModels.chatGPT)).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(AIModels.providerName(provider)).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.expired), .some(.failed):
         Section {
-          Text(outcome == .expired ? String(localized: "The code expired. Try again.") : String(localized: "ChatGPT didn't connect. Try again."))
+          Text(outcome == .expired ? String(localized: "The code expired. Try again.") : provider == AIModels.grok ? String(localized: "Grok didn't connect. Try again.") : String(localized: "ChatGPT didn't connect. Try again."))
             .foregroundStyle(Ink.danger)
+          Button("Try Again") { attempt += 1 }
+        }
+        .listRowBackground(Ink.groupedRow)
+      case .some(.notAllowed):
+        // Signed in, on a plan xAI doesn't let in here: why, and where to get one that is.
+        Section {
+          Text(AIModels.startProblem(code: "not_allowed", provider: provider)).foregroundStyle(Ink.primary)
+          if let plans = AIModels.plansPage(provider) {
+            Button("See Grok Plans") { openURL(plans) }
+          }
           Button("Try Again") { attempt += 1 }
         }
         .listRowBackground(Ink.groupedRow)
@@ -395,7 +408,7 @@ struct ChatGPTConnectSheet: View {
       }
     }
     .groupedGround()
-    .navigationTitle("Connect ChatGPT")
+    .navigationTitle("Connect \(AIModels.providerName(provider))")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
@@ -420,7 +433,7 @@ struct ChatGPTConnectSheet: View {
     outcome = nil
     copied = false
     model.problem = nil
-    guard let started = await model.startChatGPT() else { return }
+    guard let started = await model.startCodeSignIn(provider) else { return }
     signIn = started
     let answer = await model.waitForApproval(started)
     guard !Task.isCancelled, answer != .waiting else { return }

@@ -30,8 +30,12 @@ import { type Meter, percentLabel } from './usage'
 
 export const chatGPT = 'chatgpt'
 export const claude = 'claude'
+/** Grok, on the person's SuperGrok or X Premium plan (10 November 2026), signed in to by code as ChatGPT is (`AIModels.grok`). */
+export const grok = 'grok'
 /** The providers a person can connect, in the order the apps list them (`AIModels.providers`). */
-export const providers = [chatGPT, claude] as const
+export const providers = [chatGPT, claude, grok] as const
+/** The providers signed in to with a code on their own page (the ChatGPT sheet), not on the computer (Claude's). */
+export const signedInByCode: ReadonlySet<string> = new Set([chatGPT, grok])
 /** The name on the composer while the agents use Simeon's models (`AIModels.simeon`, the founder's "⌘ Simeon"). */
 export const simeon = 'Simeon'
 /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
@@ -64,7 +68,7 @@ export interface ModelAccount {
 
 /** One window of a plan's usage (`PlanUsage.Window`): its share used (0 to 100, past 100 when the plan lets usage run on) and its reset, in milliseconds. */
 export interface PlanWindow {
-  kind: 'five_hour' | 'weekly'
+  kind: 'five_hour' | 'weekly' | 'monthly'
   usedPercent: number
   resetsAt?: number
 }
@@ -73,9 +77,10 @@ export interface PlanWindow {
  * How much of an account's plan is used (`PlanUsage`; 9 November 2026, the
  * founder: "we need the usage for both claude and chat gpt ... it should
  * look like usage and billing"), as its provider last said: ChatGPT with
- * each answer, Claude from Claude Code on the computer. Never guessed: a
- * window whose reset has passed reads as unused until the provider says
- * again.
+ * each answer, Claude from Claude Code on the computer, Grok from xAI's
+ * billing (its credits by the week or the month, 10 November 2026). Never
+ * guessed: a window whose reset has passed reads as unused until the
+ * provider says again.
  */
 export interface PlanUsage {
   windows: PlanWindow[]
@@ -94,7 +99,10 @@ export function planUsage(json: JSONValue | undefined): PlanUsage | undefined {
     (one): PlanWindow[] => {
       const kind = str(field(one, 'kind'))
       const used = num(field(one, 'usedPercent'))
-      if ((kind !== 'five_hour' && kind !== 'weekly') || used === undefined)
+      if (
+        (kind !== 'five_hour' && kind !== 'weekly' && kind !== 'monthly') ||
+        used === undefined
+      )
         return []
       const resetsAt = num(field(one, 'resetsAt'))
       return [
@@ -111,13 +119,13 @@ export function planUsage(json: JSONValue | undefined): PlanUsage | undefined {
   return { windows, ...(at !== undefined && at > 0 ? { at } : {}) }
 }
 
-/** "5-hour limit" and "Weekly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
+/** "5-hour limit", "Weekly limit" and "Monthly limit", each "42%", "Resets 4:00 PM" (or "Resets Thu 4:00 PM") and its bar (red past 90%, as Usage & Billing's). */
 export function planUsageLines(
   usage: PlanUsage,
   options: { now?: Date; locale?: string; timeZone?: string } = {},
 ): PlanUsageLine[] {
   const now = options.now ?? new Date()
-  return (['five_hour', 'weekly'] as const).flatMap((kind) => {
+  return (['five_hour', 'weekly', 'monthly'] as const).flatMap((kind) => {
     const window = usage.windows.find((one) => one.kind === kind)
     if (!window) return []
     const reset =
@@ -130,7 +138,12 @@ export function planUsageLines(
         : window.usedPercent
     return [
       {
-        title: kind === 'five_hour' ? t('5-hour limit') : t('Weekly limit'),
+        title:
+          kind === 'five_hour'
+            ? t('5-hour limit')
+            : kind === 'weekly'
+              ? t('Weekly limit')
+              : t('Monthly limit'),
         meter: {
           valueLabel: percentLabel(used),
           barPercent: Math.max(0, Math.min(100, used)),
@@ -182,12 +195,18 @@ export function usageLine(
     .join(' · ')
 }
 
-/** The provider's own page for the plan's usage and the plan (`ModelAccount.planPage`): Codex's usage page on chatgpt.com, Claude's on claude.ai. */
+/** The provider's own page for the plan's usage and the plan (`ModelAccount.planPage`): Codex's usage page on chatgpt.com, Claude's on claude.ai, Grok's plans on grok.com. */
 export function planPage(account: ModelAccount): string | undefined {
   if (account.provider === chatGPT)
     return 'https://chatgpt.com/codex/settings/usage'
   if (account.provider === claude) return 'https://claude.ai/settings/usage'
+  if (account.provider === grok) return plansPage(grok)
   return undefined
+}
+
+/** Where a provider sells its plans, for an account whose plan it doesn't let in here (`AIModels.plansPage`; Grok's Free: SuperGrok's page). */
+export function plansPage(provider: string): string | undefined {
+  return provider === grok ? 'https://grok.com/supergrok' : undefined
 }
 
 export function modelAccount(
@@ -214,10 +233,11 @@ export function modelAccount(
 export function providerName(provider: string): string {
   if (provider === chatGPT) return 'ChatGPT'
   if (provider === claude) return 'Claude'
+  if (provider === grok) return 'Grok'
   return provider.slice(0, 1).toUpperCase() + provider.slice(1)
 }
 
-/** ChatGPT's plan as people know it: "plus" is Plus, "prolite" is Pro Lite. */
+/** A plan as people know it: ChatGPT's "plus" is Plus, "prolite" Pro Lite; Grok's "supergrok_heavy" SuperGrok Heavy, "x_premium_plus" X Premium+. */
 export function planName(plan: string): string {
   switch (plan.toLowerCase()) {
     case 'prolite':
@@ -226,6 +246,16 @@ export function planName(plan: string): string {
       return 'Pro Max'
     case 'edu':
       return 'Edu'
+    case 'supergrok':
+      return 'SuperGrok'
+    case 'supergrok_heavy':
+      return 'SuperGrok Heavy'
+    case 'supergrok_lite':
+      return 'SuperGrok Lite'
+    case 'supergrok_plus':
+      return 'SuperGrok Plus'
+    case 'x_premium_plus':
+      return 'X Premium+'
     default:
       return plan
         .split('_')
@@ -325,8 +355,10 @@ function ownModelChoice(json: JSONValue): OwnModelChoice | undefined {
   }
 }
 
-/** A ChatGPT sign-in waiting for the person: the code, where to enter it, how often to ask (`ChatGPTSignIn`). */
+/** A sign-in by code waiting for the person (ChatGPT's, and Grok's): the code, where to enter it, how often to ask, and whose it is (`ChatGPTSignIn`). */
 export interface ChatGPTSignIn {
+  /** `chatgpt` or `grok`: the server's route for it (`models/accounts/<provider>/…`). */
+  provider: string
   connectId: string
   userCode: string
   verificationURL: string
@@ -338,6 +370,7 @@ export interface ChatGPTSignIn {
 
 export function chatGPTSignIn(
   json: JSONValue | undefined,
+  provider: string = chatGPT,
 ): ChatGPTSignIn | undefined {
   const connectId = text(field(json, 'connectId'))
   const userCode = text(field(json, 'userCode'))
@@ -350,9 +383,10 @@ export function chatGPTSignIn(
   } catch {
     return undefined
   }
-  // Only OpenAI's own page over https is ever opened.
+  // Only the provider's own page over https is ever opened.
   if (parsed.protocol !== 'https:') return undefined
   return {
+    provider,
     connectId,
     userCode,
     verificationURL: parsed.href,
@@ -375,11 +409,27 @@ export type ChatGPTPoll =
   | { kind: 'connected'; account: ModelAccount }
   /** The code ran out, or was used already: the person starts again. */
   | { kind: 'expired' }
-  /** OpenAI refused the sign-in. */
+  /** The provider refused the sign-in. */
   | { kind: 'failed' }
+  /** Signed in, but the plan may not be used here (Grok's Free plan, 10 November 2026): said in the provider's words (`startProblem('not_allowed')`). */
+  | { kind: 'notAllowed' }
 
-/** What the server's refusal of a sign-in means, in the person's words (`error.code` of `models/accounts/chatgpt/start`). */
-export function startProblem(code: string | undefined): string {
+/** What the server's refusal of a sign-in means, in the person's words (`error.code` of `models/accounts/<provider>/start`). */
+export function startProblem(
+  code: string | undefined,
+  provider: string = chatGPT,
+): string {
+  if (provider === grok) {
+    if (code === 'not_allowed')
+      return t(
+        "Grok didn't allow this account to sign in here. It needs SuperGrok or X Premium.",
+      )
+    if (code === 'device_code_off')
+      return t(
+        "Grok isn't letting apps sign in with a code right now. Try again later.",
+      )
+    return t("Couldn't reach Grok. Try again in a moment.")
+  }
   return code === 'device_code_off'
     ? t(
         "ChatGPT didn't allow signing in with a code. Check your ChatGPT security settings, then try again.",
@@ -618,18 +668,24 @@ export class AIModelsModel {
 
   /** A ChatGPT sign-in started: the code to show; none (and `problem`) when none could be had. */
   async startChatGPT(): Promise<ChatGPTSignIn | undefined> {
+    return this.startCodeSignIn(chatGPT)
+  }
+
+  /** A sign-in by code started for `provider` (ChatGPT, Grok): the code to show; none (and `problem`) when none could be had. */
+  async startCodeSignIn(provider: string): Promise<ChatGPTSignIn | undefined> {
     try {
       const answer = await this.call(
-        'models/accounts/chatgpt/start',
+        `models/accounts/${provider}/start`,
         'POST',
         {},
       )
-      const signIn = chatGPTSignIn(answer)
-      this.problem = signIn ? undefined : startProblem(undefined)
+      const signIn = chatGPTSignIn(answer, provider)
+      this.problem = signIn ? undefined : startProblem(undefined, provider)
       return signIn
     } catch (error) {
       this.problem = startProblem(
         error instanceof SimeonAPIError ? error.code : undefined,
+        provider,
       )
       return undefined
     } finally {
@@ -641,9 +697,11 @@ export class AIModelsModel {
   async poll(signIn: ChatGPTSignIn): Promise<ChatGPTPoll> {
     let answer: JSONValue
     try {
-      answer = await this.call('models/accounts/chatgpt/poll', 'POST', {
-        connectId: signIn.connectId,
-      })
+      answer = await this.call(
+        `models/accounts/${signIn.provider}/poll`,
+        'POST',
+        { connectId: signIn.connectId },
+      )
     } catch {
       // The server not reached this time: asked again at the next turn.
       return { kind: 'waiting' }
@@ -656,7 +714,9 @@ export class AIModelsModel {
       case 'expired':
         return { kind: 'expired' }
       case 'failed':
-        return { kind: 'failed' }
+        return str(field(answer, 'reason')) === 'not_allowed'
+          ? { kind: 'notAllowed' }
+          : { kind: 'failed' }
       default:
         return { kind: 'waiting' }
     }
@@ -686,7 +746,7 @@ export class AIModelsModel {
       if (answer.kind === 'waiting') continue
       if (answer.kind === 'connected') {
         await this.load()
-        const best = this.models.find((one) => one.provider === chatGPT)
+        const best = this.models.find((one) => one.provider === signIn.provider)
         if (this.chosen === undefined && best) await this.choose(best.id)
       }
       return answer

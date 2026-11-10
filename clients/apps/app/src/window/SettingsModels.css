@@ -259,6 +259,12 @@
   padding-top: 4px;
 }
 
+/* Try Again under a sheet's wide button, a pill in the middle (the Mac's). */
+.models-sheet-again {
+  display: flex;
+  justify-content: center;
+}
+
 .models-steps {
   display: flex;
   flex-direction: column;

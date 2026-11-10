@@ -290,10 +290,11 @@ export function appIconURL(id: string): string | undefined {
   return appIconById.get(id)
 }
 
-/** ChatGPT's and Claude's app icons, from the App Store (the Mac's `Providers/<provider>`), by the provider's slug. */
+/** ChatGPT's, Claude's and Grok's app icons (the Mac's `Providers/<provider>`; Grok's from grok.com's own), by the provider's slug. */
 const providerIcons: Record<string, string> = {
   chatgpt: new URL('../assets/providers/chatgpt.png', import.meta.url).href,
   claude: new URL('../assets/providers/claude.png', import.meta.url).href,
+  grok: new URL('../assets/providers/grok.png', import.meta.url).href,
 }
 
 export type AppLogo =

@@ -46,19 +46,24 @@ The apps' routes:
   is no token here (`access_token` is empty) and nothing to revoke: the
   computer signs Claude Code out itself.
 
+- `POST /desktop/api/models/accounts/grok/start` and `…/grok/poll` (10
+  November 2026, the founder: "lets do grok"): Grok on the person's
+  SuperGrok or X Premium plan, signed in to with xAI's device code in the
+  same sheet (`grok.py`). A plan xAI doesn't let use Grok here is refused
+  at once (`failed`, `not_allowed`).
+
 The tokens never leave the server. Nothing here logs a token, a code or a
 verifier.
 """
 
 from __future__ import annotations
 
-import base64
 import json
 import math
 import secrets
 from collections.abc import Mapping
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from dataclasses import dataclass, replace
+from datetime import datetime, timedelta
 from typing import Any, Literal
 from uuid import UUID
 
@@ -76,14 +81,28 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 
+from . import grok
 from .auth import get_desktop_session
 from .model_account_repository import ModelAccountRepository
+from .model_sign_in import (
+    ProviderError,
+    RefreshUnavailable,
+    SignInTokens,
+    claims,
+    error_code,
+    expiry,
+    tokens_of,
+)
 
 log = structlog.get_logger()
 
 router = APIRouter(include_in_schema=False)
 
 PROVIDER_CHATGPT = "chatgpt"
+#: Grok, on the person's SuperGrok or X Premium plan (`grok.py`).
+PROVIDER_GROK = grok.PROVIDER
+#: The providers signed in to with a code, whose tokens are kept here.
+SIGNED_IN_BY_CODE = frozenset({PROVIDER_CHATGPT, PROVIDER_GROK})
 #: Claude through Claude Code on the person's computer: a row with no token.
 PROVIDER_CLAUDE = "claude"
 #: The one Claude row a person has: Claude Code on their one computer.
@@ -93,6 +112,8 @@ STATUS_AVAILABLE = "available"
 STATUS_SIGNED_OUT = "signed_out"
 #: How long a started sign-in waits for the person: Codex's own 15 minutes.
 CONNECT_TTL_S = 15 * 60
+#: xAI's `slow_down`: this much longer between two questions (RFC 8628).
+SLOW_DOWN_S = 5
 #: An access token with less than this left is refreshed before a call.
 REFRESH_AHEAD = timedelta(minutes=5)
 #: OpenAI's codes for a sign-in that is over (Codex's
@@ -112,28 +133,11 @@ _SEALED = "model-account"
 _CONNECT_PREFIX = "desktop:model-connect:"
 
 
-class ChatGptError(Exception):
+class ChatGptError(ProviderError):
     """OpenAI refused a sign-in call: its HTTP status and error code."""
 
-    def __init__(self, status: int, code: str | None) -> None:
-        super().__init__(f"OpenAI answered {status} {code or ''}".strip())
-        self.status = status
-        self.code = code
-
-    @property
-    def sign_in_gone(self) -> bool:
-        return self.code in GONE_CODES
-
-
-class ChatGptUnavailable(Exception):
-    """OpenAI could not refresh an access token that has run out."""
-
-
-@dataclass(frozen=True)
-class ChatGptTokens:
-    id_token: str | None
-    access_token: str
-    refresh_token: str | None
+    gone_codes = GONE_CODES
+    provider_name = "OpenAI"
 
 
 @dataclass(frozen=True)
@@ -148,9 +152,16 @@ class AccessGrant:
 
 @dataclass(frozen=True)
 class DeviceCode:
+    """A sign-in by code waiting for the person: OpenAI's `device_auth_id`,
+    or xAI's `device_code`, kept on the server only."""
+
     device_auth_id: str
     user_code: str
     interval: int
+    provider: str = PROVIDER_CHATGPT
+    #: Where the person enters the code (xAI names its own page).
+    verification_url: str | None = None
+    expires_in: int = CONNECT_TTL_S
 
 
 # --- OpenAI's sign-in ---------------------------------------------------------
@@ -165,49 +176,7 @@ def verification_url() -> str:
     return f"{_auth_base()}/codex/device"
 
 
-def _error_code(response: httpx.Response) -> str | None:
-    """OpenAI's error code, from `{"error": {"code": …}}` or OAuth's
-    `{"error": "…"}`."""
-    try:
-        body = response.json()
-    except ValueError:
-        return None
-    if not isinstance(body, dict):
-        return None
-    error = body.get("error")
-    if isinstance(error, dict):
-        code = error.get("code") or error.get("type")
-        return str(code) if code else None
-    if isinstance(error, str) and error:
-        return error
-    code = body.get("code")
-    return str(code) if isinstance(code, str) and code else None
-
-
-def claims(token: str | None) -> dict[str, Any]:
-    """A JWT's claims, unverified: the token comes straight from OpenAI over
-    TLS, and only says whose it is and when it ends."""
-    if not token:
-        return {}
-    parts = token.split(".")
-    if len(parts) < 2:
-        return {}
-    payload = parts[1] + "=" * (-len(parts[1]) % 4)
-    try:
-        decoded = json.loads(base64.urlsafe_b64decode(payload.encode()))
-    except (ValueError, json.JSONDecodeError):
-        return {}
-    return decoded if isinstance(decoded, dict) else {}
-
-
-def expiry(access_token: str) -> datetime | None:
-    exp = claims(access_token).get("exp")
-    if isinstance(exp, int | float):
-        return datetime.fromtimestamp(exp, tz=UTC)
-    return None
-
-
-def identity(tokens: ChatGptTokens) -> tuple[str | None, str, str | None]:
+def identity(tokens: SignInTokens) -> tuple[str | None, str, str | None]:
     """The ChatGPT account the sign-in is for, its e-mail and its plan, read
     from the ID token (and the access token, which carries the same claims)."""
     id_claims = claims(tokens.id_token)
@@ -244,7 +213,7 @@ async def request_device_code() -> DeviceCode:
         json_body={"client_id": settings.CHATGPT_CLIENT_ID},
     )
     if not response.is_success:
-        raise ChatGptError(response.status_code, _error_code(response))
+        raise ChatGptError(response.status_code, error_code(response))
     body = response.json()
     code = body.get("user_code") or body.get("usercode")
     device_auth_id = body.get("device_auth_id")
@@ -254,10 +223,12 @@ async def request_device_code() -> DeviceCode:
         interval = max(1, int(str(body.get("interval", 5)).strip()))
     except ValueError:
         interval = 5
-    return DeviceCode(device_auth_id, code, interval)
+    return DeviceCode(
+        device_auth_id, code, interval, verification_url=verification_url()
+    )
 
 
-async def poll_device_code(device: DeviceCode) -> ChatGptTokens | None:
+async def poll_device_code(device: DeviceCode) -> SignInTokens | None:
     """The sign-in's tokens once the person approved, or None while they
     haven't yet."""
     response = await _post(
@@ -270,7 +241,7 @@ async def poll_device_code(device: DeviceCode) -> ChatGptTokens | None:
     if response.status_code in (403, 404):
         return None
     if not response.is_success:
-        raise ChatGptError(response.status_code, _error_code(response))
+        raise ChatGptError(response.status_code, error_code(response))
     body = response.json()
     code = body.get("authorization_code")
     verifier = body.get("code_verifier")
@@ -279,7 +250,7 @@ async def poll_device_code(device: DeviceCode) -> ChatGptTokens | None:
     return await _exchange(code, verifier)
 
 
-async def _exchange(code: str, verifier: str) -> ChatGptTokens:
+async def _exchange(code: str, verifier: str) -> SignInTokens:
     response = await _post(
         "/oauth/token",
         form={
@@ -291,23 +262,11 @@ async def _exchange(code: str, verifier: str) -> ChatGptTokens:
         },
     )
     if not response.is_success:
-        raise ChatGptError(response.status_code, _error_code(response))
-    return _tokens_of(response.json())
+        raise ChatGptError(response.status_code, error_code(response))
+    return tokens_of(response.json(), ChatGptError)
 
 
-def _tokens_of(body: Any) -> ChatGptTokens:
-    if not isinstance(body, dict) or not isinstance(body.get("access_token"), str):
-        raise ChatGptError(200, "no_access_token")
-    refresh = body.get("refresh_token")
-    id_token = body.get("id_token")
-    return ChatGptTokens(
-        id_token=id_token if isinstance(id_token, str) else None,
-        access_token=body["access_token"],
-        refresh_token=refresh if isinstance(refresh, str) and refresh else None,
-    )
-
-
-async def _refresh(refresh_token: str) -> ChatGptTokens:
+async def _refresh(refresh_token: str) -> SignInTokens:
     response = await _post(
         "/oauth/token",
         json_body={
@@ -317,8 +276,8 @@ async def _refresh(refresh_token: str) -> ChatGptTokens:
         },
     )
     if not response.is_success:
-        raise ChatGptError(response.status_code, _error_code(response))
-    return _tokens_of(response.json())
+        raise ChatGptError(response.status_code, error_code(response))
+    return tokens_of(response.json(), ChatGptError)
 
 
 async def revoke(refresh_token: str) -> bool:
@@ -345,35 +304,49 @@ async def revoke(refresh_token: str) -> bool:
 # --- the person's accounts ----------------------------------------------------
 
 
-def _keep(account: DesktopModelAccount, tokens: ChatGptTokens) -> None:
-    """Writes OpenAI's answer into the row, sealed. A refresh that names no
-    new refresh token keeps the one before."""
+def _keep(account: DesktopModelAccount, tokens: SignInTokens) -> None:
+    """Writes the provider's answer into the row, sealed. A refresh that
+    names no new refresh token keeps the one before."""
     account.access_token = seal(tokens.access_token, purpose=_SEALED)
     if tokens.refresh_token is not None:
         account.refresh_token = seal(tokens.refresh_token, purpose=_SEALED)
-    account.expires_at = expiry(tokens.access_token)
+    account.expires_at = expiry(tokens.access_token, tokens.expires_in)
     account.status = STATUS_AVAILABLE
 
 
+_NAMES = {PROVIDER_CHATGPT: "ChatGPT", PROVIDER_GROK: "Grok"}
+
+
+def _identity(
+    provider: str, tokens: SignInTokens
+) -> tuple[str | None, str, str | None]:
+    return grok.identity(tokens) if provider == PROVIDER_GROK else identity(tokens)
+
+
 async def keep_sign_in(
-    session: AsyncSession, user_id: UUID, tokens: ChatGptTokens
+    session: AsyncSession,
+    user_id: UUID,
+    tokens: SignInTokens,
+    provider: str = PROVIDER_CHATGPT,
 ) -> DesktopModelAccount:
-    """A finished ChatGPT sign-in, kept: the same ChatGPT account signed in
-    again replaces its row (its name stays as the person left it)."""
-    account_key, email, plan = identity(tokens)
+    """A finished sign-in by code (ChatGPT's or Grok's), kept: the same
+    account signed in again replaces its row (its name stays as the person
+    left it)."""
+    error = grok.GrokError if provider == PROVIDER_GROK else ChatGptError
+    account_key, email, plan = _identity(provider, tokens)
     if account_key is None:
-        raise ChatGptError(200, "no_account")
+        raise error(200, "no_account")
     if tokens.refresh_token is None:
-        raise ChatGptError(200, "no_refresh_token")
+        raise error(200, "no_refresh_token")
     repository = ModelAccountRepository.from_session(session)
-    account = await repository.by_key(user_id, PROVIDER_CHATGPT, account_key)
+    account = await repository.by_key(user_id, provider, account_key)
     if account is None:
         account = DesktopModelAccount(
             user_id=user_id,
-            provider=PROVIDER_CHATGPT,
+            provider=provider,
             kind=KIND_SUBSCRIPTION,
             account_key=account_key,
-            label=email or "ChatGPT",
+            label=email or _NAMES[provider],
             plan=plan,
             limited_until=None,
         )
@@ -384,7 +357,7 @@ async def keep_sign_in(
     account.plan = plan or account.plan
     account.limited_until = None
     if not account.label:
-        account.label = email or "ChatGPT"
+        account.label = email or _NAMES[provider]
     await session.flush()
     return account
 
@@ -437,7 +410,7 @@ async def access_for(
     if (
         account is None
         or account.status == STATUS_SIGNED_OUT
-        or account.provider != PROVIDER_CHATGPT
+        or account.provider not in SIGNED_IN_BY_CODE
     ):
         # Claude's row holds no token: Claude Code on the computer makes its calls.
         return None
@@ -459,8 +432,12 @@ async def access_for(
     if (fresh and not force_refresh) or refresh is None:
         return current
     try:
-        tokens = await _refresh(refresh)
-    except ChatGptError as error:
+        tokens = (
+            await grok.refresh(refresh, access)
+            if account.provider == PROVIDER_GROK
+            else await _refresh(refresh)
+        )
+    except ProviderError as error:
         if error.sign_in_gone:
             log.info(
                 "desktop.models.signed_out",
@@ -474,27 +451,31 @@ async def access_for(
         log.warning(
             "desktop.models.refresh_failed",
             user_id=str(user_id),
+            provider=account.provider,
             status=error.status,
             error=error.code,
         )
         if account.expires_at is not None and account.expires_at > now:
             return current
-        raise ChatGptUnavailable() from error
+        raise RefreshUnavailable() from error
     except httpx.HTTPError as error:
         log.warning(
             "desktop.models.refresh_failed",
             user_id=str(user_id),
+            provider=account.provider,
             reason=type(error).__name__,
         )
         if account.expires_at is not None and account.expires_at > now:
             return current
-        raise ChatGptUnavailable() from error
+        raise RefreshUnavailable() from error
     _keep(account, tokens)
     account.set_modified_at()
-    # OpenAI has already spent the refresh token it was sent: the new one is
-    # written now, before anything else in this request can fail.
+    # The provider has already spent the refresh token it was sent: the new
+    # one is written now, before anything else in this request can fail.
     await session.flush()
-    log.info("desktop.models.refreshed", user_id=str(user_id))
+    log.info(
+        "desktop.models.refreshed", user_id=str(user_id), provider=account.provider
+    )
     return AccessGrant(tokens.access_token, account.account_key, account.expires_at)
 
 
@@ -529,6 +510,8 @@ async def disconnect(
     )
     if refresh is not None and account.provider == PROVIDER_CHATGPT:
         revoked = await revoke(refresh)
+    elif refresh is not None and account.provider == PROVIDER_GROK:
+        revoked = await grok.revoke(refresh)
     await repository.delete_one(user_id, account_id)
     log.info(
         "desktop.models.disconnected",
@@ -665,24 +648,35 @@ def account_json(account: DesktopModelAccount) -> dict[str, Any]:
 # --- the sign-in in progress, kept a quarter of an hour -------------------------
 
 
+def _kept(user_id: UUID, device: DeviceCode, asked_at: float | None) -> str:
+    return json.dumps(
+        {
+            "user_id": str(user_id),
+            "provider": device.provider,
+            "device_auth_id": device.device_auth_id,
+            "user_code": device.user_code,
+            "interval": device.interval,
+            "verification_url": device.verification_url,
+            "asked_at": asked_at,
+        }
+    )
+
+
 async def _remember(redis: Redis, user_id: UUID, device: DeviceCode) -> str:
     connect_id = secrets.token_urlsafe(24)
     await redis.set(
         f"{_CONNECT_PREFIX}{connect_id}",
-        json.dumps(
-            {
-                "user_id": str(user_id),
-                "device_auth_id": device.device_auth_id,
-                "user_code": device.user_code,
-                "interval": device.interval,
-            }
-        ),
-        ex=CONNECT_TTL_S,
+        _kept(user_id, device, None),
+        ex=min(CONNECT_TTL_S, device.expires_in),
     )
     return connect_id
 
 
-async def _recall(redis: Redis, user_id: UUID, connect_id: str) -> DeviceCode | None:
+async def _recall(
+    redis: Redis, user_id: UUID, connect_id: str, provider: str = PROVIDER_CHATGPT
+) -> tuple[DeviceCode, float | None] | None:
+    """The sign-in in progress and when its provider was last asked; None
+    when it ran out, is another person's or another provider's."""
     raw = await redis.get(f"{_CONNECT_PREFIX}{connect_id}")
     if raw is None:
         return None
@@ -692,7 +686,29 @@ async def _recall(redis: Redis, user_id: UUID, connect_id: str) -> DeviceCode | 
         return None
     if kept.get("user_id") != str(user_id):
         return None
-    return DeviceCode(kept["device_auth_id"], kept["user_code"], int(kept["interval"]))
+    if kept.get("provider", PROVIDER_CHATGPT) != provider:
+        return None
+    asked_at = kept.get("asked_at")
+    device = DeviceCode(
+        kept["device_auth_id"],
+        kept["user_code"],
+        int(kept["interval"]),
+        provider=provider,
+        verification_url=kept.get("verification_url"),
+    )
+    return device, asked_at if isinstance(asked_at, int | float) else None
+
+
+async def _asked(
+    redis: Redis, user_id: UUID, connect_id: str, device: DeviceCode, at: float
+) -> None:
+    """When the provider was asked (and how often it now wants to be),
+    kept until the sign-in runs out as before."""
+    await redis.set(
+        f"{_CONNECT_PREFIX}{connect_id}",
+        _kept(user_id, device, at),
+        keepttl=True,
+    )
 
 
 # --- routes -------------------------------------------------------------------
@@ -727,26 +743,28 @@ class _ClaudeUsageBody(BaseModel):
 #: own words for the code (`AIModels.startProblem`), these where they have
 #: none.
 _REFUSALS = {
-    "device_code_off": "ChatGPT didn't allow signing in with a code.",
-    "provider_unavailable": "Couldn't reach ChatGPT. Try again in a moment.",
+    "device_code_off": "{provider} didn't allow signing in with a code.",
+    "provider_unavailable": "Couldn't reach {provider}. Try again in a moment.",
     "not_found": "That account isn't connected.",
     "empty_label": "Give the account a name.",
     "not_offered": "That model isn't one of your accounts' models.",
 }
 
 
-def refusal(code: str, status: int) -> JSONResponse:
+def refusal(code: str, status: int, provider: str = PROVIDER_CHATGPT) -> JSONResponse:
     """A refusal in the shape the apps read (`{"error": {"code", "message"}}`,
     as the model proxy's): the code for the apps' own words, the message
     where they have none."""
+    message = _REFUSALS.get(code, code).replace("{provider}", _NAMES[provider])
     return JSONResponse(
-        {"error": {"code": code, "message": _REFUSALS.get(code, code)}},
-        status_code=status,
+        {"error": {"code": code, "message": message}}, status_code=status
     )
 
 
-def _provider_unavailable(code: str = "provider_unavailable") -> JSONResponse:
-    return refusal(code, 502)
+def _provider_unavailable(
+    code: str = "provider_unavailable", provider: str = PROVIDER_CHATGPT
+) -> JSONResponse:
+    return refusal(code, 502, provider)
 
 
 @router.get("/api/models/accounts", name="desktop:model_accounts_list")
@@ -758,6 +776,18 @@ async def model_accounts_list(
         desktop_session.user_id
     )
     return JSONResponse({"accounts": [account_json(a) for a in accounts]})
+
+
+def _started(connect_id: str, device: DeviceCode) -> JSONResponse:
+    return JSONResponse(
+        {
+            "connectId": connect_id,
+            "userCode": device.user_code,
+            "verificationUrl": device.verification_url or verification_url(),
+            "interval": device.interval,
+            "expiresIn": min(CONNECT_TTL_S, device.expires_in),
+        }
+    )
 
 
 @router.post(
@@ -783,15 +813,35 @@ async def model_accounts_chatgpt_start(
         return _provider_unavailable()
     connect_id = await _remember(redis, desktop_session.user_id, device)
     log.info("desktop.models.sign_in_started", user_id=str(desktop_session.user_id))
-    return JSONResponse(
-        {
-            "connectId": connect_id,
-            "userCode": device.user_code,
-            "verificationUrl": verification_url(),
-            "interval": device.interval,
-            "expiresIn": CONNECT_TTL_S,
-        }
+    return _started(connect_id, device)
+
+
+async def _connected(
+    redis: Redis, connect_id: str, user_id: UUID, account: DesktopModelAccount
+) -> JSONResponse:
+    await redis.delete(f"{_CONNECT_PREFIX}{connect_id}")
+    log.info(
+        "desktop.models.connected",
+        user_id=str(user_id),
+        provider=account.provider,
+        plan=account.plan,
     )
+    return JSONResponse({"status": "connected", "account": account_json(account)})
+
+
+async def _failed(
+    redis: Redis, connect_id: str, error: ProviderError, provider: str
+) -> JSONResponse:
+    log.warning(
+        "desktop.models.poll_failed",
+        provider=provider,
+        status=error.status,
+        error=error.code,
+    )
+    await redis.delete(f"{_CONNECT_PREFIX}{connect_id}")
+    # The poll answered: the sign-in failed (the app says so and offers to
+    # start again).
+    return JSONResponse({"status": "failed", "reason": error.code})
 
 
 @router.post(
@@ -804,31 +854,111 @@ async def model_accounts_chatgpt_poll(
     redis: Redis = Depends(get_redis),
 ) -> JSONResponse:
     user_id = desktop_session.user_id
-    device = await _recall(redis, user_id, body.connectId)
-    if device is None:
+    recalled = await _recall(redis, user_id, body.connectId)
+    if recalled is None:
         return JSONResponse({"status": "expired"})
+    device, _ = recalled
     try:
         tokens = await poll_device_code(device)
         if tokens is None:
             return JSONResponse({"status": "waiting"})
         account = await keep_sign_in(session, user_id, tokens)
     except ChatGptError as error:
-        log.warning("desktop.models.poll_failed", status=error.status, error=error.code)
-        await redis.delete(f"{_CONNECT_PREFIX}{body.connectId}")
-        # The poll answered: the sign-in failed (the app says so and offers
-        # to start again).
-        return JSONResponse({"status": "failed", "reason": error.code})
+        return await _failed(redis, body.connectId, error, PROVIDER_CHATGPT)
     except httpx.HTTPError as error:
         log.warning("desktop.models.poll_failed", reason=type(error).__name__)
         return JSONResponse({"status": "waiting"})
-    await redis.delete(f"{_CONNECT_PREFIX}{body.connectId}")
-    log.info(
-        "desktop.models.connected",
-        user_id=str(user_id),
-        provider=account.provider,
-        plan=account.plan,
+    return await _connected(redis, body.connectId, user_id, account)
+
+
+@router.post(
+    "/api/models/accounts/grok/start", name="desktop:model_accounts_grok_start"
+)
+async def model_accounts_grok_start(
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    redis: Redis = Depends(get_redis),
+) -> JSONResponse:
+    """A code for the person to approve on xAI's page, in the same sheet as
+    ChatGPT's."""
+    try:
+        started = await grok.request_device_code()
+    except grok.GrokError as error:
+        log.warning(
+            "desktop.models.start_failed",
+            provider=PROVIDER_GROK,
+            status=error.status,
+            error=error.code,
+        )
+        return _provider_unavailable(
+            "device_code_off" if error.status == 404 else "provider_unavailable",
+            PROVIDER_GROK,
+        )
+    except httpx.HTTPError as error:
+        log.warning(
+            "desktop.models.start_failed",
+            provider=PROVIDER_GROK,
+            reason=type(error).__name__,
+        )
+        return _provider_unavailable(provider=PROVIDER_GROK)
+    device = DeviceCode(
+        started.device_code,
+        started.user_code,
+        started.interval,
+        provider=PROVIDER_GROK,
+        verification_url=started.verification_url,
+        expires_in=started.expires_in,
     )
-    return JSONResponse({"status": "connected", "account": account_json(account)})
+    connect_id = await _remember(redis, desktop_session.user_id, device)
+    log.info(
+        "desktop.models.sign_in_started",
+        user_id=str(desktop_session.user_id),
+        provider=PROVIDER_GROK,
+    )
+    return _started(connect_id, device)
+
+
+@router.post("/api/models/accounts/grok/poll", name="desktop:model_accounts_grok_poll")
+async def model_accounts_grok_poll(
+    body: _PollBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+    redis: Redis = Depends(get_redis),
+) -> JSONResponse:
+    """`waiting` until the person approves on xAI's page; then the plan is
+    asked whether it may use Grok here, and kept only if so."""
+    user_id = desktop_session.user_id
+    recalled = await _recall(redis, user_id, body.connectId, PROVIDER_GROK)
+    if recalled is None:
+        return JSONResponse({"status": "expired"})
+    device, asked_at = recalled
+    now = utc_now().timestamp()
+    if asked_at is not None and now - asked_at < device.interval:
+        # Asked sooner than xAI wants (RFC 8628): xAI isn't asked again yet.
+        return JSONResponse({"status": "waiting", "interval": device.interval})
+    try:
+        answer = await grok.poll_device_code(device.device_auth_id)
+        if isinstance(answer, grok.Waiting):
+            if answer.slower:
+                device = replace(device, interval=device.interval + SLOW_DOWN_S)
+            await _asked(redis, user_id, body.connectId, device, now)
+            return JSONResponse({"status": "waiting", "interval": device.interval})
+        if await grok.access_allowed(answer.access_token) is False:
+            # A plan xAI doesn't let use Grok here (Free, or one its gate
+            # bars): said now, and the sign-in ended at xAI, not kept.
+            if answer.refresh_token:
+                await grok.revoke(answer.refresh_token)
+            raise grok.GrokError(403, "not_allowed")
+        account = await keep_sign_in(session, user_id, answer, PROVIDER_GROK)
+    except grok.GrokError as error:
+        return await _failed(redis, body.connectId, error, PROVIDER_GROK)
+    except httpx.HTTPError as error:
+        log.warning(
+            "desktop.models.poll_failed",
+            provider=PROVIDER_GROK,
+            reason=type(error).__name__,
+        )
+        return JSONResponse({"status": "waiting", "interval": device.interval})
+    return await _connected(redis, body.connectId, user_id, account)
 
 
 @router.post("/api/models/accounts/claude", name="desktop:model_accounts_claude")

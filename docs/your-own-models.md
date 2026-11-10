@@ -68,7 +68,7 @@ in the conversation.
 |---|---|---|
 | **ChatGPT** | **Yes, officially, once OpenAI approves Simeon.** Commercial apps join a waitlist with OpenAI's interest form. Plus and Pro (and Go) users let an app use their plan, with a weekly cap per app they set themselves. The app gets an access token (1 hour) and a refresh token (30 days) and calls the Responses API: `store: false`, `stream: true`, no `temperature` or `max_output_tokens`. A capped app gets `subscription_sharing_usage_limit_exceeded` (a 429, or `response.failed` mid-stream). | developers.openai.com/siwc (quickstart, request-client-id), help.openai.com article 20001542 |
 | **Claude** | **Yes, through the real Claude Code only.** Not from Simeon's server: Anthropic: "Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, Max, or Ultra plan credentials on behalf of their users … developers may not collect, store, or intermediate Claude.ai credentials." The Agent SDK page: "Unless previously approved". **But the real Claude Code may run on a platform's computers, each person signing in to it with their own plan** (read 9 November 2026). Reason's screen is that sign-in. Simeon's server won't sign in as Claude Code; Claude Code itself runs on the person's computer (section 6). | code.claude.com/docs/en/legal-and-compliance, /agent-sdk/overview, support.claude.com article 13189465 |
-| **Grok** | **To check with xAI.** xAI publishes no programme for other apps. Kilo Code and Hermes Agent use the same device-code sign-in with SuperGrok plans. | hermes-agent docs (xai-grok-oauth), kilo.ai docs (xai) |
+| **Grok** | **Done the way the tools xAI's own CLI is shared with do it** (section 9, 10 November 2026). xAI publishes no programme for other apps; Grok Build's public client id is the one Hermes, Kilo Code and OpenCode sign in with, each naming itself as the `referrer`. Simeon does the same and asks xAI for an id of its own (the e-mail in section 9). xAI's terms bar access it hasn't authorised, so its answer decides. | hermes-agent docs (xai-grok-oauth), kilo.ai docs (xai), github.com/xai-org/grok-build |
 | **GitHub Copilot** | **To check with GitHub.** Not read yet. | |
 | **Kimi Code** | **To check with Moonshot.** Not read yet. | |
 | **Muse** | **Likely yes:** it signs in to Meta's developer API (Meta Model API, `api.meta.ai/v1`), whose use is billed by Meta. Meta's terms on an app holding the token not read yet. | |
@@ -418,6 +418,73 @@ of this step. Anthropic, OpenAI, Google and Bedrock keys need none.
 4. Whether a teammate's agents may use an account someone connected (Reason's
    "Usage not shared").
 
+## 9. Grok, on the person's own plan (10 November 2026)
+
+The founder: "now we need to bring meta and grok - both should be the same
+as chat gpt", then "No api key. Sign in." and "lets do grok. we'll decide on
+meta later". Grok is now what ChatGPT is, read from Grok Build's own code
+(xai-org/grok-build, Apache-2.0; nothing has met xAI's real servers in a
+test):
+
+- **Connect.** AI Models › Grok › Connect, the consent, then the same sheet
+  as ChatGPT's: "Copy this code", "Enter it on accounts.x.ai/oauth2/device
+  and approve" (the page opens with the code already in it), "Waiting for
+  you to approve…". The server asks xAI for the code (`grok.py`, OAuth's
+  device code at `auth.x.ai`, Grok Build's client id, Simeon as the
+  `referrer`) and asks no faster than xAI wants (`slow_down`).
+- **Who may.** Signed in, the plan is asked whether it may use Grok here
+  (the proxy's `/settings`, the gate Grok Build's own paywall reads). A plan
+  it bars (Free) is never kept: the sheet says "Grok didn't allow this
+  account to sign in here. It needs SuperGrok or X Premium." with **See Grok
+  Plans** (grok.com/supergrok) and Try Again, and the sign-in is ended at
+  xAI.
+- **The account.** Kept sealed like ChatGPT's; its plan is the access
+  token's `tier` (SuperGrok, SuperGrok Heavy, X Premium, X Premium+…);
+  refreshed five minutes ahead; Disconnect ends it at xAI (OAuth's revoke).
+  A team's sign-in is its own account.
+- **The models.** Grok 4.6 (chosen on connecting) and Grok 4.5, Grok
+  Build's two, 500,000 tokens each. Thinking: Light, Medium, High (Grok's
+  own default) and Extra High on 4.6; up to High on 4.5. The machinery
+  (titles, summaries, memory) runs on the chosen model, as Grok Build's.
+- **The calls.** Where Grok Build sends its own
+  (`cli-chat-proxy.grok.com/v1/responses`), with its headers and Simeon named
+  as the client, on the Responses wire both its models use. The brief goes as
+  a `system` message; `store: false`. Web search is the proxy's own
+  `web_search` tool on Grok 4.6; pictures are Grok Imagine on xAI's API,
+  except for Free and X Basic, which xAI keeps from pictures (Simeon's
+  draws them, on credits).
+- **The plan's usage.** xAI's billing (`/billing?format=credits`) says how
+  much of the week's or the month's credits is used and when the period
+  ends: asked after an answer, at most every five minutes, and shown as
+  "Weekly limit" or "Monthly limit" in Usage & Billing and on Grok's page.
+- **When it runs out.** Out of credits (402, or 403 or 429 saying so) moves
+  the call to the person's next Grok account, then to Simeon's model, and the
+  account waits until its period ends ("Limit reached until …").
+
+**The e-mail to xAI** (to send to legal@x.ai, and to the developer contact
+on x.ai):
+
+> Subject: A client id for Simeon to sign people in with their Grok plan
+>
+> Hello,
+>
+> We make Simeon (simeonlabs.com), a team of AI agents that work on a cloud
+> computer for each person. People ask to use the Grok plan they already
+> pay for (SuperGrok, X Premium) for their agents, as they can in Hermes,
+> Kilo Code and OpenCode.
+>
+> Today we sign them in with OAuth's device code at auth.x.ai, under Grok
+> Build's public client id with `referrer=simeon`, and send their agents'
+> calls to the Grok Build proxy with Simeon named as the client. The person
+> approves on accounts.x.ai; we keep the tokens encrypted on our server,
+> never share them, end the sign-in when they disconnect, and respect the
+> plan's gate and its credits.
+>
+> We would like a client id of our own, and to know the terms you want us
+> to follow. We'll change anything you ask.
+>
+> Simeon Labs
+
 ## Sources
 
 - Reason: reasonmachines.com/guides/use-all-your-ai-subscriptions;
@@ -430,3 +497,7 @@ of this step. Anthropic, OpenAI, Google and Bedrock keys need none.
   /en/articles/15036540
 - xAI's device sign-in as other tools use it:
   hermes-agent.nousresearch.com/docs/guides/xai-grok-oauth; kilo.ai/docs/ai-providers/xai
+- Grok Build's own code (read 10 November 2026, commit 2bdd1d6):
+  github.com/xai-org/grok-build, `crates/codegen/xai-grok-login`
+  (sign-in), `xai-grok-sampler` (the calls), `xai-grok-shell/src/extensions/billing.rs`
+  (usage)

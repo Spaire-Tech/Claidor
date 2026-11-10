@@ -68,7 +68,7 @@ async def _account(
     account = await accounts.keep_sign_in(
         session,
         user.id,
-        accounts.ChatGptTokens(
+        accounts.SignInTokens(
             id_token=_id_token(key, f"{key}@example.com", plan),
             access_token=access or _access(key),
             refresh_token=refresh,

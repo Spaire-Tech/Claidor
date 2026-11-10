@@ -919,6 +919,64 @@ When it misbehaves (nothing here logs a token, a code or a verifier):
 the migration up and down on PostgreSQL. **Not verified:** a real sign-in at
 auth.openai.com and a real call at chatgpt.com (no app calls them yet).
 
+**Grok** (10 November 2026, the founder: "lets do grok"; the plan:
+`docs/your-own-models.md`, section 9). The same as ChatGPT's, on xAI's side
+(`server/simeon/desktop/grok.py`, read from Grok Build's code):
+
+- `POST /desktop/api/models/accounts/grok/start` and `…/grok/poll`: xAI's
+  device code at `auth.x.ai` (Grok Build's client id, `referrer=simeon`).
+  `start` answers the code and the page with the code in it
+  (`verificationUrl`, only ever an `x.ai` or `grok.com` page over https);
+  `poll` answers `waiting` (with xAI's `interval`, five seconds more after
+  its `slow_down`; asked sooner, xAI isn't asked), `connected`, `expired`,
+  or `failed` with xAI's reason. Signed in, the plan is asked whether it may
+  use Grok here (`{proxy}/settings`, `allow_access`); a plan it bars answers
+  `failed`, `not_allowed`, and the sign-in is revoked, not kept.
+- The row: `provider` `grok`, `account_key` the ID token's `sub` (a team's
+  sign-in `team:<id>`), `plan` the access token's `tier` (`supergrok`,
+  `supergrok_heavy`, `x_premium`, `x_premium_plus`…). Refresh and revoke are
+  OAuth's, at `auth.x.ai`; `invalid_grant` and `invalid_client` end it.
+- Models: `own:grok:grok-4.6` and `own:grok:grok-4.5` for every role (the
+  machinery on the chosen model, as Grok Build does). Efforts low to xhigh
+  on 4.6, low to high on 4.5; high until the person chooses.
+- The relay: `POST {proxy}/responses` with Grok Build's headers
+  (`X-XAI-Token-Auth`, `x-grok-client-version`, `x-grok-model-override`…,
+  `x-grok-client-identifier: simeon`), the brief as `system`, no `status` on
+  reasoning sent back, `store: false`. Out of credits (402; 403 or 429
+  saying so; a stream that fails so) marks the account limited until its
+  period ends (xAI's billing; an hour when it doesn't say), and the call
+  goes to the next account, then Simeon's. Any other 4xx is handed back.
+- Usage: `GET {proxy}/billing?format=credits` after an answer, at most every
+  five minutes (`GROK_USAGE_EVERY`), and at once when the credits run out:
+  one window, `weekly` or `monthly`, kept on the account as ChatGPT's.
+- Search: the proxy's `web_search` tool on Grok 4.6, answered whole.
+  Pictures: `POST https://api.x.ai/v1/images/generations` (or `/edits`)
+  with `grok-imagine-image-quality`, the same sign-in as the bearer; Free
+  and X Basic draw on Simeon's.
+
+Settings (none needed on Render; the defaults are xAI's):
+
+- `SIMEON_GROK_CLIENT_ID`: Grok Build's public
+  `b1a00492-073a-47ea-816f-4c329264a828` until xAI gives Simeon its own.
+- `SIMEON_GROK_AUTH_BASE_URL` (`https://auth.x.ai`),
+  `SIMEON_GROK_PROXY_BASE_URL` (`https://cli-chat-proxy.grok.com/v1`),
+  `SIMEON_GROK_API_BASE_URL` (`https://api.x.ai/v1`).
+- `SIMEON_GROK_REFERRER` and `SIMEON_GROK_CLIENT_IDENTIFIER`: `simeon`.
+- `SIMEON_GROK_CLIENT_VERSION`: `1.0.45`, Grok Build's; the proxy checks it,
+  so a newer one goes here if xAI refuses an old one.
+- `SIMEON_GROK_TOKEN_AUTH`: `xai-grok-cli`, the `X-XAI-Token-Auth` header.
+
+Log lines carry `provider=grok` (`desktop.models.start_failed`,
+`poll_failed`, `connected`, `refreshed`, `signed_out`, `revoke_failed`,
+`relay_refused` with xAI's words, `limited`), plus
+`desktop.models.grok_settings_failed` and `desktop.models.grok_billing_failed`
+when xAI's gate or billing didn't answer (the sign-in and the answer go on).
+
+**Verified:** `server/tests/desktop/test_grok.py` (26 tests, xAI stood in by
+respx). **Not verified:** a real sign-in at auth.x.ai, a real call at the
+proxy, xAI's real billing and error bodies: all of it is read from Grok
+Build's code.
+
 ### Settings on Render
 
 - `SIMEON_OPENAI_API_KEY`: the OpenAI key. Without it, no OpenAI model is offered.

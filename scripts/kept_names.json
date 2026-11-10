@@ -630,6 +630,46 @@
       ],
       "match": "eleven \\?labs|\\(SAND\\|SIMEON\\|CLAIDOR\\)_",
       "reason": "The filter that keeps what is behind Simeon off the person's screen (PlainWords, simeonFacingProviderError, and the web app's copy of PlainWords, built into its index file) names the earlier names and setting prefixes it replaces."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "grok",
+        "xai"
+      ],
+      "paths": [
+        "server/simeon/config.py",
+        "server/simeon/desktop/grok.py",
+        "server/simeon/desktop/model_accounts.py",
+        "server/simeon/desktop/model_sign_in.py",
+        "server/simeon/desktop/own_models.py",
+        "server/tests/desktop/test_grok.py",
+        "ios/SimeonCore/Sources/SimeonCore/AIModels.swift",
+        "ios/SimeonCore/Tests/SimeonCoreTests/AIModelsTests.swift",
+        "ios/SimeonCore/Sources/SimeonCore/Resources/Localizable.xcstrings",
+        "ios/Simeon/AIModels.swift",
+        "ios/Simeon/Localizable.xcstrings",
+        "ios/Simeon/Assets.xcassets/Providers/grok*",
+        "mac/Simeon/SettingsModels.swift",
+        "mac/Simeon/Localizable.xcstrings",
+        "mac/Simeon/Assets.xcassets/Providers/grok*",
+        "mac/STEPS.md",
+        "clients/apps/app/src/core/aiModels.ts",
+        "clients/apps/app/src/core/aiModels.test.ts",
+        "clients/apps/app/src/core/connectCards.ts",
+        "clients/apps/app/src/window/ComposerModelMenu.tsx",
+        "clients/apps/app/src/window/SettingsModels.tsx",
+        "clients/apps/app/src/assets/providers/grok*",
+        "clients/apps/app/src/words/*/*.json",
+        "clients/apps/web/public/app-next/assets/*",
+        "docs/web-app/inventory/*",
+        "docs/web-app/PROGRESS.md",
+        "docs/your-own-models.md",
+        "docs/services-core.md",
+        "docs/kept-names.md"
+      ],
+      "match": "^(?!.*grok[ _-]?bot)",
+      "reason": "Grok, xAI's assistant, is a provider a person connects for their agents on their own SuperGrok or X Premium plan (10 November 2026, the founder: \"lets do grok\"): its name on the apps' pages and in their words, xAI's sign-in, proxy and API addresses, and the headers and client values xAI's servers read. The upstream Grok Bot stays a finding everywhere, these files included."
     }
   ]
 }

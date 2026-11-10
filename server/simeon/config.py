@@ -743,6 +743,24 @@ class Settings(BaseSettings):
     # above is Codex's too.
     CHATGPT_ORIGINATOR: str = "codex_cli_rs"
 
+    # Grok plans (SuperGrok, X Premium) a person connects for their agents
+    # (`simeon.desktop.grok`, 10 November 2026, the founder: "lets do
+    # grok"): xAI's device code under Grok Build's public client id, the one
+    # Hermes and OpenCode sign in with, each naming itself as the
+    # `referrer`; Simeon's own client id goes here once xAI gives one. The
+    # model calls go where Grok Build sends its own, with its headers; the
+    # proxy checks the client version, so a newer one goes here when xAI
+    # asks for it. The addresses are settings so the tests can point them
+    # at a stand-in.
+    GROK_CLIENT_ID: str = "b1a00492-073a-47ea-816f-4c329264a828"
+    GROK_AUTH_BASE_URL: str = "https://auth.x.ai"
+    GROK_PROXY_BASE_URL: str = "https://cli-chat-proxy.grok.com/v1"
+    GROK_API_BASE_URL: str = "https://api.x.ai/v1"
+    GROK_REFERRER: str = "simeon"
+    GROK_CLIENT_IDENTIFIER: str = "simeon"
+    GROK_CLIENT_VERSION: str = "1.0.45"
+    GROK_TOKEN_AUTH: str = "xai-grok-cli"
+
     # Plans bought in the iPhone app with Apple's in-app purchase
     # (`simeon.plans.app_store`, docs/services-billing.md). The iPhone app's
     # bundle id; the app's Apple ID from App Store Connect (App Information,

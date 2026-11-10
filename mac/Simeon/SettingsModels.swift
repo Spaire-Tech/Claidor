@@ -21,7 +21,8 @@ import SimeonCore
 struct SettingsModelsPage: View {
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var connectingChatGPT = false
+  /** The provider whose code sheet is open (ChatGPT's, Grok's). */
+  @State private var connectingByCode: String?
   @State private var connectingClaude = false
   @State private var renaming: ModelAccount?
   @State private var newName = ""
@@ -54,7 +55,7 @@ struct SettingsModelsPage: View {
                 divided: index > 0,
                 look: look,
                 rename: { newName = account.shownName; renaming = account },
-                addAnother: account.provider == AIModels.chatGPT ? { connectingChatGPT = true } : nil,
+                addAnother: AIModels.signedInByCode.contains(account.provider) ? { connectingByCode = account.provider } : nil,
                 connectAgain: { connect(account.provider) },
                 disconnect: { askToDisconnect(account, model: model) }
               )
@@ -79,7 +80,9 @@ struct SettingsModelsPage: View {
         }
       }
     }
-    .sheet(isPresented: $connectingChatGPT) { MacChatGPTConnectSheet(model: model) }
+    .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
+      MacChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT)
+    }
     .sheet(isPresented: $connectingClaude) { MacClaudeConnectSheet(model: model) }
     .alert("Rename account", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
       TextField(String(localized: "Account name"), text: $newName)
@@ -101,9 +104,9 @@ struct SettingsModelsPage: View {
     MacConnector.shared.ask(consent: ConnectConsent(modelProvider: provider)) { connect(provider) }
   }
 
-  /** A provider's sign-in: ChatGPT's code sheet, or Claude's. */
+  /** A provider's sign-in: the code sheet (ChatGPT, Grok), or Claude's. */
   private func connect(_ provider: String) {
-    if provider == AIModels.claude { connectingClaude = true } else { connectingChatGPT = true }
+    if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
   }
 
   private func askToDisconnect(_ account: ModelAccount, model: AIModelsModel) {
@@ -361,6 +364,8 @@ struct SettingsModelAccountPage: View {
  */
 struct MacChatGPTConnectSheet: View {
   let model: AIModelsModel
+  /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
+  var provider: String = AIModels.chatGPT
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
   @State private var signIn: ChatGPTSignIn?
@@ -372,8 +377,8 @@ struct MacChatGPTConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        MacProviderIcon(provider: AIModels.chatGPT, look: look, side: 36)
-        Text("Connect ChatGPT")
+        MacProviderIcon(provider: provider, look: look, side: 36)
+        Text("Connect \(AIModels.providerName(provider))")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
           .accessibilityAddTraits(.isHeader)
@@ -397,18 +402,33 @@ struct MacChatGPTConnectSheet: View {
         Label("Connected", systemImage: "checkmark.circle.fill")
           .font(PanelType.row)
           .foregroundStyle(look.settingsGreen)
-        Text("You're now connected to \(AIModels.providerName(AIModels.chatGPT)).")
+        Text("You're now connected to \(AIModels.providerName(provider)).")
           .font(PanelType.row)
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
       }
       footer(look, title: String(localized: "Done"))
     case .some(.expired), .some(.failed):
-      Text(outcome == .expired ? String(localized: "The code expired. Try again.") : String(localized: "ChatGPT didn't connect. Try again."))
+      Text(outcome == .expired ? String(localized: "The code expired. Try again.") : provider == AIModels.grok ? String(localized: "Grok didn't connect. Try again.") : String(localized: "ChatGPT didn't connect. Try again."))
         .font(PanelType.row)
         .foregroundStyle(look.danger)
         .fixedSize(horizontal: false, vertical: true)
       tryAgain(look)
+    case .some(.notAllowed):
+      // Signed in, on a plan xAI doesn't let in here: why, and where to get one that is.
+      Text(AIModels.startProblem(code: "not_allowed", provider: provider))
+        .font(PanelType.row)
+        .foregroundStyle(look.ink)
+        .fixedSize(horizontal: false, vertical: true)
+      if let plans = AIModels.plansPage(provider) {
+        SheetWideButton(title: String(localized: "See Grok Plans")) { NSWorkspace.shared.open(plans) }
+          .padding(.top, 4)
+      }
+      HStack {
+        Spacer()
+        SettingsPill(title: String(localized: "Try Again"), look: look) { attempt += 1 }
+        Spacer()
+      }
     default:
       if let signIn {
         steps(signIn, look: look)
@@ -472,7 +492,7 @@ struct MacChatGPTConnectSheet: View {
     outcome = nil
     copied = false
     model.problem = nil
-    guard let started = await model.startChatGPT() else { return }
+    guard let started = await model.startCodeSignIn(provider) else { return }
     signIn = started
     let answer = await model.waitForApproval(started)
     guard !Task.isCancelled, answer != .waiting else { return }

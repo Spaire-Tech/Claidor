@@ -68,12 +68,28 @@ next primary row, Simeon's, answers, as before). A call that still names a
 Claude model is answered by Simeon's; web search and pictures stay on
 Simeon's for a person on Claude.
 
-**Not verified against chatgpt.com.** For models it marks
+**Grok** (10 November 2026, the founder: "lets do grok"). A person who
+connected their SuperGrok or X Premium plan (`grok.py`) may choose Grok 4.6
+or Grok 4.5 (`own:grok:grok-4.6`), Grok Build's own two. The agents' calls
+go where Grok Build sends its own (`settings.GROK_PROXY_BASE_URL`,
+`/responses`), with its headers (`grok.headers`), and the body Grok Build
+writes (`grok_body`): the brief as a `system` message, `store: false`, no
+`metadata`, `user`, `truncation` or `service_tier`, and no `status` on the
+reasoning sent back. Out of credits (402, or 403 or 429 saying so) marks
+the account limited until its period ends, as xAI's billing says. Its web
+search is the proxy's own `web_search` tool on Grok 4.6, its pictures Grok
+Imagine on xAI's API (`grok-imagine-image-quality`), as Grok Build's; the
+plans xAI keeps pictures from (Free, X Basic) get Simeon's. How much of the
+plan is used is asked of xAI's billing after an answer, at most every few
+minutes (`GROK_USAGE_EVERY`).
+
+**Not verified against chatgpt.com or grok.com.** For models it marks
 `use_responses_lite`, Codex sends the tools inside `input`
 (`additional_tools`), not in `tools`. This relay sends the standard
 `tools`, as OpenAI's public Responses API takes them. If ChatGPT refuses
 that, the log line says so and the agent gets ChatGPT's refusal: a request
-refused is not taken on by Simeon's model.
+refused is not taken on by Simeon's model. Grok's wire is read from Grok
+Build's code alone; the same log line says what xAI refused.
 """
 
 from __future__ import annotations
@@ -98,9 +114,10 @@ from simeon.models import DesktopModelAccount, DesktopSession, User
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
-from . import model_accounts
+from . import grok, model_accounts
 from .auth import ProxyCaller, get_desktop_session
 from .model_account_repository import ModelAccountRepository
+from .model_sign_in import RefreshUnavailable
 from .pricing import (
     DesktopModel,
     DesktopProvider,
@@ -132,10 +149,15 @@ EFFORT_KEY = "own_model_effort"
 EFFORTS: dict[str, tuple[str, ...]] = {
     "claude": ("low", "medium", "high", "xhigh", "max"),
     "chatgpt": ("low", "medium", "high"),
+    # Grok 4.6's, as Grok Build lists them (Grok 4.5 stops at high: its own
+    # `OwnModel.efforts`).
+    "grok": ("low", "medium", "high", "xhigh"),
 }
-#: Each provider's effort until the person chooses one (Claude Code's own and
-#: Codex's).
-DEFAULT_EFFORT = {"claude": "high", "chatgpt": "medium"}
+#: Each provider's effort until the person chooses one (Claude Code's own,
+#: Codex's and Grok Build's).
+DEFAULT_EFFORT = {"claude": "high", "chatgpt": "medium", "grok": "high"}
+#: How often a Grok plan's usage is asked of xAI's billing, at most.
+GROK_USAGE_EVERY = timedelta(minutes=5)
 #: A limit ChatGPT reports without saying until when.
 LIMIT_WITHOUT_END = timedelta(hours=1)
 #: ChatGPT's words for a plan's limit reached (Codex's
@@ -155,6 +177,12 @@ class OwnModel:
     context_window: int
     #: The provider's plans that don't include it (from Codex's list).
     not_on_plans: frozenset[str] = frozenset()
+    #: The efforts it takes, where fewer than its provider's.
+    efforts: tuple[str, ...] = ()
+
+    @property
+    def efforts_taken(self) -> tuple[str, ...]:
+        return self.efforts or EFFORTS.get(self.provider, ())
 
     def on_plan(self, plan: str | None) -> bool:
         """Whether an account on `plan` may use it; an account whose plan
@@ -191,6 +219,7 @@ class OwnModel:
 _PROVIDER_NAMES = {
     model_accounts.PROVIDER_CHATGPT: "ChatGPT",
     model_accounts.PROVIDER_CLAUDE: "Claude",
+    model_accounts.PROVIDER_GROK: "Grok",
 }
 
 #: ChatGPT's models for Codex, as Codex's own list names them (openai/codex,
@@ -242,6 +271,19 @@ CLAUDE_MODELS: tuple[OwnModel, ...] = (
     OwnModel(_CLAUDE, "claude-fable-5-1", "Claude Fable 5.1", 200_000),
     OwnModel(_CLAUDE, "claude-fable-5", "Claude Fable 5", 200_000),
 )
+#: Grok's models on the person's plan, as Grok Build ships them
+#: (`xai-grok-models/default_models.json`), best first: Grok 4.6, the one
+#: chosen when the person connects, and Grok 4.5. Grok Build asks the proxy
+#: for the plan's own list (`GET /models`); to be read from the account
+#: later, as ChatGPT's.
+_GROK = model_accounts.PROVIDER_GROK
+GROK_MODELS: tuple[OwnModel, ...] = (
+    OwnModel(_GROK, "grok-4.6", "Grok 4.6", 500_000),
+    OwnModel(_GROK, "grok-4.5", "Grok 4.5", 500_000, efforts=("low", "medium", "high")),
+)
+#: The Grok model with the proxy's own web search (`supports_backend_search`).
+GROK_SEARCH = "grok-4.6"
+
 #: The first Claude choices (9 November 2026), Claude Code's aliases, still
 #: read as the versions they meant: a person who chose one keeps it, and an
 #: app that still sends one is understood.
@@ -252,9 +294,9 @@ _FORMER_IDS = {
 #: The wire the engine runs a Claude Code turn on (`transportApi`).
 CLAUDE_CODE_TRANSPORT = "claude-code"
 
-_MODELS: dict[str, OwnModel] = {
-    one.model_id: one for one in (*CHATGPT_MODELS, *CLAUDE_MODELS)
-}
+#: Every model a person may choose, in the order the apps list them.
+ALL_MODELS: tuple[OwnModel, ...] = (*CHATGPT_MODELS, *CLAUDE_MODELS, *GROK_MODELS)
+_MODELS: dict[str, OwnModel] = {one.model_id: one for one in ALL_MODELS}
 _CHEAP: dict[str, str] = {
     model_accounts.PROVIDER_CHATGPT: f"{OWN_PREFIX}chatgpt:{CHATGPT_CHEAP}"
 }
@@ -282,9 +324,12 @@ def chosen_effort(user: User) -> str | None:
     if chosen is None:
         return None
     value = (user.meta or {}).get(EFFORT_KEY)
-    if isinstance(value, str) and value in EFFORTS.get(chosen.provider, ()):
+    if isinstance(value, str) and value in chosen.efforts_taken:
         return value
-    return DEFAULT_EFFORT.get(chosen.provider)
+    default = DEFAULT_EFFORT.get(chosen.provider)
+    if default is not None and default not in chosen.efforts_taken:
+        return chosen.efforts_taken[-1] if chosen.efforts_taken else None
+    return default
 
 
 async def _usable(
@@ -417,6 +462,72 @@ def codex_body(
     return body
 
 
+#: What the Responses request keeps on the way to Grok (Grok Build's own
+#: request, `conversation/responses.rs`). Everything else is left out.
+_GROK_FIELDS = (
+    "input",
+    "tools",
+    "tool_choice",
+    "parallel_tool_calls",
+    "reasoning",
+    "text",
+    "include",
+    "prompt_cache_key",
+    "max_output_tokens",
+    "temperature",
+    "top_p",
+)
+
+
+def _grok_item(item: Any) -> Any:
+    """An input item as Grok Build sends it: the brief as `system`, and no
+    `status` on reasoning sent back (`responses.rs`)."""
+    if not isinstance(item, dict):
+        return item
+    if item.get("role") == "developer":
+        return {**item, "role": "system"}
+    if item.get("type") == "reasoning" and "status" in item:
+        return {key: value for key, value in item.items() if key != "status"}
+    return item
+
+
+def grok_body(
+    payload: dict[str, Any], own: OwnModel, effort: str | None = None
+) -> dict[str, Any]:
+    """The engine's Responses request as Grok takes it; `effort`, the one
+    the person chose, in place of the engine's own on its real thinking."""
+    body: dict[str, Any] = {"model": own.slug, "stream": True}
+    for key in _GROK_FIELDS:
+        if payload.get(key) is not None:
+            body[key] = payload[key]
+    raw_input = payload.get("input")
+    if isinstance(raw_input, str):
+        items: list[Any] = [{"role": "user", "content": raw_input}]
+    elif isinstance(raw_input, list):
+        items = [_grok_item(item) for item in raw_input]
+    else:
+        items = []
+    instructions = payload.get("instructions")
+    if isinstance(instructions, str) and instructions.strip():
+        items.insert(0, {"role": "system", "content": instructions})
+    body["input"] = items
+    taken = own.efforts_taken
+    reasoning = body.get("reasoning")
+    if isinstance(reasoning, dict):
+        asked = reasoning.get("effort")
+        if asked in _NO_EFFORT:
+            # The machinery's "none": Grok's lowest.
+            asked = "low"
+        elif asked is not None and taken and asked not in taken:
+            # An effort the model lacks ("max"): the highest it has.
+            asked = taken[-1]
+        if effort is not None and effort in taken and asked != "low":
+            asked = effort
+        body["reasoning"] = {**reasoning, "effort": asked} if asked else reasoning
+    body["store"] = False
+    return body
+
+
 def _codex_headers(
     grant: model_accounts.AccessGrant, accept: str = "text/event-stream"
 ) -> dict[str, str]:
@@ -435,6 +546,29 @@ def _codex_base() -> str:
 
 def _codex_url() -> str:
     return f"{settings.CHATGPT_CODEX_BASE_URL.rstrip('/')}/responses"
+
+
+def _responses_url(provider: str) -> str:
+    if provider == model_accounts.PROVIDER_GROK:
+        return f"{grok.proxy_base()}/responses"
+    return _codex_url()
+
+
+def _headers(
+    provider: str,
+    grant: model_accounts.AccessGrant,
+    *,
+    model: str | None = None,
+    accept: str = "text/event-stream",
+    conversation: str | None = None,
+) -> dict[str, str]:
+    """The headers of a call on the account, as its provider's own client
+    sends them."""
+    if provider == model_accounts.PROVIDER_GROK:
+        return grok.headers(
+            grant.access_token, model=model, accept=accept, conversation=conversation
+        )
+    return _codex_headers(grant, accept)
 
 
 def limit_end(body: Any, now: datetime) -> datetime | None:
@@ -490,19 +624,25 @@ class _ResponseTally(OpenAIResponsesUsageTally):
 class _Refused(Exception):
     """One account did not answer: its status and ChatGPT's own words."""
 
-    def __init__(self, status: int | None, body: bytes) -> None:
+    def __init__(
+        self, status: int | None, body: bytes, *, limited: bool = False
+    ) -> None:
         super().__init__(f"{status}")
         self.status = status
         self.body = body
+        #: The plan's limit reached (Grok's 402 or 403 out of credits): a
+        #: refusal of the moment, whatever its status.
+        self.limited = limited
 
     @property
     def refuses_the_request(self) -> bool:
         """A refusal of the request itself (its shape, a model the plan
         lacks, an account not allowed to), not of the moment: a 4xx but
         the sign-in (401), a timeout (408), a conflict (409) and a limit
-        (429)."""
+        (429, or the credits used up)."""
         return (
-            self.status is not None
+            not self.limited
+            and self.status is not None
             and 400 <= self.status < 500
             and self.status not in (401, 408, 409, 429)
         )
@@ -569,7 +709,13 @@ async def relay(
     wants_stream = payload.get("stream") is True
     chosen = chosen_model(user)
     effort = chosen_effort(user) if chosen is not None and chosen == own else None
-    body = json.dumps(codex_body(payload, own.slug, effort)).encode()
+    shaped = (
+        grok_body(payload, own, effort)
+        if own.provider == model_accounts.PROVIDER_GROK
+        else codex_body(payload, own.slug, effort)
+    )
+    body = json.dumps(shaped).encode()
+    conversation = payload.get("prompt_cache_key")
     now = utc_now()
     accounts = [
         one
@@ -582,7 +728,15 @@ async def relay(
         account_id = account.id
         try:
             return await _on_account(
-                request, caller, session, own, account_id, body, wants_stream, reason
+                request,
+                caller,
+                session,
+                own,
+                account_id,
+                body,
+                wants_stream,
+                reason,
+                conversation=conversation if isinstance(conversation, str) else None,
             )
         except _Refused as refused:
             log.warning(
@@ -596,8 +750,8 @@ async def relay(
             if refused.refuses_the_request:
                 refused_request = refused
     if refused_request is not None:
-        # ChatGPT refused the request itself, not for the moment: said as
-        # it said it. Simeon's model doesn't take it on in silence, on the
+        # The provider refused the request itself, not for the moment: said
+        # as it said it. Simeon's model doesn't take it on in silence, on the
         # person's credits.
         return refused_request.answer()
     return await _on_simeon(own, payload, user, simeon)
@@ -664,7 +818,7 @@ async def _grant(
                 one, user_id, account_id, force_refresh=force_refresh
             ),
         )
-    except model_accounts.ChatGptUnavailable as error:
+    except RefreshUnavailable as error:
         raise _Refused(None, b"the sign-in could not be refreshed") from error
     if grant is None:
         raise _Refused(None, b"signed out")
@@ -680,10 +834,13 @@ async def _on_account(
     body: bytes,
     wants_stream: bool,
     reason: str | None,
+    *,
+    conversation: str | None = None,
 ) -> _Answer:
     """The call on one account. Raises `_Refused` when it did not answer,
     so the next one can."""
     user_id = caller.user.id
+    is_grok = own.provider == model_accounts.PROVIDER_GROK
     grant = await _grant(request, session, user_id, account_id)
     client = httpx.AsyncClient(timeout=_timeout())
     refreshed = False
@@ -691,7 +848,15 @@ async def _on_account(
         try:
             upstream = await client.send(
                 client.build_request(
-                    "POST", _codex_url(), headers=_codex_headers(grant), content=body
+                    "POST",
+                    _responses_url(own.provider),
+                    headers=_headers(
+                        own.provider,
+                        grant,
+                        model=own.slug,
+                        conversation=conversation,
+                    ),
+                    content=body,
                 ),
                 stream=True,
             )
@@ -715,19 +880,26 @@ async def _on_account(
                 raise
             continue
         await client.aclose()
-        try:
-            answer = json.loads(refusal)
-        except ValueError:
-            answer = None
-        until = limit_end(answer, utc_now())
+        until = await _limit_until(
+            request,
+            session,
+            own,
+            user_id,
+            account_id,
+            grant,
+            upstream.status_code,
+            refusal,
+        )
         if until is not None:
             await _mark_limited(request, session, user_id, account_id, until)
-        raise _Refused(upstream.status_code, refusal)
+        raise _Refused(upstream.status_code, refusal, limited=until is not None)
 
     # How much of the plan is used, as ChatGPT says with each answer: kept
     # on the account for the apps (9 November 2026), never in the way of
-    # the answer.
-    plan_usage = model_accounts.chatgpt_usage(upstream.headers, utc_now())
+    # the answer. Grok's is asked of xAI's billing once the answer is done.
+    plan_usage = (
+        None if is_grok else model_accounts.chatgpt_usage(upstream.headers, utc_now())
+    )
     if plan_usage is not None:
         try:
             await _in_own_session(
@@ -761,8 +933,15 @@ async def _on_account(
 
     async def after(tally: _ResponseTally) -> None:
         """A limit reached mid-stream ends that answer; the account is
-        skipped from the next call on."""
-        until = limit_end(tally.response, utc_now())
+        skipped from the next call on. Grok's usage is asked for then."""
+        if is_grok:
+            ran_out = grok.failed_out_of_credits(tally.response)
+            found = await _grok_credits(
+                request, session, user_id, account_id, grant, force=ran_out
+            )
+            until = _credits_end(found, utc_now()) if ran_out else None
+        else:
+            until = limit_end(tally.response, utc_now())
         if until is not None:
             await _mark_limited(request, session, user_id, account_id, until)
 
@@ -809,6 +988,90 @@ async def _on_account(
     )
 
 
+def _credits_end(found: grok.Credits | None, now: datetime) -> datetime:
+    """Until when a Grok plan out of credits waits: the end of its period,
+    as xAI's billing says, else an hour."""
+    end = found.period_end if found is not None else None
+    return end if end is not None and end > now else now + LIMIT_WITHOUT_END
+
+
+async def _limit_until(
+    request: Request,
+    session: AsyncSession,
+    own: OwnModel,
+    user_id: Any,
+    account_id: Any,
+    grant: model_accounts.AccessGrant,
+    status: int,
+    refusal: bytes,
+) -> datetime | None:
+    """Until when the account's plan limit holds, when the refusal says it
+    was reached; None for any other refusal."""
+    now = utc_now()
+    if own.provider == model_accounts.PROVIDER_GROK:
+        if not grok.out_of_credits(status, refusal):
+            return None
+        found = await _grok_credits(
+            request, session, user_id, account_id, grant, force=True
+        )
+        return _credits_end(found, now)
+    try:
+        answer = json.loads(refusal)
+    except ValueError:
+        answer = None
+    return limit_end(answer, now)
+
+
+async def _usage_at(
+    session: AsyncSession, user_id: Any, account_id: Any
+) -> datetime | None:
+    account = await ModelAccountRepository.from_session(session).one_for_user(
+        user_id, account_id
+    )
+    at = (account.usage or {}).get("at") if account is not None else None
+    return (
+        datetime.fromtimestamp(at / 1000, tz=UTC)
+        if isinstance(at, int | float)
+        else None
+    )
+
+
+async def _grok_credits(
+    request: Request,
+    session: AsyncSession,
+    user_id: Any,
+    account_id: Any,
+    grant: model_accounts.AccessGrant,
+    *,
+    force: bool,
+) -> grok.Credits | None:
+    """A Grok plan's credits from xAI's billing, kept on the account for the
+    apps: at most every `GROK_USAGE_EVERY`, or now when they ran out. None
+    when not asked, or xAI didn't say. Never in the way of an answer."""
+    try:
+        if not force:
+            last = await _in_own_session(
+                request, session, lambda one: _usage_at(one, user_id, account_id)
+            )
+            if last is not None and utc_now() - last < GROK_USAGE_EVERY:
+                return None
+        found = await grok.credits(grant.access_token, grant.account_key)
+        if found is not None and found.window is not None:
+            usage = {
+                "windows": [found.window],
+                "at": int(utc_now().timestamp() * 1000),
+            }
+            await _in_own_session(
+                request,
+                session,
+                lambda one: model_accounts.keep_usage(one, user_id, account_id, usage),
+            )
+        return found
+    except Exception:
+        log.exception("desktop.models.usage_not_kept")
+        return None
+
+
 async def _mark_limited(
     request: Request,
     session: AsyncSession,
@@ -844,10 +1107,24 @@ async def _mark_limited(
 
 #: The picture model, as Codex's image tool names it.
 CHATGPT_IMAGE = OwnModel(_CHATGPT, "gpt-image-2", "GPT Image 2", 0)
+#: Grok's, as Grok Build's `image_gen` and `image_edit` name it; xAI keeps
+#: pictures from Free and X Basic (Grok Build's `is_restricted_tier_name`).
+GROK_IMAGE = OwnModel(
+    _GROK,
+    "grok-imagine-image-quality",
+    "Grok Imagine",
+    0,
+    frozenset({"free", "x_basic"}),
+)
+#: The shapes Grok Imagine draws (Grok Build's `aspect_ratio`), "auto" aside.
+_GROK_RATIOS = ("1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2")
 
 
 async def _helper(session: AsyncSession, user: User, chosen: OwnModel) -> OwnModel:
-    """The account's cheap model where its plan has it, else the chosen."""
+    """The model that searches: Grok's with the proxy's own search; the
+    account's cheap model where its plan has it; else the chosen."""
+    if chosen.provider == model_accounts.PROVIDER_GROK:
+        return own_model(f"{OWN_PREFIX}{_GROK}:{GROK_SEARCH}") or chosen
     cheap = own_model(_CHEAP.get(chosen.provider, ""))
     plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
     if cheap is not None and any(cheap.on_plan(plan) for plan in plans):
@@ -861,13 +1138,37 @@ async def _own_gate(
     """The chosen model, or a refusal: None and None when the person's
     agents are on Simeon's models (the caller goes on as before)."""
     chosen = chosen_model(user)
-    if chosen is None or chosen.provider != model_accounts.PROVIDER_CHATGPT:
+    if chosen is None or chosen.provider not in model_accounts.SIGNED_IN_BY_CODE:
         # Claude Code searches the web itself; Simeon's answers the rest.
         return None, None
     allowance = await desktop.allowance(session, user)
     if allowance.none:
         return None, quota_exhausted_response(allowance)
     return chosen, None
+
+
+def _image_headers(
+    grant: model_accounts.AccessGrant, accept: str = "application/json"
+) -> dict[str, str]:
+    """xAI's API takes the same sign-in as a bearer and nothing more (Grok
+    Build's `side_call_bearer.rs`)."""
+    return {
+        "authorization": f"Bearer {grant.access_token}",
+        "content-type": "application/json",
+        "accept": accept,
+    }
+
+
+def _headers_for(
+    model: OwnModel, url: str
+) -> Callable[[model_accounts.AccessGrant, str], dict[str, str]]:
+    if model.provider != model_accounts.PROVIDER_GROK:
+        return _codex_headers
+    if url.startswith(grok.api_base()):
+        return _image_headers
+    return lambda grant, accept: grok.headers(
+        grant.access_token, model=model.slug, accept=accept
+    )
 
 
 async def _call(
@@ -879,15 +1180,17 @@ async def _call(
     body: dict[str, Any],
     *,
     stream: bool,
+    model: OwnModel,
 ) -> dict[str, Any]:
     """One search or picture on one account: the answer, or `_Refused`.
     A stream (the Responses API, which ChatGPT serves only as one) is read
     to its last response."""
     grant = await _grant(request, session, user_id, account_id)
+    headers_of = _headers_for(model, url)
     refreshed = False
     async with httpx.AsyncClient(timeout=_timeout()) as client:
         while True:
-            headers = _codex_headers(
+            headers = headers_of(
                 grant, "text/event-stream" if stream else "application/json"
             )
             try:
@@ -926,14 +1229,12 @@ async def _call(
                     request, session, user_id, account_id, force_refresh=True
                 )
                 continue
-            try:
-                said = json.loads(refusal)
-            except ValueError:
-                said = None
-            until = limit_end(said, utc_now())
+            until = await _limit_until(
+                request, session, model, user_id, account_id, grant, status, refusal
+            )
             if until is not None:
                 await _mark_limited(request, session, user_id, account_id, until)
-            raise _Refused(status, refusal)
+            raise _Refused(status, refusal, limited=until is not None)
 
 
 async def _on_accounts(
@@ -947,7 +1248,7 @@ async def _on_accounts(
     *,
     stream: bool,
 ) -> tuple[dict[str, Any] | None, JSONResponse | None]:
-    """The answer of the first account that gives one; else ChatGPT's
+    """The answer of the first account that gives one; else the provider's
     refusal of the request itself; else neither (Simeon's takes it on)."""
     now = utc_now()
     accounts = [
@@ -960,7 +1261,14 @@ async def _on_accounts(
     for account in accounts:
         try:
             answer = await _call(
-                request, session, user.id, account.id, url, body, stream=stream
+                request,
+                session,
+                user.id,
+                account.id,
+                url,
+                body,
+                stream=stream,
+                model=model,
             )
         except _Refused as refused:
             log.warning(
@@ -1095,21 +1403,45 @@ async def web_search(
     if refused is not None or chosen is None:
         return refused
     model = await _helper(session, user, chosen)
-    body: dict[str, Any] = {
-        "model": model.slug,
-        "stream": True,
-        "input": [
-            {"role": "developer", "content": instructions},
-            {"role": "user", "content": query},
-        ],
-        "tools": [{"type": "web_search", "external_web_access": True}],
-        "tool_choice": "auto",
-        "parallel_tool_calls": False,
-        "reasoning": {"effort": "low"},
-        "store": False,
-    }
+    is_grok = model.provider == model_accounts.PROVIDER_GROK
+    if is_grok:
+        # Grok Build's own search (`web_search/client.rs`): one call to the
+        # proxy's Responses, its `web_search` tool, answered whole.
+        body: dict[str, Any] = {
+            "model": model.slug,
+            "input": [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": query},
+            ],
+            "tools": [{"type": "web_search"}],
+            "store": False,
+            "temperature": 0.1,
+            "top_p": 0.95,
+            "max_output_tokens": 8192,
+        }
+    else:
+        body = {
+            "model": model.slug,
+            "stream": True,
+            "input": [
+                {"role": "developer", "content": instructions},
+                {"role": "user", "content": query},
+            ],
+            "tools": [{"type": "web_search", "external_web_access": True}],
+            "tool_choice": "auto",
+            "parallel_tool_calls": False,
+            "reasoning": {"effort": "low"},
+            "store": False,
+        }
     answer, refusal = await _on_accounts(
-        request, session, user, model, "search", _codex_url(), body, stream=True
+        request,
+        session,
+        user,
+        model,
+        "search",
+        _responses_url(model.provider),
+        body,
+        stream=not is_grok,
     )
     if refusal is not None:
         return refusal
@@ -1124,6 +1456,63 @@ async def web_search(
         "search",
     )
     return JSONResponse(search_result(answer), headers={"cache-control": "no-store"})
+
+
+def _aspect(size: str) -> str:
+    """The Grok Imagine shape nearest the size asked ("1536x1024" is 3:2);
+    "auto", Grok Build's own default, lets Grok choose."""
+    if size == "auto":
+        return "auto"
+    try:
+        width, height = (int(part) for part in size.lower().split("x", 1))
+    except ValueError:
+        return "1:1"
+    if width <= 0 or height <= 0:
+        return "1:1"
+    wanted = width / height
+
+    def ratio(one: str) -> float:
+        w, h = one.split(":")
+        return int(w) / int(h)
+
+    return min(_GROK_RATIOS, key=lambda one: abs(ratio(one) - wanted))
+
+
+def _grok_picture(
+    prompt: str, size: str, references: Sequence[tuple[bytes, str]]
+) -> tuple[dict[str, Any], str]:
+    """Grok Build's picture request: drawn new, or from the pictures given
+    (one as `image`, several as `images`, the shape then named)."""
+    body: dict[str, Any] = {
+        "model": GROK_IMAGE.slug,
+        "prompt": prompt,
+        "n": 1,
+        "resolution": "1k",
+        "response_format": "b64_json",
+    }
+    if not references:
+        body["aspect_ratio"] = _aspect(size)
+        return body, "/images/generations"
+    given = [
+        {"url": f"data:{mime};base64,{base64.b64encode(raw).decode()}"}
+        for raw, mime in references
+    ]
+    if len(given) == 1:
+        body["image"] = given[0]
+    else:
+        body["images"] = given
+        body["aspect_ratio"] = _aspect(size)
+    return body, "/images/edits"
+
+
+def _picture_type(b64: str) -> str:
+    """A picture's type from its first bytes: ChatGPT draws PNGs, Grok
+    Imagine JPEGs."""
+    if b64.startswith("/9j/"):
+        return "image/jpeg"
+    if b64.startswith("UklGR"):
+        return "image/webp"
+    return "image/png"
 
 
 async def draw(
@@ -1143,26 +1532,33 @@ async def draw(
     chosen, refused = await _own_gate(session, user)
     if refused is not None or chosen is None:
         return refused
-    body: dict[str, Any] = {
-        "prompt": prompt,
-        "model": CHATGPT_IMAGE.slug,
-        "quality": quality,
-        "size": size,
-    }
-    path = "/images/generations"
-    if references:
-        path = "/images/edits"
-        body["images"] = [
-            {"image_url": f"data:{mime};base64,{base64.b64encode(raw).decode()}"}
-            for raw, mime in references
-        ]
+    if chosen.provider == model_accounts.PROVIDER_GROK:
+        picture_model = GROK_IMAGE
+        body, path = _grok_picture(prompt, size, references)
+        url = f"{grok.api_base()}{path}"
+    else:
+        picture_model = CHATGPT_IMAGE
+        body = {
+            "prompt": prompt,
+            "model": CHATGPT_IMAGE.slug,
+            "quality": quality,
+            "size": size,
+        }
+        path = "/images/generations"
+        if references:
+            path = "/images/edits"
+            body["images"] = [
+                {"image_url": f"data:{mime};base64,{base64.b64encode(raw).decode()}"}
+                for raw, mime in references
+            ]
+        url = f"{_codex_base()}{path}"
     answer, refusal = await _on_accounts(
         request,
         session,
         user,
-        CHATGPT_IMAGE,
+        picture_model,
         "images",
-        f"{_codex_base()}{path}",
+        url,
         body,
         stream=False,
     )
@@ -1172,14 +1568,14 @@ async def draw(
         return None
     data = answer.get("data")
     pictures = [
-        {"b64_json": one["b64_json"], "mime_type": "image/png"}
+        {"b64_json": one["b64_json"], "mime_type": _picture_type(one["b64_json"])}
         for one in (data if isinstance(data, list) else [])
         if isinstance(one, dict) and isinstance(one.get("b64_json"), str)
     ]
     if not pictures:
         log.warning("desktop.models.no_picture", user_id=str(user.id))
         return _error("api_error", "The image service returned no picture.", 502)
-    await _record_own(request, session, caller, CHATGPT_IMAGE, Usage(), "images")
+    await _record_own(request, session, caller, picture_model, Usage(), "images")
     return JSONResponse(
         {"data": pictures, "usage": None}, headers={"cache-control": "no-store"}
     )
@@ -1203,7 +1599,7 @@ async def _choices(session: AsyncSession, user: User) -> list[OwnModel]:
     ]
     return [
         model
-        for model in (*CHATGPT_MODELS, *CLAUDE_MODELS)
+        for model in ALL_MODELS
         if any(
             one.provider == model.provider and model.on_plan(one.plan)
             for one in signed_in
@@ -1220,9 +1616,7 @@ async def _choice_json(session: AsyncSession, user: User) -> dict[str, Any]:
         "models": [one.json() for one in choices],
         # How hard it thinks, and the efforts its provider takes (none for Simeon's).
         "effort": chosen_effort(user) if offered else None,
-        "efforts": list(EFFORTS.get(chosen.provider, ()))
-        if chosen is not None and offered
-        else [],
+        "efforts": list(chosen.efforts_taken) if chosen is not None and offered else [],
     }
 
 
@@ -1258,7 +1652,7 @@ async def own_models_choose(
     if "effort" in body.model_fields_set:
         value = meta.get(CHOICE_KEY)
         model = own_model(value) if isinstance(value, str) else None
-        if model is None or body.effort not in EFFORTS.get(model.provider, ()):
+        if model is None or body.effort not in model.efforts_taken:
             return model_accounts.refusal("not_offered", 400)
         meta[EFFORT_KEY] = body.effort
     user.meta = meta

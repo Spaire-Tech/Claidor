@@ -27,13 +27,14 @@ const marks: Record<string, string> = {
   chatgpt: new URL('../assets/providers/chatgpt-mark.png', import.meta.url)
     .href,
   claude: new URL('../assets/providers/claude-mark.png', import.meta.url).href,
+  grok: new URL('../assets/providers/grok-mark.png', import.meta.url).href,
   simeon: new URL('../assets/providers/simeon-mark.svg', import.meta.url).href,
 }
 
 /**
  * A provider's mark, bare, as the composer shows it (`ProviderMark`; the
- * founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the
- * ink, Claude's in its orange; no provider is Simeon's.
+ * founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's, Grok's and Simeon's
+ * in the ink, Claude's in its orange; no provider is Simeon's.
  */
 export function ProviderMark({
   provider,
