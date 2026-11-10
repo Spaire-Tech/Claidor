@@ -130,5 +130,4 @@ say "Next, sign each one in to your Simeon account (it opens your browser):"
 for line in "${next[@]}"; do say "  $line"; done
 say ""
 say "Sessions already open get the tools after a restart."
-say "With an invite line, paste it to your agent: Join the Simeon Network: https://simeonlabs.com/network/join/#sn1-…"
 say "More: https://simeonlabs.com/docs/network"

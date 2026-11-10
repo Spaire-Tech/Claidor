@@ -56,6 +56,7 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 
+from . import network as network_module
 from .network import Network, NetworkRefusal
 
 log = structlog.get_logger()
@@ -73,6 +74,20 @@ INBOX_MAX = 100
 #: A bot's name as its OAuth registration gives it, at most this long.
 CLIENT_NAME_MAX = 60
 SESSION_HEADER = "Mcp-Session-Id"
+
+#: What a bot reads at its hello while other people are off (`network.PEOPLE`):
+#: its user's own agents, nothing of colleagues.
+INSTRUCTIONS_ALONE = (
+    "This is your user's Simeon Network: their Simeon agents, always on, "
+    "each with a cloud computer (they research, browse, write, book), and "
+    "their coding agents and assistants like you. At the start, call "
+    "set_status with where you work (machine, repo, branch) and what you are "
+    "doing. list_team shows who is on; send_message asks one of them, by "
+    "address (ana/Nora, ana/claude); check_inbox reads what was sent to you "
+    "and their answers (wait_seconds to wait; a Simeon agent can take a few "
+    "minutes, so read again rather than sending twice). Check your inbox when "
+    "you finish a step."
+)
 
 INSTRUCTIONS = (
     "This is the Simeon Network: the agents of the people on your user's "
@@ -98,8 +113,7 @@ TOOLS: list[dict[str, Any]] = [
             "agents (always on, each with a cloud computer) and their live "
             "sessions (coding agents and assistants), with the machine, "
             "repository, branch, whether busy and what each one is doing. "
-            "Also your own address, how many messages wait in your inbox and "
-            "the network's invite line."
+            "Also your own address and how many messages wait in your inbox."
         ),
         "inputSchema": {
             "type": "object",
@@ -239,6 +253,18 @@ TOOLS: list[dict[str, Any]] = [
 
 #: The tools the first Bots release offered (10 November 2026), still answered.
 FORMER_TOOLS = {"list_agents": "list_team", "read_messages": "check_inbox"}
+
+
+def offered_tools() -> list[dict[str, Any]]:
+    """The tools a bot is offered: without `join_network` while other
+    people are off (`network.PEOPLE`)."""
+    if network_module.PEOPLE:
+        return TOOLS
+    return [tool for tool in TOOLS if tool["name"] != "join_network"]
+
+
+def instructions() -> str:
+    return INSTRUCTIONS if network_module.PEOPLE else INSTRUCTIONS_ALONE
 
 
 # MARK: Where the sign-in is found
@@ -469,13 +495,13 @@ class Caller:
                         "title": "Simeon Network",
                         "version": "2.0.0",
                     },
-                    "instructions": INSTRUCTIONS,
+                    "instructions": instructions(),
                 },
             )
         if method == "ping":
             return _result(id_, {})
         if method == "tools/list":
-            return _result(id_, {"tools": TOOLS})
+            return _result(id_, {"tools": offered_tools()})
         if method == "tools/call":
             return await self.call(id_, params)
         return _error(id_, -32601, f"Method not found: {method}")
@@ -494,6 +520,8 @@ class Caller:
             "set_status": self.set_status,
             "join_network": self.join_network,
         }
+        if not network_module.PEOPLE:
+            tools.pop("join_network")
         tool = tools.get(name) if isinstance(name, str) else None
         if tool is None:
             return _error(id_, -32602, f"Unknown tool: {name}")

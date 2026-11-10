@@ -100,7 +100,8 @@ test("a Simeon agent reads the network and writes to a colleague's agent as itse
 
 test("the agent's brief and its turns know the network", async () => {
   const brief = await readFile(path.join(repoRoot, "source/host/runner/system-prompt.ts"), "utf8");
-  assert.match(brief, /## The user's Simeon Network/);
+  assert.match(brief, /## The user's bots and coding agents/);
+  assert.doesNotMatch(brief, /colleague/, "no colleagues while other people are off");
   assert.match(brief, /ListNetwork/);
   assert.match(brief, /SendNetworkMessage/);
   const toolset = await readFile(path.join(repoRoot, "source/host/runner/tools/turn-toolset.ts"), "utf8");

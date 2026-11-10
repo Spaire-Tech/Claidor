@@ -277,6 +277,8 @@ private struct SettingsNav: View {
     SettingsState.Page.allCases.filter { page in
       switch page {
       case .account, .modelAccount: false
+      // Other people on a network are off for now (SimeonCore's `NetworkInvite.listed`).
+      case .network: NetworkInvite.listed
       // Usage & Billing, as the iPhone lists it: not for an enterprise team.
       case .usage: store.usage.summary == nil || store.usage.showsSection
       default: true

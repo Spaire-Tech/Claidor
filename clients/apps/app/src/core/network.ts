@@ -55,6 +55,15 @@ export interface NetworkInvitePreview {
   already: boolean
 }
 
+/**
+ * Settings › Network is listed only once other people can be on a network
+ * (the server's `network.PEOPLE`; SimeonCore's `NetworkInvite.listed`). Off
+ * since 10 November 2026, the founder: "that plus other people - is what we
+ * don't need for now. can we hide that". The page stays built: this turns it
+ * back on, with the website's invite hand-over.
+ */
+export const networkListed = false
+
 export const networkInstall =
   'curl -fsSL https://simeonlabs.com/network/install.sh | bash'
 export const networkMcp = 'https://api.simeonlabs.com/mcp'
