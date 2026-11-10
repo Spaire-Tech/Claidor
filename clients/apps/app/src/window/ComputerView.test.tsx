@@ -218,7 +218,8 @@ describe('the hand-off card', () => {
     expect(page).toContain('Sign in to the bank, then press I’m done')
     expect(page).toContain('aria-label="Take over the computer"')
     expect(page).toContain('src="data:image/webp;base64,AAAA"')
-    expect(page).toContain('handoff-pill blue">Take over<')
+    expect(page).toContain('Action needed')
+    expect(page).toContain('card-button prominent">Take over<')
   })
 
   it('draws no picture that isn’t one', () => {

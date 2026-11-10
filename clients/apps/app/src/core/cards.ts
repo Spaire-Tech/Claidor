@@ -20,7 +20,23 @@ export interface QuestionOption {
   style: OptionStyle
 }
 
-/** A question card (`send-message` of type `widget`), with the answer once given. */
+/** One question of a card: its words, its choices, and whether several may be picked or the person's own words given. */
+export interface QuestionStep {
+  prompt: string
+  help?: string
+  options: QuestionOption[]
+  allowsOwnAnswer: boolean
+  multiSelect: boolean
+}
+
+/**
+ * A question card (`send-message` of type `widget`), with the answer once
+ * given. It may ask several questions (`questions`, 10 November 2026: "have
+ * the thing swipe when there's many questions"), one at a time, sent
+ * together a line each (`questionsReply`); its own prompt and options are
+ * its first question's, as the engine writes them (Chat.swift's
+ * `QuestionCard`).
+ */
 export interface QuestionCard {
   prompt: string
   help?: string
@@ -28,6 +44,8 @@ export interface QuestionCard {
   allowsOwnAnswer: boolean
   /** Several options may be picked; their values go back one per line. */
   multiSelect: boolean
+  /** Every question, its own first; one for a card that asks one. */
+  questions: QuestionStep[]
   /** What the person answered (`respondedValue`); none while it waits. */
   answer?: string
   isDismissed: boolean
@@ -37,12 +55,9 @@ export interface QuestionCard {
 
 const styles: OptionStyle[] = ['default', 'primary', 'danger']
 
-export function questionCard(entry: Entry): QuestionCard | undefined {
-  const widget = field(entry.message, 'widget')
-  const prompt = text(field(widget, 'prompt'))
-  if (prompt == null) return undefined
+function optionsOf(question: JSONValue | undefined): QuestionOption[] {
   const options: QuestionOption[] = []
-  for (const option of arr(field(widget, 'options')) ?? []) {
+  for (const option of arr(field(question, 'options')) ?? []) {
     const label = text(field(option, 'label')) ?? text(option)
     if (label == null) continue
     const style = str(field(option, 'style')) as OptionStyle | undefined
@@ -53,12 +68,36 @@ export function questionCard(entry: Entry): QuestionCard | undefined {
       style: style && styles.includes(style) ? style : 'default',
     })
   }
-  return {
+  return options
+}
+
+export function questionCard(entry: Entry): QuestionCard | undefined {
+  const widget = field(entry.message, 'widget')
+  const prompt = text(field(widget, 'prompt'))
+  if (prompt == null) return undefined
+  const own: QuestionStep = {
     prompt,
     help: text(field(widget, 'helpText')),
-    options,
+    options: optionsOf(widget),
     allowsOwnAnswer: bool(field(widget, 'allowCustom')) ?? false,
     multiSelect: bool(field(widget, 'multiSelect')) ?? false,
+  }
+  const steps: QuestionStep[] = []
+  for (const question of arr(field(widget, 'questions')) ?? []) {
+    const words = text(field(question, 'prompt'))
+    const options = optionsOf(question)
+    if (words == null || options.length === 0) continue
+    steps.push({
+      prompt: words,
+      help: text(field(question, 'helpText')),
+      options,
+      allowsOwnAnswer: bool(field(question, 'allowCustom')) ?? false,
+      multiSelect: bool(field(question, 'multiSelect')) ?? false,
+    })
+  }
+  return {
+    ...own,
+    questions: steps.length > 1 ? steps : [own],
     answer: text(entry.get('respondedValue')),
     isDismissed: bool(entry.get('widgetDismissed')) ?? false,
     isSkipped: bool(entry.get('widgetSkipped')) ?? false,
@@ -69,16 +108,82 @@ export function isOpenQuestion(card: QuestionCard): boolean {
   return card.answer == null && !card.isDismissed && !card.isSkipped
 }
 
-/** An answer as the person reads it: each picked option by its label (several joined with commas), else the words they typed. */
-export function shownAnswer(card: QuestionCard, answer: string): string {
+function shownFor(
+  question: { options: QuestionOption[] },
+  answer: string,
+): string {
   return answer
     .split('\n')
+    .map((line) => line.trim())
     .filter((line) => line !== '')
     .map(
       (line) =>
-        card.options.find((option) => option.value === line)?.label ?? line,
+        question.options.find((option) => option.value === line)?.label ?? line,
     )
     .join(', ')
+}
+
+/** An answer as the person reads it: each picked option by its label (several joined with commas), else the words they typed. */
+export function shownAnswer(card: QuestionCard, answer: string): string {
+  return shownFor(card, answer)
+}
+
+/** What a skipped question of a several-question card says in the reply (the engine's `SKIPPED_ANSWER`). */
+export const SKIPPED_ANSWER = '(skipped)'
+
+/**
+ * The reply a card sends: for one question, its answer as it is; for
+ * several, a line each, the question then its answer ("Budget? Under $75
+ * CAD"), `(skipped)` for one skipped (the engine's `formatQuestionsReply`).
+ * None when nothing was answered.
+ */
+export function questionsReply(
+  card: QuestionCard,
+  answers: (string | undefined)[],
+): string | undefined {
+  const given = card.questions.map((_, index) => {
+    const answer = answers[index]?.trim()
+    return answer ? answer : undefined
+  })
+  if (given.every((answer) => answer == null)) return undefined
+  if (card.questions.length < 2) return given[0]
+  return card.questions
+    .map((question, index) => {
+      const answer = given[index]
+      const words =
+        answer == null
+          ? SKIPPED_ANSWER
+          : answer
+              .split('\n')
+              .map((line) => line.trim())
+              .filter((line) => line !== '')
+              .join(', ')
+      const head = question.prompt.trim()
+      return /[?:？：]$/.test(head) ? `${head} ${words}` : `${head}: ${words}`
+    })
+    .join('\n')
+}
+
+/** Each question's answer read back from the reply, as the person reads it (none when skipped, or not there: an older app answers the first only). */
+export function questionAnswers(
+  card: QuestionCard,
+  reply: string,
+): (string | undefined)[] {
+  if (card.questions.length < 2) return [shownFor(card, reply)]
+  const lines = reply
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+  return card.questions.map((question, index) => {
+    const line = lines[index]
+    if (line == null) return undefined
+    const head = question.prompt.trim()
+    const answer = (
+      line.startsWith(head) ? line.slice(head.length) : line
+    ).replace(/^\s*[:：]?\s*/, '')
+    if (answer === '' || answer === SKIPPED_ANSWER) return undefined
+    return shownFor(question, answer)
+  })
 }
 
 // MARK: Drafts

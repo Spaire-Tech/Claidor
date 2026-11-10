@@ -167,6 +167,7 @@ export function claudeCodeBriefNote(): string {
     "## Your Simeon tools",
     `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names. The person sees only what you send with it; your own text is your scratchpad.`,
     `Run shell commands with \`mcp__${SIMEON_MCP_SERVER}__Shell\`: it carries the person's safety review, and your own Bash is off. Files, web search and web fetch are your own tools.`,
+    `Ask the person a question with a question card, \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` with type widget, as the brief says: your own AskUserQuestion is off, because the person would never see it.`,
     "When you answer the person's message and end your turn without having sent them the answer, your final words are sent to them as your reply: write them to the person, not as notes to yourself.",
   ].join("\n");
 }

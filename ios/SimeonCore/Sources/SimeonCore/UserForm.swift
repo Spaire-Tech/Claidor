@@ -97,7 +97,25 @@ public struct UserFormCard: Hashable, Sendable {
 
   /** Fill is pressed only once every field it needs has something in it. */
   public func canFill(_ values: [String: String]) -> Bool {
+    Self.canFill(fields, values)
+  }
+
+  /** The same for any fields (the store's sign-in form has its own two). */
+  public static func canFill(_ fields: [Field], _ values: [String: String]) -> Bool {
     fields.allSatisfy { !$0.required || !(values[$0.id] ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
+  }
+
+  /**
+   * A sign-in: one password field and the email or name before it. Its
+   * secure form then offers to keep the login in the Credentials Store too
+   * (10 November 2026, the founder's reference: "Securely save to … vault").
+   */
+  public var login: (username: Field, password: Field)? {
+    let passwords = fields.filter { $0.kind == .password }
+    guard passwords.count == 1, let password = passwords.first, let at = fields.firstIndex(of: password) else { return nil }
+    let before = fields[..<at]
+    guard let username = before.first(where: { $0.kind == .email }) ?? before.first(where: { $0.kind == .text }) else { return nil }
+    return (username, password)
   }
 
   /** What is sent: the form's own fields only, a checkbox as "true" or "false". */

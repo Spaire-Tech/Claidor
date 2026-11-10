@@ -40,7 +40,14 @@ test("the turn's model: the person's own, Claude's plan, or Simeon's whichever m
     assert.deepEqual(m.turnModelOf({ primary: "claude-sonnet-5-5" }, "claude-sonnet-5-5"), m.SIMEON_TURN_MODEL);
     assert.deepEqual(m.turnModelOf({}, undefined), m.SIMEON_TURN_MODEL);
     // A key's model the server didn't name: its id says it.
-    assert.deepEqual(m.turnModelOf({}, "own:deepseek:deepseek-v4-pro", () => undefined), { model: "own:deepseek:deepseek-v4-pro", name: "deepseek-v4-pro", provider: "deepseek" });
+    assert.deepEqual(m.turnModelOf({}, "own:deepseek:deepseek-v4-pro", () => undefined), { model: "own:deepseek:deepseek-v4-pro", name: "Deepseek V4 Pro", provider: "deepseek" });
+    // Read as a name: the Claude plan's once the server lists it no more (a key chosen), the way the server names it.
+    assert.equal(m.readableModelName("claude-opus-5-5"), "Claude Opus 5.5");
+    assert.equal(m.readableModelName("claude-fable-5-1"), "Claude Fable 5.1");
+    assert.equal(m.readableModelName("gpt-6.1-sol"), "GPT 6.1 Sol");
+    assert.equal(m.readableModelName("grok-4.6"), "Grok 4.6");
+    assert.deepEqual(m.turnModelOf({ claudeCode: "claude-sonnet-5-5" }, undefined, () => undefined, null), { model: "own:claude:claude-sonnet-5-5", name: "Claude Sonnet 5.5", provider: "claude" });
+    assert.deepEqual(m.turnModelOf({ claudeCode: "opus" }, undefined, () => undefined, null), { model: "own:claude:opus", name: "Claude Opus", provider: "claude" });
     // The Claude plan: the Claude Code row's model, named as the server named it.
     m.rememberSimeonModelNames(rows(claudeRow, solRow));
     assert.equal(m.simeonClaudeCodeModelId(), "own:claude:claude-opus-5-5");
@@ -92,6 +99,64 @@ test("a line only when an agent's model changes, none at first sight, kept acros
     await (await import("node:fs/promises")).writeFile(broken, "{not json");
     assert.equal(await new m.TurnModels(broken, write, () => {}).note("iris", opus), false);
   } finally {
+    await dispose();
+  }
+});
+
+test("an agent's first turn on a new engine is compared with the model the computer was last on", async () => {
+  const { module: m, dir, dispose } = await load();
+  try {
+    // The founder, 10 November 2026: the Claude plan, then an Anthropic key chosen, and the first
+    // message the new engine ran showed no line. The roles the last run kept said Claude.
+    const claude = { model: "own:claude:claude-opus-5-5", name: "Claude Opus 5.5", provider: "claude" };
+    const key = { model: "own:anthropic:claude-opus-5-5", name: "Claude Opus 5.5", provider: "anthropic" };
+    const written = [];
+    const before = { model: () => claude, agents: Promise.resolve(["iris", "theo", "leo"]) };
+    const file = path.join(dir, "seen.json");
+    const models = new m.TurnModels(file, (agentId, event) => { written.push({ agentId, event }); }, () => {}, before);
+    assert.equal(await models.note("iris", key), true);
+    assert.deepEqual(written, [{ agentId: "iris", event: { type: "model-changed", from: claude, to: key } }]);
+    assert.equal(await models.note("iris", key), false);
+    // Theo's first turn on what the computer was on: no line, and kept.
+    assert.equal(await models.note("theo", claude), false);
+    assert.equal(JSON.parse(await readFile(file, "utf8")).theo.model, claude.model);
+    // Nora was made after the engine started: her first turn is only remembered.
+    assert.equal(await models.note("nora", key), false);
+    assert.equal(written.length, 1);
+    // What the file knows comes first: Leo kept on the key, the start's Claude never asked.
+    await (await import("node:fs/promises")).writeFile(file, JSON.stringify({ leo: key }));
+    const again = new m.TurnModels(file, (agentId, event) => { written.push({ agentId, event }); }, () => {}, before);
+    assert.equal(await again.note("leo", key), false);
+    assert.equal(written.length, 1);
+    // Nothing kept before, or the agents unread: only remembered, nothing thrown.
+    const none = new m.TurnModels(undefined, () => { throw new Error("no line"); }, () => {}, { model: () => undefined, agents: Promise.resolve(["iris"]) });
+    assert.equal(await none.note("iris", key), false);
+    const unread = new m.TurnModels(undefined, () => { throw new Error("no line"); }, () => {}, { model: () => claude, agents: Promise.reject(new Error("store closed")) });
+    assert.equal(await unread.note("iris", key), false);
+  } finally {
+    await dispose();
+  }
+});
+
+test("the model the computer was last on is the roles its last run kept, read as the engine starts", async () => {
+  const { module: m, dir, dispose } = await load();
+  try {
+    const kept = path.join(dir, "model-roles.json");
+    await (await import("node:fs/promises")).writeFile(kept, JSON.stringify({ primary: "gpt-6.1-sol", claudeCode: "claude-opus-5-5" }));
+    assert.equal(m.turnModelAtStart(), undefined);
+    const stop = m.startSimeonModelRoles({ getAccessToken: async () => "token", rememberIn: kept, fetch: async () => new Response("", { status: 503 }) });
+    stop();
+    assert.deepEqual(m.simeonModelRolesAtStart(), { primary: "gpt-6.1-sol", claudeCode: "claude-opus-5-5" });
+    assert.deepEqual(m.turnModelAtStart(), { model: "own:claude:claude-opus-5-5", name: "Claude Opus 5.5", provider: "claude" });
+    // Through the engine's own path: the agents as it starts, then a turn on the key.
+    const lines = [];
+    m.setTurnModelLine((agentId, event) => { lines.push({ agentId, event }); }, path.join(dir, "first.json"), async () => ["iris"]);
+    await m.noteTurnModel("iris", { model: "own:anthropic:claude-opus-5-5", name: "Claude Opus 5.5", provider: "anthropic" });
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0].event.from.name, "Claude Opus 5.5");
+    assert.equal(lines[0].event.to.provider, "anthropic");
+  } finally {
+    m.setTurnModelLine(undefined);
     await dispose();
   }
 });

@@ -826,7 +826,9 @@ export function ChatCoverView({
   const model = useWindowModel()
   useWatched(model)
   const cover = model.chatCover
-  if (!cover || cover.agentId !== agentId) return null
+  // A product opened over the chat is the products card's own (ShopCards.tsx's `ProductCover`).
+  if (!cover || cover.agentId !== agentId || cover.kind === 'product')
+    return null
   const close = () => model.coverChat(undefined)
   return cover.kind === 'call' ? (
     <CallChatView
@@ -855,8 +857,8 @@ export function useCovered(agentId: string): boolean {
   return model.chatCover?.agentId === agentId
 }
 
-/** The cover's Escape and the field letting go of the keys as it opens. */
-function useCoverKeys(close: () => void, exchange: boolean) {
+/** The cover's Escape and the field letting go of the keys as it opens (a product opened over the chat too, ShopCards.tsx). */
+export function useCoverKeys(close: () => void, exchange: boolean) {
   const latest = useRef(close)
   useEffect(() => {
     latest.current = close

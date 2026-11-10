@@ -32,11 +32,12 @@ struct CredentialCardView: View {
         if !card.purpose.isEmpty {
           Text(card.purpose).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
         }
-        HStack(spacing: 8) {
-          Button("Fill with 1Password") { fill() }
-            .buttonStyle(Tactile(look: BlueButtonStyle()))
+        // The cards' pills (10 November 2026): Not now grey, Fill the main one, last.
+        CardPills {
           Button("Not now") { run { refusal = await store.answerCredentialRequest(entryId, allow: false, in: agentId) } }
-            .buttonStyle(Tactile(look: GreyButtonStyle()))
+            .buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Fill with 1Password") { fill() }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
         }
         .disabled(busy)
         Text("From your vault shared with Simeon. Your agent never sees it.").font(.system(size: 13)).foregroundStyle(Ink.secondary)
@@ -80,7 +81,7 @@ struct CredentialCardView: View {
  * The 1Password connect card (28 October 2026, SimeonCore's
  * `OnePasswordConnectCard`). 1Password is connected from Simeon on a Mac,
  * where the 1Password app makes the shared vault and its key; here the card
- * says so, and the X is a decline.
+ * says so, and Not now is a decline.
  */
 struct OnePasswordConnectCardView: View {
   let entryId: String
@@ -95,18 +96,7 @@ struct OnePasswordConnectCardView: View {
         Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
         Text("Connect 1Password").font(.system(size: 17, weight: .medium)).foregroundStyle(card.state == .dismissed ? Ink.secondary : Ink.primary)
         Spacer(minLength: 0)
-        if card.state == .open {
-          Button {
-            guard !busy else { return }
-            busy = true
-            Task { await store.dismissOnePasswordConnect(entryId, in: agentId); busy = false }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 32, height: 32).contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
+        if card.state != .open, let status = card.statusLine {
           StatusPill(text: status, dot: card.state == .connected ? Ink.live : Ink.tertiary)
         }
       }
@@ -114,6 +104,16 @@ struct OnePasswordConnectCardView: View {
         if let reason = card.reason { Text(reason).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
         Text("Open Simeon on your Mac to connect it: your 1Password app makes a vault shared with Simeon, and your agent fills sign-ins from it with your OK.")
           .font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        // Not now declines it, as the X did (10 November 2026).
+        CardPills {
+          Button("Not now") {
+            guard !busy else { return }
+            busy = true
+            Task { await store.dismissOnePasswordConnect(entryId, in: agentId); busy = false }
+          }
+          .buttonStyle(Tactile(look: CardPillStyle()))
+          .disabled(busy)
+        }
       } else if card.state == .connected, let account = card.account {
         Text(account).font(.system(size: 15)).foregroundStyle(Ink.secondary)
       }
@@ -124,12 +124,15 @@ struct OnePasswordConnectCardView: View {
 
 /**
  * The Credentials Store's card (9 November 2026, SimeonCore's
- * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`; 10
- * November 2026, the founder: "Can you respect our design"): the site's
- * icon (a card's mark, a person for contact info) on its 40 tile, its name
- * over one line, and at its right Save (a login) or Add in the grey
- * capsule, which opens the store's own editor over the chat already
- * filled; once saved, "Saved" in green with its tick, as "Connected".
+ * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`): the
+ * site's icon (a card's mark, a person for contact info) on its 40 tile,
+ * its name over one line, and its pill at the right; once saved, "Saved" in
+ * green with its tick, as "Connected". A login asked for reads as the
+ * founder's reference (10 November 2026): "Sign in to Amazon", "Opens a
+ * secure form" and Open, which opens the secure form in a sheet
+ * (`PhoneSecureFormSheet`): the email or username and the password, saved
+ * in the store. A card or contact info has Add, which opens the store's
+ * own editor over the chat, filled.
  */
 struct StoreEntryCardView: View {
   let entryId: String
@@ -138,6 +141,9 @@ struct StoreEntryCardView: View {
   @Environment(AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var editing = false
+  @State private var signingIn = false
+
+  private var signIn: Bool { card.kind == .login && card.asks }
 
   var body: some View {
     HStack(spacing: 12) {
@@ -147,15 +153,17 @@ struct StoreEntryCardView: View {
         SiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, size: 40)
       }
       VStack(alignment: .leading, spacing: 0) {
-        Text(card.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
-        if let line = card.line { Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1) }
+        Text(signIn ? String(localized: "Sign in to \(card.title)") : card.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+        if let line = signIn ? String(localized: "Opens a secure form") : card.line {
+          Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).lineLimit(1)
+        }
       }
       Spacer(minLength: 0)
       if card.isSaved {
         Label("Saved", systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.success).labelStyle(.titleAndIcon)
       } else if card.asks {
-        Button(card.kind == .login ? String(localized: "Save") : String(localized: "Add")) { open() }
-          .buttonStyle(Tactile(look: GreyButtonStyle(capsule: true)))
+        Button(signIn ? String(localized: "Open") : String(localized: "Add")) { open() }
+          .buttonStyle(Tactile(look: CardPillStyle(height: 32)))
       }
     }
     .card()
@@ -168,13 +176,43 @@ struct StoreEntryCardView: View {
         }
       }
     }
+    .sheet(isPresented: $signingIn) {
+      PhoneSecureFormSheet(
+        title: String(localized: "Sign in to \(card.title)"),
+        line: card.reason,
+        fields: [
+          UserFormCard.Field(id: "username", label: String(localized: "Email or username"), kind: .text, required: false),
+          UserFormCard.Field(id: "password", label: String(localized: "Password"), kind: .password, secret: true),
+        ],
+        site: card.website,
+        submitTitle: String(localized: "Save"),
+        decline: { await store.answerStoreEntry(entryId, in: agentId, saved: false) },
+        submit: saveLogin
+      )
+    }
   }
 
-  /** The store's editor, filled; the saved contacts read for a card's billing address. */
+  /** A login asked for: the secure form; anything else: the store's editor, filled (the saved contacts read for a card's billing address). */
   private func open() {
     let made = model ?? CredentialsStoreModel(store: store)
     model = made
+    if signIn {
+      signingIn = true
+      return
+    }
     editing = true
     if card.kind == .card { Task { await made.load() } }
+  }
+
+  /** The login saved in the store; the agent is told once it's there. */
+  private func saveLogin(_ typed: [String: String], _ keep: Bool) async -> String? {
+    let made = model ?? CredentialsStoreModel(store: store)
+    model = made
+    var draft = card.draft
+    draft.username = typed["username"] ?? ""
+    draft.password = typed["password"] ?? ""
+    guard await made.save(draft) != nil else { return made.problem ?? String(localized: "That didn't work.") }
+    await store.answerStoreEntry(entryId, in: agentId, saved: true)
+    return nil
   }
 }

@@ -9,7 +9,7 @@
 
 .shop-card,
 .card-chooser,
-.product-sheet {
+.products-card {
   --shop-ink: #1d1d1f;
   --shop-grey: #6e6e73;
   --shop-fill: #ffffff;
@@ -28,7 +28,7 @@
 @media (prefers-color-scheme: dark) {
   .shop-card,
   .card-chooser,
-  .product-sheet {
+  .products-card {
     --shop-ink: #f5f5f7;
     --shop-grey: #98989d;
     --shop-fill: #3a3a3c;
@@ -38,10 +38,6 @@
     --shop-added: #38d591;
     --shop-added-wash: rgb(0 201 114 / 0.173);
     --shop-tint-wash: 20%;
-  }
-
-  .product-sheet {
-    --shop-hairline: rgb(255 255 255 / 0.1);
   }
 }
 
@@ -55,7 +51,7 @@
 }
 
 /* The cards' buttons take the card's words and ink, unless they say otherwise. */
-:where(.shop-card, .card-chooser, .product-sheet) button {
+:where(.shop-card, .card-chooser, .products-card) button {
   font: inherit;
   letter-spacing: inherit;
   color: inherit;
@@ -291,15 +287,7 @@
 .payment-row:focus-visible,
 .shop-pill:focus-visible,
 .review-order:focus-visible,
-.chooser-card:focus-visible,
-.product-tile:focus-visible,
-.product-row:focus-visible,
-.buy-button:focus-visible,
-.view-website:focus-visible,
-.reviews-row:focus-visible,
-.more-tile:focus-visible,
-.see-more:focus-visible,
-.sheet-close:focus-visible {
+.chooser-card:focus-visible {
   outline: 2px solid var(--unread);
   outline-offset: 1px;
 }
@@ -674,51 +662,101 @@
   color: var(--shop-grey);
 }
 
-/* MARK: The products card */
+/* MARK: The products card: no frame, each product a card of its own, 200 wide, in one row. */
 
 .products-card {
-  overflow: hidden;
-}
-
-/* Side by side: as wide as its tiles, padded 8, 4 between. */
-.products-card.tiles {
-  width: max-content;
-  max-width: 100%;
-}
-
-.product-grid {
-  display: grid;
-  gap: 4px;
-  padding: 8px;
-}
-
-/* A tile: padded 8, 14 round, grey under the pointer; the picture 168 square, 12 round, a hairline round it; its words 2 in from the sides, 8 under it. */
-.product-tile {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 184px;
-  box-sizing: border-box;
-  padding: 8px;
-  border: 0;
-  border-radius: 14px;
-  background: none;
-  text-align: left;
-  cursor: pointer;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--shop-ink);
+  letter-spacing: -0.15px;
 }
 
-.product-tile:hover {
-  background: var(--shop-hairline);
+/* The row: 10 apart, scrolling sideways when they don't fit, no scroll bar. */
+.product-cards {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.product-cards::-webkit-scrollbar {
+  display: none;
+}
+
+/* A card: 200 wide, 20 round, the picture on white over the card's colour. */
+.product-card {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 20px;
+  background: var(--shop-ground);
+  text-align: left;
+  cursor: pointer;
+  transition: filter 0.12s ease-out;
+}
+
+.product-card:hover {
+  filter: brightness(0.97);
+}
+
+/* In light, a hairline round the card and the opened picture: their white would melt into the ground (`theirsHairline`). */
+.product-card::after,
+.page-picture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgb(20 30 60 / 0.07);
+  pointer-events: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .product-card::after,
+  .page-picture::after {
+    box-shadow: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .product-card:hover {
+    filter: brightness(1.12);
+  }
+}
+
+.product-card:focus-visible,
+.product-reply:focus-visible,
+.buy-button:focus-visible,
+.view-at:focus-visible,
+.product-page-close:focus-visible,
+.product-page-steps button:focus-visible {
+  outline: 2px solid var(--unread);
+  outline-offset: 1px;
+}
+
+/* The picture's place: 240 high, white in both looks, the badge 8 in from its top left. */
+.product-card-picture {
+  position: relative;
+  display: block;
+  height: 240px;
+  background: #ffffff;
 }
 
 .product-picture {
   position: relative;
-  flex: none;
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--shop-fill);
-  color: var(--shop-grey);
+  background: #ffffff;
+  color: #8e8e93;
 }
 
 .product-picture img {
@@ -726,97 +764,99 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0;
-}
-
-.product-picture.fit img {
+  box-sizing: border-box;
   object-fit: contain;
+  opacity: 0;
 }
 
 .product-picture img.loaded {
   opacity: 1;
 }
 
-/* A hairline over the picture, as the Mac's border is drawn over it. */
-.tile-picture::after,
-.sheet-picture::after,
-.reviews-picture::after,
-.more-picture::after {
-  content: '';
+/* Fitted, padded 16. */
+.card-picture {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px var(--shop-hairline);
-  pointer-events: none;
 }
 
-.tile-picture {
-  width: 168px;
-  height: 168px;
-  border-radius: 12px;
+.card-picture img {
+  padding: 16px;
 }
 
-.tile-words {
+/* The badge: a small grey pill, see-through, white words (12, 500). */
+.product-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(60 60 67 / 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 15px;
+  white-space: nowrap;
+}
+
+/* Its words, padded 12 14 14: the name, "price · take" and the store at the bottom. */
+.product-card-words {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 2px;
+  padding: 12px 14px 14px;
 }
 
-/* The name: 13, 500, two lines kept for it. */
-.tile-title {
+.product-card-title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Two lines kept, so every card's store sits at its bottom. */
+.product-card-line {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
-  min-height: 32px;
+  min-height: 38px;
+  margin-top: 2px;
   overflow: hidden;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 16px;
+  color: var(--shop-grey);
+  font-size: 14px;
+  line-height: 19px;
+  overflow-wrap: anywhere;
 }
 
-.tile-byline,
-.row-byline {
-  font-size: 12px;
-  line-height: 15px;
+/* The store: its icon (16, rounded) and its name in grey, 8 apart; Buying or Bought at the right. */
+.product-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 12px;
   color: var(--shop-grey);
-  white-space: nowrap;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.product-store-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-/* The price and, at its right, Buying or Bought: 20 high at least, 2 under the seller. */
-.tile-foot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 20px;
-  margin-top: 2px;
-}
-
-.tile-foot .product-pill,
-.row-foot .product-pill {
-  margin-left: auto;
-}
-
-.product-price {
-  display: inline-flex;
-  gap: 4px;
-  min-width: 0;
-  font-size: 13px;
-  line-height: 16px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.product-price s {
-  color: var(--shop-grey);
-}
-
 /* Buying in the link's blue, Bought in the green, each in its own wash. */
+.status-pill.product-pill {
+  flex: none;
+}
+
 .status-pill.product-pill.buying {
   background: color-mix(
     in srgb,
@@ -839,162 +879,187 @@
   background: currentColor;
 }
 
-/* The iPhone's rows: padded 12, the picture 72 square, 10 round, 12 from the words; a hairline between, 12 in. */
-.products-card.rows {
+/* The replies: chips 36 high on the card's colour, 15, 8 apart, 12 under the row. */
+.product-replies {
   display: flex;
-  flex-direction: column;
-  width: 100%;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.product-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
+.product-reply {
+  height: 36px;
+  padding: 0 16px;
   border: 0;
-  background: none;
-  text-align: left;
+  border-radius: 999px;
+  background: var(--shop-ground);
+  font-size: 15px;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.product-row:hover {
-  background: var(--shop-hairline);
+.product-reply:hover {
+  filter: brightness(0.96);
 }
 
-.row-picture {
-  width: 72px;
-  height: 72px;
-  border-radius: 10px;
+@media (prefers-color-scheme: dark) {
+  .product-reply:hover {
+    filter: brightness(1.15);
+  }
 }
 
-.row-words {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.product-reply:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
-.row-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 17px;
-}
+/* MARK: A product opened over the chat (the sidebar stays), on the chat's ground. */
 
-.row-foot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.row-price {
-  font-size: 13px;
-  line-height: 16px;
-  color: var(--shop-grey);
-  font-variant-numeric: tabular-nums;
-}
-
-.product-rule {
-  height: 1px;
-  margin-left: 12px;
-  background: var(--shop-hairline);
-}
-
-/* MARK: A product opened: a store's page, 780 by 600, white (#1e1e1e in dark). */
-
-.sheet.product-sheet {
-  position: relative;
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  width: 780px;
-  height: 600px;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-  overflow: hidden;
-  background: #ffffff;
+.product-page {
+  --shop-ink: var(--ink);
+  --shop-grey: #6e6e73;
+  --shop-blue: #255a93;
+  --shop-hairline: rgb(0 0 0 / 0.08);
+  --shop-added: #009957;
+  --shop-added-wash: rgb(0 201 114 / 0.09);
   color: var(--shop-ink);
   letter-spacing: -0.15px;
 }
 
 @media (prefers-color-scheme: dark) {
-  .sheet.product-sheet {
-    background: #1e1e1e;
+  .product-page {
+    --shop-grey: #98989d;
+    --shop-blue: #2f6db0;
+    --shop-hairline: rgb(255 255 255 / 0.1);
+    --shop-added: #38d591;
+    --shop-added-wash: rgb(0 201 114 / 0.173);
   }
 }
 
-.product-scroll {
-  flex: 1;
-  min-height: 0;
+.product-page :where(button) {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+.product-page-scroll {
+  position: absolute;
+  inset: 0;
   overflow-y: auto;
-  padding-bottom: 28px;
+  container-type: inline-size;
 }
 
-/* The picture at the left (340, fitted, 16 round), what it is at its right, 28 apart; 28 in and 28 from the top. */
-.product-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 28px;
-  padding: 28px 28px 0;
+/*
+ * Two columns, 32 apart, 880 wide at most, centred, 64 from the top: the
+ * picture and Why it fits at the left, what it is at the right. One column
+ * in a narrow chat: the picture, what it is, then Why it fits.
+ */
+.product-page-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'picture facts'
+    'why facts';
+  column-gap: 32px;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 64px 32px 48px;
 }
 
-.sheet-picture {
-  width: 340px;
-  height: 340px;
+@container (max-width: 680px) {
+  .product-page-columns {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'picture'
+      'facts'
+      'why';
+    max-width: 480px;
+  }
+}
+
+/* The picture on a white square, 16 round, fitted, padded 24. */
+.page-picture {
+  grid-area: picture;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 16px;
 }
 
-/* A window narrower than the sheet: the picture gives way first, down to 160 (the Mac's sheet is always 780). */
-@media (max-width: 811px) {
-  .sheet-picture {
-    flex: 0 1 340px;
-    min-width: 160px;
-    height: auto;
-    aspect-ratio: 1;
+.page-picture img {
+  padding: 24px;
+}
+
+.product-page-facts {
+  grid-area: facts;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+@container (max-width: 680px) {
+  .product-page-facts {
+    padding-top: 20px;
   }
 }
 
-.product-facts {
-  flex: 1;
-  min-width: 240px;
+.product-page-facts .product-store {
+  margin-top: 0;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+/* The title: 28, 600. */
+.product-page-title {
+  margin: 6px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 33px;
+  letter-spacing: -0.4px;
+}
+
+/* The price (20) and "★ 5.0 (12)" (15, grey), 10 apart. */
+.product-page-price {
   display: flex;
-  flex-direction: column;
-  padding-top: 8px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 8px;
 }
 
-.product-sold-by {
-  font-size: 13px;
-  line-height: 16px;
-  color: var(--shop-grey);
+.product-price {
+  display: inline-flex;
+  gap: 6px;
+  font-size: 20px;
+  line-height: 25px;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.product-title {
-  margin-top: 4px;
-  font-size: 22px;
-  line-height: 26px;
+.product-price s {
+  color: var(--shop-grey);
 }
 
-.product-sheet-price {
-  margin-top: 6px;
+.product-rating {
+  color: var(--shop-grey);
+  font-size: 15px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
 }
 
-.product-sheet-price .product-price {
-  font-size: 16px;
-  line-height: 19px;
+/* The take: 15, grey. */
+.product-page-take {
+  margin: 10px 0 0;
+  color: var(--shop-grey);
+  font-size: 15px;
+  line-height: 20px;
 }
 
-/* Buy with <agent>: the blue capsule, 38 high, 15, 500, white words; Buying faded, Bought in the green's wash. */
+/* Buy with <agent>: our blue capsule, 38 high, full width, 15, 500, white words; Buying faded, Bought in the green's wash. */
 .buy-button {
   height: 38px;
-  margin-top: 18px;
+  margin-top: 20px;
   border: 0;
   border-radius: 999px;
   background: var(--shop-blue);
@@ -1004,11 +1069,15 @@
   cursor: pointer;
 }
 
+.product-page .buy-button {
+  color: #fcfcfc;
+}
+
 .buy-button.buying {
   background: color-mix(in srgb, var(--shop-blue) 55%, transparent);
 }
 
-.buy-button.bought {
+.product-page .buy-button.bought {
   background: var(--shop-added-wash);
   color: var(--shop-added);
 }
@@ -1017,9 +1086,9 @@
   cursor: default;
 }
 
-/* View website: 15, the ink, 36 high, 4 under Buy. */
-.view-website {
-  height: 36px;
+/* View at <store>: plain words, 15, the ink, 38 high, 4 under Buy. */
+.view-at {
+  height: 38px;
   margin-top: 4px;
   border: 0;
   background: none;
@@ -1027,182 +1096,78 @@
   cursor: pointer;
 }
 
-/* What it is: 14, three lines, then See more (14, grey); 20 under View website. */
-.product-description {
+.view-at:hover {
+  text-decoration: underline;
+}
+
+.product-page-rule {
+  height: 1px;
+  margin-top: 14px;
+  background: var(--shop-hairline);
+}
+
+/* Sold by, grey at the left; the seller at the right. */
+.product-sold-by {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  margin-top: 20px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 20px;
 }
 
-.description-words {
-  font-size: 14px;
-  line-height: 17px;
-  white-space: pre-wrap;
-}
-
-.description-words.folded {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
-}
-
-.description-words strong {
-  font-weight: 600;
-}
-
-.description-words a {
-  color: var(--link);
-}
-
-.see-more {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: 14px;
-  line-height: 17px;
-  color: var(--shop-grey);
-  cursor: pointer;
-}
-
-/* Reviews and More like this: 16, 500. */
-.product-heading {
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 19px;
-}
-
-.product-heading.reviews {
-  margin-top: 26px;
-}
-
-.product-heading.more {
-  padding: 30px 28px 0;
-}
-
-/* The reviews row: the picture 48 square, 8 round, its name (14) and its stars, 12 apart; 10 under Reviews. */
-.reviews-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 0;
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.reviews-picture {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-}
-
-.reviews-words {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.reviews-title {
-  font-size: 14px;
-  line-height: 17px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Five stars (12, 1 apart, Apple's orange), "4.5" at 70% and "(153)" in grey, 5 apart, 13. */
-.product-stars {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  line-height: 16px;
-  font-variant-numeric: tabular-nums;
-}
-
-.stars {
-  display: flex;
-  gap: 1px;
-  color: #f5a524;
-}
-
-.stars svg {
-  display: block;
-}
-
-.stars-rating {
-  color: color-mix(in srgb, var(--shop-ink) 70%, transparent);
-}
-
-.stars-count {
-  color: var(--shop-grey);
-}
-
-/* More like this: tiles 120 wide, 14 apart, sideways, no scroll bar; 10 under its title. */
-.more-like-this {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin-top: 10px;
-  padding: 0 28px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.more-like-this::-webkit-scrollbar {
-  display: none;
-}
-
-.more-tile {
+.sold-by-label {
   flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 120px;
-  padding: 0;
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.more-picture {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 6px;
-  border-radius: 10px;
-}
-
-.more-title,
-.more-byline {
-  font-size: 13px;
-  line-height: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.more-title {
-  font-weight: 600;
-}
-
-.more-byline {
   color: var(--shop-grey);
 }
 
-/* The X: the window's round glass button, 32, its cross at 40% in the discs' ink, 12 from the corner. */
-.sheet-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+.sold-by-seller {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Why it fits (17, 600), 32 under the picture; each reason (15) after a round green check, 10 apart. */
+.product-why {
+  grid-area: why;
+  padding-top: 32px;
+}
+
+.product-why-heading {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.product-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-reasons li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.reason-check {
+  flex: none;
+  margin-top: 2px;
+  color: var(--shop-added);
+}
+
+/* The X at the top left, ‹ and › at the top right: our glass discs, 32, 12 from the corners. */
+.product-page-close,
+.product-page-steps button {
   display: grid;
   place-items: center;
   width: 32px;
@@ -1212,4 +1177,23 @@
   border-radius: 50%;
   color: var(--disc-ink);
   cursor: pointer;
+}
+
+.product-page-close {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.product-page-steps {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.product-page-steps button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

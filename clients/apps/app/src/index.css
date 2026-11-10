@@ -1309,8 +1309,8 @@ button {
   gap: 10px;
   box-sizing: border-box;
   width: 100%;
-  padding: 12px;
-  border-radius: 16px;
+  padding: 14px 16px;
+  border-radius: 20px;
   background: var(--theirs);
   color: var(--ink);
   box-shadow:
@@ -1358,69 +1358,86 @@ button {
   background: var(--working);
 }
 
-/* The two buttons: 14, 32 high, 12 at the sides, 8 round; plain is the grey with a line at 15%, prominent the person's blue. */
+/*
+ * A card's buttons (10 November 2026, the question card's): at the card's right, the main one last, all pills 32 high;
+ * the main one in our blue (the founder: "make them our blue"), the others grey, red words for one that refuses.
+ */
 .card-buttons {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+  margin-left: auto;
+}
+
+/* A card's foot: a line at the left (the lock's, a note), its buttons at the right. */
+.card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 12px;
+}
+
+.card-foot > :first-child:not(.card-buttons) {
+  flex: 1;
+  min-width: 160px;
 }
 
 .card-button {
   flex: none;
   height: 32px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-  border-radius: 8px;
-  background: var(--wash);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   line-height: 20px;
   white-space: nowrap;
   cursor: pointer;
 }
 
+.card-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
 .card-button.prominent {
-  border-color: transparent;
   background: var(--yours);
   color: #ffffff;
 }
 
+.card-button.prominent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
+}
+
+.card-button.danger {
+  color: var(--danger);
+}
+
+.card-button.money {
+  background: var(--yours);
+  color: #ffffff;
+}
+
+.card-button.money:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
+}
+
 .card-button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: default;
 }
 
 .card-button:focus-visible,
-.question-option:focus-visible,
+.qcard-option:focus-visible,
+.qcard-pill:focus-visible,
 .card-close:focus-visible,
 .approval-fold:focus-visible {
   outline: 2px solid var(--unread);
   outline-offset: 1px;
-}
-
-/* A question: 14 on 20, 500; its help under it at 60%; the X 20 square at the right. */
-.question-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.question-words {
-  flex: 1;
-  min-width: 0;
-}
-
-.question-prompt {
-  font-weight: 500;
-}
-
-.question-prompt.quiet {
-  color: var(--ink-secondary);
-}
-
-.question-help {
-  color: var(--ink-secondary);
 }
 
 .card-close {
@@ -1439,53 +1456,6 @@ button {
 
 .card-close:hover {
   background: var(--row-hover);
-}
-
-/* The choices in one box, 8 round, a hairline at 10% between; each padded 8. */
-.question-options {
-  display: flex;
-  flex-direction: column;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.question-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.question-option + .question-option {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
-}
-
-.question-option:hover {
-  background: var(--row-hover);
-}
-
-.option-ring {
-  flex: none;
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: 18px;
-  height: 18px;
-  border: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
-  border-radius: 50%;
-  /* The tick cut out of the blue, as `checkmark.circle.fill`. */
-  color: var(--theirs);
-}
-
-.option-ring.picked {
-  border-color: transparent;
-  background: var(--blue);
 }
 
 .option-words {
@@ -1507,28 +1477,260 @@ button {
   color: var(--ink-secondary);
 }
 
-/* Answered: the blue tick, 18 square, and the answer, padded 8. */
-.question-answer {
+/*
+ * A question card (10 November 2026, the Mac's `QuestionCardView`): the agent's grey, 20 round; the question 15
+ * semibold; each choice a row 12 round with its letter on a 24 tile that becomes the blue round check once picked;
+ * "Something else" last; one question at a time, sliding in, the tallest holding the card's height; dots, Back, Skip
+ * and Next (Send) at the foot, Next in our blue.
+ */
+.qcard {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px 10px 12px;
+  border-radius: 20px;
+  background: var(--theirs);
+  box-shadow:
+    0 0 0 0.5px var(--theirs-hairline),
+    0 1px 1px var(--theirs-shadow);
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 20px;
+  overflow: hidden;
 }
 
-.answer-tick {
+.qcard-pages {
+  display: grid;
+}
+
+.qcard-page {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.qcard-page.shadow {
+  visibility: hidden;
+}
+
+.qcard-page.slide-forward {
+  animation: qcard-in-forward 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.qcard-page.slide-back {
+  animation: qcard-in-back 0.34s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes qcard-in-forward {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes qcard-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qcard-page.slide-forward,
+  .qcard-page.slide-back {
+    animation: qcard-fade 0.15s ease-out;
+  }
+}
+
+@keyframes qcard-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.qcard-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.qcard-prompt {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.qcard-prompt.quiet {
+  color: var(--ink-secondary);
+}
+
+.qcard-help {
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.qcard-dismissed {
+  padding: 0 8px;
+}
+
+.qcard-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qcard-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.qcard-option:hover {
+  background: var(--row-hover);
+}
+
+.qcard-option.picked {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.qcard-option.own {
+  cursor: text;
+}
+
+.qcard-else {
+  color: var(--placeholder);
+}
+
+.qcard-own-field {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  line-height: 22px;
+}
+
+.qcard-tile {
   flex: none;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 20px;
-  color: var(--blue);
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
 }
 
-/* Its own answer: on the ground, 8 round, a line at 15%, 30 high at least, one to six lines. */
-.question-own {
+/* Picked: our blue round check, the tick cut out of the blue as `checkmark.circle.fill`. */
+.qcard-tile.picked,
+.qcard-check {
+  border-color: transparent;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--theirs);
+  animation: qcard-pop 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+@keyframes qcard-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+.qcard-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.qcard-answer {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.qcard-answer.skipped {
+  color: var(--ink-tertiary);
+}
+
+.qcard-foot {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  padding: 0 8px;
+}
+
+.qcard-gap {
+  flex: 1;
+}
+
+.qcard-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.qcard-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  transition: background 0.2s ease-out;
+}
+
+.qcard-dot.on {
+  background: color-mix(in srgb, var(--ink) 50%, transparent);
+}
+
+.qcard-pill {
+  flex: none;
+  height: 32px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.qcard-pill:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.qcard-pill.prominent {
+  background: var(--yours);
+  color: #ffffff;
+}
+
+.qcard-pill.prominent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--yours) 88%, #000000);
+}
+
+.qcard-pill:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .growing-field {
@@ -1549,18 +1751,10 @@ button {
   color: var(--placeholder);
 }
 
-.question-own .growing-field {
-  flex: 1;
-  min-width: 0;
-  min-height: 30px;
-  padding: 4px 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
-  border-radius: 8px;
-  background: var(--ground);
-}
-
-.question-own .growing-field:focus-visible {
-  border-color: var(--unread);
+.qcard-own-field.growing-field {
+  padding: 1px 0;
+  font-size: 14.5px;
+  line-height: 22px;
 }
 
 /* A draft: its title (14 on 22, 500, Slack's logo 20 before it) with its state; its fields on the ground, 10 round. */
@@ -1591,10 +1785,11 @@ button {
   height: 20px;
 }
 
+/* The draft's own box, rounded as every writing box (10 November 2026). */
 .draft-box {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--ground);
   overflow: hidden;
 }

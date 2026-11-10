@@ -29,9 +29,11 @@ export const CLAUDE_CODE_HAS_ITS_OWN: ReadonlySet<string> = new Set([
 
 /**
  * Claude Code's own tools turned off for a turn: its shell, so every command
- * goes through the engine's `Shell` and the person's safety review.
+ * goes through the engine's `Shell` and the person's safety review; and its
+ * own question (`AskUserQuestion`, 10 November 2026), which no app shows: a
+ * question goes to the person as Simeon's question card, SendMessage's widget.
  */
-export const CLAUDE_CODE_TOOLS_OFF: readonly string[] = ["Bash", "BashOutput", "KillShell", "KillBash"];
+export const CLAUDE_CODE_TOOLS_OFF: readonly string[] = ["Bash", "BashOutput", "KillShell", "KillBash", "AskUserQuestion"];
 
 /** A tool as the engine builds it (`createZodAgentTool`). */
 export interface EngineTool {

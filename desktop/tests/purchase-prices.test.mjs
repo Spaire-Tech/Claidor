@@ -133,11 +133,13 @@ test("a products card shows the price Shop's catalog gave, not the agent's copy 
     let card;
     const tool = module.createShowProductsTool({ emitCard: (posted) => { card = posted; return "t3s0"; }, capturePreview: async () => undefined, checkoutFacts: () => undefined, markPurchaseDone: async () => ({ ok: true }) });
     const said = await run(tool, { products: [
-      { title: "MSI PRO MP275W E2", url: "https://altex.com/products/msi-pro-mp275w-e2", price: "$159.99", shop_variant_id: "gid://shopify/ProductVariant/47664962109596", shop: "altex-computers-electronics.myshopify.com" },
+      { title: "MSI PRO MP275W E2", url: "https://altex.com/products/msi-pro-mp275w-e2", price: "$159.99", shop_variant_id: "gid://shopify/ProductVariant/47664962109596", shop: "altex-computers-electronics.myshopify.com", store: "Altex", take: "Cheapest 27-inch of the three", reasons: ["Lowest price"], badge: "Best value" },
       { title: "Samsung Odyssey G55C", url: "https://example-shop.com/products/g55c", price: "$149.95", shop_variant_id: "222", shop: "example-shop.myshopify.com" },
       { title: "A monitor from a shop's own page", url: "https://other.example/monitor", price: "$120.00" },
     ] });
     assert.deepEqual(card.products.map((product) => product.price), ["$139.99", "$149.95", "$120.00"]);
+    // The catalog's price changes nothing of the agent's comparison (10 November 2026).
+    assert.deepEqual([card.products[0].store, card.products[0].take, card.products[0].reasons, card.products[0].badge], ["Altex", "Cheapest 27-inch of the three", ["Lowest price"], "Best value"]);
     const told = JSON.parse(said).success.currentStep;
     assert.match(told, /The card shows the prices Shop's catalog gave, not the ones you wrote: "MSI PRO MP275W E2" is \$139\.99 \(you wrote \$159\.99\)\. Quote those\./);
     assert.doesNotMatch(told, /Samsung/, "a price written right is not called out");

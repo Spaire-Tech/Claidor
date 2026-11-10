@@ -75,32 +75,32 @@ CSS = """
 .watch{display:grid;place-items:center;padding:5cqw 0}
 .watch-in{width:62cqw}
 .watch .scr{aspect-ratio:16/10}
-.watch-btns{display:flex;justify-content:center;gap:1.4cqw;margin-top:2.4cqw}
-.watch-btns span{display:inline-flex;align-items:center;height:4.2cqw;padding:0 2.6cqw;border-radius:99px;font-size:1.6cqw;letter-spacing:-.01em}
-.watch-btns .go{background:#0071e3;color:#fff}
-.watch-btns .stop{background:linear-gradient(160deg,rgba(255,255,255,.95),rgba(255,255,255,.6));box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px rgba(0,0,0,.07),0 .6cqw 1.6cqw -.6cqw rgba(0,0,0,.18);color:var(--ink)}
+/* who has the computer, under the screen, as the Mac and the web draw it (ComputerView.css, .control-pill): a dark capsule,
+   the eye and "Watching" in white at 60%, Take control in white */
+.pill-wrap{display:flex;justify-content:center;margin-top:1.6cqw}
+.ctl-pill{display:inline-flex;align-items:center;gap:1.2cqw;padding:.5cqw;border-radius:99px;background:rgba(28,28,30,.94);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.1),0 .5cqw 3cqw rgba(0,0,0,.35);font-size:1.6cqw;line-height:1;white-space:nowrap}
+.ctl-pill .state{display:flex;align-items:center;gap:.7cqw;padding-left:1.2cqw;color:rgba(255,255,255,.6)}
+.ctl-pill .state svg{width:2cqw;height:2cqw}
+.ctl-pill .go{display:inline-flex;align-items:center;height:3.6cqw;padding:0 1.7cqw;border-radius:99px;background:#fff;color:#141414;font-weight:var(--w-title)}
 
-/* Sign in once: the card the agent sends in the chat, as the apps draw it. */
+/* Sign in once: the card the agent sends in the chat, as the iPhone draws it (Cards.swift, the computer's card, 10 November
+   2026): "Computer" with a laptop, "Action needed" over the agent's words in grey, the screen across the card, then Skip,
+   I'm done and Take over in the blue of your messages, in a row at the right. */
 .hand{display:grid;place-items:center;padding:6cqw 0}
-.hand-card{width:46cqw;padding:2.4cqw;border-radius:2.4cqw;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1.4cqw 4cqw -1.6cqw rgba(0,0,0,.25)}
-.hand-top{display:flex;align-items:center;gap:1.4cqw}
-.hand-tile{display:grid;place-items:center;width:4.4cqw;height:4.4cqw;border-radius:1.1cqw;background:#f2f2f4;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
-.hand-tile svg{width:55%;height:55%;color:#6e6e73}
-.hand-top b{display:block;font-size:1.75cqw;font-weight:var(--w-title);letter-spacing:-.015em}
-.hand-top small{display:flex;align-items:center;gap:.6cqw;margin-top:.3cqw;font-size:1.4cqw;color:#6e6e73}
-.hand-top small i{width:.8cqw;height:.8cqw;border-radius:50%;background:#34c759;box-shadow:0 0 0 .4cqw rgba(52,199,89,.18)}
-.hand-card .say{margin-top:1.8cqw;font-size:1.6cqw;line-height:1.4;letter-spacing:-.01em;color:var(--ink)}
-.hand-card .scr{margin-top:1.6cqw;aspect-ratio:16/9;border-radius:1.2cqw}
+.hand-card{width:46cqw;padding:2.2cqw 2.2cqw 2cqw;border-radius:2.4cqw;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 1.4cqw 4cqw -1.6cqw rgba(0,0,0,.25)}
+.hand-kind{display:flex;align-items:center;gap:1cqw;font-size:1.6cqw;color:var(--ink)}
+.hand-kind svg{width:1.8cqw;height:1.8cqw;color:#6e6e73}
+.hand-card .need{margin-top:1.6cqw;font-size:2cqw;font-weight:var(--w-title);letter-spacing:-.02em;color:var(--ink)}
+.hand-card .say{margin-top:.3cqw;font-size:1.7cqw;line-height:1.35;letter-spacing:-.01em;color:#6e6e73}
+.hand-card .scr{margin:1.6cqw -2.2cqw 0;aspect-ratio:16/10;border-radius:0;box-shadow:inset 0 .5px 0 rgba(0,0,0,.12),inset 0 -.5px 0 rgba(0,0,0,.12)}
 .hand-card .win{left:22%;top:14%;right:22%;bottom:10%;border-radius:.8cqw}
 .signin{display:flex;flex-direction:column;align-items:center;gap:.9cqw;padding:2.4cqw 2cqw}
 .signin b{font-size:1.3cqw;font-weight:var(--w-title)}
 .signin i{width:100%;height:2.2cqw;border-radius:.6cqw;background:#f2f2f4;box-shadow:inset 0 0 0 1px #e3e3e8}
 .signin i.go{background:var(--ink);box-shadow:none}
-.hand-btns{display:flex;align-items:center;gap:1cqw;margin-top:1.8cqw}
-.hand-btns span{display:inline-flex;align-items:center;height:3.6cqw;padding:0 2cqw;border-radius:99px;font-size:1.45cqw}
-.hand-btns .go{background:var(--ink);color:#fff}
-.hand-btns .soft{background:#f2f2f4;color:var(--ink)}
-.hand-btns .skip{margin-left:auto;color:#6e6e73}
+.hand-btns{display:flex;justify-content:flex-end;gap:1cqw;margin-top:1.8cqw}
+.hand-btns span{display:inline-flex;align-items:center;height:3.8cqw;padding:0 1.8cqw;border-radius:99px;font-size:1.5cqw;font-weight:var(--w-title);background:rgba(29,29,31,.08);color:var(--ink)}
+.hand-btns .main{background:#255a93;color:#fff}
 
 /* Forms, files and checkouts: a page the agent fills in. */
 .form-shot{padding:5cqw 12cqw}
@@ -138,10 +138,10 @@ CSS = """
   .desks{grid-template-columns:1fr;gap:6cqw;padding:7cqw}
   .desk .win-bar{height:5cqw}.desk .win-url{height:3cqw;font-size:2cqw}.desk .win-body .h{font-size:3cqw}.desk .win-body .l{height:1.6cqw;margin-top:1.8cqw}
   .desk p{font-size:4cqw;gap:2.2cqw;margin-top:3cqw}.desk p img{width:7cqw;height:7cqw}
-  .watch-in{width:88cqw}.watch-btns span{height:9.6cqw;padding:0 5cqw;font-size:3.8cqw}.watch-btns{gap:3cqw;margin-top:5cqw}
-  .hand-card{width:88cqw;padding:5cqw;border-radius:5cqw}.hand-tile{width:10cqw;height:10cqw;border-radius:2.6cqw}.hand-top{gap:3cqw}
-  .hand-top b{font-size:4.2cqw}.hand-top small{font-size:3.4cqw;gap:1.4cqw}.hand-top small i{width:2cqw;height:2cqw}.hand-card .say{font-size:3.8cqw;margin-top:4cqw}
-  .hand-btns span{height:8.6cqw;padding:0 4.4cqw;font-size:3.4cqw}.hand-btns{gap:2.4cqw;margin-top:4cqw}
+  .watch-in{width:88cqw}.pill-wrap{margin-top:3.6cqw}.ctl-pill{font-size:3.6cqw;gap:2.6cqw;padding:1.1cqw}.ctl-pill .state{padding-left:2.6cqw;gap:1.6cqw}.ctl-pill .state svg{width:4.4cqw;height:4.4cqw}.ctl-pill .go{height:8cqw;padding:0 3.8cqw}
+  .hand-card{width:88cqw;padding:5cqw 5cqw 4.6cqw;border-radius:5cqw}.hand-kind{font-size:3.8cqw;gap:2.2cqw}.hand-kind svg{width:4.2cqw;height:4.2cqw}
+  .hand-card .need{font-size:4.6cqw;margin-top:3.6cqw}.hand-card .say{font-size:3.8cqw;margin-top:.8cqw}.hand-card .scr{margin:3.6cqw -5cqw 0}
+  .hand-btns span{height:8.8cqw;padding:0 4cqw;font-size:3.5cqw}.hand-btns{gap:2.2cqw;margin-top:4cqw}
   .form-shot{padding:6cqw 5cqw}.form-shot .scr{aspect-ratio:4/3.4}.form-shot .win{left:6%;right:6%}
   .fields label{font-size:2.2cqw}.fields span{height:5.6cqw;font-size:2.6cqw;padding:0 2cqw}.fields{gap:2.4cqw 3cqw;margin-top:3cqw}
 }
@@ -201,7 +201,7 @@ def cloud_computer(assets, ctas, close):
                                 "left:12%;top:10%;right:12%;bottom:12%") + who("Margot", "clay-01", "left:58%;top:52%"))
     signin = '<div class="signin"><b>Sign in</b><i></i><i></i><i class="go"></i></div>'
     hand_shot = screen(wall, window("accounts.shopify.com", signin))
-    tile = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 20h6M12 16.5V20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
+    laptop = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="10" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 18.5h19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
     clip = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m18.5 11.5-6.4 6.4a4 4 0 0 1-5.7-5.7l7-7a2.7 2.7 0 0 1 3.8 3.8l-7 7a1.3 1.3 0 0 1-1.9-1.9l6.4-6.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
     form = ('<div class="win-body"><p class="h">Apply for Brand Designer</p><div class="fields">'
             '<div><label>First name</label><span>Archer</span></div><div><label>Last name</label><span>Lee</span></div>'
@@ -226,17 +226,18 @@ def cloud_computer(assets, ctas, close):
 </div></section>
 
 <section class="pp-sec" aria-labelledby="watch-title"><div class="wrap">
-  <div class="trust-top"><h2 id="watch-title">Watch it work.<br>Take over anytime.</h2><p>Open an agent's computer from the chat, on your Mac or iPhone. Take control stops the agent. The ✓ hands the computer back, and the agent carries on from where you left it. Stop task ends the work.</p></div>
-  <div class="pp-card"><div class="watch"><div class="watch-in">{watch}<div class="watch-btns"><span class="go">Take control</span><span class="stop">Stop task</span></div></div></div></div>
+  <div class="trust-top"><h2 id="watch-title">Watch it work.<br>Take over anytime.</h2><p>Open an agent's computer from the chat, on your Mac or iPhone, and watch it work. Take control pauses the agent while you use the computer. Hand it back, and the agent carries on from where you left it.</p></div>
+  <div class="pp-card"><div class="watch"><div class="watch-in">{watch}<div class="pill-wrap"><span class="ctl-pill"><span class="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>Watching</span><span class="go">Take control</span></span></div></div></div></div>
 </div></section>
 
 <section class="pp-sec" aria-labelledby="sign-title"><div class="wrap">
   <div class="trust-top"><h2 id="sign-title">Sign in once.</h2><p>When a site needs your password or a code, the agent opens the page and hands the computer to you. You sign in, and it carries on. Every agent's Chrome keeps that sign-in.</p></div>
   <div class="pp-card"><div class="hand"><div class="hand-card">
-    <div class="hand-top"><span class="hand-tile">{tile}</span><div><b>Your turn on the computer</b><small><i></i>Waiting for you</small></div></div>
+    <div class="hand-kind">{laptop}Computer</div>
+    <p class="need">Action needed</p>
     <p class="say">Sign in to Shopify, then hand the computer back.</p>
     {hand_shot}
-    <div class="hand-btns"><span class="go">Take over</span><span class="soft">I’m done</span><span class="skip">Skip</span></div>
+    <div class="hand-btns"><span>Skip</span><span>I’m done</span><span class="main">Take over</span></div>
   </div></div></div>
 </div></section>
 

@@ -258,6 +258,9 @@ file and the code disagree, the code is right and this file is fixed.
 | 7 November 2026 | In the Windows app the sidebar's words are a size up: names 15, previews 14, times 13 at the previews' grey (not the lighter one), title tags 12.5, section names 13, as measured in the other app (its names 15, previews 14, sections 13); its pictures stay 46 | The founder: the sidebar is "either too small, or too light"; measured: as dark, a size smaller |
 | 7 November 2026 | In the Windows app a message's words are 16 on 22 (the Mac's 14 on 20, 21 for the person's), as the other Windows chat app the founder compared: only the words grow, the gaps and a bubble's padding stay the Mac's | The founder, comparing the two apps side by side; the sizes measured by the session |
 | 6 November 2026 | The web and Windows app's text is drawn with the system's own smoothing: no `-webkit-font-smoothing: antialiased` (`src/index.css`, `src/connected.css`). On a Mac that rule turns off macOS's text smoothing, so the words came out thinner and paler than the Mac app's, which SwiftUI draws with it on. It does nothing on Windows (ClearType either way) | The founder: "the mac app font is clearer web app/window seems cheap seems like its fading" |
+| 10 November 2026 | The products card is redrawn after the founder's reference: each product its own card in a sideways row, the agent's take, reasons and badge, reply chips under it; a product opened covers the chat area (not a sheet), the sidebar staying; the iPhone's opened page is full screen, in one column | The founder |
+| 10 November 2026 | Reply chips are only for the products card, not for other messages; the opened product's button keeps "Buy with <agent>", in our blue capsule | The founder |
+| 10 November 2026 | A product's store is named by the agent (`store`, new and optional in `ShowProducts`), else its site; the store's icon is its site's own, as a saved login's (the letter until it comes). Buy on the opened page closes it on the chat, as Buy closed the sheet. ← and → step between products, Escape closes, and Return on the page itself buys, as Return did in the sheet | The session |
 
 ## For Windows
 
@@ -838,6 +841,245 @@ For the founder, each to be answered before the step that needs it:
 ## Log
 
 Newest first.
+
+### 10 November 2026: the sign-in form over the window, the secret and computer cards as the references
+
+The founder, with four pictures of another app's cards: "log in from the store card comes like
+this. open, then an iframe. all writing boxes should be rounded too. ours are squared ish,
+which is off design. computer like this. api key like this." Done in the web and Windows app,
+the Mac and the iPhone (and the shared core):
+
+- **Sign-in.** The in-chat form and the store's login card are a row: the site's icon, "Sign
+  in to Acme" (the store's: "Sign in to Instagram"), "Opens a secure form", and Open. Open
+  shows the form over the window (`SecureFormDialog` here, 480 wide, 24 round, the window
+  dimmed; `MacSecureFormSheet`, `PhoneSecureFormSheet`): the title and the X, why, each field
+  with its name over it, a password's eye, then a shield and "Never shown to your agent. Only
+  filled on acme.com." with Not now and Fill in (the store's: Save). For a sign-in form
+  (`formLogin`, `UserFormCard.login`), "Save to your Credentials Store", checked: the login is
+  saved with the server first, then typed into the page. The X, Escape or a click outside only
+  close the form; Not now declines. A refusal stays in the form with what was typed.
+- **Secrets.** "Secrets" at the top with a key on a small tile; the secret's name (15, 600)
+  and why; the variable it's kept under over the field when the agent named one (the engine's
+  `target.name`, read as `SecretCard.variable` and the core's `.secret(variable:)`); a shield
+  line, Not now and Save securely.
+- **Computer.** "Computer" at the top with a laptop; "Action needed" over the instruction in
+  grey; the screen's picture across the whole card; Skip, I'm done and Take over at the right.
+  Settled: the outcome's pill at the top.
+- **Writing boxes** are 36 high and 12 round on the web and the Mac (`.ask-input`,
+  `cardField`), 44 and 14 on the iPhone; the draft's box 14 round.
+
+Checked in Chromium against a stand-in computer, light and dark: the secret with its variable,
+the computer card with a picture, the form and store rows, both secure forms opened (their
+fields, the store checkbox on the form only, the note, Fill in and Save waiting on the
+password), Escape closing them, no console error. The app's tests (1247; new ones for the
+variable and `formLogin`), tsc, ESLint, the words and the committed build; the core's
+`UserFormTests` (the sign-in and the variable) ran on Linux; `check_names.py`,
+`check_translations.py`, the engine's tests that read the apps' Swift. Not checked: the Mac
+and iPhone apps built and run (their Swift parses, the core type-checks); saving a login from
+the form against the real server.
+
+### 10 November 2026: the cards' main buttons in our blue
+
+The founder, looking at the cards' new pills: "now you see all those
+buttons. send, take over, allow once etc.. make them our blue". The main
+pill of every card (Send, Allow once, Take over, Save securely, Fill in,
+Fill with 1Password, Connect, View PR, the question card's Next and Send) is
+now our blue with white words (`--yours`; the Mac's `look.yours`; the
+iPhone's `Ink.bubbleMine`), in light and dark, instead of the ink's own
+colour. The others stay grey and Deny red; paying was already this blue. On
+the Mac the Slack/GitHub Connect, a small black box until now, is the card's
+main pill too.
+
+Checked in Chromium against a stand-in computer, light and dark: every card
+of the last entry and the question card, no console error; the app's tests
+(1246), tsc, ESLint, the committed build, `check_names.py`,
+`check_translations.py`. Not checked: the Mac and iPhone apps built and run
+(their Swift parses).
+
+### 10 November 2026: one style for every card's buttons
+
+The founder, after the question card's new style: "Where else (cards) can we
+bring this design. To avoid inconsistency? The buttons style etc", then "kk.
+go for your suggestions." Every card now has the question card's shape and
+buttons, in the web and Windows app, the Mac and the iPhone:
+
+- **The shape:** 20 round, padded 14 by 16 (`.card-shell`; the Mac's
+  `CardShell`); 22 round and padded 16 on the iPhone (`.card()`), as its
+  question card.
+- **The buttons are pills** (`CardButton` here with `tone`; the Mac's
+  `CardButton`; the iPhone's `CardPillStyle` in `CardPills`): 32 high on the
+  web and the Mac, 38 on the iPhone. The main action in the ink's own colour
+  (black in light, white in dark), the others grey, a refusal in red words
+  (Deny, the Mac's Never), and our blue kept for money only (Buy with, Book
+  with Simeon, the checkout's Allow, which stay as they were). They sit at
+  the card's right, the main one last: Discard, Send; Deny, Always allow,
+  Allow once; Not now, Save securely; Not now, Fill in; Not now, Fill with
+  1Password; Skip at the left, I'm done, Take over.
+- **Not now replaces the corner X** on the secret, in-chat form and
+  1Password connect cards; it declines as the X did. Once answered, the
+  status pill takes the corner.
+- **On the iPhone** the buttons sit one under the other, each across the
+  card, when they don't fit in a row (`ViewThatFits`: the approval's three
+  on a small iPhone, a longer translation), rather than being cut short.
+  The Slack/GitHub Connect and the cloud agent's View PR are main pills too.
+
+Checked in Chromium against a stand-in computer, light and dark: the draft,
+question, approval, secret (open and saved), hand-off, form, 1Password fill
+and 1Password connect cards, each card's buttons in the order above, the
+disabled main pill faded, no console error. tsc, ESLint, the app's tests
+(1246; `ShopCards.test.tsx` typed again: its products left `take` and
+`badge` undefined, which a JSON value can't hold), the words, the committed
+build, `check_names.py`, `check_translations.py`, and the engine's tests that
+read the apps' Swift (35). Not checked: the Mac and iPhone apps built and run
+(no Xcode here; their Swift parses).
+
+### 10 November 2026: the question card asks several questions, one at a time
+
+The founder, with three pictures of another app's question card: "have the
+thing swipe when there's many questions instead of having the agent send one
+by one … i also wanna change our card style to this. but keep the round check
+and our blue color." The agent may now put two to four questions in one card
+(the widget's `questions`, the engine's `normalizeSandWidget`; its own prompt
+and options are always the first question's, so an older app still shows
+that one). The card (`Cards.tsx` `QuestionCardView`, as the Mac's and the
+iPhone's) shows one question at a time and slides to the next, the tallest
+question holding its height: the question 15 semibold, each choice a row
+with its letter on a 24 tile (A, B, C…) that becomes our blue round check
+once picked, "Something else" last when the agent allows the person's own
+words (the row opens a field that takes the typing); dots, Back, Skip and
+Next at the foot, Next (Send on the last) in the ink's own colour. A pick
+moves on by itself, and on the last question sends; several picks and the
+words typed go together. Skip on a card of one question declines it, as the
+X did. The answers go back as one reply, a line per question, the question
+then the answer, "(skipped)" for one skipped (`questionsReply`, the
+engine's `formatQuestionsReply`, Chat.swift's `QuestionCard.reply`: the same
+words); answered, the card shows each question in grey with its answer under
+the blue round check, Back and Next to look through several. The Mac's
+catalogue gained "Something else", "Next", "Send", "Skipped", "Question %lld
+of %lld", "Skip this question" and "Your own answer" in the ten languages
+(the iPhone's words where it had them).
+
+Checked in Chromium against a stand-in computer, light and dark: four
+questions (a pick moves on, Skip, Back, several picks with words typed, Send
+sends "Which city is she in? Toronto / Budget? (skipped) / What's the
+occasion? Just because / What does she like? Roses, Soft pinks and whites,
+Peonies" as one reply); one question (a pick sends its own value); an
+answered card of three paged with Next; a dismissed one; the card's height
+the same on every question; no console error. tsc, ESLint, the app's tests
+(1244), the words and the committed build. Not checked: the Mac and iPhone
+apps built and run (their Swift parses; the core's tests ran on Linux), a
+real agent sending such a card (it needs the next engine).
+
+### 10 November 2026: the products card as a shop's own cards; a product opened over the chat
+
+The founder, with reference screenshots of another app's shopping card (a
+row of tall product cards, reply chips under it, a product opened in the
+chat's place with "Why it fits"). Done in the engine, the shared core, the
+Mac, the iPhone and the web and Windows app:
+
+- **The engine:** `ShowProducts` takes per product `take` (the agent's own
+  line against the others, about 60 characters), `reasons` (one to three),
+  `badge` (two words, one product of the card at most: a second is
+  refused) and `store` (the store as people know it), and per card
+  `replies` (three at most). `description` stays, optional. The brief's
+  purchase step "0. Show" has the agent compare the set and offer replies.
+- **The core** (`ProductsCard.swift`): the new fields; `priceLine` ("price ·
+  take"), `shownTake` (a card from before takes: its description's first
+  sentence, no "Why it fits"), `ratingLine` ("★ 5.0 (12)"), `viewAt`,
+  `neighbour(of:by:)` for ‹ ›; `repliesOpen`, set as the chat's rows are
+  laid out (`settlingReplies`): the chips show until anything of the
+  person's comes after the card. The web's `shopCards.ts` is the same
+  (`productRepliesOpen` reads the rows on screen). Gone: Reviews, More like
+  this, See more, the five stars.
+- **The web** (`ShopCards.tsx`, `.css`): no frame round the products; each a
+  card 200 wide, 20 round, in one row that scrolls sideways and runs to the
+  column's edge (`ChatPane.tsx`): the picture on white (240 high, fitted,
+  padded 16) with the badge at its top left, the name, "price · take" in
+  grey (two lines), the store's icon (its site's own, as a saved login's)
+  and name, Buying or Bought at their right; the replies as chips under the
+  row, one pressed sent as the person's own message. A product opened is a
+  cover over the chat and its field (`chatCover` of kind `product`, as a
+  call's lines), the sidebar staying: the X at the top left, ‹ › at the top
+  right (← → too); two columns (one in a narrow chat, by a container
+  query): the picture on a white square, "Why it fits" with green checks;
+  the store, the title (28), the price and "★ 5.0 (12)", the take, "Buy with
+  <agent>" in our blue capsule, "View at <store>", a hairline, "Sold by".
+  Buy closes it on the chat, as Buy closed the sheet. In light, a hairline
+  round the cards and the picture, whose white would melt into the ground.
+- **The Mac** (`Cards.swift`, `ChatPane.swift`, `MessageActions.swift`): the
+  same, the page as an exchange or a call's lines open
+  (`ChatControl.productOpen`). **The iPhone** (`ios/Simeon/Cards.swift`): the
+  cards 170 wide; the page full screen in one column, swiped between, ‹ ›
+  and the X at the top.
+- Words: "Why it fits", "Sold by", "View at %@" in the core's catalogue;
+  "Previous product", "Next product" in the Mac's and the iPhone's; the ten
+  languages each, then `pnpm words` and the committed build.
+- Fixed on the way: the core's gallery test expected two products on the
+  demo's card, which has had three (it never ran on Linux, below).
+
+**Checked:** in Chromium (deviceScaleFactor 2), the app on Vite's dev
+server with the Windows app's stand-in server and computer behind its
+proxy (`windows/test/standIn.mjs`), every outside address answered by the
+check (drawn pictures, a store's icon; a proxy that answers nothing behind
+it), dark, light and French: the row, the badge, Bought on an older card
+(its description's first sentence as the take, no "Why it fits"), the
+page opened, ›, Escape, a 900-wide window (one column; the row cut at the
+column's edge and scrolling), a chip sending "Get Love Blossoms" as the
+person's message (`sendPrompt`) and the chips gone, Buy on the page sending
+`buyProduct` (index 1) and Buying on the card; no page errors. vitest (1245,
+128 files), tsc, ESLint and Prettier (`shopCards.ts`'s old warning fixed),
+the words', brands', pages' and committed build's checks; the engine's
+suite (1049: 1026 pass, 22 skipped, the one known failure the renderer
+asset not built here) and its type check; the core's products, purchase,
+chat and computer-store tests in Swift on Linux (212, in a package of
+their own: the core's own `swift test` stops at test discovery on Linux on
+the `@MainActor` test classes, as before; one fails there for a path, the
+voices' test reading the engine's file next to it); `check_names.py`,
+`check_translations.py`, `web_app_inventory.py`.
+
+**Not checked:** the Mac and iPhone apps built and run (no Xcode here; every
+Swift file changed parses, and the SwiftUI was read again by hand); a real
+agent writing takes, reasons and replies; a real store's pictures and icon.
+
+Next: the Mac and the iPhone built and looked at against the reference;
+the engine published (a host bundle), with the founder's go, so agents
+write the new fields.
+
+### 10 November 2026: the computer opens watching; Take control under the screen
+
+The founder, with a reference picture of another app's computer view: "the computer is designed in a way
+that you can use the computer while its on use by the agent without much
+clicking anywhere to allow you. well thats not good … below it has a
+watching/take over picker. i want that. make it smooth." The full view
+(`ComputerView.tsx`, as the Mac's `ComputerView.swift`) now opens
+**watching**: the screen takes no click or key (`setViewOnly`, on the same
+connection), and a click on it swells Take control once. Under the screen,
+12 below it, a dark capsule: the eye and "Watching" with **Take control**
+(white), or the pointer and "You're in control" with **Stop** (white at
+12%). Take control pauses a working agent (`takeComputerControl`, the
+iPhone's since October) and says "Iris is paused while you're in control."
+under the pill; Stop, or closing the view, hands the computer back
+(`handBackComputer`), which resumes it. While the agent waits on the person
+(a hand-off it asked for) the view opens in control, with the hand-off's
+banner as before; the hand-off taking control started shows no banner.
+In control the clipboard goes both ways as before; watching, nothing is
+sent. "Stop" was added to the Mac's catalogue in the ten languages; the
+other words were the iPhone's already.
+
+Checked in Chromium against the stand-in computer (step 5b's RFB server),
+light, dark and French: watching, a click and two keys reach nothing (0
+pointer events, 0 keys) and Take control swells; Take control sends
+`takeComputerControl`, the pill and the paused line change, and clicks and
+keys reach the computer on the same connection; Stop sends one hand-back
+and nothing reaches it again; Theo's waiting hand-off opens in control with
+its banner. tsc, ESLint, the window's tests (178), the words and the
+committed build. Not checked: the Mac and iPhone apps built and run (the
+Mac's Swift parses), a real computer.
+
+Also: the computer's wallpaper is the founder's lake at dusk
+(`box/wallpapers`, carried by the engine), and the engine opens Chrome on
+the computer's screen as soon as it is up, once per start of the computer
+(`chrome-at-start.ts`). Both need the engine published.
 
 ### 10 November 2026: the chat says when an agent's model changes
 

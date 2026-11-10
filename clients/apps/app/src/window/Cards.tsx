@@ -18,8 +18,9 @@ import {
   clip,
   draftStatus,
   proposedRule,
+  questionAnswers,
+  questionsReply,
   settledNote,
-  shownAnswer,
   summaryLine,
 } from '../core/cards'
 import type { Entry } from '../core/entry'
@@ -86,22 +87,30 @@ export function StatusPill({
   )
 }
 
-/** The window's two button kinds on a card: the blue one and the plain one (14, 32 high, 8 round). */
+/** A card's button: a pill 32 high, grey, or our blue for the main one (`prominent`). */
 export function CardButton({
   title,
   prominent = false,
+  tone,
+  help,
   disabled,
   onClick,
 }: {
   title: string
+  /** The card's main action: a pill in our blue. */
   prominent?: boolean
+  /** `danger`: a grey pill in red words; `money`: the blue pill, kept for paying. */
+  tone?: 'danger' | 'money'
+  /** What it does, under the pointer. */
+  help?: string
   disabled?: boolean
   onClick: () => void
 }) {
   return (
     <button
       type="button"
-      className={classes('card-button', prominent && 'prominent')}
+      className={classes('card-button', prominent && 'prominent', tone)}
+      title={help}
       disabled={disabled}
       onClick={onClick}
     >
@@ -125,29 +134,21 @@ function Tick() {
   )
 }
 
-function Cross() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M3.5 3.5l9 9M12.5 3.5l-9 9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
 // MARK: Questions
 
 /**
- * A question (`sand-widget--choices`): the question (14 on 20, 500) and its
- * help under it (60%), the X that dismisses it; the choices in one box,
- * each with an empty ring, its label and its line under it, a hairline
- * between; then "Type your own answer" when the agent allows one, with
- * Submit once something is written. Answered, the question and the answer
- * with a blue tick; dismissed, the question at 60% and a "Dismissed" pill.
+ * A question card (10 November 2026, the founder's reference: "change our
+ * card style to this. but keep the round check and our blue color"): the
+ * question in bold; each choice with its letter on a small tile (A, B, C…)
+ * that becomes our blue round check once picked; "Something else" last when
+ * the agent allows the person's own words. A card may ask several questions
+ * ("have the thing swipe when there's many questions"): one at a time,
+ * sliding to the next, dots at the foot, Back, Skip and Next (Send on the
+ * last); the answers go together, a line each (`questionsReply`). A pick
+ * moves on by itself, and on the last question sends; Skip on a card of one
+ * declines it. Answered: each question in grey with its answer under a blue
+ * round check, Back and Next to look through several (Mac's
+ * `QuestionCardView`).
  */
 export function QuestionCardView({
   entryId,
@@ -160,79 +161,183 @@ export function QuestionCardView({
   card: QuestionCard
   store: AppStore
 }) {
-  const [own, setOwn] = useState('')
-  const [picked, setPicked] = useState<number[]>([])
   const pending = store.pendingAnswers[entryId]
   if (card.isDismissed || card.isSkipped || pending === '')
     return (
-      <CardShell>
-        <div className="question-prompt quiet">{card.prompt}</div>
-        <StatusPill words={t('Dismissed')} />
-      </CardShell>
+      <div className="qcard">
+        <div className="qcard-head">
+          <div className="qcard-prompt quiet">{card.prompt}</div>
+        </div>
+        <div className="qcard-dismissed">
+          <StatusPill words={t('Dismissed')} />
+        </div>
+      </div>
     )
   const answer = card.answer ?? pending
   if (answer != null)
-    return (
-      <CardShell>
-        <div className="question-prompt">{card.prompt}</div>
-        <div
-          className="question-answer"
-          aria-label={t`Your answer: ${shownAnswer(card, answer)}`}
-        >
-          <span className="answer-tick">
-            <Tick />
-          </span>
-          <span>{shownAnswer(card, answer)}</span>
-        </div>
-      </CardShell>
-    )
-  const submitOwn = () => {
-    const words = own.trim()
-    if (words === '') return
-    setOwn('')
-    void store.answer(words, entryId, agentId)
-  }
+    return <AnsweredQuestions key={answer} card={card} answer={answer} />
   return (
-    <CardShell>
-      <div className="question-head">
-        <div className="question-words">
-          <div className="question-prompt">{card.prompt}</div>
-          {card.help && <div className="question-help">{card.help}</div>}
+    <AskingQuestions
+      entryId={entryId}
+      agentId={agentId}
+      card={card}
+      store={store}
+    />
+  )
+}
+
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+const letter = (place: number) =>
+  LETTERS[Math.max(0, Math.min(place, LETTERS.length - 1))]!
+
+type Picks = Record<number, number[]>
+type Words = Record<number, string>
+
+/** The answer given to one question: the options picked (one per line), else, or with them for several, the words typed. */
+function answerOf(
+  card: QuestionCard,
+  at: number,
+  picks: Picks,
+  own: Words,
+): string | undefined {
+  const question = card.questions[at]
+  if (!question) return undefined
+  const words = (own[at] ?? '').trim()
+  const chosen = [...(picks[at] ?? [])]
+    .sort((a, b) => a - b)
+    .map((place) => question.options[place]?.value)
+    .filter((value): value is string => value != null)
+  const all = question.multiSelect
+    ? [...chosen, ...(words ? [words] : [])]
+    : words
+      ? [words]
+      : chosen
+  return all.length > 0 ? all.join('\n') : undefined
+}
+
+function AskingQuestions({
+  entryId,
+  agentId,
+  card,
+  store,
+}: {
+  entryId: string
+  agentId: string
+  card: QuestionCard
+  store: AppStore
+}) {
+  const questions = card.questions
+  const [index, setIndex] = useState(0)
+  const [forward, setForward] = useState(true)
+  const [picks, setPicks] = useState<Picks>({})
+  const [own, setOwn] = useState<Words>({})
+  const [writing, setWriting] = useState<number | null>(null)
+  const [sending, setSending] = useState(false)
+  const at = useRef(0)
+  useEffect(() => {
+    at.current = index
+  }, [index])
+  const isLast = index >= questions.length - 1
+
+  const move = (target: number) => {
+    if (target < 0 || target >= questions.length || target === index) return
+    setForward(target > index)
+    setWriting(null)
+    setIndex(target)
+  }
+  const send = (nowPicks: Picks, nowOwn: Words) => {
+    setSending(true)
+    const reply = questionsReply(
+      card,
+      questions.map((_, place) => answerOf(card, place, nowPicks, nowOwn)),
+    )
+    void (async () => {
+      if (reply != null) await store.answer(reply, entryId, agentId)
+      else await store.dismissQuestion(entryId, agentId)
+      setSending(false)
+    })()
+  }
+  const goOn = (from: number, nowPicks: Picks, nowOwn: Words) => {
+    if (sending || answerOf(card, from, nowPicks, nowOwn) == null) return
+    if (from >= questions.length - 1) send(nowPicks, nowOwn)
+    else {
+      setForward(true)
+      setWriting(null)
+      setIndex(from + 1)
+    }
+  }
+  const choose = (place: number, question: number) => {
+    if (sending) return
+    if (questions[question]!.multiSelect) {
+      const now = picks[question] ?? []
+      setPicks({
+        ...picks,
+        [question]: now.includes(place)
+          ? now.filter((one) => one !== place)
+          : [...now, place],
+      })
+      return
+    }
+    const nowPicks = { ...picks, [question]: [place] }
+    const nowOwn = { ...own, [question]: '' }
+    setPicks(nowPicks)
+    setOwn(nowOwn)
+    setWriting(null)
+    // A pick moves on by itself once its check has shown: to the next question, or, on the last, sends.
+    window.setTimeout(() => {
+      if (at.current === question) goOn(question, nowPicks, nowOwn)
+    }, 220)
+  }
+  const skip = () => {
+    if (sending) return
+    const nowPicks = { ...picks, [index]: [] }
+    const nowOwn = { ...own, [index]: '' }
+    setPicks(nowPicks)
+    setOwn(nowOwn)
+    if (isLast) send(nowPicks, nowOwn)
+    else move(index + 1)
+  }
+  const typed = (question: number, words: string) => {
+    setOwn({ ...own, [question]: words })
+    if (!questions[question]!.multiSelect && words !== '')
+      setPicks({ ...picks, [question]: [] })
+  }
+
+  const page = (place: number, live: boolean) => {
+    const question = questions[place]!
+    const words = own[place] ?? ''
+    const given = words.trim() !== ''
+    const open = writing === place || words !== ''
+    return (
+      <div
+        key={live ? `live-${place}` : `shadow-${place}`}
+        className={classes(
+          'qcard-page',
+          live ? (forward ? 'slide-forward' : 'slide-back') : 'shadow',
+        )}
+        aria-hidden={live ? undefined : true}
+      >
+        <div className="qcard-head">
+          <div className="qcard-prompt">{question.prompt}</div>
+          {question.help && <div className="qcard-help">{question.help}</div>}
         </div>
-        <button
-          type="button"
-          className="card-close"
-          title={t('Dismiss without answering')}
-          aria-label={t('Dismiss question')}
-          onClick={() => void store.dismissQuestion(entryId, agentId)}
+        <div
+          className="qcard-options"
+          role="group"
+          aria-label={question.prompt}
         >
-          <Cross />
-        </button>
-      </div>
-      {card.options.length > 0 && (
-        <div className="question-options">
-          {card.options.map((option, index) => {
-            const chosen = picked.includes(index)
+          {question.options.map((option, choice) => {
+            const picked = (picks[place] ?? []).includes(choice)
             return (
               <button
-                key={index}
+                key={choice}
                 type="button"
-                className="question-option"
-                aria-pressed={card.multiSelect ? chosen : undefined}
-                onClick={() => {
-                  if (card.multiSelect)
-                    setPicked((now) =>
-                      now.includes(index)
-                        ? now.filter((one) => one !== index)
-                        : [...now, index],
-                    )
-                  // Picking sends the option's own reply (`value`).
-                  else void store.answer(option.value, entryId, agentId)
-                }}
+                tabIndex={live ? undefined : -1}
+                className={classes('qcard-option', picked && 'picked')}
+                aria-pressed={picked}
+                onClick={() => choose(choice, place)}
               >
-                <span className={classes('option-ring', chosen && 'picked')}>
-                  {chosen && <Tick />}
-                </span>
+                <QuestionTile letter={letter(choice)} picked={picked} />
                 <span className="option-words">
                   <span className={classes('option-label', option.style)}>
                     {option.label}
@@ -244,42 +349,193 @@ export function QuestionCardView({
               </button>
             )
           })}
+          {question.allowsOwnAnswer &&
+            (open ? (
+              <div
+                className={classes('qcard-option', 'own', given && 'picked')}
+              >
+                <QuestionTile
+                  letter={letter(question.options.length)}
+                  picked={given}
+                />
+                <GrowingField
+                  className="qcard-own-field"
+                  value={words}
+                  onChange={(value) => typed(place, value)}
+                  placeholder={t('Something else')}
+                  label={t('Your own answer')}
+                  maxLines={4}
+                  lineHeight={22}
+                  onReturn={() => goOn(place, picks, own)}
+                  disabled={!live}
+                  focusOnOpen={live}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                tabIndex={live ? undefined : -1}
+                className="qcard-option own"
+                onClick={() => setWriting(place)}
+              >
+                <QuestionTile
+                  letter={letter(question.options.length)}
+                  picked={false}
+                />
+                <span className="qcard-else">{t('Something else')}</span>
+              </button>
+            ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="qcard" role="group" aria-label={card.prompt}>
+      <div className="qcard-pages">
+        {questions.map((_, place) => page(place, false))}
+        {page(index, true)}
+      </div>
+      <div className="qcard-foot">
+        {questions.length > 1 && (
+          <QuestionDots count={questions.length} at={index} />
+        )}
+        <span className="qcard-gap" />
+        {index > 0 && (
+          <button
+            type="button"
+            className="qcard-pill"
+            onClick={() => move(index - 1)}
+          >
+            {t('Back')}
+          </button>
+        )}
+        <button
+          type="button"
+          className="qcard-pill"
+          title={
+            questions.length > 1
+              ? t('Skip this question')
+              : t('Dismiss without answering')
+          }
+          onClick={skip}
+        >
+          {t('Skip')}
+        </button>
+        <button
+          type="button"
+          className="qcard-pill prominent"
+          disabled={answerOf(card, index, picks, own) == null || sending}
+          onClick={() => goOn(index, picks, own)}
+        >
+          {isLast ? t('Send') : t('Next')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AnsweredQuestions({
+  card,
+  answer,
+}: {
+  card: QuestionCard
+  answer: string
+}) {
+  const [index, setIndex] = useState(0)
+  const [forward, setForward] = useState(true)
+  const answers = questionAnswers(card, answer)
+  const several = card.questions.length > 1
+  const move = (target: number) => {
+    if (target < 0 || target >= card.questions.length) return
+    setForward(target > index)
+    setIndex(target)
+  }
+  const page = (place: number, live: boolean) => {
+    const given = answers[place]
+    return (
+      <div
+        key={live ? `live-${place}` : `shadow-${place}`}
+        className={classes(
+          'qcard-page',
+          live ? (forward ? 'slide-forward' : 'slide-back') : 'shadow',
+        )}
+        aria-hidden={live ? undefined : true}
+      >
+        <div className="qcard-head">
+          <div className="qcard-prompt quiet">
+            {card.questions[place]!.prompt}
+          </div>
+        </div>
+        {given != null ? (
+          <div className="qcard-answer" aria-label={t`Your answer: ${given}`}>
+            <span className="qcard-check">
+              <Tick />
+            </span>
+            <span>{given}</span>
+          </div>
+        ) : (
+          <div className="qcard-answer skipped">{t('Skipped')}</div>
+        )}
+      </div>
+    )
+  }
+  return (
+    <div className="qcard">
+      <div className="qcard-pages">
+        {card.questions.map((_, place) => page(place, false))}
+        {page(index, true)}
+      </div>
+      {several && (
+        <div className="qcard-foot">
+          <QuestionDots count={card.questions.length} at={index} />
+          <span className="qcard-gap" />
+          <button
+            type="button"
+            className="qcard-pill"
+            disabled={index === 0}
+            onClick={() => move(index - 1)}
+          >
+            {t('Back')}
+          </button>
+          <button
+            type="button"
+            className="qcard-pill"
+            disabled={index >= card.questions.length - 1}
+            onClick={() => move(index + 1)}
+          >
+            {t('Next')}
+          </button>
         </div>
       )}
-      {card.multiSelect && picked.length > 0 && (
-        <div>
-          <CardButton
-            title={t('Submit')}
-            prominent
-            onClick={() =>
-              void store.answer(
-                [...picked]
-                  .sort((a, b) => a - b)
-                  .map((index) => card.options[index]!.value)
-                  .join('\n'),
-                entryId,
-                agentId,
-              )
-            }
-          />
-        </div>
-      )}
-      {card.allowsOwnAnswer && (
-        <div className="question-own">
-          <GrowingField
-            value={own}
-            onChange={setOwn}
-            placeholder={t('Type your own answer')}
-            label={t('Custom answer')}
-            maxLines={6}
-            onReturn={submitOwn}
-          />
-          {own.trim() !== '' && (
-            <CardButton title={t('Submit')} onClick={submitOwn} />
-          )}
-        </div>
-      )}
-    </CardShell>
+    </div>
+  )
+}
+
+/** A choice's letter on a small tile, or our blue round check once picked. */
+function QuestionTile({ letter, picked }: { letter: string; picked: boolean }) {
+  return (
+    <span className={classes('qcard-tile', picked && 'picked')} aria-hidden>
+      {picked ? <Tick /> : letter}
+    </span>
+  )
+}
+
+/** Where the person is among a card's questions. */
+function QuestionDots({ count, at }: { count: number; at: number }) {
+  return (
+    <span
+      className="qcard-dots"
+      role="img"
+      aria-label={t`Question ${at + 1} of ${count}`}
+    >
+      {Array.from({ length: count }, (_, place) => (
+        <span
+          key={place}
+          className={classes('qcard-dot', place === at && 'on')}
+        />
+      ))}
+    </span>
   )
 }
 
@@ -296,6 +552,7 @@ export function GrowingField({
   disabled,
   className,
   id,
+  focusOnOpen,
 }: {
   value: string
   onChange: (value: string) => void
@@ -309,8 +566,13 @@ export function GrowingField({
   className?: string
   /** For a `<label htmlFor>` naming the field. */
   id?: string
+  /** Takes the typing as it appears (a question's "Something else", opened by a click). */
+  focusOnOpen?: boolean
 }) {
   const field = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    if (focusOnOpen) field.current?.focus()
+  }, [focusOnOpen])
   useEffect(() => {
     const box = field.current
     if (!box) return
@@ -487,13 +749,13 @@ export function DraftCardView({
       {editable && (
         <div className="card-buttons">
           <CardButton
+            title={t('Discard')}
+            onClick={() => void store.discardDraft(entryId, agentId)}
+          />
+          <CardButton
             title={email ? t('Send email') : t('Send message')}
             prominent
             onClick={send}
-          />
-          <CardButton
-            title={t('Discard')}
-            onClick={() => void store.discardDraft(entryId, agentId)}
           />
         </div>
       )}
@@ -630,10 +892,10 @@ export function ApprovalCardView({
       {settled === 'pending' && (
         <div className="card-buttons">
           <CardButton
-            title={t('Allow once')}
-            prominent
+            title={t('Deny')}
+            tone="danger"
             disabled={answering}
-            onClick={() => resolve('approved')}
+            onClick={() => resolve('denied')}
           />
           <CardButton
             title={t('Always allow')}
@@ -641,9 +903,10 @@ export function ApprovalCardView({
             onClick={() => resolve('always')}
           />
           <CardButton
-            title={t('Deny')}
+            title={t('Allow once')}
+            prominent
             disabled={answering}
-            onClick={() => resolve('denied')}
+            onClick={() => resolve('approved')}
           />
         </div>
       )}

@@ -66,8 +66,12 @@ final class ChatControl {
   var callOpen: CallOpen? {
     didSet { ChatControl.exchangeShowing = coversChat }
   }
-  /** An exchange or a call is over the chat and its field. */
-  var coversChat: Bool { exchangePeer != nil || callOpen != nil }
+  /** A product of a products card opened over the chat (`MacProductPage`, 10 November 2026), as an exchange. */
+  var productOpen: ProductOpen? {
+    didSet { ChatControl.exchangeShowing = coversChat }
+  }
+  /** An exchange, a call or a product is over the chat and its field. */
+  var coversChat: Bool { exchangePeer != nil || callOpen != nil || productOpen != nil }
   /** An exchange (or a call) is over the chat: its Escape is its own, not the pane's. */
   static var exchangeShowing = false
   /** The exchange's message under the pointer, for the right-click menu: its id and words. */
@@ -161,6 +165,23 @@ final class ChatControl {
     callOpen = nil
     exchangeHovered = nil
   }
+
+  /** A product opens over the chat; the message field, now under it, lets go of the keys. */
+  func openProduct(_ open: ProductOpen) {
+    productOpen = open
+    exchangeHovered = nil
+    NSApp.keyWindow?.makeFirstResponder(nil)
+  }
+
+  func closeProduct() {
+    productOpen = nil
+  }
+}
+
+/** A product of a products card opened over the chat: the card's entry, and the product's place on it (what ‹ and › change). */
+struct ProductOpen: Equatable {
+  let entryId: String
+  let index: Int
 }
 
 // MARK: The hover bar

@@ -350,6 +350,47 @@ test("ShowProducts posts the products card; Buy marks the product and wakes the 
   }
 });
 
+test("ShowProducts carries the agent's comparison: a take, reasons and one badge per product, the store, and up to three replies on the card", async () => {
+  const tool = await load("source/host/runner/tools/purchase-tool.ts", "purchase-tool-takes");
+  try {
+    const cards = [];
+    const show = tool.module.createShowProductsTool({ checkoutFacts: () => undefined, capturePreview: async () => undefined, emitCard: (posted) => { cards.push(posted); return `t3s${cards.length}`; }, markPurchaseDone: async () => ({ ok: true }) });
+    assert.match(show.descriptionGenerator(), /take/);
+    assert.match(show.descriptionGenerator(), /badge/);
+    assert.match(show.descriptionGenerator(), /replies/);
+    const pink = { title: "Possibly Pink", url: "https://www.canadaflowers.ca/p/pink", price: "CA$62.00", store: " Canada Flowers ", take: "Pink, mauve, peach and lavender in a pink vase", reasons: ["Best-reviewed of the four", " "], badge: "Top rated", rating: 5, review_count: 33, image_url: "https://www.canadaflowers.ca/pink.jpg" };
+    const blossoms = { title: "Love Blossoms", url: "https://www.canadaflowers.ca/p/love", price: "CA$53.00", store: "Canada Flowers", take: "Soft pink and white, cheapest of the four", reasons: ["Lowest price, still highly rated"] };
+    const shown = await run(show, { products: [pink, blossoms], replies: ["Get Possibly Pink", "Get Love Blossoms", "Show me roses"] });
+    assert.match(shown, /products card is in the chat \(entry t3s1\)/);
+    assert.match(shown, /chips under it/);
+    assert.doesNotMatch(shown, /Next time give each product a take/);
+    const [card] = cards;
+    assert.deepEqual(card.replies, ["Get Possibly Pink", "Get Love Blossoms", "Show me roses"]);
+    assert.equal(card.products[0].store, "Canada Flowers");
+    assert.equal(card.products[0].take, "Pink, mauve, peach and lavender in a pink vase");
+    assert.deepEqual(card.products[0].reasons, ["Best-reviewed of the four"], "an empty reason is left out");
+    assert.equal(card.products[0].badge, "Top rated");
+    assert.deepEqual(card.products[1].reasons, ["Lowest price, still highly rated"]);
+    assert.equal(card.products[1].badge, undefined);
+    assert.equal(card.content, "Possibly Pink · CA$62.00; Love Blossoms · CA$53.00", "an older app's words are as before");
+
+    // A card without the comparison (as before 10 November 2026): still posted, nothing new on it, the agent reminded.
+    const plain = await run(show, { products: [{ title: "Sketch pack", url: "https://gumroad.com/l/sketch", description: "A pack. Of sketches." }, { title: "Water book", url: "https://gumroad.com/l/water" }] });
+    assert.match(plain, /Next time give each product a take/);
+    assert.equal(cards[1].replies, undefined);
+    assert.deepEqual(Object.keys(cards[1].products[0]).sort(), ["description", "domain", "title", "url"]);
+
+    // One badge on a card at most, of two words at most; three replies at most.
+    assert.match(await run(show, { products: [pink, { ...blossoms, badge: "Best value" }] }), /Only one product of the card can have a badge/);
+    assert.match(await run(show, { products: [{ ...pink, badge: "The best rated one" }] }), /badge is two words at most/);
+    await assert.rejects(run(show, { products: [pink], replies: ["a", "b", "c", "d"] }), /replies/);
+    await assert.rejects(run(show, { products: [{ ...pink, reasons: ["a", "b", "c", "d"] }] }), /reasons/);
+    assert.equal(cards.length, 2, "a refused card is never posted");
+  } finally {
+    await tool.dispose();
+  }
+});
+
 test("a purchase that ends settles the products card: Bought once ordered at the pressed product's store, Buying gone otherwise", async () => {
   const words = await load("source/shared/node/link-wallet/product-card.ts", "product-card-bought");
   const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-cards-bought");
@@ -513,5 +554,7 @@ test("the card is wired: the gateway takes answerPurchase, the turn ends on the 
   assert.equal((await src("host/extensions/transcript/send-message-shaping.ts")).match(/"purchase",/g)?.length, 2);
   const prompt = await src("host/runner/system-prompt.ts");
   for (const words of ["You can buy things for the user", "RequestPurchase", "get_wallet", "pay_checkout", "MarkPurchaseDone", "never for card details"]) assert.ok(prompt.includes(words), words);
+  // The products card's comparison (10 November 2026): a take, reasons, one badge at most, replies.
+  for (const words of ["Compare the set", "take (one short line", "one to three reasons", "a badge (two words", "or on none", "up to three replies"]) assert.ok(prompt.includes(words), words);
   assert.match(await src("host/runner/prompt-collector-glue.ts"), /press Place order \(or Pay\) once/);
 });

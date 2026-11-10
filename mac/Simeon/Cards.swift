@@ -7,8 +7,8 @@ import SimeonCore
  * The cards an agent sends into the chat, copied from the Electron
  * window's (measured from its Gallery chat, mac/STEPS.md step 2c). Every
  * card is as wide as a message may be (88% of the chat, 640, or the chat
- * less 82), grey like an agent's bubble, 16 round, padded 12, its parts 10
- * apart.
+ * less 82), grey like an agent's bubble, its parts 10 apart; 20 round and
+ * padded 14 by 16 since 10 November 2026, as the question card.
  */
 struct CardShell<Content: View>: View {
   let look: Look
@@ -19,10 +19,11 @@ struct CardShell<Content: View>: View {
     VStack(alignment: .leading, spacing: spacing) {
       content()
     }
-    .padding(12)
+    .padding(.vertical, 14)
+    .padding(.horizontal, 16)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
-    .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
     .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
@@ -54,43 +55,65 @@ struct StatusPill: View {
   }
 }
 
-/** The window's two button kinds on a card: the blue one and the plain one (14 on 22, 32 high, 8 round). */
+/**
+ * A card's buttons (10 November 2026, the question card's; the founder: "go for your suggestions"): pills 32 high, the
+ * main one (`prominent`) in our blue (the founder: "make them our blue"), the others grey, `danger` in red words;
+ * `money` is the same blue, for paying. A card puts them at its right, the main one last.
+ */
 struct CardButton: View {
+  enum Tone { case plain, danger, money }
   let title: String
   var prominent = false
+  var tone: Tone = .plain
   let look: Look
   let action: () -> Void
+  @Environment(\.isEnabled) private var enabled
+  @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
       Text(title)
-        .font(.system(size: 14))
-        .foregroundStyle(prominent ? Color.white : look.ink)
+        .font(.system(size: 13.5, weight: .medium))
+        .foregroundStyle(ink)
         .lineLimit(1)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         .frame(height: 32)
-        .background(prominent ? look.yours : look.wash, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-          if !prominent { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 8))
+        .background(fill, in: Capsule())
+        .contentShape(Capsule())
     }
     .buttonStyle(.hand)
+    .opacity(enabled ? 1 : 0.4)
+    .onHover { hovering = $0 }
     .fixedSize()
+  }
+
+  private var ink: Color {
+    if prominent || tone == .money { return .white }
+    return tone == .danger ? look.danger : look.ink
+  }
+
+  private var fill: Color {
+    if prominent || tone == .money { return look.yours.opacity(hovering && enabled ? 0.88 : 1) }
+    return look.ink.opacity(hovering && enabled ? (look.dark ? 0.12 : 0.10) : (look.dark ? 0.08 : 0.06))
   }
 }
 
 // MARK: Questions
 
 /**
- * A question (`sand-widget--choices`): the question (14 on 20, 500) and its
- * help under it (60%), the X that dismisses it at the right; the choices in
- * one box, each with an empty ring, its label and its line under it, a
- * hairline between; then "Type your own answer" when the agent allows one,
- * with Submit once something is written. Answered, the card keeps the
- * question and the answer with a blue tick; dismissed, the question at 60%
- * and a "Dismissed" pill. The iPhone's card, at the Mac's sizes (the founder,
- * 27 October 2026: the lettered rings and the grey tick were the window's).
+ * A question card (10 November 2026, the founder's reference: "change our
+ * card style to this. but keep the round check and our blue color"): the
+ * question in bold, its help under it; each choice in a row with its letter
+ * on a small tile (A, B, C…) that becomes our blue round check once picked;
+ * "Something else" last when the agent allows an answer of the person's own,
+ * which opens a field in its row. A card may ask several questions ("have
+ * the thing swipe when there's many questions"): one shows at a time and
+ * slides to the next, dots at the foot say where the person is, and Back,
+ * Skip and Next (Send on the last) carry them through; the answers go
+ * together, a line each (`QuestionCard.reply`). A pick moves on by itself,
+ * and on the last question sends. Skip on a card of one question declines
+ * it, as the X did. Answered, the card keeps each question in grey with its
+ * answer under a blue round check, Back and Next to look through several.
  */
 struct QuestionCardView: View {
   let entryId: String
@@ -98,171 +121,436 @@ struct QuestionCardView: View {
   let card: QuestionCard
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var own = ""
-  /** Several picked at once (`multiSelect`), sent together with Submit. */
-  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
     if card.isDismissed || card.isSkipped || pending == "" {
-      CardShell(look: look) {
+      VStack(alignment: .leading, spacing: 10) {
         Text(card.prompt)
-          .font(.system(size: 14, weight: .medium))
+          .font(.system(size: 15, weight: .semibold))
           .foregroundStyle(look.inkSecondary)
-          .cssLineHeight(20, size: 14, weight: .medium)
+          .fixedSize(horizontal: false, vertical: true)
         StatusPill(text: String(localized: "Dismissed"), look: look)
       }
+      .padding(.horizontal, 8)
+      .questionCard(look)
     } else if let answer = card.answer ?? pending {
-      CardShell(look: look) {
-        Text(card.prompt)
-          .font(.system(size: 14, weight: .medium))
-          .foregroundStyle(look.ink)
-          .cssLineHeight(20, size: 14, weight: .medium)
-        HStack(spacing: 8) {
-          Image(systemName: "checkmark")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(look.blue)
-            .frame(width: 18, height: 18)
-          Text(card.shown(answer))
-            .font(.system(size: 14))
-            .foregroundStyle(look.ink)
-            .cssLineHeight(20, size: 14)
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Your answer: \(card.shown(answer))")
-      }
+      AnsweredQuestionsView(card: card, answer: answer, look: look)
     } else {
-      open
+      AskingQuestionsView(entryId: entryId, agentId: agentId, card: card, look: look)
     }
-  }
-
-  private var open: some View {
-    CardShell(look: look) {
-      HStack(alignment: .top, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(card.prompt)
-            .font(.system(size: 14, weight: .medium))
-            .foregroundStyle(look.ink)
-            .cssLineHeight(20, size: 14, weight: .medium)
-          if let help = card.help, !help.isEmpty {
-            Text(help)
-              .font(.system(size: 14))
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(20, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        Button {
-          Task { await store.dismissQuestion(entryId, in: agentId) }
-        } label: {
-          Image(systemName: "xmark")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(look.inkSecondary)
-            .frame(width: 20, height: 20)
-            .contentShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.hand)
-        .help("Dismiss without answering")
-        .accessibilityLabel("Dismiss question")
-      }
-      if !card.options.isEmpty {
-        VStack(spacing: 0) {
-          ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
-            if index > 0 { Rectangle().fill(look.ink.opacity(0.1)).frame(height: 1) }
-            // Picking sends the option's own reply (`value`); several picked go together with Submit.
-            OptionRow(option: option, look: look, picked: picked.contains(index)) {
-              if card.multiSelect {
-                if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
-              } else {
-                Task { await store.answer(option.value, card: entryId, in: agentId) }
-              }
-            }
-          }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-      }
-      if card.multiSelect && !picked.isEmpty {
-        CardButton(title: String(localized: "Submit"), prominent: true, look: look) {
-          let values = picked.sorted().map { card.options[$0].value }.joined(separator: "\n")
-          Task { await store.answer(values, card: entryId, in: agentId) }
-        }
-      }
-      if card.allowsOwnAnswer {
-        HStack(alignment: .top, spacing: 8) {
-          TextField("", text: $own, prompt: Text("Type your own answer").foregroundStyle(look.placeholder), axis: .vertical)
-            .textFieldStyle(.plain)
-            .font(.system(size: 14))
-            .lineLimit(1...6)
-            .padding(.vertical, 5)
-            .padding(.horizontal, 10)
-            .frame(minHeight: 30)
-            .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-            .onSubmit(submit)
-            .accessibilityLabel("Custom answer")
-          if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            CardButton(title: String(localized: "Submit"), look: look, action: submit)
-          }
-        }
-      }
-    }
-  }
-
-  private func submit() {
-    let words = own.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !words.isEmpty else { return }
-    own = ""
-    Task { await store.answer(words, card: entryId, in: agentId) }
   }
 }
 
-/**
- * One choice (`sand-widget-option`): padded 8, an empty 18-point ring at 30% as the iPhone's (a blue tick once picked
- * for a several-at-once answer), its label (14 on 20; blue for the recommended path, red for a destructive one) and
- * line under it (60%).
- */
-private struct OptionRow: View {
-  let option: QuestionOption
+/** The questions being asked, one at a time. */
+private struct AskingQuestionsView: View {
+  let entryId: String
+  let agentId: String
+  let card: QuestionCard
   let look: Look
-  var picked = false
+  @Environment(AppStore.self) private var store
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+  /** The options picked, by question. */
+  @State private var picks: [Int: Set<Int>] = [:]
+  /** The words typed under "Something else", by question. */
+  @State private var own: [Int: String] = [:]
+  /** The question whose "Something else" field is open. */
+  @State private var writing: Int?
+  @State private var sending = false
+  @FocusState private var typing: Int?
+
+  private var questions: [QuestionCard.Question] { card.questions }
+  private var isLast: Bool { index >= questions.count - 1 }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      ZStack(alignment: .topLeading) {
+        // Every question, unseen, holds the card at the tallest one's height, so it never jumps as it slides.
+        ForEach(questions.indices, id: \.self) { at in
+          page(at, live: false).hidden().accessibilityHidden(true)
+        }
+        page(index, live: true)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      footer
+    }
+    .questionCard(look)
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  private func page(_ at: Int, live: Bool) -> some View {
+    let question = questions[at]
+    return VStack(alignment: .leading, spacing: 10) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(question.prompt)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+        if let help = question.help, !help.isEmpty {
+          Text(help)
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .padding(.horizontal, 8)
+      VStack(spacing: 2) {
+        ForEach(Array(question.options.enumerated()), id: \.offset) { place, option in
+          LetteredOptionRow(letter: Self.letter(place), option: option, picked: picks[at, default: []].contains(place), look: look) {
+            choose(place, in: at)
+          }
+        }
+        if question.allowsOwnAnswer { ownRow(at, live: live) }
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  /** "Something else": its letter and grey words, a field in the row once clicked. */
+  private func ownRow(_ at: Int, live: Bool) -> some View {
+    let words = own[at, default: ""]
+    let open = writing == at || !words.isEmpty
+    let given = !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    return QuestionRowFrame(picked: given, look: look) {
+      QuestionTile(letter: Self.letter(questions[at].options.count), picked: given, look: look)
+      if open {
+        TextField("", text: Binding(get: { own[at, default: ""] }, set: { typed in
+          own[at] = typed
+          // One answer to a question of one: the words replace a pick.
+          if !questions[at].multiSelect && !typed.isEmpty { picks[at] = [] }
+        }), prompt: Text("Something else").foregroundStyle(look.placeholder), axis: .vertical)
+          .textFieldStyle(.plain)
+          .font(.system(size: 14.5))
+          .foregroundStyle(look.ink)
+          .lineLimit(1...4)
+          .focused($typing, equals: live ? at : -1 - at)
+          .onSubmit(next)
+          .accessibilityLabel("Your own answer")
+      } else {
+        Text("Something else")
+          .font(.system(size: 14.5))
+          .foregroundStyle(look.placeholder)
+      }
+    } action: {
+      writing = at
+      // The field appears with this change; it takes the typing on the next beat, once it is there.
+      Task { typing = at }
+    }
+  }
+
+  private var footer: some View {
+    HStack(spacing: 8) {
+      if questions.count > 1 { QuestionDots(count: questions.count, at: index, look: look) }
+      Spacer(minLength: 0)
+      if index > 0 {
+        QuestionPill(title: String(localized: "Back"), look: look) { move(to: index - 1) }
+      }
+      QuestionPill(title: String(localized: "Skip"), look: look, action: skip)
+        .help(questions.count > 1 ? String(localized: "Skip this question") : String(localized: "Dismiss without answering"))
+      QuestionPill(title: isLast ? String(localized: "Send") : String(localized: "Next"), prominent: true, look: look, action: next)
+        .disabled(answer(index) == nil || sending)
+    }
+    .padding(.horizontal, 8)
+  }
+
+  static func letter(_ place: Int) -> String {
+    let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    return String(letters[max(0, min(place, letters.count - 1))])
+  }
+
+  /** The answer given to one question: the options picked (one per line), else, or with them for several, the words typed. */
+  private func answer(_ at: Int) -> String? {
+    guard questions.indices.contains(at) else { return nil }
+    let question = questions[at]
+    let words = own[at, default: ""].trimmingCharacters(in: .whitespacesAndNewlines)
+    // Each pick sends the option's own reply (`value`), never its label.
+    let chosen = picks[at, default: []].sorted().compactMap { place in question.options.indices.contains(place) ? question.options[place] : nil }.map { option in option.value }
+    let all = question.multiSelect ? chosen + (words.isEmpty ? [] : [words]) : (words.isEmpty ? chosen : [words])
+    return all.isEmpty ? nil : all.joined(separator: "\n")
+  }
+
+  private func choose(_ place: Int, in at: Int) {
+    guard !sending else { return }
+    if questions[at].multiSelect {
+      var now = picks[at, default: []]
+      if now.contains(place) { now.remove(place) } else { now.insert(place) }
+      picks[at] = now
+      return
+    }
+    picks[at] = [place]
+    own[at] = ""
+    writing = nil
+    // A pick moves on by itself once its check has shown: to the next question, or, on the last, sends.
+    Task {
+      try? await Task.sleep(for: .milliseconds(220))
+      if index == at, picks[at, default: []] == Set([place]) { next() }
+    }
+  }
+
+  private func move(to target: Int) {
+    guard questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    writing = nil
+    typing = nil
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+
+  private func next() {
+    guard !sending, answer(index) != nil else { return }
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  /** Skip: this question goes unanswered; on a card of one, the card is declined. */
+  private func skip() {
+    guard !sending else { return }
+    picks[index] = []
+    own[index] = ""
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  private func send() {
+    sending = true
+    let reply = card.reply(questions.indices.map(answer))
+    Task {
+      if let reply { await store.answer(reply, card: entryId, in: agentId) } else { await store.dismissQuestion(entryId, in: agentId) }
+      sending = false
+    }
+  }
+}
+
+/** The answers given: each question in grey with its answer under a blue round check, one at a time for several. */
+private struct AnsweredQuestionsView: View {
+  let card: QuestionCard
+  let answer: String
+  let look: Look
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+
+  var body: some View {
+    let answers = card.answers(answer)
+    VStack(alignment: .leading, spacing: 12) {
+      ZStack(alignment: .topLeading) {
+        ForEach(card.questions.indices, id: \.self) { at in
+          page(at, answers).hidden().accessibilityHidden(true)
+        }
+        page(index, answers)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      if card.asksSeveral {
+        HStack(spacing: 8) {
+          QuestionDots(count: card.questions.count, at: index, look: look)
+          Spacer(minLength: 0)
+          QuestionPill(title: String(localized: "Back"), look: look) { move(to: index - 1) }
+            .disabled(index == 0)
+          QuestionPill(title: String(localized: "Next"), look: look) { move(to: index + 1) }
+            .disabled(index >= card.questions.count - 1)
+        }
+        .padding(.horizontal, 8)
+      }
+    }
+    .questionCard(look)
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  private func page(_ at: Int, _ answers: [String?]) -> some View {
+    let given = at < answers.count ? answers[at] : nil
+    return VStack(alignment: .leading, spacing: 10) {
+      Text(card.questions[at].prompt)
+        .font(.system(size: 15, weight: .semibold))
+        .foregroundStyle(look.inkSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: 12) {
+        if let given {
+          Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 22))
+            .foregroundStyle(look.blue)
+            .frame(width: 24, height: 24)
+          Text(given)
+            .font(.system(size: 14.5))
+            .foregroundStyle(look.ink)
+            .fixedSize(horizontal: false, vertical: true)
+        } else {
+          Text("Skipped")
+            .font(.system(size: 14.5))
+            .foregroundStyle(look.inkTertiary)
+        }
+        Spacer(minLength: 0)
+      }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(given.map { String(localized: "Your answer: \($0)") } ?? String(localized: "Skipped"))
+    }
+    .padding(.horizontal, 8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func move(to target: Int) {
+    guard card.questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+}
+
+/** One choice: its letter on a tile (our blue round check once picked), its label (blue for the recommended path, red for a destructive one) and its line under it. */
+private struct LetteredOptionRow: View {
+  let letter: String
+  let option: QuestionOption
+  let picked: Bool
+  let look: Look
+  let action: () -> Void
+
+  var body: some View {
+    QuestionRowFrame(picked: picked, look: look) {
+      QuestionTile(letter: letter, picked: picked, look: look)
+      VStack(alignment: .leading, spacing: 1) {
+        Text(option.label)
+          .font(.system(size: 14.5, weight: option.style == .primary ? .medium : .regular))
+          .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
+          .multilineTextAlignment(.leading)
+          .fixedSize(horizontal: false, vertical: true)
+        if let line = option.description, !line.isEmpty {
+          Text(line)
+            .font(.system(size: 13))
+            .foregroundStyle(look.inkSecondary)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+    } action: {
+      action()
+    }
+    .accessibilityAddTraits(picked ? .isSelected : [])
+  }
+}
+
+/** A choice's row: 12 round, the hover's grey, a lighter grey once picked. */
+private struct QuestionRowFrame<Content: View>: View {
+  let picked: Bool
+  let look: Look
+  @ViewBuilder let content: () -> Content
   let action: () -> Void
   @State private var hovering = false
 
   var body: some View {
     Button(action: action) {
-      HStack(spacing: 8) {
-        if picked {
-          Image(systemName: "checkmark.circle.fill")
-            .font(.system(size: 16))
-            .foregroundStyle(look.blue)
-            .frame(width: 18, height: 18)
-        } else {
-          Circle()
-            .strokeBorder(look.ink.opacity(0.3), lineWidth: 1)
-            .frame(width: 18, height: 18)
-        }
-        VStack(alignment: .leading, spacing: 0) {
-          Text(option.label)
-            .font(.system(size: 14, weight: option.style == .primary ? .medium : .regular))
-            .foregroundStyle(option.style == .danger ? look.danger : option.style == .primary ? look.blue : look.ink)
-            .cssLineHeight(20, size: 14)
-          if let line = option.description, !line.isEmpty {
-            Text(line)
-              .font(.system(size: 14))
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(20, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+      HStack(alignment: .center, spacing: 12) {
+        content()
+        Spacer(minLength: 0)
       }
-      .padding(8)
-      .background(hovering ? look.rowHover : Color.clear)
-      .contentShape(Rectangle())
+      .padding(.vertical, 7)
+      .padding(.horizontal, 8)
+      .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(picked ? look.ink.opacity(look.dark ? 0.08 : 0.06) : hovering ? look.rowHover : Color.clear))
+      .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
     .buttonStyle(.hand)
     .onHover { hovering = $0 }
+  }
+}
+
+/** A choice's letter on a small tile, or our blue round check once picked. */
+private struct QuestionTile: View {
+  let letter: String
+  let picked: Bool
+  let look: Look
+
+  var body: some View {
+    ZStack {
+      if picked {
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: 22))
+          .foregroundStyle(look.blue)
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
+      } else {
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
+          .fill(look.ink.opacity(look.dark ? 0.06 : 0.04))
+          .overlay { RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(look.ink.opacity(0.1), lineWidth: 1) }
+          .overlay {
+            Text(letter)
+              .font(.system(size: 12, weight: .medium))
+              .foregroundStyle(look.inkSecondary)
+          }
+          .transition(.opacity)
+      }
+    }
+    .frame(width: 24, height: 24)
+    .animation(.spring(response: 0.25, dampingFraction: 0.8), value: picked)
+    .accessibilityHidden(true)
+  }
+}
+
+/** Where the person is among a card's questions. */
+private struct QuestionDots: View {
+  let count: Int
+  let at: Int
+  let look: Look
+
+  var body: some View {
+    HStack(spacing: 6) {
+      ForEach(0..<count, id: \.self) { place in
+        Circle()
+          .fill(look.ink.opacity(place == at ? 0.5 : 0.14))
+          .frame(width: 7, height: 7)
+      }
+    }
+    .animation(.easeOut(duration: 0.2), value: at)
+    .accessibilityElement()
+    .accessibilityLabel(Text("Question \(at + 1) of \(count)"))
+  }
+}
+
+/** The card's buttons: grey capsules, Next and Send in our blue. */
+private struct QuestionPill: View {
+  let title: String
+  var prominent = false
+  let look: Look
+  let action: () -> Void
+  @Environment(\.isEnabled) private var enabled
+
+  var body: some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 13.5, weight: .medium))
+        .foregroundStyle(prominent ? Color.white : look.ink)
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .frame(height: 32)
+        .background(prominent ? look.yours : look.ink.opacity(look.dark ? 0.08 : 0.06), in: Capsule())
+        .contentShape(Capsule())
+    }
+    .buttonStyle(.hand)
+    .opacity(enabled ? 1 : 0.4)
+    .fixedSize()
+  }
+}
+
+private extension View {
+  /** A question card's ground: the agent's grey, 20 round. */
+  func questionCard(_ look: Look) -> some View {
+    self
+      .padding(.horizontal, 10)
+      .padding(.top, 14)
+      .padding(.bottom, 12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
+      .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
 
@@ -361,14 +649,16 @@ struct DraftCardView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
         }
       }
-      .background(look.ground, in: RoundedRectangle(cornerRadius: 10))
-      .clipShape(RoundedRectangle(cornerRadius: 10))
+      // Rounded as every writing box (the founder, 10 November 2026).
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
       if editable {
         HStack(spacing: 8) {
-          CardButton(title: card.kind == .email ? String(localized: "Send email") : String(localized: "Send message"), prominent: true, look: look, action: send)
+          Spacer(minLength: 0)
           CardButton(title: String(localized: "Discard"), look: look) {
             Task { await store.discardDraft(entryId, in: agentId) }
           }
+          CardButton(title: card.kind == .email ? String(localized: "Send email") : String(localized: "Send message"), prominent: true, look: look, action: send)
         }
       }
     }
@@ -704,9 +994,10 @@ struct ApprovalCardView: View {
       }
       if settled == "pending" {
         HStack(spacing: 8) {
-          CardButton(title: String(localized: "Allow once"), prominent: true, look: look) { resolve("approved") }
+          Spacer(minLength: 0)
+          CardButton(title: String(localized: "Deny"), tone: .danger, look: look) { resolve("denied") }
           CardButton(title: String(localized: "Always allow"), look: look) { resolve("always") }
-          CardButton(title: String(localized: "Deny"), look: look) { resolve("denied") }
+          CardButton(title: String(localized: "Allow once"), prominent: true, look: look) { resolve("approved") }
         }
         .disabled(answering)
       }
@@ -821,21 +1112,14 @@ struct ListenerConnectCardView: View {
             Text("Connected").font(.system(size: 12, weight: .medium)).foregroundStyle(look.ink)
           }
         } else if connected == false {
-          Button {
+          // The cards' main pill, in our blue (10 November 2026).
+          CardButton(title: String(localized: "Connect"), prominent: true, look: look) {
             opening = true
             Task {
               if let url = await store.listenerConnectURL(platform) { NSWorkspace.shared.open(url) }
               opening = false
             }
-          } label: {
-            Text("Connect")
-              .font(.system(size: 13, weight: .medium))
-              .foregroundStyle(look.dark ? Color.black : Color.white)
-              .padding(.horizontal, 10)
-              .frame(height: 24)
-              .background(look.ink, in: RoundedRectangle(cornerRadius: 6))
           }
-          .buttonStyle(.hand)
           .disabled(opening)
         } else {
           ProgressView().controlSize(.small)
@@ -854,25 +1138,104 @@ struct ListenerConnectCardView: View {
   }
 }
 
+// MARK: The parts the asking cards share
+
+/**
+ * A card's kind at its top, as the founder's references put it (10 November
+ * 2026): a 28 tile (8 round, the ink at 6%, a hairline) with the kind's
+ * symbol, its name (14), and what happened in a pill at the right.
+ */
+struct CardKindHead<End: View>: View {
+  let symbol: String
+  let name: String
+  let look: Look
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: symbol)
+        .font(.system(size: 13, weight: .regular))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .background(look.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(look.ink.opacity(0.14), lineWidth: 0.5) }
+        .accessibilityHidden(true)
+      Text(name)
+        .font(.system(size: 14))
+        .tracking(-0.15)
+        .foregroundStyle(look.ink)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      end()
+    }
+    .frame(minHeight: 28)
+  }
+}
+
+extension CardKindHead where End == EmptyView {
+  init(symbol: String, name: String, look: Look) {
+    self.init(symbol: symbol, name: name, look: look) { EmptyView() }
+  }
+}
+
+/** `checkmark.shield` and its line (13), at 40%: kept safe, never shown to the agent. */
+struct CardShieldLine: View {
+  let words: String
+  let look: Look
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 5) {
+      Image(systemName: "checkmark.shield")
+        .font(.system(size: 12))
+        .padding(.top, 1)
+      Text(words)
+        .font(.system(size: 13))
+        .tracking(-0.08)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .foregroundStyle(look.inkTertiary)
+  }
+}
+
+extension View {
+  /**
+   * A field on a card or a secure form: 14, 36 high, padded 12 at the
+   * sides, on the ground, 12 round with a line at 15% (the founder, 10
+   * November 2026: "all writing boxes should be rounded too").
+   */
+  func cardField(_ look: Look, height: CGFloat? = 36) -> some View {
+    self
+      .textFieldStyle(.plain)
+      .font(.system(size: 14))
+      .padding(.horizontal, 12)
+      .padding(.vertical, height == nil ? 9 : 0)
+      .frame(height: height)
+      .background(look.ground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+      .overlay { RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+  }
+}
+
 // MARK: Secrets
 
 /**
- * A secret the agent asks for (`sand-secret-request`): its name (14 on 22,
- * 500) and why (60%); a field ("Paste your <name>", on the ground with a
- * 15% edge, 32 high) and Save securely in the blue; under them a lock and
- * "Stored securely, never shown to your agent." (13, 40%). Once the
- * computer says it has it (the entry's `secretProvided`, as the window's
- * card reads `isProvided`): "Saved securely and kept private." and a
- * "Saved" pill. A save on its way only greys Save securely; one the
- * computer didn't keep leaves the field and Save securely there.
+ * A secret the agent asks for (`sand-secret-request`), as the founder's
+ * reference draws it (10 November 2026): "Secrets" at the top with a key;
+ * the secret's name (15, 600) and why; the variable it is kept under over
+ * its field when the agent named one ("AWS_ACCESS_KEY_ID"); the field, 36
+ * high and 12 round; then a shield and "Stored securely, never shown to
+ * your agent." with Not now and Save securely at the right. Once the
+ * computer says it has it (the entry's `secretProvided`): "Saved securely
+ * and kept private." and a "Saved" pill. A save on its way only greys Save
+ * securely; one the computer didn't keep leaves the field there.
  */
 struct SecretCardView: View {
   let entryId: String
   let agentId: String
   let label: String
   let description: String
+  /** The variable it is kept under on the computer, when the agent named one. */
+  var variable: String? = nil
   let provided: Bool
-  /** Dismissed with its X: a decline the agent is told (`dismissWidget`). */
+  /** Dismissed with Not now: a decline the agent is told (`dismissWidget`). */
   var dismissed = false
   let look: Look
   @Environment(AppStore.self) private var store
@@ -880,67 +1243,55 @@ struct SecretCardView: View {
   @State private var saving = false
 
   var body: some View {
-    CardShell(look: look) {
-      HStack(alignment: .top, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(label)
-            .font(.system(size: 14, weight: .medium))
-            .tracking(-0.15)
-            .foregroundStyle(look.ink)
-            .cssLineHeight(22, size: 14, weight: .medium)
-          let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
-          if !line.isEmpty {
-            Text(line)
-              .font(.system(size: 14))
-              .tracking(-0.15)
-              .foregroundStyle(look.inkSecondary)
-              .cssLineHeight(22, size: 14)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    CardShell(look: look, spacing: 12) {
+      CardKindHead(symbol: "key.horizontal", name: String(localized: "Secrets"), look: look) {
         if provided {
           StatusPill(text: String(localized: "Saved"), look: look, dot: look.working)
         } else if dismissed {
           StatusPill(text: String(localized: "Dismissed"), look: look)
-        } else {
-          Button {
-            Task { await store.dismissQuestion(entryId, in: agentId) }
-          } label: {
-            Image(systemName: "xmark")
-              .font(.system(size: 11, weight: .medium))
-              .foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20)
-              .contentShape(RoundedRectangle(cornerRadius: 6))
-          }
-          .buttonStyle(.hand)
-          .help("Dismiss without giving it")
-          .accessibilityLabel("Dismiss request")
+        }
+      }
+      VStack(alignment: .leading, spacing: 2) {
+        Text(label)
+          .font(.system(size: 15, weight: .semibold))
+          .tracking(-0.2)
+          .foregroundStyle(dismissed ? look.inkSecondary : look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+        let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
+        if !line.isEmpty {
+          Text(line)
+            .font(.system(size: 14))
+            .tracking(-0.15)
+            .foregroundStyle(look.inkSecondary)
+            .cssLineHeight(20, size: 14)
+            .fixedSize(horizontal: false, vertical: true)
         }
       }
       if !(provided || dismissed) {
-        HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
+          if let variable {
+            Text(verbatim: variable)
+              .font(.system(size: 13))
+              .tracking(0.2)
+              .foregroundStyle(look.inkSecondary)
+              .textSelection(.enabled)
+          }
           SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(look.placeholder))
-            .textFieldStyle(.plain)
-            .font(.system(size: 14))
-            .padding(.vertical, 6)
-            .padding(.horizontal, 10)
-            .frame(height: 32)
-            .background(look.ground, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
+            .cardField(look)
             .onSubmit(save)
+        }
+        HStack(alignment: .center, spacing: 8) {
+          CardShieldLine(words: String(localized: "Stored securely, never shown to your agent."), look: look)
+          Spacer(minLength: 8)
+          // Not now declines it, as the X did (10 November 2026).
+          CardButton(title: String(localized: "Not now"), look: look) {
+            Task { await store.dismissQuestion(entryId, in: agentId) }
+          }
+          .disabled(saving)
+          .help("Dismiss without giving it")
           CardButton(title: String(localized: "Save securely"), prominent: true, look: look, action: save)
             .disabled(saving || value.isEmpty)
         }
-        HStack(alignment: .top, spacing: 4) {
-          Image(systemName: "lock.fill")
-            .font(.system(size: 9))
-            .frame(width: 12, height: 12)
-            .padding(.top, 3)
-          Text("Stored securely, never shown to your agent.")
-            .font(.system(size: 13))
-            .tracking(-0.08)
-        }
-        .foregroundStyle(look.inkTertiary)
       }
     }
   }
@@ -1568,20 +1919,17 @@ struct AirlineMark: View {
 
 /**
  * The agent hands the person its computer (`simeon-handoff`, at most 520
- * wide on a Mac, 20 round, padded 16, its parts 14 apart): a white tile (44,
- * 12 round) with a screen, "Your turn on the computer" (15, 600) over
- * "Waiting for you" beside a pulsing blue dot; the agent's instruction (15
- * on 21); then a Mac's row of buttons (21 October 2026, the founder: the
- * cards were an iPhone's, "and not a mac"): Skip quiet at the left, a grey
- * I'm done and Take over in the blue at the right, each as wide as its
- * words. Once settled: "Computer" with what happened in a pill at
- * its right, as the email card has its state (Done and Answered in green,
- * Skipped in blue, Canceled in red; the founder, 16 October 2026), the
- * instruction in grey, and Open computer. While it
- * waits, the screen's snapshot (when the computer sent one) sits over the
- * buttons; it, Take over and Open computer open the computer over the
- * window (step 13). It waits while the computer carries this request or
- * while the request has no answer yet (decision 3, `HandoffCardState`).
+ * wide on a Mac, 20 round, padded 16, its parts 14 apart), as the
+ * founder's reference draws it (10 November 2026): "Computer" at the top
+ * with a laptop; "Action needed" (16, 600) over the agent's instruction in
+ * grey; while it waits, the screen's snapshot (when the computer sent one)
+ * across the whole card; then Skip, I'm done and Take over (our blue) at
+ * the right. Once settled: what happened in a pill at the top (Done and
+ * Answered in green, Skipped in blue, Canceled in red; the founder, 16
+ * October 2026), the instruction, and Open computer. The snapshot, Take
+ * over and Open computer open the computer over the window (step 13). It
+ * waits while the computer carries this request or while the request has
+ * no answer yet (decision 3, `HandoffCardState`).
  */
 struct ComputerHandoffCard: View {
   let agentId: String
@@ -1596,49 +1944,37 @@ struct ComputerHandoffCard: View {
   private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
   private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
   private var fill: Color { look.dark ? Color(hex: 0x3a3a3c) : Color.white }
-  private var blue: Color { look.dark ? Color(hex: 0x2f6db0) : Color(hex: 0x255a93) }
 
   var body: some View {
     let state = HandoffCardState.of(requestId: requestId, instruction: instruction, resolution: resolution, status: store.computer.status(agentId))
     let waiting = state.waiting
     let words = state.instruction.trimmingCharacters(in: .whitespacesAndNewlines)
     VStack(alignment: .leading, spacing: 14) {
-      HStack(spacing: 12) {
-        Image(systemName: "display")
-          .font(.system(size: 18, weight: .regular))
-          .foregroundStyle(ink)
-          .frame(width: 44, height: 44)
-          .background(fill, in: RoundedRectangle(cornerRadius: 12))
-        if waiting {
-          VStack(alignment: .leading, spacing: 1) {
-            Text("Your turn on the computer")
-              .font(.system(size: 15, weight: .semibold))
-              .foregroundStyle(ink)
-            HStack(spacing: 6) {
-              HandoffDot(waiting: true, blue: blue, grey: grey)
-              Text("Waiting for you")
-                .font(.system(size: 13))
-                .foregroundStyle(grey)
-            }
-          }
-        } else {
-          Text("Computer")
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(ink)
-            .frame(maxWidth: .infinity, alignment: .leading)
+      CardKindHead(symbol: "laptopcomputer", name: String(localized: "Computer"), look: look) {
+        if !waiting {
           let tint = Self.tint(state.ending, look: look)
           StatusPill(text: state.outcome, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1), large: true)
         }
       }
-      if !words.isEmpty {
-        Text(words)
-          .font(.system(size: 15))
-          .foregroundStyle(waiting ? ink : grey)
-          .cssLineHeight(21, size: 15)
-          .fixedSize(horizontal: false, vertical: true)
+      if waiting || !words.isEmpty {
+        VStack(alignment: .leading, spacing: 2) {
+          if waiting {
+            Text("Action needed")
+              .font(.system(size: 16, weight: .semibold))
+              .tracking(-0.2)
+              .foregroundStyle(ink)
+          }
+          if !words.isEmpty {
+            Text(words)
+              .font(.system(size: 15))
+              .foregroundStyle(grey)
+              .cssLineHeight(21, size: 15)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
       }
       if waiting, let snapshot = state.snapshotDataUrl.flatMap(Self.picture) {
-        // The screen when the agent asked (16:10, 12 round, a hairline); a click takes over.
+        // The screen when the agent asked (16:10), across the whole card, a hairline over and under; a click takes over.
         Button { takeOver() } label: {
           Image(nsImage: snapshot)
             .resizable()
@@ -1648,43 +1984,38 @@ struct ComputerHandoffCard: View {
             .frame(maxWidth: .infinity)
             .aspectRatio(16 / 10, contentMode: .fit)
             .background(fill)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06), lineWidth: 1))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipped()
+            .overlay(alignment: .top) { Rectangle().fill(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)).frame(height: 1) }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.hand)
         .onHover { snapshotHover = $0 }
+        .padding(.horizontal, -16)
         .accessibilityLabel("Take over the computer")
       }
-      if waiting {
-        HStack(spacing: 8) {
-          Button {
+      HStack(spacing: 8) {
+        Spacer(minLength: 0)
+        if waiting {
+          // The cards' pills, as the founder's reference has them: Skip and I'm done grey, Take over the main one, last.
+          CardButton(title: String(localized: "Skip"), look: look) {
             Task { await store.handBackComputer(agentId, skip: true) }
-          } label: {
-            Text("Skip")
-              .font(.system(size: 13))
-              .foregroundStyle(grey)
-              .padding(.horizontal, 8)
-              .frame(height: 32)
-              .contentShape(Rectangle())
           }
-          .buttonStyle(.hand)
           .help("Cancel this request without doing the step; the agent continues without it")
-          Spacer(minLength: 8)
-          pill(String(localized: "I’m done"), ground: fill, ink: ink) {
+          CardButton(title: String(localized: "I’m done"), look: look) {
             Task { await store.handBackComputer(agentId) }
           }
-          pill(String(localized: "Take over"), ground: blue, ink: .white) { takeOver() }
+          CardButton(title: String(localized: "Take over"), prominent: true, look: look) { takeOver() }
+        } else {
+          CardButton(title: String(localized: "Open computer"), look: look) { takeOver() }
         }
-      } else {
-        pill(String(localized: "Open computer"), ground: fill, ink: ink) { takeOver() }
-          .fixedSize()
       }
     }
     .tracking(-0.15)
     .padding(16)
     .frame(maxWidth: 520, alignment: .leading)
-    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
+    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     .accessibilityElement(children: .contain)
     .accessibilityLabel(waiting ? "Your turn on the computer" : "Computer, \(state.outcome)")
   }
@@ -1708,53 +2039,6 @@ struct ComputerHandoffCard: View {
     guard let comma = dataURL.firstIndex(of: ","), dataURL.hasPrefix("data:"),
           let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]), options: .ignoreUnknownCharacters) else { return nil }
     return NSImage(data: data)
-  }
-
-  /** A Mac's pill (21 October 2026): as wide as its words (at least 88), 32 high. */
-  private func pill(_ title: String, ground: Color, ink: Color, action: @escaping () -> Void) -> some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 14, weight: .medium))
-        .foregroundStyle(ink)
-        .lineLimit(1)
-        .padding(.horizontal, 16)
-        .frame(minWidth: 88)
-        .frame(height: 32)
-        .background(ground, in: Capsule())
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.hand)
-    .fixedSize()
-  }
-}
-
-/**
- * The card's dot, blue with a ring that breathes while it waits. The ring's
- * animation is its own (`.animation(_:value:)`), as the iPhone's
- * `PulsingDot`. Until 16 October 2026 it started with `withAnimation(…
- * .repeatForever)` in the card's `onAppear`, which repeats whatever else
- * changes in that update too: in the founder's recording the rows above the
- * card kept moving and vanishing, from the card's arrival on.
- */
-private struct HandoffDot: View {
-  let waiting: Bool
-  let blue: Color
-  let grey: Color
-  @State private var pulse = false
-
-  var body: some View {
-    Circle()
-      .fill(waiting ? blue : grey)
-      .frame(width: 7, height: 7)
-      .background {
-        if waiting {
-          Circle()
-            .stroke(blue.opacity(pulse ? 0 : 0.35), lineWidth: pulse ? 10 : 0)
-            .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
-        }
-      }
-      .onAppear { if waiting { pulse = true } }
-      .onChange(of: waiting) { _, now in if now { pulse = true } }
   }
 }
 
@@ -2260,14 +2544,19 @@ struct CloudAgentCardView: View {
 // MARK: Products
 
 /**
- * The products card (14 October 2026; SimeonCore's `ProductsCard`): each
- * product's picture, name, seller and price; a click opens it, with "Buy
- * with <agent>" (the agent is woken to buy exactly that one, through the
- * checkout card) and "View website". On a Mac's chat (21 October 2026, the
- * founder: the cards were an iPhone's, "and not a mac") the products stand
- * side by side as a shop shows them, three to a line, each a square picture
- * over its name, seller and price, Buying or Bought at the right of the
- * price; a chat too narrow for them has the iPhone's rows.
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`), as a
+ * shop's own cards (10 November 2026, after the founder's reference): no
+ * frame round them, each product a card of its own, 200 wide and 20 round,
+ * side by side in one row that scrolls sideways when they don't fit (six at
+ * most). On each, the picture on white (200 by 240, fitted, padded 16) with
+ * the badge at its top left, then on the card's colour the name (15,
+ * semibold, one line), "price · take" in grey (two lines at most) and the
+ * store's icon (16, rounded) and name in grey at the bottom, Buying in blue
+ * or Bought in green at their right (18 October 2026, the founder: "make it
+ * blue, and on the right"). Under the row, the agent's replies as chips (36
+ * high, the card's colour) until the person sends anything after the card
+ * (`ProductsCard.repliesOpen`); one pressed is sent as their own message. A
+ * click opens the product over the chat (`MacProductPage`).
  */
 struct ProductsCardView: View {
   let entryId: String
@@ -2275,82 +2564,27 @@ struct ProductsCardView: View {
   let card: ProductsCard
   let look: Look
   @Environment(AppStore.self) private var store
-  @State private var open: ProductsCard.Product?
-  @State private var hovered: Int?
-
-  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
-  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
-  private var hairline: Color { look.dark ? Color.white.opacity(0.08) : Color.black.opacity(0.08) }
+  @Environment(ChatControl.self) private var control
 
   var body: some View {
     let shown = card.shown(pressed: store.pressedProducts[entryId])
-    ViewThatFits(in: .horizontal) {
-      tiles(shown)
-      rows(shown)
+    VStack(alignment: .leading, spacing: 12) {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .top, spacing: 10) {
+          ForEach(shown.products) { product in
+            MacProductCard(product: product, status: shown.status(of: product), look: look) {
+              control.openProduct(ProductOpen(entryId: entryId, index: product.index))
+            }
+          }
+        }
+      }
+      if !shown.shownReplies.isEmpty {
+        MacProductReplies(replies: shown.shownReplies, paused: store.isSendingPaused, look: look) { reply in
+          Task { await store.send(reply, to: agentId) }
+        }
+      }
     }
     .tracking(-0.15)
-    .background(look.dark ? Color(hex: 0x2c2c2e) : look.theirs, in: RoundedRectangle(cornerRadius: 20))
-    .clipShape(RoundedRectangle(cornerRadius: 20))
-    .sheet(item: $open) { product in
-      MacProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, look: look, current: product) { chosen in
-        open = nil
-        Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
-      }
-      .closesOnClickOutside { open = nil }
-    }
-  }
-
-  /** Side by side, three to a line: as wide as its tiles. */
-  private func tiles(_ shown: ProductsCard) -> some View {
-    let across = min(3, max(1, shown.products.count))
-    let lines = stride(from: 0, to: shown.products.count, by: across).map { Array(shown.products[$0..<min($0 + across, shown.products.count)]) }
-    return Grid(alignment: .topLeading, horizontalSpacing: 4, verticalSpacing: 4) {
-      ForEach(lines.indices, id: \.self) { line in
-        GridRow {
-          ForEach(lines[line]) { product in
-            MacProductCardTile(product: product, status: shown.status(of: product), agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) { open = product }
-          }
-        }
-      }
-    }
-    .padding(8)
-    .fixedSize()
-  }
-
-  /** The iPhone's rows, for a narrow chat: the picture, the name on two lines, the seller, the price and its pill. */
-  private func rows(_ shown: ProductsCard) -> some View {
-    VStack(spacing: 0) {
-      ForEach(shown.products) { product in
-        Button { open = product } label: {
-          HStack(spacing: 12) {
-            MacProductPicture(url: product.imageURL, agentId: agentId, look: look)
-              .frame(width: 72, height: 72)
-              .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
-              Text(product.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(ink).lineLimit(2).multilineTextAlignment(.leading)
-              Text(product.byline).font(.system(size: 12)).foregroundStyle(grey).lineLimit(1)
-              // Buying in blue at the right, then Bought in green, as the computer card's ending (18 October 2026).
-              HStack(spacing: 6) {
-                if let price = product.price { Text(price).font(.system(size: 13)).foregroundStyle(grey).monospacedDigit() }
-                Spacer(minLength: 0)
-                if let status = shown.status(of: product) {
-                  let tint = Self.tint(status, look: look)
-                  StatusPill(text: status.label, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1), large: true)
-                }
-              }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-          }
-          .padding(12)
-          .background(hovered == product.index ? hairline : Color.clear)
-          .contentShape(Rectangle())
-        }
-        .buttonStyle(.hand)
-        .onHover { hovered = $0 ? product.index : (hovered == product.index ? nil : hovered) }
-        if product.index != shown.products.last?.index { Rectangle().fill(hairline).frame(height: 1).padding(.leading, 12) }
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   /** Buying in blue, Bought in green: the computer card's Skipped and Done. */
@@ -2360,78 +2594,167 @@ struct ProductsCardView: View {
     case .bought: return look.added
     }
   }
+
+  /** The words' ink, their grey, and the card's colour (the agent's grey; #2c2c2e in dark), as the iPhone's. */
+  static func ink(_ look: Look) -> Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
+  static func grey(_ look: Look) -> Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
+  static func ground(_ look: Look) -> Color { look.dark ? Color(hex: 0x2c2c2e) : look.theirs }
 }
 
-/** A product side by side with the others: its square picture (168), its name on two lines, the seller, the price and, at its right, Buying or Bought. */
-private struct MacProductCardTile: View {
+/** One product in the row: the picture on white with its badge, its name, "price · take" and its store. */
+private struct MacProductCard: View {
   let product: ProductsCard.Product
   let status: ProductsCard.Status?
-  let agentId: String
   let look: Look
-  let ink: Color
-  let grey: Color
-  let hairline: Color
   let open: () -> Void
   @State private var hovering = false
-  static let side: CGFloat = 168
+  static let width: CGFloat = 200
 
   var body: some View {
+    let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
     Button(action: open) {
-      VStack(alignment: .leading, spacing: 8) {
-        MacProductPicture(url: product.imageURL, agentId: agentId, look: look)
-          .frame(width: Self.side, height: Self.side)
-          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(hairline, lineWidth: 1))
-        VStack(alignment: .leading, spacing: 2) {
+      VStack(alignment: .leading, spacing: 0) {
+        MacProductPicture(url: product.imageURL, look: look)
+          .padding(16)
+          .frame(width: Self.width, height: 240)
+          .background(Color.white)
+          .overlay(alignment: .topLeading) {
+            if let badge = product.badge { MacProductBadge(text: badge).padding(8) }
+          }
+        VStack(alignment: .leading, spacing: 0) {
           Text(product.title)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(ink)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(ProductsCardView.ink(look))
+            .lineLimit(1)
+          // Two lines kept, so every card's store sits at its bottom.
+          Text(product.priceLine ?? "")
+            .font(.system(size: 14))
+            .foregroundStyle(ProductsCardView.grey(look))
             .lineLimit(2, reservesSpace: true)
             .multilineTextAlignment(.leading)
-          Text(product.byline).font(.system(size: 12)).foregroundStyle(grey).lineLimit(1)
-          HStack(spacing: 6) {
-            if let price = product.price { MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey) }
-            Spacer(minLength: 0)
-            if let status {
-              let tint = ProductsCardView.tint(status, look: look)
-              StatusPill(text: status.label, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1))
-            }
-          }
-          .frame(minHeight: 20)
-          .padding(.top, 2)
+            .padding(.top, 2)
+          MacStoreLine(product: product, status: status, look: look)
+            .padding(.top, 12)
         }
-        .padding(.horizontal, 2)
+        .padding(EdgeInsets(top: 12, leading: 14, bottom: 14, trailing: 14))
+        .frame(width: Self.width, alignment: .leading)
       }
-      .frame(width: Self.side, alignment: .leading)
-      .padding(8)
-      .background(hovering ? hairline : Color.clear, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-      .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .background(ProductsCardView.ground(look))
+      .clipShape(shape)
+      // In light, a hairline round it: its white would melt into the ground (`theirsHairline`).
+      .overlay { shape.strokeBorder(look.theirsHairline, lineWidth: 1) }
+      .brightness(hovering ? (look.dark ? 0.04 : -0.02) : 0)
+      .contentShape(shape)
     }
     .buttonStyle(.hand)
-    .onHover { hovering = $0 }
+    .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
     .accessibilityElement(children: .combine)
   }
 }
 
-/** A product's own picture from its shop; a bag while it loads or when the shop gave none. */
+/** The badge: a small grey pill, see-through, white words (12, medium), 8 in from the picture's top left. */
+private struct MacProductBadge: View {
+  let text: String
+
+  var body: some View {
+    Text(text)
+      .font(.system(size: 12, weight: .medium))
+      .foregroundStyle(Color.white)
+      .lineLimit(1)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 3)
+      .background(Color(red: 60 / 255, green: 60 / 255, blue: 67 / 255).opacity(0.55), in: Capsule())
+  }
+}
+
+/** The store: its site's icon (as a saved login's, the letter until it comes) and its name in grey, 8 apart; Buying or Bought at the right. */
+private struct MacStoreLine: View {
+  let product: ProductsCard.Product
+  var status: ProductsCard.Status? = nil
+  var side: CGFloat = 16
+  var size: CGFloat = 14
+  let look: Look
+
+  var body: some View {
+    HStack(spacing: 8) {
+      MacSiteIconTile(site: LinkIcons.site(of: product.url), title: product.storeName, side: side, look: look)
+      Text(product.storeName)
+        .font(.system(size: size))
+        .foregroundStyle(ProductsCardView.grey(look))
+        .lineLimit(1)
+        .truncationMode(.tail)
+      Spacer(minLength: 0)
+      if let status {
+        let tint = ProductsCardView.tint(status, look: look)
+        StatusPill(text: status.label, look: look, dot: tint, ink: tint, wash: tint.opacity(look.dark ? 0.2 : 0.1))
+          .fixedSize()
+      }
+    }
+  }
+}
+
+/** The replies under the row: chips 36 high on the card's colour (15), 8 apart; under each other when the chat is too narrow for them side by side. */
+private struct MacProductReplies: View {
+  let replies: [String]
+  let paused: Bool
+  let look: Look
+  let send: (String) -> Void
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 8) { chips }
+      VStack(alignment: .leading, spacing: 8) { chips }
+    }
+  }
+
+  @ViewBuilder private var chips: some View {
+    ForEach(replies, id: \.self) { reply in
+      MacReplyChip(text: reply, look: look) { send(reply) }
+        .disabled(paused)
+        .opacity(paused ? 0.5 : 1)
+    }
+  }
+}
+
+private struct MacReplyChip: View {
+  let text: String
+  let look: Look
+  let action: () -> Void
+  @State private var hovering = false
+
+  var body: some View {
+    Button(action: action) {
+      Text(text)
+        .font(.system(size: 15))
+        .foregroundStyle(ProductsCardView.ink(look))
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .frame(height: 36)
+        .background(ProductsCardView.ground(look), in: Capsule())
+        .brightness(hovering ? (look.dark ? 0.05 : -0.03) : 0)
+        .contentShape(Capsule())
+        .fixedSize()
+    }
+    .buttonStyle(.hand)
+    .onHover { hovering = $0 }
+  }
+}
+
+/** A product's own picture from its shop, fitted on white; a bag while it loads or when the shop gave none. */
 private struct MacProductPicture: View {
   let url: URL?
-  let agentId: String
   let look: Look
-  var fit = false
-  @Environment(AppStore.self) private var store
   @State private var loaded: NSImage?
 
   var body: some View {
     ZStack {
-      Rectangle().fill(look.dark ? Color(hex: 0x3a3a3c) : Color.white)
+      Color.white
       if let loaded {
-        if fit { Image(nsImage: loaded).resizable().interpolation(.high).scaledToFit() } else { Image(nsImage: loaded).resizable().interpolation(.high).scaledToFill() }
+        Image(nsImage: loaded).resizable().interpolation(.high).scaledToFit()
       } else {
-        Image(systemName: "bag").font(.system(size: 18)).foregroundStyle(look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73))
+        Image(systemName: "bag").font(.system(size: 18)).foregroundStyle(Color(hex: 0x8e8e93))
       }
     }
-    .clipped()
     .accessibilityHidden(true)
     .task(id: url) {
       guard let url else { return }
@@ -2442,107 +2765,227 @@ private struct MacProductPicture: View {
 }
 
 /**
- * One product, opened, as a store's page: the iPhone's (18 October 2026, the
- * founder's screenshots of Muse) in a Mac's sheet, the picture at the left
- * and the rest at its right (21 October 2026). Its picture large, "Sold by",
- * its name and price, "Buy with <agent>" in a light blue capsule and View
- * website, what it is in three lines with See more, its stars under
- * Reviews, and the card's other products under More like this, each opening
- * in place. Escape or the X closes it.
+ * One product opened, over the whole chat and its field (not a sheet: the
+ * sidebar stays; 10 November 2026, after the founder's reference), as an
+ * exchange or a call's lines open (`ChatControl.productOpen`): the X (our
+ * glass disc) at the top left, ‹ and › at the top right for the card's
+ * other products. Two columns, 32 apart, at most 880 wide, 64 from the top:
+ * at the left the picture on a white square (16 round), and under it "Why
+ * it fits" (17, semibold) with each reason after a round green check; at
+ * the right the store's icon and name (15, grey), the title (28, semibold),
+ * the price (20) and "★ 5.0 (12)" (15, grey), the take (15, grey), "Buy
+ * with <agent>" in our blue capsule, full width, "View at <store>" as plain
+ * words, a hairline, and "Sold by" with the seller at its right. One column
+ * in a narrow chat, the reasons last. Escape or the X closes it; ← and →
+ * step as ‹ and ›; Return buys, unless a field has the keys.
  */
-private struct MacProductSheet: View {
-  let entryId: String
+struct MacProductPage: View {
   let agentId: String
-  let agentName: String
-  let card: ProductsCard
+  let open: ProductOpen
   let look: Look
-  @State var current: ProductsCard.Product
-  let buy: (ProductsCard.Product) -> Void
   @Environment(AppStore.self) private var store
+  @Environment(ChatControl.self) private var control
+  @Environment(Viewers.self) private var viewers
   @Environment(\.openURL) private var openURL
-  @Environment(\.dismiss) private var dismiss
 
-  private var ink: Color { look.dark ? Color(hex: 0xf5f5f7) : Color(hex: 0x1d1d1f) }
-  private var grey: Color { look.dark ? Color(hex: 0x98989d) : Color(hex: 0x6e6e73) }
+  private var ink: Color { ProductsCardView.ink(look) }
+  private var grey: Color { ProductsCardView.grey(look) }
   private var hairline: Color { look.dark ? Color.white.opacity(0.1) : Color.black.opacity(0.08) }
 
+  /** The card read afresh from the chat (or the thread open over it): Buying and Bought as they come. */
+  private var card: ProductsCard? {
+    for row in store.rows(for: agentId) + (store.threadRows[agentId] ?? []) {
+      if case .products(let id, let card) = row, id == open.entryId { return card.shown(pressed: store.pressedProducts[open.entryId]) }
+    }
+    return nil
+  }
+
   var body: some View {
-    let shown = card.shown(pressed: store.pressedProducts[entryId])
-    let product = shown.products.first { $0.index == current.index } ?? current
-    let status = shown.status(of: product)
-    let others = shown.others(than: product)
-    ScrollViewReader { reader in
-      ScrollView {
-        VStack(alignment: .leading, spacing: 0) {
-          // A Mac's store page (21 October 2026): the picture at the left, what it is at its right.
-          HStack(alignment: .top, spacing: 28) {
-            MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
-              .frame(width: 340, height: 340)
-              .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-              .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(hairline, lineWidth: 1))
-            VStack(alignment: .leading, spacing: 0) {
-              Text(product.soldBy).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
-              Text(product.title).font(.system(size: 22)).foregroundStyle(ink).fixedSize(horizontal: false, vertical: true).padding(.top, 4)
-              if let price = product.price {
-                MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 16).padding(.top, 6)
-              }
-              MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, look: look) { buy(product) }
-                .padding(.top, 18)
-              Button { openURL(product.url) } label: {
-                Text(ProductsCard.viewWebsite).font(.system(size: 15)).foregroundStyle(ink)
-                  .frame(maxWidth: .infinity).frame(height: 36).contentShape(Rectangle())
-              }
-              .buttonStyle(.hand)
-              .padding(.top, 4)
-              if let detail = product.detail {
-                MacProductDescription(text: detail, ink: ink, grey: grey).padding(.top, 20).id("about-\(product.index)")
-              }
-              if !product.stars.isEmpty {
-                Text(ProductsCard.reviews).font(.system(size: 16, weight: .medium)).foregroundStyle(ink).padding(.top, 26)
-                Button { openURL(product.url) } label: { MacProductReviewsRow(product: product, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
-                  .buttonStyle(.hand)
-                  .padding(.top, 10)
-                  .help("Opens the reviews on the shop's page")
-              }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 8)
-          }
-          .padding(.horizontal, 28)
-          .padding(.top, 28)
-          .id("top")
-          if !others.isEmpty {
-            Text(ProductsCard.moreLikeThis).font(.system(size: 16, weight: .medium)).foregroundStyle(ink)
-              .padding(.horizontal, 28).padding(.top, 30)
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(alignment: .top, spacing: 14) {
-                ForEach(others) { other in
-                  Button { current = other } label: { MacProductTile(product: other, agentId: agentId, look: look, ink: ink, grey: grey, hairline: hairline) }
-                    .buttonStyle(.hand)
-                }
-              }
-              .padding(.horizontal, 28)
-            }
-            .padding(.top, 10)
-          }
-        }
-        .padding(.bottom, 28)
+    let card = self.card
+    let product = card?.products.first { $0.index == open.index }
+    ZStack(alignment: .top) {
+      look.ground
+        .contentShape(Rectangle())
+      if let card, let product {
+        page(card, product)
       }
-      .onChange(of: current.index) { withAnimation(.snappy) { reader.scrollTo("top", anchor: .top) } }
     }
     .tracking(-0.15)
-    .frame(width: 780, height: 600)
-    .background(look.dark ? Color(hex: 0x1e1e1e) : Color.white)
-    .overlay(alignment: .topTrailing) {
-      // The window's round glass button (`GlassDiscButton`, 21 October 2026).
-      GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
-        .keyboardShortcut(.cancelAction)
+    .overlay(alignment: .topLeading) {
+      GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { control.closeProduct() }
         .padding(12)
     }
+    .overlay(alignment: .topTrailing) {
+      if let card, let product {
+        let previous = card.neighbour(of: product, by: -1)
+        let next = card.neighbour(of: product, by: 1)
+        HStack(spacing: 8) {
+          GlassDiscButton(symbol: "chevron.left", help: String(localized: "Previous product"), size: 32) { step(card, product, -1) }
+            .disabled(previous == nil)
+            .opacity(previous == nil ? 0.4 : 1)
+          GlassDiscButton(symbol: "chevron.right", help: String(localized: "Next product"), size: 32) { step(card, product, 1) }
+            .disabled(next == nil)
+            .opacity(next == nil ? 0.4 : 1)
+        }
+        .padding(12)
+      }
+    }
+    .background(ViewerKeys { event in
+      // Not a picture or diagram opened over it; while a field (find's) has the keys, they are the field's.
+      guard viewers.shown == nil, !(NSApp.keyWindow?.firstResponder is NSText) else { return false }
+      let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
+      guard mods.isEmpty else { return false }
+      switch event.keyCode {
+      case 53:
+        control.closeProduct()
+        return true
+      case 123, 124:
+        if let card, let product { step(card, product, event.keyCode == 123 ? -1 : 1) }
+        return true
+      case 36, 76:
+        if let card, let product, card.status(of: product) == nil { buy(product) }
+        return true
+      default:
+        return false
+      }
+    })
+    // The card gone (the chat cleared, another chat), the page goes with it.
+    .onChange(of: product == nil, initial: true) { _, gone in
+      if gone { control.closeProduct() }
+    }
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel(product?.title ?? "")
+    .accessibilityAddTraits(.isModal)
+  }
+
+  private func page(_ card: ProductsCard, _ product: ProductsCard.Product) -> some View {
+    GeometryReader { box in
+      let wide = box.size.width >= 744
+      ScrollViewReader { reader in
+        ScrollView {
+          Group {
+            if wide {
+              HStack(alignment: .top, spacing: 32) {
+                VStack(alignment: .leading, spacing: 0) {
+                  picture(product)
+                  why(product)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                facts(card, product)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                  .padding(.top, 4)
+              }
+            } else {
+              VStack(alignment: .leading, spacing: 0) {
+                picture(product)
+                facts(card, product).padding(.top, 20)
+                why(product)
+              }
+            }
+          }
+          .frame(maxWidth: wide ? 880 : 480)
+          .padding(.horizontal, 32)
+          .padding(.top, 64)
+          .padding(.bottom, 48)
+          .frame(maxWidth: .infinity)
+          .id("top")
+        }
+        .onChange(of: open.index) { reader.scrollTo("top", anchor: .top) }
+      }
+    }
+  }
+
+  /** The picture on a white square, 16 round, fitted, padded 24. */
+  private func picture(_ product: ProductsCard.Product) -> some View {
+    let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+    return Color.white
+      .aspectRatio(1, contentMode: .fit)
+      .overlay { MacProductPicture(url: product.imageURL, look: look).padding(24) }
+      .clipShape(shape)
+      .overlay { shape.strokeBorder(look.theirsHairline, lineWidth: 1) }
+      .frame(maxWidth: .infinity)
+  }
+
+  @ViewBuilder
+  private func why(_ product: ProductsCard.Product) -> some View {
+    if !product.reasons.isEmpty {
+      VStack(alignment: .leading, spacing: 10) {
+        Text(ProductsCard.whyItFits)
+          .font(.system(size: 17, weight: .semibold))
+          .foregroundStyle(ink)
+          .padding(.bottom, 2)
+        ForEach(Array(product.reasons.enumerated()), id: \.offset) { _, reason in
+          HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "checkmark.circle")
+              .font(.system(size: 15))
+              .foregroundStyle(look.added)
+            Text(reason)
+              .font(.system(size: 15))
+              .foregroundStyle(ink)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.top, 32)
+    }
+  }
+
+  private func facts(_ card: ProductsCard, _ product: ProductsCard.Product) -> some View {
+    let status = card.status(of: product)
+    return VStack(alignment: .leading, spacing: 0) {
+      MacStoreLine(product: product, side: 18, size: 15, look: look)
+      Text(product.title)
+        .font(.system(size: 28, weight: .semibold))
+        .foregroundStyle(ink)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.top, 6)
+      if product.price != nil || product.ratingLine != nil {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+          if let price = product.price { MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey, size: 20) }
+          if let rating = product.ratingLine { Text(rating).font(.system(size: 15)).foregroundStyle(grey).monospacedDigit() }
+        }
+        .padding(.top, 8)
+      }
+      if let take = product.shownTake {
+        Text(take)
+          .font(.system(size: 15))
+          .foregroundStyle(grey)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, 10)
+      }
+      MacProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: store.agent(agentId)?.name ?? ""), status: status, look: look) { buy(product) }
+        .padding(.top, 20)
+      Button { openURL(product.url) } label: {
+        Text(product.viewAt).font(.system(size: 15)).foregroundStyle(ink)
+          .frame(maxWidth: .infinity).frame(height: 38).contentShape(Rectangle())
+      }
+      .buttonStyle(.hand)
+      .padding(.top, 4)
+      Rectangle().fill(hairline).frame(height: 1).padding(.top, 14)
+      HStack(alignment: .firstTextBaseline, spacing: 16) {
+        Text(ProductsCard.soldBy).foregroundStyle(grey)
+        Spacer(minLength: 0)
+        Text(product.byline).foregroundStyle(ink).lineLimit(1).truncationMode(.tail)
+      }
+      .font(.system(size: 15))
+      .padding(.top, 14)
+    }
+  }
+
+  private func step(_ card: ProductsCard, _ product: ProductsCard.Product, _ by: Int) {
+    guard let other = card.neighbour(of: product, by: by) else { return }
+    control.productOpen = ProductOpen(entryId: open.entryId, index: other.index)
+  }
+
+  /** Buy: the page closes on the chat, where the agent sets up the checkout, and the card says Buying at once. */
+  private func buy(_ product: ProductsCard.Product) {
+    control.closeProduct()
+    Task { await store.buyProduct(open.entryId, index: product.index, in: agentId) }
   }
 }
 
-/** Buy with <agent> in the chat's blue with white words, as the iPhone's; Buying faded while it is under way, Bought in green once ordered. Return presses it. */
+/** Buy with <agent> in the chat's blue with white words, as the iPhone's; Buying faded while it is under way, Bought in green once ordered. */
 private struct MacProductBuyButton: View {
   let label: String
   let status: ProductsCard.Status?
@@ -2563,32 +3006,6 @@ private struct MacProductBuyButton: View {
     }
     .buttonStyle(.hand)
     .disabled(status != nil)
-    .keyboardShortcut(.defaultAction)
-  }
-}
-
-/** The Reviews row: the product's picture in a framed square, its name, its stars. */
-private struct MacProductReviewsRow: View {
-  let product: ProductsCard.Product
-  let agentId: String
-  let look: Look
-  let ink: Color
-  let grey: Color
-  let hairline: Color
-
-  var body: some View {
-    HStack(spacing: 12) {
-      MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
-        .frame(width: 48, height: 48)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(hairline, lineWidth: 1))
-      VStack(alignment: .leading, spacing: 3) {
-        Text(product.title).font(.system(size: 14)).foregroundStyle(ink).lineLimit(1)
-        MacProductStars(product: product, ink: ink, grey: grey)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .contentShape(Rectangle())
   }
 }
 
@@ -2601,95 +3018,13 @@ private struct MacProductPrice: View {
   var size: CGFloat = 13
 
   var body: some View {
-    HStack(spacing: 4) {
+    HStack(spacing: 6) {
       Text(price).foregroundStyle(ink)
       if let listPrice { Text(listPrice).strikethrough().foregroundStyle(grey) }
     }
     .font(.system(size: size))
     .monospacedDigit()
     .lineLimit(1)
-  }
-}
-
-/** Five stars to the nearest half, then "4.5" and "(153)". */
-private struct MacProductStars: View {
-  let product: ProductsCard.Product
-  let ink: Color
-  let grey: Color
-
-  var body: some View {
-    HStack(spacing: 5) {
-      HStack(spacing: 1) {
-        ForEach(Array(product.stars.enumerated()), id: \.offset) { _, star in
-          Image(systemName: star == .full ? "star.fill" : star == .half ? "star.leadinghalf.filled" : "star")
-            .font(.system(size: 12))
-            .foregroundStyle(Color(hex: 0xf5a524))
-        }
-      }
-      if let rating = product.ratingText { Text(rating).foregroundStyle(ink.opacity(0.7)) }
-      if let reviews = product.reviewsText { Text(reviews).foregroundStyle(grey) }
-    }
-    .font(.system(size: 13))
-    .monospacedDigit()
-  }
-}
-
-/** What the product is, in three lines with See more when there is more; `**bold**` drawn bold. */
-private struct MacProductDescription: View {
-  let text: String
-  let ink: Color
-  let grey: Color
-  @State private var open = false
-  @State private var whole: CGFloat = 0
-  @State private var shown: CGFloat = 0
-
-  var body: some View {
-    let words = (try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
-    VStack(alignment: .leading, spacing: 4) {
-      Text(words)
-        .font(.system(size: 14))
-        .foregroundStyle(ink)
-        .lineLimit(open ? nil : 3)
-        .fixedSize(horizontal: false, vertical: true)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown = $0 }
-        .background(alignment: .topLeading) {
-          Text(words).font(.system(size: 14)).fixedSize(horizontal: false, vertical: true).hidden()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { whole = $0 }
-        }
-      if open || whole > shown + 1 {
-        Button { withAnimation(.snappy) { open.toggle() } } label: {
-          Text(open ? ProductsCard.seeLess : ProductsCard.seeMore).font(.system(size: 14)).foregroundStyle(grey)
-        }
-        .buttonStyle(.hand)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-/** One of More like this: its picture in a framed square, its name, who sells it, its price. */
-private struct MacProductTile: View {
-  let product: ProductsCard.Product
-  let agentId: String
-  let look: Look
-  let ink: Color
-  let grey: Color
-  let hairline: Color
-  static let side: CGFloat = 120
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      MacProductPicture(url: product.imageURL, agentId: agentId, look: look, fit: true)
-        .frame(width: Self.side, height: Self.side)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(hairline, lineWidth: 1))
-        .padding(.bottom, 6)
-      Text(product.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(ink).lineLimit(1)
-      Text(product.byline).font(.system(size: 13)).foregroundStyle(grey).lineLimit(1)
-      if let price = product.price { MacProductPrice(price: price, listPrice: product.listPrice, ink: ink, grey: grey) }
-    }
-    .frame(width: Self.side, alignment: .leading)
-    .contentShape(Rectangle())
   }
 }
 

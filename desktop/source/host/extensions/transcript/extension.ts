@@ -72,7 +72,8 @@ export const transcriptExtension = defineHostExtension<
     // The chat's one line when Claude Code can't run a turn and Simeon's models answer (docs/your-own-models.md, section 6).
     setClaudeCodeFallbackNotice((agentId, why) => void appendClaudeCodeNotice(manager, agentId, why));
     // The chat's line when an agent's turn is on another model than its last ("Changed from Simeon to Claude Opus 5.5").
-    setTurnModelLine((agentId, event) => appendModelChangeLine(manager, agentId, event), join(sandRoot, TURN_MODELS_FILE));
+    // Its agents as the engine starts: one that was there is compared, at its first turn, with the model the computer was last on.
+    setTurnModelLine((agentId, event) => appendModelChangeLine(manager, agentId, event), join(sandRoot, TURN_MODELS_FILE), () => manager.listAgentIds());
     manager.setTelemetry(deps.telemetry.brain);
     manager.setProductAnalytics(deps.telemetry.analytics);
     manager.setTraceFlusher(deps.telemetry.flushTracing);

@@ -169,8 +169,12 @@ extension View {
     scrollContentBackground(.hidden).background(Ink.groupedGround)
   }
 
-  /** The Messages grey card with its faint edge: every card in the chat. */
-  func card(radius: CGFloat = 16, padding: CGFloat = 12) -> some View {
+  /**
+   * The Messages grey card with its faint edge: every card in the chat. 22
+   * round and padded 16, as the question card, since 10 November 2026 (it
+   * was 16 and 12): one shape for every card.
+   */
+  func card(radius: CGFloat = 22, padding: CGFloat = 16) -> some View {
     self.padding(padding)
       .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
       .modifier(CardEdge(radius: radius))

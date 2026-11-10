@@ -3,8 +3,9 @@
 // chat, which says its words;
 // Allow waits for a card to be picked; Review order opens the agent's
 // computer, or a Shop checkout's page, and the bank's check has Open the
-// computer (step 5b); the products stand side by side when the chat has
-// room, else in rows.
+// computer (step 5b); the products stand side by side as cards of their
+// own, in one row, with the agent's replies under them until the person
+// sends anything after the card.
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
@@ -114,17 +115,53 @@ describe('the shop cards on the web', () => {
     expect(bank).toContain('Open the computer<')
   })
 
-  it('stands the products side by side when the chat has room, else in rows', () => {
+  it('stands the products side by side as cards of their own, with the agent’s take, the badge and the store; the replies until the person sends anything', () => {
     const products: JSONObject = {
       type: 'products',
+      replies: ['Get Mug 1', 'Show me cups'],
       products: [1, 2, 3].map((n) => ({
         title: `Mug ${n}`,
         url: `https://example.com/mug-${n}`,
         price: '$28.00',
+        store: 'Example',
+        // Only the first has a take and a badge (a JSON value leaves a key out rather than holding undefined).
+        ...(n === 1 ? { take: 'The biggest of the three', badge: 'Top rated' } : {}),
       })),
     }
-    // Three tiles are 576 wide: a column of 928 has room (a card at most 640), one of 548 doesn't.
-    expect(draw('products', products, {}, 928)).toContain('products-card tiles')
-    expect(draw('products', products, {}, 548)).toContain('products-card rows')
+    const card = Entry.from({
+      kind: 'send-message',
+      id: 'p1',
+      timestampMs: 1,
+      message: products,
+    })!
+    const chat = (entries: Entry[]) =>
+      (
+        store as unknown as {
+          setTranscript: (agentId: string, entries: Entry[]) => void
+        }
+      ).setTranscript('iris', entries)
+    chat([card])
+    // In a narrow chat too: one row, scrolling sideways.
+    const page = draw('products', products, {}, 548)
+    expect(page).toContain('class="products-card"')
+    expect(page.match(/class="product-card"/g)?.length).toBe(3)
+    expect(page.match(/class="product-badge"/g)?.length).toBe(1)
+    expect(page).toContain('$28.00 · The biggest of the three')
+    expect(page).toContain('class="product-store-name">Example<')
+    expect(page).toContain('>Get Mug 1</button>')
+    expect(page).toContain('>Show me cups</button>')
+    // The person said something after it: the replies are gone.
+    chat([
+      card,
+      Entry.from({
+        kind: 'message',
+        id: 'u2',
+        role: 'user',
+        content: 'Get Mug 1',
+        timestampMs: 2,
+      })!,
+    ])
+    expect(draw('products', products)).not.toContain('product-reply')
+    chat([])
   })
 })

@@ -75,6 +75,12 @@ const CLAUDE_CODE_EFFORTS: ReadonlySet<string> = new Set(["low", "medium", "high
 
 let current: SimeonModelRoles = {};
 /**
+ * The roles the engine's last run kept (`model-roles.json` as this run found
+ * it at its start): the model the agents were last on before this engine
+ * started, which an agent's first turn on it is compared with (`turn-model.ts`).
+ */
+let rolesAtStart: SimeonModelRoles | undefined;
+/**
  * Each model's name as the last read gave it (`modelName`), and the model the
  * Claude Code row names (`own:claude:…`): the chat's line when an agent's
  * model changes names it with them (`turn-model.ts`, 10 November 2026).
@@ -117,6 +123,11 @@ export function setSimeonModelRolesSourceForTest(source: SimeonModelRolesSource 
 
 export function simeonModelRoles(): SimeonModelRoles {
   return current;
+}
+
+/** The roles the engine's last run kept, as this run found them when it started; undefined when it kept none. */
+export function simeonModelRolesAtStart(): SimeonModelRoles | undefined {
+  return rolesAtStart;
 }
 
 /** A model's name as the server's last answer gave it; undefined when it named none. */
@@ -385,7 +396,7 @@ export function startSimeonModelRoles(source: SimeonModelRolesSource): () => voi
   let stopped = false;
   let readOnce = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  if (source.rememberIn !== undefined) recallSimeonModelRoles(source.rememberIn);
+  if (source.rememberIn !== undefined) rolesAtStart = recallSimeonModelRoles(source.rememberIn);
   const tick = async (): Promise<void> => {
     const read = await refreshSimeonModelRoles(source);
     if (stopped) return;

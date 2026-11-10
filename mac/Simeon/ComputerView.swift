@@ -17,16 +17,25 @@ struct ComputerLayer: View {
 
 /**
  * An agent's computer over the whole window (`bbn`: sidebar, chat and pane
- * under it, the window showing through at 5%), always the person's to use
- * while it is open. At the top a 44-point bar (the window's traffic lights
- * at its left, a strip that moves the window, Exit fullscreen at its
- * right); under it, 8 in: the hand-off's banner, the screen as the largest
- * 16:10 that fits, the helper's name when a helper's screen is shown, and
- * the other helpers' screens. Opening and closing are instant. Opening it
- * started the computer; closing it hands nothing back and lets go of the
- * screen (decision 4); the message field takes the keys again. While it
- * shows, the keys are the computer's (decision 1); the clipboard goes both
- * ways.
+ * under it, the window showing through at 5%). At the top a 44-point bar
+ * (the window's traffic lights at its left, a strip that moves the window,
+ * Exit fullscreen at its right); under it, 8 in: the hand-off's banner, the
+ * screen as the largest 16:10 that fits, the Watching / Take control pill,
+ * the helper's name when a helper's screen is shown, and the other helpers'
+ * screens. Opening and closing are instant. Opening it started the
+ * computer; closing it lets go of the screen (decision 4); the message field
+ * takes the keys again.
+ *
+ * It opens watching (the founder, 10 November 2026: "you can use the
+ * computer while its on use by the agent without much clicking anywhere to
+ * allow you. well thats not good", with a reference picture of a watching/take-over picker): the screen takes no
+ * click or key until Take control, a click on it only nudges the pill. In
+ * control the keys are the computer's (decision 1) and the clipboard goes
+ * both ways; taking control while the agent works pauses it
+ * (`takeComputerControl`, as on the iPhone), and Stop, or closing the view,
+ * hands the computer back, which resumes it. It opens in control while the
+ * agent waits on the person (a hand-off it asked for), and that hand-off is
+ * still answered from its banner, which closing the view does not.
  */
 private struct ComputerFullView: View {
   let open: WindowState.ComputerOpen
@@ -41,6 +50,12 @@ private struct ComputerFullView: View {
   /** The clipboard's `changeCount` whose words the computer has (sent, or copied from it). */
   @State private var pasteboardSent = -1
   @State private var fullScreen = false
+  /** The person has the computer (Take control); else they watch. */
+  @State private var control = false
+  /** Taking control paused the working agent: Stop, or closing the view, hands the computer back and resumes it. */
+  @State private var paused = false
+  /** A click on the screen while watching: the pill's Take control answers it. */
+  @State private var nudge = 0
 
   var body: some View {
     let look = Look(scheme)
@@ -51,20 +66,31 @@ private struct ComputerFullView: View {
     let focusedHelper = ComputerHelper.focused(helpers, asked: open.helper)
     let helper = helpers.first { $0.subagentId == focusedHelper }
     let url = status?.screenURL
+    let waiting = status?.handoff != nil
     // A helper's screen is a new connection (`{stageKey}:{url}`).
     let stageKey = focusedHelper ?? "setup"
     VStack(spacing: 0) {
       ComputerTopBar(fullScreen: fullScreen, look: look) { window.closeComputer() }
       VStack(spacing: 0) {
-        if let handoff = status?.handoff {
+        // The hand-off the agent asked for; the one taking control started is the pill's.
+        if let handoff = status?.handoff, !paused {
           HandoffBanner(agentId: agentId, name: name, instruction: handoff.instruction)
             .padding(.bottom, 8)
         }
         Group {
           if let url {
-            ComputerScreenView(vncUrl: url, interactive: true, phase: $phase, events: events)
+            ComputerScreenView(vncUrl: url, interactive: true, watching: !control, phase: $phase, events: events)
               .id("\(stageKey):\(url)")
               .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
+              // Watching, a click on the screen reaches nothing on it: the pill's Take control answers it.
+              .overlay {
+                if !control {
+                  Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { nudge += 1 }
+                    .accessibilityHidden(true)
+                }
+              }
               // The editor's ground until the picture paints (a white box on light), 6 round, a faint edge.
               .background(look.ground)
               .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -76,6 +102,19 @@ private struct ComputerFullView: View {
           }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if url != nil {
+          ControlPill(control: control, enabled: phase == "connected", nudge: nudge, take: { takeControl(agentId) }, stop: { stopControl(agentId) })
+            .padding(.top, 12)
+          if control && paused {
+            Text("\(name) is paused while you're in control.")
+              .font(.system(size: 12))
+              .cssLineHeight(16, size: 12)
+              .foregroundStyle(Color(hex: 0xfcfcfc).opacity(0.6))
+              .lineLimit(1)
+              .padding(.top, 6)
+              .transition(.opacity)
+          }
+        }
         if let helper {
           Text(helper.title)
             .font(.system(size: 12))
@@ -103,6 +142,8 @@ private struct ComputerFullView: View {
     .accessibilityLabel("\(name)'s screen")
     .accessibilityAddTraits(.isModal)
     .onAppear {
+      // The agent waits on the person: the computer opens theirs to use.
+      if waiting { control = true }
       fullScreen = NSApp.keyWindow?.styleMask.contains(.fullScreen) ?? false
       // The arrows from inside the screen switch between helpers' screens too (`sand:vnc-host-key`).
       events.onHostKey = { key in
@@ -130,12 +171,28 @@ private struct ComputerFullView: View {
       events.onClipboard = { _ in }
       events.onPointerDown = {}
       events.onPasteKey = { _ in }
+      // Closed while the agent was paused for the person: it has the computer back.
+      if paused { Task { await store.handBackComputer(agentId) } }
+    }
+    // The agent hands the computer over and waits: it is the person's to use.
+    .onChange(of: waiting) { _, now in
+      if now && !control { withAnimation(.easeOut(duration: 0.18)) { control = true } }
+    }
+    // In control the screen takes the keys and this Mac's clipboard; watching, it gives the keys back.
+    .onChange(of: control) { _, now in
+      guard let view = events.view, let window = view.window else { return }
+      if now {
+        window.makeFirstResponder(view)
+        sendClipboard()
+      } else if (window.firstResponder as? NSView)?.isDescendant(of: view) == true {
+        window.makeFirstResponder(nil)
+      }
     }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in sendClipboard() }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEnterFullScreenNotification)) { _ in fullScreen = true }
     .onReceive(NotificationCenter.default.publisher(for: NSWindow.didExitFullScreenNotification)) { _ in fullScreen = false }
     .onChange(of: phase) { _, now in
-      guard now == "connected" else { return }
+      guard now == "connected", control else { return }
       sendClipboard()
       // Once the screen is up it takes the keys (the window focuses its page when ready).
       if let view = events.view { view.window?.makeFirstResponder(view) }
@@ -153,11 +210,34 @@ private struct ComputerFullView: View {
    * before the computer opened never reached it.
    */
   private func sendClipboard() {
-    guard phase == "connected" else { return }
+    // Watching, the screen takes nothing: words sent now would be dropped and counted as sent.
+    guard phase == "connected", control else { return }
     let pasteboard = NSPasteboard.general
     guard pasteboard.changeCount != pasteboardSeen, bridge.mayRead() else { return }
     guard let text = readClipboard() else { return }
     events.paste(text)
+  }
+
+  /** Take control: the screen is the person's at once; a working agent is paused meanwhile (`takeComputerControl`). */
+  private func takeControl(_ agentId: String) {
+    withAnimation(.easeOut(duration: 0.18)) { control = true }
+    Task {
+      guard await store.takeComputerControl(agentId) else { return }
+      if control {
+        withAnimation(.easeOut(duration: 0.18)) { paused = true }
+      } else {
+        // Stopped before the agent was paused: it has the computer back at once.
+        await store.handBackComputer(agentId)
+      }
+    }
+  }
+
+  /** Stop: back to watching; an agent paused for the person has the computer back and goes on. */
+  private func stopControl(_ agentId: String) {
+    withAnimation(.easeOut(duration: 0.18)) { control = false }
+    guard paused else { return }
+    paused = false
+    Task { await store.handBackComputer(agentId) }
   }
 
   /**
@@ -174,6 +254,85 @@ private struct ComputerFullView: View {
     pasteboardSent = count
     bridge.sent(text)
     return text
+  }
+}
+
+/**
+ * Under the screen, who has the computer (the founder's reference picture,
+ * 10 November 2026): a dark capsule (#1c1c1e at 94%, a hairline, 4 in) with
+ * the eye and "Watching" in white at 60% and Take control (white, the ink
+ * on it), or the pointer and "You're in control" in white and Stop (white
+ * at 12%). 13 points, 30 high inside. Take control waits for the picture; a
+ * click on the screen while watching swells it once.
+ */
+private struct ControlPill: View {
+  let control: Bool
+  let enabled: Bool
+  let nudge: Int
+  let take: () -> Void
+  let stop: () -> Void
+  @State private var hovering = false
+  @State private var swelling = false
+  @FocusState private var focused: Bool
+
+  var body: some View {
+    HStack(spacing: 10) {
+      HStack(spacing: 6) {
+        Image(systemName: control ? "cursorarrow" : "eye")
+          .font(.system(size: 12, weight: .medium))
+          .frame(width: 14)
+        Text(control ? "You're in control" : "Watching")
+          .font(.system(size: 13))
+          .lineLimit(1)
+      }
+      .foregroundStyle(Color.white.opacity(control ? 1 : 0.6))
+      .padding(.leading, 10)
+      .contentTransition(.opacity)
+      Button(action: control ? stop : take) {
+        Text(control ? "Stop" : "Take control")
+          .font(.system(size: 13, weight: .medium))
+          .lineLimit(1)
+          .foregroundStyle(control ? Color.white : Color(hex: 0x141414))
+          .padding(.horizontal, 14)
+          .frame(height: 30)
+          .background(fill, in: Capsule())
+          .contentShape(Capsule())
+          .contentTransition(.opacity)
+      }
+      .buttonStyle(.hand)
+      .disabled(!control && !enabled)
+      .opacity(!control && !enabled ? 0.5 : 1)
+      .scaleEffect(swelling ? 1.08 : 1)
+      .focused($focused)
+      .focusEffectDisabled()
+      .overlay {
+        if focused {
+          Capsule().strokeBorder(Color(hex: 0xfcfcfc).opacity(0.4), lineWidth: 2).padding(-2)
+        }
+      }
+      .onHover { inside in withAnimation(.easeOut(duration: 0.12)) { hovering = inside } }
+      .pointerStyle(.link)
+      .accessibilityLabel(control ? "Stop" : "Take control")
+    }
+    .padding(4)
+    .background(Color(hex: 0x1c1c1e).opacity(0.94), in: Capsule())
+    .overlay(Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5))
+    .shadow(color: .black.opacity(0.35), radius: 12, y: 4)
+    .fixedSize()
+    .animation(.easeOut(duration: 0.18), value: control)
+    .onChange(of: nudge) { _, _ in
+      guard !control else { return }
+      withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { swelling = true }
+      Task {
+        try? await Task.sleep(nanoseconds: 180_000_000)
+        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { swelling = false }
+      }
+    }
+    .accessibilityElement(children: .contain)
+  }
+
+  private var fill: Color {
+    control ? Color.white.opacity(hovering ? 0.18 : 0.12) : (hovering ? Color(hex: 0xe9e9eb) : Color.white)
   }
 }
 

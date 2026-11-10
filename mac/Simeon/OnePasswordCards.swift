@@ -36,8 +36,9 @@ struct CredentialCardView: View {
           Text(card.purpose).font(.system(size: 14)).tracking(-0.15).foregroundStyle(look.inkSecondary).cssLineHeight(22, size: 14).fixedSize(horizontal: false, vertical: true)
         }
         HStack(spacing: 8) {
-          CardButton(title: String(localized: "Fill with 1Password"), prominent: true, look: look, action: fill)
+          Spacer(minLength: 0)
           CardButton(title: String(localized: "Not now"), look: look) { run { refusal = await store.answerCredentialRequest(entryId, allow: false, in: agentId) } }
+          CardButton(title: String(localized: "Fill with 1Password"), prominent: true, look: look, action: fill)
         }
         .disabled(busy)
         if let refusal { Text(refusal).font(.system(size: 13)).foregroundStyle(look.danger) }
@@ -107,17 +108,7 @@ struct OnePasswordConnectCardView: View {
           .foregroundStyle(card.state == .dismissed ? look.inkSecondary : look.ink)
           .cssLineHeight(22, size: 14, weight: .medium)
           .frame(maxWidth: .infinity, alignment: .leading)
-        if card.state == .open {
-          Button {
-            run { await store.dismissOnePasswordConnect(entryId, in: agentId) }
-          } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .medium)).foregroundStyle(look.inkSecondary)
-              .frame(width: 20, height: 20).contentShape(RoundedRectangle(cornerRadius: 6))
-          }
-          .buttonStyle(.hand)
-          .help("Dismiss without connecting")
-          .accessibilityLabel("Dismiss")
-        } else if let status = card.statusLine {
+        if card.state != .open, let status = card.statusLine {
           StatusPill(text: status, look: look, dot: card.state == .connected ? look.working : nil)
         }
       }
@@ -133,12 +124,19 @@ struct OnePasswordConnectCardView: View {
           }
           .labelsHidden().pickerStyle(.menu).frame(maxWidth: 360, alignment: .leading)
         }
+        // Not now declines it, as the X did; Connect the main one at the right (10 November 2026).
         HStack(spacing: 8) {
-          CardButton(title: busy ? String(localized: "Connecting…") : String(localized: "Connect"), prominent: true, look: look, action: connect)
-            .disabled(busy)
+          Spacer(minLength: 0)
           if failure?.needsSetup == true {
             CardButton(title: String(localized: "How to set it up"), look: look) { NSWorkspace.shared.open(MacOnePassword.setupURL) }
           }
+          CardButton(title: String(localized: "Not now"), look: look) {
+            run { await store.dismissOnePasswordConnect(entryId, in: agentId) }
+          }
+          .disabled(busy)
+          .help("Dismiss without connecting")
+          CardButton(title: busy ? String(localized: "Connecting…") : String(localized: "Connect"), prominent: true, look: look, action: connect)
+            .disabled(busy)
         }
         if let message = failure?.message ?? refusal {
           Text(message).font(.system(size: 13)).foregroundStyle(look.danger).fixedSize(horizontal: false, vertical: true)
@@ -180,13 +178,15 @@ struct OnePasswordConnectCardView: View {
 }
 
 /**
- * The Credentials Store's card (9 November 2026, SimeonCore's
- * `StoreEntryCard`), drawn as the connector card (`ConnectorCard`; 10
- * November 2026, the founder: "Can you respect our design"): the site's
- * icon (a card's mark, a person for contact info) on its 40 tile, its name
- * (13, 500) over one line (13 at 60%), and at its right Save (a login) or
- * Add in the grey capsule, which opens the store's own sheet over the chat
- * already filled; once saved, "Saved" in green as "Connected".
+ * The Credentials Store's card (SimeonCore's `StoreEntryCard`), drawn as
+ * the connector card: the site's icon (a card's mark, a person for contact
+ * info) on its 40 tile, its name over one line, and its button at the
+ * right; once saved, "Saved" in green as "Connected". A login asked for
+ * reads as the founder's reference (10 November 2026): "Sign in to
+ * Amazon", "Opens a secure form" and Open, which opens the secure form in
+ * a sheet (`MacSecureFormSheet`): the email or username and the password,
+ * saved in the store. A card or contact info has Add, which opens the
+ * store's own sheet, filled.
  */
 struct StoreEntryCardView: View {
   let entryId: String
@@ -196,6 +196,9 @@ struct StoreEntryCardView: View {
   @Environment(AppStore.self) private var store
   @State private var model: CredentialsStoreModel?
   @State private var editing: MacCredentialEdit?
+  @State private var signingIn = false
+
+  private var signIn: Bool { card.kind == .login && card.asks }
 
   var body: some View {
     CardShell(look: look) {
@@ -206,13 +209,13 @@ struct StoreEntryCardView: View {
           MacSiteIconTile(site: card.iconSite, title: card.title, contact: card.kind == .contact, side: 40, look: look)
         }
         VStack(alignment: .leading, spacing: 0) {
-          Text(card.title)
+          Text(signIn ? String(localized: "Sign in to \(card.title)") : card.title)
             .font(.system(size: 13, weight: .medium))
             .tracking(-0.08)
             .foregroundStyle(look.ink)
             .lineLimit(1)
             .frame(height: 18)
-          if let line = card.line {
+          if let line = signIn ? String(localized: "Opens a secure form") : card.line {
             Text(line)
               .font(.system(size: 13))
               .tracking(-0.08)
@@ -233,17 +236,7 @@ struct StoreEntryCardView: View {
             .padding(.horizontal, 12)
             .background(look.addedWash, in: Capsule())
         } else if card.asks {
-          Button(action: open) {
-            Text(card.kind == .login ? String(localized: "Save") : String(localized: "Add"))
-              .font(.system(size: 13))
-              .foregroundStyle(look.ink)
-              .padding(.horizontal, 13)
-              .frame(height: 32)
-              .background(look.wash, in: Capsule())
-              .overlay { Capsule().strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
-              .contentShape(Capsule())
-          }
-          .buttonStyle(.hand)
+          CardButton(title: signIn ? String(localized: "Open") : String(localized: "Add"), look: look, action: open)
         }
       }
     }
@@ -254,13 +247,43 @@ struct StoreEntryCardView: View {
         }
       }
     }
+    .sheet(isPresented: $signingIn) {
+      MacSecureFormSheet(
+        title: String(localized: "Sign in to \(card.title)"),
+        line: card.reason,
+        fields: [
+          UserFormCard.Field(id: "username", label: String(localized: "Email or username"), kind: .text, required: false),
+          UserFormCard.Field(id: "password", label: String(localized: "Password"), kind: .password, secret: true),
+        ],
+        site: card.website,
+        submitTitle: String(localized: "Save"),
+        decline: { await store.answerStoreEntry(entryId, in: agentId, saved: false) },
+        submit: saveLogin
+      )
+    }
   }
 
-  /** The store's sheet, filled; the saved contacts read for a card's billing address. */
+  /** A login asked for: the secure form; anything else: the store's sheet, filled (the saved contacts read for a card's billing address). */
   private func open() {
     let made = model ?? CredentialsStoreModel(store: store)
     model = made
+    if signIn {
+      signingIn = true
+      return
+    }
     editing = .filled(card.draft)
     if card.kind == .card { Task { await made.load() } }
+  }
+
+  /** The login saved in the store; the agent is told once it's there. */
+  private func saveLogin(_ typed: [String: String], _ keep: Bool) async -> String? {
+    let made = model ?? CredentialsStoreModel(store: store)
+    model = made
+    var draft = card.draft
+    draft.username = typed["username"] ?? ""
+    draft.password = typed["password"] ?? ""
+    guard await made.save(draft) != nil else { return made.problem ?? String(localized: "That didn't work.") }
+    await store.answerStoreEntry(entryId, in: agentId, saved: true)
+    return nil
   }
 }

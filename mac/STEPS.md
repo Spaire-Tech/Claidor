@@ -3056,3 +3056,62 @@ Not yet built or run on a Mac or an iPhone: no Xcode here; the Swift parses
 and the core's tests ran on Linux (17). The web app's translation ran in
 Chromium, light, dark and French.
 
+
+### The computer opens watching; Take control under the screen (10 November 2026)
+
+The founder, with a reference picture of another app's computer view: "you can use the computer while its
+on use by the agent without much clicking anywhere to allow you. well thats
+not good … below it has a watching/take over picker. i want that. make it
+smooth." The computer's window (`ComputerView.swift`) opens watching: the
+screen takes no click or key (`ComputerScreenView(watching:)`, switched on
+the same connection by `simeonViewOnly`), and a click on it swells Take
+control once. Under the screen, 12 below it, `ControlPill`: a dark capsule
+(#1c1c1e at 94%, a hairline) with the eye and "Watching" and Take control
+(white), or the pointer and "You're in control" and Stop (white at 12%).
+Take control gives the screen the keys and this Mac's clipboard, and
+pauses a working agent (`takeComputerControl`, as the iPhone does), with
+"Iris is paused while you're in control." under the pill; Stop gives the
+keys back and hands the computer back, as closing the window does, which
+resumes the agent. While the agent waits on the person the window opens in
+control, with the hand-off's banner as before. "Stop" is new in the
+catalogue (ten languages); the rest were the iPhone's.
+
+Not yet built or run on a Mac: no Xcode here; the Swift parses. The web
+app's translation ran in Chromium against a stand-in computer.
+
+### The question card: several questions, one at a time (10 November 2026)
+
+`Cards.swift` `QuestionCardView`, in the style of the founder's reference
+picture ("keep the round check and our blue color"):
+- **Layout.** The question 15 semibold. Each choice is a row with its letter on a 24 tile (A, B, C…). The tile becomes the blue round check once picked. "Something else" comes last; clicking it opens a field in its row.
+- **Several questions** (the widget's `questions`, two to four). One shows at a time and slides to the next, and the card holds the tallest one's height. The foot has dots, Back, Skip and Next (Send on the last).
+- **Answering.** A pick moves on by itself; on the last question it sends. The answers go as one reply, a line each (`QuestionCard.reply` in SimeonCore).
+- **Answered.** Each question shows in grey with its answer under the blue round check.
+- **Skip on a card of one question** declines it, as the X did.
+
+The iPhone's card is the same in its own sizes, and a sideways swipe moves between its questions. New words are in both catalogues (ten languages).
+
+Not yet built or run on a Mac or an iPhone: no Xcode here. Both files parse. The core's new tests ran on Linux (`QuestionCardTests`, with `ChatTests.testQuestionCardsAndConnectors`). The web app's card ran in Chromium against a stand-in computer.
+
+### One style for every card's buttons (10 November 2026)
+
+The founder: "Where else (cards) can we bring this design. To avoid inconsistency?", then "go for your suggestions."
+- **The shape.** `CardShell` is 20 round and padded 14 by 16, as the question card.
+- **The buttons.** `CardButton` is a pill 32 high, 13.5 medium. `prominent` is the main action, in our blue (it was the ink's own colour at first). The others are grey; `tone: .danger` is a refusal in red words; `tone: .money` keeps our blue for paying. The checkout card's own Deny and Allow stay as they were.
+- **The order.** Buttons sit at the card's right, the main one last: Discard, Send; Deny, Always allow, Allow once; Never, Allow once, Always allow (`MacLocalPermission`); Not now, Fill in; Skip at the left of I'm done and Take over.
+- **Not now replaces the X** on the secret, form and 1Password connect cards. Once answered, the status pill takes the corner.
+
+The iPhone has the same in its own sizes: `CardPillStyle` (38 high) in `CardPills`, which puts the buttons one under the other when they don't fit across, and `.card()` 22 round, padded 16.
+
+The same day the founder had the main pills made our blue ("make them our blue"): `prominent` and the question card's Next and Send are `look.yours` with white words; the iPhone's `.main` is `Ink.bubbleMine`. The Slack/GitHub Connect is a `CardButton` now.
+
+
+### The sign-in form, the secret and the computer, as the founder's references (10 November 2026)
+
+- **`CardKindHead`**: a card's kind at its top (a 28 tile with its symbol, its name), used by the secret ("Secrets", `key.horizontal`) and the computer ("Computer", `laptopcomputer`) cards. `CardShieldLine` is the shield and its line.
+- **`cardField`**: every writing box on a card or a secure form, 36 high and 12 round (the draft's box is 14 round).
+- **The in-chat form** (`UserFormCard.swift`) is a row with Open; Open shows `MacSecureFormSheet` (title and X, fields, a password's eye, "Save to your Credentials Store" for a sign-in, the shield, Not now and Fill in). The store's login card opens the same sheet, saved in the store.
+- **The computer card**: "Action needed" over the instruction in grey, the screen across the whole card, Skip, I'm done and Take over at the right.
+
+The iPhone has the same: `CardKindHead`, `CardShieldLine` and `cardField()` (44 high, 14 round) in `Cards.swift`, `PhoneSecureFormSheet` in `UserFormCard.swift`. Not yet built or run on a Mac or an iPhone: the files parse and the core's tests ran on Linux.
+Not yet built or run on a Mac or an iPhone: no Xcode here. The files parse. The web app's cards ran in Chromium against a stand-in computer, light and dark.

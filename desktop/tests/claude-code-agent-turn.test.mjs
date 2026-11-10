@@ -122,7 +122,7 @@ test("Claude Code runs the agent's turn: the brief with the tools' note, the con
     assert.equal(one.argv[one.argv.indexOf("--model") + 1], "opus");
     assert.equal(one.argv[one.argv.indexOf("--permission-prompt-tool") + 1], "mcp__simeon__ReviewPermission");
     // Claude Code's own shell is off; every command goes through the engine's Shell and its safety review. Simeon's tools don't ask.
-    assert.equal(one.argv[one.argv.indexOf("--disallowedTools") + 1], "Bash,BashOutput,KillShell,KillBash");
+    assert.equal(one.argv[one.argv.indexOf("--disallowedTools") + 1], "Bash,BashOutput,KillShell,KillBash,AskUserQuestion");
     assert.equal(one.argv[one.argv.indexOf("--allowedTools") + 1], "mcp__simeon");
     assert.match(one.brief, /Run shell commands with `mcp__simeon__Shell`/);
     assert.deepEqual(box.lines.filter((line) => line.startsWith("claude-code tools offered=")), ["claude-code tools offered=SendMessage"]);
@@ -197,6 +197,9 @@ test("the prompt and the brief's note", async () => {
     assert.equal(bridge.claudeCodePrompt("Hi", undefined, true), "Hi");
     assert.match(bridge.claudeCodePrompt("  ", undefined, false), /continue as the brief says/);
     assert.match(bridge.claudeCodeBriefNote(), /The person sees only what you send with it/);
+    // A question goes as Simeon's question card: Claude Code's own AskUserQuestion reaches no app (10 November 2026).
+    assert.match(bridge.claudeCodeBriefNote(), /question card, `mcp__simeon__SendMessage` with type widget/);
+    assert.match(bridge.claudeCodeBriefNote(), /your own AskUserQuestion is off/);
   } finally {
     await dispose();
   }

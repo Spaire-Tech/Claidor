@@ -31,22 +31,7 @@ enum ChatMetrics {
   }
 }
 
-/** The chat's blue button (`button[data-variant="primary"]`): 32 pt, 8 pt corners, white 14 pt. */
-struct BlueButtonStyle: ButtonStyle {
-  var height: CGFloat = 32
-  @Environment(\.isEnabled) private var enabled
-
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(.system(size: 14))
-      .foregroundStyle(.white)
-      .padding(.horizontal, 10)
-      .frame(height: height)
-      .background(Ink.bubbleMine.opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.45), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-  }
-}
-
-/** The quiet grey button beside it: the faint fill and a hairline edge. */
+/** The quiet grey button outside the cards (Show Hidden Agents, a row's Connect): the faint fill and a hairline edge. */
 struct GreyButtonStyle: ButtonStyle {
   var height: CGFloat = 32
   var capsule = false
@@ -75,6 +60,171 @@ struct GreyButtonStyle: ButtonStyle {
         .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.55 : 1)
         .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
+  }
+}
+
+/**
+ * A card's button, one style on every card (10 November 2026, the question
+ * card's; the founder: "go for your suggestions"): a capsule 38 high, 15
+ * medium. The main action (`main`) in our blue (the founder: "make them our
+ * blue"); the others grey; a refusal (`danger`) in red words; `money` (buy,
+ * book, pay) the same blue. A card sets them in `CardPills`, at its right,
+ * the main one last.
+ */
+struct CardPillStyle: ButtonStyle {
+  enum Tone { case plain, main, danger, money }
+  var tone: Tone = .plain
+  /** 38 under a card; 32 in a card's own row, beside its name (Connect). */
+  var height: CGFloat = 38
+
+  func makeBody(configuration: Configuration) -> some View {
+    CardPill(configuration: configuration, tone: tone, height: height)
+  }
+
+  private struct CardPill: View {
+    let configuration: ButtonStyleConfiguration
+    let tone: Tone
+    let height: CGFloat
+    @Environment(\.isEnabled) private var enabled
+    @Environment(\.cardPillsStacked) private var stacked
+
+    var body: some View {
+      let small = height < 36
+      configuration.label
+        .font(.system(size: small ? 13 : 15, weight: .medium))
+        .foregroundStyle(ink)
+        .lineLimit(1)
+        .padding(.horizontal, small ? 14 : 18)
+        .frame(maxWidth: stacked ? .infinity : nil)
+        .frame(height: height)
+        .background(fill, in: Capsule())
+        .contentShape(Capsule())
+        .opacity(!enabled ? 0.4 : configuration.isPressed ? 0.7 : 1)
+        .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+
+    private var ink: Color {
+      switch tone {
+      case .main, .money: Ink.mineText
+      case .danger: Ink.danger
+      case .plain: Ink.primary
+      }
+    }
+
+    private var fill: Color {
+      switch tone {
+      case .main, .money: Ink.bubbleMine
+      case .plain, .danger: Ink.primary.opacity(0.08)
+      }
+    }
+  }
+}
+
+private struct CardPillsStackedKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+  /** Set by `CardPills` when its buttons sit one under the other, each across the card. */
+  var cardPillsStacked: Bool {
+    get { self[CardPillsStackedKey.self] }
+    set { self[CardPillsStackedKey.self] = newValue }
+  }
+}
+
+/**
+ * A card's buttons: in a row at its right, the main one last, with
+ * `leading` (Skip, a note) at its left. When they don't fit across (three
+ * on a small iPhone, or a longer translation), one under the other, each as
+ * wide as the card, `leading` last, rather than cut short.
+ */
+struct CardPills<Leading: View, Content: View>: View {
+  private let leading: Leading
+  private let content: Content
+
+  init(@ViewBuilder content: () -> Content) where Leading == EmptyView {
+    self.leading = EmptyView()
+    self.content = content()
+  }
+
+  init(@ViewBuilder leading: () -> Leading, @ViewBuilder content: () -> Content) {
+    self.leading = leading()
+    self.content = content()
+  }
+
+  var body: some View {
+    ViewThatFits(in: .horizontal) {
+      HStack(spacing: 8) {
+        leading
+        Spacer(minLength: 0)
+        content
+      }
+      VStack(spacing: 8) {
+        content
+        leading
+      }
+      .environment(\.cardPillsStacked, true)
+    }
+  }
+}
+
+/**
+ * A card's kind at its top, as the founder's references put it (10
+ * November 2026): a 32 tile (9 round, the ink at 6%, a hairline) with the
+ * kind's symbol, its name (16), and what happened in a pill at the right.
+ */
+struct CardKindHead<End: View>: View {
+  let symbol: String
+  let name: String
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 10) {
+      Image(systemName: symbol)
+        .font(.system(size: 15, weight: .regular))
+        .foregroundStyle(Ink.secondary)
+        .frame(width: 32, height: 32)
+        .background(Ink.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).stroke(Ink.primary.opacity(0.14), lineWidth: 0.5))
+        .accessibilityHidden(true)
+      Text(name).font(.system(size: 16)).foregroundStyle(Ink.primary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      end()
+    }
+  }
+}
+
+extension CardKindHead where End == EmptyView {
+  init(symbol: String, name: String) {
+    self.init(symbol: symbol, name: name) { EmptyView() }
+  }
+}
+
+/** `checkmark.shield` and its line (13), in grey: kept safe, never shown to the agent. */
+struct CardShieldLine: View {
+  let words: String
+
+  var body: some View {
+    HStack(alignment: .top, spacing: 5) {
+      Image(systemName: "checkmark.shield").font(.system(size: 13)).padding(.top, 1)
+      Text(words).font(.system(size: 13)).fixedSize(horizontal: false, vertical: true)
+    }
+    .foregroundStyle(Ink.secondary)
+  }
+}
+
+extension View {
+  /**
+   * A field on a card or a secure form: 17, 44 high, padded 14 at the
+   * sides, 14 round with its edge (the founder, 10 November 2026: "all
+   * writing boxes should be rounded too").
+   */
+  func cardField(height: CGFloat? = 44) -> some View {
+    self
+      .font(.system(size: 17))
+      .padding(.horizontal, 14)
+      .padding(.vertical, height == nil ? 11 : 0)
+      .frame(height: height)
+      .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+      .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Ink.edge, lineWidth: 1))
   }
 }
 
@@ -135,17 +285,25 @@ struct StatusPill: View {
 
 // MARK: - Question
 
-/** A question card (`widget`): live, answered, or dismissed, the window's three looks. */
+/**
+ * A question card (10 November 2026, the founder's reference: "change our
+ * card style to this. but keep the round check and our blue color"): the
+ * question in bold, each choice with its letter on a small tile (A, B, C…)
+ * that becomes our blue round check once picked, "Something else" last when
+ * the agent allows the person's own words. A card may ask several questions
+ * ("have the thing swipe when there's many questions"): one at a time,
+ * swiped or carried by Back, Skip and Next (Send on the last), dots at the
+ * foot; the answers go together, a line each (`QuestionCard.reply`). A pick
+ * moves on by itself, and on the last question sends. Skip on a card of one
+ * question declines it. Answered: each question in grey with its answer
+ * under a blue round check; dismissed: the question and a pill.
+ */
 struct QuestionCardView: View {
   let entryId: String
   let agentId: String
   let card: QuestionCard
   @Environment(AppStore.self) private var store
   @Environment(\.chatWidth) private var width
-  @State private var own = ""
-  @FocusState private var typingOwn: Bool
-  /** Several picked at once (`multiSelect`), sent together with Submit. */
-  @State private var picked: Set<Int> = []
 
   var body: some View {
     let pending = store.pendingAnswers[entryId]
@@ -154,124 +312,371 @@ struct QuestionCardView: View {
       if card.isDismissed || pending == "" {
         dismissed
       } else if let answer {
-        answered(answer)
+        AnsweredQuestionsView(card: card, answer: answer)
       } else if card.isSkipped {
         dismissed
       } else {
-        live
+        AskingQuestionsView(entryId: entryId, agentId: agentId, card: card)
       }
     }
     .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
   }
 
-  private var live: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .top, spacing: 8) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(card.prompt).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
-            .lineSpacing(MessageType.spacing()).fixedSize(horizontal: false, vertical: true)
-          if let help = card.help {
-            Text(help).font(.system(size: 17)).foregroundStyle(Ink.secondary)
-              .lineSpacing(MessageType.spacing()).fixedSize(horizontal: false, vertical: true)
-          }
-        }
-        Spacer(minLength: 0)
-        Button { Task { await store.dismissQuestion(entryId, in: agentId) } } label: {
-          Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-            .frame(width: 32, height: 32).contentShape(Rectangle())
-        }
-        .buttonStyle(.tactile)
-        .accessibilityLabel("Dismiss")
-      }
-      VStack(spacing: 0) {
-        ForEach(Array(card.options.enumerated()), id: \.offset) { index, option in
-          if index > 0 { Rectangle().fill(Ink.hairline).frame(height: 1) }
-          // Picking sends the option's own reply (`value`); several picked go together with Submit.
-          Button { if card.multiSelect { toggle(index) } else { give(option.value) } } label: {
-            HStack(spacing: 8) {
-              mark(picked.contains(index))
-              VStack(alignment: .leading, spacing: 0) {
-                Text(option.label).font(.system(size: 17, weight: option.style == .primary ? .medium : .regular))
-                  .foregroundStyle(option.style == .danger ? Ink.danger : option.style == .primary ? Ink.blue : Ink.primary)
-                  .multilineTextAlignment(.leading)
-                if let description = option.description {
-                  Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
-                }
-              }
-              Spacer(minLength: 0)
-            }
-            .padding(8)
-            .contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-        }
-      }
-      if card.multiSelect && !picked.isEmpty {
-        Button("Submit") { give(picked.sorted().map { card.options[$0].value }.joined(separator: "\n")) }
-          .buttonStyle(Tactile(look: BlueButtonStyle()))
-      }
-      if card.allowsOwnAnswer {
-        HStack(alignment: .bottom, spacing: 8) {
-          TextField("Type your own answer", text: $own, axis: .vertical)
-            .font(.system(size: 17))
-            .lineLimit(1...5)
-            .focused($typingOwn)
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            // The whole box takes the tap, not only the line of text inside its padding.
-            .background { RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Ink.field).onTapGesture { typingOwn = true } }
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1).allowsHitTesting(false))
-            .submitLabel(.send)
-            .onSubmit { give(own) }
-          if !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            Button("Submit") { give(own) }.buttonStyle(Tactile(look: BlueButtonStyle()))
-          }
-        }
-      }
-    }
-    .card()
-  }
-
-  private func answered(_ answer: String) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      Text(card.prompt).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.primary)
-        .fixedSize(horizontal: false, vertical: true)
-      HStack(spacing: 8) {
-        Image(systemName: "checkmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.blue).frame(width: 18)
-        Text(card.shown(answer)).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
-        Spacer(minLength: 0)
-      }
-      .padding(8)
-    }
-    .card()
-  }
-
   private var dismissed: some View {
     HStack(alignment: .center, spacing: 8) {
-      Text(card.prompt).font(.system(size: 17, weight: .medium)).foregroundStyle(Ink.secondary).lineLimit(2)
+      Text(card.prompt).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.secondary).lineLimit(2)
       Spacer(minLength: 0)
       StatusPill(text: card.isSkipped && !card.isDismissed ? String(localized: "Skipped") : String(localized: "Dismissed"))
     }
-    .card()
+    .card(radius: 22, padding: 16)
   }
+}
 
-  private func give(_ value: String) {
-    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !trimmed.isEmpty else { return }
-    own = ""
-    Task { await store.answer(trimmed, card: entryId, in: agentId) }
-  }
+/** The questions being asked, one at a time. */
+private struct AskingQuestionsView: View {
+  let entryId: String
+  let agentId: String
+  let card: QuestionCard
+  @Environment(AppStore.self) private var store
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+  @State private var picks: [Int: Set<Int>] = [:]
+  @State private var own: [Int: String] = [:]
+  @State private var writing: Int?
+  @State private var sending = false
+  @FocusState private var typing: Int?
 
-  private func toggle(_ index: Int) {
-    if picked.contains(index) { picked.remove(index) } else { picked.insert(index) }
-  }
+  private var questions: [QuestionCard.Question] { card.questions }
+  private var isLast: Bool { index >= questions.count - 1 }
 
-  /** The ring before an option: empty, or filled with a tick once picked for a several-at-once answer. */
-  @ViewBuilder private func mark(_ on: Bool) -> some View {
-    if on {
-      Image(systemName: "checkmark.circle.fill").font(.system(size: 18)).foregroundStyle(Ink.blue).frame(width: 18, height: 18)
-    } else {
-      Circle().stroke(Ink.primary.opacity(0.3), lineWidth: 1).frame(width: 18, height: 18)
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      ZStack(alignment: .topLeading) {
+        // Every question, unseen, holds the card at the tallest one's height, so it never jumps as it slides.
+        ForEach(questions.indices, id: \.self) { at in
+          page(at, live: false).hidden().accessibilityHidden(true)
+        }
+        page(index, live: true)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      .contentShape(Rectangle())
+      .simultaneousGesture(swipe)
+      footer
     }
+    .padding(.horizontal, 8)
+    .padding(.top, 16)
+    .padding(.bottom, 14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  /** A swipe sideways: left to the next question once this one is answered, right back to the one before. */
+  private var swipe: some Gesture {
+    DragGesture(minimumDistance: 24)
+      .onEnded { drag in
+        let across = drag.translation.width
+        guard questions.count > 1, abs(across) > abs(drag.translation.height) * 1.5, abs(across) > 44 else { return }
+        if across < 0 { if !isLast, answer(index) != nil { move(to: index + 1) } } else { move(to: index - 1) }
+      }
+  }
+
+  private func page(_ at: Int, live: Bool) -> some View {
+    let question = questions[at]
+    return VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(question.prompt).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+          .fixedSize(horizontal: false, vertical: true)
+        if let help = question.help, !help.isEmpty {
+          Text(help).font(.system(size: 15)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      .padding(.horizontal, 8)
+      VStack(spacing: 2) {
+        ForEach(Array(question.options.enumerated()), id: \.offset) { place, option in
+          Button { choose(place, in: at) } label: {
+            QuestionRow(picked: picks[at, default: []].contains(place)) {
+              QuestionTile(letter: Self.letter(place), picked: picks[at, default: []].contains(place))
+              VStack(alignment: .leading, spacing: 1) {
+                Text(option.label).font(.system(size: 17, weight: option.style == .primary ? .medium : .regular))
+                  .foregroundStyle(option.style == .danger ? Ink.danger : option.style == .primary ? Ink.blue : Ink.primary)
+                  .multilineTextAlignment(.leading)
+                if let line = option.description, !line.isEmpty {
+                  Text(line).font(.system(size: 15)).foregroundStyle(Ink.secondary).multilineTextAlignment(.leading)
+                }
+              }
+            }
+          }
+          .buttonStyle(.tactile)
+          .accessibilityAddTraits(picks[at, default: []].contains(place) ? .isSelected : [])
+        }
+        if question.allowsOwnAnswer { ownRow(at, live: live) }
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  /** "Something else": its letter and grey words, a field in the row once tapped. */
+  private func ownRow(_ at: Int, live: Bool) -> some View {
+    let words = own[at, default: ""]
+    let open = writing == at || !words.isEmpty
+    let given = !words.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    return QuestionRow(picked: given) {
+      QuestionTile(letter: Self.letter(questions[at].options.count), picked: given)
+      if open {
+        TextField("Something else", text: Binding(get: { own[at, default: ""] }, set: { typed in
+          own[at] = typed
+          if !questions[at].multiSelect && !typed.isEmpty { picks[at] = [] }
+        }), axis: .vertical)
+          .font(.system(size: 17))
+          .lineLimit(1...4)
+          .focused($typing, equals: live ? at : -1 - at)
+          .submitLabel(isLast ? .send : .next)
+          .onSubmit(next)
+          .accessibilityLabel("Your own answer")
+      } else {
+        Text("Something else").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
+      }
+    }
+    .contentShape(Rectangle())
+    .onTapGesture {
+      writing = at
+      // The field appears with this change; it takes the typing on the next beat, once it is there.
+      Task { typing = at }
+    }
+  }
+
+  private var footer: some View {
+    HStack(spacing: 8) {
+      if questions.count > 1 { QuestionDots(count: questions.count, at: index) }
+      Spacer(minLength: 0)
+      if index > 0 {
+        QuestionPill(title: String(localized: "Back")) { move(to: index - 1) }
+      }
+      QuestionPill(title: String(localized: "Skip"), action: skip)
+      QuestionPill(title: isLast ? String(localized: "Send") : String(localized: "Next"), prominent: true, action: next)
+        .disabled(answer(index) == nil || sending)
+    }
+    .padding(.horizontal, 8)
+  }
+
+  static func letter(_ place: Int) -> String {
+    let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    return String(letters[max(0, min(place, letters.count - 1))])
+  }
+
+  private func answer(_ at: Int) -> String? {
+    guard questions.indices.contains(at) else { return nil }
+    let question = questions[at]
+    let words = own[at, default: ""].trimmingCharacters(in: .whitespacesAndNewlines)
+    // Each pick sends the option's own reply (`value`), never its label.
+    let chosen = picks[at, default: []].sorted().compactMap { place in question.options.indices.contains(place) ? question.options[place] : nil }.map { option in option.value }
+    let all = question.multiSelect ? chosen + (words.isEmpty ? [] : [words]) : (words.isEmpty ? chosen : [words])
+    return all.isEmpty ? nil : all.joined(separator: "\n")
+  }
+
+  private func choose(_ place: Int, in at: Int) {
+    guard !sending else { return }
+    Haptics.tap()
+    if questions[at].multiSelect {
+      var now = picks[at, default: []]
+      if now.contains(place) { now.remove(place) } else { now.insert(place) }
+      picks[at] = now
+      return
+    }
+    picks[at] = [place]
+    own[at] = ""
+    writing = nil
+    typing = nil
+    // A pick moves on by itself once its check has shown: to the next question, or, on the last, sends.
+    Task {
+      try? await Task.sleep(for: .milliseconds(240))
+      if index == at, picks[at, default: []] == Set([place]) { next() }
+    }
+  }
+
+  private func move(to target: Int) {
+    guard questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    writing = nil
+    typing = nil
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+
+  private func next() {
+    guard !sending, answer(index) != nil else { return }
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  private func skip() {
+    guard !sending else { return }
+    picks[index] = []
+    own[index] = ""
+    if isLast { send() } else { move(to: index + 1) }
+  }
+
+  private func send() {
+    sending = true
+    typing = nil
+    let reply = card.reply(questions.indices.map(answer))
+    Task {
+      if let reply { await store.answer(reply, card: entryId, in: agentId) } else { await store.dismissQuestion(entryId, in: agentId) }
+      sending = false
+    }
+  }
+}
+
+/** The answers given: each question in grey with its answer under a blue round check, one at a time for several. */
+private struct AnsweredQuestionsView: View {
+  let card: QuestionCard
+  let answer: String
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @State private var index = 0
+  @State private var forward = true
+
+  var body: some View {
+    let answers = card.answers(answer)
+    VStack(alignment: .leading, spacing: 14) {
+      ZStack(alignment: .topLeading) {
+        ForEach(card.questions.indices, id: \.self) { at in
+          page(at, answers).hidden().accessibilityHidden(true)
+        }
+        page(index, answers)
+          .id(index)
+          .transition(slide)
+      }
+      .clipped()
+      if card.asksSeveral {
+        HStack(spacing: 8) {
+          QuestionDots(count: card.questions.count, at: index)
+          Spacer(minLength: 0)
+          QuestionPill(title: String(localized: "Back")) { move(to: index - 1) }
+            .disabled(index == 0)
+          QuestionPill(title: String(localized: "Next")) { move(to: index + 1) }
+            .disabled(index >= card.questions.count - 1)
+        }
+        .padding(.horizontal, 8)
+      }
+    }
+    .padding(.horizontal, 8)
+    .padding(.top, 16)
+    .padding(.bottom, 14)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    .modifier(CardEdge(radius: 22))
+  }
+
+  private var slide: AnyTransition {
+    if reduceMotion { return .opacity }
+    return .asymmetric(insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                       removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
+  }
+
+  private func page(_ at: Int, _ answers: [String?]) -> some View {
+    let given = at < answers.count ? answers[at] : nil
+    return VStack(alignment: .leading, spacing: 12) {
+      Text(card.questions[at].prompt).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: 12) {
+        if let given {
+          Image(systemName: "checkmark.circle.fill").font(.system(size: 24)).foregroundStyle(Ink.blue).frame(width: 28, height: 28)
+          Text(given).font(.system(size: 17)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true)
+        } else {
+          Text("Skipped").font(.system(size: 17)).foregroundStyle(Ink.tertiary)
+        }
+        Spacer(minLength: 0)
+      }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(given.map { String(localized: "Your answer: \($0)") } ?? String(localized: "Skipped"))
+    }
+    .padding(.horizontal, 8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func move(to target: Int) {
+    guard card.questions.indices.contains(target), target != index else { return }
+    forward = target > index
+    withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .smooth(duration: 0.34)) { index = target }
+  }
+}
+
+/** A choice's row: 14 round, a lighter grey once picked. */
+private struct QuestionRow<Content: View>: View {
+  let picked: Bool
+  @ViewBuilder let content: () -> Content
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 12) {
+      content()
+      Spacer(minLength: 0)
+    }
+    .padding(.vertical, 9)
+    .padding(.horizontal, 8)
+    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(picked ? Ink.primary.opacity(0.07) : Color.clear))
+    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+  }
+}
+
+/** A choice's letter on a small tile, or our blue round check once picked. */
+private struct QuestionTile: View {
+  let letter: String
+  let picked: Bool
+
+  var body: some View {
+    ZStack {
+      if picked {
+        Image(systemName: "checkmark.circle.fill").font(.system(size: 24)).foregroundStyle(Ink.blue)
+          .transition(.scale(scale: 0.6).combined(with: .opacity))
+      } else {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+          .fill(Ink.primary.opacity(0.05))
+          .overlay { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Ink.hairline, lineWidth: 1) }
+          .overlay { Text(letter).font(.system(size: 14, weight: .medium)).foregroundStyle(Ink.secondary) }
+          .transition(.opacity)
+      }
+    }
+    .frame(width: 28, height: 28)
+    .animation(.spring(response: 0.25, dampingFraction: 0.8), value: picked)
+    .accessibilityHidden(true)
+  }
+}
+
+/** Where the person is among a card's questions. */
+private struct QuestionDots: View {
+  let count: Int
+  let at: Int
+
+  var body: some View {
+    HStack(spacing: 6) {
+      ForEach(0..<count, id: \.self) { place in
+        Circle().fill(Ink.primary.opacity(place == at ? 0.5 : 0.14)).frame(width: 7, height: 7)
+      }
+    }
+    .animation(.easeOut(duration: 0.2), value: at)
+    .accessibilityElement()
+    .accessibilityLabel(Text("Question \(at + 1) of \(count)"))
+  }
+}
+
+/** The card's buttons, every card's pills: grey, Next and Send the main one. */
+private struct QuestionPill: View {
+  let title: String
+  var prominent = false
+  let action: () -> Void
+
+  var body: some View {
+    Button(title, action: action)
+      .buttonStyle(Tactile(look: CardPillStyle(tone: prominent ? .main : .plain)))
+      .fixedSize()
   }
 }
 
@@ -563,7 +968,7 @@ struct ListenerConnectCard: View {
             opening = false
           }
         }
-        .buttonStyle(Tactile(look: BlueButtonStyle()))
+        .buttonStyle(Tactile(look: CardPillStyle(tone: .main, height: 32)))
       }
     }
     .card()
@@ -1015,18 +1420,20 @@ struct DraftCardView: View {
             .padding(.horizontal, 10).padding(.vertical, 9)
           }
         }
-        .background(Ink.field, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // Rounded as every writing box (10 November 2026).
+        .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         if editable {
-          HStack(spacing: 8) {
-            Button(isEmail ? "Send email" : "Send message") { send() }
-              .buttonStyle(Tactile(look: BlueButtonStyle()))
-              .disabled(isEmail && !validAddresses)
+          // The cards' pills (10 November 2026): Discard grey, Send the main one, last.
+          CardPills {
+            if busy { ProgressView().controlSize(.small) }
             Button("Discard") {
               busy = true
               Task { await store.discardDraft(entryId, in: agentId); busy = false }
             }
-            .buttonStyle(Tactile(look: GreyButtonStyle()))
-            if busy { ProgressView().controlSize(.small) }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            Button(isEmail ? "Send email" : "Send message") { send() }
+              .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+              .disabled(isEmail && !validAddresses)
           }
           .disabled(busy)
         }
@@ -1481,8 +1888,8 @@ struct RequestCardView: View {
       switch card {
       case .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule):
         approval(requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule)
-      case .secret(let label, let description, let provided, let dismissed):
-        secretCard(label: label, description: description, provided: provided, dismissed: dismissed)
+      case .secret(let label, let description, let variable, let provided, let dismissed):
+        secretCard(label: label, description: description, variable: variable, provided: provided, dismissed: dismissed)
       case .computer(let requestId, let instruction, let resolution):
         computer(requestId: requestId, instruction: instruction, resolution: resolution)
       case .form(let form):
@@ -1532,10 +1939,11 @@ struct RequestCardView: View {
         ApprovalDisclosure(subject: heading.subject, text: command ?? summary, pending: pending)
       }
       if pending {
-        HStack(spacing: 8) {
-          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(Tactile(look: BlueButtonStyle()))
-          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
-          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(Tactile(look: GreyButtonStyle()))
+        // Deny in red words, Always allow grey, Allow once the main one, last (10 November 2026).
+        CardPills {
+          Button("Deny") { resolve(requestId, "denied", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle(tone: .danger)))
+          Button("Always allow") { resolve(requestId, "always", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Allow once") { resolve(requestId, "approved", rule: proposedRule) }.buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
         }
         .disabled(busy)
       }
@@ -1567,48 +1975,62 @@ struct RequestCardView: View {
     Task { await work(); busy = false }
   }
 
-  private func secretCard(label: String, description: String, provided: Bool, dismissed: Bool) -> some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(spacing: 8) {
-        Image(systemName: "key.fill").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        Text(label).font(.system(size: 17, weight: .medium)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
-        Spacer(minLength: 0)
+  /**
+   * A secret the agent asks for, as the founder's reference draws it (10
+   * November 2026): "Secrets" at the top with a key; the secret's name and
+   * why; the variable it is kept under over its field when the agent named
+   * one ("AWS_ACCESS_KEY_ID"); the field, rounded; then a shield and
+   * "Stored securely, never shown to your agent." with Not now and Save
+   * securely at the right.
+   */
+  private func secretCard(label: String, description: String, variable: String?, provided: Bool, dismissed: Bool) -> some View {
+    VStack(alignment: .leading, spacing: 14) {
+      CardKindHead(symbol: "key.horizontal", name: String(localized: "Secrets")) {
         if provided { StatusPill(text: String(localized: "Saved"), dot: Ink.live, size: 12) }
         else if dismissed { StatusPill(text: String(localized: "Dismissed")) }
-        else {
-          // Not giving it is an answer too: the agent is told it was declined.
-          Button { run { await store.dismissQuestion(entryId, in: agentId) } } label: {
-            Image(systemName: "xmark").font(.system(size: 11, weight: .semibold)).foregroundStyle(Ink.secondary)
-              .frame(width: 32, height: 32).contentShape(Rectangle())
-          }
-          .buttonStyle(.tactile)
-          .accessibilityLabel("Dismiss")
-        }
       }
-      if !description.isEmpty && !dismissed { Text(description).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      VStack(alignment: .leading, spacing: 3) {
+        Text(label).font(.system(size: 18, weight: .semibold)).foregroundStyle(dismissed ? Ink.secondary : Ink.primary)
+          .fixedSize(horizontal: false, vertical: true)
+        let line = provided ? String(localized: "Saved securely and kept private.") : dismissed ? "" : description
+        if !line.isEmpty { Text(line).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true) }
+      }
       if !provided && !dismissed {
-        SecureField("Paste your \(label)", text: $secret)
-          .font(.system(size: 17))
-          .typedAsIs().autocorrectionDisabled()
-          .padding(.horizontal, 10).frame(height: 34)
-          .background(Ink.field, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Ink.edge, lineWidth: 1))
-        Button("Save securely") {
-          let value = secret
-          secret = ""
-          run { await store.submitSecret(value, entryId: entryId, in: agentId) }
+        VStack(alignment: .leading, spacing: 6) {
+          if let variable {
+            Text(verbatim: variable).font(.system(size: 13)).tracking(0.2).foregroundStyle(Ink.secondary).textSelection(.enabled)
+          }
+          SecureField("Paste your \(label)", text: $secret)
+            .typedAsIs().autocorrectionDisabled()
+            .cardField()
         }
-        .buttonStyle(Tactile(look: BlueButtonStyle()))
-        .disabled(busy || secret.trimmingCharacters(in: .whitespaces).isEmpty)
+        CardPills {
+          CardShieldLine(words: String(localized: "Stored securely, never shown to your agent."))
+        } content: {
+          // Not giving it is an answer too: the agent is told it was declined (Not now replaced the X, 10 November 2026).
+          Button("Not now") { run { await store.dismissQuestion(entryId, in: agentId) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+          Button("Save securely") {
+            let value = secret
+            secret = ""
+            run { await store.submitSecret(value, entryId: entryId, in: agentId) }
+          }
+          .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+          .disabled(secret.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+        .disabled(busy)
       }
     }
     .card()
   }
 
   /**
-   * "Your turn on the computer" (patch HANDOFF_CARD_SOURCE): a computer
-   * tile, the status, the instruction, the screen as it was when
-   * the agent asked, Take over / I'm done / Skip. It waits while the
+   * The agent hands the person its computer, as the founder's reference
+   * draws it (10 November 2026): "Computer" at the top with a laptop;
+   * "Action needed" over the agent's instruction in grey; while it waits,
+   * the screen as it was when the agent asked, across the whole card; then
+   * Skip, I'm done and Take over (our blue). Settled: what happened in a
+   * pill at the top, the instruction, and Open computer. It waits while the
    * computer says this request is pending (`Obn`); before its status is
    * read, while the line has no answer yet.
    */
@@ -1616,69 +2038,57 @@ struct RequestCardView: View {
     let pending = store.computer.status(agentId)?.handoff
     let known = store.computer.readState(agentId) == .known
     let waiting = known ? pending?.requestId == requestId : resolution == nil
-    let shownInstruction = waiting ? (pending?.instruction ?? instruction) : instruction
+    let shownInstruction = (waiting ? (pending?.instruction ?? instruction) : instruction).trimmingCharacters(in: .whitespacesAndNewlines)
     let ending = HandoffOutcome(resolution: resolution)
     let snapshot = waiting ? pending?.snapshotDataUrl.flatMap(Self.picture) : nil
-    return VStack(alignment: .leading, spacing: 12) {
-      HStack(spacing: 12) {
-        // The cards' own tile, light or dark with the theme (15 October 2026: on a fixed white tile
-        // the monitor, drawn in the theme's ink, vanished in the dark).
-        Image(systemName: "display").font(.system(size: 19, weight: .medium)).foregroundStyle(Ink.primary)
-          .frame(width: 44, height: 44)
-          .background(Ink.tile, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-          .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Ink.tileEdge, lineWidth: 0.5))
-        if waiting {
-          VStack(alignment: .leading, spacing: 2) {
-            Text("Your turn on the computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-            HStack(spacing: 6) {
-              PulsingDot(active: true)
-              Text("Waiting for you").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-            }
-          }
-          Spacer(minLength: 0)
-        } else {
-          // Settled: what happened in a pill at the right, as the email card has its state (16 October 2026):
+    return VStack(alignment: .leading, spacing: 14) {
+      CardKindHead(symbol: "laptopcomputer", name: String(localized: "Computer")) {
+        if !waiting {
+          // Settled: what happened in a pill, as the email card has its state (16 October 2026):
           // Done and Answered in green, Skipped in blue, Canceled in red.
-          Text("Computer").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
           let tint = Self.tint(ending)
           StatusPill(text: ending.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
         }
       }
-      if !shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        Text(shownInstruction.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 15)).foregroundStyle(waiting ? Ink.primary : Ink.secondary).fixedSize(horizontal: false, vertical: true)
+      if waiting || !shownInstruction.isEmpty {
+        VStack(alignment: .leading, spacing: 3) {
+          if waiting { Text("Action needed").font(.system(size: 20, weight: .semibold)).foregroundStyle(Ink.primary) }
+          if !shownInstruction.isEmpty {
+            Text(shownInstruction).font(.system(size: 17)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+          }
+        }
       }
       if let snapshot {
+        // The screen when the agent asked, across the whole card; a tap takes over.
         Button(action: openComputer) {
           Image(uiImage: snapshot).resizable().aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fill)
             .frame(maxWidth: .infinity)
             .aspectRatio(ComputerScreen.width / ComputerScreen.height, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipped()
+            .overlay(alignment: .top) { Rectangle().fill(Ink.hairline).frame(height: 0.5) }
+            .overlay(alignment: .bottom) { Rectangle().fill(Ink.hairline).frame(height: 0.5) }
         }
         .buttonStyle(.tactile)
+        .padding(.horizontal, -16)
         .accessibilityLabel("Take over the computer")
       }
-      if waiting {
-        VStack(spacing: 6) {
-          HStack(spacing: 8) {
-            Button("Take over", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: true)))
-            Button("I’m done") { run { await store.handBackComputer(agentId) } }.buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
-              .disabled(busy)
-          }
-          Button { run { await store.handBackComputer(agentId, skip: true) } } label: {
-            Text("Skip").font(.system(size: 13)).foregroundStyle(Ink.secondary)
-              .frame(maxWidth: .infinity, minHeight: 32)
-              .contentShape(.rect)
-          }
-          .buttonStyle(.tactile)
-          .disabled(busy)
-          .help("Cancel this request without doing the step; the agent continues without it")
+      CardPills {
+        if waiting {
+          Button("Skip") { run { await store.handBackComputer(agentId, skip: true) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            .disabled(busy)
+            .help("Cancel this request without doing the step; the agent continues without it")
+          Button("I’m done") { run { await store.handBackComputer(agentId) } }
+            .buttonStyle(Tactile(look: CardPillStyle()))
+            .disabled(busy)
+          Button("Take over", action: openComputer)
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+        } else {
+          Button("Open computer", action: openComputer).buttonStyle(Tactile(look: CardPillStyle()))
         }
-      } else {
-        Button("Open computer", action: openComputer).buttonStyle(Tactile(look: PillButtonStyle(primary: false)))
       }
     }
-    .card(radius: 18, padding: 14)
+    .card()
   }
 
   /** What happened, in its colour: Done and Answered green, Skipped blue, Canceled red. */
@@ -1703,7 +2113,7 @@ struct RequestCardView: View {
   private static let snapshots = NSCache<NSString, UIImage>()
 }
 
-/** The hand-off card's 36 pt pills: the blue one, and the grey beside it. */
+/** The 36 pt pills across a sheet or the checkout card: the blue one (money: Allow, Book with Simeon), and the grey beside it. */
 struct PillButtonStyle: ButtonStyle {
   let primary: Bool
 
@@ -2511,44 +2921,55 @@ struct CardChooserSheet: View {
 // MARK: - Products
 
 /**
- * The products card (14 October 2026; SimeonCore's `ProductsCard`), as Muse
- * shows what it is about to buy: each product's picture, name, seller and
- * price in a row of the agent's card. A tap opens it, with "Buy with
- * <agent>" (the agent is woken to buy exactly that one, through the checkout
- * card) and "View website".
+ * The products card (14 October 2026; SimeonCore's `ProductsCard`), as a
+ * shop's own cards (10 November 2026, after the founder's reference, the
+ * iPhone's in its own sizes): each product a card of its own, 170 wide and
+ * 20 round, side by side in one row that scrolls sideways. On each, the
+ * picture on white (170 by 204, fitted, padded 14) with the badge at its top
+ * left, then on the card's grey the name (15, semibold, one line), "price ·
+ * take" in grey (two lines at most) and the store's icon and name at the
+ * bottom, Buying in blue or Bought in green at their right. Under the row,
+ * the agent's replies as chips (36 high, the card's grey) until the person
+ * sends anything after the card; one tapped is sent as their own message. A
+ * tap opens the product full screen (`ProductPages`), where a swipe, or ‹
+ * and ›, goes to the card's others.
  */
 struct ProductsCardView: View {
   let entryId: String
   let agentId: String
   let card: ProductsCard
   @Environment(AppStore.self) private var store
-  @Environment(\.chatWidth) private var width
   @State private var open: ProductsCard.Product?
 
   var body: some View {
     let shown = card.shown(pressed: store.pressedProducts[entryId])
-    VStack(spacing: 0) {
-      ForEach(shown.products) { product in
-        Button { Haptics.tap(); open = product } label: {
-          ProductRow(product: product, agentId: agentId, status: shown.status(of: product))
+    VStack(alignment: .leading, spacing: 12) {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(alignment: .top, spacing: 10) {
+          ForEach(shown.products) { product in
+            Button { Haptics.tap(); open = product } label: {
+              ProductCard(product: product, agentId: agentId, status: shown.status(of: product))
+            }
+            .buttonStyle(.tactile)
+          }
         }
-        .buttonStyle(.tactile)
-        if product.index != shown.products.last?.index {
-          Rectangle().fill(Ink.hairline).frame(height: 1).padding(.leading, 14)
+      }
+      // The cards go on past the chat's margin as they scroll.
+      .scrollClipDisabled()
+      if !shown.shownReplies.isEmpty {
+        ProductReplies(replies: shown.shownReplies, paused: store.isSendingPaused) { reply in
+          Haptics.tap()
+          Task { await store.send(reply, to: agentId) }
         }
       }
     }
-    .frame(width: FlightsCardView.cardWidth(width), alignment: .leading)
-    .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    .modifier(CardEdge(radius: 22))
-    .sheet(item: $open) { product in
-      ProductSheet(entryId: entryId, agentId: agentId, agentName: store.agent(agentId)?.name ?? "", card: card, current: product) { chosen in
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .fullScreenCover(item: $open) { product in
+      ProductPages(entryId: entryId, agentId: agentId, card: card, start: product.index) { chosen in
         Haptics.press()
         open = nil
         Task { await store.buyProduct(entryId, index: chosen.index, in: agentId) }
       }
-      .presentationDetents([.large])
-      .presentationDragIndicator(.visible)
     }
   }
 
@@ -2561,62 +2982,133 @@ struct ProductsCardView: View {
   }
 }
 
-/**
- * One product in the card: its picture, its name on two lines, who sells it,
- * its price, and at the right of the price a pill once Buy was pressed:
- * Buying in blue, then Bought in green once the order is placed (18 October
- * 2026, the founder: "make it blue, and on the right, like the take over
- * computer card"; it had been a grey pill beside the price).
- */
-private struct ProductRow: View {
+/** One product in the row: the picture on white with its badge, its name, "price · take" and its store. */
+private struct ProductCard: View {
   let product: ProductsCard.Product
   let agentId: String
   let status: ProductsCard.Status?
+  static let width: CGFloat = 170
 
   var body: some View {
-    HStack(alignment: .center, spacing: 14) {
+    VStack(alignment: .leading, spacing: 0) {
       ProductPicture(url: product.imageURL, agentId: agentId)
-        .frame(width: 96, height: 96)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-      VStack(alignment: .leading, spacing: 3) {
-        Text(product.title).font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.theirsText).lineLimit(2).multilineTextAlignment(.leading)
-        Text(product.byline).font(.system(size: 14)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-        HStack(spacing: 8) {
-          if let price = product.price { Text(price).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).monospacedDigit() }
-          Spacer(minLength: 0)
-          if let status {
-            let tint = ProductsCardView.tint(status)
-            StatusPill(text: status.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
-          }
+        .padding(14)
+        .frame(width: Self.width, height: 204)
+        .background(Color.white)
+        .overlay(alignment: .topLeading) {
+          if let badge = product.badge { ProductBadge(text: badge).padding(8) }
         }
+      VStack(alignment: .leading, spacing: 0) {
+        Text(product.title)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(Ink.theirsText)
+          .lineLimit(1)
+        // Two lines kept, so every card's store sits at its bottom.
+        Text(product.priceLine ?? "")
+          .font(.system(size: 13))
+          .foregroundStyle(Ink.fineGrey)
+          .lineLimit(2, reservesSpace: true)
+          .multilineTextAlignment(.leading)
+          .padding(.top, 2)
+        ProductStoreLine(product: product, status: status)
+          .padding(.top, 10)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(EdgeInsets(top: 10, leading: 12, bottom: 12, trailing: 12))
+      .frame(width: Self.width, alignment: .leading)
     }
-    .padding(14)
-    .contentShape(Rectangle())
+    .background(Ink.bubbleTheirs)
+    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .modifier(CardEdge(radius: 20))
+    .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     .accessibilityElement(children: .combine)
-    .accessibilityHint("Opens it, with Buy and View website")
   }
 }
 
-/** A product's own picture from its shop, filling its frame; a bag while it loads or when the shop gave none. */
+/** The badge: a small grey pill, see-through, white words (12, medium). */
+private struct ProductBadge: View {
+  let text: String
+
+  var body: some View {
+    Text(text)
+      .font(.system(size: 12, weight: .medium))
+      .foregroundStyle(Color.white)
+      .lineLimit(1)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 3)
+      .background(Color(.sRGB, red: 60 / 255, green: 60 / 255, blue: 67 / 255, opacity: 0.55), in: Capsule())
+  }
+}
+
+/** The store: its site's icon (as a saved login's, the letter until it comes) and its name in grey, 8 apart; Buying or Bought at the right. */
+private struct ProductStoreLine: View {
+  let product: ProductsCard.Product
+  var status: ProductsCard.Status? = nil
+  var side: CGFloat = 16
+  var size: CGFloat = 13
+
+  var body: some View {
+    HStack(spacing: 8) {
+      SiteIconTile(site: LinkIcons.site(of: product.url), title: product.storeName, size: side)
+      Text(product.storeName)
+        .font(.system(size: size))
+        .foregroundStyle(Ink.fineGrey)
+        .lineLimit(1)
+        .truncationMode(.tail)
+      Spacer(minLength: 0)
+      if let status {
+        let tint = ProductsCardView.tint(status)
+        StatusPill(text: status.label, dot: tint, ink: tint, wash: tint.opacity(0.12)).fixedSize()
+      }
+    }
+  }
+}
+
+/** The replies under the row: chips 36 high on the card's grey (15), 8 apart, scrolling sideways when they don't fit. */
+private struct ProductReplies: View {
+  let replies: [String]
+  let paused: Bool
+  let send: (String) -> Void
+
+  var body: some View {
+    ScrollView(.horizontal, showsIndicators: false) {
+      HStack(spacing: 8) {
+        ForEach(replies, id: \.self) { reply in
+          Button { send(reply) } label: {
+            Text(reply)
+              .font(.system(size: 15))
+              .foregroundStyle(Ink.theirsText)
+              .lineLimit(1)
+              .padding(.horizontal, 16)
+              .frame(height: 36)
+              .background(Ink.bubbleTheirs, in: Capsule())
+              .contentShape(Capsule())
+          }
+          .buttonStyle(.tactile)
+          .disabled(paused)
+          .opacity(paused ? 0.5 : 1)
+        }
+      }
+    }
+    .scrollClipDisabled()
+  }
+}
+
+/** A product's own picture from its shop, fitted on white; a bag while it loads or when the shop gave none. */
 private struct ProductPicture: View {
   let url: URL?
   let agentId: String
-  var fit = false
   @Environment(AppStore.self) private var store
   @State private var loaded: UIImage?
 
   var body: some View {
     ZStack {
-      Rectangle().fill(Ink.field)
+      Color.white
       if let loaded {
-        if fit { Image(uiImage: loaded).resizable().scaledToFit() } else { Image(uiImage: loaded).resizable().scaledToFill() }
+        Image(uiImage: loaded).resizable().scaledToFit()
       } else {
-        Image(systemName: "bag").font(.system(size: 22)).foregroundStyle(Ink.tertiary)
+        Image(systemName: "bag").font(.system(size: 22)).foregroundStyle(Color(.sRGB, red: 142 / 255, green: 142 / 255, blue: 147 / 255, opacity: 1))
       }
     }
-    .clipped()
     .accessibilityHidden(true)
     .task(id: url) {
       guard let url else { return }
@@ -2631,92 +3123,171 @@ private struct ProductPicture: View {
 }
 
 /**
- * One product, opened, as a store's page (18 October 2026, the founder's
- * screenshots of Muse: "inside i want it to be like this. like a store"):
- * its picture large under the close button, "Sold by", its name and price,
- * "Buy with <agent>" in a light blue capsule and View website under it, what
- * it is in three lines with See more, its stars under Reviews, and the
- * card's other products under More like this, each opening in place.
+ * The products opened, full screen (10 November 2026, after the founder's
+ * reference, in the iPhone's one column): a page for each product of the
+ * card, side by side, swiped between, with the X at the top left and ‹ and
+ * › at the top right (our glass discs). The card is read afresh from the
+ * chat, so Buying and Bought show as they come.
  */
-private struct ProductSheet: View {
+private struct ProductPages: View {
   let entryId: String
   let agentId: String
-  let agentName: String
+  /** The card as it was opened: the one shown if the chat no longer has it. */
   let card: ProductsCard
-  @State var current: ProductsCard.Product
   let buy: (ProductsCard.Product) -> Void
+  @State private var selection: Int
   @Environment(AppStore.self) private var store
-  @Environment(\.openURL) private var openURL
   @Environment(\.dismiss) private var dismiss
 
+  init(entryId: String, agentId: String, card: ProductsCard, start: Int, buy: @escaping (ProductsCard.Product) -> Void) {
+    self.entryId = entryId; self.agentId = agentId; self.card = card; self.buy = buy
+    _selection = State(initialValue: start)
+  }
+
   var body: some View {
-    let shown = card.shown(pressed: store.pressedProducts[entryId])
-    let product = shown.products.first { $0.index == current.index } ?? current
-    let status = shown.status(of: product)
-    let others = shown.others(than: product)
-    ScrollViewReader { reader in
-      ScrollView {
-        VStack(alignment: .leading, spacing: 0) {
-          ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-            .frame(maxWidth: .infinity)
-            .frame(height: 320)
-            .id("top")
-          VStack(alignment: .leading, spacing: 0) {
-            Text(product.soldBy).font(.system(size: 16)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-            Text(product.title).font(.system(size: 26)).foregroundStyle(Ink.primary).fixedSize(horizontal: false, vertical: true).padding(.top, 6)
-            if let price = product.price {
-              ProductPrice(price: price, listPrice: product.listPrice, size: 19).padding(.top, 8)
-            }
-            ProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status) { buy(product) }
-              .padding(.top, 22)
-            Button { openURL(product.url) } label: {
-              Text(ProductsCard.viewWebsite).font(.system(size: 18)).foregroundStyle(Ink.primary)
-                .frame(maxWidth: .infinity).frame(height: 48).contentShape(Rectangle())
-            }
-            .buttonStyle(.tactile)
-            .padding(.top, 8)
-            if let detail = product.detail {
-              ProductDescription(text: detail).padding(.top, 26).id("about-\(product.index)")
-            }
-            if !product.stars.isEmpty {
-              Text(ProductsCard.reviews).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary).padding(.top, 34)
-              Button { openURL(product.url) } label: { ProductReviewsRow(product: product, agentId: agentId) }
-                .buttonStyle(.tactile)
-                .padding(.top, 14)
-                .accessibilityHint("Opens the reviews on the shop's page")
-            }
-          }
-          .padding(.horizontal, 16)
-          .padding(.top, 20)
-          if !others.isEmpty {
-            Text(ProductsCard.moreLikeThis).font(.system(size: 20, weight: .medium)).foregroundStyle(Ink.primary)
-              .padding(.horizontal, 16).padding(.top, 34)
-            ScrollView(.horizontal, showsIndicators: false) {
-              HStack(alignment: .top, spacing: 16) {
-                ForEach(others) { other in
-                  Button { Haptics.tap(); current = other } label: { ProductTile(product: other, agentId: agentId) }
-                    .buttonStyle(.tactile)
-                }
-              }
-              .padding(.horizontal, 16)
-            }
-            .padding(.top, 14)
-          }
-        }
-        .padding(.bottom, 32)
+    let shown = fresh.shown(pressed: store.pressedProducts[entryId])
+    let current = shown.products.first { $0.index == selection }
+    TabView(selection: $selection) {
+      ForEach(shown.products) { product in
+        ProductPage(product: product, agentId: agentId, status: shown.status(of: product), agentName: store.agent(agentId)?.name ?? "") { buy(product) }
+          .tag(product.index)
       }
-      .onChange(of: current.index) { withAnimation(.snappy) { reader.scrollTo("top", anchor: .top) } }
     }
+    .tabViewStyle(.page(indexDisplayMode: .never))
     .background(Ink.groupedGround.ignoresSafeArea())
-    .overlay(alignment: .topTrailing) {
-      Button { dismiss() } label: {
-        Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
-          .frame(width: 36, height: 36).contentShape(Circle())
+    .overlay(alignment: .top) {
+      HStack(spacing: 10) {
+        disc("xmark", label: "Close") { dismiss() }
+        Spacer(minLength: 0)
+        let previous = current.flatMap { shown.neighbour(of: $0, by: -1) }
+        let next = current.flatMap { shown.neighbour(of: $0, by: 1) }
+        disc("chevron.left", label: "Previous product") { if let previous { step(to: previous) } }
+          .disabled(previous == nil)
+          .opacity(previous == nil ? 0.4 : 1)
+        disc("chevron.right", label: "Next product") { if let next { step(to: next) } }
+          .disabled(next == nil)
+          .opacity(next == nil ? 0.4 : 1)
       }
-      .buttonStyle(.tactile)
-      .glassEffect(.regular, in: .circle)
-      .padding(14)
-      .accessibilityLabel("Close")
+      .padding(.horizontal, 14)
+      .padding(.top, 6)
+    }
+  }
+
+  /** The chat's own copy of the card, else the one it was opened with. */
+  private var fresh: ProductsCard {
+    for row in store.rows(for: agentId) {
+      if case .products(let id, let card) = row, id == entryId { return card }
+    }
+    return card
+  }
+
+  private func step(to product: ProductsCard.Product) {
+    Haptics.tap()
+    withAnimation(.snappy) { selection = product.index }
+  }
+
+  private func disc(_ symbol: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Image(systemName: symbol).font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary)
+        .frame(width: 36, height: 36).contentShape(Circle())
+    }
+    .buttonStyle(.tactile)
+    .glassEffect(.regular, in: .circle)
+    .accessibilityLabel(label)
+  }
+}
+
+/**
+ * One product, opened, in one column: the picture on a white square (16
+ * round), the store's icon and name (15, grey), the title (26, semibold),
+ * the price (20) and "★ 5.0 (12)" (15, grey), the take (15, grey), "Buy
+ * with <agent>" in our blue capsule (48 high), "View at <store>", a
+ * hairline, "Sold by" with the seller at its right, then "Why it fits" (19,
+ * semibold) with each reason after a round green check.
+ */
+private struct ProductPage: View {
+  let product: ProductsCard.Product
+  let agentId: String
+  let status: ProductsCard.Status?
+  let agentName: String
+  let buy: () -> Void
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    ScrollView {
+      VStack(alignment: .leading, spacing: 0) {
+        Color.white
+          .aspectRatio(1, contentMode: .fit)
+          .overlay { ProductPicture(url: product.imageURL, agentId: agentId).padding(24) }
+          .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+          .modifier(CardEdge(radius: 16))
+        ProductStoreLine(product: product, side: 18, size: 15)
+          .padding(.top, 18)
+        Text(product.title)
+          .font(.system(size: 26, weight: .semibold))
+          .foregroundStyle(Ink.primary)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.top, 6)
+        if product.price != nil || product.ratingLine != nil {
+          HStack(alignment: .firstTextBaseline, spacing: 10) {
+            if let price = product.price { ProductPrice(price: price, listPrice: product.listPrice, size: 20) }
+            if let rating = product.ratingLine {
+              Text(rating)
+                .font(.system(size: 15))
+                .foregroundStyle(Ink.fineGrey)
+                .monospacedDigit()
+                .accessibilityLabel([product.ratingText.map { String(localized: "\($0) out of 5 stars") }, product.reviewCount.map { String(localized: "\($0) reviews") }].compactMap { $0 }.joined(separator: ", "))
+            }
+          }
+          .padding(.top, 8)
+        }
+        if let take = product.shownTake {
+          Text(take)
+            .font(.system(size: 15))
+            .foregroundStyle(Ink.fineGrey)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 10)
+        }
+        ProductBuyButton(label: status?.label ?? ProductsCard.buyLabel(agent: agentName), status: status, action: buy)
+          .padding(.top, 20)
+        Button { openURL(product.url) } label: {
+          Text(product.viewAt).font(.system(size: 17)).foregroundStyle(Ink.primary)
+            .frame(maxWidth: .infinity).frame(height: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.tactile)
+        .padding(.top, 4)
+        Rectangle().fill(Ink.hairline).frame(height: 1).padding(.top, 10)
+        HStack(alignment: .firstTextBaseline, spacing: 16) {
+          Text(ProductsCard.soldBy).foregroundStyle(Ink.fineGrey)
+          Spacer(minLength: 0)
+          Text(product.byline).foregroundStyle(Ink.primary).lineLimit(1).truncationMode(.tail)
+        }
+        .font(.system(size: 16))
+        .padding(.top, 14)
+        if !product.reasons.isEmpty {
+          Text(ProductsCard.whyItFits)
+            .font(.system(size: 19, weight: .semibold))
+            .foregroundStyle(Ink.primary)
+            .padding(.top, 30)
+          VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(product.reasons.enumerated()), id: \.offset) { _, reason in
+              HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "checkmark.circle")
+                  .font(.system(size: 16))
+                  .foregroundStyle(Ink.success)
+                Text(reason)
+                  .font(.system(size: 16))
+                  .foregroundStyle(Ink.primary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+            }
+          }
+          .padding(.top, 12)
+        }
+      }
+      .padding(.horizontal, 20)
+      .padding(.top, 60)
+      .padding(.bottom, 32)
     }
   }
 }
@@ -2743,27 +3314,6 @@ private struct ProductBuyButton: View {
   }
 }
 
-/** The Reviews row: the product's picture in a framed square, its name, its stars. */
-private struct ProductReviewsRow: View {
-  let product: ProductsCard.Product
-  let agentId: String
-
-  var body: some View {
-    HStack(spacing: 14) {
-      ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-        .frame(width: 58, height: 58)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
-      VStack(alignment: .leading, spacing: 4) {
-        Text(product.title).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
-        ProductStars(product: product)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    .contentShape(Rectangle())
-  }
-}
-
 /** A price, and the price before the sale struck through after it in grey: "$99.99 ~~$119.99~~". */
 private struct ProductPrice: View {
   let price: String
@@ -2771,7 +3321,7 @@ private struct ProductPrice: View {
   var size: CGFloat = 15
 
   var body: some View {
-    HStack(spacing: 5) {
+    HStack(spacing: 6) {
       Text(price).foregroundStyle(Ink.primary)
       if let listPrice { Text(listPrice).strikethrough().foregroundStyle(Ink.fineGrey) }
     }
@@ -2780,85 +3330,6 @@ private struct ProductPrice: View {
     .lineLimit(1)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(listPrice.map { String(localized: "\(price), was \($0)") } ?? price)
-  }
-}
-
-/** Five stars to the nearest half, then "4.5" and "(153)". */
-private struct ProductStars: View {
-  let product: ProductsCard.Product
-
-  var body: some View {
-    HStack(spacing: 6) {
-      HStack(spacing: 1) {
-        ForEach(Array(product.stars.enumerated()), id: \.offset) { _, star in
-          Image(systemName: star == .full ? "star.fill" : star == .half ? "star.leadinghalf.filled" : "star")
-            .font(.system(size: 15))
-            .foregroundStyle(Ink.stars)
-        }
-      }
-      if let rating = product.ratingText { Text(rating).foregroundStyle(Ink.secondary) }
-      if let reviews = product.reviewsText { Text(reviews).foregroundStyle(Ink.fineGrey) }
-    }
-    .font(.system(size: 16))
-    .monospacedDigit()
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel([product.ratingText.map { String(localized: "\($0) out of 5 stars") }, product.reviewCount.map { String(localized: "\($0) reviews") }].compactMap { $0 }.joined(separator: ", "))
-  }
-}
-
-/** What the product is, in three lines with See more under them when there is more; `**bold**` drawn bold. */
-private struct ProductDescription: View {
-  let text: String
-  @State private var open = false
-  @State private var whole: CGFloat = 0
-  @State private var shown: CGFloat = 0
-
-  var body: some View {
-    let words = (try? AttributedString(markdown: text, options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
-    VStack(alignment: .leading, spacing: 6) {
-      Text(words)
-        .font(.system(size: 17))
-        .foregroundStyle(Ink.primary)
-        .lineLimit(open ? nil : 3)
-        .fixedSize(horizontal: false, vertical: true)
-        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shown = $0 }
-        .background(alignment: .topLeading) {
-          // The whole text, unseen, to know whether three lines hide some of it.
-          Text(words).font(.system(size: 17)).fixedSize(horizontal: false, vertical: true).hidden()
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { whole = $0 }
-        }
-      if open || whole > shown + 1 {
-        Button { withAnimation(.snappy) { open.toggle() } } label: {
-          Text(open ? ProductsCard.seeLess : ProductsCard.seeMore).font(.system(size: 17)).foregroundStyle(Ink.fineGrey)
-        }
-        .buttonStyle(.tactile)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-}
-
-/** One of More like this: its picture in a framed square, its name, who sells it, its price (the sale's list price struck through). */
-private struct ProductTile: View {
-  let product: ProductsCard.Product
-  let agentId: String
-  static let side: CGFloat = 136
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 3) {
-      ProductPicture(url: product.imageURL, agentId: agentId, fit: true)
-        .frame(width: Self.side, height: Self.side)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Ink.hairline, lineWidth: 1))
-        .padding(.bottom, 7)
-      Text(product.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Ink.primary).lineLimit(1)
-      Text(product.byline).font(.system(size: 15)).foregroundStyle(Ink.fineGrey).lineLimit(1)
-      if let price = product.price { ProductPrice(price: price, listPrice: product.listPrice) }
-    }
-    .frame(width: Self.side, alignment: .leading)
-    .contentShape(Rectangle())
-    .accessibilityElement(children: .combine)
-    .accessibilityHint("Opens it here")
   }
 }
 
