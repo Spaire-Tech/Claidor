@@ -42,6 +42,31 @@ export const grok = 'grok'
 export const providers = [chatGPT, claude, grok] as const
 /** The providers signed in to with a code on their own page (the ChatGPT sheet), not on the computer (Claude's). */
 export const signedInByCode: ReadonlySet<string> = new Set([chatGPT, grok])
+
+/**
+ * AI Models' card, as External Agents' (`AIModels.Card`; 11 November 2026,
+ * the founder: "ai models should have the same above", then, of the
+ * designs, "i like B. but without the claude opus 5.5. also add meta icon
+ * there too"): a line that says what the page is, what it does, Learn
+ * more, and the makers' marks fanned on Connect apps' tiles. ChatGPT's and
+ * Grok's marks in the ink, Claude's orange and Meta's blue in both modes
+ * ("meta keeps it blue in dark mode as well").
+ */
+export const modelsCard = {
+  headline: (): string => t('Connect your own AI models'),
+  explanation: (): string =>
+    t(
+      'Use your ChatGPT, Claude or Grok plan, or an API key. Your agents use the model you pick, and Simeon’s own when a plan runs out.',
+    ),
+  /** The website's page of the plans and the keys. */
+  learnMore: 'https://simeonlabs.com/models',
+  /** The marks fanned in the picture (`assets/marks/<provider>.png`), left to right. */
+  marks: ['chatgpt', 'claude', 'grok', 'meta'] as const,
+  /** Each tile's turn, in degrees, left to right. */
+  turns: [-8, -3, 3, 8] as const,
+  /** The marks drawn in their own colours in both modes; the others in the ink. */
+  coloured: new Set(['claude', 'meta']) as ReadonlySet<string>,
+}
 /** The name on the composer while the agents use Simeon's models (`AIModels.simeon`, the founder's "⌘ Simeon"). */
 export const simeon = 'Simeon'
 /**
@@ -356,7 +381,7 @@ export function limitTime(
   }).format(date)
 }
 
-/** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out". */
+/** How it stands, in a few words: "Active" (11 November 2026, the founder: "usage available. can we change the wording to Active"), "Limit reached until 4:00 PM", "Signed out". */
 export function statusWords(
   account: ModelAccount,
   options: { now?: Date; locale?: string; timeZone?: string } = {},
@@ -364,12 +389,12 @@ export function statusWords(
   const now = options.now ?? new Date()
   switch (account.status) {
     case 'available':
-      return t('Usage available')
+      return t('Active')
     case 'signed_out':
       return t('Signed out')
     case 'limited':
       if (account.limitedUntil === undefined || account.limitedUntil <= +now)
-        return t('Usage available')
+        return t('Active')
       return t`Limit reached until ${limitTime(account.limitedUntil, { ...options, now })}`
   }
 }

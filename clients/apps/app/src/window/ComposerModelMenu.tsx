@@ -38,7 +38,7 @@ const keyMarks = import.meta.glob<string>('../assets/providers/*-mark.png', {
 })
 
 /** The marks drawn in their own colours, not the ink. */
-const colouredMarks = new Set(['claude', 'bedrock', 'copilot'])
+const colouredMarks = new Set(['claude', 'bedrock', 'copilot', 'meta'])
 
 function markURL(provider: string): string | undefined {
   return marks[provider] ?? keyMarks[`../assets/providers/${provider}-mark.png`]
@@ -47,8 +47,9 @@ function markURL(provider: string): string | undefined {
 /**
  * A provider's mark, bare, as the composer shows it (`ProviderMark`; the
  * founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's, Grok's and Simeon's
- * in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own
- * colours (10 November 2026, the founder's logos); no provider is Simeon's.
+ * in the ink; Claude's, Amazon Bedrock's, GitHub Copilot's and Meta's in
+ * their own colours (10 November 2026, the founder's logos; Meta's blue on
+ * dark too, 11 November); no provider is Simeon's.
  */
 export function ProviderMark({
   provider,

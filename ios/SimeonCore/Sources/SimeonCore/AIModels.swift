@@ -117,13 +117,13 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
     return "\(L10n.text("API key")) \(keyEnding)"
   }
 
-  /** How it stands, in a few words: "Usage available", "Limit reached until 4:00 PM", "Signed out". */
+  /** How it stands, in a few words: "Active" (11 November 2026, the founder: "usage available. can we change the wording to Active"), "Limit reached until 4:00 PM", "Signed out". */
   public func statusWords(now: Date = Date(), timeZone: TimeZone = .current) -> String {
     switch status {
-    case .available: return L10n.text("Usage available")
+    case .available: return L10n.text("Active")
     case .signedOut: return L10n.text("Signed out")
     case .limited:
-      guard let limitedUntil, limitedUntil > now else { return L10n.text("Usage available") }
+      guard let limitedUntil, limitedUntil > now else { return L10n.text("Active") }
       return L10n.text("Limit reached until \(AIModels.time(limitedUntil, now: now, timeZone: timeZone))")
     }
   }
@@ -347,6 +347,28 @@ public enum AIModels {
   public static let signedInByCode: Set<String> = [chatGPT, grok]
   /** The name on the composer while the agents use Simeon's models (the founder's "⌘ Simeon"). */
   public static let simeon = "Simeon"
+
+  /**
+   * AI Models' card, as External Agents' (11 November 2026, the founder:
+   * "ai models should have the same above", then, of the designs, "i like
+   * B. but without the claude opus 5.5. also add meta icon there too"): a
+   * line that says what the page is, what it does, Learn more, and the
+   * makers' marks fanned on Connect apps' tiles, white or #2c2c2e on dark.
+   * ChatGPT's and Grok's marks in the ink, Claude's orange and Meta's blue
+   * in both (the founder: "meta keeps it blue in dark mode as well").
+   */
+  public enum Card {
+    public static var headline: String { L10n.text("Connect your own AI models") }
+    public static var explanation: String { L10n.text("Use your ChatGPT, Claude or Grok plan, or an API key. Your agents use the model you pick, and Simeon’s own when a plan runs out.") }
+    /** The website's page of the plans and the keys. */
+    public static let learnMore = URL(string: "https://simeonlabs.com/models")!
+    /** The marks fanned in the picture (`Marks/<provider>`), left to right. */
+    public static let marks = ["chatgpt", "claude", "grok", "meta"]
+    /** Each tile's turn, in degrees, left to right. */
+    public static let turns: [Double] = [-8, -3, 3, 8]
+    /** The marks drawn in their own colours in both modes; the others in the ink. */
+    public static let coloured: Set<String> = ["claude", "meta"]
+  }
   /** Where Claude Code's sign-in link may point (claude.ai's own pages). */
   static let claudeHosts: Set<String> = ["claude.com", "claude.ai", "platform.claude.com", "console.anthropic.com"]
 

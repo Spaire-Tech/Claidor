@@ -89,27 +89,47 @@ enum ExternalAgentsPage {
  * box is white. and below is grey. it shouldnt be white. make it grey like
  * below"), its words on the left (a line at 15, what it does at 13 in grey,
  * Learn more in a grey capsule at its foot), the picture on the right, on
- * the same grey.
+ * the same grey. AI Models' card is the same (`SettingsHeroCard`).
  */
 private struct ExternalAgentsHero: View {
   let look: Look
+
+  var body: some View {
+    SettingsHeroCard(headline: ExternalAgents.headline, explanation: ExternalAgents.explanation, learnMore: ExternalAgents.learnMore, look: look) {
+      ExternalAgentsPicture(look: look)
+    }
+  }
+}
+
+/**
+ * A settings page's card (External Agents', AI Models'; 11 November 2026,
+ * the founder: "ai models should have the same above"): its line, what it
+ * does, Learn more in a grey capsule at its foot, and its picture, 320 by
+ * 200, on the right, all on the groups' grey.
+ */
+struct SettingsHeroCard<Picture: View>: View {
+  let headline: String
+  let explanation: String
+  let learnMore: URL
+  let look: Look
+  @ViewBuilder let picture: () -> Picture
   @Environment(\.openURL) private var openURL
   @State private var hovering = false
 
   var body: some View {
     HStack(alignment: .top, spacing: 24) {
       VStack(alignment: .leading, spacing: 8) {
-        Text(ExternalAgents.headline)
+        Text(headline)
           .font(.system(size: 15))
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
-        Text(ExternalAgents.explanation)
+        Text(explanation)
           .font(.system(size: 13))
           .foregroundStyle(look.inkSecondary)
           .lineSpacing(2)
           .fixedSize(horizontal: false, vertical: true)
         Spacer(minLength: 14)
-        Button { openURL(ExternalAgents.learnMore) } label: {
+        Button { openURL(learnMore) } label: {
           Text("Learn more")
             .font(.system(size: 13))
             .foregroundStyle(look.ink)
@@ -124,7 +144,7 @@ private struct ExternalAgentsHero: View {
       .padding(.vertical, 8)
       .padding(.leading, 4)
       .frame(maxWidth: .infinity, alignment: .leading)
-      ExternalAgentsPicture(look: look)
+      picture()
         .frame(width: ExternalAgents.Picture.width, height: ExternalAgents.Picture.height)
     }
     .padding(14)
@@ -352,22 +372,63 @@ enum AccountMenuRows {
   static func mascots() -> NSImage? {
     let images = ExternalAgents.menuIcons.compactMap { NSImage(named: "Mascots/\($0)") }
     guard images.count == ExternalAgents.menuIcons.count else { return nil }
+    return tiles(images.count) { index, tile, _ in images[index].draw(in: tile) }
+  }
+
+  /**
+   * AI Models' marks on the same tiles (11 November 2026, the founder: "can
+   * you add ai models to the menu bar"): ChatGPT, Claude, Grok and Meta,
+   * each 0.64 of its tile in the middle; ChatGPT's and Grok's in the ink
+   * (white on dark), Claude's and Meta's in their own colours.
+   */
+  static func models() -> NSImage? {
+    let marks = AIModels.Card.marks
+    let images = marks.compactMap { NSImage(named: "Marks/\($0)") }
+    guard images.count == marks.count else { return nil }
+    return tiles(images.count) { index, tile, dark in
+      let share: CGFloat = 0.64
+      let side = tile.width * share
+      let size = images[index].size
+      let scale = side / max(size.width, size.height)
+      let spot = NSRect(
+        x: tile.midX - size.width * scale / 2, y: tile.midY - size.height * scale / 2,
+        width: size.width * scale, height: size.height * scale)
+      if AIModels.Card.coloured.contains(marks[index]) {
+        images[index].draw(in: spot)
+      } else {
+        inked(images[index], dark ? NSColor.white.withAlphaComponent(0.9) : NSColor.black.withAlphaComponent(0.85)).draw(in: spot)
+      }
+    }
+  }
+
+  /** A template mark drawn in `ink`. */
+  private static func inked(_ image: NSImage, _ ink: NSColor) -> NSImage {
+    NSImage(size: image.size, flipped: false) { rect in
+      image.draw(in: rect)
+      ink.set()
+      rect.fill(using: .sourceAtop)
+      return true
+    }
+  }
+
+  /** `count` tiles at 17, each over the last by 4, the first turned 7° left and the last 7° right, `draw` putting what each holds inside its clip. */
+  private static func tiles(_ count: Int, draw: @escaping (Int, NSRect, Bool) -> Void) -> NSImage {
     let side: CGFloat = 17
     let step: CGFloat = side - 4
-    let turns: [CGFloat] = [-7, 0, 7]
     // Room for the turned corners and the shadow on every side.
     let margin: CGFloat = 1.5
-    let size = NSSize(width: step * CGFloat(images.count - 1) + side + margin * 2, height: side + margin * 2)
+    let size = NSSize(width: step * CGFloat(count - 1) + side + margin * 2, height: side + margin * 2)
     return NSImage(size: size, flipped: false) { _ in
       let dark = NSAppearance.currentDrawing().bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-      for (index, image) in images.enumerated() {
+      for index in 0..<count {
         let tile = NSRect(x: margin + step * CGFloat(index), y: margin, width: side, height: side)
+        let turn: CGFloat = index == 0 ? -7 : index == count - 1 ? 7 : 0
         NSGraphicsContext.saveGraphicsState()
-        let turn = NSAffineTransform()
-        turn.translateX(by: tile.midX, yBy: tile.midY)
-        turn.rotate(byDegrees: -turns[index % turns.count])
-        turn.translateX(by: -tile.midX, yBy: -tile.midY)
-        turn.concat()
+        let transform = NSAffineTransform()
+        transform.translateX(by: tile.midX, yBy: tile.midY)
+        transform.rotate(byDegrees: -turn)
+        transform.translateX(by: -tile.midX, yBy: -tile.midY)
+        transform.concat()
         let shape = NSBezierPath(roundedRect: tile, xRadius: 4.5, yRadius: 4.5)
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
@@ -380,7 +441,7 @@ enum AccountMenuRows {
         NSGraphicsContext.restoreGraphicsState()
         NSGraphicsContext.saveGraphicsState()
         shape.addClip()
-        image.draw(in: tile)
+        draw(index, tile, dark)
         NSGraphicsContext.restoreGraphicsState()
         (dark ? NSColor.white.withAlphaComponent(0.10) : NSColor.black.withAlphaComponent(0.08)).setStroke()
         let edge = NSBezierPath(roundedRect: tile.insetBy(dx: -0.25, dy: -0.25), xRadius: 4.75, yRadius: 4.75)

@@ -711,6 +711,18 @@ providers not yet connected under Subscriptions, and the Connect sheets. The
 model the agents use is chosen on the composer (9 November 2026,
 `ComposerModelMenu` on each), which `PUT models/own` as the page did.
 
+Since 11 November 2026 the page opens on a card, as External Agents' does
+(the founder: "ai models should have the same above"; design B, without
+a model's pill and with Meta): "Connect your own AI models", what it does,
+Learn more (`simeonlabs.com/models`), and ChatGPT's, Claude's, Grok's and
+Meta's marks fanned on Connect apps' tiles (`AIModels.Card`, `modelsCard`;
+the marks in `Marks/<provider>` and `assets/marks/`). The account menu on
+the Mac and the web has an AI Models row, those four marks at its end. An
+account that can be used says "Active" in green (it said "Usage available";
+the founder: "can we change the wording to Active"). Meta's mark is drawn
+in its blue in light and dark mode ("meta keeps it blue in dark mode as
+well").
+
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
 `SIMEON_CHATGPT_CLIENT_ID` changes). The steps are Codex's own

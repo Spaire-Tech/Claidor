@@ -34,6 +34,7 @@ import { copyText } from './clipboard'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import { mascotURL } from './mascots'
 import type { Dismissal } from './MessageActions'
+import { MenuModelTiles } from './ModelTiles'
 import './Settings.css'
 import { PanelDisc, SettingsSymbol } from './SettingsParts'
 import { useBillingReturn } from './SettingsUsage'
@@ -151,6 +152,14 @@ function AccountMenu({
     })
   }
   items.push(
+    {
+      // The founder, 11 November 2026: "can you add ai models to the menu bar" (as External Agents, the makers' marks at its end).
+      id: 'aiModels',
+      label: t('AI Models'),
+      icon: <SettingsSymbol name="brain" size={14} />,
+      end: <MenuModelTiles />,
+      action: () => model.openSettings('models'),
+    },
     {
       // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
       id: 'externalAgents',

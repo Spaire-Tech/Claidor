@@ -8,7 +8,7 @@ final class AIModelsTests: XCTestCase {
     let plus = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "chatgpt", "kind": "subscription", "label": "ada@example.com", "plan": "plus", "status": "available", "limitedUntil": .null, "createdAt": 1_700_000_000_000]))
     XCTAssertEqual(plus.providerName, "ChatGPT")
     XCTAssertEqual(plus.detail, "Subscription · Plus")
-    XCTAssertEqual(plus.statusWords(), "Usage available")
+    XCTAssertEqual(plus.statusWords(), "Active")
     XCTAssertTrue(plus.usable())
 
     let gone = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "label": "Work", "status": "signed_out"]))
@@ -42,7 +42,7 @@ final class AIModelsTests: XCTestCase {
     XCTAssertTrue(words.contains("4:00"), "the time, today: \(words)")
     XCTAssertFalse(limited.usable(now: now))
     XCTAssertTrue(limited.usable(now: until.addingTimeInterval(1)), "the limit ends at its time")
-    XCTAssertEqual(limited.statusWords(now: until.addingTimeInterval(1)), "Usage available")
+    XCTAssertEqual(limited.statusWords(now: until.addingTimeInterval(1)), "Active")
   }
 
   func testThePlansUsageAsUsageAndBillingDrawsIt() throws {

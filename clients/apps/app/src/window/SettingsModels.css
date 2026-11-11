@@ -1,6 +1,6 @@
 /*
- * AI Models (SettingsModels.tsx, mac/Simeon/SettingsModels.swift): its line
- * and groups 22 apart; an account's tile, its name over its kind, plan and
+ * AI Models (SettingsModels.tsx, mac/Simeon/SettingsModels.swift): its card
+ * (External Agents' `.agents-hero`) and groups 22 apart; an account's tile, its name over its kind, plan and
  * how it stands (green while usable, red when signed out), and `⋯`; the
  * rename's field; the Connect ChatGPT and Connect Claude sheets, 460 wide
  * on the grouped ground, padded 28, its parts 20 apart.
@@ -22,12 +22,6 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
-}
-
-.models-lead {
-  margin: 0;
-  color: var(--ink);
-  font-size: 13px;
 }
 
 .models-loading {
