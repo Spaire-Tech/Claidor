@@ -31,7 +31,9 @@ while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
 Marketplace pages: `python3 source/teams.py` rewrites `public/marketplace/`
 from `server/simeon/desktop/packs.json` (build.py runs it too); run it whenever
-a pack changes and commit what it writes. `source/connectors.py` writes
+a pack changes and commit what it writes. `source/sitemap.py` writes `public/sitemap.xml` and `public/robots.txt` from the pages in `public/`
+(each at its www address, the host the site answers on; redirects, noindex pages and `/app` left out), last in
+the build; run it again after any page is added or removed. `source/connectors.py` writes
 `public/connectors/`, with a page for each connector at `/connectors/<id>`
 (`source/connector_pages.py`: the apps' connector page, its words and links read
 from `ios/SimeonCore/.../ConnectorPages.swift`, so run it again when those

@@ -390,6 +390,9 @@ async def main():
     # The Simeon Network's addresses (network.py): /network, its skill and install line, the invite page.
     import network
     network.build(OUT)
+    # The sitemap and robots.txt (sitemap.py), from every page written above, for Google Search Console.
+    import sitemap
+    sitemap.build(OUT)
     print("site written to", os.path.abspath(OUT))
 
 asyncio.run(main())

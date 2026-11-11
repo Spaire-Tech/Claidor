@@ -54,21 +54,21 @@ body{margin:0}
         <img src="/_blob/de2bda4d5ff33faec8a01d6f0e8aa599" alt="Kai" style="position: absolute; left: 162px; top: 48px; width: 68px; height: 68px; border-radius: 34px; display: block; object-fit: cover">
         <div class="glass" style="position: absolute; left: 0; right: 0; top: 112px; margin: 0 auto; width: max-content; height: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; font-size: 15px; font-weight: 500">Kai</div>
 
-        <div style="position: absolute; left: 16px; right: 16px; top: 170px; display: flex; flex-direction: column; gap: 4px">
+        <div style="position: absolute; left: 16px; right: 16px; top: 156px; display: flex; flex-direction: column; gap: 4px">
           <div class="stamp">Today 2:10 PM</div>
           <div class="me" style="width: 275px; /*fit*/">Get me to Austin Thursday morning for the Acme offsite.</div>
-          <div class="them edge" style="margin-top: 12px">Best morning flights from SFO:</div>
+          <div class="them edge" style="margin-top: 0">Best morning flights from SFO:</div>
 
-          <div class="edge" style="align-self: flex-start; width: 345px; box-sizing: border-box; border-radius: 22px; background: #e9e9eb">
+          <div class="edge" data-pop="1.1" data-pop-ground="#ffffff" style="align-self: flex-start; width: 345px; box-sizing: border-box; border-radius: 22px; background: #e9e9eb">
             <div style="padding: 14px 16px 4px">
               <div style="font-size: 17px; font-weight: 500; line-height: 22px; color: #1d1d1f">San Francisco to Austin — Thu, Nov 12</div>
               <div style="font-size: 13px; line-height: 18px; color: #86868b; margin-top: 2px">Refundable · 1 adult</div>
             </div>
             <div style="padding: 6px">
-              <div class="fl"><span class="mark"><img src="/_blob/a9454eb29b3dd00ba611a2b18bbdf12a" alt=""></span><div style="flex: 1; min-width: 0"><div class="who">Alaska Airlines · $264.20</div><div class="tm">8:15am<i></i><small>3h40m</small><i></i>1:55pm</div></div></div>
-              <div class="fl"><span class="mark"><img src="/_blob/e5adbc387ab998b7c40b41ddaed10683" alt=""></span><div style="flex: 1; min-width: 0"><div class="who">United Airlines · $289.40</div><div class="tm">7:00am<i></i><small>3h45m</small><i></i>12:45pm</div></div></div>
-              <div class="fl"><span class="mark"><img src="/_blob/4392727449fdddeae02efe0a3e1dd487" alt=""></span><div style="flex: 1; min-width: 0"><div class="who">American Airlines · $298.10</div><div class="tm">9:40am<i></i><small>3h50m</small><i></i>3:30pm</div></div></div>
-              <div class="fl"><span class="mark"><img src="/_blob/c329f442c11dfc14d7c11ad3ed5ad790" alt=""></span><div style="flex: 1; min-width: 0"><div class="who">Delta Air Lines · $312.60</div><div class="tm">6:30am<i></i><small>5h55m · 1 stop</small><i></i>2:25pm</div></div></div>
+              <div class="fl"><span class="mark"><img src="/_blob/a9454eb29b3dd00ba611a2b18bbdf12a" alt=""></span><div style="flex: 1; min-width: 0"><div class="who" style="display: flex; gap: 8px"><span style="flex: 1">Alaska Airlines</span><span style="color: #007aff">$264.20</span></div><div class="tm">8:15am<i></i><small>3h40m</small><i></i>1:55pm</div></div></div>
+              <div class="fl"><span class="mark"><img src="/_blob/e5adbc387ab998b7c40b41ddaed10683" alt=""></span><div style="flex: 1; min-width: 0"><div class="who" style="display: flex; gap: 8px"><span style="flex: 1">United Airlines</span><span style="color: #007aff">$289.40</span></div><div class="tm">7:00am<i></i><small>3h45m</small><i></i>12:45pm</div></div></div>
+              <div class="fl"><span class="mark"><img src="/_blob/4392727449fdddeae02efe0a3e1dd487" alt=""></span><div style="flex: 1; min-width: 0"><div class="who" style="display: flex; gap: 8px"><span style="flex: 1">American Airlines</span><span style="color: #007aff">$298.10</span></div><div class="tm">9:40am<i></i><small>3h50m</small><i></i>3:30pm</div></div></div>
+              <div class="fl"><span class="mark"><img src="/_blob/c329f442c11dfc14d7c11ad3ed5ad790" alt=""></span><div style="flex: 1; min-width: 0"><div class="who" style="display: flex; gap: 8px"><span style="flex: 1">Delta Air Lines</span><span style="color: #007aff">$312.60</span></div><div class="tm">6:30am<i></i><small>5h55m · 1 stop</small><i></i>2:25pm</div></div></div>
             </div>
           </div>
 
@@ -90,6 +90,31 @@ body{margin:0}
   <img class="face" src="/_blob/1a7daeb859f7b9fcc86356a554ef9785" alt="" aria-hidden="true" style="left: 1150px; top: 980px; width: 340px; height: 340px">
 </div>
 </x-dc>
+<script>
+/* The card that matters on this screen, lifted out of the phone as the computer on screen 2 is (the founder, 11 November
+   2026: "for each pop out the most important thing … look how computer pops out"): the same card, as wide as the
+   computer (1100 px), centred on the screenshot, growing down from where it sits in the chat, with the computer's
+   shadow; what it then covers in the chat is left out. */
+document.fonts.ready.then(() => {
+  const board = document.querySelector('x-dc > div'), B = board.getBoundingClientRect(), Z = 2.25, WIDE = 1100
+  for (const card of document.querySelectorAll('[data-pop]')) {
+    const r = card.getBoundingClientRect(), k = WIDE / r.width
+    const lift = document.createElement('div'), inner = document.createElement('div'), copy = card.cloneNode(true)
+    lift.className = 'ui'
+    Object.assign(lift.style, { position: 'absolute', zIndex: 20, left: (B.width / 2 - WIDE / 2) + 'px', top: (r.top - B.top) + 'px', width: WIDE + 'px', height: (r.height * k) + 'px', filter: 'drop-shadow(0 50px 50px rgba(0,0,0,0.16))' })
+    inner.style.zoom = Z * k
+    copy.removeAttribute('data-pop')
+    Object.assign(copy.style, { position: 'relative', left: 'auto', right: 'auto', top: 'auto', margin: '0', width: (r.width / Z) + 'px', height: (r.height / Z) + 'px', boxShadow: '0 0 0 0.5px rgba(20,20,20,0.12)' })
+    if (card.dataset.popGround) copy.style.background = card.dataset.popGround
+    inner.append(copy); lift.append(inner); board.append(lift)
+    card.style.visibility = 'hidden'
+    // a list (data-pop-room) carries on under it; in a chat, the messages it now covers are left out
+    if ('popRoom' in card.dataset) card.style.marginBottom = (parseFloat(getComputedStyle(card).marginBottom) + r.height * (k - 1) / Z) + 'px'
+    else { const bottom = r.top + r.height * k; for (let n = card.nextElementSibling; n; n = n.nextElementSibling) if (n.getBoundingClientRect().top < bottom) n.style.visibility = 'hidden' }
+  }
+})
+</script>
+
 <script type="text/x-dc" data-dc-script data-props='{"ground":{"editor":"color","default":"#F2F2F2","options":["#FFFFFF","#F5F5F5","#F2F2F2","#ECECEC"]},"$preview":{"width":1320,"height":2868}}'>
 class Component extends DCLogic {
   renderVals() {
