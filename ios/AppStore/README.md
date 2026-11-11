@@ -8,9 +8,9 @@ Designed on the Design canvas "Simeon App Store Screenshots"
 
 | File | Headline | What it shows |
 |---|---|---|
-| `screenshots/01-teammates.png` | AI teammates that do the actual work | The list: Simeon, Ruby and Maya pinned, the team's rows with what each one finished |
-| `screenshots/02-own-computer.png` | Each teammate has its own computer | A chat with Iris, and Iris's computer: the box's own wallpaper, Chrome on a competitor's pricing page, her pointer on the price |
-| `screenshots/03-chief-of-staff.png` | Your chief of staff runs the team | Simeon adds a sales lead: "Messaged Maya", then Maya named in the chat with HubSpot |
+| `screenshots/01-teammates.png` | AI teammates for everyday work | The list: Simeon, Ruby and Maya pinned, the team's rows with what each one finished |
+| `screenshots/02-own-computer.png` | Your teammates share a computer of their own | A chat with Iris, and Iris's computer: the box's own wallpaper, Chrome on Google's home page (`assets/google-home.png`, the founder's capture), her pointer by the search box |
+| `screenshots/03-chief-of-staff.png` | Your chief of staff runs the team | Simeon adds a sales lead: "Messaged Maya", the "Maya just joined your team" card as the app draws it (`JoinedCardView`: her standing figure, her face's colour), then Maya named with HubSpot |
 | `screenshots/04-connect-apps.png` | Connect the apps you already use | The Connectors page: Mail & Calendar, Marketing & Growth, Meetings, with ✓ and + |
 | `screenshots/05-your-ok.png` | Nothing goes out without your OK | Nia's email draft card: To, Subject, the message, Send email and Discard |
 | `screenshots/06-buys-for-the-team.png` | Buys what the team needs | Ruby's Checkout card: the shop's page with Review order, Visa through Link by Stripe, Total, Deny and Allow |
@@ -24,6 +24,13 @@ on into the next screenshot. The phone screens copy the app's light mode
 (`ios/Simeon/Theme.swift`, `Cards.swift`, `MessageText.swift`,
 `ConnectorsList.swift`): bubble colours and sizes, the agent name pill, the
 email draft, Checkout and flight cards and the Connectors rows.
+
+On screens 3 to 8 the card that matters is lifted out of the phone, larger
+and in front of the frame, as the computer on screen 2 (the founder, 11
+November 2026): the card carries `data-pop` (how much larger), and a short
+script at the end of each file copies it out and gives it room in the chat,
+so it covers no message. Since then the files here are ahead of the Design
+canvas, which has neither the lift nor the changes above.
 
 ## Where they differ from the app
 
@@ -41,6 +48,9 @@ email draft, Checkout and flight cards and the Connectors rows.
 python3 ios/AppStore/render.py            # Playwright's Chromium
 python3 ios/AppStore/render.py /path/to/chrome
 ```
+
+The lift waits for the fonts, as `render.py` does; a renderer that does not
+run the page's scripts draws the screens without it.
 
 It reads `source/*.dc.html`, points each canvas asset address (`/_blob/…`)
 at its file in `assets/` (`assets/blobs.json`), sets the canvas's ground,

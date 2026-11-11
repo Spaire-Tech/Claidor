@@ -54,12 +54,12 @@ body{margin:0}
         <img src="/_blob/de2bda4d5ff33faec8a01d6f0e8aa599" alt="Kai" style="position: absolute; left: 162px; top: 48px; width: 68px; height: 68px; border-radius: 34px; display: block; object-fit: cover">
         <div class="glass" style="position: absolute; left: 0; right: 0; top: 112px; margin: 0 auto; width: max-content; height: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; font-size: 15px; font-weight: 500">Kai</div>
 
-        <div style="position: absolute; left: 16px; right: 16px; top: 170px; display: flex; flex-direction: column; gap: 4px">
+        <div style="position: absolute; left: 16px; right: 16px; top: 156px; display: flex; flex-direction: column; gap: 4px">
           <div class="stamp">Today 2:10 PM</div>
           <div class="me" style="width: 275px; /*fit*/">Get me to Austin Thursday morning for the Acme offsite.</div>
-          <div class="them edge" style="margin-top: 12px">Best morning flights from SFO:</div>
+          <div class="them edge" style="margin-top: 0">Best morning flights from SFO:</div>
 
-          <div class="edge" style="align-self: flex-start; width: 345px; box-sizing: border-box; border-radius: 22px; background: #e9e9eb">
+          <div class="edge" data-pop="1.1" style="align-self: flex-start; width: 345px; box-sizing: border-box; border-radius: 22px; background: #e9e9eb">
             <div style="padding: 14px 16px 4px">
               <div style="font-size: 17px; font-weight: 500; line-height: 22px; color: #1d1d1f">San Francisco to Austin — Thu, Nov 12</div>
               <div style="font-size: 13px; line-height: 18px; color: #86868b; margin-top: 2px">Refundable · 1 adult</div>
@@ -90,6 +90,30 @@ body{margin:0}
   <img class="face" src="/_blob/1a7daeb859f7b9fcc86356a554ef9785" alt="" aria-hidden="true" style="left: 1150px; top: 980px; width: 340px; height: 340px">
 </div>
 </x-dc>
+<script>
+/* The card that matters on this screen, lifted out of the phone (the founder, 11 November 2026: "for each pop out the
+   most important thing"): the same card, larger, in front of the frame, as the computer on screen 2. data-pop holds how
+   much larger. */
+document.fonts.ready.then(() => {
+  const board = document.querySelector('x-dc > div'), B = board.getBoundingClientRect(), Z = 2.25
+  for (const card of document.querySelectorAll('[data-pop]')) {
+    // room in the chat for what the card grows by, above and below, so it covers no message (not for a card placed on its own)
+    if (getComputedStyle(card).position !== 'absolute') {
+      const g = (card.dataset.pop - 1) * card.getBoundingClientRect().height / 2 / Z, cs = getComputedStyle(card)
+      card.style.marginTop = (parseFloat(cs.marginTop) + g) + 'px'; card.style.marginBottom = (parseFloat(cs.marginBottom) + g) + 'px'
+    }
+    const r = card.getBoundingClientRect(), lift = document.createElement('div'), inner = document.createElement('div'), copy = card.cloneNode(true)
+    lift.className = 'ui'
+    Object.assign(lift.style, { position: 'absolute', zIndex: 20, left: (r.left - B.left) + 'px', top: (r.top - B.top) + 'px', width: r.width + 'px', height: r.height + 'px', transform: `scale(${card.dataset.pop})`, transformOrigin: '50% 50%' })
+    inner.style.zoom = Z
+    copy.removeAttribute('data-pop')
+    Object.assign(copy.style, { position: 'relative', left: 'auto', right: 'auto', top: 'auto', margin: '0', width: (r.width / Z) + 'px', height: (r.height / Z) + 'px', boxShadow: '0 14px 34px rgba(20,20,20,0.16), 0 0 0 0.5px rgba(20,20,20,0.10)' })
+    if (card.dataset.popGround) Object.assign(copy.style, { background: card.dataset.popGround, borderRadius: '22px' })
+    inner.append(copy); lift.append(inner); board.append(lift)
+  }
+})
+</script>
+
 <script type="text/x-dc" data-dc-script data-props='{"ground":{"editor":"color","default":"#F2F2F2","options":["#FFFFFF","#F5F5F5","#F2F2F2","#ECECEC"]},"$preview":{"width":1320,"height":2868}}'>
 class Component extends DCLogic {
   renderVals() {

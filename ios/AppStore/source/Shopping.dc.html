@@ -50,7 +50,7 @@ body{margin:0}
         <div style="position: absolute; left: 16px; right: 16px; top: 170px; display: flex; flex-direction: column; gap: 4px">
           <div class="me">Order monitors for the 3 new hires.</div>
 
-          <div class="edge" style="align-self: flex-start; margin-top: 12px; width: 345px; box-sizing: border-box; padding: 16px; border-radius: 22px; background: #e9e9eb; display: flex; flex-direction: column; gap: 14px">
+          <div class="edge" data-pop="1.16" style="align-self: flex-start; margin-top: 12px; width: 345px; box-sizing: border-box; padding: 16px; border-radius: 22px; background: #e9e9eb; display: flex; flex-direction: column; gap: 14px">
             <div style="display: flex; align-items: center; gap: 12px">
               <span style="width: 44px; height: 44px; flex: none; border-radius: 11px; background: #ffffff; box-shadow: inset 0 0 0 0.5px rgba(20,20,20,0.08); display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#141414"><path d="M2.5 3.5h2.6c.5 0 .9.3 1 .8l.3 1.7h13.2c.7 0 1.1.6 1 1.2l-1.3 6.3c-.1.5-.5.8-1 .8H8l.3 1.7h10.2a1 1 0 1 1 0 2H7.5c-.5 0-.9-.3-1-.8L4.3 5.5H2.5a1 1 0 0 1 0-2z"></path><circle cx="9" cy="20" r="1.6"></circle><circle cx="17" cy="20" r="1.6"></circle></svg></span>
               <div style="min-width: 0">
@@ -128,6 +128,30 @@ body{margin:0}
   <img class="face" src="/_blob/de2bda4d5ff33faec8a01d6f0e8aa599" alt="" aria-hidden="true" style="left: 1150px; top: 2250px; width: 300px; height: 300px">
 </div>
 </x-dc>
+<script>
+/* The card that matters on this screen, lifted out of the phone (the founder, 11 November 2026: "for each pop out the
+   most important thing"): the same card, larger, in front of the frame, as the computer on screen 2. data-pop holds how
+   much larger. */
+document.fonts.ready.then(() => {
+  const board = document.querySelector('x-dc > div'), B = board.getBoundingClientRect(), Z = 2.25
+  for (const card of document.querySelectorAll('[data-pop]')) {
+    // room in the chat for what the card grows by, above and below, so it covers no message (not for a card placed on its own)
+    if (getComputedStyle(card).position !== 'absolute') {
+      const g = (card.dataset.pop - 1) * card.getBoundingClientRect().height / 2 / Z, cs = getComputedStyle(card)
+      card.style.marginTop = (parseFloat(cs.marginTop) + g) + 'px'; card.style.marginBottom = (parseFloat(cs.marginBottom) + g) + 'px'
+    }
+    const r = card.getBoundingClientRect(), lift = document.createElement('div'), inner = document.createElement('div'), copy = card.cloneNode(true)
+    lift.className = 'ui'
+    Object.assign(lift.style, { position: 'absolute', zIndex: 20, left: (r.left - B.left) + 'px', top: (r.top - B.top) + 'px', width: r.width + 'px', height: r.height + 'px', transform: `scale(${card.dataset.pop})`, transformOrigin: '50% 50%' })
+    inner.style.zoom = Z
+    copy.removeAttribute('data-pop')
+    Object.assign(copy.style, { position: 'relative', left: 'auto', right: 'auto', top: 'auto', margin: '0', width: (r.width / Z) + 'px', height: (r.height / Z) + 'px', boxShadow: '0 14px 34px rgba(20,20,20,0.16), 0 0 0 0.5px rgba(20,20,20,0.10)' })
+    if (card.dataset.popGround) Object.assign(copy.style, { background: card.dataset.popGround, borderRadius: '22px' })
+    inner.append(copy); lift.append(inner); board.append(lift)
+  }
+})
+</script>
+
 <script type="text/x-dc" data-dc-script data-props='{"ground":{"editor":"color","default":"#F2F2F2","options":["#FFFFFF","#F5F5F5","#F2F2F2","#ECECEC"]},"$preview":{"width":1320,"height":2868}}'>
 class Component extends DCLogic {
   renderVals() {
