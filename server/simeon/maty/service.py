@@ -40,6 +40,7 @@ from simeon.exceptions import PolarError
 from simeon.kit.crypto import generate_token_hash_pair
 from simeon.kit.utils import utc_now
 from simeon.models import DesktopSession, MatyJob, MatyJobKind, MatyJobStatus, User
+from simeon.models.maty import COMPUTER_EXECUTOR, MATY_RUNNER_EXECUTOR
 from simeon.postgres import AsyncSession
 
 from .repository import MatyJobRepository, MatyJobSessionRepository
@@ -225,15 +226,19 @@ class MatyService:
         scheduled_at: datetime | None = None,
         conversation: list[dict[str, Any]] | None = None,
         parent_job_id: UUID | None = None,
+        executor: str = MATY_RUNNER_EXECUTOR,
     ) -> MatyJob:
         """One piece of work for one person, due now unless told otherwise.
 
         `conversation` and `parent_job_id` are a cloud agent's turn
         (`simeon.sand.cloud_agents`, 25 September 2026): the messages the
         runner continues from, and the turn before it. A routine or a
-        mail passes neither and runs from `prompt` alone."""
+        mail passes neither and runs from `prompt` alone. `executor` is
+        which machine does it: the cloud runner, or the person's own
+        computer for a cloud agent's coding (11 November 2026)."""
         job = MatyJob(
             user_id=user.id,
+            executor=executor,
             kind=kind,
             prompt=prompt,
             deliver=deliver or {},
@@ -264,6 +269,7 @@ class MatyService:
         prompt: str,
         deliver: dict[str, Any] | None = None,
         allow: dict[str, Any] | None = None,
+        executor: str = MATY_RUNNER_EXECUTOR,
     ) -> MatyJob:
         """One piece of work a person asked for, or a refusal saying why not.
 
@@ -290,8 +296,12 @@ class MatyService:
         wrong about its own history and nothing else. The day `kind`
         starts deciding anything — a different workspace, a different
         tool list — is the day it stops being the client's to choose.
+
+        A job for the person's own computer (`executor`, a cloud agent's
+        coding) needs no cloud runner, so it is taken whether or not this
+        Simeon has one.
         """
-        if not self.available:
+        if executor == MATY_RUNNER_EXECUTOR and not self.available:
             raise MatyNotAvailable()
         if deliver:
             raise MatyJobRefused(
@@ -320,7 +330,9 @@ class MatyService:
         if await repository.count_live_for_user(user.id) >= LIVE_JOB_LIMIT:
             raise MatyTooManyJobs(LIVE_JOB_LIMIT)
 
-        return await self.enqueue(session, user, kind=kind, prompt=cleaned)
+        return await self.enqueue(
+            session, user, kind=kind, prompt=cleaned, executor=executor
+        )
 
     async def list_for_person(
         self, session: AsyncSession, user: User
@@ -430,36 +442,79 @@ class MatyService:
           credential dies with the work and not merely with the clock.
         """
         moment = now or utc_now()
+        job = await self._take_next(
+            session, runner=runner, now=moment, executor=MATY_RUNNER_EXECUTOR
+        )
+        if job is None:
+            return None
+        assert job.lease_expires_at is not None
+        access_token = await self._mint_job_token(
+            session, job, expires_at=job.lease_expires_at
+        )
+        return ClaimedJob(
+            job=job, access_token=access_token, expires_at=job.lease_expires_at
+        )
+
+    async def claim_for_computer(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        runner: str,
+        now: datetime | None = None,
+    ) -> MatyJob | None:
+        """The person's own computer asking for its next job: the oldest of
+        this person's computer jobs that is due and nobody holds, under the
+        same lease as the cloud runner's (11 November 2026, a cloud agent's
+        coding in Claude Code). No token is minted: the computer already
+        speaks for the person with its own credential, and it is the only
+        one that may ask."""
+        return await self._take_next(
+            session,
+            runner=runner,
+            now=now or utc_now(),
+            executor=COMPUTER_EXECUTOR,
+            user_id=user.id,
+        )
+
+    async def _take_next(
+        self,
+        session: AsyncSession,
+        *,
+        runner: str,
+        now: datetime,
+        executor: str,
+        user_id: UUID | None = None,
+    ) -> MatyJob | None:
+        """The claim's locked read and the lease, for either executor."""
         repository = MatyJobRepository.from_session(session)
 
         for _ in range(CLAIM_SCAN_LIMIT):
-            job = await repository.get_next_claimable(moment)
+            job = await repository.get_next_claimable(
+                now, executor=executor, user_id=user_id
+            )
             if job is None:
                 return None
             if job.attempts >= settings.MATY_JOB_MAX_ATTEMPTS:
                 await self._give_up(
-                    session, job, reason=job.error or LEASE_LOST_REASON, now=moment
+                    session, job, reason=job.error or LEASE_LOST_REASON, now=now
                 )
                 continue
 
-            expires_at = moment + settings.MATY_JOB_LEASE_TTL
             job.status = MatyJobStatus.running
             job.runner = runner[:128]
             job.attempts += 1
-            job.lease_expires_at = expires_at
+            job.lease_expires_at = now + settings.MATY_JOB_LEASE_TTL
             # When the try that is now running began. Stamped at every
             # claim, so a retry says when *it* started rather than when
             # the first attempt did; `attempts` is what counts the tries.
-            job.started_at = moment
+            job.started_at = now
             session.add(job)
             await session.flush()
 
             # Nothing survives from the previous try.
-            await self._end_job_tokens(session, job, now=moment)
-            access_token = await self._mint_job_token(
-                session, job, expires_at=expires_at
-            )
-            return ClaimedJob(job=job, access_token=access_token, expires_at=expires_at)
+            await self._end_job_tokens(session, job, now=now)
+            return job
 
         return None
 

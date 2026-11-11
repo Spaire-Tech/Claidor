@@ -317,6 +317,8 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case thread(id: String, rootId: String, count: Int, side: Side)
   /** A cloud agent the agent started (`cloud-agent`, its `bcId`): its state read from the host (`getCloudAgentInfo`). */
   case cloudAgent(id: String, bcId: String)
+  /** "Connect GitHub" with a one-time code (`github-sign-in`): GitHub signed in on the computer for a cloud agent's coding (GitHubSignInCard). */
+  case gitHubSignIn(id: String, card: GitHubSignInCard)
   /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
   case purchase(id: String, card: PurchaseCard)
   /** What an agent found to buy, each with Buy and View website (`products`). */
@@ -332,7 +334,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _),
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .gitHubSignIn(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _),
          .modelChange(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
@@ -359,6 +361,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .queuedSend: return "queued"
     case .thread: return "thread"
     case .cloudAgent: return "cloud-agent"
+    case .gitHubSignIn: return "github-sign-in"
     case .purchase: return "purchase"
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
@@ -384,7 +387,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .purchase, .products, .flightPassengers, .joined: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .gitHubSignIn, .purchase, .products, .flightPassengers, .joined: return .agent(nil)
     default: return .middle
     }
   }
@@ -559,7 +562,8 @@ public struct ChannelTag: Hashable, Sendable {
  * branch and pull request, and what it changed.
  */
 public struct CloudAgentInfo: Hashable, Sendable {
-  public enum Status: String, Sendable { case creating, running, finished, error, expired, unknown }
+  /** `paused`: the person's Claude plan reached its limit (11 November 2026); a reply carries on once it resets. */
+  public enum Status: String, Sendable { case creating, running, finished, error, expired, paused, unknown }
   public let name: String
   public let prompt: String
   public let status: Status
@@ -583,7 +587,7 @@ public struct CloudAgentInfo: Hashable, Sendable {
     linesRemoved = json["linesRemoved"]?.int ?? 0
   }
 
-  /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Status unavailable". */
+  /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
   public var statusLabel: String {
     switch status {
     case .creating: return L10n.text("Creating")
@@ -591,6 +595,7 @@ public struct CloudAgentInfo: Hashable, Sendable {
     case .finished: return L10n.text("Done")
     case .error: return L10n.text("Error")
     case .expired: return L10n.text("Expired")
+    case .paused: return L10n.text("Paused")
     case .unknown: return L10n.text("Status unavailable")
     }
   }
@@ -637,10 +642,80 @@ public struct CloudAgentInfo: Hashable, Sendable {
     return filesChanged == 1 ? L10n.text("1 file changed") : L10n.text("\(filesChanged) files changed")
   }
 
-  /** Where Open would go (`cloudAgentWebUrl`): Simeon's page for the run. Not made yet, so the cards leave Open out (3 November 2026, as the web's card). */
+  /** Where Open would have gone (`cloudAgentWebUrl`): Simeon's page for the run, never made; the cards open the pull request instead (View PR, 11 November 2026). */
   public static func webURL(_ bcId: String) -> URL? {
     URL(string: "https://app.simeonlabs.com/agents/" + (bcId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? bcId))
   }
+}
+
+/**
+ * "Connect GitHub" (`github-sign-in`, 11 November 2026): the card a cloud
+ * agent's launch puts in the chat when GitHub isn't connected on the
+ * person's computer yet. GitHub's own device sign-in runs there (`gh auth
+ * login`, `desktop/source/host/cloud-agents/coding-github.ts`): the person
+ * opens github.com/login/device on any device, signs in to GitHub as usual
+ * and types the code; the card asks the computer how it went
+ * (`getGitHubSignIn`) every three seconds while it waits, and the agent goes
+ * on by itself once it is connected.
+ */
+public struct GitHubSignInCard: Hashable, Sendable {
+  /** The one-time code, `WXYZ-1234`. */
+  public let code: String
+  /** Where it is typed: GitHub's own page. */
+  public let url: URL
+  /** When the code stops working (ms since 1970), a quarter of an hour after it was made. */
+  public let expiresAtMs: Double
+
+  public init?(_ message: JSON) {
+    guard let code = message["code"]?.text?.trimmingCharacters(in: .whitespacesAndNewlines), code.range(of: "^[A-Z0-9]{4}-[A-Z0-9]{4}$", options: .regularExpression) != nil else { return nil }
+    let address = message["url"]?.text ?? ""
+    self.code = code
+    url = address.hasPrefix("https://github.com/") ? (URL(string: address) ?? GitHubSignInCard.devicePage) : GitHubSignInCard.devicePage
+    expiresAtMs = message["expiresAtMs"]?.double ?? 0
+  }
+
+  public static let devicePage = URL(string: "https://github.com/login/device")!
+
+  /** How the sign-in stands, as the computer says it. */
+  public enum State: Hashable, Sendable {
+    case waiting
+    case connected(login: String?)
+    case expired
+    case failed
+  }
+
+  /** The computer's answer (`{state, code?, login?}`) for this card: a sign-in waiting on another code means this one expired. */
+  public func state(_ answer: JSON?, nowMs: Double) -> State? {
+    guard let answer, let state = answer["state"]?.string else { return nil }
+    switch state {
+    case "connected": return .connected(login: answer["login"]?.text)
+    case "waiting":
+      if answer["code"]?.text != code || (expiresAtMs > 0 && nowMs >= expiresAtMs) { return .expired }
+      return .waiting
+    case "failed": return .failed
+    default: return .expired
+    }
+  }
+
+  /** Seconds until the card asks again: three while it waits (and when it couldn't be asked), never once it's settled. */
+  public static func nextPoll(_ state: State?) -> Double? {
+    switch state {
+    case .none, .waiting: return 3
+    default: return nil
+    }
+  }
+
+  public static var title: String { L10n.text("Connect GitHub") }
+  public static var prompt: String { L10n.text("Enter this code on GitHub to connect it to your computer.") }
+  public static var openLabel: String { L10n.text("Open GitHub") }
+  public static var copyLabel: String { L10n.text("Copy code") }
+  public static var copiedLabel: String { L10n.text("Copied") }
+  public static func connectedLabel(_ login: String?) -> String {
+    guard let login, !login.isEmpty else { return L10n.text("Connected") }
+    return L10n.text("Connected as \(login)")
+  }
+  public static var expiredLabel: String { L10n.text("This code expired. Ask your agent for a new one.") }
+  public static var failedLabel: String { L10n.text("GitHub couldn't be connected.") }
 }
 
 /** A picture an agent sent with a message (`message.images`): a `file://` path on its computer or an `https` address, and its shape when known. */
@@ -869,6 +944,7 @@ public enum Chat {
       let names = message["connectors"]?.array?.compactMap(\.text) ?? []
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
+    case "github-sign-in": return L10n.text("Connect GitHub")
     case "purchase": return message["content"]?.string ?? L10n.text("Checkout")
     case "products": return message["content"]?.string ?? L10n.text("Products")
     case "flight-passengers": return message["content"]?.string ?? L10n.text("Traveller details")
@@ -1333,6 +1409,9 @@ public enum Chat {
       case "cloud-agent":
         guard let bcId = message["bcId"]?.text, !bcId.isEmpty else { return nil }
         return .cloudAgent(id: entry.id, bcId: bcId)
+      case "github-sign-in":
+        if let card = GitHubSignInCard(message) { return .gitHubSignIn(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: notShown)
       case "purchase":
         if let card = PurchaseCard(message: message, entry: entry) { return .purchase(id: entry.id, card: card) }
         return .notice(id: entry.id, text: message["content"]?.text ?? notShown)

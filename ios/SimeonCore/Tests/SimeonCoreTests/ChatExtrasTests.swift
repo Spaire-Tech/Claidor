@@ -642,6 +642,48 @@ final class CloudAgentTests: XCTestCase {
     XCTAssertEqual(CloudAgentInfo.nextPoll(after: .failed, known: nil), 60)
     XCTAssertEqual(CloudAgentInfo.nextPoll(after: .failed, known: running), 5)
   }
+
+  /** The plan's limit stopped the work (11 November 2026): "Paused", not asked again. */
+  func testPausedByThePlansLimit() {
+    let paused = CloudAgentInfo(["status": "paused"])!
+    XCTAssertEqual(paused.statusLabel, "Paused")
+    XCTAssertFalse(paused.isLive)
+    XCTAssertNil(CloudAgentInfo.nextPoll(after: .info(paused), known: nil))
+  }
+}
+
+/** The Connect GitHub card (`github-sign-in`, 11 November 2026): the code, the page, and how the sign-in on the computer stands. */
+final class GitHubSignInCardTests: XCTestCase {
+  func testTheCardItsWordsAndItsState() {
+    let entry = Entry(["kind": "send-message", "id": "g1", "message": ["type": "github-sign-in", "code": "WXYZ-1234", "url": "https://github.com/login/device", "expiresAtMs": 2_000]])!
+    guard case .gitHubSignIn("g1", let card)? = Chat.rows([entry]).last else { return XCTFail() }
+    XCTAssertEqual(card.code, "WXYZ-1234")
+    XCTAssertEqual(card.url.absoluteString, "https://github.com/login/device")
+    XCTAssertEqual(Chat.rows([entry]).last?.kind, "github-sign-in")
+    XCTAssertEqual(GitHubSignInCard.title, "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.connectedLabel("octo"), "Connected as octo")
+    XCTAssertEqual(GitHubSignInCard.connectedLabel(nil), "Connected")
+
+    XCTAssertEqual(card.state(["state": "waiting", "code": "WXYZ-1234"], nowMs: 1_000), .waiting)
+    XCTAssertEqual(card.state(["state": "waiting", "code": "ABCD-0000"], nowMs: 1_000), .expired, "a newer sign-in waits on another code")
+    XCTAssertEqual(card.state(["state": "waiting", "code": "WXYZ-1234"], nowMs: 3_000), .expired)
+    XCTAssertEqual(card.state(["state": "connected", "login": "octo"], nowMs: 1_000), .connected(login: "octo"))
+    XCTAssertEqual(card.state(["state": "failed", "why": "no gh"], nowMs: 1_000), .failed)
+    XCTAssertEqual(card.state(["state": "none"], nowMs: 1_000), .expired)
+    XCTAssertNil(card.state(nil, nowMs: 1_000))
+
+    XCTAssertEqual(GitHubSignInCard.nextPoll(.waiting), 3)
+    XCTAssertEqual(GitHubSignInCard.nextPoll(nil), 3, "asked again after a failed read")
+    XCTAssertNil(GitHubSignInCard.nextPoll(.connected(login: nil)))
+    XCTAssertNil(GitHubSignInCard.nextPoll(.expired))
+  }
+
+  func testAPageOtherThanGitHubsOrABadCodeIsNotTrusted() {
+    XCTAssertEqual(GitHubSignInCard(["code": "WXYZ-1234", "url": "https://evil.example/login"])?.url, GitHubSignInCard.devicePage)
+    XCTAssertNil(GitHubSignInCard(["code": "not a code"]))
+    let entry = Entry(["kind": "send-message", "id": "g2", "message": ["type": "github-sign-in"]])!
+    guard case .notice? = Chat.rows([entry]).last else { return XCTFail("a card it can't read says so") }
+  }
 }
 
 /** A link card's page, read by the Electron app's rules: which addresses, which redirects, what of the page. */

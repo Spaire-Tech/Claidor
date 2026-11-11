@@ -205,6 +205,7 @@ export type CardKind =
   | 'onePasswordConnect'
   | 'storeEntry'
   | 'cloudAgent'
+  | 'gitHubSignIn'
   | 'purchase'
   | 'products'
   | 'flightPassengers'
@@ -668,6 +669,8 @@ export function cardText(message: unknown): string {
       return str(field(message, 'platform')) === 'slack'
         ? t('Connect Slack')
         : t('Connect GitHub')
+    case 'github-sign-in':
+      return t('Connect GitHub')
     case 'purchase':
       return str(field(message, 'content')) ?? t('Checkout')
     case 'products':
@@ -1450,6 +1453,8 @@ export function rowFor(entry: Entry): ChatRow | undefined {
           return text(field(message, 'bcId')) != null
             ? card('cloudAgent')
             : undefined
+        case 'github-sign-in':
+          return card('gitHubSignIn')
         case 'purchase':
           return card('purchase')
         case 'products':

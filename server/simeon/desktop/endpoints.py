@@ -62,6 +62,7 @@ from simeon.plans.service import PlansError
 from simeon.plans.service import plans as plans_service
 from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
+from simeon.sand.cloud_agents_computer import router as cloud_agents_computer_router
 
 from . import own_models
 from .account_deletion import router as account_deletion_router
@@ -1868,6 +1869,8 @@ router.include_router(releases_router)
 router.include_router(packs_router)
 # The copy of the agents and their chats the apps read while the computer is away (26 October 2026).
 router.include_router(chats_router)
+# A cloud agent's coding work, done by the person's own computer in Claude Code (11 November 2026).
+router.include_router(cloud_agents_computer_router)
 # The Simeon Network's routes for Settings › Network (10 November 2026, `network.py`).
 router.include_router(network_router)
 router.include_router(external_agents_router)

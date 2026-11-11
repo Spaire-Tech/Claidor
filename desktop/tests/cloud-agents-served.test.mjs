@@ -109,7 +109,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
 
     const launched = await manager.launch({ prompt: "Summarise the README.", repoUrl: "simeonlabs/demo", startingRef: "main", title: "Readme summary", modelId: "gpt-6-sol" });
     assert.match(launched.bcId, /^bc-[0-9a-f-]{36}$/);
-    assert.equal(launched.url, `https://app.simeonlabs.com/agents/${launched.bcId}`, "the card's link is Simeon's page, not the upstream site");
+    assert.equal(launched.url, "", "no link to app.simeonlabs.com/agents, which was never made (11 November 2026): a cloud agent opens at its pull request");
     const start = fake.seen.find((entry) => entry.path.endsWith("/StartBackgroundComposerFromSnapshot"));
     assert.ok(start, "the launch reached the server");
     assert.equal(start.headers.authorization, "Bearer simeon_da_test");
@@ -183,8 +183,12 @@ test("the brief and the app say Simeon where the upstream app said the upstream 
     assert.doesNotMatch(enabled, /cursor\.com/);
     assert.doesNotMatch(enabled, /## Origin/);
     assert.match(enabled, /## Repositories/);
-    assert.match(enabled, /Simeon's cloud runner/);
-    assert.match(enabled, /does not check the repository out, push a branch or open a pull request yet/);
+    // 11 November 2026: Claude Code on the person's computer clones, branches, pushes and opens the pull request, as the upstream's machines did.
+    assert.match(enabled, /The cloud agent is Claude Code on the user's own Claude plan/);
+    assert.match(enabled, /it clones the repository, makes a new branch, writes the code, builds and tests it, then pushes the branch and opens a pull request/);
+    assert.match(enabled, /Simeon's computer" \(the user's own computer\)/);
+    assert.match(enabled, /a Connect GitHub card in the chat/);
+    assert.doesNotMatch(enabled, /does not check the repository out|app\.simeonlabs\.com\/agents/);
     assert.doesNotMatch(enabled, /mobile-ios-mac/, "no self-hosted pool is offered");
     assert.match(enabled, /"type":"environment","name":"Simeon's computer"/);
     assert.match(enabled, /CloudAgent tool \(action "launch"\)/, "the upstream app's structure is kept");

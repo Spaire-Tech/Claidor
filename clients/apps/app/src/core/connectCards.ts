@@ -19,7 +19,7 @@ import type { ConnectedApp } from './connectedApps'
 import type { Entry } from './entry'
 import { type AgentFace, faceById, faceByVersion } from './faces'
 import { brandLogos, brandMentions } from './generatedBrands'
-import { arr, bool, field, int, isObject, str, text } from './json'
+import { arr, bool, field, int, isObject, num, str, text } from './json'
 import { t } from './l10n'
 import { type Agent, hasPicture } from './models'
 
@@ -386,12 +386,14 @@ export function cloudAgentCard(entry: Entry): { bcId: string } | undefined {
   return bcId != null ? { bcId } : undefined
 }
 
+/** `paused`: the person's Claude plan reached its limit (11 November 2026); a reply carries on once it resets. */
 export type CloudAgentStatus =
   | 'creating'
   | 'running'
   | 'finished'
   | 'error'
   | 'expired'
+  | 'paused'
   | 'unknown'
 
 const statuses: CloudAgentStatus[] = [
@@ -400,6 +402,7 @@ const statuses: CloudAgentStatus[] = [
   'finished',
   'error',
   'expired',
+  'paused',
   'unknown',
 ]
 
@@ -439,7 +442,7 @@ export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
 /** The card when nothing could be read and nothing is coming: "Cloud agent", "Status unavailable". */
 export const unavailableCloudAgent: CloudAgentInfo = cloudAgentInfo({})!
 
-/** The badge: "Creating", "Running", "Done", "Error", "Expired", "Status unavailable". */
+/** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
 export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
   switch (info.status) {
     case 'creating':
@@ -452,6 +455,8 @@ export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
       return t('Error')
     case 'expired':
       return t('Expired')
+    case 'paused':
+      return t('Paused')
     case 'unknown':
       return t('Status unavailable')
   }
@@ -504,7 +509,103 @@ export function cloudAgentNextPoll(
   }
 }
 
-/** Where Open would go (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). Not made yet, so the cards leave Open out. */
+// MARK: GitHub on the computer (the cloud agent's first coding run)
+
+/** GitHub's own page where the one-time code is typed. */
+export const gitHubDevicePage = 'https://github.com/login/device'
+
+/** "Connect GitHub" (`github-sign-in`, upstream card 8): the one-time code `WXYZ-1234` the computer's `gh` asked for, GitHub's page, and when the code stops working (ms since 1970). */
+export interface GitHubSignInCard {
+  code: string
+  url: string
+  expiresAtMs: number
+}
+
+export function gitHubSignInCard(entry: Entry): GitHubSignInCard | undefined {
+  const message = entry.message
+  if (str(field(message, 'type')) !== 'github-sign-in') return undefined
+  const code = text(field(message, 'code'))?.trim() ?? ''
+  if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) return undefined
+  const address = text(field(message, 'url')) ?? ''
+  return {
+    code,
+    url: address.startsWith('https://github.com/') ? address : gitHubDevicePage,
+    expiresAtMs: num(field(message, 'expiresAtMs')) ?? 0,
+  }
+}
+
+/** How the sign-in stands, as the computer says it. */
+export type GitHubSignInState =
+  | { kind: 'waiting' }
+  | { kind: 'connected'; login?: string }
+  | { kind: 'expired' }
+  | { kind: 'failed' }
+
+/** The computer's answer (`getGitHubSignIn`: `{state, code?, login?}`) for this card, none when it couldn't be asked: a sign-in waiting on another code means this one expired. */
+export function gitHubSignInState(
+  card: GitHubSignInCard,
+  answer: unknown,
+  nowMs: number,
+): GitHubSignInState | undefined {
+  const state = str(field(answer, 'state'))
+  if (state == null) return undefined
+  switch (state) {
+    case 'connected':
+      return { kind: 'connected', login: text(field(answer, 'login')) }
+    case 'waiting':
+      if (
+        text(field(answer, 'code')) !== card.code ||
+        (card.expiresAtMs > 0 && nowMs >= card.expiresAtMs)
+      )
+        return { kind: 'expired' }
+      return { kind: 'waiting' }
+    case 'failed':
+      return { kind: 'failed' }
+    default:
+      return { kind: 'expired' }
+  }
+}
+
+/** Seconds until the card asks again: three while it waits (and when it couldn't be asked), never once it's settled. */
+export function gitHubSignInNextPoll(
+  state: GitHubSignInState | undefined,
+): number | undefined {
+  return state == null || state.kind === 'waiting' ? 3 : undefined
+}
+
+/** The line under the title: what to do with the code, or why there's nothing more to do. */
+export function gitHubSignInLine(state: GitHubSignInState | undefined): string {
+  switch (state?.kind) {
+    case 'expired':
+      return t('This code expired. Ask your agent for a new one.')
+    case 'failed':
+      return t("GitHub couldn't be connected.")
+    default:
+      return t('Enter this code on GitHub to connect it to your computer.')
+  }
+}
+
+/** The card's title and buttons. */
+export function gitHubSignInWords(): {
+  title: string
+  open: string
+  copy: string
+  copied: string
+} {
+  return {
+    title: t('Connect GitHub'),
+    open: t('Open GitHub'),
+    copy: t('Copy code'),
+    copied: t('Copied'),
+  }
+}
+
+/** "Connected as octocat", or "Connected" when the account's name isn't known. */
+export function gitHubConnectedLabel(login: string | undefined): string {
+  return login ? t`Connected as ${login}` : t('Connected')
+}
+
+/** Where Open would have gone (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). Never made; the card opens the pull request instead (View PR, 11 November 2026). */
 export function cloudAgentWebURL(bcId: string): string {
   let part: string
   try {

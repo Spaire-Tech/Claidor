@@ -74,6 +74,15 @@ class MatyJobStatus(StrEnum):
 #: The states a job never leaves.
 FINAL_STATUSES = frozenset({MatyJobStatus.done, MatyJobStatus.failed})
 
+#: Which machine does a job (`MatyJob.executor`). `maty-runner` is the
+#: Render container that reads the person's memory and asks a model
+#: (`runner/src/executor.ts`); `computer` is the person's own cloud
+#: computer, whose engine runs a cloud agent's coding work in Claude Code
+#: on the person's plan (11 November 2026, `simeon.sand.cloud_agents_computer`).
+#: Each claims only its own.
+MATY_RUNNER_EXECUTOR = "maty-runner"
+COMPUTER_EXECUTOR = "computer"
+
 
 class MatyJob(RecordModel):
     """One piece of work for the cloud engine, for one person."""
@@ -134,6 +143,14 @@ class MatyJob(RecordModel):
     #: claim, so a runner that died counts the same as one that failed.
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    #: Which machine does it: `maty-runner` (the cloud runner) or
+    #: `computer` (the person's own computer, a cloud agent's coding work).
+    executor: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=MATY_RUNNER_EXECUTOR,
+        server_default=MATY_RUNNER_EXECUTOR,
+    )
     #: Which runner holds it, by the name it claimed under.
     runner: Mapped[str | None] = mapped_column(String(128), nullable=True, default=None)
     #: Until when. Past this moment the job is claimable again whatever

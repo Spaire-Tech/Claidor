@@ -26,44 +26,97 @@ Conventions used below:
 
 ## 1. Cloud agents
 
-**For the person.** The agent can hand a task to a cloud agent that keeps running on Simeon
-Labs' servers, check on it, reply to it, pause it and read its answer. Today a cloud agent
-answers in words only: it does not check out code, run commands or open pull requests.
+**For the person** (11 November 2026). An agent can hand a coding task to a cloud agent. The
+work runs on the person's own cloud computer, in Claude Code, on their own Claude plan, with the
+model and effort they chose in AI Models. It clones the repository, makes a branch
+(`simeon/<task>-<4 hex>`), writes the code, builds and tests it, pushes and opens a pull
+request. The chat's card shows its state (Creating, Running, Done, Error, Paused), the branch,
+"PR #12", the files and lines changed, and View PR opens the pull request. A reply carries on in
+the same Claude Code session on the same branch and pull request. Pausing it stops the run.
+
+- **GitHub, the first time.** The agent shows a Connect GitHub card (the upstream app's card 8):
+  a one-time code, Copy code and Open GitHub. Once the person types the code on GitHub, the
+  card says "Connected as <login>" and the agent carries on by itself. The computer keeps the
+  sign-in, as it keeps Claude's.
+- **Claude not connected.** The agent asks the person to connect Claude in Settings › AI Models
+  before starting.
+- **The plan's limit.** The card says Paused; the agent says when the limit resets and offers to
+  carry on then.
+- **Tests that fail.** The agent says what failed and asks how to go on.
+- **Which repository.** When it isn't clear, the agent asks with a question card; `gh repo list`
+  on the computer names the person's own.
 
 **How it works.**
 
 - Server: `server/simeon/sand/cloud_agents.py` (Connect surface), `cloud_agents_service.py`,
-  `cloud_agents_repository.py`. It serves `simeon.v1.CloudAgentService` (start, info,
-  list, follow-up, pause, rename, archive, delete, artifacts, conversation, and empty
-  pull-request and diff answers) and `simeon.v1.AiService/AvailableModels`.
+  `cloud_agents_repository.py`. It serves `simeon.v1.CloudAgentService` (start, info, list,
+  follow-up, pause, rename, archive, delete, artifacts, conversation, the pull request's state
+  and the diff) and `simeon.v1.AiService/AvailableModels`.
 - A cloud agent is a `sand_cloud_agents` row over one `MatyJob` per turn in the job queue
   (`server/simeon/maty/`). A follow-up on a finished turn is a continuation job with the whole
   conversation; on a running turn it waits and is queued when the turn settles. Pause calls off
-  a queued job, or sets `cancel_requested` on a running one, which the runner reads from its
+  a queued job, or sets `cancel_requested` on a running one, which the worker reads from its
   heartbeat. There is one environment, `simeon-computer` ("Simeon's computer").
-- Runner: `runner/` (Render service `claidor-maty-runner`) claims a job, lays out the person's
-  memory, makes one model call over the conversation through the API's metered proxy on the
-  job's token (`runner/src/engine.ts`), and writes the reply back as the turn's message. The
-  call runs on the model the API names `primary` (`PersonClient.models` in `runner/src/api.ts`;
-  until 2 October 2026 it took the catalogue's first row, the Claude fallback). Jobs
-  go through the `Executor` seam in `runner/src/executor.ts`; the only executor today is
-  `maty-runner`. The model cannot write files, so a cloud turn writes nothing back to memory.
-- App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`), the manager and a poll
-  loop that checks every 10 s for up to 5 hours (`host/extensions/cloud-agents/`), and the
-  card type `cursor-agent`. The card links to `https://app.simeonlabs.com/agents/<bcId>`
-  (`shared/cloud-agents-availability.ts`).
+- **Where a turn runs** (`maty_jobs.executor`). An engine that codes on the computer launches
+  with `usePrivateWorker: true` and the label `executor=computer`; its jobs are `computer` jobs.
+  A follow-up keeps its parent's executor. Every other launch (an engine before this one) is a
+  `maty-runner` job, as before.
+- **The computer's routes** (`server/simeon/sand/cloud_agents_computer.py`, under
+  `/desktop/api/cloud-agents/computer/`): `claim`, `jobs/{id}/heartbeat`, `jobs/{id}/complete`,
+  `jobs/{id}/fail`. They take the computer's own credential (a job token is refused) and hand out
+  only that person's `computer` jobs, under a lease. The heartbeat (every 30 s) keeps the lease,
+  carries what was found so far and answers `cancelRequested`. A lease that runs out (the engine
+  restarted) lets the job be claimed again.
+- **What a turn found** is kept in `sand_cloud_agents.work` (JSONB): the branch and its base,
+  the pull request's address, number and state, the lines and files changed, the commits,
+  Claude Code's session, and when the plan's limit resets. The composer, the pull request's
+  state (`GetPullRequestMergeStatus`) and the diff (`GetOptimizedDiffDetails`) read it. A failed
+  turn with a reset time reads as the upstream's limit (`rateLimitReason:
+  sand_included_limit`), which the engine shows as Paused.
+- **Engine** (`host/cloud-agents/`):
+  - `coding-runner.ts` asks for work once a minute, and at once after a launch or a reply;
+  - `coding-run.ts` does one turn: `gh repo clone` into `/home/box/code/<bcId>/repo` (or a
+    fetch), the branch, git's name and e-mail from the GitHub account, then Claude Code
+    (`--resume` with the kept session), then the push, `gh pr create` (or the open pull
+    request), and `git diff --numstat` against the base;
+  - `coding-github.ts` runs `gh auth login` with the device code, then `gh auth setup-git`;
+  - `coding-choice.ts` reads the person's Claude model and effort.
 
-* **Settings on Render.** API service: `SIMEON_MATY_RUNNER_TOKEN`. Runner service: the same
-  `SIMEON_MATY_RUNNER_TOKEN` and `SIMEON_API_BASE_URL`. Without the token the queue refuses:
-  "The cloud engine is not available on this server."
-* **App switches.** `SAND_CLOUD_AGENTS_SERVED` (off removes the tool, the card type and the
-  brief's cloud-agent sections); `SAND_CLOUD_AGENTS_WEB_BASE` (where the card's link points).
-* **Log lines.** Server: `[simeon] cloud-agent started bcId=… job=…`, then `follow-up`,
-  `continuation`, `pause`, `deleted`, `continuation refused`. Runner:
-  `job <id> (<kind>, <executor>) claimed`. A card stuck at "creating" means no runner has
-  claimed the job.
-* **Not yet verified.** Nothing has run from a Mac against production. The page at
-  `app.simeonlabs.com/agents/<bcId>` does not exist yet. Images attached to a launch are ignored.
+  While a turn runs, the computer counts as busy and is not put to sleep (`sand-host.ts`).
+  GitHub's sign-in (`~/.config/gh/hosts.yml`) and the checkouts (`/home/box/code`) are left
+  out of Simeon's backup.
+- **Runner:** `runner/` (Render service `claidor-maty-runner`) still takes `maty-runner` jobs
+  only: one model call over the conversation through the API's metered proxy, words only
+  (`runner/src/engine.ts`, `runner/src/executor.ts`). Coding never goes there.
+- App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`) checks that Claude is
+  connected and GitHub signed in before a launch or a reply; when GitHub isn't, it puts the
+  `github-sign-in` card in the chat (`codingReady` in `host-runner-composition.ts`). The
+  manager and a poll loop check every 10 s for up to 5 hours
+  (`host/extensions/cloud-agents/`). The card type is `cloud-agent`; its link is the pull
+  request. The apps read the GitHub card's state with the box command `getGitHubSignIn`.
+
+* **Settings.** None new on Render. The server's migration `coding_on_computer_1111` adds
+  `maty_jobs.executor` and `sand_cloud_agents.work`. The `maty-runner` jobs still need
+  `SIMEON_MATY_RUNNER_TOKEN` (API and runner) and `SIMEON_API_BASE_URL` (runner); the computer's
+  jobs need neither.
+* **App switches.** `SAND_CLOUD_AGENTS_SERVED` (off removes the tool, the card type, the coding
+  runner and the brief's cloud-agent sections).
+* **Log lines.**
+  - Server: `[simeon] cloud-agent started bcId=… job=… repo=… model=… executor=computer`, then
+    `cloud-agent computer claimed bcId=… job=… attempt=…`, `cloud-agent computer done … branch=…
+    pr=…` or `cloud-agent computer failed … status=… limited=… retryable=…`.
+  - Computer (`/tmp/sand-host.log`): `[simeon] coding job=… claude model=… effort=… resume=…`,
+    `coding job=… claude outcome=…`, `coding job=… done commits=… files=… pr=…`; GitHub's
+    sign-in: `[simeon] github sign-in waiting for the person's code`, `github connected as …`.
+  - A card stuck at "Creating" means the computer hasn't claimed the job: look for `coding …
+    claim didn't reach the server`.
+* **Tested.** The server's routes and routing (`server/tests/sand/test_cloud_agents_computer.py`,
+  14 tests). The engine's turn against stand-ins: a bare git origin, a `gh` script, a fake
+  Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 9 tests). The cards'
+  models in SimeonCore and the web app; the web card drawn in Chromium, light and dark.
+* **Not yet verified.** No run against real GitHub or Claude Code, on a cloud computer, a Mac or
+  an iPhone. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
+  attached to a launch are ignored.
 
 ## 2. Routines and event listeners
 
@@ -1774,7 +1827,7 @@ the computer handed over at a sign-in.
 * **Not yet verified.** Not run with a real 1Password account, on the cloud computer, a Mac or
   an iPhone. No way yet to disconnect from the apps (the key can be deleted in 1Password).
 
-### Two of the upstream app's cards we do not build, on purpose (28 October 2026)
+### Two of the upstream app's cards we did not build, on purpose (28 October 2026)
 
 The audit ("audit the other cards and make sure they each work exactly like" the upstream
 app's) left two of its fourteen cards unbuilt, each by a deliberate decision, not an oversight:
@@ -1787,9 +1840,9 @@ app's) left two of its fourteen cards unbuilt, each by a deliberate decision, no
   sessions to the cloud computer, against that guard. The founder kept the guard (28 October):
   1Password, the in-chat form and the box handoff cover sign-ins instead.
 * **The SCM / repo connect card** (its card 8: connect GitHub so a cloud agent can open a
-  repository). Simeon's cloud agents can't open a repository yet — the runner has no step that
-  clones one (`runner/src/executor.ts`, "GetEnvironment … no repositories configured"). The
-  founder left the card until they can (28 October); there is nothing for it to unblock today.
+  repository). Left out on 28 October while cloud agents couldn't open a repository. Built on
+  11 November 2026, when coding moved to the person's computer: the Connect GitHub card
+  (section 1).
 
 ### Files and lists in the chat
 

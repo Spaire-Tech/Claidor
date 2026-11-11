@@ -790,6 +790,10 @@ private struct TranscriptRow: View {
       ListenerConnectCardView(platform: platform, reason: reason, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .gitHubSignIn(_, let card):
+      GitHubSignInCardView(card: card, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule)):
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)

@@ -17,12 +17,19 @@ from sqlalchemy import Select, or_
 
 from simeon.kit.repository import RepositoryBase, RepositoryIDMixin
 from simeon.models import DesktopSession, MatyJob, MatyJobStatus
+from simeon.models.maty import MATY_RUNNER_EXECUTOR
 
 
 class MatyJobRepository(RepositoryIDMixin[MatyJob, UUID], RepositoryBase[MatyJob]):
     model = MatyJob
 
-    def claimable_statement(self, now: datetime) -> Select[tuple[MatyJob]]:
+    def claimable_statement(
+        self,
+        now: datetime,
+        *,
+        executor: str = MATY_RUNNER_EXECUTOR,
+        user_id: UUID | None = None,
+    ) -> Select[tuple[MatyJob]]:
         """The next job that is due and not leased, oldest first.
 
         « Due » is `scheduled_at` in the past; « not leased » is no lease
@@ -30,24 +37,38 @@ class MatyJobRepository(RepositoryIDMixin[MatyJob, UUID], RepositoryBase[MatyJob
         hands its work back without anybody noticing it died. Finished
         jobs are excluded by status, so a completed job is never picked
         up a second time.
+
+        Only `executor`'s jobs (11 November 2026): the cloud runner never
+        takes a cloud agent's coding work, which the person's computer
+        does, and a computer takes only its own person's (`user_id`).
         """
+        statement = self.get_base_statement().where(
+            MatyJob.executor == executor,
+            MatyJob.status.in_((MatyJobStatus.queued, MatyJobStatus.running)),
+            MatyJob.scheduled_at <= now,
+            or_(
+                MatyJob.lease_expires_at.is_(None),
+                MatyJob.lease_expires_at <= now,
+            ),
+        )
+        if user_id is not None:
+            statement = statement.where(MatyJob.user_id == user_id)
         return (
-            self.get_base_statement()
-            .where(
-                MatyJob.status.in_((MatyJobStatus.queued, MatyJobStatus.running)),
-                MatyJob.scheduled_at <= now,
-                or_(
-                    MatyJob.lease_expires_at.is_(None),
-                    MatyJob.lease_expires_at <= now,
-                ),
-            )
-            .order_by(MatyJob.scheduled_at.asc(), MatyJob.created_at.asc())
+            statement.order_by(MatyJob.scheduled_at.asc(), MatyJob.created_at.asc())
             .limit(1)
             .with_for_update(skip_locked=True)
         )
 
-    async def get_next_claimable(self, now: datetime) -> MatyJob | None:
-        return await self.get_one_or_none(self.claimable_statement(now))
+    async def get_next_claimable(
+        self,
+        now: datetime,
+        *,
+        executor: str = MATY_RUNNER_EXECUTOR,
+        user_id: UUID | None = None,
+    ) -> MatyJob | None:
+        return await self.get_one_or_none(
+            self.claimable_statement(now, executor=executor, user_id=user_id)
+        )
 
     async def list_by_user(
         self, user_id: UUID, *, limit: int | None = None

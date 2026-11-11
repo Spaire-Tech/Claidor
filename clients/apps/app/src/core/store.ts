@@ -1934,6 +1934,17 @@ export class AppStore {
     }
   }
 
+  /** How GitHub's sign-in on the computer stands (`getGitHubSignIn`), for the Connect GitHub card; none when it couldn't be asked. */
+  async gitHubSignIn(): Promise<JSONValue | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return await backend.command('getGitHubSignIn', {})
+    } catch {
+      return undefined
+    }
+  }
+
   /** A cloud agent's state (`getCloudAgentInfo`): what it is, nothing (final), or that it couldn't be asked. */
   async cloudAgent(bcId: string): Promise<CloudAgentRead> {
     const backend = this.backend

@@ -143,27 +143,33 @@ async def get_background_composer_conversation(call: ConnectCall) -> dict[str, A
 
 @service.unary("GetPullRequestMergeStatus", auth="desktop-or-box")
 async def get_pull_request_merge_status(call: ConnectCall) -> dict[str, Any]:
-    # No executor opens a pull request yet: the « no PR » shape, which the
-    # client's `fetchLivePrState` reads as null.
-    return {
-        "isMerged": False,
-        "isClosed": False,
-        "isDraft": False,
-        "state": "",
-        "mergeableState": "",
-        "title": "",
-        "baseBranch": "",
-        "behindBy": 0,
-        "canUpdateBranch": False,
-        "isAutoMergeEnabled": False,
-    }
+    # The pull request a cloud agent's work opened, as the person's computer
+    # last reported it; the « no PR » shape, which the client's
+    # `fetchLivePrState` reads as null, for any other address.
+    from .cloud_agents_repository import SandCloudAgentRepository
+
+    pr_url = _text(call.message, "prUrl")
+    agent = (
+        await SandCloudAgentRepository.from_session(call.db).get_by_pr_url(
+            call.caller.user.id, pr_url
+        )
+        if pr_url
+        else None
+    )
+    return cloud_agents.pull_request_status(agent)
 
 
 @service.unary("GetOptimizedDiffDetails", auth="desktop-or-box")
 async def get_optimized_diff_details(call: ConnectCall) -> dict[str, Any]:
-    # The run owns no checkout: no diffs, and the client draws no files.
-    await cloud_agents.info(call.db, call.caller.user, _text(call.message, "bcId"))
-    return {"diff": {"diffs": [], "diffType": 0}, "submoduleDiffs": []}
+    # The files the work changed, as the computer reported them at its last
+    # turn; none for the cloud runner's agents, which own no checkout.
+    agent, _ = await cloud_agents.agent(
+        call.db, call.caller.user, _text(call.message, "bcId")
+    )
+    return {
+        "diff": {"diffs": cloud_agents.diffs(agent), "diffType": 0},
+        "submoduleDiffs": [],
+    }
 
 
 @service.unary("GetEnvironment", auth="desktop-or-box")

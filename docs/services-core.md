@@ -743,8 +743,10 @@ driving Chrome, the general ones) and its turns in group chats
 (`turn-agent-composition.ts`, `claudeCodeKind`); and each small job as one
 `claude -p` with no tools and nothing kept (`claude-code-text.ts`, routed in
 `provider-session.ts`). Only these stay on Simeon's: a video helper (Claude
-can't watch video), voice calls, dictation, cloud agents (they run on
-Simeon's server), and any of the above when Claude Code can't answer (the
+can't watch video), voice calls, dictation, cloud agents launched by
+an engine from before 11 November 2026 (they answer in words on Simeon's
+server; since then a cloud agent codes in Claude Code on the person's own
+computer and plan, `services-agents.md`, section 1), and any of the above when Claude Code can't answer (the
 plan's limit, the sign-in gone), as the card says. The host log says which:
 `claude-code turn helper=… outcome=…`, `claude-code job model=… effort=…
 outcome=…`.

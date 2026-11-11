@@ -1141,6 +1141,95 @@ struct ListenerConnectCardView: View {
   }
 }
 
+/**
+ * "Connect GitHub" with a one-time code (`github-sign-in`, 11 November 2026;
+ * SimeonCore's `GitHubSignInCard`): laid out as the Connect Slack card above
+ * (GitHub's logo on a faint tile, the title, a line under it), then the code
+ * large in monospaced figures with Copy code and Open GitHub (our blue) at
+ * its right. The person opens GitHub's page on this Mac, already signed in to
+ * GitHub there, and types the code; the card asks the computer every three
+ * seconds and turns to "Connected as octo" with a green tick, or says the code
+ * expired. The agent goes on by itself once GitHub is connected.
+ */
+struct GitHubSignInCardView: View {
+  let card: GitHubSignInCard
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var state: GitHubSignInCard.State?
+  @State private var copied = false
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(alignment: .top, spacing: 10) {
+        Group {
+          if let logo = NSImage(named: "Connectors/github") ?? NSImage(named: "Brands/github") {
+            Image(nsImage: logo).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: 18, height: 18)
+          }
+        }
+        .frame(width: 30, height: 30)
+        .background(look.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+        VStack(alignment: .leading, spacing: 3) {
+          Text(GitHubSignInCard.title)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(look.ink)
+          Text(line)
+            .font(.system(size: 12))
+            .foregroundStyle(look.inkSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        if case .connected(let login) = state {
+          HStack(spacing: 4) {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(look.working)
+            Text(GitHubSignInCard.connectedLabel(login)).font(.system(size: 12, weight: .medium)).foregroundStyle(look.ink)
+          }
+          .fixedSize()
+        }
+      }
+      if waiting {
+        HStack(spacing: 8) {
+          Text(card.code)
+            .font(.system(size: 20, weight: .semibold, design: .monospaced))
+            .tracking(1)
+            .foregroundStyle(look.ink)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+          CardButton(title: copied ? GitHubSignInCard.copiedLabel : GitHubSignInCard.copyLabel, look: look) {
+            NSPasteboard.general.clearContents()
+            copied = NSPasteboard.general.setString(card.code, forType: .string)
+          }
+          CardButton(title: GitHubSignInCard.openLabel, prominent: true, look: look) {
+            NSWorkspace.shared.open(card.url)
+          }
+        }
+      }
+    }
+    .padding(12)
+    .frame(maxWidth: 520, alignment: .leading)
+    .background(look.theirs, in: RoundedRectangle(cornerRadius: 14))
+    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+    .task(id: card.code) {
+      while !Task.isCancelled {
+        let read = card.state(await store.gitHubSignIn(), nowMs: Date().timeIntervalSince1970 * 1000)
+        if let read { state = read }
+        guard let wait = GitHubSignInCard.nextPoll(read ?? state) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+
+  /** Waiting, or not yet heard from the computer: the code is shown. */
+  private var waiting: Bool { state == nil || state == .waiting }
+
+  private var line: String {
+    switch state {
+    case .expired: return GitHubSignInCard.expiredLabel
+    case .failed: return GitHubSignInCard.failedLabel
+    default: return GitHubSignInCard.prompt
+    }
+  }
+}
+
 // MARK: The parts the asking cards share
 
 /**

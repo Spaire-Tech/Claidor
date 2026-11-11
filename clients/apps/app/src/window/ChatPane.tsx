@@ -1197,6 +1197,7 @@ const cardCaps: Record<CardKind, number> = {
   connectors: 640,
   listenerConnect: 520,
   cloudAgent: 640,
+  gitHubSignIn: 520,
   joined: 460,
   flights: 680,
   flightPassengers: 520,
@@ -1279,6 +1280,7 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
     case 'connectors':
     case 'listenerConnect':
     case 'cloudAgent':
+    case 'gitHubSignIn':
     case 'joined':
       return connectCardView(kind, card)
     // 3d: flights and the travellers' form (FlightCards.tsx).

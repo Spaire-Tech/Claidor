@@ -16,7 +16,7 @@ Nothing in `simeon.maty` knows this table exists; the only link is
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import (
@@ -28,7 +28,9 @@ from sqlalchemy import (
     Text,
     Uuid,
     false,
+    text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
 from simeon.kit.db.models import RecordModel
@@ -60,11 +62,21 @@ class SandCloudAgent(RecordModel):
         Boolean, nullable=False, default=False, server_default=false()
     )
     #: What the launch named, kept so the card and the brief can say where
-    #: the work is meant to land. Today's executor does not clone it
-    #: (`runner/README.md`): branch and pull-request fields stay empty.
+    #: the work is meant to land. The cloud runner does not clone it
+    #: (`runner/README.md`); the person's computer does (11 November 2026).
     repo_url: Mapped[str] = mapped_column(Text, nullable=False, default="")
     base_branch: Mapped[str] = mapped_column(Text, nullable=False, default="")
     model_id: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    #: What the computer reported of the work, across its turns (11
+    #: November 2026, `simeon.sand.cloud_agents_computer`): `branchName`,
+    #: `prUrl`, `prNumber`, `prState` (open, draft, merged, closed),
+    #: `linesAdded`, `linesRemoved`, `filesChanged`, `commitCount`, `files`
+    #: (`{path, added, removed}`), `sessionId` (Claude Code's, resumed by
+    #: the next turn) and `limitedUntilMs` (the plan's limit stopped the
+    #: last turn, until then). Empty for the cloud runner's agents.
+    work: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb")
+    )
     #: A deleted agent answers « not found » and is left off every list;
     #: its jobs keep their record.
     deleted_at: Mapped[datetime | None] = mapped_column(
