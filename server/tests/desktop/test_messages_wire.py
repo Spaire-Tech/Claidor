@@ -169,10 +169,14 @@ class TestRequest:
             ],
         }
 
-    def test_the_machinery_stays_quick(self) -> None:
+    def test_the_machinery_thinks_as_the_person_chose(self) -> None:
         quick = {"input": "Title this.", "reasoning": {"effort": "none"}}
 
-        body = messages_wire.messages_request(quick, "claude-haiku-5-5", "max")
+        # The person's effort on the machinery's calls too (11 November 2026).
+        chosen = messages_wire.messages_request(quick, "claude-haiku-5-5", "max")
+        assert chosen["output_config"] == {"effort": "max"}
+
+        body = messages_wire.messages_request(quick, "claude-haiku-5-5")
 
         assert body["output_config"] == {"effort": "low"}
         assert body["max_tokens"] == messages_wire.DEFAULT_MAX_TOKENS

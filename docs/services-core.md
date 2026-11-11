@@ -723,6 +723,32 @@ the founder: "can we change the wording to Active"). Meta's mark is drawn
 in its blue in light and dark mode ("meta keeps it blue in dark mode as
 well").
 
+**Everything on the person's own plan or key** (11 November 2026, the
+founder: "small jobs is their own plan and chosen model. and make sure
+everything else is like that, the api keys included"). With ChatGPT, Grok or
+an API key chosen, every role the engine reads is the chosen model
+(`own_models.rows`: primary, cheap and computer), so the agent, its small jobs
+(titles, summaries, memory, the safety review) and its helper on the screen
+all run on the person's account; web search too (Grok searches on Grok 4.6,
+the one model with the proxy's search). The effort the person chose replaces
+the engine's own on every call, the small jobs' too (`codex_body`,
+`grok_body`, `chat_wire.effort_of`). Until then the small jobs ran on a
+cheaper model of the plan or key (GPT-6 Luna, a key provider's `cheap`) at
+low effort.
+
+With Claude chosen, the engine runs all of it in Claude Code on the computer,
+on the chosen model and effort: the agent's turns; its helpers (the one on
+the computer's screen, whose screenshots reach Claude as pictures, the one
+driving Chrome, the general ones) and its turns in group chats
+(`turn-agent-composition.ts`, `claudeCodeKind`); and each small job as one
+`claude -p` with no tools and nothing kept (`claude-code-text.ts`, routed in
+`provider-session.ts`). Only these stay on Simeon's: a video helper (Claude
+can't watch video), voice calls, dictation, cloud agents (they run on
+Simeon's server), and any of the above when Claude Code can't answer (the
+plan's limit, the sign-in gone), as the card says. The host log says which:
+`claude-code turn helper=… outcome=…`, `claude-code job model=… effort=…
+outcome=…`.
+
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
 `SIMEON_CHATGPT_CLIENT_ID` changes). The steps are Codex's own

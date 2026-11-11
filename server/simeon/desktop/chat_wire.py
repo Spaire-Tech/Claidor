@@ -323,12 +323,14 @@ QUICK_EFFORTS = frozenset({"none", "minimal", "low"})
 
 
 def effort_of(payload: dict[str, Any], chosen: str | None) -> str | None:
-    """How hard the model thinks: the person's effort for the agent's real
-    thinking, the engine's own for its machinery; None when neither says."""
+    """How hard the model thinks: the person's effort on every call, the
+    machinery's too (11 November 2026, the founder: "their own plan and
+    chosen model", "and the effort set"); the engine's own when the person
+    chose none; None when neither says."""
+    if chosen is not None:
+        return chosen
     reasoning = payload.get("reasoning")
     asked = reasoning.get("effort") if isinstance(reasoning, dict) else None
-    if chosen is not None and asked not in QUICK_EFFORTS:
-        return chosen
     return asked if isinstance(asked, str) else None
 
 

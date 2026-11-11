@@ -108,7 +108,9 @@ test("Router settings use the trusted backend and display recorded inference usa
   assert.match(providers, /parameters: jsonSchema\(parameters\)/);
   assert.match(providers, /You are Simeon, a warm, concise desktop assistant/);
   assert.match(providers, /recordRoutedUsage\(provider, usage\)/);
-  assert.match(providers, /return simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, effort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\), this\.callReason\);/);
+  assert.match(providers, /const onSimeon = \(\) => simeonExecutor\(this\.getMessages\(\), invocationId, definitions, undefined, this\.onUsage, this\.modelId, effort, this\.budget, this\.onRequestId, simeonPromptCacheKey\(conversationIdFromContext\(ctx\)\), this\.callReason\);/);
+  // A small job on the person's Claude plan when they chose Claude (11 November 2026); Simeon's model otherwise.
+  assert.match(providers, /return \(onClaudeCode\(this\.smallJob, this\.getMessages\(\), definitions, undefined, signal instanceof AbortSignal \? signal : undefined, onSimeon\) \?\? onSimeon\(\)\)/);
   assert.match(simeonSession, /routedProvider !== "cursor"/);
   assert.match(simeonSession, /createProviderPromptSession\(routedProvider, sessionOptions\)/);
   assert.match(simeonBackend, /routedProvider !== "cursor"/);

@@ -128,9 +128,6 @@ class KeyProvider:
     known: tuple[KnownModel, ...] = ()
     #: Offer only the models named here (when the list has any of them).
     only_known: bool = False
-    #: The model for the agents' machinery (titles, summaries), where it
-    #: has a cheaper one.
-    cheap: str | None = None
     efforts: tuple[str, ...] = ()
     default_effort: str | None = None
     #: Claude's thinking settings on the Messages wire (MiniMax thinks its
@@ -218,7 +215,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("claude-fable-5-1", "Claude Fable 5.1", 1_000_000),
         ),
         only_known=True,
-        cheap="claude-haiku-5-5",
         efforts=_CLAUDE_EFFORTS,
         # Anthropic's own default for Opus 5.5: the person's key pays.
         default_effort="medium",
@@ -237,7 +233,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("gpt-6-luna", "GPT-6 Luna", 1_050_000),
         ),
         only_known=True,
-        cheap="gpt-6-luna",
         efforts=_OPENAI_EFFORTS,
         default_effort="medium",
         hint="ChatGPT Plus or Pro? Connect ChatGPT under Subscriptions.",
@@ -272,7 +267,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("gemini-3.8-flash", "Gemini 3.8 Flash", 1_048_576),
         ),
         only_known=True,
-        cheap="gemini-3.8-flash",
         efforts=_OPENAI_EFFORTS,
         default_effort="medium",
     ),
@@ -371,7 +365,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("deepseek-flash", "DeepSeek Flash", 1_000_000),
         ),
         only_known=True,
-        cheap="deepseek-flash",
     ),
     KeyProvider(
         "fireworks",
@@ -409,7 +402,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("llama-3.3-70b-versatile", "Llama 3.3 70B", 131_072),
             KnownModel("openai/gpt-oss-20b", "GPT-OSS 20B", 131_072),
         ),
-        cheap="openai/gpt-oss-20b",
     ),
     KeyProvider(
         "huggingface",
@@ -447,7 +439,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("MiniMax-M3.1-Flash", "MiniMax M3.1 Flash", 1_000_000),
         ),
         only_known=True,
-        cheap="MiniMax-M3.1-Flash",
         thinking=False,
     ),
     KeyProvider(
@@ -465,7 +456,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("mistral-small-latest", "Mistral Small"),
         ),
         only_known=True,
-        cheap="mistral-small-latest",
     ),
     KeyProvider(
         "moonshot",
@@ -516,7 +506,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("qwen3.8-flash", "Qwen3.8 Flash"),
         ),
         only_known=True,
-        cheap="qwen3.8-flash",
     ),
     KeyProvider(
         "together",
@@ -547,7 +536,6 @@ PROVIDERS: tuple[KeyProvider, ...] = (
             KnownModel("mimo-v2.6-pro-ultraspeed", "MiMo V2.6 Pro Ultraspeed"),
         ),
         only_known=True,
-        cheap="mimo-v2.6-flash",
     ),
     KeyProvider(
         "zai",

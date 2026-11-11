@@ -602,7 +602,12 @@ class TestTheRequest:
         machinery = own_models.grok_body(
             {**_engine_request(), "reasoning": {"effort": "none"}}, newest, "xhigh"
         )
-        assert machinery["reasoning"] == {"effort": "low"}
+        # The machinery on the effort chosen too.
+        assert machinery["reasoning"] == {"effort": "xhigh"}
+        quick = own_models.grok_body(
+            {**_engine_request(), "reasoning": {"effort": "none"}}, newest
+        )
+        assert quick["reasoning"] == {"effort": "low"}
         chosen = own_models.grok_body(_engine_request(), newest, "xhigh")
         assert chosen["reasoning"] == {"effort": "xhigh"}
         most = own_models.grok_body(
