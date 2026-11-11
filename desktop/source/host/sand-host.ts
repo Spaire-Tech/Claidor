@@ -712,7 +712,10 @@ export class SandHost {
     const otherWorkBusy = Boolean(
       optionalMethod(transcript, "hasRunningBackgroundShellWork")?.() ||
       optionalMethod(transcript, "hasCarryablePendingWake")?.() ||
-      optionalMethod(transcript, "hasMidDrainRevival")?.()
+      optionalMethod(transcript, "hasMidDrainRevival")?.() ||
+      // A cloud agent's coding, done on this computer (11 November 2026):
+      // the sleeper must not put it to sleep under the work.
+      (this.hostExtensions === undefined ? undefined : optionalMethod(this.hostExtensions.api("cloud-agents"), "isCodingBusy"))?.()
     );
     const isBusy = runningTurnsBusy || otherWorkBusy;
     const busyOnlyAwaitingApproval =

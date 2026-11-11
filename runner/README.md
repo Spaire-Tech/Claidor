@@ -52,9 +52,11 @@ reports the reply as the turn's message (`messages` on `complete`) so the
 agent's transcript grows by what was said. The heartbeat's answer carries
 `cancel_requested`: when the person pauses the agent, the run is aborted
 and the job is failed as cancelled, final. Every claim also names an
-`executor`; `maty-runner` is this process and the only one, and
-`src/executor.ts` is the seam a box executor (a checkout, a shell, a pull
-request) plugs into.
+`executor`, and this process claims only `maty-runner` jobs. Since 11
+November 2026 a cloud agent's coding (a checkout, Claude Code, a pull
+request) runs on the person's own cloud computer instead, as `computer`
+jobs (`docs/services-agents.md`, section 1); the runner still answers in
+words the agents launched by an engine from before then.
 
 ## The safety of it
 

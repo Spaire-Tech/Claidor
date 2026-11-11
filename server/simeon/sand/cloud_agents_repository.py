@@ -42,6 +42,15 @@ class SandCloudAgentRepository(
             )
         )
 
+    async def get_by_pr_url(self, user_id: UUID, pr_url: str) -> SandCloudAgent | None:
+        """The person's newest agent whose work opened this pull request."""
+        return await self.get_one_or_none(
+            self._for_user(user_id)
+            .where(SandCloudAgent.work["prUrl"].astext == pr_url)
+            .order_by(SandCloudAgent.created_at.desc())
+            .limit(1)
+        )
+
     async def list_for_user(
         self, user_id: UUID, *, include_archived: bool, limit: int
     ) -> Sequence[SandCloudAgent]:

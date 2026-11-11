@@ -1,5 +1,6 @@
 // Step 3c (mac/Simeon/Cards.swift): apps an agent needs connected, Slack or
-// GitHub for a routine, the cloud agent's card, and a new teammate joined.
+// GitHub for a routine, the cloud agent's card, GitHub on the computer for
+// a cloud agent's coding (11 November 2026), and a new teammate joined.
 // Read by `src/core/connectCards.ts`.
 //
 // An app's Connect (step 6b): the consent, then the app added and its
@@ -17,6 +18,12 @@ import {
   connectedWord,
   connectorsCard,
   cssColour,
+  gitHubConnectedLabel,
+  gitHubSignInCard,
+  gitHubSignInLine,
+  gitHubSignInNextPoll,
+  gitHubSignInState,
+  gitHubSignInWords,
   goToChatWord,
   joinedAgent,
   joinedCard,
@@ -32,6 +39,8 @@ import {
   type AppLogo,
   type CloudAgentInfo,
   type ConnectorsCard,
+  type GitHubSignInCard,
+  type GitHubSignInState,
   type JoinedCard,
   type ListenerCard,
 } from '../core/connectCards'
@@ -43,6 +52,7 @@ import { AgentPicture } from './AgentMark'
 import { CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
 import { classes } from './classes'
+import { copyText } from './clipboard'
 import { useConnector, useConnectorWatched } from './connector'
 import { openPending } from './outside'
 import { useDarkScheme } from './theme'
@@ -50,7 +60,7 @@ import { useWindowModel } from './windowModel'
 
 type ConnectKind = Extract<
   CardKind,
-  'connectors' | 'listenerConnect' | 'cloudAgent' | 'joined'
+  'connectors' | 'listenerConnect' | 'cloudAgent' | 'gitHubSignIn' | 'joined'
 >
 
 /** The card for one of 3c's kinds, or none when its line doesn't read as one. */
@@ -70,6 +80,10 @@ export function connectCardView(
     case 'cloudAgent': {
       const read = cloudAgentCard(card.entry)
       return read && <CloudAgentCardView bcId={read.bcId} store={card.store} />
+    }
+    case 'gitHubSignIn': {
+      const read = gitHubSignInCard(card.entry)
+      return read && <GitHubSignInCardView card={read} store={card.store} />
     }
     case 'joined': {
       const read = joinedCard(card.entry)
@@ -368,18 +382,7 @@ function ListenerConnectCardView({
       <div className="listener-end">
         {connected === true ? (
           <span className="listener-connected">
-            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="7.5" fill="currentColor" />
-              <path
-                d="M4.9 8.3 7.1 10.4l4.1-4.6"
-                fill="none"
-                // Cut out of the green, as `checkmark.circle.fill`: the card's grey shows through.
-                style={{ stroke: 'var(--theirs)' }}
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <ConnectedTick />
             <span>{t('Connected')}</span>
           </span>
         ) : connected === false ? (
@@ -613,6 +616,135 @@ function CloudAgentCardView({
           </div>
         )}
       </CardShell>
+    </div>
+  )
+}
+
+// MARK: GitHub on the computer
+
+/** The green tick cut out of the card's grey (`checkmark.circle.fill`). */
+function ConnectedTick() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="8" cy="8" r="7.5" fill="currentColor" />
+      <path
+        d="M4.9 8.3 7.1 10.4l4.1-4.6"
+        fill="none"
+        style={{ stroke: 'var(--theirs)' }}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
+ * "Connect GitHub" (`github-sign-in`, the upstream's card 8; at most 520
+ * wide, 14 round, as the routine's Connect GitHub): GitHub's logo on its
+ * faint tile, the title and what to do; while it waits, the one-time code
+ * (20, 600, monospaced, selectable) with Copy code and Open GitHub (GitHub's
+ * own page, in a new tab). The computer is asked every three seconds while
+ * the card is on screen; once GitHub is connected the code goes and
+ * "Connected as octocat" shows with the green tick, and the agent carries
+ * on by itself. A code past its quarter of an hour, or replaced by a newer
+ * one, says it expired.
+ */
+function GitHubSignInCardView({
+  card,
+  store,
+}: {
+  card: GitHubSignInCard
+  store: AppStore
+}) {
+  const [state, setState] = useState<GitHubSignInState>()
+  const [copied, setCopied] = useState(false)
+  const box = useRef<HTMLDivElement>(null)
+  const [onScreen, setOnScreen] = useState(false)
+  useEffect(() => {
+    const element = box.current
+    if (!element) return
+    const watch = new IntersectionObserver((seen) =>
+      setOnScreen(seen.some((one) => one.isIntersecting)),
+    )
+    watch.observe(element)
+    return () => watch.disconnect()
+  }, [])
+
+  // Asked again only when the code changes, not each time the chat draws the card anew.
+  const { code, url, expiresAtMs } = card
+  useEffect(() => {
+    if (!onScreen) return
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let known: GitHubSignInState | undefined
+    const ask = async () => {
+      const read = gitHubSignInState(
+        { code, url, expiresAtMs },
+        await store.gitHubSignIn(),
+        Date.now(),
+      )
+      if (stopped) return
+      if (read) {
+        known = read
+        setState(read)
+      }
+      const wait = gitHubSignInNextPoll(read ?? known)
+      if (wait != null) timer = setTimeout(() => void ask(), wait * 1000)
+    }
+    void ask()
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+    }
+  }, [store, code, url, expiresAtMs, onScreen])
+
+  const words = gitHubSignInWords()
+  const logo = listenerLogos.github
+  const dark = useDarkScheme()
+  const waiting = state == null || state.kind === 'waiting'
+  return (
+    <div ref={box} className="listener-card github-card">
+      <div className="github-head">
+        <span className="listener-logo" aria-hidden="true">
+          <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
+        </span>
+        <div className="listener-words">
+          <div className="listener-title">{words.title}</div>
+          <div className="listener-reason">{gitHubSignInLine(state)}</div>
+        </div>
+        {state?.kind === 'connected' && (
+          <div className="listener-end">
+            <span className="listener-connected" role="status">
+              <ConnectedTick />
+              <span>{gitHubConnectedLabel(state.login)}</span>
+            </span>
+          </div>
+        )}
+      </div>
+      {waiting && (
+        <div className="github-code-row">
+          <span className="github-code">{card.code}</span>
+          {/* The two buttons together, at the right; under the code when the card is narrow. */}
+          <div className="card-buttons">
+            <button
+              type="button"
+              className="card-button"
+              onClick={() =>
+                void copyText(card.code).then(
+                  () => setCopied(true),
+                  () => setCopied(false),
+                )
+              }
+            >
+              {copied ? words.copied : words.copy}
+            </button>
+            <a className="card-button prominent" href={card.url} {...pageLink}>
+              {words.open}
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

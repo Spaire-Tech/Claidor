@@ -1383,6 +1383,12 @@ public final class AppStore {
     return CloudAgentInfo(answer).map(CloudAgentInfo.Read.info) ?? .empty
   }
 
+  /** How GitHub's sign-in on the computer stands (`getGitHubSignIn`), for the Connect GitHub card; nil when it couldn't be asked. */
+  public func gitHubSignIn() async -> JSON? {
+    guard let backend else { return nil }
+    return try? await backend.command("getGitHubSignIn", [:])
+  }
+
   // MARK: Threads (the window's thread view)
 
   /**

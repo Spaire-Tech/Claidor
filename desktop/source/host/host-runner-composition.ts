@@ -2119,6 +2119,22 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           ),
           ...(watchCloudAgent === undefined ? {} : { watch: watchCloudAgent }),
           ...(reviewAction === undefined ? {} : { reviewAction }),
+          // The coding on this computer (11 November 2026): Claude chosen and
+          // GitHub connected, else what the agent says; the Connect GitHub
+          // card goes into this agent's chat when GitHub's sign-in starts.
+          ...(typeof (cloudAgents as { codingReady?: unknown }).codingReady !== "function"
+            ? {}
+            : {
+                codingReady: async () => {
+                  const ready = await (cloudAgents as unknown as {
+                    codingReady(agentId: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
+                  }).codingReady(session.id);
+                  if (!ready.ok && ready.card !== undefined) {
+                    hooks.transport.onUpdate({ type: "send-message", message: ready.card, timestampMs: Date.now() });
+                  }
+                  return ready.ok ? { ok: true as const } : { ok: false as const, text: ready.text };
+                },
+              }),
         };
       })();
 
@@ -2903,6 +2919,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   ...(cloudAgent.reviewAction === undefined
                     ? {}
                     : { reviewAction: cloudAgent.reviewAction }),
+                  ...(cloudAgent.codingReady === undefined
+                    ? {}
+                    : { codingReady: cloudAgent.codingReady }),
                 },
               }),
             }

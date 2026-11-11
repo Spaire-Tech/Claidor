@@ -286,6 +286,38 @@
   outline-offset: 1px;
 }
 
+/* GitHub on the computer: the routine card's ground, its head over the code's row, 12 apart. */
+.github-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.github-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* The one-time code (20, 600, monospaced, a little apart), then Copy code and Open GitHub, 8 apart. */
+.github-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.github-code {
+  flex: 1 0 auto;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: 1px;
+  user-select: text;
+  white-space: nowrap;
+}
+
 /* While the computer is asked: a small spinner. */
 .connect-spinner {
   display: block;

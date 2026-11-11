@@ -167,6 +167,20 @@ export class BoxHandoffResume {
     );
   }
 
+  /**
+   * GitHub finished connecting on the computer from the chat's Connect
+   * GitHub card (11 November 2026, `host/cloud-agents/coding-github.ts`):
+   * the agent that waited on it launches the coding it paused for.
+   */
+  async resumeAfterGitHubConnect(agentId: string, login?: string): Promise<void> {
+    const who = login === undefined || login === "" ? "" : ` as ${login}`;
+    await this.resumeWithHiddenPrompt(
+      agentId,
+      `[GitHub is now connected on the user's computer${who}, so cloud agents can open their repositories and pull requests. Your first action is a SendMessage telling the user it's connected, then launch the cloud agent you paused for (CloudAgent "launch" with the same repository and task). Remember: nothing reaches the user unless it's inside a SendMessage.]`,
+      "tray.resumeAfterListenerFailed",
+    );
+  }
+
   async resumeWithHiddenPrompt(
     agentId: string,
     prompt: string,

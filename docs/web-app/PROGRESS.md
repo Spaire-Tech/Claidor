@@ -842,6 +842,31 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: the Connect GitHub card; a cloud agent Paused
+
+A cloud agent now codes on the person's own computer, in Claude Code on their plan
+(`docs/services-agents.md`, section 1), working as the upstream app's cloud agents did, at the
+founder's word. Two things reach the window:
+
+- **The Connect GitHub card** (`github-sign-in`, the upstream's card 8), the first time a cloud
+  agent needs GitHub: GitHub's logo on its tile, "Connect GitHub" and "Enter this code on GitHub
+  to connect it to your computer."; the one-time code (20, 600, monospaced), Copy code and Open
+  GitHub (GitHub's own page in a new tab; the default browser in the Windows app). The card asks
+  the computer (`getGitHubSignIn`) every three seconds while it is on screen. Once connected, the
+  code goes and "Connected as <login>" shows with the green tick; a code past its quarter of an
+  hour, or replaced by a newer one, says "This code expired. Ask your agent for a new one.". At a
+  narrow width the two buttons go under the code, together. The model is in the core
+  (`gitHubSignInCard`, `gitHubSignInState`, `gitHubSignInNextPoll`), as SimeonCore's
+  `GitHubSignInCard`; the card in `ConnectCards.tsx`, 520 wide at most, on the routine card's
+  ground.
+- **Paused** in the cloud agent card's pill, when the person's Claude plan reached its limit (not
+  asked again until a reply).
+
+Checked: the core's and the window's tests (the card read, its states, its words; the card drawn
+with its code, Copy code and Open GitHub's address), typecheck, ESLint, the words, the committed
+build; the card drawn from the committed build in Chromium, light and dark, at 520 and 300 wide.
+Not checked: the card against a real computer and GitHub; the Windows app run.
+
 ### 11 November 2026: AI Models' card, its row in the account menu, "Active"
 
 The founder, of the three designs for a card on AI Models like External

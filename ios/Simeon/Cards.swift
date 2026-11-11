@@ -983,6 +983,78 @@ struct ListenerConnectCard: View {
   }
 }
 
+/**
+ * "Connect GitHub" with a one-time code (`github-sign-in`, 11 November 2026;
+ * SimeonCore's `GitHubSignInCard`): GitHub's tile and the title with a line
+ * under it, as Connect Slack above, then the code large in monospaced figures
+ * and the card's buttons, Copy code and Open GitHub (our blue, last). The
+ * person opens GitHub's page on this iPhone, signs in to GitHub there as
+ * usual and types the code; the card asks the computer every three seconds
+ * and turns to "Connected as octo" with a green check, or says the code
+ * expired. The agent goes on by itself once GitHub is connected.
+ */
+struct GitHubSignInCardView: View {
+  let card: GitHubSignInCard
+  @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
+  @Environment(\.chatWidth) private var width
+  @State private var state: GitHubSignInCard.State?
+  @State private var copied = false
+
+  private var waiting: Bool { state == nil || state == .waiting }
+  private var line: String {
+    switch state {
+    case .expired: return GitHubSignInCard.expiredLabel
+    case .failed: return GitHubSignInCard.failedLabel
+    default: return GitHubSignInCard.prompt
+    }
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      HStack(spacing: 12) {
+        ConnectorTile(name: "GitHub", size: 32)
+        VStack(alignment: .leading, spacing: 2) {
+          Text(GitHubSignInCard.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
+          if case .connected = state {} else {
+            Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        Spacer(minLength: 0)
+        if case .connected(let login) = state {
+          Label(GitHubSignInCard.connectedLabel(login), systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.success).labelStyle(ConnectedLabel())
+        }
+      }
+      if waiting {
+        Text(card.code)
+          .font(.system(size: 24, weight: .semibold, design: .monospaced))
+          .tracking(1)
+          .foregroundStyle(Ink.primary)
+          .textSelection(.enabled)
+        CardPills {
+          Button(copied ? GitHubSignInCard.copiedLabel : GitHubSignInCard.copyLabel) {
+            UIPasteboard.general.string = card.code
+            copied = true
+          }
+          .buttonStyle(Tactile(look: CardPillStyle()))
+          Button(GitHubSignInCard.openLabel) { openURL(card.url) }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+        }
+      }
+    }
+    .card()
+    .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
+    .task(id: card.code) {
+      while !Task.isCancelled {
+        let read = card.state(await store.gitHubSignIn(), nowMs: Date().timeIntervalSince1970 * 1000)
+        if let read { state = read }
+        guard let wait = GitHubSignInCard.nextPoll(read ?? state) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+}
+
 /** The green check beside the green "Connected". */
 private struct ConnectedLabel: LabelStyle {
   func makeBody(configuration: Configuration) -> some View {

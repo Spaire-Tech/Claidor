@@ -143,6 +143,8 @@ export const COORDINATOR_METHOD_TABLE = {
   requestDiskSaverAudit: { args: "object", reply: "record-or-null" },
   broadcastToAgents: { args: "object", reply: "record" },
   getCloudAgentInfo: { args: "object", reply: "record-or-null" },
+  // The chat's Connect GitHub card: the sign-in on the computer (11 November 2026, `cloud-agents/coding-github.ts`).
+  getGitHubSignIn: { args: "none", reply: "record" },
   getListenerIntegrations: { args: "none", reply: "record" },
   getListenerConnectUrl: { args: "object", reply: "connect-url" },
   setAgentUnread: { args: "object", reply: "void" },

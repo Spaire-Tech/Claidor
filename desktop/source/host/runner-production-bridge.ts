@@ -325,6 +325,7 @@ export interface ProductionTurnHostDependencies {
     readonly cloudAgentWatcher?: BackgroundWatchesHost["cloudAgentWatcher"];
     readonly watch?: CloudAgentToolDeps["watch"];
     readonly reviewAction?: CloudAgentToolDeps["reviewAction"];
+    readonly codingReady?: CloudAgentToolDeps["codingReady"];
   };
   readonly subagentManagement?: SubagentManagementController<unknown>;
   /**

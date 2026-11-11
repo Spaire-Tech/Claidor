@@ -18,8 +18,8 @@ What each RPC becomes:
 - GetBackgroundComposerInfo / ListBackgroundComposers → the row and its
   latest job, projected into `DetailedBackgroundComposer`. Status:
   queued → CREATING, running → RUNNING, done → FINISHED, failed → ERROR.
-  Branch, pull request and diff counts are empty until an executor
-  that clones a repository exists (`runner/src/executor.ts`).
+  Branch, pull request and diff counts are what the person's computer
+  reported (`SandCloudAgent.work`); the cloud runner's agents have none.
 - AddAsyncFollowupBackgroundComposer → the follow-up appended to the
   conversation. A queued job simply carries it; a finished one gets a
   continuation job (`parent_job_id`) with the whole conversation; a
@@ -36,8 +36,19 @@ What each RPC becomes:
 - GetBackgroundComposerConversation → the latest job's conversation as
   `ConversationMessage`s (HUMAN 1 / AI 2), which
   `convertConversationMessagesToTrace` reads for the `dump` action.
-- GetPullRequestMergeStatus / GetOptimizedDiffDetails → the « no PR »
-  shape the client handles (nothing merged, no diffs).
+- GetPullRequestMergeStatus / GetOptimizedDiffDetails → the pull
+  request's state and the files changed, as the computer last reported
+  them; the « no PR » shape when there is none.
+
+Where the work runs (11 November 2026, as the upstream app's, at the
+founder's word): the upstream app's cloud agents ran in its maker's
+virtual machines, which cloned the repository, made a branch, coded and
+opened the pull request. Simeon's run on the person's own computer, in
+Claude Code on their own Claude plan (`host/cloud-agents/coding-run.ts`):
+a launch from an engine that asks for it (`usePrivateWorker` with the
+`executor: computer` label) makes a `computer` job, which only that
+person's computer claims (`cloud_agents_computer.py`). A launch from an
+older engine still goes to the cloud runner, which answers in words.
 - GetEnvironment / ListEnvironments → one environment, "Simeon's
   computer", with no repositories configured, so a launch on it still
   needs `repo_url`, the way the client's resolver already works.
@@ -59,6 +70,7 @@ from simeon.maty.service import (
     maty,
 )
 from simeon.models import MatyJob, MatyJobKind, MatyJobStatus, SandCloudAgent, User
+from simeon.models.maty import COMPUTER_EXECUTOR, MATY_RUNNER_EXECUTOR
 from simeon.postgres import AsyncSession
 
 from .cloud_agents_repository import CloudAgentJobRepository, SandCloudAgentRepository
@@ -90,6 +102,23 @@ ENVIRONMENT_NAME = "Simeon's computer"
 #: `ListBackgroundComposers.n` is what the client sends (20 by default);
 #: the queue's own listing cap is the ceiling.
 LIST_LIMIT = 50
+
+#: What a run stopped by the person while it ran fails with: the cloud
+#: runner's words (`runner/src/loop.ts`) and the computer's
+#: (`host/cloud-agents/coding-runner.ts`).
+RUN_CANCELLED_REASON = "Cancelled by the person while it ran."
+CANCELLED_REASONS = frozenset({CANCELLED_REASON, RUN_CANCELLED_REASON})
+
+#: `PullRequestStatus` in `background_composer_pb.ts`.
+PR_STATUS = {"open": 1, "draft": 2, "merged": 3, "closed": 4}
+
+#: The upstream's marker for a run stopped by its plan's included limit
+#: (`resolveSandLimitError` in the client), here the person's Claude plan.
+LIMIT_REASON = "sand_included_limit"
+
+#: The label an engine that runs the work on the person's computer puts on
+#: its launch (`cloud-agents-service.ts`).
+COMPUTER_LABEL = {"key": "executor", "value": COMPUTER_EXECUTOR}
 
 
 def _ms(value: Any) -> int:
@@ -159,6 +188,41 @@ def requested_model_id(request: dict[str, Any]) -> str:
     return ""
 
 
+def executor_of(request: dict[str, Any]) -> str:
+    """Which machine a launch asks for: the person's computer when the
+    engine says so (`usePrivateWorker` and the `executor: computer`
+    label), else the cloud runner, as every engine before it."""
+    labels = request.get("labels")
+    if request.get("usePrivateWorker") is True and isinstance(labels, list):
+        for label in labels:
+            if (
+                isinstance(label, dict)
+                and label.get("key") == COMPUTER_LABEL["key"]
+                and label.get("value") == COMPUTER_LABEL["value"]
+            ):
+                return COMPUTER_EXECUTOR
+    return MATY_RUNNER_EXECUTOR
+
+
+def _count(work: dict[str, Any], key: str) -> int:
+    value = work.get(key)
+    return value if isinstance(value, int) and value > 0 else 0
+
+
+def _words(work: dict[str, Any], key: str) -> str:
+    value = work.get(key)
+    return value if isinstance(value, str) else ""
+
+
+def limited_until_ms(agent: SandCloudAgent, job: MatyJob) -> int | None:
+    """When the person's Claude plan lets the work go on, for a turn the
+    plan's limit stopped; None otherwise."""
+    if job.status is not MatyJobStatus.failed:
+        return None
+    until = (agent.work or {}).get("limitedUntilMs")
+    return until if isinstance(until, int) and until > 0 else None
+
+
 def _connect_error(error: MatyError) -> ConnectError:
     """A queue refusal, in Connect's shape and with the queue's sentence:
     the tool shows the message to the person."""
@@ -190,27 +254,34 @@ class CloudAgentsService:
             raise ConnectError("not_found", f"Cloud agent {bc_id!r} has no run.")
         return agent, job
 
+    async def agent(
+        self, session: AsyncSession, user: User, bc_id: str
+    ) -> tuple[SandCloudAgent, MatyJob]:
+        """The person's agent and its latest job, or « not found »."""
+        return await self._agent(session, user, bc_id)
+
     def composer(self, agent: SandCloudAgent, job: MatyJob) -> dict[str, Any]:
         """`simeon.v1.BackgroundComposer`, the fields the client reads."""
+        work = agent.work or {}
         return {
             "bcId": agent.bc_id,
             "createdAtMs": _ms(agent.created_at),
             "updatedAtMs": _ms(job.modified_at or job.created_at),
             "name": agent.name,
-            "branchName": "",
+            "branchName": _words(work, "branchName"),
             "repoUrl": agent.repo_url,
             "isArchived": agent.is_archived,
             "status": status_of(job),
-            "prUrl": "",
-            "isPrMerged": False,
-            "linesAdded": 0,
-            "linesRemoved": 0,
-            "filesChanged": 0,
-            "commitCount": 0,
+            "prUrl": _words(work, "prUrl"),
+            "isPrMerged": work.get("prState") == "merged",
+            "linesAdded": _count(work, "linesAdded"),
+            "linesRemoved": _count(work, "linesRemoved"),
+            "filesChanged": _count(work, "filesChanged"),
+            "commitCount": _count(work, "commitCount"),
             "workspaceRootPath": "/workspace",
             "hasStartedVm": job.status is not MatyJobStatus.queued,
             "isKilled": job.status is MatyJobStatus.failed
-            and job.error == CANCELLED_REASON,
+            and job.error in CANCELLED_REASONS,
             **(
                 {"requestedModel": {"modelId": agent.model_id}}
                 if agent.model_id
@@ -220,29 +291,96 @@ class CloudAgentsService:
 
     def detailed(self, agent: SandCloudAgent, job: MatyJob) -> dict[str, Any]:
         """`simeon.v1.DetailedBackgroundComposer`."""
+        work = agent.work or {}
+        on_computer = job.executor == COMPUTER_EXECUTOR
+        pr_url = _words(work, "prUrl")
+        prs: list[dict[str, Any]] = []
+        if pr_url:
+            pr: dict[str, Any] = {
+                "prUrl": pr_url,
+                "branchName": _words(work, "branchName"),
+            }
+            if _count(work, "prNumber"):
+                pr["pullNumber"] = _count(work, "prNumber")
+            if work.get("prState") in PR_STATUS:
+                pr["prStatus"] = PR_STATUS[str(work["prState"])]
+            prs.append(pr)
         body: dict[str, Any] = {
             "composer": self.composer(agent, job),
             "status": status_of(job),
-            "baseBranch": agent.base_branch,
+            "baseBranch": agent.base_branch or _words(work, "baseBranch"),
             "prompt": {"text": first_user_text(job.conversation) or job.prompt},
-            "prs": [],
-            "autoCreatePr": False,
-            "autoBranch": False,
+            "prs": prs,
+            # The computer makes the branch and opens the pull request, as
+            # the upstream's virtual machines did; the cloud runner neither.
+            "autoCreatePr": on_computer,
+            "autoBranch": on_computer,
             "environmentName": ENVIRONMENT_NAME,
         }
         if job.status is MatyJobStatus.done and job.result:
             body["summary"] = job.result
         if job.status is MatyJobStatus.failed and job.error:
+            until = limited_until_ms(agent, job)
             body["permanentError"] = {
                 "error": ERROR_CUSTOM_MESSAGE,
-                "details": {
-                    "title": "The cloud agent stopped",
-                    "detail": job.error,
-                    "additionalInfo": {},
-                },
-                "isExpected": job.error == CANCELLED_REASON,
+                "details": (
+                    {
+                        "title": "Paused: the Claude plan's limit is reached",
+                        "detail": job.error,
+                        "additionalInfo": {"rateLimitReason": LIMIT_REASON},
+                    }
+                    if until is not None
+                    else {
+                        "title": "The cloud agent stopped",
+                        "detail": job.error,
+                        "additionalInfo": {},
+                    }
+                ),
+                "isExpected": job.error in CANCELLED_REASONS or until is not None,
             }
+            # Why it stopped reaches the agent that waits on it: the
+            # client's completion text carries `summary`
+            # (`buildWatchResult`), and the limit's own words carry the
+            # rest. A stop the person asked for needs no reason.
+            if until is None and job.error not in CANCELLED_REASONS:
+                body["summary"] = job.error
         return body
+
+    def pull_request_status(self, agent: SandCloudAgent | None) -> dict[str, Any]:
+        """`GetPullRequestMergeStatusResponse` from what the computer last
+        reported; the « no PR » shape, which the client reads as null,
+        when nothing is known."""
+        state = str((agent.work or {}).get("prState") or "") if agent else ""
+        return {
+            "isMerged": state == "merged",
+            "isClosed": state == "closed",
+            "isDraft": state == "draft",
+            "state": "open" if state in ("open", "draft") else state,
+            "mergeableState": "",
+            "title": agent.name if agent and state else "",
+            "baseBranch": (agent.base_branch if agent and state else ""),
+            "behindBy": 0,
+            "canUpdateBranch": False,
+            "isAutoMergeEnabled": False,
+        }
+
+    def diffs(self, agent: SandCloudAgent) -> list[dict[str, Any]]:
+        """The files the work changed, as `FileDiff` rows the client reads
+        (`toFileChange`: `from`, `to`, `added`, `removed`)."""
+        rows: list[dict[str, Any]] = []
+        files = (agent.work or {}).get("files")
+        for file in files if isinstance(files, list) else []:
+            if not isinstance(file, dict) or not isinstance(file.get("path"), str):
+                continue
+            rows.append(
+                {
+                    "from": file["path"],
+                    "to": file["path"],
+                    "added": _count(file, "added"),
+                    "removed": _count(file, "removed"),
+                }
+            )
+        return rows
 
     def conversation(self, job: MatyJob) -> list[dict[str, Any]]:
         """`simeon.v1.ConversationMessage`s, as
@@ -293,9 +431,10 @@ class CloudAgentsService:
             )
 
         now_ms = _ms(utc_now())
+        executor = executor_of(request)
         try:
             job = await maty.create_for_person(
-                session, user, kind=MatyJobKind.task, prompt=text
+                session, user, kind=MatyJobKind.task, prompt=text, executor=executor
             )
         except MatyError as error:
             raise _connect_error(error)
@@ -320,11 +459,12 @@ class CloudAgentsService:
         session.add(agent)
         await session.flush()
         log.info(
-            "[simeon] cloud-agent started bcId=%s job=%s repo=%s model=%s",
+            "[simeon] cloud-agent started bcId=%s job=%s repo=%s model=%s executor=%s",
             bc_id,
             job.id,
             agent.repo_url or "-",
             agent.model_id or "-",
+            executor,
         )
         return agent, job
 
@@ -421,6 +561,8 @@ class CloudAgentsService:
                 user,
                 kind=MatyJobKind.task,
                 prompt=first_user_text(conversation) or parent.prompt,
+                # A follow-up is done where the work is: the same machine.
+                executor=parent.executor,
             )
         except MatyError as error:
             raise _connect_error(error)

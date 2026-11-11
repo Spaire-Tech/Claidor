@@ -29,6 +29,12 @@ import {
   connectedWord,
   connectorIconId,
   connectorsCard,
+  gitHubConnectedLabel,
+  gitHubSignInCard,
+  gitHubSignInLine,
+  gitHubSignInNextPoll,
+  gitHubSignInState,
+  gitHubSignInWords,
   goToChatWord,
   hexOf,
   iconConnectors,
@@ -348,6 +354,99 @@ describe('Slack or GitHub for a routine', () => {
   })
 })
 
+describe('GitHub on the computer (GitHubSignInCardTests)', () => {
+  const line = (message: JSONObject) => card('g1', message)
+
+  it('reads the card: a one-time code, GitHub’s own page, when it stops working', () => {
+    const read = line({
+      type: 'github-sign-in',
+      code: ' ABCD-1234 ',
+      url: 'https://github.com/login/device',
+      expiresAtMs: 2_000,
+    })
+    const row = chatRows([read]).at(-1)
+    expect(row?.kind === 'card' && row.card).toBe('gitHubSignIn')
+    expect(cardText(read.message)).toBe('Connect GitHub')
+    expect(gitHubSignInCard(read)).toEqual({
+      code: 'ABCD-1234',
+      url: 'https://github.com/login/device',
+      expiresAtMs: 2_000,
+    })
+    // Another site's address is never opened: GitHub's page instead.
+    expect(
+      gitHubSignInCard(
+        line({
+          type: 'github-sign-in',
+          code: 'ABCD-1234',
+          url: 'https://evil.example/login/device',
+        }),
+      ),
+    ).toEqual({
+      code: 'ABCD-1234',
+      url: 'https://github.com/login/device',
+      expiresAtMs: 0,
+    })
+    expect(
+      gitHubSignInCard(line({ type: 'github-sign-in', code: 'abcd-1234' })),
+    ).toBeUndefined()
+    expect(gitHubSignInCard(line({ type: 'github-sign-in' }))).toBeUndefined()
+    expect(gitHubSignInCard(line({ type: 'cloud-agent', bcId: 'b' }))).toBe(
+      undefined,
+    )
+  })
+
+  it('reads the computer’s answer for this code: waiting, connected, expired, failed', () => {
+    const read = gitHubSignInCard(
+      line({ type: 'github-sign-in', code: 'ABCD-1234', expiresAtMs: 2_000 }),
+    )!
+    expect(
+      gitHubSignInState(read, { state: 'waiting', code: 'ABCD-1234' }, 1_000),
+    ).toEqual({ kind: 'waiting' })
+    // A newer code, or this one's quarter of an hour gone: expired.
+    expect(
+      gitHubSignInState(read, { state: 'waiting', code: 'WXYZ-9876' }, 1_000),
+    ).toEqual({ kind: 'expired' })
+    expect(
+      gitHubSignInState(read, { state: 'waiting', code: 'ABCD-1234' }, 2_000),
+    ).toEqual({ kind: 'expired' })
+    expect(
+      gitHubSignInState(read, { state: 'connected', login: 'octocat' }, 1_000),
+    ).toEqual({ kind: 'connected', login: 'octocat' })
+    expect(gitHubSignInState(read, { state: 'none' }, 1_000)).toEqual({
+      kind: 'expired',
+    })
+    expect(
+      gitHubSignInState(read, { state: 'failed', why: 'x' }, 1_000),
+    ).toEqual({ kind: 'failed' })
+    expect(gitHubSignInState(read, undefined, 1_000)).toBeUndefined()
+
+    expect(gitHubSignInNextPoll(undefined)).toBe(3)
+    expect(gitHubSignInNextPoll({ kind: 'waiting' })).toBe(3)
+    expect(gitHubSignInNextPoll({ kind: 'connected' })).toBeUndefined()
+    expect(gitHubSignInNextPoll({ kind: 'expired' })).toBeUndefined()
+  })
+
+  it('says what to do, and how it ended', () => {
+    expect(gitHubSignInLine(undefined)).toBe(
+      'Enter this code on GitHub to connect it to your computer.',
+    )
+    expect(gitHubSignInLine({ kind: 'expired' })).toBe(
+      'This code expired. Ask your agent for a new one.',
+    )
+    expect(gitHubSignInLine({ kind: 'failed' })).toBe(
+      "GitHub couldn't be connected.",
+    )
+    expect(gitHubConnectedLabel('octocat')).toBe('Connected as octocat')
+    expect(gitHubConnectedLabel(undefined)).toBe('Connected')
+    expect(gitHubSignInWords()).toEqual({
+      title: 'Connect GitHub',
+      open: 'Open GitHub',
+      copy: 'Copy code',
+      copied: 'Copied',
+    })
+  })
+})
+
 describe('cloud agents (CloudAgentTests)', () => {
   it('reads the card and its state', () => {
     const line = entry({
@@ -395,6 +494,13 @@ describe('cloud agents (CloudAgentTests)', () => {
     )
     expect(cloudAgentStatusLabel(unavailableCloudAgent)).toBe(
       'Status unavailable',
+    )
+    // The person's Claude plan reached its limit: Paused, not asked again.
+    const paused = cloudAgentInfo({ status: 'paused' })!
+    expect(cloudAgentStatusLabel(paused)).toBe('Paused')
+    expect(cloudAgentIsLive(paused)).toBe(false)
+    expect(cloudAgentNextPoll({ kind: 'info', info: paused }, undefined)).toBe(
+      undefined,
     )
   })
 
