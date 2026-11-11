@@ -117,7 +117,7 @@ public enum ExternalAgents {
   public static let disconnectLine = L10n.text("It can’t reach your agents anymore. You can connect it again anytime.")
 
   /** The card's words: what the page is, in a line. */
-  public static let headline = L10n.text("Your agents, in your other assistants")
+  public static let headline = L10n.text("Connect other assistants to Simeon")
   public static let explanation = L10n.text("Connect Grok Bot, Muse, Dots or Claude Code. They can message your agents, follow their work and answer what they ask.")
 }
 

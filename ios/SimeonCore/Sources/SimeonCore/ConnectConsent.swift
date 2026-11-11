@@ -56,8 +56,8 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     else { reach = L10n.text("Your agents can read and use what's in your \(title) account.") }
 
     points = [
-      Point(symbol: "square.stack.3d.up", title: L10n.text("Put \(title) to work"), body: reach),
-      Point(symbol: "hand.raised", title: L10n.text("You stay in charge"), body: L10n.text("Auto-review asks for your OK before steps it judges risky. Turn off any of \(title)'s tools, or remove it, in Settings → Connect apps.")),
+      Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: reach),
+      Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("Auto-review asks for your OK before steps it judges risky. Turn off any of \(title)'s tools, or remove it, in Settings → Connect apps.")),
       Point(symbol: "checkmark.circle", title: L10n.text("Check their work"), body: L10n.text("Agents can misread a request or take a step you didn't expect. Look over what they do in \(title), especially at first.")),
     ]
 
@@ -80,11 +80,11 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
     let title = AIModels.providerName(provider)
     id = "model:\(provider)"
     self.title = title
-    summary = L10n.text("Your \(title) plan, for your agents.")
+    summary = L10n.text("Run your agents on your \(title) plan.")
     route = .unknown
     points = [
-      Point(symbol: "square.stack.3d.up", title: L10n.text("Put \(title) to work"), body: L10n.text("Your agents work on your \(title) plan, not on your Simeon credits.")),
-      Point(symbol: "hand.raised", title: L10n.text("You stay in charge"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
+      Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: L10n.text("Your agents work on your \(title) plan, not on your Simeon credits.")),
+      Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
       Point(symbol: "checkmark.circle", title: L10n.text("When your plan runs out"), body: L10n.text("Your agents use Simeon's models until it resets.")),
     ]
     smallPrint = [
@@ -101,12 +101,12 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   public init(keyProvider provider: String, name title: String) {
     id = "key:\(provider)"
     self.title = title
-    summary = L10n.text("Your \(title) API key, for your agents.")
+    summary = L10n.text("Run your agents on \(title)'s models with your own API key.")
     route = .unknown
     points = [
-      Point(symbol: "square.stack.3d.up", title: L10n.text("Put \(title) to work"), body: L10n.text("Your agents work on \(title)'s models with your key, not on your Simeon credits.")),
-      Point(symbol: "lock.shield", title: L10n.text("Your key stays with Simeon"), body: L10n.text("It's kept encrypted on Simeon's server and sent only to \(title). Your agents never see it.")),
-      Point(symbol: "hand.raised", title: L10n.text("You stay in charge"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
+      Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: L10n.text("Your agents work on \(title)'s models with your key, not on your Simeon credits.")),
+      Point(symbol: "lock.shield", title: L10n.text("Where the key is kept"), body: L10n.text("It's kept encrypted on Simeon's server and sent only to \(title). Your agents never see it.")),
+      Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
     ]
     smallPrint = [
       L10n.text("\(title) bills each call on your key, at its own prices."),

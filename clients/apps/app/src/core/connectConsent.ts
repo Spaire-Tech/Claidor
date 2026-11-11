@@ -73,12 +73,12 @@ export function connectConsent(
   const points: ConsentPoint[] = [
     {
       symbol: 'square.stack.3d.up',
-      title: t`Put ${title} to work`,
+      title: t('What it does'),
       body: reach,
     },
     {
       symbol: 'hand.raised',
-      title: t('You stay in charge'),
+      title: t('Control'),
       body: t`Auto-review asks for your OK before steps it judges risky. Turn off any of ${title}'s tools, or remove it, in Settings → Connect apps.`,
     },
     {
@@ -122,17 +122,17 @@ export function modelConsent(provider: string): ConnectConsent {
   return {
     id: `model:${provider}`,
     title,
-    summary: t`Your ${title} plan, for your agents.`,
+    summary: t`Run your agents on your ${title} plan.`,
     route: { kind: 'unknown' },
     points: [
       {
         symbol: 'square.stack.3d.up',
-        title: t`Put ${title} to work`,
+        title: t('What it does'),
         body: t`Your agents work on your ${title} plan, not on your Simeon credits.`,
       },
       {
         symbol: 'hand.raised',
-        title: t('You stay in charge'),
+        title: t('Control'),
         body: t(
           "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.",
         ),
@@ -159,22 +159,22 @@ export function keyConsent(provider: string, title: string): ConnectConsent {
   return {
     id: `key:${provider}`,
     title,
-    summary: t`Your ${title} API key, for your agents.`,
+    summary: t`Run your agents on ${title}'s models with your own API key.`,
     route: { kind: 'unknown' },
     points: [
       {
         symbol: 'square.stack.3d.up',
-        title: t`Put ${title} to work`,
+        title: t('What it does'),
         body: t`Your agents work on ${title}'s models with your key, not on your Simeon credits.`,
       },
       {
         symbol: 'lock.shield',
-        title: t('Your key stays with Simeon'),
+        title: t('Where the key is kept'),
         body: t`It's kept encrypted on Simeon's server and sent only to ${title}. Your agents never see it.`,
       },
       {
         symbol: 'hand.raised',
-        title: t('You stay in charge'),
+        title: t('Control'),
         body: t(
           "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.",
         ),
