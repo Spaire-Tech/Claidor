@@ -41,9 +41,12 @@ struct AIModelsPage: View {
 
   var body: some View {
     let model = store.aiModels
-    // The page starts with what is connected, then Subscriptions (11 November 2026, the founder: "remove the connect
-    // provider text in ai models in iphone. have it just start with connected of subscriptions").
+    // The card, as External Agents' (11 November 2026, the founder: "ai models should have the same above", design B
+    // "without the claude opus 5.5" and with Meta), then what is connected, then Subscriptions (the same day: "remove
+    // the connect provider text in ai models in iphone. have it just start with connected of subscriptions").
     Form {
+      Section { AIModelsCard() }
+        .listRowBackground(Ink.groupedRow)
       if let problem = model.problem, !model.loaded {
         Section {
           Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)
@@ -394,13 +397,13 @@ struct ProviderIcon: View {
   }
 }
 
-/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own colours (10 November 2026, the founder's logos); no provider is Simeon's. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's, GitHub Copilot's and Meta's in their own colours (10 November 2026, the founder's logos; Meta's blue on dark too, 11 November); no provider is Simeon's. */
 struct ProviderMark: View {
   let provider: String?
   var side: CGFloat = 16
 
   /** The marks drawn in their own colours, not the ink. */
-  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot"]
+  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot", "meta"]
 
   var body: some View {
     Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
@@ -904,5 +907,101 @@ struct KeyConnectSheet: View {
     checking = false
     outcome = answer
     if case .refused = answer { key = ""; keyFocused = true }
+  }
+}
+
+/**
+ * AI Models' card, as External Agents' on the iPhone: the picture over the
+ * words (the line at 17, semibold, what it does at 15 in grey), Learn more
+ * in a grey capsule on the right under them.
+ */
+private struct AIModelsCard: View {
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      ModelTilesFan()
+        .padding(.bottom, 6)
+      Text(AIModels.Card.headline)
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(Ink.primary)
+        .fixedSize(horizontal: false, vertical: true)
+      Text(AIModels.Card.explanation)
+        .font(.system(size: 15))
+        .foregroundStyle(Ink.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+      Button { openURL(AIModels.Card.learnMore) } label: {
+        Text("Learn more")
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.primary)
+          .padding(.horizontal, 16)
+          .frame(height: 34)
+          .background(Ink.pillButton, in: Capsule())
+      }
+      .buttonStyle(.borderless)
+      .frame(maxWidth: .infinity, alignment: .trailing)
+      .padding(.top, 4)
+    }
+    .padding(.vertical, 8)
+  }
+}
+
+/**
+ * AI Models' picture (design B, without the model's pill): ChatGPT, Claude,
+ * Grok and Meta on Connect apps' tiles at 56, fanned in the middle of the
+ * website's grey (`--soft`, #f5f5f7; #1c1c1e on dark), 128 high, as wide as
+ * the card, each over the last by 8, turned as `AIModels.Card.turns`, the
+ * outer two 4 lower; a soft shadow under each.
+ */
+private struct ModelTilesFan: View {
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    let marks = AIModels.Card.marks
+    ZStack {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
+      HStack(spacing: -8) {
+        ForEach(Array(marks.enumerated()), id: \.element) { index, provider in
+          ModelTile(provider: provider, size: 56)
+            .rotationEffect(.degrees(AIModels.Card.turns[index]))
+            .offset(y: index == 0 || index == marks.count - 1 ? 4 : 0)
+            .shadow(color: .black.opacity(0.12), radius: 5, x: 0, y: 4)
+        }
+      }
+    }
+    .frame(height: 128)
+    .accessibilityElement()
+    .accessibilityLabel(Text(verbatim: "ChatGPT, Claude, Grok, Meta"))
+  }
+}
+
+/**
+ * A maker's mark on Connect apps' tile (`Marks/<provider>`): white, #2c2c2e
+ * on dark, a hairline and a soft shadow, round as an app's icon, the mark
+ * 0.56 of it in the middle; ChatGPT's and Grok's in the ink, Claude's and
+ * Meta's in their own colours (11 November 2026, the founder: "meta keeps
+ * it blue in dark mode as well").
+ */
+struct ModelTile: View {
+  let provider: String
+  var size: CGFloat = 30
+
+  var body: some View {
+    let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+    ZStack {
+      shape.fill(Ink.appsTile)
+      Image("Marks/\(provider)")
+        .renderingMode(AIModels.Card.coloured.contains(provider) ? .original : .template)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .foregroundStyle(Ink.primary)
+        .frame(width: size * 0.56, height: size * 0.56)
+    }
+    .frame(width: size, height: size)
+    .overlay { shape.inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+    .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+    .accessibilityHidden(true)
   }
 }

@@ -14236,64 +14236,6 @@
         }
       }
     },
-    "Connect providers and choose the models your agents use." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinde Anbieter und wähle die Modelle, die deine Agenten nutzen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecta proveedores y elige los modelos que usan tus agentes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecte des fournisseurs et choisis les modèles qu’utilisent tes agents."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Collega i fornitori e scegli i modelli che usano i tuoi agenti."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koppel aanbieders en kies de modellen die je agenten gebruiken."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Połącz dostawców i wybierz modele, których używają twoi agenci."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conecte provedores e escolha os modelos que seus agentes usam."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anslut leverantörer och välj vilka modeller dina agenter använder."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sağlayıcıları bağla ve ajanlarının kullandığı modelleri seç."
-          }
-        }
-      }
-    },
     "Connected" : {
       "localizations" : {
         "de" : {

@@ -46,7 +46,7 @@ describe('an account as the server lists it', () => {
     expect(plus).toBeDefined()
     if (!plus) return
     expect(accountDetail(plus)).toBe('Subscription · Plus')
-    expect(statusWords(plus)).toBe('Usage available')
+    expect(statusWords(plus)).toBe('Active')
     expect(usable(plus)).toBe(true)
 
     const gone = modelAccount({
@@ -85,9 +85,7 @@ describe('an account as the server lists it', () => {
     expect(words).toBe('Limit reached until 4:00 PM')
     expect(usable(limited, now)).toBe(false)
     expect(usable(limited, new Date(until + 1))).toBe(true)
-    expect(statusWords(limited, { now: new Date(until + 1) })).toBe(
-      'Usage available',
-    )
+    expect(statusWords(limited, { now: new Date(until + 1) })).toBe('Active')
     // Another day: its weekday too.
     const later = statusWords(
       { ...limited, limitedUntil: +now + 26 * 3600 * 1000 },

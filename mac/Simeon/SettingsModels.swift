@@ -40,10 +40,10 @@ struct SettingsModelsPage: View {
   var body: some View {
     let model = store.aiModels
     VStack(alignment: .leading, spacing: 22) {
-      Text("Connect providers and choose the models your agents use.")
-        .font(PanelType.row)
-        .foregroundStyle(look.ink)
-        .fixedSize(horizontal: false, vertical: true)
+      // External Agents' card (11 November 2026, the founder: "ai models should have the same above", then design B "without the claude opus 5.5" and with Meta), in place of the page's line.
+      SettingsHeroCard(headline: AIModels.Card.headline, explanation: AIModels.Card.explanation, learnMore: AIModels.Card.learnMore, look: look) {
+        MacModelTilesFan(look: look)
+      }
       if !model.loaded {
         if let problem = model.problem {
           SettingsGroup(look: look) {
@@ -1142,14 +1142,14 @@ enum ComposerModelMenus {
   }
 }
 
-/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own colours (10 November 2026, the founder's logos); no provider is Simeon's. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's, GitHub Copilot's and Meta's in their own colours (10 November 2026, the founder's logos; Meta's blue on dark too, 11 November); no provider is Simeon's. */
 struct ProviderMark: View {
   let provider: String?
   let ink: Color
   var side: CGFloat = 14
 
   /** The marks drawn in their own colours, not the ink. */
-  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot"]
+  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot", "meta"]
 
   var body: some View {
     Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
@@ -1160,5 +1160,62 @@ struct ProviderMark: View {
       .foregroundStyle(ink)
       .frame(width: side, height: side)
       .accessibilityHidden(true)
+  }
+}
+
+/**
+ * A maker's mark on Connect apps' tile (`Marks/<provider>`; AI Models'
+ * card): white, #2c2c2e on dark, a hairline and a soft shadow, round as an
+ * app icon, the mark `share` of it in the middle; ChatGPT's and Grok's in
+ * the ink, Claude's and Meta's in their own colours (11 November 2026, the
+ * founder: "meta keeps it blue in dark mode as well").
+ */
+struct MacModelTile: View {
+  let provider: String
+  let look: Look
+  let side: CGFloat
+  var share: CGFloat = 0.56
+
+  var body: some View {
+    let shape = RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
+    ZStack {
+      shape.fill(look.tile)
+      Image("Marks/\(provider)")
+        .renderingMode(AIModels.Card.coloured.contains(provider) ? .original : .template)
+        .resizable()
+        .interpolation(.high)
+        .aspectRatio(contentMode: .fit)
+        .foregroundStyle(look.ink)
+        .frame(width: side * share, height: side * share)
+    }
+    .frame(width: side, height: side)
+    .overlay { shape.inset(by: -0.5).stroke(look.tileHairline, lineWidth: 1) }
+    .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
+    .accessibilityHidden(true)
+  }
+}
+
+/**
+ * AI Models' picture (design B, without the model's pill): ChatGPT, Claude,
+ * Grok and Meta on their tiles at 56, in the middle of the card's 320 by
+ * 200, each over the last by 8, turned as `AIModels.Card.turns`, the outer
+ * two 4 lower, so they sit on an arc; a soft shadow under each.
+ */
+struct MacModelTilesFan: View {
+  let look: Look
+
+  var body: some View {
+    let marks = AIModels.Card.marks
+    HStack(spacing: -8) {
+      ForEach(Array(marks.enumerated()), id: \.element) { index, provider in
+        MacModelTile(provider: provider, look: look, side: 56)
+          .rotationEffect(.degrees(AIModels.Card.turns[index]))
+          .offset(y: index == 0 || index == marks.count - 1 ? 4 : 0)
+          .shadow(color: .black.opacity(0.12), radius: 5, x: 0, y: 4)
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .accessibilityElement()
+    .accessibilityLabel(Text(verbatim: "ChatGPT, Claude, Grok, Meta"))
   }
 }

@@ -842,6 +842,44 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: AI Models' card, its row in the account menu, "Active"
+
+The founder, of the three designs for a card on AI Models like External
+Agents': "i like B. but without the claude opus 5.5. also add meta icon there
+too. and also can you add ai models to the menu bar. also usage available.
+can we change the wording to Active", then "meta keeps it blue in dark mode
+as well".
+
+- **The card** (`ModelsHero` in `SettingsModels.tsx`) takes the place of
+  the page's line, laid out as External Agents' (`.agents-hero`): "Connect
+  your own AI models", "Use your ChatGPT, Claude or Grok plan, or an API
+  key. Your agents use the model you pick, and Simeon's own when a plan
+  runs out.", Learn more (simeonlabs.com/models), and on the right ChatGPT,
+  Claude, Grok and Meta on Connect apps' tiles at 56, fanned on an arc
+  (`ModelTilesFan`, `ModelTiles.tsx`); no model's pill. When the panel is
+  narrow the picture goes under the words, 112 high.
+- **The marks** are new, 256 square (`assets/marks/`, the Mac's and the
+  iPhone's `Marks/`): ChatGPT's, Claude's and Grok's drawn from the
+  website's own, Meta's cut from its tile. ChatGPT's and Grok's in the ink,
+  Claude's and Meta's in their colours. Meta's small mark (the composer's,
+  the API keys') is blue now too, in both modes.
+- **The account menu** has AI Models above External Agents, the four marks
+  at its end on the same tiles as the bots' mascots; it opens Settings ›
+  AI Models.
+- **"Active"** in green where an account said "Usage available" (the
+  core's `statusWords`; the word in the core's String Catalog, in the nine
+  languages; "Usage available" gone).
+
+Checked: the web app's tests (1,259), typecheck, lint on the changed files,
+the words and build checks, the core's `AIModelsTests` (18) and
+`ExternalAgentsTests` (6) on Linux, the names and translations checks; in
+Chromium on a build of this source against a stand-in server, light, dark,
+French and a narrow window: the menu's row with its four tiles, a click on
+it opening AI Models, the card's words, Learn more opening
+simeonlabs.com/models, the account's "Active", no console errors. Not
+checked: the Mac's and the iPhone's views (no Xcode here; the Swift files
+parse, the core builds).
+
 ### 11 November 2026: External Agents: Claude Code and Codex, and dark tiles
 
 The founder, with a screenshot of the page in dark mode: "can we add claude

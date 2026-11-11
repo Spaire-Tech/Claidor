@@ -9699,6 +9699,64 @@
         }
       }
     },
+    "Active" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiv"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actief"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywna"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativa"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktiv"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etkin"
+          }
+        }
+      }
+    },
     "Ask %@" : {
       "localizations" : {
         "de" : {
@@ -10450,6 +10508,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon'u Meta Muse'a bağla."
+          }
+        }
+      }
+    },
+    "Connect your own AI models" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbinde deine eigenen KI-Modelle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta tus propios modelos de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecte tes propres modèles d’IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega i tuoi modelli IA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel je eigen AI-modellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz własne modele AI"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte seus próprios modelos de IA"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut dina egna AI-modeller"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kendi yapay zekâ modellerini bağla"
           }
         }
       }
@@ -76935,6 +77051,64 @@
         }
       }
     },
+    "Use your ChatGPT, Claude or Grok plan, or an API key. Your agents use the model you pick, and Simeon’s own when a plan runs out." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutze deinen ChatGPT-, Claude- oder Grok-Tarif oder einen API-Schlüssel. Deine Agenten nutzen das Modell, das du wählst, und Simeons eigenes, wenn ein Tarif aufgebraucht ist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa tu plan de ChatGPT, Claude o Grok, o una clave de API. Tus agentes usan el modelo que elijas, y el de Simeon cuando se agota un plan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilise ton forfait ChatGPT, Claude ou Grok, ou une clé d’API. Tes agents utilisent le modèle que tu choisis, et celui de Simeon quand un forfait est épuisé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa il tuo piano ChatGPT, Claude o Grok, o una chiave API. I tuoi agenti usano il modello che scegli, e quello di Simeon quando un piano si esaurisce."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik je ChatGPT-, Claude- of Grok-abonnement, of een API-sleutel. Je agenten gebruiken het model dat je kiest, en dat van Simeon als een abonnement op is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj swojego planu ChatGPT, Claude lub Grok albo klucza API. Twoi agenci używają wybranego przez ciebie modelu, a gdy plan się wyczerpie, modelu Simeona."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use seu plano do ChatGPT, Claude ou Grok, ou uma chave de API. Seus agentes usam o modelo que você escolher, e o do Simeon quando um plano acabar."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd ditt ChatGPT-, Claude- eller Grok-abonnemang eller en API-nyckel. Dina agenter använder modellen du väljer, och Simeons egen när ett abonnemang tar slut."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ChatGPT, Claude veya Grok planını ya da bir API anahtarı kullan. Ajanların seçtiğin modeli, bir plan dolduğunda Simeon’un kendi modelini kullanır."
+          }
+        }
+      }
+    },
     "What it does" : {
       "localizations" : {
         "de" : {
@@ -106217,64 +106391,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bu fotoğrafın çözünürlüğünü Replicate’te artır."
-          }
-        }
-      }
-    },
-    "Usage available" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nutzung verfügbar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uso disponible"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilisation disponible"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilizzo disponibile"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruik beschikbaar"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limit dostępny"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uso disponível"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Användning tillgänglig"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kullanım mevcut"
           }
         }
       }

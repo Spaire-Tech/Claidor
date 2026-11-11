@@ -120,6 +120,11 @@ enum AccountActions {
     }
     show(AccountMenu.reading(store.usage, readAt: store.usageReadAt))
 
+    // The founder, 11 November 2026: "can you add ai models to the menu bar" (as External Agents, the makers' marks at its end).
+    let modelsItem = BlockMenuItem(String(localized: "AI Models")) { settings.open(.models) }
+    modelsItem.image = symbol("brain")
+    modelsItem.attributedTitle = AccountMenuRows.title(String(localized: "AI Models"), part: AccountMenuRows.models())
+    menu.addItem(modelsItem)
     // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
     let agentsItem = BlockMenuItem(String(localized: "External Agents")) { settings.open(.externalAgents) }
     agentsItem.image = symbol("bubble.left.and.bubble.right")
