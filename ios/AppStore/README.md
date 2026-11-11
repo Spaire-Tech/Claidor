@@ -28,7 +28,7 @@ email draft, Checkout and flight cards and the Connectors rows.
 On screens 3 to 8 the card that matters is lifted out of the phone as the
 computer on screen 2 is (the founder, 11 November 2026: "look how computer
 pops out"): as wide as the computer (1100 px), centred, growing down from
-where it sits, with the computer's shadow. The card carries `data-pop`; a
+where it sits, with the computer's shadow, on white as the call panel is. The card carries `data-pop`; a
 short script at the end of each file copies it out and hides the original.
 In a chat, the messages it then covers are left out; the Connectors list
 (`data-pop-room`) carries on under it. Since then the files here are ahead of the Design
