@@ -103,6 +103,20 @@ export function claudeCodeInteractionHandler(options: Pick<BridgeOptions, "signa
   });
 }
 
+/**
+ * The picture a tool's output carries, for Claude to see (11 November 2026: the helper that uses the
+ * computer's screen runs in Claude Code too): the computer tools' screenshot (`ComputerUseResult`,
+ * `sand-computer-tool.ts`), whose words say only where it was saved. Its type is read from its first bytes.
+ */
+export function screenshotOf(output: unknown): BridgeContent | undefined {
+  const result = (output as { result?: { case?: unknown; value?: { screenshot?: unknown } } } | null | undefined)?.result;
+  if (result?.case !== "success") return undefined;
+  const data = result.value?.screenshot;
+  if (typeof data !== "string" || data.length === 0) return undefined;
+  const mimeType = data.startsWith("iVBORw0KGgo") ? "image/png" : data.startsWith("/9j/") ? "image/jpeg" : data.startsWith("UklGR") ? "image/webp" : undefined;
+  return mimeType === undefined ? undefined : { type: "image", data, mimeType };
+}
+
 function contentOf(rendered: unknown): BridgeResult | undefined {
   if (typeof rendered === "string") return { content: [{ type: "text", text: rendered }] };
   if (rendered === null || typeof rendered !== "object") return undefined;
@@ -150,6 +164,8 @@ export function bridgeEngineTools(tools: readonly EngineTool[], options: BridgeO
           const output = await tool.execute(options.ctx, handler, argsStream, meta);
           const rendered = tool.render === undefined ? undefined : await tool.render(options.ctx, output, {});
           result = contentOf(rendered) ?? { content: [{ type: "text", text: "Done." }] };
+          const picture = screenshotOf(output);
+          if (picture !== undefined && !result.content.some((part) => part.type === "image")) result = { ...result, content: [...result.content, picture] };
         } catch (error) {
           result = { content: [{ type: "text", text: error instanceof Error ? error.message : String(error) }], isError: true };
         }

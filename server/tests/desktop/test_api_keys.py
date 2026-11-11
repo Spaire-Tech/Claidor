@@ -576,10 +576,10 @@ class TestTheChoice:
             for row in rows
             if row["modelId"].startswith("own:")
         ]
-        # The machinery on the key's cheaper model: the person's key pays.
+        # Every role on the chosen model: the person's key pays for all of it.
         assert mine == [
             ("own:deepseek:deepseek-v4-pro", "primary"),
-            ("own:deepseek:deepseek-flash", "cheap"),
+            ("own:deepseek:deepseek-v4-pro", "cheap"),
             ("own:deepseek:deepseek-v4-pro", "computer"),
         ]
         primary = next(

@@ -27,6 +27,7 @@ import { SandSettingsStore } from "../../../shared/node/settings/sand-settings-s
 import { simeonGeminiEndpoint, streamGeminiGenerateContent, toGeminiRequest, type GeminiDirectTool } from "./gemini-direct-generate.js";
 import { CLAUDE_HOUR_CACHE_REASONS, claudeEffortFor, claudeUsage, isClaudeModelId, isClaudeProviderFailure, withClaudeBetaHeader, withClaudeRequestOptions, type ClaudeEffort } from "./claude-messages.js";
 import { simeonModelRoles } from "./simeon-model-roles.js";
+import { claudeCodeTextChoice, claudeCodeTextResult, type TextJobStreamResult } from "../../claude-code/claude-code-text.js";
 import { configuredSimeonVideoModel, isGeminiVideoModelId } from "../../../shared/video-availability.js";
 import { readImageFileDimensions } from "../../../shared/media/image-dimensions.js";
 import type { LabelMessage, PromptExecutor } from "./sand-labeling.js";
@@ -1199,12 +1200,27 @@ function conversationIdFromContext(ctx: unknown): unknown {
   try { return get.call(ctx, conversationIdKey); } catch { return undefined; }
 }
 
+/**
+ * A small job (the safety review, memory, a summary, a title: a cheap session's call with no tools) on the
+ * person's own Claude plan when they chose Claude (11 November 2026, the founder: "small jobs is their own plan
+ * and chosen model"): one `claude -p` on the computer (`claude-code-text.ts`), Simeon's model only when Claude
+ * Code can't answer. Undefined: the call is Simeon's.
+ */
+function onClaudeCode(smallJob: boolean, messages: readonly ProviderMessage[], definitions: readonly Loose[] | undefined, executeTool: unknown, signal: AbortSignal | undefined, onSimeon: () => unknown): TextJobStreamResult | undefined {
+  if (!smallJob || (definitions !== undefined && definitions.length > 0) || executeTool !== undefined) return undefined;
+  const choice = claudeCodeTextChoice();
+  if (choice === undefined) return undefined;
+  return claudeCodeTextResult(messages, choice, () => onSimeon() as TextJobStreamResult, signal === undefined ? {} : { signal });
+}
+
 class ProviderPromptExecutor extends BasePromptExecutor<ProviderMessage> {
-  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason, readonly effortFollowsSteps = false) { super(new BasePromptBuilder(initialMessages)); }
+  constructor(readonly provider: RoutedProvider, initialMessages?: readonly ProviderMessage[], readonly onUsage?: (usage: UsageRecord) => void, readonly modelId?: string, readonly reasoningEffort?: SimeonReasoningEffort, readonly budget?: ModelCallBudget, readonly onRequestId?: (requestId: string) => void, readonly callReason?: SimeonCallReason, readonly effortFollowsSteps = false, readonly smallJob = false) { super(new BasePromptBuilder(initialMessages)); }
   stream(ctx: unknown, invocationId = crypto.randomUUID(), definitions?: readonly Loose[]) {
     if (this.budget != null) spendModelCall(this.budget);
     const effort = this.reasoningEffort === undefined ? undefined : simeonEffortForCall(this.reasoningEffort, this.effortFollowsSteps, this.getMessages());
-    return simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, effort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)), this.callReason);
+    const onSimeon = () => simeonExecutor(this.getMessages(), invocationId, definitions, undefined, this.onUsage, this.modelId, effort, this.budget, this.onRequestId, simeonPromptCacheKey(conversationIdFromContext(ctx)), this.callReason);
+    const signal = (ctx as { signal?: unknown } | null | undefined)?.signal;
+    return (onClaudeCode(this.smallJob, this.getMessages(), definitions, undefined, signal instanceof AbortSignal ? signal : undefined, onSimeon) ?? onSimeon()) as ReturnType<typeof simeonExecutor>;
   }
 }
 
@@ -1215,7 +1231,8 @@ export function createProviderPromptSession(_provider: RoutedProvider, options?:
   const budget = createModelCallBudget(options);
   const callReason = simeonCallReason(options);
   const effortFollowsSteps = simeonEffortFollowsSteps(options);
-  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason, effortFollowsSteps) };
+  const smallJob = isCheapSimeonSession(options);
+  return { getModelId: () => modelId, getExecutor: state => new ProviderPromptExecutor(provider, Array.isArray(state) ? state as ProviderMessage[] : undefined, usage => recordRoutedUsage(provider, usage), modelId, reasoningEffort, budget, onRequestId, callReason, effortFollowsSteps, smallJob) };
 }
 
 export async function runRoutedProviderText(provider: RoutedProvider, messages: readonly ProviderMessage[], options?: {
@@ -1233,7 +1250,8 @@ export async function runRoutedProviderText(provider: RoutedProvider, messages: 
   const invocationId = crypto.randomUUID();
   const onUsage = (usage: UsageRecord) => recordRoutedUsage(provider, usage);
   if (options?.budget != null) spendModelCall(options.budget);
-  const result = simeonExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, simeonModelForSession(options), simeonReasoningEffortForSession(options), options?.budget, undefined, undefined, options?.callReason ?? (options?.cheap === true ? "cheap" : "background"));
+  const onSimeon = () => simeonExecutor(messages, invocationId, options?.tools, options?.executeTool, onUsage, simeonModelForSession(options), simeonReasoningEffortForSession(options), options?.budget, undefined, undefined, options?.callReason ?? (options?.cheap === true ? "cheap" : "background"));
+  const result = (onClaudeCode(options?.cheap === true, messages, options?.tools, options?.executeTool, undefined, onSimeon) ?? onSimeon()) as ReturnType<typeof simeonExecutor>;
   let text = "";
   for await (const event of result.fullStream) {
     if (event.type === "text-delta" && typeof event.textDelta === "string") {

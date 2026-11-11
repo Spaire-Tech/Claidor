@@ -3463,6 +3463,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               isBoxScopedSubagent: isBoxScopedTurn,
               isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
+              isVideoSubagent: isVideoTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,
               systemPromptGenerator: () => promptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
             },

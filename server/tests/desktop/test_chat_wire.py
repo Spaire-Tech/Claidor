@@ -309,16 +309,19 @@ class TestRequest:
         asked = {"input": "Hi", "reasoning": {"effort": "medium"}}
         quick = {"input": "Hi", "reasoning": {"effort": "low"}}
 
-        # The person's effort for the agent wins over the engine's default…
+        # The person's effort wins over the engine's default…
         assert (
             chat_wire.chat_request(asked, "m", dialect, "high")["reasoning_effort"]
             == "high"
         )
-        # …but a call the engine wants quick (a title) stays quick.
+        # …on the machinery's calls too (11 November 2026, the founder: "their
+        # own plan and chosen model", "and the effort set").
         assert (
             chat_wire.chat_request(quick, "m", dialect, "high")["reasoning_effort"]
-            == "low"
+            == "high"
         )
+        # With no choice, the engine's own.
+        assert chat_wire.chat_request(quick, "m", dialect)["reasoning_effort"] == "low"
         # And a provider that reads no effort is never sent one.
         assert "reasoning_effort" not in chat_wire.chat_request(
             asked, "m", PLAIN, "high"
