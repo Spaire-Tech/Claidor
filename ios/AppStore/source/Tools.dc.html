@@ -47,7 +47,7 @@ body{margin:0}
         <div class="glass" style="position: absolute; right: 16px; top: 54px; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"></path></svg></div>
 
         <div style="position: absolute; left: 16px; right: 16px; top: 100px">
-          <div data-pop="1.12" data-pop-ground="#ffffff" style="padding: 1px 16px 2px; margin: 0 -16px">
+          <div data-pop="1.12" data-pop-room data-pop-ground="#ffffff" style="padding: 1px 16px 2px; margin: 0 -16px; border-radius: 22px">
           <div class="sh">Mail &amp; Calendar<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,20,0.6)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div>
           <div class="row"><img class="tile" src="/_blob/42627d70b997b4455f950e05f6e63bf7" alt=""><div class="tx"><div class="nm">Gmail</div><div class="ds">Search, read, draft, and manage email.</div></div><span class="mk"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="rgba(20,20,20,0.6)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"></path></svg></span></div>
           <div class="row"><img class="tile" src="/_blob/adb47c5779666123f63c2020237050c3" alt=""><div class="tx"><div class="nm">Outlook</div><div class="ds">Mail and Microsoft 365 calendar.</div></div><span class="mk"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="1.3" stroke-linecap="round"><path d="M12 3.5v17M3.5 12h17"></path></svg></span></div>
@@ -79,25 +79,26 @@ body{margin:0}
 </div>
 </x-dc>
 <script>
-/* The card that matters on this screen, lifted out of the phone (the founder, 11 November 2026: "for each pop out the
-   most important thing"): the same card, larger, in front of the frame, as the computer on screen 2. data-pop holds how
-   much larger. */
+/* The card that matters on this screen, lifted out of the phone as the computer on screen 2 is (the founder, 11 November
+   2026: "for each pop out the most important thing … look how computer pops out"): the same card, as wide as the
+   computer (1100 px), centred on the screenshot, growing down from where it sits in the chat, with the computer's
+   shadow; what it then covers in the chat is left out. */
 document.fonts.ready.then(() => {
-  const board = document.querySelector('x-dc > div'), B = board.getBoundingClientRect(), Z = 2.25
+  const board = document.querySelector('x-dc > div'), B = board.getBoundingClientRect(), Z = 2.25, WIDE = 1100
   for (const card of document.querySelectorAll('[data-pop]')) {
-    // room in the chat for what the card grows by, above and below, so it covers no message (not for a card placed on its own)
-    if (getComputedStyle(card).position !== 'absolute') {
-      const g = (card.dataset.pop - 1) * card.getBoundingClientRect().height / 2 / Z, cs = getComputedStyle(card)
-      card.style.marginTop = (parseFloat(cs.marginTop) + g) + 'px'; card.style.marginBottom = (parseFloat(cs.marginBottom) + g) + 'px'
-    }
-    const r = card.getBoundingClientRect(), lift = document.createElement('div'), inner = document.createElement('div'), copy = card.cloneNode(true)
+    const r = card.getBoundingClientRect(), k = WIDE / r.width
+    const lift = document.createElement('div'), inner = document.createElement('div'), copy = card.cloneNode(true)
     lift.className = 'ui'
-    Object.assign(lift.style, { position: 'absolute', zIndex: 20, left: (r.left - B.left) + 'px', top: (r.top - B.top) + 'px', width: r.width + 'px', height: r.height + 'px', transform: `scale(${card.dataset.pop})`, transformOrigin: '50% 50%' })
-    inner.style.zoom = Z
+    Object.assign(lift.style, { position: 'absolute', zIndex: 20, left: (B.width / 2 - WIDE / 2) + 'px', top: (r.top - B.top) + 'px', width: WIDE + 'px', height: (r.height * k) + 'px', filter: 'drop-shadow(0 50px 50px rgba(0,0,0,0.16))' })
+    inner.style.zoom = Z * k
     copy.removeAttribute('data-pop')
-    Object.assign(copy.style, { position: 'relative', left: 'auto', right: 'auto', top: 'auto', margin: '0', width: (r.width / Z) + 'px', height: (r.height / Z) + 'px', boxShadow: '0 14px 34px rgba(20,20,20,0.16), 0 0 0 0.5px rgba(20,20,20,0.10)' })
-    if (card.dataset.popGround) Object.assign(copy.style, { background: card.dataset.popGround, borderRadius: '22px' })
+    Object.assign(copy.style, { position: 'relative', left: 'auto', right: 'auto', top: 'auto', margin: '0', width: (r.width / Z) + 'px', height: (r.height / Z) + 'px', boxShadow: '0 0 0 0.5px rgba(20,20,20,0.12)' })
+    if (card.dataset.popGround) copy.style.background = card.dataset.popGround
     inner.append(copy); lift.append(inner); board.append(lift)
+    card.style.visibility = 'hidden'
+    // a list (data-pop-room) carries on under it; in a chat, the messages it now covers are left out
+    if ('popRoom' in card.dataset) card.style.marginBottom = (parseFloat(getComputedStyle(card).marginBottom) + r.height * (k - 1) / Z) + 'px'
+    else { const bottom = r.top + r.height * k; for (let n = card.nextElementSibling; n; n = n.nextElementSibling) if (n.getBoundingClientRect().top < bottom) n.style.visibility = 'hidden' }
   }
 })
 </script>

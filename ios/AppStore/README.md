@@ -9,7 +9,7 @@ Designed on the Design canvas "Simeon App Store Screenshots"
 | File | Headline | What it shows |
 |---|---|---|
 | `screenshots/01-teammates.png` | AI teammates for everyday work | The list: Simeon, Ruby and Maya pinned, the team's rows with what each one finished |
-| `screenshots/02-own-computer.png` | Your teammates share a computer of their own | A chat with Iris, and Iris's computer: the box's own wallpaper, Chrome on Google's home page (`assets/google-home.png`, the founder's capture), her pointer by the search box |
+| `screenshots/02-own-computer.png` | Your teammates share a computer of their own | A chat with Iris, and Iris's computer: the box's own wallpaper, Chrome on Google's home page, signed out (`assets/google-home.png`, the founder's capture), her pointer by the search box |
 | `screenshots/03-chief-of-staff.png` | Your chief of staff runs the team | Simeon adds a sales lead: "Messaged Maya", the "Maya just joined your team" card as the app draws it (`JoinedCardView`: her standing figure, her face's colour), then Maya named with HubSpot |
 | `screenshots/04-connect-apps.png` | Connect the apps you already use | The Connectors page: Mail & Calendar, Marketing & Growth, Meetings, with ✓ and + |
 | `screenshots/05-your-ok.png` | Nothing goes out without your OK | Nia's email draft card: To, Subject, the message, Send email and Discard |
@@ -25,11 +25,13 @@ on into the next screenshot. The phone screens copy the app's light mode
 `ConnectorsList.swift`): bubble colours and sizes, the agent name pill, the
 email draft, Checkout and flight cards and the Connectors rows.
 
-On screens 3 to 8 the card that matters is lifted out of the phone, larger
-and in front of the frame, as the computer on screen 2 (the founder, 11
-November 2026): the card carries `data-pop` (how much larger), and a short
-script at the end of each file copies it out and gives it room in the chat,
-so it covers no message. Since then the files here are ahead of the Design
+On screens 3 to 8 the card that matters is lifted out of the phone as the
+computer on screen 2 is (the founder, 11 November 2026: "look how computer
+pops out"): as wide as the computer (1100 px), centred, growing down from
+where it sits, with the computer's shadow. The card carries `data-pop`; a
+short script at the end of each file copies it out and hides the original.
+In a chat, the messages it then covers are left out; the Connectors list
+(`data-pop-room`) carries on under it. Since then the files here are ahead of the Design
 canvas, which has neither the lift nor the changes above.
 
 ## Where they differ from the app
