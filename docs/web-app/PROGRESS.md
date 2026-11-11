@@ -842,6 +842,16 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: no slogan titles
+
+The founder: "make a rule that we never use these kinds of title or phrasing. you x, handled. your
+x, this. i hate that". External Agents' card says "Connect other assistants to Simeon". The connect
+page of a plan says "Run your agents on your ChatGPT plan." and of a key "Run your agents on
+DeepSeek's models with your own API key.". Its points (an app's too) are "What it does",
+"Control" and, for a key, "Where the key is kept", no longer "Put X to work", "You stay in charge"
+and "Your key stays with Simeon". The rule is in CLAUDE.md. Checked: the core's and the web's
+consent and page tests, the words, the committed build.
+
 ### 11 November 2026: External Agents' picture redone, its icon two speech bubbles
 
 The founder, of the card's picture: "Does this seems normal to you? Creative? Proportionate? Use

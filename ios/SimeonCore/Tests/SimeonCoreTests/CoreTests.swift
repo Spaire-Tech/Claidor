@@ -1768,7 +1768,7 @@ final class ConnectConsentTests: XCTestCase {
     let stripe = CatalogApp(id: "stripe", name: "stripe", title: "Stripe", summary: "Customers, payments, subscriptions, and invoices.", serverURL: "https://mcp.stripe.com")
     let consent = ConnectConsent(app: stripe, name: "Stripe")
     XCTAssertEqual(consent.title, "Stripe")
-    XCTAssertEqual(consent.points.map(\.title), ["Put Stripe to work", "You stay in charge", "Check their work"])
+    XCTAssertEqual(consent.points.map(\.title), ["What it does", "Control", "Check their work"])
     XCTAssertEqual(consent.points[0].body, "Your agents can read and use customers, payments, subscriptions and invoices in Stripe.")
     XCTAssertEqual(consent.route, .vendor(host: "mcp.stripe.com"))
     XCTAssertTrue(consent.smallPrint[0].contains("Stripe's own page"))

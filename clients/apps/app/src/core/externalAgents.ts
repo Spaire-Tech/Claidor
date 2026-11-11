@@ -166,7 +166,7 @@ export const disconnectLine = (): string =>
 
 /** The card's words: what the page is, in a line. */
 export const externalAgentsHeadline = (): string =>
-  t('Your agents, in your other assistants')
+  t('Connect other assistants to Simeon')
 export const externalAgentsExplanation = (): string =>
   t(
     'Connect Grok Bot, Muse, Dots or Claude Code. They can message your agents, follow their work and answer what they ask.',

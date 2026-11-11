@@ -78,6 +78,13 @@ skills, connectors, avatars, approvals). Running the box servers:
   `docs/web-app/PROGRESS.md` in the same pull request: what was done, what
   was and was not checked, decisions and who made them, what comes next.
   Read both before any work on it; nothing about it is kept in memory.
+- **No slogan titles.** Never write a title, heading or summary line as a
+  tagline: "Your X, handled.", "You X, done.", "Your X, for your Y.",
+  "Put X to work", "You stay in charge", "X, simplified". Say plainly what it
+  is or what it does ("Connect other assistants to Simeon", "Run your agents
+  on your ChatGPT plan.", "What it does"). The founder, 11 November 2026: "i
+  hate that". This holds in every app, the website, the docs and the agents'
+  own words.
 - **Server code:** never call `session.commit()` in request code (the session
   commits at the end of the request; see `server/CLAUDE.md`).
 - **Git:** no model names in commits or pull requests. PR bodies follow

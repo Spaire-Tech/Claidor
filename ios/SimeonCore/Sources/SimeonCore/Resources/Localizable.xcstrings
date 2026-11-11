@@ -76413,60 +76413,60 @@
         }
       }
     },
-    "Put %@ to work" : {
+    "What it does" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lass %@ für dich arbeiten"
+            "value" : "Was es macht"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pon %@ a trabajar"
+            "value" : "Qué hace"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mets %@ au travail"
+            "value" : "Ce que ça fait"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Metti %@ al lavoro"
+            "value" : "Cosa fa"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zet %@ aan het werk"
+            "value" : "Wat het doet"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zaprzęgnij %@ do pracy"
+            "value" : "Co to robi"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Coloque o %@ para trabalhar"
+            "value" : "O que faz"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sätt %@ i arbete"
+            "value" : "Vad det gör"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ uygulamasını işe koş"
+            "value" : "Ne yapar"
           }
         }
       }
@@ -120199,60 +120199,60 @@
         }
       }
     },
-    "You stay in charge" : {
+    "Control" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du behältst die Kontrolle"
+            "value" : "Kontrolle"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tú tienes el control"
+            "value" : "Control"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu gardes la main"
+            "value" : "Contrôle"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il controllo resta a te"
+            "value" : "Controllo"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jij houdt de regie"
+            "value" : "Controle"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To ty decydujesz"
+            "value" : "Kontrola"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Você no controle"
+            "value" : "Controle"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du har kontrollen"
+            "value" : "Kontroll"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kontrol sende"
+            "value" : "Kontrol"
           }
         }
       }
@@ -120547,60 +120547,60 @@
         }
       }
     },
-    "Your %@ API key, for your agents." : {
+    "Run your agents on %@'s models with your own API key." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein %@-API-Schlüssel, für deine Agenten."
+            "value" : "Lass deine Agenten mit deinem eigenen API-Schlüssel auf den Modellen von %@ laufen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu clave de API de %@, para tus agentes."
+            "value" : "Haz que tus agentes usen los modelos de %@ con tu propia clave de API."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ta clé API %@, pour tes agents."
+            "value" : "Fais tourner tes agents sur les modèles de %@ avec ta propre clé API."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua chiave API %@, per i tuoi agenti."
+            "value" : "Fai lavorare i tuoi agenti con i modelli di %@ e la tua chiave API."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je %@-API-sleutel, voor je agenten."
+            "value" : "Laat je agenten draaien op de modellen van %@ met je eigen API-sleutel."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twój klucz API %@ dla twoich agentów."
+            "value" : "Uruchamiaj swoich agentów na modelach %@ z własnym kluczem API."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sua chave de API do %@, para seus agentes."
+            "value" : "Rode seus agentes nos modelos do %@ com sua própria chave de API."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Din %@-API-nyckel, för dina agenter."
+            "value" : "Kör dina agenter på %@s modeller med din egen API-nyckel."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ API anahtarın, ajanların için."
+            "value" : "Ajanlarını kendi API anahtarınla %@ modellerinde çalıştır."
           }
         }
       }
@@ -137019,60 +137019,60 @@
         }
       }
     },
-    "Your agents, in your other assistants" : {
+    "Connect other assistants to Simeon" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Agenten, in deinen anderen Assistenten"
+            "value" : "Verbinde andere Assistenten mit Simeon"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tus agentes, en tus otros asistentes"
+            "value" : "Conecta otros asistentes a Simeon"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tes agents, dans tes autres assistants"
+            "value" : "Connecte d’autres assistants à Simeon"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I tuoi agenti, nei tuoi altri assistenti"
+            "value" : "Collega altri assistenti a Simeon"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je agenten, in je andere assistenten"
+            "value" : "Koppel andere assistenten aan Simeon"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twoi agenci w twoich innych asystentach"
+            "value" : "Połącz innych asystentów z Simeonem"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seus agentes, nos seus outros assistentes"
+            "value" : "Conecte outros assistentes ao Simeon"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dina agenter, i dina andra assistenter"
+            "value" : "Anslut andra assistenter till Simeon"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajanların, diğer asistanlarında"
+            "value" : "Diğer asistanları Simeon'a bağla"
           }
         }
       }
@@ -139746,60 +139746,60 @@
         }
       }
     },
-    "Your key stays with Simeon" : {
+    "Where the key is kept" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein Schlüssel bleibt bei Simeon"
+            "value" : "Wo der Schlüssel liegt"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu clave se queda en Simeon"
+            "value" : "Dónde se guarda la clave"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ta clé reste chez Simeon"
+            "value" : "Où la clé est gardée"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua chiave resta su Simeon"
+            "value" : "Dove viene custodita la chiave"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je sleutel blijft bij Simeon"
+            "value" : "Waar de sleutel bewaard wordt"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twój klucz zostaje w Simeon"
+            "value" : "Gdzie przechowywany jest klucz"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sua chave fica com o Simeon"
+            "value" : "Onde a chave fica guardada"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Din nyckel stannar hos Simeon"
+            "value" : "Var nyckeln förvaras"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anahtarın Simeon’da kalır"
+            "value" : "Anahtar nerede saklanır"
           }
         }
       }
@@ -145086,60 +145086,60 @@
         }
       }
     },
-    "Your %@ plan, for your agents." : {
+    "Run your agents on your %@ plan." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dein %@-Tarif, für deine Agenten."
+            "value" : "Lass deine Agenten über dein %@-Abo laufen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu plan de %@, para tus agentes."
+            "value" : "Haz que tus agentes funcionen con tu plan de %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ton forfait %@, pour tes agents."
+            "value" : "Fais tourner tes agents sur ton forfait %@."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il tuo piano %@, per i tuoi agenti."
+            "value" : "Fai lavorare i tuoi agenti con il tuo piano %@."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Je %@-abonnement, voor je agenten."
+            "value" : "Laat je agenten draaien op je %@-abonnement."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twój plan %@ dla twoich agentów."
+            "value" : "Uruchamiaj swoich agentów na planie %@."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seu plano do %@, para seus agentes."
+            "value" : "Rode seus agentes no seu plano do %@."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ditt %@-abonnemang, för dina agenter."
+            "value" : "Kör dina agenter på ditt %@-abonnemang."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ planın, ajanların için."
+            "value" : "Ajanlarını %@ planınla çalıştır."
           }
         }
       }

@@ -334,7 +334,7 @@ final class AIModelsTests: XCTestCase {
   func testAPlansConsentIsTheAppsPage() {
     let consent = ConnectConsent(modelProvider: AIModels.claude)
     XCTAssertEqual(consent.title, "Claude")
-    XCTAssertEqual(consent.points.map(\.title), ["Put Claude to work", "You stay in charge", "When your plan runs out"])
+    XCTAssertEqual(consent.points.map(\.title), ["What it does", "Control", "When your plan runs out"])
     XCTAssertEqual(consent.smallPrint.first, "You'll sign in on Claude's own page. Simeon never sees your password.")
     XCTAssertNil(consent.note)
   }
@@ -371,7 +371,7 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(ConnectConsent(keyProvider: "bedrock", name: "Amazon Bedrock").provider, "bedrock")
     XCTAssertEqual(ConnectConsent(modelProvider: AIModels.claude).provider, AIModels.claude)
     XCTAssertEqual(consent.title, "DeepSeek")
-    XCTAssertEqual(consent.points.map(\.title), ["Put DeepSeek to work", "Your key stays with Simeon", "You stay in charge"])
+    XCTAssertEqual(consent.points.map(\.title), ["What it does", "Where the key is kept", "Control"])
     XCTAssertEqual(consent.points.map(\.symbol), ["square.stack.3d.up", "lock.shield", "hand.raised"])
     XCTAssertEqual(consent.smallPrint.first, "DeepSeek bills each call on your key, at its own prices.")
     XCTAssertNotEqual(consent, ConnectConsent(keyProvider: "groq", name: "Groq"))
