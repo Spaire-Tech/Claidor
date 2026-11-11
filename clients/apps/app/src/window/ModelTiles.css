@@ -1,0 +1,72 @@
+/*
+ * The makers' marks on Connect apps' tiles (ModelTiles.tsx): AI Models'
+ * card and its row in the account menu. A tile white, #2c2c2e on dark, a
+ * hairline and a soft shadow (`.bot-tile`'s), its mark in the middle;
+ * ChatGPT's and Grok's in the ink, Claude's and Meta's in their colours.
+ */
+.model-tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--logo-card);
+  box-shadow:
+    0 0 0 1px var(--logo-card-hairline),
+    0 1px 1px var(--logo-card-shadow);
+}
+
+.model-tile img {
+  display: block;
+  object-fit: contain;
+}
+
+.model-tile-ink {
+  display: block;
+  background-color: var(--ink);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* The card's picture: the tiles in a row in the middle of its 320 by 200, each over the last by 8, a soft shadow under each. */
+.models-fan {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.models-fan-tile {
+  margin-left: -8px;
+  filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.12));
+}
+
+.models-fan-tile:first-child {
+  margin-left: 0;
+}
+
+/* Under the words, when the panel is narrow: 112 high, enough for the row, not External Agents' 200. */
+@container (max-width: 600px) {
+  .agents-picture.models-picture {
+    height: 112px;
+  }
+}
+
+/* AI Models' end in the account menu, as External Agents' (`.menu-mascot`): each over the last by 4, the first turned 7° left and the last 7° right. */
+.menu-model-tile {
+  margin-left: -4px;
+}
+
+.menu-model-tile:first-child {
+  margin-left: 0;
+  transform: rotate(-7deg);
+}
+
+.menu-model-tile:last-child {
+  transform: rotate(7deg);
+}

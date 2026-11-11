@@ -711,6 +711,44 @@ providers not yet connected under Subscriptions, and the Connect sheets. The
 model the agents use is chosen on the composer (9 November 2026,
 `ComposerModelMenu` on each), which `PUT models/own` as the page did.
 
+Since 11 November 2026 the page opens on a card, as External Agents' does
+(the founder: "ai models should have the same above"; design B, without
+a model's pill and with Meta): "Connect your own AI models", what it does,
+Learn more (`simeonlabs.com/models`), and ChatGPT's, Claude's, Grok's and
+Meta's marks fanned on Connect apps' tiles (`AIModels.Card`, `modelsCard`;
+the marks in `Marks/<provider>` and `assets/marks/`). The account menu on
+the Mac and the web has an AI Models row, those four marks at its end. An
+account that can be used says "Active" in green (it said "Usage available";
+the founder: "can we change the wording to Active"). Meta's mark is drawn
+in its blue in light and dark mode ("meta keeps it blue in dark mode as
+well").
+
+**Everything on the person's own plan or key** (11 November 2026, the
+founder: "small jobs is their own plan and chosen model. and make sure
+everything else is like that, the api keys included"). With ChatGPT, Grok or
+an API key chosen, every role the engine reads is the chosen model
+(`own_models.rows`: primary, cheap and computer), so the agent, its small jobs
+(titles, summaries, memory, the safety review) and its helper on the screen
+all run on the person's account; web search too (Grok searches on Grok 4.6,
+the one model with the proxy's search). The effort the person chose replaces
+the engine's own on every call, the small jobs' too (`codex_body`,
+`grok_body`, `chat_wire.effort_of`). Until then the small jobs ran on a
+cheaper model of the plan or key (GPT-6 Luna, a key provider's `cheap`) at
+low effort.
+
+With Claude chosen, the engine runs all of it in Claude Code on the computer,
+on the chosen model and effort: the agent's turns; its helpers (the one on
+the computer's screen, whose screenshots reach Claude as pictures, the one
+driving Chrome, the general ones) and its turns in group chats
+(`turn-agent-composition.ts`, `claudeCodeKind`); and each small job as one
+`claude -p` with no tools and nothing kept (`claude-code-text.ts`, routed in
+`provider-session.ts`). Only these stay on Simeon's: a video helper (Claude
+can't watch video), voice calls, dictation, cloud agents (they run on
+Simeon's server), and any of the above when Claude Code can't answer (the
+plan's limit, the sign-in gone), as the card says. The host log says which:
+`claude-code turn helper=… outcome=…`, `claude-code job model=… effort=…
+outcome=…`.
+
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
 `SIMEON_CHATGPT_CLIENT_ID` changes). The steps are Codex's own
@@ -1353,8 +1391,8 @@ computer hibernated to a snapshot. What differs from Docker:
   date, and only then is it replaced; if the backup cannot be brought up to
   date it stays as it is (`sand.box.update_deferred`, reason `backup`).
 - **A new engine on the same computer** (9 November 2026). When only the
-  host bundle is new, the computer is not replaced: once its backup is up to
-  date and it is idle, the server writes each engine file beside the old one
+  host bundle is new, the computer is not replaced: once it is idle, the
+  server writes each engine file beside the old one
   (`<path>.next`) and runs `/run/simeon/update-engine.sh` on it
   (`ENGINE_UPDATE_SCRIPT` in `box_e2b.py`), which moves the files in, stops
   the engine and the exec daemon (TERM, then KILL after 15 seconds) and
@@ -1367,10 +1405,24 @@ computer hibernated to a snapshot. What differs from Docker:
   published, every computer lost it. When the engine does not come back
   (`sand.box.update_in_place_failed` with the script's answer:
   `not-running`, `not-staged`, `not-moved`, `not-restarted`, `no-pgrep`, or
-  `not ready`), the computer is replaced from its backup as before. A new
-  template, or a move to another server, still replaces it. Run here against
-  a stand-in supervisor and engine (the swap, a host ignoring TERM, nothing
-  staged, nothing restarting); not yet on a real computer.
+  `not ready`), its backup is brought up to date and the computer is
+  replaced from it as before (or kept as it is when the backup cannot be:
+  `update_deferred`, reason `backup`). A new template, or a move to another
+  server, still replaces it. Run here against a stand-in supervisor and
+  engine (the swap, a host ignoring TERM, nothing staged, nothing
+  restarting); not yet on a real computer. Since 11 November 2026 no backup
+  is asked for before the swap, which keeps the disk: asked first, a backup
+  the computer could not finish put the update off on every wake, each wake
+  holding the person's computer about two minutes (the app's other calls
+  answered "still starting"), and the computer did not answer for about an
+  hour.
+- **An engine that does not answer.** A computer that runs, or was just
+  woken, and whose engine has not answered after `BOX_READY_TIMEOUT` (90
+  seconds) has its engine restarted in place the same way, the published
+  one, its disk kept (`sand.box.revive`, then `sand.box.revived` or
+  `sand.box.revive_failed`), at most once every ten minutes
+  (`sand_boxes.host_meta.revived_at`), so a restart that did not help is not
+  repeated on every wake.
 - **Reaching it.** The API dials `https://<port>-<sandbox>.<domain>` with the
   computer's traffic token (`e2b-traffic-access-token`, kept in
   `sand_boxes.host_meta`); E2B refuses its ports to anyone without it. The

@@ -41,13 +41,12 @@ struct AIModelsPage: View {
 
   var body: some View {
     let model = store.aiModels
+    // The card, as External Agents' (11 November 2026, the founder: "ai models should have the same above", design B
+    // "without the claude opus 5.5" and with Meta), then what is connected, then Subscriptions (the same day: "remove
+    // the connect provider text in ai models in iphone. have it just start with connected of subscriptions").
     Form {
-      Section {
-        Text("Connect providers and choose the models your agents use.")
-          .font(.system(size: 15))
-          .foregroundStyle(Ink.secondary)
-      }
-      .listRowBackground(Color.clear)
+      Section { AIModelsCard() }
+        .listRowBackground(Ink.groupedRow)
       if let problem = model.problem, !model.loaded {
         Section {
           Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)
@@ -214,96 +213,160 @@ struct AIModelsPage: View {
 // MARK: Bots (Settings › External Agents, ExternalAgents.swift)
 
 /**
- * A bot's sheet (the reference): the round close; its mascot and its name,
- * or Simeon's mark and "Add a bot" for any other; who to give the address
- * to, in that bot's words ("Give this to your Muse."); the address in its
- * field with Copy inside it; MCP details, which open what the bot can do
- * once it is in. Simeon's tile stays white in dark mode too, as an app's icon
- * does (the founder: "keep it how it is for that frame. white").
+ * A bot's sheet, as the Mac's (`MacAddBotSheet`): its mascot and its name,
+ * or Simeon's mark and "Add a bot"; a bot in its maker's cloud is given its
+ * address to copy, a coding agent (Claude Code, Codex; 11 November 2026, the
+ * founder: "we need to show the many ways to do it for both") "Pick one…"
+ * and its ways, each a title, a line and what to copy; then MCP details. It
+ * scrolls, so the three ways show whole. Simeon's tile stays white in dark
+ * mode too, as an app's icon does (the founder: "keep it how it is for that
+ * frame. white").
  */
 struct PhoneAddBotSheet: View {
   let bot: String
   @Environment(\.dismiss) private var dismiss
-  @State private var copied = false
   @State private var details = false
 
   var body: some View {
     let known = ExternalAgents.known.first { $0.kind == bot }
-    VStack(alignment: .leading, spacing: 18) {
-      HStack {
-        CloseDisc { dismiss() }
-        Spacer()
-      }
-      HStack(spacing: 14) {
-        if let known {
-          ProviderIcon(provider: known.icon, size: 48)
-        } else {
-          Image("Providers/simeon-mark")
-            .renderingMode(.template)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 26, height: 26)
-            .foregroundStyle(Color(red: 13 / 255, green: 13 / 255, blue: 13 / 255))
-            .frame(width: 48, height: 48)
-            .background(Color.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay { RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5) }
+    let ways = known?.ways ?? []
+    ScrollView {
+      VStack(alignment: .leading, spacing: 18) {
+        HStack {
+          CloseDisc { dismiss() }
+          Spacer()
+        }
+        HStack(spacing: 14) {
+          if let known {
+            BotIcon(icon: known.icon, name: known.name, size: 48)
+          } else {
+            Image("Providers/simeon-mark")
+              .renderingMode(.template)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 26, height: 26)
+              .foregroundStyle(Color(red: 13 / 255, green: 13 / 255, blue: 13 / 255))
+              .frame(width: 48, height: 48)
+              .background(Color.white, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+              .overlay { RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Color.black.opacity(0.1), lineWidth: 0.5) }
+          }
+          Group {
+            if let known { Text(verbatim: known.name) } else { Text("Add a bot") }
+          }
+          .font(.system(size: 24))
+          .foregroundStyle(Ink.primary)
+          .accessibilityAddTraits(.isHeader)
         }
         Group {
-          if let known { Text(verbatim: known.name) } else { Text("Add a bot") }
+          if let known { Text(verbatim: known.give) } else { Text("Give this to any bot that can add an MCP server.") }
         }
-        .font(.system(size: 24))
+        .font(.system(size: 17))
         .foregroundStyle(Ink.primary)
-        .accessibilityAddTraits(.isHeader)
-      }
-      Group {
-        if let known { Text(verbatim: known.give) } else { Text("Give this to any bot that can add an MCP server.") }
-      }
-      .font(.system(size: 17))
-      .foregroundStyle(Ink.primary)
-      .fixedSize(horizontal: false, vertical: true)
-      HStack(spacing: 10) {
-        Text(verbatim: ExternalAgents.address(for: known?.kind))
-          .font(.system(size: 15, design: .monospaced))
-          .foregroundStyle(Ink.primary)
-          .lineLimit(1)
-          .minimumScaleFactor(0.8)
-          .textSelection(.enabled)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Button {
-          UIPasteboard.general.string = ExternalAgents.address(for: known?.kind)
-          copied = true
-        } label: {
-          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
-            .font(.system(size: 15))
-            .foregroundStyle(Ink.primary)
-            .padding(.horizontal, 16)
-            .frame(height: 38)
-            .background(Ink.pillButton, in: Capsule())
+        .fixedSize(horizontal: false, vertical: true)
+        if ways.isEmpty {
+          PhoneCopyField(text: ExternalAgents.address(for: known?.kind), code: false)
+        } else {
+          VStack(alignment: .leading, spacing: 22) {
+            ForEach(ways) { way in
+              VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: way.title)
+                  .font(.system(size: 17, weight: .semibold))
+                  .foregroundStyle(Ink.primary)
+                Text(verbatim: way.line)
+                  .font(.system(size: 15))
+                  .foregroundStyle(Ink.secondary)
+                  .fixedSize(horizontal: false, vertical: true)
+                PhoneCopyField(text: way.text, code: true)
+                  .padding(.top, 8)
+              }
+            }
+          }
+        }
+        Button { withAnimation(.snappy) { details.toggle() } } label: {
+          Text("MCP details").font(.system(size: 15)).underline().foregroundStyle(Ink.link)
         }
         .buttonStyle(.plain)
+        if details {
+          Text("It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app.")
+            .font(.system(size: 15))
+            .foregroundStyle(Ink.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
       }
-      .padding(.leading, 16)
-      .padding(.trailing, 6)
-      .frame(minHeight: 54)
-      .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-      .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Ink.edge, lineWidth: 1) }
-      Button { withAnimation(.snappy) { details.toggle() } } label: {
-        Text("MCP details").font(.system(size: 15)).underline().foregroundStyle(Ink.link)
-      }
-      .buttonStyle(.plain)
-      if details {
-        Text("It signs in to Simeon once, with your permission. Then it can message your agents, follow their work and run their routines. Purchases and passwords stay with you, in the app.")
-          .font(.system(size: 15))
-          .foregroundStyle(Ink.secondary)
-          .fixedSize(horizontal: false, vertical: true)
-      }
-      Spacer(minLength: 0)
+      .padding(.horizontal, 20)
+      .padding(.top, 16)
+      .padding(.bottom, 24)
+      .frame(maxWidth: .infinity, alignment: .leading)
     }
-    .padding(.horizontal, 20)
-    .padding(.top, 16)
-    .frame(maxWidth: .infinity, alignment: .leading)
     .background(Ink.groupedGround)
-    .presentationDetents([.medium, .large])
+    // A coding agent's three ways open at full height; an address fits half.
+    .presentationDetents(ways.isEmpty ? Set([PresentationDetent.medium, .large]) : Set([PresentationDetent.large]))
+  }
+}
+
+/**
+ * What to copy in its field (14 round, a grey line) and Copy, "Copied" once
+ * it is. An address on one line with Copy beside it; a command or the words
+ * for a coding agent (`code`) across the whole field, wrapped at its spaces,
+ * with Copy under it at its end, so no address is cut on a phone.
+ */
+private struct PhoneCopyField: View {
+  let text: String
+  let code: Bool
+  @State private var copied = false
+
+  var body: some View {
+    Group {
+      if code {
+        VStack(alignment: .trailing, spacing: 10) {
+          words
+            .font(.system(size: 13, design: .monospaced))
+            .lineSpacing(3)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.trailing, 10)
+          copy
+        }
+        .padding(.top, 14)
+        .padding(.bottom, 8)
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+      } else {
+        HStack(spacing: 10) {
+          words
+            .font(.system(size: 15, design: .monospaced))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+          copy
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+        .frame(minHeight: 54)
+      }
+    }
+    .background(Ink.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Ink.edge, lineWidth: 1) }
+  }
+
+  private var words: some View {
+    Text(verbatim: text)
+      .foregroundStyle(Ink.primary)
+      .textSelection(.enabled)
+      .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var copy: some View {
+    Button {
+      UIPasteboard.general.string = text
+      copied = true
+    } label: {
+      Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
+        .font(.system(size: 15))
+        .foregroundStyle(Ink.primary)
+        .padding(.horizontal, 16)
+        .frame(height: 38)
+        .background(Ink.pillButton, in: Capsule())
+    }
+    .buttonStyle(.plain)
   }
 }
 
@@ -334,13 +397,13 @@ struct ProviderIcon: View {
   }
 }
 
-/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's and GitHub Copilot's in their own colours (10 November 2026, the founder's logos); no provider is Simeon's. */
+/** A provider's mark, bare, as the composer shows it (the founder's "✳ Claude Opus 5.5", "⌘ Simeon"): ChatGPT's and Simeon's in the ink; Claude's, Amazon Bedrock's, GitHub Copilot's and Meta's in their own colours (10 November 2026, the founder's logos; Meta's blue on dark too, 11 November); no provider is Simeon's. */
 struct ProviderMark: View {
   let provider: String?
   var side: CGFloat = 16
 
   /** The marks drawn in their own colours, not the ink. */
-  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot"]
+  static let coloured: Set<String> = [AIModels.claude, "bedrock", "copilot", "meta"]
 
   var body: some View {
     Image(provider.map { "Providers/\($0)-mark" } ?? "Providers/simeon-mark")
@@ -844,5 +907,101 @@ struct KeyConnectSheet: View {
     checking = false
     outcome = answer
     if case .refused = answer { key = ""; keyFocused = true }
+  }
+}
+
+/**
+ * AI Models' card, as External Agents' on the iPhone: the picture over the
+ * words (the line at 17, semibold, what it does at 15 in grey), Learn more
+ * in a grey capsule on the right under them.
+ */
+private struct AIModelsCard: View {
+  @Environment(\.openURL) private var openURL
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      ModelTilesFan()
+        .padding(.bottom, 6)
+      Text(AIModels.Card.headline)
+        .font(.system(size: 17, weight: .semibold))
+        .foregroundStyle(Ink.primary)
+        .fixedSize(horizontal: false, vertical: true)
+      Text(AIModels.Card.explanation)
+        .font(.system(size: 15))
+        .foregroundStyle(Ink.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+      Button { openURL(AIModels.Card.learnMore) } label: {
+        Text("Learn more")
+          .font(.system(size: 15))
+          .foregroundStyle(Ink.primary)
+          .padding(.horizontal, 16)
+          .frame(height: 34)
+          .background(Ink.pillButton, in: Capsule())
+      }
+      .buttonStyle(.borderless)
+      .frame(maxWidth: .infinity, alignment: .trailing)
+      .padding(.top, 4)
+    }
+    .padding(.vertical, 8)
+  }
+}
+
+/**
+ * AI Models' picture (design B, without the model's pill): ChatGPT, Claude,
+ * Grok and Meta on Connect apps' tiles at 56, fanned in the middle of the
+ * website's grey (`--soft`, #f5f5f7; #1c1c1e on dark), 128 high, as wide as
+ * the card, each over the last by 8, turned as `AIModels.Card.turns`, the
+ * outer two 4 lower; a soft shadow under each.
+ */
+private struct ModelTilesFan: View {
+  @Environment(\.colorScheme) private var scheme
+
+  var body: some View {
+    let marks = AIModels.Card.marks
+    ZStack {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
+      HStack(spacing: -8) {
+        ForEach(Array(marks.enumerated()), id: \.element) { index, provider in
+          ModelTile(provider: provider, size: 56)
+            .rotationEffect(.degrees(AIModels.Card.turns[index]))
+            .offset(y: index == 0 || index == marks.count - 1 ? 4 : 0)
+            .shadow(color: .black.opacity(0.12), radius: 5, x: 0, y: 4)
+        }
+      }
+    }
+    .frame(height: 128)
+    .accessibilityElement()
+    .accessibilityLabel(Text(verbatim: "ChatGPT, Claude, Grok, Meta"))
+  }
+}
+
+/**
+ * A maker's mark on Connect apps' tile (`Marks/<provider>`): white, #2c2c2e
+ * on dark, a hairline and a soft shadow, round as an app's icon, the mark
+ * 0.56 of it in the middle; ChatGPT's and Grok's in the ink, Claude's and
+ * Meta's in their own colours (11 November 2026, the founder: "meta keeps
+ * it blue in dark mode as well").
+ */
+struct ModelTile: View {
+  let provider: String
+  var size: CGFloat = 30
+
+  var body: some View {
+    let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+    ZStack {
+      shape.fill(Ink.appsTile)
+      Image("Marks/\(provider)")
+        .renderingMode(AIModels.Card.coloured.contains(provider) ? .original : .template)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .foregroundStyle(Ink.primary)
+        .frame(width: size * 0.56, height: size * 0.56)
+    }
+    .frame(width: size, height: size)
+    .overlay { shape.inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+    .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+    .accessibilityHidden(true)
   }
 }

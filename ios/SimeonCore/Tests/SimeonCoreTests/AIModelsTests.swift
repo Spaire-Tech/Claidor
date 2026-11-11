@@ -8,7 +8,7 @@ final class AIModelsTests: XCTestCase {
     let plus = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "chatgpt", "kind": "subscription", "label": "ada@example.com", "plan": "plus", "status": "available", "limitedUntil": .null, "createdAt": 1_700_000_000_000]))
     XCTAssertEqual(plus.providerName, "ChatGPT")
     XCTAssertEqual(plus.detail, "Subscription · Plus")
-    XCTAssertEqual(plus.statusWords(), "Usage available")
+    XCTAssertEqual(plus.statusWords(), "Active")
     XCTAssertTrue(plus.usable())
 
     let gone = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "label": "Work", "status": "signed_out"]))
@@ -23,6 +23,16 @@ final class AIModelsTests: XCTestCase {
     XCTAssertNil(ModelAccount(json: nil))
   }
 
+  /** Usage & Billing's Subscriptions lists the plans only (11 November 2026, the founder: "api keys should not be there"). */
+  func testAKeyIsNoSubscription() throws {
+    let plan = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "claude", "kind": "subscription", "label": "Claude", "status": "available"]))
+    let unnamed = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "label": "ChatGPT", "status": "available"]))
+    let key = try XCTUnwrap(ModelAccount(json: ["id": "a3", "provider": "anthropic", "kind": "api_key", "label": "…a1b2", "status": "available"]))
+    XCTAssertTrue(plan.isSubscription)
+    XCTAssertTrue(unnamed.isSubscription, "an account the server names no kind for is a plan's")
+    XCTAssertFalse(key.isSubscription)
+  }
+
   func testALimitSaysUntilWhenAndEndsOnItsOwn() throws {
     let now = Date(timeIntervalSince1970: 1_794_146_400)  // 8 November 2026, 14:00 UTC
     let until = now.addingTimeInterval(2 * 3600)
@@ -32,7 +42,7 @@ final class AIModelsTests: XCTestCase {
     XCTAssertTrue(words.contains("4:00"), "the time, today: \(words)")
     XCTAssertFalse(limited.usable(now: now))
     XCTAssertTrue(limited.usable(now: until.addingTimeInterval(1)), "the limit ends at its time")
-    XCTAssertEqual(limited.statusWords(now: until.addingTimeInterval(1)), "Usage available")
+    XCTAssertEqual(limited.statusWords(now: until.addingTimeInterval(1)), "Active")
   }
 
   func testThePlansUsageAsUsageAndBillingDrawsIt() throws {
@@ -334,7 +344,7 @@ final class AIModelsTests: XCTestCase {
   func testAPlansConsentIsTheAppsPage() {
     let consent = ConnectConsent(modelProvider: AIModels.claude)
     XCTAssertEqual(consent.title, "Claude")
-    XCTAssertEqual(consent.points.map(\.title), ["Put Claude to work", "You stay in charge", "When your plan runs out"])
+    XCTAssertEqual(consent.points.map(\.title), ["What it does", "Control", "When your plan runs out"])
     XCTAssertEqual(consent.smallPrint.first, "You'll sign in on Claude's own page. Simeon never sees your password.")
     XCTAssertNil(consent.note)
   }
@@ -371,7 +381,7 @@ final class AIModelsTests: XCTestCase {
     XCTAssertEqual(ConnectConsent(keyProvider: "bedrock", name: "Amazon Bedrock").provider, "bedrock")
     XCTAssertEqual(ConnectConsent(modelProvider: AIModels.claude).provider, AIModels.claude)
     XCTAssertEqual(consent.title, "DeepSeek")
-    XCTAssertEqual(consent.points.map(\.title), ["Put DeepSeek to work", "Your key stays with Simeon", "You stay in charge"])
+    XCTAssertEqual(consent.points.map(\.title), ["What it does", "Where the key is kept", "Control"])
     XCTAssertEqual(consent.points.map(\.symbol), ["square.stack.3d.up", "lock.shield", "hand.raised"])
     XCTAssertEqual(consent.smallPrint.first, "DeepSeek bills each call on your key, at its own prices.")
     XCTAssertNotEqual(consent, ConnectConsent(keyProvider: "groq", name: "Groq"))

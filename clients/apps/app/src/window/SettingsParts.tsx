@@ -48,7 +48,7 @@ export type SettingsSymbolName =
   | 'bubbleLeft'
   | 'terminal'
   | 'hexagonGrid'
-  | 'sparkles'
+  | 'bubbles'
 
 const symbols: Record<SettingsSymbolName, ReactNode> = {
   gearshape: (
@@ -116,11 +116,11 @@ const symbols: Record<SettingsSymbolName, ReactNode> = {
   ),
   moon: <path d="M13 10.1A5.6 5.6 0 0 1 5.9 3a5.6 5.6 0 1 0 7.1 7.1Z" />,
   display: <path d="M2 3h12v8H2ZM6 14h4" />,
-  // `sparkles` (External Agents, as the Mac's): a four-point star and a small one above it.
-  sparkles: (
+  // `bubble.left.and.bubble.right` (External Agents, as the Mac's): two speech bubbles, one behind the other, the bots and your agents talking.
+  bubbles: (
     <>
-      <path d="M7 3.5c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z" />
-      <path d="M12.5 1.6c.2 1.1.6 1.5 1.7 1.7-1.1.2-1.5.6-1.7 1.7-.2-1.1-.6-1.5-1.7-1.7 1.1-.2 1.5-.6 1.7-1.7Z" />
+      <path d="M6.5 2.5c2.8 0 5 1.7 5 3.9s-2.2 3.9-5 3.9c-.5 0-1-.1-1.5-.2L2.6 11.2l.6-2.1C2.1 8.4 1.5 7.4 1.5 6.4c0-2.2 2.2-3.9 5-3.9Z" />
+      <path d="M12.9 6.9c1 .7 1.6 1.6 1.6 2.7 0 1-.6 1.9-1.6 2.6l.5 1.9-2.1-1c-.5.1-1 .2-1.5.2-1.5 0-2.8-.5-3.7-1.3" />
     </>
   ),
   // `point.3.connected.trianglepath.dotted` (Network): three points, joined.

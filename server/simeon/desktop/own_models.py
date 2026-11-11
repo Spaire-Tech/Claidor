@@ -284,9 +284,6 @@ CHATGPT_MODELS: tuple[OwnModel, ...] = (
         frozenset({"hc_consumption", "law", "promax"}),
     ),
 )
-#: The model for the agents' machinery (titles, summaries, memory).
-CHATGPT_CHEAP = "gpt-6-luna"
-
 #: Claude through Claude Code on the person's computer, each model by its
 #: version (9 November 2026, the founder, from Reason's menu: "Claude Opus
 #: 5.5"…), its slug the name Claude Code takes (`--model claude-opus-5-5`;
@@ -328,9 +325,6 @@ CLAUDE_CODE_TRANSPORT = "claude-code"
 #: Every model a person may choose, in the order the apps list them.
 ALL_MODELS: tuple[OwnModel, ...] = (*CHATGPT_MODELS, *CLAUDE_MODELS, *GROK_MODELS)
 _MODELS: dict[str, OwnModel] = {one.model_id: one for one in ALL_MODELS}
-_CHEAP: dict[str, str] = {
-    model_accounts.PROVIDER_CHATGPT: f"{OWN_PREFIX}chatgpt:{CHATGPT_CHEAP}"
-}
 
 
 def is_own(model_id: str) -> bool:
@@ -435,37 +429,26 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
         chosen = next(
             (m for one in usable for m in _stored_models(one) if m == chosen), chosen
         )
-    cheap = own_model(_CHEAP.get(chosen.provider, "")) or _key_cheap(chosen, usable)
-    if cheap is None or not any(cheap.on_plan(plan) for plan in plans):
-        # The machinery on the chosen model, where the plan has no cheap one.
-        cheap = chosen
+    # Every role on the chosen model (11 November 2026, the founder: "small
+    # jobs is their own plan and chosen model. and make sure everything else
+    # is like that, the api keys included"): the agent, its machinery
+    # (titles, summaries, memory, the safety review) and its helper on the
+    # screen. Until then the machinery ran on a cheaper model of the plan
+    # or the key (GPT-6 Luna, a key provider's `cheap`).
     return [
-        chosen.desktop_model(ModelRole.primary).available(),
-        cheap.desktop_model(ModelRole.cheap).available(),
-        chosen.desktop_model(ModelRole.computer).available(),
+        chosen.desktop_model(role).available()
+        for role in (ModelRole.primary, ModelRole.cheap, ModelRole.computer)
     ]
-
-
-def _key_cheap(
-    chosen: OwnModel, accounts: Sequence[DesktopModelAccount]
-) -> OwnModel | None:
-    """A key provider's cheaper model for the agents' machinery, where the
-    person's key reaches it: their key pays for every title and summary."""
-    one = key_providers.provider(chosen.provider)
-    if one is None or one.cheap is None:
-        return None
-    for account in accounts:
-        for model in _stored_models(account):
-            if model.slug == one.cheap:
-                return model
-    return None
 
 
 def claude_code_row(model: OwnModel, effort: str | None = None) -> dict[str, Any]:
     """The agents' primary model when the person chose Claude: a row on the
     `claude-code` wire, which only an engine that runs turns in Claude Code
     follows, with the effort Claude Code is given (`--effort`). No cheap or
-    computer row: the engine's machinery stays on Simeon's models."""
+    computer row: since 11 November 2026 the engine runs those in Claude Code
+    too, on this model and effort (its helpers, the safety review, memory,
+    summaries; `claude-code-text.ts`), and keeps Simeon's own cheap and
+    computer models only for when Claude Code can't answer."""
     return {
         "modelId": model.model_id,
         "modelName": model.name,
@@ -509,8 +492,9 @@ def codex_body(
     payload: dict[str, Any], slug: str, effort: str | None = None
 ) -> dict[str, Any]:
     """The engine's Responses request as ChatGPT takes it; `effort`, the one
-    the person chose, in place of the engine's own on its real thinking (not
-    on the machinery it asks to think little)."""
+    the person chose, in place of the engine's own on every call, the
+    machinery's too (11 November 2026, the founder: "their own plan and
+    chosen model", "and the effort set")."""
     body: dict[str, Any] = {"model": slug, "stream": True}
     for key in _CODEX_FIELDS:
         if payload.get(key) is not None:
@@ -543,11 +527,7 @@ def codex_body(
         # for none.
         body["reasoning"] = {**reasoning, "effort": "low"}
     reasoning = body.get("reasoning")
-    if (
-        effort is not None
-        and isinstance(reasoning, dict)
-        and reasoning.get("effort") not in {"low"}
-    ):
+    if effort is not None and isinstance(reasoning, dict):
         body["reasoning"] = {**reasoning, "effort": effort}
     body["store"] = False
     return body
@@ -586,7 +566,7 @@ def grok_body(
     payload: dict[str, Any], own: OwnModel, effort: str | None = None
 ) -> dict[str, Any]:
     """The engine's Responses request as Grok takes it; `effort`, the one
-    the person chose, in place of the engine's own on its real thinking."""
+    the person chose, in place of the engine's own on every call."""
     body: dict[str, Any] = {"model": own.slug, "stream": True}
     for key in _GROK_FIELDS:
         if payload.get(key) is not None:
@@ -612,7 +592,7 @@ def grok_body(
         elif asked is not None and taken and asked not in taken:
             # An effort the model lacks ("max"): the highest it has.
             asked = taken[-1]
-        if effort is not None and effort in taken and asked != "low":
+        if effort is not None and effort in taken:
             asked = effort
         body["reasoning"] = {**reasoning, "effort": asked} if asked else reasoning
     body["store"] = False
@@ -886,11 +866,7 @@ def _simeon_stand_in(
     """Simeon's model that answers for `own`: one of its offered models on
     the same wire, in the role the person's model was playing."""
     on_wire = [one for one in offered if one.spoken is SpokenApi.openai_responses]
-    order = (
-        (ModelRole.cheap, ModelRole.primary, ModelRole.fallback)
-        if own.model_id in _CHEAP.values()
-        else (ModelRole.primary, ModelRole.fallback, ModelRole.cheap)
-    )
+    order = (ModelRole.primary, ModelRole.fallback, ModelRole.cheap)
     for role in order:
         for one in on_wire:
             if one.role is role:
@@ -1198,8 +1174,8 @@ def responses_body(
     payload: dict[str, Any], own: OwnModel, effort: str | None, *, plain: bool = False
 ) -> dict[str, Any]:
     """The engine's Responses request for a provider that speaks it: the
-    model the key's, nothing stored there, the person's effort on the
-    agent's real thinking."""
+    model the key's, nothing stored there, the person's effort on every
+    call."""
     body: dict[str, Any] = {"model": own.slug, "stream": True, "store": False}
     for key in _RESPONSES_PLAIN if plain else _RESPONSES_FIELDS:
         if payload.get(key) is not None:
@@ -1607,15 +1583,12 @@ GROK_IMAGE = OwnModel(
 _GROK_RATIOS = ("1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "2:1", "1:2")
 
 
-async def _helper(session: AsyncSession, user: User, chosen: OwnModel) -> OwnModel:
-    """The model that searches: Grok's with the proxy's own search; the
-    account's cheap model where its plan has it; else the chosen."""
+def _helper(chosen: OwnModel) -> OwnModel:
+    """The model that searches: the chosen one (11 November 2026, the
+    founder: "make sure everything else is like that"); on Grok, Grok 4.6,
+    the one model with the proxy's own search."""
     if chosen.provider == model_accounts.PROVIDER_GROK:
         return own_model(f"{OWN_PREFIX}{_GROK}:{GROK_SEARCH}") or chosen
-    cheap = own_model(_CHEAP.get(chosen.provider, ""))
-    plans = [one.plan for one in await _usable(session, user.id, chosen.provider)]
-    if cheap is not None and any(cheap.on_plan(plan) for plan in plans):
-        return cheap
     return chosen
 
 
@@ -1889,7 +1862,7 @@ async def web_search(
     chosen, refused = await _own_gate(session, user)
     if refused is not None or chosen is None:
         return refused
-    model = await _helper(session, user, chosen)
+    model = _helper(chosen)
     is_grok = model.provider == model_accounts.PROVIDER_GROK
     if is_grok:
         # Grok Build's own search (`web_search/client.rs`): one call to the
@@ -1917,7 +1890,8 @@ async def web_search(
             "tools": [{"type": "web_search", "external_web_access": True}],
             "tool_choice": "auto",
             "parallel_tool_calls": False,
-            "reasoning": {"effort": "low"},
+            # The effort the person chose, as on every other call.
+            "reasoning": {"effort": chosen_effort(user) or "low"},
             "store": False,
         }
     answer, refusal = await _on_accounts(

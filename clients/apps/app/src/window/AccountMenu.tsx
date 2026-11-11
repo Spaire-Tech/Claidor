@@ -32,7 +32,9 @@ import { type WebSession, clientVersion } from '../session'
 import './AccountMenu.css'
 import { copyText } from './clipboard'
 import { ContextMenu, type MenuLine } from './ContextMenu'
+import { mascotURL } from './mascots'
 import type { Dismissal } from './MessageActions'
+import { MenuModelTiles } from './ModelTiles'
 import './Settings.css'
 import { PanelDisc, SettingsSymbol } from './SettingsParts'
 import { useBillingReturn } from './SettingsUsage'
@@ -151,10 +153,18 @@ function AccountMenu({
   }
   items.push(
     {
+      // The founder, 11 November 2026: "can you add ai models to the menu bar" (as External Agents, the makers' marks at its end).
+      id: 'aiModels',
+      label: t('AI Models'),
+      icon: <SettingsSymbol name="brain" size={14} />,
+      end: <MenuModelTiles />,
+      action: () => model.openSettings('models'),
+    },
+    {
       // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
       id: 'externalAgents',
       label: t('External Agents'),
-      icon: <SettingsSymbol name="sparkles" size={14} />,
+      icon: <SettingsSymbol name="bubbles" size={14} />,
       end: <BotMascots />,
       action: () => model.openSettings('externalAgents'),
     },
@@ -190,22 +200,36 @@ function AccountMenu({
       items={items}
       at={{ x: at.left, y: at.top - 4 }}
       foot
-      minWidth={228}
+      minWidth={248}
+      className="account-menu"
       close={close}
       label={coreT('Account')}
     />
   )
 }
 
-/** The bots' mascots at External Agents' end (the reference's "Reason with" and its icons): 16 each, each over the last by 3, each round 4. */
+/**
+ * The bots' mascots at External Agents' end, on Connect apps' tiles (11
+ * November 2026, the founder: "can the icons look better than this? like
+ * connect apps icons. with a dark mode as well"): each cut out of its cream
+ * ground on a white tile (#2c2c2e on dark), a hairline and a soft shadow,
+ * the first turned 7° left, the last 7° right, each over the last by 4.
+ */
 function BotMascots() {
   return (
     <span className="menu-mascots" aria-hidden="true">
       {menuIcons.map((icon) => (
-        <img key={icon} src={providerIconURL(icon)} alt="" />
+        <span key={icon} className="menu-mascot">
+          <img src={mascotTileURL(icon)} alt="" />
+        </span>
       ))}
     </span>
   )
+}
+
+/** A bot's mascot cut out of its ground (`assets/mascots/`), its app icon for any other. */
+function mascotTileURL(icon: string): string | undefined {
+  return mascotURL(icon) ?? providerIconURL(icon)
 }
 
 // MARK: The disc

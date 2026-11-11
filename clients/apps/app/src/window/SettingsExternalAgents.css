@@ -1,27 +1,16 @@
 /*
  * Settings › External Agents (SettingsExternalAgents.tsx) at the Mac's
  * measures (mac/Simeon/SettingsExternalAgents.swift): the card with its
- * words and its picture, the bots' gear. The rows, Add and the bot's sheet
+ * words and its picture, on the groups' grey, the bots' gear. The rows, Add and the bot's sheet
  * are AI Models' own (SettingsModels.css: `.models-line`, `.bots-*`).
  */
-:root {
-  /* The picture's ground: the website's grey (`--soft`, #f5f5f7), #1c1c1e on dark. */
-  --agents-picture: #f5f5f7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --agents-picture: #1c1c1e;
-  }
-}
-
 .agents-page {
   display: flex;
   flex-direction: column;
   gap: 22px;
 }
 
-/* The card: on the page's ground, 16 round, a line at 8%, 14 in; its words beside its picture, 24 apart; the picture under the words, as wide as the card, when the panel is narrow. */
+/* The card: the groups' own grey, 16 round, 14 in (11 November 2026, the founder: "it shouldnt be white. make it grey like below"); its words beside its picture, 24 apart; the picture under the words, as wide as the card, when the panel is narrow. */
 .agents-hero {
   container-type: inline-size;
   display: flex;
@@ -29,8 +18,7 @@
   gap: 24px;
   padding: 14px;
   border-radius: 16px;
-  background: var(--grouped-ground);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+  background: var(--grouped-row);
 }
 
 /* Its words: the line (15) over what it does (13, grey), Learn more at the foot, at least 14 under them. */
@@ -81,13 +69,11 @@
   outline-offset: 1px;
 }
 
-/* The picture: 320 by 180 on the website's grey, 12 round; the orbit a dashed line at 12%, Grok Bot at its top, Muse and Dots below either side, Simeon's tile in the middle. */
+/* The picture: 320 by 200 on the card's grey; the circle and the lines at 10%, Grok Bot at its top, Muse and Dots below either side, Simeon in the middle. */
 .agents-picture {
   position: relative;
   flex: 0 0 320px;
-  height: 180px;
-  border-radius: 12px;
-  background: var(--agents-picture);
+  height: 200px;
   overflow: hidden;
 }
 
@@ -97,81 +83,125 @@
   }
 }
 
-/* What it shows, 320 by 180, in the middle of the grey however wide it is. */
+/* What it shows, 320 by 200, in the middle of the grey however wide it is. */
 .agents-scene {
   position: absolute;
   left: 50%;
   top: 0;
   width: 320px;
-  height: 180px;
+  height: 200px;
   transform: translateX(-50%);
 }
 
-.agents-orbit {
+/* The circle the bots sit on and the lines joining each to Simeon: the ink at 10%. */
+.agents-lines {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: color-mix(in srgb, var(--ink) 12%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 10%, transparent);
   stroke-width: 1;
-  stroke-dasharray: 3 4;
 }
 
+/* A bot: its app icon at 40, centred on its place, a soft shadow. */
 .agents-mascot {
   position: absolute;
   display: flex;
-  filter: drop-shadow(0 3px 6px rgb(0 0 0 / 0.1));
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.12));
 }
 
-/* On the orbit at 90°, 210° and 330°, each tilted a little. */
-.agents-mascot-top {
-  left: 50%;
-  top: 16.67%;
-  transform: translate(-50%, -50%) rotate(6deg);
-}
-
-.agents-mascot-left {
-  left: 23.16%;
-  top: 66.67%;
-  transform: translate(-50%, -50%) rotate(-8deg);
-}
-
-.agents-mascot-right {
-  left: 76.84%;
-  top: 66.67%;
-  transform: translate(-50%, -50%) rotate(8deg);
-}
-
-/* Simeon's tile: 72, white in dark mode too (an app's icon), 17 round, its mark (34) black. */
+/* Simeon: his face, round, 64, on his own backdrop, a white ring of 3 and a soft shadow. */
 .agents-simeon {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 17px;
-  background: #ffffff;
+  left: 160px;
+  top: 118px;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #89acbc;
   box-shadow:
-    inset 0 0 0 0.5px rgb(0 0 0 / 0.08),
-    0 6px 20px rgb(0 0 0 / 0.12);
+    0 0 0 3px #ffffff,
+    0 6px 18px rgb(0 0 0 / 0.16);
   transform: translate(-50%, -50%);
 }
 
-.agents-simeon-mark {
-  width: 34px;
-  height: 34px;
-  background: #0d0d0d;
-  mask: url('../assets/providers/simeon-mark.svg') center / contain no-repeat;
-  -webkit-mask: url('../assets/providers/simeon-mark.svg') center / contain
-    no-repeat;
+.agents-simeon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* His whole head and his collar, the hair clear of the edge (SimeonCore's
+     `Picture.simeonZoom` and `simeonLower`): 1.31 times the circle, lowered by
+     0.144 of it. */
+  transform: translateY(14.4%) scale(1.31);
+  transform-origin: 50% 50%;
 }
 
 /* A connected bot's gear: the round glass disc (32), its gear at 15. */
 .agents-gear {
   width: 32px;
   height: 32px;
+}
+
+/* A bot's mascot on Connect apps' tile (the account menu's `.menu-mascot`): white, #2c2c2e on dark, a hairline and a soft shadow, the mascot over the whole tile (11 November 2026, the founder: "the tab in dark mode should not have these white background"). */
+.bot-tile {
+  display: block;
+  flex: none;
+  overflow: hidden;
+  background: var(--logo-card);
+  box-shadow:
+    0 0 0 1px var(--logo-card-hairline),
+    0 1px 1px var(--logo-card-shadow);
+}
+
+.bot-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A coding agent's ways (Claude Code, Codex): each its title, its line and its field, 18 apart. */
+.bots-ways {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bots-way {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bots-way-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.bots-way-line {
+  margin-bottom: 8px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+/* A coding agent's sheet: 520 wide, so each address in its fields (41 characters at most) stays on one line. */
+.sheet.models-sheet.bots-sheet-ways {
+  width: 520px;
+}
+
+/* A command or the words for the agent: 13, wrapped at its spaces, so all of it shows and no address is cut; Copy stays at the field's end. */
+.bots-code .bots-address-text {
+  padding: 8px 0;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font-size: 13px;
+  line-height: 1.45;
 }

@@ -1308,13 +1308,13 @@ struct ChatRowView: View, Equatable {
     case .notice(_, let text):
       EventLine { Text(text) }
     case .modelChange(_, let change):
-      // The events' grey and size, centred; two long names wrap rather than being cut.
+      // The events' grey and size, centred, in their band (`EventLine`); two long names wrap rather than being cut.
       ModelChangeLine(change: change)
         .font(.system(size: 12))
         .foregroundStyle(Ink.secondary)
         .multilineTextAlignment(.center)
         .lineLimit(2)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 24)
         .padding(.horizontal, 16)
     case .failedSend(_, let nonce):
       FailedSendRow(nonce: nonce, agentId: agentId)

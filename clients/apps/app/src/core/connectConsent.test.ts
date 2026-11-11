@@ -41,8 +41,8 @@ describe('the consent (ConnectConsentTests)', () => {
     const consent = connectConsent(stripe, 'Stripe')
     expect(consent.title).toBe('Stripe')
     expect(consent.points.map((point) => point.title)).toEqual([
-      'Put Stripe to work',
-      'You stay in charge',
+      'What it does',
+      'Control',
       'Check their work',
     ])
     expect(consent.points[0]!.body).toBe(
@@ -457,9 +457,9 @@ describe("a plan's or a key's consent (ConnectConsent(keyProvider:))", () => {
     const consent = keyConsent('deepseek', 'DeepSeek')
     expect(consent.id).toBe('key:deepseek')
     expect(consent.points.map((point) => point.title)).toEqual([
-      'Put DeepSeek to work',
-      'Your key stays with Simeon',
-      'You stay in charge',
+      'What it does',
+      'Where the key is kept',
+      'Control',
     ])
     expect(consent.smallPrint[0]).toBe(
       'DeepSeek bills each call on your key, at its own prices.',

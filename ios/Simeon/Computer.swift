@@ -13,18 +13,27 @@ import SimeonCore
  * fitted to the phone and pinched up to four times larger (`ZoomScreen`,
  * ComputerZoom.swift). What is happening at the top with the way out at its
  * right (the checkmark hands the computer back while the person is in
- * control), and at the foot one big blue Take control, with Stop task while
- * the agent works. The founder, after an Apple sign-in on the earlier
- * layout, with the hand among three icons: "that hand icon should be the
- * main thing, not an option." Taking control while the agent works stops
- * it; handing back resumes it. It opens in control while the agent waits on
- * the person. In control a tap is a click, and the phone's keyboard is up
+ * control), and at the foot Stop task while the agent works. Taking control
+ * while the agent works pauses it; handing back, or Watching, lets it go on.
+ * It opens in control while the agent waits on the person. In control a tap
+ * is a click, and the phone's keyboard is up
  * all along (the founder, 26 October 2026: "doesnt matter where i tap, it
  * doesnt work … have the keyboard always up"), the picture above it; a tap
  * on a field the computer can name sets the keyboard's kind (`typingFocus`).
  * The clipboard, at the top left facing the checkmark, pastes from the
- * phone or copies to it; Skip step, while the agent waits on the person,
- * sits under the title. The sheet is always
+ * phone or copies to it. Under the title, Watching or Take control, Apple's
+ * segmented control, as the Mac's pill says who has the computer (11
+ * November 2026, the founder: "there is no picker for watching. when you
+ * click take control, there is no way to go back to watching aside from the
+ * x of quitting"): Watching puts the keyboard away and lets a paused agent
+ * go on; Skip step, while the agent waits on the person, beside it. It is
+ * the one switch, as the Mac's pill is: the big blue Take control that was
+ * at the foot went with it (the founder had asked for the hand to be "the
+ * main thing, not an option" among three icons; it is now one of two, at
+ * the top, where the thumb finds it over the keyboard too). The
+ * keyboard comes up once the picture is there, not over "Starting the
+ * computer…" (the same day: when the agent handed the computer over, it
+ * came up at once and the picture was drawn behind it). The sheet is always
  * dark, as a screen's surround is. The computer's own screen stays 1280 by
  * 800: the agents click by that size (`host/box/box-monitor-layout.ts`).
  * Closing it closes the stream. While helpers work on the computer, the one
@@ -56,6 +65,8 @@ struct ComputerSheet: View {
   @State private var focusAsked = 0
   /** Handing the computer back: the keyboard goes and stays down while the sheet closes. */
   @State private var leaving = false
+  /** Taking control paused the working agent: going back to watching lets it go on. */
+  @State private var paused = false
 
   var body: some View {
     computer
@@ -78,10 +89,10 @@ struct ComputerSheet: View {
   /**
    * The whole computer, drawn by noVNC and zoomable (`ZoomScreen`); its
    * connection opens only while it shows. What is happening at the top with
-   * the way out at its right, the screen across the space between, and at
-   * the foot one big blue Take control
-   * (with Stop task while the agent works), or, in control, Skip step
-   * (while the agent waits on the person) and the clipboard and keyboard.
+   * the way out at its right, under it Watching or Take control (with Skip
+   * step while the agent waits on the person), the screen across the space
+   * between, and at the foot Stop task while the agent works or, in
+   * control, the keyboard.
    */
   @ViewBuilder
   private var computer: some View {
@@ -95,7 +106,8 @@ struct ComputerSheet: View {
         VStack(spacing: 2) {
           Text(control ? "You're in control" : "\(name)'s computer")
             .font(.system(size: 17, weight: .semibold)).foregroundStyle(.white)
-          Text(note ?? (control ? String(localized: "Tap to click · pinch to zoom") : live ? String(localized: "Pinch to zoom") : String(localized: "Watching")))
+          // Watching or in control is the switch's to say, under the title.
+          Text(note ?? (control ? String(localized: "Tap to click · pinch to zoom") : String(localized: "Pinch to zoom")))
             .font(.system(size: 15)).foregroundStyle(.white.opacity(0.55))
             .contentTransition(.opacity)
         }
@@ -138,19 +150,29 @@ struct ComputerSheet: View {
       }
       .padding(.horizontal, 16).padding(.top, 22).padding(.bottom, 12)
       .background(Color(white: 0.11))
-      if control && waitingOnPerson {
-        // Skip step, under the title: the foot of the sheet is the keyboard's.
-        Button { leave(); Haptics.tap(); Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
-          Text("Skip step").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
-            .padding(.horizontal, 18).frame(height: 36)
-            .background(Color(white: 0.2), in: Capsule())
-            .contentShape(Capsule())
+      // Who has the computer, under the title, and Skip step beside it: the foot of the sheet is the keyboard's in control.
+      HStack(spacing: 10) {
+        Picker("Who has the computer", selection: Binding(get: { control }, set: { take in take ? takeControl() : watch() })) {
+          Text("Watching").tag(false)
+          Text("Take control").tag(true)
         }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
-        .padding(.bottom, 12)
-        .background(Color(white: 0.11))
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 260)
+        if control && waitingOnPerson {
+          Button { leave(); Haptics.tap(); Task { await store.handBackComputer(agentId, skip: true); dismiss() } } label: {
+            Text("Skip step").font(.system(size: 15, weight: .medium)).foregroundStyle(.white)
+              .padding(.horizontal, 16).frame(height: 32)
+              .background(Color(white: 0.2), in: Capsule())
+              .contentShape(Capsule())
+          }
+          .buttonStyle(.plain)
+          .fixedSize()
+        }
       }
+      .frame(maxWidth: .infinity)
+      .padding(.horizontal, 16)
+      .padding(.bottom, 12)
+      .background(Color(white: 0.11))
       // In control the keyboard has the foot of the sheet: the helpers are listed under the header instead.
       if control { helperLines(shownHelper, helpers: helpers, focused: focused) }
       ZStack {
@@ -178,9 +200,7 @@ struct ComputerSheet: View {
       .clipped()
       .padding(.top, 8)
       if !control { helperLines(shownHelper, helpers: helpers, focused: focused) }
-      controls(live: live)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
+      controls
     }
     // The screen keeps its size when the keyboard comes up (a new size would undo the zoom); the picture moves above it instead.
     .ignoresSafeArea(.keyboard)
@@ -196,13 +216,15 @@ struct ComputerSheet: View {
     // In control the sheet stays until the checkmark hands the computer back.
     .interactiveDismissDisabled(control)
     .task(id: attempt) { await load() }
-    // In control the keyboard is up all along: it comes up with control, and again if something else took it a moment.
-    .onChange(of: control, initial: true) { _, now in typing = now }
+    // In control the keyboard is up all along once the picture is there: it comes up with control (or with the picture,
+    // when the agent handed the computer over before it was there), and again if something else took it a moment.
+    .onChange(of: control, initial: true) { _, now in typing = now && isLive }
+    .onChange(of: isLive) { _, now in if control && now && !leaving { typing = true } }
     .onChange(of: typing) { _, up in
-      guard !up, control, !leaving else { return }
+      guard !up, control, isLive, !leaving else { return }
       Task {
         try? await Task.sleep(nanoseconds: 300_000_000)
-        if control && !leaving { typing = true }
+        if control && isLive && !leaving { typing = true }
       }
     }
     // In control: the computer's Chrome is made ready to see the taps, so the first one's field is known too.
@@ -231,30 +253,52 @@ struct ComputerSheet: View {
     }
   }
 
-  /** Watching: Stop task (while the agent works) and Take control. In control: nothing, the keyboard is there. */
+  /** Watching: Stop task while the agent works (Take control is the switch under the title). In control: nothing, the keyboard is there. */
   @ViewBuilder
-  private func controls(live: Bool) -> some View {
-    if control {
-      // The keyboard's place: the clipboard and Skip step are at the top.
-      EmptyView()
-    } else {
-      HStack(spacing: 12) {
-        if store.agent(agentId)?.isRunning == true {
-          StopTaskButton(busy: stopping) { stopTask() }
-        }
-        TakeControlButton(enabled: live) { takeControl() }
-      }
-      .padding(.horizontal, 16)
+  private var controls: some View {
+    if !control, store.agent(agentId)?.isRunning == true {
+      StopTaskButton(busy: stopping) { stopTask() }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
     }
   }
 
-  /** Take control: the computer is the person's at once; a working agent is stopped meanwhile (handing back resumes it). */
+  /** The picture is there: the computer can be used. */
+  private var isLive: Bool { screen?.socket != nil && phase == "connected" }
+
+  /**
+   * Take control, the switch under the title: the computer is the person's
+   * at once; a working agent is paused meanwhile (handing back, or Watching,
+   * lets it go on). Before the picture is there too, as a hand-off opens:
+   * the keyboard waits for the picture.
+   */
   private func takeControl() {
+    guard !control else { return }
     Haptics.press()
     control = true
     Task {
-      if await store.takeComputerControl(agentId) { show(String(localized: "\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control.")) }
+      if await store.takeComputerControl(agentId) {
+        paused = true
+        show(String(localized: "\(store.agent(agentId)?.name ?? "The agent") is paused while you're in control."))
+      }
     }
+  }
+
+  /**
+   * Back to watching, the sheet left open (the Mac's Stop): the keyboard
+   * goes away, and an agent that taking control paused goes on. One that
+   * handed the computer over keeps waiting on the person: Take control
+   * again, the checkmark or Skip step answers it.
+   */
+  private func watch() {
+    guard control else { return }
+    Haptics.tap()
+    typing = false
+    control = false
+    guard paused, !waitingOnPerson else { return }
+    paused = false
+    Task { await store.handBackComputer(agentId) }
   }
 
   private func stopTask() {
@@ -354,29 +398,7 @@ struct ComputerSheet: View {
   }
 }
 
-/** The blue Take control: the main button under the agent's computer. */
-struct TakeControlButton: View {
-  let enabled: Bool
-  let action: () -> Void
-
-  /** iOS's own blue (systemBlue in the dark): the one thing to press. */
-  static let blue = Color(red: 0.039, green: 0.518, blue: 1.0)
-
-  var body: some View {
-    Button(action: action) {
-      Label("Take control", systemImage: "hand.point.up.left.fill")
-        .font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
-        .frame(maxWidth: .infinity).frame(height: 56)
-        .background(Self.blue, in: Capsule())
-        .contentShape(Capsule())
-    }
-    .buttonStyle(.plain)
-    .disabled(!enabled)
-    .opacity(enabled ? 1 : 0.5)
-  }
-}
-
-/** Stop task, beside Take control while the agent works: the agent and its helpers stop. */
+/** Stop task, at the foot while the agent works: the agent and its helpers stop. */
 struct StopTaskButton: View {
   let busy: Bool
   let action: () -> Void

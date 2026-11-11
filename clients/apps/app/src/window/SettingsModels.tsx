@@ -38,23 +38,24 @@ import {
 import {
   type ChatGPTPoll,
   type ChatGPTSignIn,
+  claude,
   type ClaudeConnect,
   type ClaudeSignIn,
-  type KeyConnect,
-  type KeyProvider,
-  type AIModelsModel as Model,
-  type ModelAccount,
-  claude,
   grok,
+  type KeyConnect,
   keyFieldName,
   keyFieldNote,
   keyHint,
+  type KeyProvider,
   kindName,
+  type AIModelsModel as Model,
+  type ModelAccount,
+  modelsCard,
   planName,
   planPage,
+  plansPage,
   planUsageLines,
   planUsageUpdated,
-  plansPage,
   providerName,
   shownAddress,
   shownName,
@@ -75,6 +76,8 @@ import './ConnectCards.css'
 import { useConnector } from './connector'
 import { ContextMenu, type MenuLine } from './ContextMenu'
 import { Alert, Sheet } from './Dialogs'
+import { ModelTilesFan } from './ModelTiles'
+import './SettingsExternalAgents.css'
 import './SettingsModels.css'
 import {
   PanelDisc,
@@ -87,6 +90,35 @@ import {
 import { UsageMeterLine } from './SettingsUsage'
 import { useWatched } from './useStore'
 import { useWindowModel } from './windowModel'
+
+/**
+ * The page's card, as External Agents' (11 November 2026, the founder: "ai
+ * models should have the same above", then design B "without the claude
+ * opus 5.5" and with Meta): its words on the left (a line at 15, what it
+ * does at 13 in grey, Learn more in a grey capsule at its foot), the
+ * makers' marks fanned on the right, under the words when the panel is
+ * narrow. In place of the page's lead line.
+ */
+function ModelsHero() {
+  return (
+    <section className="agents-hero">
+      <div className="agents-hero-words">
+        <h3 className="agents-hero-title">{modelsCard.headline()}</h3>
+        <p className="agents-hero-line">{modelsCard.explanation()}</p>
+        <button
+          type="button"
+          className="agents-learn"
+          onClick={() =>
+            window.open(modelsCard.learnMore, '_blank', 'noopener,noreferrer')
+          }
+        >
+          {t('Learn more')}
+        </button>
+      </div>
+      <ModelTilesFan />
+    </section>
+  )
+}
 
 export function SettingsModelsPage({ store }: { store: AppStore }) {
   const model = store.aiModels
@@ -104,9 +136,7 @@ export function SettingsModelsPage({ store }: { store: AppStore }) {
   }, [model])
   return (
     <div className="models-page">
-      <p className="models-lead">
-        {t('Connect providers and choose the models your agents use.')}
-      </p>
+      <ModelsHero />
       {!model.loaded ? (
         model.problem !== undefined ? (
           <SettingsGroup>
@@ -373,7 +403,8 @@ function ModelAccountLine({
  * it takes us to the page"): each connected account, its app's icon, its
  * name over how much of its plan is used ("5-hour limit 42% · Weekly limit
  * 18%"; its plan before its first use; "Signed out" in red), and `›` to its
- * page. None while nothing is connected, so Usage & Billing stays as it was.
+ * page. A plan's accounts only: an API key has no plan's usage (11 November
+ * 2026). None while nothing is connected, so Usage & Billing stays as it was.
  */
 export function SubscriptionsGroup({ store }: { store: AppStore }) {
   const model = store.aiModels
@@ -385,10 +416,11 @@ export function SubscriptionsGroup({ store }: { store: AppStore }) {
     const timer = window.setInterval(() => setNow(new Date()), 30_000)
     return () => window.clearInterval(timer)
   }, [model])
-  if (model.accounts.length === 0) return null
+  const accounts = model.subscriptions
+  if (accounts.length === 0) return null
   return (
     <SettingsGroup title={t('Subscriptions')}>
-      {model.accounts.map((account, index) => {
+      {accounts.map((account, index) => {
         const signedOut = account.status === 'signed_out'
         return (
           <button

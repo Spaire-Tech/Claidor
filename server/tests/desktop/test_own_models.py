@@ -184,17 +184,19 @@ class TestTheRequest:
         kept = own_models.codex_body(_engine_request(), "gpt-6-luna")
         assert kept["reasoning"] == {"effort": "medium"}
 
-    async def test_the_effort_chosen_replaces_the_agents_own_not_the_machinerys(
+    async def test_the_effort_chosen_replaces_the_engines_on_every_call(
         self,
     ) -> None:
         loop = own_models.codex_body(
             {**_engine_request(), "reasoning": {"effort": "high"}}, "gpt-6.1-sol", "low"
         )
         assert loop["reasoning"] == {"effort": "low"}
+        # The machinery's calls too (11 November 2026, the founder: "their own
+        # plan and chosen model", "and the effort set").
         machinery = own_models.codex_body(
             {**_engine_request(), "reasoning": {"effort": "low"}}, "gpt-6.1-sol", "high"
         )
-        assert machinery["reasoning"] == {"effort": "low"}
+        assert machinery["reasoning"] == {"effort": "high"}
         no_choice = own_models.codex_body(
             {**_engine_request(), "reasoning": {"effort": "high"}}, "gpt-6.1-sol"
         )
@@ -272,7 +274,8 @@ class TestTheChoice:
         for row in rows:
             first.setdefault(row["role"], row["modelId"])
         assert first["primary"] == SOL
-        assert first["cheap"] == "own:chatgpt:gpt-6-luna"
+        # Every role on the chosen model, the machinery's too.
+        assert first["cheap"] == SOL
         assert first["computer"] == SOL
         assert first["fallback"] == "gpt-6-sol"
         own_row = rows[0]
@@ -747,7 +750,8 @@ class TestSearchAndPicturesOnTheAccount:
         assert answer.status_code == 200, answer.text
         assert not claude.called
         sent = json.loads(route.calls[0].request.content)
-        assert sent["model"] == "gpt-6-luna"
+        # On the chosen model, as every call on the account.
+        assert sent["model"] == "gpt-6.1-sol"
         assert sent["stream"] is True
         assert sent["store"] is False
         assert sent["tools"] == [{"type": "web_search", "external_web_access": True}]
@@ -761,7 +765,7 @@ class TestSearchAndPicturesOnTheAccount:
             "searches": 1,
         }
         [row] = await _usage(session, user)
-        assert row.model == "own:chatgpt:gpt-6-luna"
+        assert row.model == SOL
         assert row.provider == "chatgpt"
         assert row.credits == 0
         assert row.reason == "search"
@@ -1223,6 +1227,45 @@ class TestClaudeThroughClaudeCode:
             await client.get("/desktop/api/models/available", headers=headers)
         ).json()["data"]
         assert rows[0]["transportApi"] == "claude-code"
+
+    async def test_the_computer_itself_says_signed_out_and_usage(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """11 November 2026: the engine tells both with the computer's own
+        credential, and the routes refused it (401), so AI Models went on
+        showing Claude connected while the chat said it wasn't, and no
+        usage ever showed."""
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        issued = await client.post(
+            "/desktop/api/box/renewal-credential", headers=headers
+        )
+        credential = issued.json()["data"]["credential"]
+        renewed = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        computer = {"Authorization": f"Bearer {renewed.json()['accessToken']}"}
+
+        usage = await client.post(
+            "/desktop/api/models/accounts/claude/usage",
+            headers=computer,
+            json={"windows": [{"kind": "five_hour", "usedPercent": 12}]},
+        )
+        assert usage.status_code == 200, usage.text
+        with capture_logs() as logs:
+            told = await client.post(
+                "/desktop/api/models/accounts/claude/signed-out", headers=computer
+            )
+        assert told.status_code == 200, told.text
+        assert any(
+            one["event"] == "desktop.models.signed_out" and one["by"] == "computer"
+            for one in logs
+        )
+        [account] = (
+            await client.get("/desktop/api/models/accounts", headers=headers)
+        ).json()["accounts"]
+        assert account["status"] == "signed_out"
+        assert account["usage"]["windows"][0]["usedPercent"] == 12
 
     async def test_claude_signed_out_without_a_claude_account_is_nothing(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

@@ -30,15 +30,27 @@
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
+import { currentTurnModel, noteTurnModel } from "../extensions/inference/turn-model.js";
 import { getSandRootDir } from "../host-paths.js";
 import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
-import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow } from "./claude-code-turn.js";
+import { ClaudeCodeMemorySessions, ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeSessionStore } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
+
+/**
+ * Who the turn is (11 November 2026, the founder: "everything should go on
+ * their plan and the effort set"): an agent in its own chat; a helper an
+ * agent started (the one on the computer's screen, the one driving Chrome,
+ * a general one), whose last words are its report to that agent; an agent
+ * in a group chat, whose words reach the room only through SendMessage.
+ */
+export type ClaudeCodeTurnKind = "agent" | "helper" | "room";
 
 /** The hook's input, as the agent's handler gives it (`ClaudeCodeTurnHook` in user-message-action-handler.ts). */
 export interface ClaudeCodeTurnInput {
   readonly ctx: unknown;
   readonly conversationId: string;
+  /** None: an agent in its own chat. */
+  readonly kind?: ClaudeCodeTurnKind;
   readonly brief: string;
   readonly context?: string;
   readonly text: string;
@@ -130,7 +142,9 @@ export function claudeCodeEndingSince(conversationId: string, since: number): Cl
 }
 
 export interface ClaudeCodeAgentTurnOptions {
-  readonly sessions: ClaudeCodeSessions;
+  readonly sessions: ClaudeCodeSessionStore;
+  /** A helper's session, for the length of the engine's run (a helper isn't resumed after a restart). */
+  readonly helperSessions?: ClaudeCodeSessionStore;
   /** The model Claude Code runs on; the roles' `claudeCode` by default. */
   readonly model?: () => string | undefined;
   /** How hard it thinks (`--effort`); the roles' `claudeCodeEffort` by default. */
@@ -139,6 +153,8 @@ export interface ClaudeCodeAgentTurnOptions {
   readonly review?: ((toolName: string, input: Readonly<Record<string, unknown>>, signal: AbortSignal) => Promise<{ allow: boolean; reason?: string }>) | undefined;
   /** Claude didn't answer this turn: the chat says why, once. */
   readonly onFallback?: ((conversationId: string, why: ClaudeCodeFallback, until?: number) => void) | undefined;
+  /** Claude didn't answer a helper's or a group chat's turn: no chat of its own to say so in. */
+  readonly onQuietFallback?: ((why: ClaudeCodeFallback) => void) | undefined;
   /** How much of the plan is used, as Claude Code last said it in the turn (its `rate_limit_event`). */
   readonly onUsage?: ((windows: readonly ClaudeCodePlanWindow[]) => void) | undefined;
   readonly log?: ((line: string) => void) | undefined;
@@ -157,16 +173,40 @@ const MINUTE = 60_000;
  * first command waits on the safety review, 7 to 8 seconds) and answered
  * tersely. The agent is told who it is first, and to answer first.
  */
-export function claudeCodeBriefLead(): string {
+export function claudeCodeBriefLead(kind: ClaudeCodeTurnKind = "agent"): string {
+  if (kind === "helper") {
+    return [
+      "## Who you are",
+      "You are not a coding assistant here. You are a helper one of the person's agents in Simeon started, to do the task below for it with the tools you are given.",
+      "Do the task, then end your turn with what came of it: your last words are your report to the agent that asked. The person doesn't read them.",
+    ].join("\n");
+  }
   return [
     "## Who you are",
-    "You are not a coding assistant here. You are one of the person's agents in Simeon, as the brief below says: answer as that agent, in its own voice.",
+    kind === "room"
+      ? "You are not a coding assistant here. You are one of the person's agents in Simeon, in a group chat with the person and other agents, as the brief below says: speak as that agent, in its own voice."
+      : "You are not a coding assistant here. You are one of the person's agents in Simeon, as the brief below says: answer as that agent, in its own voice.",
     "Answer the person first. Look at files or run commands only when what they asked needs it.",
   ].join("\n");
 }
 
 /** The line added to the brief: where Simeon's own tools are. */
-export function claudeCodeBriefNote(): string {
+export function claudeCodeBriefNote(kind: ClaudeCodeTurnKind = "agent"): string {
+  if (kind === "helper") {
+    return [
+      "## Your Simeon tools",
+      `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`. Use them for the task: the computer's screen (a screenshot comes back as a picture), its browser, its shell (\`mcp__${SIMEON_MCP_SERVER}__Shell\`, which carries the person's safety review; your own Bash is off). Files, web search and web fetch are your own tools.`,
+      "Your last words are your report: say what you did, what you found and what is left, plainly.",
+    ].join("\n");
+  }
+  if (kind === "room") {
+    return [
+      "## Your Simeon tools",
+      `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names.`,
+      `The group chat sees only what you send with \`mcp__${SIMEON_MCP_SERVER}__SendMessage\`: your own text reaches no one, so send everything you want the room to read.`,
+      `Run shell commands with \`mcp__${SIMEON_MCP_SERVER}__Shell\`: it carries the person's safety review, and your own Bash is off. Files, web search and web fetch are your own tools.`,
+    ].join("\n");
+  }
   return [
     "## Your Simeon tools",
     `Simeon's own tools are offered to you over MCP as \`mcp__${SIMEON_MCP_SERVER}__<Name>\`: \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` is the SendMessage above, and so on for each tool this brief names. The person sees only what you send with it; your own text is your scratchpad.`,
@@ -190,9 +230,12 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
   let pausedUntil = 0;
   let toolsNamed = false;
 
-  const fallBack = (conversationId: string, why: ClaudeCodeFallback, pauseMs: number, history: unknown[], until?: number): ClaudeCodeTurnResult => {
+  const helperSessions = options.helperSessions ?? new ClaudeCodeMemorySessions();
+  const fallBack = (conversationId: string, kind: ClaudeCodeTurnKind, why: ClaudeCodeFallback, pauseMs: number, history: unknown[], until?: number): ClaudeCodeTurnResult => {
     pausedUntil = Math.max(pausedUntil, until ?? now() + pauseMs);
-    options.onFallback?.(conversationId, why, until);
+    // Only an agent's own chat says why; a helper or a group chat has none of its own to say it in.
+    if (kind === "agent") options.onFallback?.(conversationId, why, until);
+    else options.onQuietFallback?.(why);
     return history.length > 0 ? { ran: false, history } : { ran: false };
   };
 
@@ -203,6 +246,10 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       const chosenModel = model();
       if (chosenModel === undefined) return { ran: false };
       const chosenEffort = effort();
+      const kind = input.kind ?? "agent";
+      const sessions = kind === "helper" ? helperSessions : options.sessions;
+      // A group chat's turns keep a session of their own: the agent's one-to-one chat isn't resumed with the room's words.
+      const sessionKey = kind === "room" ? `room:${input.conversationId}` : input.conversationId;
       const started = now();
       const calls: string[] = [];
       const answered: BridgeCall[] = [];
@@ -226,11 +273,11 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       let usage: readonly ClaudeCodePlanWindow[] | undefined;
       const server = await startSimeonMcpServer({ tools: () => [...tools, permissionBridgeTool(review)], signal: input.signal, log: options.log });
       try {
-        outcome = await runAgentClaudeCodeTurn(input.conversationId, options.sessions, {
-          prompt: claudeCodePrompt(input.text, input.context, options.sessions.get(input.conversationId) === undefined),
+        outcome = await runAgentClaudeCodeTurn(sessionKey, sessions, {
+          prompt: claudeCodePrompt(input.text, input.context, sessions.get(sessionKey) === undefined),
           model: chosenModel,
           effort: chosenEffort,
-          brief: [claudeCodeBriefLead(), input.brief, claudeCodeBriefNote()].filter((part) => part.trim() !== "").join("\n\n"),
+          brief: [claudeCodeBriefLead(kind), input.brief, claudeCodeBriefNote(kind)].filter((part) => part.trim() !== "").join("\n\n"),
           mcpServers: { [SIMEON_MCP_SERVER]: server.config },
           permissionPromptTool: `mcp__${SIMEON_MCP_SERVER}__${PERMISSION_TOOL_NAME}`,
           disallowedTools: CLAUDE_CODE_TOOLS_OFF,
@@ -246,21 +293,22 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       if (usage !== undefined) {
         try { options.onUsage?.(usage); } catch { /* never in the way of the turn */ }
       }
-      options.log?.(`claude-code turn agent=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
+      options.log?.(`claude-code turn ${kind}=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
       // What it said, whatever the outcome: a turn that moves to Simeon's model after Claude spoke keeps it too.
       const said = claudeCodeHistory(answered, outcome.kind === "done" ? outcome.text : "");
       switch (outcome.kind) {
         case "done":
-          endings.set(input.conversationId, claudeCodeEnding(calls, outcome.text, now()));
+          // How an agent's own turn ended, for its reply (`claudeCodeReplyToSend`); a helper's last words are its report.
+          if (kind === "agent") endings.set(input.conversationId, claudeCodeEnding(calls, outcome.text, now()));
           return { ran: true, text: outcome.text, history: said };
         // The person stopped the turn: it is over, on Claude or not.
         case "aborted": return said.length > 0 ? { ran: true, text: "", history: said } : { ran: true, text: "" };
-        case "limited": return fallBack(input.conversationId, "limited", 60 * MINUTE, said, outcome.until !== undefined && outcome.until > now() ? outcome.until : undefined);
-        case "signed_out": return fallBack(input.conversationId, "signed_out", 5 * MINUTE, said);
-        case "not_installed": return fallBack(input.conversationId, "not_installed", 60 * MINUTE, said);
+        case "limited": return fallBack(input.conversationId, kind, "limited", 60 * MINUTE, said, outcome.until !== undefined && outcome.until > now() ? outcome.until : undefined);
+        case "signed_out": return fallBack(input.conversationId, kind, "signed_out", 5 * MINUTE, said);
+        case "not_installed": return fallBack(input.conversationId, kind, "not_installed", 60 * MINUTE, said);
         // A session it still couldn't find, or a failure: this turn on Simeon's, Claude again next turn after a minute.
         case "no_session":
-        case "failed": return fallBack(input.conversationId, "failed", MINUTE, said);
+        case "failed": return fallBack(input.conversationId, kind, "failed", MINUTE, said);
       }
     },
   };
@@ -291,16 +339,36 @@ export function claudeCodeNoticeDue(agentId: string, why: ClaudeCodeFallback, no
   return true;
 }
 
+/**
+ * Claude Code signed out on this computer: the server is told, so AI Models
+ * shows it (red, with Connect Again) and the agents stop trying Claude until
+ * the person connects it again. Once the server has taken it, the person's
+ * model is Simeon's, and the chat says so as it says any change of model:
+ * "Changed from ✳ Claude Opus 5.5 to ⌘ Simeon" (11 November 2026, the
+ * founder: "can we change that massively long text to the original changed
+ * from x to y"); the agent's next turn, on Simeon's, then writes nothing
+ * more. Should the server not take it, the long line says why instead, at
+ * most once an hour, since the choice is still Claude.
+ */
+export async function claudeCodeSignedOut(agentId: string): Promise<void> {
+  if (await reportClaudeCodeSignedOut()) {
+    const now = currentTurnModel();
+    if (now.provider !== "claude") { await noteTurnModel(agentId, now); return; }
+  }
+  if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, "signed_out")) fallbackNotice(agentId, "signed_out");
+}
+
 /** The engine's hook, made at its first use: sessions on the data volume, lines in the host log. */
 export function claudeCodeTurnHook(): ClaudeCodeTurnHook {
   engineHook ??= createClaudeCodeAgentTurn({
     sessions: new ClaudeCodeSessions(join(getSandRootDir(), CLAUDE_CODE_SESSIONS_FILE)),
     log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
     onFallback: (agentId, why) => {
-      // Signed out: the app shows it, and the agents stop trying Claude until the person connects it again.
-      if (why === "signed_out") void reportClaudeCodeSignedOut();
+      if (why === "signed_out") { void claudeCodeSignedOut(agentId); return; }
       if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, why)) fallbackNotice(agentId, why);
     },
+    // A helper or a group chat found Claude Code signed out: the server is told all the same, so AI Models shows it.
+    onQuietFallback: (why) => { if (why === "signed_out") void reportClaudeCodeSignedOut(); },
     // How much of the plan is used: the apps show it in AI Models, like Usage & Billing.
     onUsage: (windows) => void reportClaudeCodeUsage(windows),
   });

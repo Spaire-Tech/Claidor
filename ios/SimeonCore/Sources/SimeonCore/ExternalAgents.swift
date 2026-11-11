@@ -17,23 +17,112 @@ import Observation
  * `GET /desktop/api/external-agents` (`server/simeon/desktop/external_agents.py`).
  */
 public enum ExternalAgents {
-  /** One of the bots the page always lists: the server's kind, its mascot (`Providers/<icon>`), its name (theirs, never translated), its row's line and its sheet's words. */
+  /**
+   * One of the bots the page always lists: the server's kind, its mascot
+   * (`Mascots/<icon>`), its name (theirs, never translated), its row's line
+   * and its sheet's words. A bot in its maker's cloud is given an address;
+   * a coding agent on the person's computer is shown the ways to connect it
+   * (`ways`).
+   */
   public struct Known: Identifiable, Sendable {
     public let kind: String
     public let icon: String
     public let name: String
     public let line: String
     public let give: String
+    public var ways: [Way] = []
     public var id: String { kind }
   }
 
-  /** Dots, Muse and Grok Bot, in the order the Bots section had them. */
+  /**
+   * One way to connect a coding agent, as its sheet shows it: what it is, a
+   * line under it, and what to copy (11 November 2026, the founder: "can we
+   * add claude code - and i'm guessing codex can do that as well… we need
+   * to show the many ways to do it for both").
+   */
+  public struct Way: Identifiable, Sendable, Equatable {
+    public let title: String
+    public let line: String
+    /** What is copied: words for the agent, or a command for Terminal; never translated. */
+    public let text: String
+    public var id: String { text }
+  }
+
+  /**
+   * Dots, Muse and Grok Bot, in the order the Bots section had them; then
+   * Claude Code and Codex, the coding agents (11 November 2026), each with
+   * the founder's mascot.
+   */
   public static var known: [Known] {
     [
       Known(kind: "dots", icon: "dots", name: "Dots", line: L10n.text("Connect Simeon to ChatGPT Dots."), give: L10n.text("Give this to your Dot.")),
       Known(kind: "muse", icon: "muse", name: "Muse", line: L10n.text("Connect Simeon to Meta Muse."), give: L10n.text("Give this to your Muse.")),
       Known(kind: "grok-bot", icon: "grokbot", name: "Grok Bot", line: L10n.text("Connect Simeon to Grok."), give: L10n.text("Give this to your Bot.")),
+      Known(kind: "claude-code", icon: "claudecode", name: "Claude Code", line: L10n.text("Connect Simeon to Claude Code."), give: waysIntro, ways: ways(for: "Claude Code", command: claudeCodeCommand)),
+      Known(kind: "codex", icon: "codex", name: "Codex", line: L10n.text("Connect Simeon to Codex."), give: waysIntro, ways: ways(for: "Codex", command: codexCommand)),
     ]
+  }
+
+  /** Over a coding agent's ways: any one does it, and each signs in once in the browser. */
+  public static var waysIntro: String { L10n.text("Pick one. Your browser opens once, to sign in to Simeon.") }
+
+  /** What a coding agent is asked: the Simeon Network's skill, which has it connect itself (simeonlabs.com/network/skill.md). */
+  public static let askLine = "Follow the instructions at https://simeonlabs.com/network/skill.md"
+  /**
+   * Claude Code alone, in Terminal: the server added for every project, then
+   * its sign-in (`claude mcp login`, Claude Code 2.1.322). `;`, not `&&`: the
+   * sign-in still runs when the server was added before, and Windows'
+   * PowerShell 5 knows no `&&`.
+   */
+  public static let claudeCodeCommand = "claude mcp add --transport http --scope user simeon https://api.simeonlabs.com/mcp; claude mcp login simeon"
+  /** Codex alone, in Terminal: it signs in as it adds the server ("Detected OAuth support. Starting OAuth flow", Codex 0.167.1). */
+  public static let codexCommand = "codex mcp add simeon --url https://api.simeonlabs.com/mcp"
+  /** Every coding agent on the computer at once: the network's installer adds the server and the skill to each it finds. */
+  public static let installCommand = "curl -fsSL https://simeonlabs.com/network/install.sh | bash"
+
+  /** A coding agent's three ways: ask it, its own command, or the installer for all of them. */
+  public static func ways(for name: String, command: String) -> [Way] {
+    [
+      Way(title: L10n.text("Ask \(name)"), line: L10n.text("Paste this into \(name). It does the rest."), text: askLine),
+      Way(title: L10n.text("In Terminal"), line: L10n.text("Connects \(name) alone."), text: command),
+      Way(title: L10n.text("Every coding agent on your computer"), line: L10n.text("Claude Code, Codex and the others it finds, at once."), text: installCommand),
+    ]
+  }
+
+  /** The icons drawn as mascots, cut out on Connect apps' tile (`Mascots/<icon>`): white, or #2c2c2e on dark. */
+  public static let mascots: Set<String> = ["grokbot", "muse", "dots", "claudecode", "codex"]
+
+  /**
+   * The card's picture, the same on every app (11 November 2026, the
+   * founder: "use simeon avatar if anything and by all means make it
+   * proportionate"): 320 by 200, Simeon's own face (64, round) at its
+   * middle, Grok Bot, Muse and Dots the same size (40) on a circle of 70
+   * around him, 120° apart, each joined to him by a line. He sits 118 down,
+   * so the four of them sit in the picture's middle.
+   */
+  public enum Picture {
+    public static let width = 320.0
+    public static let height = 200.0
+    public static let centerX = 160.0
+    public static let centerY = 118.0
+    public static let radius = 70.0
+    public static let simeon = 64.0
+    public static let bot = 40.0
+    /**
+     * Simeon's portrait in his circle: his whole head and his collar, the
+     * hair clear of the edge (11 November 2026, the founder: "way too
+     * zoomed. back it up. make it proportionate for it not to cut"). A
+     * square of 390 of the portrait's 512 around (257, 200): drawn 1.31
+     * times the circle and lowered by 0.144 of it, so his head is in its
+     * middle.
+     */
+    public static let simeonZoom = 1.31
+    public static let simeonLower = 0.144
+    /** Each bot's mascot and where its middle is. */
+    public static let bots: [(icon: String, x: Double, y: Double)] = [("grokbot", 90.0), ("muse", 210.0), ("dots", 330.0)].map { icon, angle in
+      let radians = angle * .pi / 180
+      return (icon, centerX + radius * cos(radians), centerY - radius * sin(radians))
+    }
   }
 
   /** The mascots the account menu's row shows at its right (the reference's "Reason with" and its icons). */
@@ -53,13 +142,13 @@ public enum ExternalAgents {
     }
   }
 
-  /** The icon for a kind the server names (`network.KINDS`): a known bot's mascot, its maker's mark for a coding agent, nil for one there is none of. */
+  /** The icon for a kind the server names (`network.KINDS`): a known bot's mascot (Claude Code's and Codex's the founder's), its maker's mark for another coding agent, nil for one there is none of. */
   public static func icon(for kind: String) -> String? {
     switch kind {
-    case "dots", "muse": return kind
+    case "dots", "muse", "codex": return kind
     case "grok-bot": return "grokbot"
-    case "claude", "claude-code": return "claude"
-    case "codex": return "openai"
+    case "claude-code": return "claudecode"
+    case "claude": return "claude"
     case "copilot": return "copilot"
     case "gemini": return "google"
     default: return nil
@@ -94,8 +183,8 @@ public enum ExternalAgents {
   public static let disconnectLine = L10n.text("It can’t reach your agents anymore. You can connect it again anytime.")
 
   /** The card's words: what the page is, in a line. */
-  public static let headline = L10n.text("Your agents, in your other assistants")
-  public static let explanation = L10n.text("Connect Grok Bot, Muse, Dots or Claude Code. They can message your agents, follow their work and answer what they ask.")
+  public static let headline = L10n.text("Connect other assistants to Simeon")
+  public static let explanation = L10n.text("Connect Grok Bot, Muse, Dots, Claude Code or Codex. They can message your agents, follow their work and answer what they ask.")
 }
 
 /** One bot the person let in, as the server lists it. */

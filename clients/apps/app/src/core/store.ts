@@ -888,6 +888,10 @@ export class AppStore {
           const isNew = !current.some((line) => line.id === entry.id)
           if (isNew && change.agentId === this.openChat)
             this.arrived.add(entry.id)
+          // "Changed from ✳ Claude Opus 5.5 to ⌘ Simeon": the composer shows the model the agents are on now, read
+          // again from the server (11 November 2026: it went on naming Claude after Claude was signed out).
+          if (isNew && str(field(entry.event, 'type')) === 'model-changed')
+            void this.aiModels.load()
           // The answer growing at the end of the chat: only its own row changes, unless a whole layout is already waiting.
           const growingLast =
             !isNew &&

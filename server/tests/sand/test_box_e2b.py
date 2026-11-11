@@ -941,7 +941,9 @@ class TestOnE2B:
         """9 November 2026: an engine published used to replace every
         computer, which kept only its backup, and Claude Code's sign-in is
         never in it. The new engine now goes onto the same computer, asleep
-        or awake, its backup brought up to date first."""
+        or awake. Its disk is kept, so no backup is asked for first (11
+        November 2026: a backup the computer could not finish put the update
+        off on every wake)."""
         _, cloud = fleet
         access, _ = await _signed_in(client, session, user)
         assert (await _ensure(client, access)).status_code == 200
@@ -953,7 +955,7 @@ class TestOnE2B:
         assert list(e2b.boxes) == ["sbx1"]
         assert len(e2b.created) == 1
         assert ("connect", "sbx1") in e2b.calls
-        assert backups.flushes
+        assert backups.flushes == []
         files = e2b.boxes["sbx1"]["files"]
         assert files["/home/box/sand-host/host-main.cjs.next"][0] == b"// host 2"
         session.expunge_all()

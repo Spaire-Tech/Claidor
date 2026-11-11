@@ -13,10 +13,14 @@ import SwiftUI
  * it shows, the server says what is connected.
  *
  * On a phone the card stands its picture over its words: Simeon among the
- * bots on the website's grey, then the line, what it does and Learn more.
+ * bots on the website's grey, then the line, what it does and Learn more
+ * at the right.
  * Then the bots: a connected one with "Last used …" and a gear whose one
  * item is Disconnect, one not connected yet with its line and +; then Add,
- * for any other bot.
+ * for any other bot. Each bot's mascot on Connect apps' tile (`BotIcon`),
+ * white or #2c2c2e on dark (11 November 2026, the founder: "the tab in dark
+ * mode should not have these white background"); Claude Code and Codex
+ * with the founder's mascots, their sheets showing the ways to connect them.
  */
 struct ExternalAgentsPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -34,7 +38,6 @@ struct ExternalAgentsPage: View {
       Section {
         VStack(alignment: .leading, spacing: 10) {
           ExternalAgentsPicture()
-            .frame(height: 176)
             .padding(.bottom, 6)
           Text(ExternalAgents.headline)
             .font(.system(size: 17, weight: .semibold))
@@ -53,6 +56,8 @@ struct ExternalAgentsPage: View {
               .background(Ink.pillButton, in: Capsule())
           }
           .buttonStyle(.borderless)
+          // On the right, under the words (11 November 2026, the founder: "learn more in iphone should be on the right").
+          .frame(maxWidth: .infinity, alignment: .trailing)
           .padding(.top, 4)
         }
         .padding(.vertical, 8)
@@ -122,15 +127,7 @@ private struct ExternalAgentLine: View {
 
   var body: some View {
     HStack(spacing: 14) {
-      if let icon = row.icon {
-        ProviderIcon(provider: icon, size: 30)
-      } else {
-        Text(verbatim: String(row.name.prefix(1)).uppercased())
-          .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(Ink.secondary)
-          .frame(width: 30, height: 30)
-          .background(Ink.pillButton, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-      }
+      BotIcon(icon: row.icon, name: row.name, size: 30)
       VStack(alignment: .leading, spacing: 2) {
         Text(verbatim: row.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
         if let words = row.connected?.lastUsedWords() ?? row.line {
@@ -164,66 +161,146 @@ private struct ExternalAgentLine: View {
 }
 
 /**
- * The card's picture: Simeon's tile in the middle, Grok Bot, Muse and Dots
- * around it on a faint orbit, on the website's grey (`--soft`, #f5f5f7;
- * #1c1c1e on dark). Simeon's tile stays white, as an app's icon does.
+ * The card's picture (SimeonCore's `ExternalAgents.Picture`): Simeon's own
+ * face in the middle, Grok Bot, Muse and Dots the same size around him,
+ * each joined to him by a line, on the website's grey (`--soft`, #f5f5f7;
+ * #1c1c1e on dark), as wide as the card, what it shows in its middle.
  */
 private struct ExternalAgentsPicture: View {
   @Environment(\.colorScheme) private var scheme
+  typealias P = ExternalAgents.Picture
 
   var body: some View {
-    GeometryReader { geometry in
-      let width = geometry.size.width
-      let height = geometry.size.height
-      let center = CGPoint(x: width / 2, y: height / 2)
-      let radiusX = min(width * 0.31, 110.0)
-      let radiusY = min(height * 0.34, 60.0)
+    ZStack {
+      RoundedRectangle(cornerRadius: 12, style: .continuous)
+        .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
       ZStack {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-          .fill(scheme == .dark ? Color(red: 28 / 255, green: 28 / 255, blue: 30 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 247 / 255))
-        Ellipse()
-          .stroke(Ink.primary.opacity(0.12), style: StrokeStyle(lineWidth: 1, dash: [3, 4]))
-          .frame(width: radiusX * 2, height: radiusY * 2)
-          .position(center)
-        mascot("grokbot", angle: 90, center: center, radiusX: radiusX, radiusY: radiusY, tilt: 6)
-        mascot("muse", angle: 210, center: center, radiusX: radiusX, radiusY: radiusY, tilt: -8)
-        mascot("dots", angle: 330, center: center, radiusX: radiusX, radiusY: radiusY, tilt: 8)
-        Image("Providers/simeon-mark")
-          .renderingMode(.template)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 34, height: 34)
-          .foregroundStyle(Color(red: 13 / 255, green: 13 / 255, blue: 13 / 255))
-          .frame(width: 72, height: 72)
-          .background(Color.white, in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-          .overlay { RoundedRectangle(cornerRadius: 17, style: .continuous).strokeBorder(Color.black.opacity(0.08), lineWidth: 0.5) }
-          .shadow(color: .black.opacity(0.12), radius: 12, x: 0, y: 6)
-          .position(center)
+        Path { path in
+          path.addEllipse(in: CGRect(x: P.centerX - P.radius, y: P.centerY - P.radius, width: P.radius * 2, height: P.radius * 2))
+          for bot in P.bots {
+            path.move(to: CGPoint(x: P.centerX, y: P.centerY))
+            path.addLine(to: CGPoint(x: bot.x, y: bot.y))
+          }
+        }
+        .stroke(Ink.primary.opacity(0.1), lineWidth: 1)
+        ForEach(P.bots, id: \.icon) { bot in
+          BotIcon(icon: bot.icon, name: bot.icon, size: P.bot)
+            .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
+            .position(x: bot.x, y: bot.y)
+        }
+        simeon
+          .position(x: P.centerX, y: P.centerY)
       }
+      .frame(width: P.width, height: P.height)
     }
+    .frame(height: P.height)
+    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     .accessibilityElement()
     .accessibilityLabel(Text("Simeon with Grok Bot, Muse and Dots"))
   }
 
-  /** A mascot on the orbit, at `angle` degrees (0 at the right, 90 at the top). */
-  private func mascot(_ icon: String, angle: Double, center: CGPoint, radiusX: CGFloat, radiusY: CGFloat, tilt: Double) -> some View {
-    let radians = angle * .pi / 180
-    let point = CGPoint(x: center.x + radiusX * CGFloat(cos(radians)), y: center.y - radiusY * CGFloat(sin(radians)))
-    return ProviderIcon(provider: icon, size: 44)
-      .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
-      .rotationEffect(.degrees(tilt))
-      .position(point)
+  /** His face, round, on his own backdrop, a white ring of 3 and a soft shadow. */
+  private var simeon: some View {
+    let face = AgentFaces.simeon
+    return ZStack {
+      Circle().fill(face?.backdrop.map { Color(red: $0.r, green: $0.g, blue: $0.b) } ?? Color(red: 137 / 255, green: 172 / 255, blue: 188 / 255))
+      if let face, let image = AgentPictures.image(.face(face)) {
+        Image(uiImage: image)
+          .resizable()
+          .scaledToFill()
+          .scaleEffect(P.simeonZoom)
+          .offset(y: P.simeonLower * P.simeon)
+      }
+    }
+    .frame(width: P.simeon, height: P.simeon)
+    .clipShape(Circle())
+    .overlay { Circle().strokeBorder(Color.white, lineWidth: 3).padding(-3) }
+    .shadow(color: .black.opacity(0.16), radius: 9, x: 0, y: 6)
   }
 }
 
-/** The bots' mascots at the end of Settings' External Agents row (the reference's "Reason with" and its icons): 20 each, each over the last by 4. */
-struct ExternalAgentsMascots: View {
+/**
+ * A bot's icon: its mascot cut out on Connect apps' tile (white, #2c2c2e on
+ * dark, a hairline and a soft shadow), round as an app's icon; else its
+ * maker's icon; else the first letter of its name.
+ */
+struct BotIcon: View {
+  let icon: String?
+  let name: String
+  var size: CGFloat = 30
+
   var body: some View {
-    HStack(spacing: -4) {
-      ForEach(ExternalAgents.menuIcons, id: \.self) { icon in
-        ProviderIcon(provider: icon, size: 20)
-      }
+    if let icon, ExternalAgents.mascots.contains(icon), UIImage(named: "Mascots/\(icon)") != nil {
+      let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+      Image("Mascots/\(icon)")
+        .resizable()
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: size, height: size)
+        .background(Ink.appsTile)
+        .clipShape(shape)
+        .overlay { shape.inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+        .accessibilityHidden(true)
+    } else if let icon {
+      ProviderIcon(provider: icon, size: size)
+    } else {
+      Text(verbatim: String(name.prefix(1)).uppercased())
+        .font(.system(size: size / 2, weight: .semibold))
+        .foregroundStyle(Ink.secondary)
+        .frame(width: size, height: size)
+        .background(Ink.pillButton, in: RoundedRectangle(cornerRadius: size * 0.23, style: .continuous))
     }
-    .accessibilityHidden(true)
+  }
+}
+
+/**
+ * Settings' External Agents row, drawn as Connect apps is (`ConnectAppsRow`;
+ * 11 November 2026, the founder: "iphone design it literally like connect
+ * apps. meaning blue text and the icons next to it"): the words in the
+ * window's blue, medium, then Grok Bot, Muse and Dots on Connect apps'
+ * tiles (white, #2c2c2e on dark, a hairline and a soft shadow), the first
+ * turned 7° left, the last 7° right, each over the last by 4.5. The
+ * mascots are cut out of their cream ground (`Mascots/`), so a dark tile
+ * stays dark.
+ */
+struct ExternalAgentsRow: View {
+  private static let turns: [Double] = [-7, 0, 7]
+
+  var body: some View {
+    HStack(spacing: 12) {
+      Text("External Agents")
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(Ink.appsBlue)
+        .fixedSize()
+      HStack(spacing: -4.5) {
+        ForEach(Array(ExternalAgents.menuIcons.enumerated()), id: \.element) { index, icon in
+          MascotTile(icon: icon, turn: Self.turns[index % Self.turns.count])
+        }
+      }
+      .accessibilityHidden(true)
+      Spacer(minLength: 0)
+    }
+    .padding(.vertical, 4)
+    .contentShape(.rect)
+  }
+
+  /** One mascot on its tile: 30, round 8, the mascot over the whole tile. */
+  private struct MascotTile: View {
+    let icon: String
+    let turn: Double
+
+    var body: some View {
+      Image("Mascots/\(icon)")
+        .resizable()
+        .interpolation(.high)
+        .aspectRatio(contentMode: .fill)
+        .frame(width: 30, height: 30)
+        .background(Ink.appsTile)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: 8).inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+        .rotationEffect(.degrees(turn))
+    }
   }
 }

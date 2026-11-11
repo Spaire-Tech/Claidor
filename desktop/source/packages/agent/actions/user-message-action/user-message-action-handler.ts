@@ -93,6 +93,8 @@ export interface ClaudeCodeTurnHook {
   run(input: {
     readonly ctx: unknown;
     readonly conversationId: string;
+    /** An agent in its own chat (the default), a helper working for one, or an agent in a group chat. */
+    readonly kind?: "agent" | "helper" | "room";
     readonly brief: string;
     readonly context?: string;
     readonly text: string;
@@ -414,6 +416,7 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     const outcome = await hook.run({
       ctx,
       conversationId: String(configAny.conversationId ?? ""),
+      ...(configAny.claudeCodeKind === undefined ? {} : { kind: configAny.claudeCodeKind }),
       brief,
       ...(userInfo === undefined ? {} : { context: textOf(userInfo) }),
       text: claudeCodeTurnWords(userMessage?.text, prependedTexts),

@@ -73,6 +73,7 @@ async function setUp(bridge) {
   await mkdir(config);
   const sent = [];
   const fallbacks = [];
+  const quiet = [];
   const usage = [];
   const lines = [];
   let clock = 1_794_140_000_000;
@@ -83,14 +84,15 @@ async function setUp(bridge) {
     env: { PATH: process.env.PATH, HOME: dir, SIMEON_CLAUDE_CODE_BIN: bin },
     configDir: config,
     onFallback: (agent, why, until) => fallbacks.push({ agent, why, until }),
+    onQuietFallback: (why) => quiet.push(why),
     onUsage: (windows) => usage.push(windows),
     log: (line) => lines.push(line),
     now: () => clock,
   });
   const tool = bridge.createSendMessageTool({ getIngestAttachment: () => undefined, onSendMessage: (message) => { sent.push(message); return "t1s1"; } });
-  const input = (text, signal = new AbortController().signal) => ({ ctx: bridge.createContext(), conversationId: "nora", brief: "You are Nora.", context: "<user_info>Bass, Paris, 9 November</user_info>", text, tools: [tool], listener: undefined, stateHandler: undefined, signal });
+  const input = (text, signal = new AbortController().signal, extra = {}) => ({ ctx: bridge.createContext(), conversationId: "nora", brief: "You are Nora.", context: "<user_info>Bass, Paris, 9 November</user_info>", text, tools: [tool], listener: undefined, stateHandler: undefined, signal, ...extra });
   return {
-    dir, hook, sent, fallbacks, usage, lines, sessions, input,
+    dir, hook, sent, fallbacks, quiet, usage, lines, sessions, input,
     mode: (value) => writeFile(path.join(config, "mode"), value),
     seen: async () => JSON.parse(await readFile(path.join(config, "seen.json"), "utf8")),
     advance: (ms) => { clock += ms; },
@@ -359,6 +361,106 @@ test("Claude reads the person's own words: the turn keeps them wrapped, never as
     // What Claude Code is then given: the words, never the line for an empty turn.
     assert.equal(bridge.claudeCodePrompt(bridge.claudeCodeTurnWords(kept.text), undefined, false), "can you archive anything not important");
   } finally {
+    await dispose();
+  }
+});
+
+test("Claude signed out: the server is told and the chat says Changed from Claude to Simeon, not the long line", async () => {
+  const { module: hook, dispose } = await load();
+  try {
+    const lines = [];
+    const notices = [];
+    hook.setTurnModelLine((agentId, event) => { lines.push({ agentId, event }); });
+    hook.setClaudeCodeFallbackNotice((agentId, why) => { notices.push({ agentId, why }); });
+    let signedOut = false;
+    const source = {
+      getAccessToken: async () => "simeon_db_stand_in",
+      backendUrl: "https://simeon.example",
+      fetch: async (url) => {
+        if (String(url).endsWith("/models/accounts/claude/signed-out")) { signedOut = true; return Response.json({ account: { status: "signed_out" } }); }
+        // Signed out, the server offers Claude no more: the roles go back to Simeon's.
+        return Response.json({ data: signedOut ? [] : [{ modelId: "own:claude:claude-opus-5-5", role: "primary", transportApi: "claude-code", claudeCodeModel: "claude-opus-5-5" }] });
+      },
+    };
+    hook.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    hook.setSimeonModelRolesSourceForTest(source, Date.now());
+    // The turn started on Claude.
+    await hook.noteTurnModel("agent-1");
+    assert.equal(lines.length, 0);
+
+    await hook.claudeCodeSignedOut("agent-1");
+    assert.deepEqual(notices, [], "no long line");
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0].agentId, "agent-1");
+    assert.equal(lines[0].event.type, "model-changed");
+    assert.equal(lines[0].event.from.provider, "claude");
+    assert.equal(lines[0].event.from.name, "Claude Opus 5.5");
+    assert.deepEqual(lines[0].event.to, { model: null, name: "Simeon", provider: null });
+    // The agent's next turn, on Simeon's: nothing more.
+    await hook.noteTurnModel("agent-1");
+    assert.equal(lines.length, 1);
+
+    // A server that doesn't take it: the choice is still Claude, so the long line says why.
+    hook.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    hook.setSimeonModelRolesSourceForTest({ ...source, fetch: async () => new Response("no", { status: 503 }) }, Date.now());
+    await hook.claudeCodeSignedOut("agent-2");
+    assert.deepEqual(notices, [{ agentId: "agent-2", why: "signed_out" }]);
+    assert.equal(lines.length, 1);
+  } finally {
+    hook.setSimeonModelRolesSourceForTest(undefined);
+    hook.setTurnModelLine(undefined);
+    hook.setClaudeCodeFallbackNotice(undefined);
+    await dispose();
+  }
+});
+
+test("a helper's turn runs in Claude Code too: its own brief, its last words its report, no chat line when Claude can't", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    await box.mode("words");
+    const helper = { conversationId: "nora-helper-1", kind: "helper", brief: "Use the computer to find the dentist's opening hours." };
+    const done = await box.hook.run(box.input("Find the opening hours.", undefined, helper));
+    assert.equal(done.ran, true);
+    assert.equal(done.text, "Tuesday at 10 is booked.");
+    const [seen] = await box.seen();
+    assert.match(seen.brief, /^## Who you are\nYou are not a coding assistant here\. You are a helper one of the person's agents in Simeon started/);
+    assert.match(seen.brief, /your last words are your report to the agent that asked/);
+    assert.match(seen.brief, /a screenshot comes back as a picture/);
+    // A helper's session isn't kept with the agents' on the data volume.
+    assert.equal(box.sessions.get("nora-helper-1"), undefined);
+    assert.ok(box.lines.some((line) => line.startsWith("claude-code turn helper=nora-helper-1 model=opus outcome=done")), box.lines.join("\n"));
+
+    // The plan's limit in a helper: no line in any chat, Simeon's model takes the helper's turn.
+    await box.mode("limit");
+    const limited = await box.hook.run(box.input("Again.", undefined, { ...helper, conversationId: "nora-helper-2" }));
+    assert.equal(limited.ran, false);
+    assert.deepEqual(box.fallbacks, []);
+    assert.deepEqual(box.quiet, ["limited"]);
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("a group chat's turn runs in Claude Code with a session of its own and the room's brief", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    await box.mode("words");
+    const own = await box.hook.run(box.input("Hello"));
+    assert.equal(own.ran, true);
+    const room = await box.hook.run(box.input("What do you all think?", undefined, { kind: "room" }));
+    assert.equal(room.ran, true);
+    const [, roomSeen] = await box.seen();
+    assert.match(roomSeen.brief, /in a group chat with the person and other agents/);
+    assert.match(roomSeen.brief, /your own text reaches no one/);
+    // Its own session: the agent's one-to-one chat is not resumed with the room's words.
+    assert.ok(box.sessions.get("room:nora") !== undefined);
+    assert.notEqual(box.sessions.get("room:nora"), box.sessions.get("nora"));
+    assert.ok(!roomSeen.argv.includes("--resume"));
+  } finally {
+    await box.dispose();
     await dispose();
   }
 });

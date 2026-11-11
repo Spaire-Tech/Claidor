@@ -89,14 +89,18 @@ enum AccountActions {
 
   /**
    * The account menu, Apple's, its foot 4 above the initials and its left
-   * edge on theirs (`top-start`, offset 4), at least 228 wide. Weekly usage
-   * shows once the usage is in hand; opening reads it again when the last
-   * reading is 30 seconds old, and a reading landing while the menu is open
-   * puts the row in (or takes it out after a failure), as the window's does.
+   * edge on theirs (`top-start`, offset 4), its words at 16 (11 November
+   * 2026, the founder: "bigger and taller. not crazily tho"; Apple's are
+   * 14). Weekly usage shows once the usage is in hand, its figure at the
+   * right where External Agents' mascots end (`AccountMenuRows`); opening
+   * reads it again when the last reading is 30 seconds old, and a reading
+   * landing while the menu is open puts the row in (or takes it out after a
+   * failure), as the window's does.
    */
   static func openMenu(above frame: CGRect, store: AppStore, session: MacSession, settings: SettingsState, account: AccountState) {
     let menu = NSMenu(title: AccountMenu.title)
     menu.autoenablesItems = false
+    menu.font = AccountMenuRows.font
     menu.minimumWidth = 228
     let weekly = NSMenuItem(title: AccountMenu.weeklyUsage, action: nil, keyEquivalent: "")
     weekly.image = symbol("gauge.with.needle")
@@ -110,16 +114,21 @@ enum AccountActions {
       // The same reading again leaves the submenu alone (it may be open under the pointer).
       if reading == shown, weekly.menu != nil { return }
       shown = reading
-      weekly.badge = NSMenuItemBadge(string: reading.percent)
+      weekly.attributedTitle = AccountMenuRows.title(AccountMenu.weeklyUsage, part: AccountMenuRows.figure(reading.percent))
       weekly.submenu = usageMenu(reading, settings: settings)
       if weekly.menu == nil { menu.insertItem(weekly, at: 0) }
     }
     show(AccountMenu.reading(store.usage, readAt: store.usageReadAt))
 
+    // The founder, 11 November 2026: "can you add ai models to the menu bar" (as External Agents, the makers' marks at its end).
+    let modelsItem = BlockMenuItem(String(localized: "AI Models")) { settings.open(.models) }
+    modelsItem.image = symbol("brain")
+    modelsItem.attributedTitle = AccountMenuRows.title(String(localized: "AI Models"), part: AccountMenuRows.models())
+    menu.addItem(modelsItem)
     // The founder, 11 November 2026: "in the menu as External Agents - and the agents icons".
     let agentsItem = BlockMenuItem(String(localized: "External Agents")) { settings.open(.externalAgents) }
-    agentsItem.image = symbol("sparkles")
-    agentsItem.attributedTitle = ExternalAgentsMenuRow.title(width: 184)
+    agentsItem.image = symbol("bubble.left.and.bubble.right")
+    agentsItem.attributedTitle = AccountMenuRows.title(String(localized: "External Agents"), part: AccountMenuRows.mascots())
     menu.addItem(agentsItem)
     let settingsItem = BlockMenuItem(AccountMenu.settings) { settings.open(.general) }
     settingsItem.image = symbol("gearshape")
@@ -160,6 +169,7 @@ enum AccountActions {
   private static func usageMenu(_ reading: AccountMenu.Reading, settings: SettingsState) -> NSMenu {
     let menu = NSMenu(title: AccountMenu.weeklyUsage)
     menu.autoenablesItems = false
+    menu.font = AccountMenuRows.font
     menu.minimumWidth = 228
     menu.showsStateColumn = false
     menu.addItem(figure(title: AccountMenu.weeklyUsage, subtitle: reading.reset, value: reading.percent))
@@ -185,8 +195,10 @@ enum AccountActions {
     return item
   }
 
+  /** A row's symbol, at the menu's size. */
   private static func symbol(_ name: String) -> NSImage? {
-    NSImage(systemSymbolName: name, accessibilityDescription: nil)
+    NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+      .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: AccountMenuRows.font.pointSize - 1, weight: .regular))
   }
 }
 

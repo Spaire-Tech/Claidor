@@ -1,4 +1,4 @@
-import { claudeCodeTurnHook } from "../claude-code/claude-code-agent-turn.js";
+import { claudeCodeTurnHook, type ClaudeCodeTurnKind } from "../claude-code/claude-code-agent-turn.js";
 import { refreshSimeonModelRolesBeforeTurn } from "../extensions/inference/simeon-model-roles.js";
 import { noteTurnModel } from "../extensions/inference/turn-model.js";
 import {
@@ -232,6 +232,8 @@ export interface TurnAgentStaticConfigInputs {
   readonly isBoxScopedSubagent: boolean;
   readonly isSubagentRunner: boolean;
   readonly isSharedRoomRunner: boolean;
+  /** A watchVideo / videoReview helper: it runs on the video model, the one Claude Code has no counterpart for. */
+  readonly isVideoSubagent?: boolean;
   readonly sandSendMessageDeliveryOwed: boolean;
   readonly transcriptsFolderAvailable?: boolean;
   readonly backgroundSummarizationPropsOverride?: Partial<
@@ -320,21 +322,31 @@ export function createSandAgentStaticConfig(
     },
     enableTerminalFiles: false,
     enableTranscriptInSummary: true,
-    // The person's own Claude plan runs the agent's own turns through Claude Code (9 November 2026,
-    // docs/your-own-models.md, section 6); never a subagent's, a box-scoped helper's or a shared room's.
-    // Before each of them, the model and effort the person chose read again when the last read is old (a choice made
-    // on the composer applies to the next message, not five minutes later); then, when the agent's turn is on another
-    // model than its last, the chat's line says so ("Changed from Simeon to Claude Opus 5.5", `turn-model.ts`).
-    ...(input.isSubagentRunner || input.isSharedRoomRunner || input.isBoxScopedSubagent
+    // The person's own Claude plan runs the agent's turns through Claude Code (9 November 2026,
+    // docs/your-own-models.md, section 6), and since 11 November 2026 its helpers' and its group chats' too (the
+    // founder: "everything should go on their plan and the effort set"): the helper that uses the computer's screen,
+    // the one that drives Chrome, the general ones, and the agent's turn in a group chat. Only a video helper stays
+    // on the video model, which Claude has no counterpart for. Before each turn, the model and effort the person
+    // chose are read again when the last read is old (a choice made on the composer applies to the next message, not
+    // five minutes later); then, when an agent's own turn is on another model than its last, its chat says so
+    // ("Changed from Simeon to Claude Opus 5.5", `turn-model.ts`).
+    ...(input.isVideoSubagent === true
       ? {}
       : {
           claudeCodeTurn: claudeCodeTurnHook(),
+          claudeCodeKind: claudeCodeKindOf(input),
           beforeTurn: async () => {
             await refreshSimeonModelRolesBeforeTurn();
-            await noteTurnModel(input.conversationId);
+            if (!input.isSubagentRunner && !input.isSharedRoomRunner) await noteTurnModel(input.conversationId);
           },
         }),
   };
+}
+
+/** Who a turn run by Claude Code is: an agent in its own chat, a helper working for one, or an agent in a group chat. */
+export function claudeCodeKindOf(input: { readonly isSubagentRunner: boolean; readonly isSharedRoomRunner: boolean }): ClaudeCodeTurnKind {
+  if (input.isSubagentRunner) return "helper";
+  return input.isSharedRoomRunner ? "room" : "agent";
 }
 
 export interface TurnAgentToolsHandoff {

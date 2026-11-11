@@ -842,6 +842,132 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: AI Models' card, its row in the account menu, "Active"
+
+The founder, of the three designs for a card on AI Models like External
+Agents': "i like B. but without the claude opus 5.5. also add meta icon there
+too. and also can you add ai models to the menu bar. also usage available.
+can we change the wording to Active", then "meta keeps it blue in dark mode
+as well".
+
+- **The card** (`ModelsHero` in `SettingsModels.tsx`) takes the place of
+  the page's line, laid out as External Agents' (`.agents-hero`): "Connect
+  your own AI models", "Use your ChatGPT, Claude or Grok plan, or an API
+  key. Your agents use the model you pick, and Simeon's own when a plan
+  runs out.", Learn more (simeonlabs.com/models), and on the right ChatGPT,
+  Claude, Grok and Meta on Connect apps' tiles at 56, fanned on an arc
+  (`ModelTilesFan`, `ModelTiles.tsx`); no model's pill. When the panel is
+  narrow the picture goes under the words, 112 high.
+- **The marks** are new, 256 square (`assets/marks/`, the Mac's and the
+  iPhone's `Marks/`): ChatGPT's, Claude's and Grok's drawn from the
+  website's own, Meta's cut from its tile. ChatGPT's and Grok's in the ink,
+  Claude's and Meta's in their colours. Meta's small mark (the composer's,
+  the API keys') is blue now too, in both modes.
+- **The account menu** has AI Models above External Agents, the four marks
+  at its end on the same tiles as the bots' mascots; it opens Settings ›
+  AI Models.
+- **"Active"** in green where an account said "Usage available" (the
+  core's `statusWords`; the word in the core's String Catalog, in the nine
+  languages; "Usage available" gone).
+
+Checked: the web app's tests (1,259), typecheck, lint on the changed files,
+the words and build checks, the core's `AIModelsTests` (18) and
+`ExternalAgentsTests` (6) on Linux, the names and translations checks; in
+Chromium on a build of this source against a stand-in server, light, dark,
+French and a narrow window: the menu's row with its four tiles, a click on
+it opening AI Models, the card's words, Learn more opening
+simeonlabs.com/models, the account's "Active", no console errors. Not
+checked: the Mac's and the iPhone's views (no Xcode here; the Swift files
+parse, the core builds).
+
+### 11 November 2026: External Agents: Claude Code and Codex, and dark tiles
+
+The founder, with a screenshot of the page in dark mode: "can we add claude
+code - and i'm guessing codex can do that as well. can we add both to that
+setting tab. only that we need to show the many ways to do it for both in
+the iframe… also the tab in dark mode should not have these white
+background", then the two mascots ("these are the logos for claude code and
+codex").
+
+- **The rows.** Claude Code and Codex join Dots, Muse and Grok Bot as bots
+  the page always lists (`knownBots`), each with the founder's mascot. A
+  connected one shows as before; Claude Code's `claude-code` row now has
+  its mascot, not the Claude app's icon.
+- **Their sheet** ("the iframe"): "Pick one. Your browser opens once, to
+  sign in to Simeon." and three ways, each a title, a line and a field to
+  copy: ask the agent (the network's skill line), its own command in
+  Terminal, or the installer for every coding agent on the computer. 520
+  wide, so no address in a field is cut; commands wrap at their spaces.
+  The commands were checked against the tools themselves (Claude Code
+  2.1.322 here; Codex 0.167.1 from npm): `claude mcp login` exists, and
+  `codex mcp add --url` starts the sign-in itself.
+- **Dark mode.** The mascots were drawn from their cream app tiles; they
+  are now cut out and drawn on Connect apps' tile (`.bot-tile`, the
+  account menu's `--logo-card`), white or #2c2c2e, in the picture, the rows
+  and the sheet. The mascots' addresses come from one place
+  (`window/mascots.ts`), the account menu's too.
+- **Words.** Ten lines in the core's String Catalog, in the nine languages;
+  the card's line names Codex. "Cursor" is one of the project's earlier
+  names, kept only for the network's own pages, so the installer's line
+  says "Claude Code, Codex and the others it finds" rather than list it.
+
+Checked: the web app's tests (1,259) and typecheck, the core's
+`ExternalAgentsTests` on Linux (6), the names and translations checks; in
+Chromium on the rebuilt committed build, light and dark, against a
+stand-in server: every tile white or #2c2c2e with its mascot loaded, the
+Codex sheet's three ways, Copy marks only its own field, Muse's sheet
+unchanged, no console errors. Not checked: the Mac and iPhone views (no
+Xcode here); the commands run against the live server.
+
+### 11 November 2026: the founder's list (account menu, External Agents, the model on the composer)
+
+The founder's list of twelve; what the web and Windows app got from it:
+
+- **The account menu** bigger and taller ("not crazily tho"): words at 15, rows 30 high, the
+  usage figure a capsule 20 high (`account-menu`, a class the menu and its submenus take). External
+  Agents' mascots end where Weekly usage's figure ends ("look at where the usage is and where the
+  icons are?"), and sit on Connect apps' tiles, white or #2c2c2e on dark, turned −7°, 0°, 7°: the
+  mascots are cut out of their cream ground (`assets/mascots/`) so a dark tile stays dark.
+- **External Agents' card** on the groups' own grey, as the rows below it ("it shouldnt be
+  white"), the picture on the same grey; Simeon's face no longer zoomed: his whole head and his
+  collar, 1.31 times his circle and lowered by 0.144 of it (`Picture.simeonZoom`, `simeonLower`).
+- **Usage & Billing's Subscriptions** lists the plans only, never a key ("api keys should not be
+  there").
+- **The composer's model** read again when a "Changed from … to …" line arrives, so it names
+  Simeon once Claude is signed out. The server took no word of a sign-out (or of the plan's usage)
+  from the computer until now: both routes refused its credential.
+- **The lines in the middle** already have the room the founder asked for on the iPhone (a band
+  of 24, 8 above): looked at, left.
+- The consent page's test still asked for "Put Acme CRM to work", the title taken out this morning;
+  it asks for "What it does".
+
+Checked: the web tests, the type check, the words, the committed build. Not checked: the menu and
+the card in a browser beside the Mac's (no Mac here); the mascots' cut-outs were looked at on
+white and dark tiles at 120 points.
+
+### 11 November 2026: no slogan titles
+
+The founder: "make a rule that we never use these kinds of title or phrasing. you x, handled. your
+x, this. i hate that". External Agents' card says "Connect other assistants to Simeon". The connect
+page of a plan says "Run your agents on your ChatGPT plan." and of a key "Run your agents on
+DeepSeek's models with your own API key.". Its points (an app's too) are "What it does",
+"Control" and, for a key, "Where the key is kept", no longer "Put X to work", "You stay in charge"
+and "Your key stays with Simeon". The rule is in CLAUDE.md. Checked: the core's and the web's
+consent and page tests, the words, the committed build.
+
+### 11 November 2026: External Agents' picture redone, its icon two speech bubbles
+
+The founder, of the card's picture: "Does this seems normal to you? Creative? Proportionate? Use
+simeon avatar if anything and by all means make it proportionate. I also dont want the sparkle
+icon." Now Simeon's own face (`clay-simeon`, round, 64, his backdrop, a white ring) sits in the
+middle. Grok Bot, Muse and Dots are the same size (40), 120° apart on a circle of 70 around him,
+each joined to him by a thin line, in a picture of 320 by 200 (SimeonCore's
+`ExternalAgents.Picture`, the same numbers on the Mac, the iPhone and here). The page's icon in
+Settings and the account menu is `bubble.left.and.bubble.right` (the web's `bubbles`), not
+`sparkles`. Checked: the committed build in Chromium, light and dark; the iPhone page drawn at
+iPhone size with the same pictures. Not checked: the Mac and iPhone apps built and run (their
+Swift parses; SimeonCore builds).
+
 ### 11 November 2026: Settings › External Agents, the bots on a page of their own
 
 The founder, with another app's Bots and Channels pages as the references: "i want the bots to have

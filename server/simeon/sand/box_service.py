@@ -273,6 +273,11 @@ _token_check: HealthCheck = gateway_token_rejected
 #: `dev-box-recreate-plane.ts`).
 FLUSH_TIMEOUT_S = 30.0
 
+#: How often a computer whose engine does not answer has it restarted in
+#: place (`_revive`): a restart that did not help is not repeated on every
+#: wake.
+REVIVE_EVERY_S = 600.0
+
 
 async def gateway_flush_box_store(
     url: str, token: str, *, headers: Mapping[str, str] | None = None
@@ -968,6 +973,28 @@ class BoxBrokerService:
         )
         return True
 
+    async def _revive(self, host: BoxHost, box: SandBox) -> bool:
+        """A computer that runs, or was just woken, whose engine does not
+        answer: its engine restarted in place (the published one, its disk
+        kept), at most once every `REVIVE_EVERY_S` (11 November 2026: a
+        computer woken at 3:14 never answered again, and every wake after
+        waited its ninety seconds and gave up, with nothing to bring the
+        engine back). True once the engine answers."""
+        if getattr(host, "update_in_place", None) is None:
+            return False
+        meta = dict(box.host_meta or {})
+        last = meta.get("revived_at")
+        now = time.time()
+        if isinstance(last, int | float) and now - last < REVIVE_EVERY_S:
+            return False
+        box.host_meta = {**meta, "revived_at": int(now)}
+        log.warning("sand.box.revive", box=str(box.id))
+        revived = await self._update_in_place(host, box)
+        log.info(
+            "sand.box.revived" if revived else "sand.box.revive_failed", box=str(box.id)
+        )
+        return revived
+
     async def _token_rejected(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
@@ -1092,10 +1119,27 @@ class BoxBrokerService:
                 )
                 if state != "running":
                     await self.check_capacity(repository, host, box)
-                flushed = state == "running" and await self.flush_box_store(
-                    box, current
+                engine_only = (
+                    stale_host
+                    and not (stale_image or stale_store)
+                    and state == "running"
+                    and credential_live
                 )
-                if flushed and credential_live and busy(await self.health_of(box)):
+                # Only its engine is out of date: the new one goes in in place
+                # first, its disk kept, so no backup is needed (11 November
+                # 2026: the backup was asked for first, and a backup the
+                # computer could not finish put the update off on every
+                # wake, each wake holding the person's computer for two
+                # minutes while it waited, and the computer never came back).
+                updated = engine_only and await self._update_in_place(host, box)
+                flushed = (
+                    not updated
+                    and state == "running"
+                    and await self.flush_box_store(box, current)
+                )
+                if updated:
+                    mark_running(box)
+                elif flushed and credential_live and busy(await self.health_of(box)):
                     # Only out of date, and a message came while its backup
                     # was made: the backup does not have it, and its turn
                     # would die with the old container. Opening the app
@@ -1117,16 +1161,6 @@ class BoxBrokerService:
                     log.warning(
                         "sand.box.update_deferred", box=str(box.id), reason="backup"
                     )
-                    mark_running(box)
-                elif (
-                    stale_host
-                    and not (stale_image or stale_store)
-                    and state == "running"
-                    and credential_live
-                    and await self._update_in_place(host, box)
-                ):
-                    # Only its engine was out of date, and the new one now
-                    # runs on the same computer: nothing is replaced.
                     mark_running(box)
                 else:
                     if state is not None:
@@ -1216,6 +1250,8 @@ class BoxBrokerService:
         # same person then blocked on that lock until the database's
         # statement timeout killed it, and the window could not connect.
         ready = await self.wait_ready(box)
+        if not ready and not created:
+            ready = await self._revive(host, box)
         # How long a woken box took to answer, from the start asked (26
         # October 2026): what waking costs the person, measured.
         wake = (

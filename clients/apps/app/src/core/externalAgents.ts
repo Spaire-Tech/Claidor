@@ -2,7 +2,8 @@
 // SimeonCore's ExternalAgents.swift: the bots the person let in, as the
 // server lists them (`GET external-agents`,
 // server/simeon/desktop/external_agents.py), the page's rows (the connected
-// ones with "Last used …", then Dots, Muse and Grok Bot not connected yet),
+// ones with "Last used …", then Dots, Muse, Grok Bot, Claude Code and Codex
+// not connected yet; the coding agents' sheets show the ways to connect them),
 // and the page's model (read as the page opens; Disconnect said to the
 // server, the list shown as it answers).
 
@@ -10,16 +11,79 @@ import { type JSONValue, arr, field, num, str } from './json'
 import { t } from './l10n'
 import { displayLocale } from './listTime'
 
-/** One of the bots the page always lists: the server's kind, its mascot (`assets/providers/<icon>.png`), its name (theirs, never translated), its row's line and its sheet's words. */
+/**
+ * One of the bots the page always lists: the server's kind, its mascot
+ * (`assets/mascots/<icon>.png`), its name (theirs, never translated), its
+ * row's line and its sheet's words. A bot in its maker's cloud is given an
+ * address; a coding agent on the person's computer is shown the ways to
+ * connect it (`ways`).
+ */
 export interface KnownBot {
   kind: string
   icon: string
   name: string
   line: () => string
   give: () => string
+  ways?: () => BotWay[]
 }
 
-/** Dots, Muse and Grok Bot, in the order the Bots section had them. */
+/**
+ * One way to connect a coding agent, as its sheet shows it: what it is, a
+ * line under it, and what to copy (11 November 2026, the founder: "can we
+ * add claude code - and i'm guessing codex can do that as well… we need to
+ * show the many ways to do it for both").
+ */
+export interface BotWay {
+  title: string
+  line: string
+  /** What is copied: words for the agent, or a command for Terminal; never translated. */
+  text: string
+}
+
+/** Over a coding agent's ways: any one does it, and each signs in once in the browser. */
+export const waysIntro = (): string =>
+  t('Pick one. Your browser opens once, to sign in to Simeon.')
+
+/** What a coding agent is asked: the Simeon Network's skill, which has it connect itself (simeonlabs.com/network/skill.md). */
+export const askLine =
+  'Follow the instructions at https://simeonlabs.com/network/skill.md'
+/**
+ * Claude Code alone, in Terminal: the server added for every project, then
+ * its sign-in (`claude mcp login`, Claude Code 2.1.322). `;`, not `&&`: the
+ * sign-in still runs when the server was added before, and Windows'
+ * PowerShell 5 knows no `&&`.
+ */
+export const claudeCodeCommand =
+  'claude mcp add --transport http --scope user simeon https://api.simeonlabs.com/mcp; claude mcp login simeon'
+/** Codex alone, in Terminal: it signs in as it adds the server ("Detected OAuth support. Starting OAuth flow", Codex 0.167.1). */
+export const codexCommand =
+  'codex mcp add simeon --url https://api.simeonlabs.com/mcp'
+/** Every coding agent on the computer at once: the network's installer adds the server and the skill to each it finds. */
+export const installCommand =
+  'curl -fsSL https://simeonlabs.com/network/install.sh | bash'
+
+/** A coding agent's three ways: ask it, its own command, or the installer for all of them. */
+export function codingAgentWays(name: string, command: string): BotWay[] {
+  return [
+    {
+      title: t`Ask ${name}`,
+      line: t`Paste this into ${name}. It does the rest.`,
+      text: askLine,
+    },
+    {
+      title: t('In Terminal'),
+      line: t`Connects ${name} alone.`,
+      text: command,
+    },
+    {
+      title: t('Every coding agent on your computer'),
+      line: t('Claude Code, Codex and the others it finds, at once.'),
+      text: installCommand,
+    },
+  ]
+}
+
+/** Dots, Muse and Grok Bot, in the order the Bots section had them; then Claude Code and Codex, the coding agents (11 November 2026), each with the founder's mascot. */
 export const knownBots: readonly KnownBot[] = [
   {
     kind: 'dots',
@@ -42,7 +106,32 @@ export const knownBots: readonly KnownBot[] = [
     line: () => t('Connect Simeon to Grok.'),
     give: () => t('Give this to your Bot.'),
   },
+  {
+    kind: 'claude-code',
+    icon: 'claudecode',
+    name: 'Claude Code',
+    line: () => t('Connect Simeon to Claude Code.'),
+    give: waysIntro,
+    ways: () => codingAgentWays('Claude Code', claudeCodeCommand),
+  },
+  {
+    kind: 'codex',
+    icon: 'codex',
+    name: 'Codex',
+    line: () => t('Connect Simeon to Codex.'),
+    give: waysIntro,
+    ways: () => codingAgentWays('Codex', codexCommand),
+  },
 ]
+
+/** The icons drawn as mascots, cut out on Connect apps' tile (`assets/mascots/<icon>.png`): white, or #2c2c2e on dark. */
+export const mascotIcons: ReadonlySet<string> = new Set([
+  'grokbot',
+  'muse',
+  'dots',
+  'claudecode',
+  'codex',
+])
 
 /** The mascots the account menu's row shows at its end (the reference's "Reason with" and its icons). */
 export const menuIcons = ['grokbot', 'muse', 'dots'] as const
@@ -65,19 +154,19 @@ export function botAddress(kind: string | undefined): string {
   return path ? `${botsAddress}/${path}` : botsAddress
 }
 
-/** The icon for a kind the server names (`network.KINDS`): a known bot's mascot, its maker's mark for a coding agent, none for one there is none of. */
+/** The icon for a kind the server names (`network.KINDS`): a known bot's mascot (Claude Code's and Codex's the founder's), its maker's mark for another coding agent, none for one there is none of. */
 export function botIcon(kind: string): string | undefined {
   switch (kind) {
     case 'dots':
     case 'muse':
+    case 'codex':
       return kind
     case 'grok-bot':
       return 'grokbot'
-    case 'claude':
     case 'claude-code':
+      return 'claudecode'
+    case 'claude':
       return 'claude'
-    case 'codex':
-      return 'openai'
     case 'copilot':
       return 'copilot'
     case 'gemini':
@@ -166,10 +255,10 @@ export const disconnectLine = (): string =>
 
 /** The card's words: what the page is, in a line. */
 export const externalAgentsHeadline = (): string =>
-  t('Your agents, in your other assistants')
+  t('Connect other assistants to Simeon')
 export const externalAgentsExplanation = (): string =>
   t(
-    'Connect Grok Bot, Muse, Dots or Claude Code. They can message your agents, follow their work and answer what they ask.',
+    'Connect Grok Bot, Muse, Dots, Claude Code or Codex. They can message your agents, follow their work and answer what they ask.',
   )
 
 export type ExternalAgentsCall = (

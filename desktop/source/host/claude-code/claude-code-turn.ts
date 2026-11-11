@@ -43,6 +43,12 @@ export interface ClaudeCodeTurnInput {
   readonly resume?: string | undefined;
   /** Added to Claude Code's own system prompt: the agent's brief. */
   readonly brief?: string | undefined;
+  /** In place of Claude Code's own system prompt (`--system-prompt-file`): a small job's own instructions. */
+  readonly systemPrompt?: string | undefined;
+  /** Claude Code's own tools offered (`--tools`); empty for none, as a small job that only answers in words. */
+  readonly tools?: readonly string[] | undefined;
+  /** Nothing kept on disk afterwards (`--no-session-persistence`): a one-off job, never resumed. */
+  readonly noSessionPersistence?: boolean | undefined;
   /** `{ mcpServers: { simeon: … } }`, written to a private file for `--mcp-config`. */
   readonly mcpServers?: Readonly<Record<string, unknown>> | undefined;
   /** `mcp__simeon__<Tool>` that answers Claude Code's permission asks. */
@@ -84,12 +90,15 @@ export type ClaudeCodeOutcome =
   | { readonly kind: "failed"; readonly sessionId?: string | undefined; readonly said: string; readonly exitCode: number | null };
 
 /** The arguments for one turn (no prompt: it goes in on stdin). */
-export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: string | undefined; mcp?: string | undefined }, newSession: string | undefined): string[] {
+export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: string | undefined; mcp?: string | undefined; system?: string | undefined }, newSession: string | undefined): string[] {
   const args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--model", input.model];
   if (input.effort !== undefined) args.push("--effort", input.effort);
   if (input.resume !== undefined) args.push("--resume", input.resume);
   else if (newSession !== undefined) args.push("--session-id", newSession);
+  if (input.noSessionPersistence === true) args.push("--no-session-persistence");
+  if (files.system !== undefined) args.push("--system-prompt-file", files.system);
   if (files.brief !== undefined) args.push("--append-system-prompt-file", files.brief);
+  if (input.tools !== undefined) args.push("--tools", input.tools.join(","));
   if (files.mcp !== undefined) args.push("--mcp-config", files.mcp, "--strict-mcp-config");
   if (input.permissionPromptTool !== undefined) args.push("--permission-prompt-tool", input.permissionPromptTool);
   if (input.disallowedTools !== undefined && input.disallowedTools.length > 0) args.push("--disallowedTools", input.disallowedTools.join(","));
@@ -212,8 +221,12 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
   if (await ensureClaudeCode({ env: input.env ?? process.env, waitMs: 120_000, log: logClaudeCode }) !== "ready") return { kind: "not_installed" };
   const newSession = input.resume === undefined ? randomUUID() : undefined;
   const folder = mkdtempSync(path.join(os.tmpdir(), "simeon-claude-turn-"));
-  const files: { brief?: string; mcp?: string } = {};
+  const files: { brief?: string; mcp?: string; system?: string } = {};
   try {
+    if (input.systemPrompt !== undefined && input.systemPrompt.trim() !== "") {
+      files.system = path.join(folder, "system.md");
+      writeFileSync(files.system, input.systemPrompt, { mode: 0o600 });
+    }
     if (input.brief !== undefined && input.brief.trim() !== "") {
       files.brief = path.join(folder, "brief.md");
       writeFileSync(files.brief, input.brief, { mode: 0o600 });
@@ -309,8 +322,23 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
 
 // MARK: Each agent's session
 
+/** Where a turn's Claude Code session is kept between its turns. */
+export interface ClaudeCodeSessionStore {
+  get(agentId: string): string | undefined;
+  set(agentId: string, sessionId: string): void;
+  forget(agentId: string): void;
+}
+
+/** A helper's sessions, for the engine's run only: a helper is done when its task is (`subagent-runtime.ts`). */
+export class ClaudeCodeMemorySessions implements ClaudeCodeSessionStore {
+  private readonly all = new Map<string, string>();
+  get(agentId: string): string | undefined { return this.all.get(agentId); }
+  set(agentId: string, sessionId: string): void { if (SESSION_ID.test(sessionId)) this.all.set(agentId, sessionId); }
+  forget(agentId: string): void { this.all.delete(agentId); }
+}
+
 /** Each agent's Claude Code session, kept on the data volume (`claude-code-sessions.json`). */
-export class ClaudeCodeSessions {
+export class ClaudeCodeSessions implements ClaudeCodeSessionStore {
   constructor(private readonly file: string) {}
 
   private read(): Record<string, string> {
@@ -354,7 +382,7 @@ export class ClaudeCodeSessions {
  * A turn with the agent's own session: resumed when it has one, started
  * afresh when the computer no longer has it, and kept for the next turn.
  */
-export async function runAgentClaudeCodeTurn(agentId: string, sessions: ClaudeCodeSessions, input: Omit<ClaudeCodeTurnInput, "resume">): Promise<ClaudeCodeOutcome> {
+export async function runAgentClaudeCodeTurn(agentId: string, sessions: ClaudeCodeSessionStore, input: Omit<ClaudeCodeTurnInput, "resume">): Promise<ClaudeCodeOutcome> {
   const resume = sessions.get(agentId);
   let outcome = await runClaudeCodeTurn({ ...input, resume });
   if (outcome.kind === "no_session" && resume !== undefined) {

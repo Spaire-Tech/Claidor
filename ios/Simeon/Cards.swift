@@ -2145,7 +2145,14 @@ struct PulsingDot: View {
 
 // MARK: - The lines in the middle: exchanges, calls, routines, notices
 
-/** The small grey type of a line in the middle of the chat (`.sand-system-event`, 12 / 16). */
+/**
+ * The small grey type of a line in the middle of the chat (`.sand-system-event`,
+ * 12 / 16), in a band at least 24 high, its words in the middle of it: the
+ * height a routine's chip gives its line, so every line in the middle has the
+ * same room above and below (11 November 2026, the founder: "there has to be
+ * space between changed from x model to x and the top chat bubble and bottom.
+ * enabled routine does have that"), as the Mac's and the web's do.
+ */
 struct EventLine<Content: View>: View {
   @ViewBuilder let content: Content
 
@@ -2154,7 +2161,8 @@ struct EventLine<Content: View>: View {
       .font(.system(size: 12))
       .foregroundStyle(Ink.secondary)
       .lineLimit(1)
-      .frame(maxWidth: .infinity)
+      // A routine's chip: 16, and 4 above and below.
+      .frame(maxWidth: .infinity, minHeight: 24)
   }
 }
 

@@ -508,7 +508,8 @@ class TestTools:
     ) -> None:
         """Grok Bot added at `/mcp` signs in as Cursor; it named itself
         `grok-bot` and still wrote "Cursor: …" in the agent's chat (11
-        November 2026). A name it chose is how it signs."""
+        November 2026). A name it chose is how it signs. Since the same day
+        its return to Cursor's website says it is Grok Bot from its hello."""
         _, box = await _signed_in_with_box(client, session, user)
         await _copy(client, box, agents=AGENTS)
         bot = await _hello(
@@ -528,7 +529,7 @@ class TestTools:
         await _said(client, bot, "send_message", to="iris", message="Second")
         inbox = DesktopChatInboxRepository.from_session(session)
         prompts = [w.message["prompt"] for w in await inbox.waiting(user.id, 10)]
-        assert prompts == ["Cursor: First", "grok-bot: Second"]
+        assert prompts == ["Grok Bot: First", "Grok Bot: Second"]
 
 
 #: Cursor's one registration, which Grok Bot signs in with too

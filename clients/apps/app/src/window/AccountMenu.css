@@ -129,18 +129,70 @@
   display: flex;
 }
 
-/* External Agents' end: the bots' mascots, 16 each, each over the last by 3, each round 4 (Account.swift's `ExternalAgentsMenuRow`). */
+/*
+ * The account menu, bigger and taller than the window's other menus (11
+ * November 2026, the founder: "that whole menu should be bigger and taller.
+ * not crazily tho"): words at 15, rows 30 high, its glyphs in an 18 column;
+ * the usage figure a capsule 20 high. A row's right-hand part ends where
+ * Weekly usage's figure ends: a row with no submenu keeps the chevron's room
+ * (its 14 and the gap's 9), as the Mac's rows end on one tab
+ * (Account.swift's `AccountMenuRows`).
+ */
+.account-menu .menu-item {
+  gap: 9px;
+  height: 30px;
+  padding: 0 10px 0 9px;
+  font-size: 15px;
+}
+
+.account-menu .menu-glyph {
+  width: 18px;
+  height: 18px;
+}
+
+.account-menu .menu-badge {
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.account-menu .menu-item:not([aria-haspopup]) > .menu-end {
+  margin-right: 23px;
+}
+
+/* External Agents' mascots on Connect apps' tiles (`.connect-apps-tile`): 18, round 5, each over the last by 4, the first turned 7° left and the last 7° right. */
 .menu-mascots {
   display: flex;
+  align-items: center;
 }
 
-.menu-mascots img {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+.menu-mascot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin-left: -4px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--logo-card);
+  box-shadow:
+    0 0 0 1px var(--logo-card-hairline),
+    0 1px 1px var(--logo-card-shadow);
+}
+
+.menu-mascot:first-child {
+  margin-left: 0;
+  transform: rotate(-7deg);
+}
+
+.menu-mascot:last-child {
+  transform: rotate(7deg);
+}
+
+.menu-mascot img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-}
-
-.menu-mascots img + img {
-  margin-left: -3px;
 }
