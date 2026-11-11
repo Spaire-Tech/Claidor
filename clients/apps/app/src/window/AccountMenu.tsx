@@ -32,6 +32,7 @@ import { type WebSession, clientVersion } from '../session'
 import './AccountMenu.css'
 import { copyText } from './clipboard'
 import { ContextMenu, type MenuLine } from './ContextMenu'
+import { mascotURL } from './mascots'
 import type { Dismissal } from './MessageActions'
 import './Settings.css'
 import { PanelDisc, SettingsSymbol } from './SettingsParts'
@@ -210,22 +211,16 @@ function BotMascots() {
     <span className="menu-mascots" aria-hidden="true">
       {menuIcons.map((icon) => (
         <span key={icon} className="menu-mascot">
-          <img src={mascotURL(icon)} alt="" />
+          <img src={mascotTileURL(icon)} alt="" />
         </span>
       ))}
     </span>
   )
 }
 
-const mascotURLs: Record<string, string> = {
-  grokbot: new URL('../assets/mascots/grokbot.png', import.meta.url).href,
-  muse: new URL('../assets/mascots/muse.png', import.meta.url).href,
-  dots: new URL('../assets/mascots/dots.png', import.meta.url).href,
-}
-
 /** A bot's mascot cut out of its ground (`assets/mascots/`), its app icon for any other. */
-function mascotURL(icon: string): string {
-  return mascotURLs[icon] ?? providerIconURL(icon)
+function mascotTileURL(icon: string): string | undefined {
+  return mascotURL(icon) ?? providerIconURL(icon)
 }
 
 // MARK: The disc

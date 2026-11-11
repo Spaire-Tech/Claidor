@@ -842,6 +842,45 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: External Agents: Claude Code and Codex, and dark tiles
+
+The founder, with a screenshot of the page in dark mode: "can we add claude
+code - and i'm guessing codex can do that as well. can we add both to that
+setting tab. only that we need to show the many ways to do it for both in
+the iframe… also the tab in dark mode should not have these white
+background", then the two mascots ("these are the logos for claude code and
+codex").
+
+- **The rows.** Claude Code and Codex join Dots, Muse and Grok Bot as bots
+  the page always lists (`knownBots`), each with the founder's mascot. A
+  connected one shows as before; Claude Code's `claude-code` row now has
+  its mascot, not the Claude app's icon.
+- **Their sheet** ("the iframe"): "Pick one. Your browser opens once, to
+  sign in to Simeon." and three ways, each a title, a line and a field to
+  copy: ask the agent (the network's skill line), its own command in
+  Terminal, or the installer for every coding agent on the computer. 520
+  wide, so no address in a field is cut; commands wrap at their spaces.
+  The commands were checked against the tools themselves (Claude Code
+  2.1.322 here; Codex 0.167.1 from npm): `claude mcp login` exists, and
+  `codex mcp add --url` starts the sign-in itself.
+- **Dark mode.** The mascots were drawn from their cream app tiles; they
+  are now cut out and drawn on Connect apps' tile (`.bot-tile`, the
+  account menu's `--logo-card`), white or #2c2c2e, in the picture, the rows
+  and the sheet. The mascots' addresses come from one place
+  (`window/mascots.ts`), the account menu's too.
+- **Words.** Ten lines in the core's String Catalog, in the nine languages;
+  the card's line names Codex. "Cursor" is one of the project's earlier
+  names, kept only for the network's own pages, so the installer's line
+  says "Claude Code, Codex and the others it finds" rather than list it.
+
+Checked: the web app's tests (1,259) and typecheck, the core's
+`ExternalAgentsTests` on Linux (6), the names and translations checks; in
+Chromium on the rebuilt committed build, light and dark, against a
+stand-in server: every tile white or #2c2c2e with its mascot loaded, the
+Codex sheet's three ways, Copy marks only its own field, Muse's sheet
+unchanged, no console errors. Not checked: the Mac and iPhone views (no
+Xcode here); the commands run against the live server.
+
 ### 11 November 2026: the founder's list (account menu, External Agents, the model on the composer)
 
 The founder's list of twelve; what the web and Windows app got from it:

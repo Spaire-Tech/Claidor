@@ -9699,6 +9699,64 @@
         }
       }
     },
+    "Ask %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frag %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregúntale a %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demande à %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi a %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag het aan %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poproś %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peça ao %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Be %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ üzerinden"
+          }
+        }
+      }
+    },
     "Changed from %@ to %@" : {
       "localizations" : {
         "de" : {
@@ -9932,6 +9990,64 @@
         }
       }
     },
+    "Claude Code, Codex and the others it finds, at once." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex und die anderen, die es findet, auf einmal."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex y los demás que encuentre, a la vez."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex et les autres qu’il trouve, d’un coup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e gli altri che trova, in una volta."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex en de andere die het vindt, in één keer."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex i inne, które znajdzie, naraz."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex e os outros que ele encontrar, de uma vez."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex och de andra den hittar, på en gång."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code, Codex ve bulduğu diğerleri, tek seferde."
+          }
+        }
+      }
+    },
     "Claude Pro or Max? Connect Claude under Subscriptions." : {
       "localizations" : {
         "de" : {
@@ -9990,60 +10106,60 @@
         }
       }
     },
-    "Connect Grok Bot, Muse, Dots or Claude Code. They can message your agents, follow their work and answer what they ask." : {
+    "Connect Grok Bot, Muse, Dots, Claude Code or Codex. They can message your agents, follow their work and answer what they ask." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbinde Grok Bot, Muse, Dots oder Claude Code. Sie können deinen Agenten schreiben, ihre Arbeit verfolgen und ihre Fragen beantworten."
+            "value" : "Verbinde Grok Bot, Muse, Dots, Claude Code oder Codex. Sie können deinen Agenten schreiben, ihre Arbeit verfolgen und ihre Fragen beantworten."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecta Grok Bot, Muse, Dots o Claude Code. Pueden escribir a tus agentes, seguir su trabajo y responder lo que preguntan."
+            "value" : "Conecta Grok Bot, Muse, Dots, Claude Code o Codex. Pueden escribir a tus agentes, seguir su trabajo y responder lo que preguntan."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connecte Grok Bot, Muse, Dots ou Claude Code. Ils peuvent écrire à tes agents, suivre leur travail et répondre à leurs questions."
+            "value" : "Connecte Grok Bot, Muse, Dots, Claude Code ou Codex. Ils peuvent écrire à tes agents, suivre leur travail et répondre à leurs questions."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Collega Grok Bot, Muse, Dots o Claude Code. Possono scrivere ai tuoi agenti, seguirne il lavoro e rispondere alle loro domande."
+            "value" : "Collega Grok Bot, Muse, Dots, Claude Code o Codex. Possono scrivere ai tuoi agenti, seguirne il lavoro e rispondere alle loro domande."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koppel Grok Bot, Muse, Dots of Claude Code. Ze kunnen je agenten berichten sturen, hun werk volgen en antwoorden op wat ze vragen."
+            "value" : "Koppel Grok Bot, Muse, Dots, Claude Code of Codex. Ze kunnen je agenten berichten sturen, hun werk volgen en antwoorden op wat ze vragen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Połącz Grok Bota, Muse, Dots lub Claude Code. Mogą pisać do twoich agentów, śledzić ich pracę i odpowiadać na ich pytania."
+            "value" : "Połącz Grok Bota, Muse, Dots, Claude Code lub Codex. Mogą pisać do twoich agentów, śledzić ich pracę i odpowiadać na ich pytania."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecte Grok Bot, Muse, Dots ou Claude Code. Eles podem mandar mensagens para seus agentes, acompanhar o trabalho deles e responder ao que perguntam."
+            "value" : "Conecte Grok Bot, Muse, Dots, Claude Code ou Codex. Eles podem mandar mensagens para seus agentes, acompanhar o trabalho deles e responder ao que perguntam."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anslut Grok Bot, Muse, Dots eller Claude Code. De kan skriva till dina agenter, följa deras arbete och svara på det de frågar."
+            "value" : "Anslut Grok Bot, Muse, Dots, Claude Code eller Codex. De kan skriva till dina agenter, följa deras arbete och svara på det de frågar."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grok Bot, Muse, Dots veya Claude Code'u bağla. Ajanlarına yazabilir, işlerini takip edebilir ve sorduklarını yanıtlayabilirler."
+            "value" : "Grok Bot, Muse, Dots, Claude Code veya Codex'i bağla. Ajanlarına yazabilir, işlerini takip edebilir ve sorduklarını yanıtlayabilirler."
           }
         }
       }
@@ -10102,6 +10218,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon'u ChatGPT Dots'a bağla."
+          }
+        }
+      }
+    },
+    "Connect Simeon to Claude Code." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbinde Simeon mit Claude Code."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta Simeon a Claude Code."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecte Simeon à Claude Code."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega Simeon a Claude Code."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel Simeon aan Claude Code."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz Simeona z Claude Code."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte o Simeon ao Claude Code."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut Simeon till Claude Code."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon'u Claude Code'a bağla."
+          }
+        }
+      }
+    },
+    "Connect Simeon to Codex." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbinde Simeon mit Codex."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta Simeon a Codex."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecte Simeon à Codex."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega Simeon a Codex."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppel Simeon aan Codex."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Połącz Simeona z Codexem."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecte o Simeon ao Codex."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anslut Simeon till Codex."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simeon'u Codex'e bağla."
           }
         }
       }
@@ -10218,6 +10450,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Simeon'u Meta Muse'a bağla."
+          }
+        }
+      }
+    },
+    "Connects %@ alone." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindet nur %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta solo %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecte seulement %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collega solo %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppelt alleen %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Łączy tylko %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta só o %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansluter bara %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yalnızca %@ bağlanır."
           }
         }
       }
@@ -10570,6 +10860,64 @@
         }
       }
     },
+    "Every coding agent on your computer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Coding-Agenten auf deinem Computer"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los agentes de código de tu ordenador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les agents de code de ton ordinateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti gli agenti di codice sul tuo computer"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle codeeragenten op je computer"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszyscy agenci programistyczni na twoim komputerze"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos os agentes de código do seu computador"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alla kodagenter på din dator"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilgisayarındaki tüm kodlama ajanları"
+          }
+        }
+      }
+    },
     "Give this to your Bot." : {
       "localizations" : {
         "de" : {
@@ -10860,6 +11208,64 @@
         }
       }
     },
+    "In Terminal" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Terminal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Terminal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dans Terminal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nel Terminale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Terminal"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W Terminalu"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Terminal"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I Terminal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminal'de"
+          }
+        }
+      }
+    },
     "It can’t reach your agents anymore. You can connect it again anytime." : {
       "localizations" : {
         "de" : {
@@ -11088,6 +11494,122 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aylık sınır"
+          }
+        }
+      }
+    },
+    "Paste this into %@. It does the rest." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge das in %@ ein. Den Rest erledigt es selbst."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pega esto en %@. Hace el resto solo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colle ceci dans %@. Il s’occupe du reste."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incolla questo in %@. Al resto pensa lui."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plak dit in %@. Het doet de rest."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wklej to do %@. Resztę zrobi samo."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cole isto no %@. Ele faz o resto."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klistra in det här i %@. Den gör resten."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bunu %@ içine yapıştır. Gerisini o halleder."
+          }
+        }
+      }
+    },
+    "Pick one. Your browser opens once, to sign in to Simeon." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle eins. Dein Browser öffnet sich einmal, damit du dich bei Simeon anmeldest."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige uno. Tu navegador se abre una vez para iniciar sesión en Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisis-en un. Ton navigateur s’ouvre une fois, pour te connecter à Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegline uno. Il browser si apre una volta, per accedere a Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies er één. Je browser opent één keer, om in te loggen bij Simeon."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz jeden. Przeglądarka otworzy się raz, żebyś zalogował się do Simeona."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha um. Seu navegador abre uma vez, para entrar no Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj ett. Din webbläsare öppnas en gång så att du loggar in på Simeon."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birini seç. Simeon'a giriş yapman için tarayıcın bir kez açılır."
           }
         }
       }

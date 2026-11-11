@@ -15,7 +15,11 @@ import SimeonCore
  * A card that says in a line what the page is, with Learn more (the docs)
  * and its picture; then the bots in one group, no title over it: a connected
  * one with "Last used …" and the gear whose one item is Disconnect, one not
- * connected yet with its line and +; then Add, for any other bot.
+ * connected yet with its line and +; then Add, for any other bot. Each
+ * bot's mascot on Connect apps' tile (`MacBotIcon`), white or #2c2c2e on
+ * dark (11 November 2026, the founder: "the tab in dark mode should not
+ * have these white background"); Claude Code and Codex with the founder's
+ * mascots, their sheets showing the ways to connect them.
  */
 struct SettingsExternalAgentsPage: View {
   let look: Look
@@ -149,7 +153,7 @@ struct ExternalAgentsPicture: View {
         }
         .stroke(look.ink.opacity(0.1), lineWidth: 1)
         ForEach(P.bots, id: \.icon) { bot in
-          MacProviderIcon(provider: bot.icon, look: look, side: P.bot)
+          MacBotIcon(icon: bot.icon, name: bot.icon, look: look, side: P.bot)
             .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
             .position(x: bot.x, y: bot.y)
         }
@@ -197,11 +201,7 @@ private struct MacExternalAgentLine: View {
 
   var body: some View {
     HStack(spacing: 12) {
-      if let icon = row.icon {
-        MacProviderIcon(provider: icon, look: look, side: 28)
-      } else {
-        AppLogoTile(name: row.name, look: look, side: 28)
-      }
+      MacBotIcon(icon: row.icon, name: row.name, look: look, side: 28)
       VStack(alignment: .leading, spacing: 2) {
         Text(verbatim: row.name).font(PanelType.row).foregroundStyle(look.ink).lineLimit(1)
         if let words = row.connected?.lastUsedWords() ?? row.line {
@@ -235,6 +235,38 @@ private struct MacExternalAgentLine: View {
     .padding(.vertical, 10)
     .frame(minHeight: SettingsRowSize.minHeight)
     .overlay(alignment: .top) { if divided { SettingsDivider(look: look) } }
+  }
+}
+
+/**
+ * A bot's icon: its mascot cut out on Connect apps' tile (white, #2c2c2e on
+ * dark, a hairline and a soft shadow, as the sidebar's `LogoTile`), round
+ * as an app's icon; else its maker's icon; else the first letter of its name.
+ */
+struct MacBotIcon: View {
+  let icon: String?
+  let name: String
+  let look: Look
+  let side: CGFloat
+
+  var body: some View {
+    if let icon, ExternalAgents.mascots.contains(icon), let mascot = NSImage(named: "Mascots/\(icon)") {
+      let shape = RoundedRectangle(cornerRadius: side * 0.2237, style: .continuous)
+      Image(nsImage: mascot)
+        .resizable()
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: side, height: side)
+        .background(look.tile)
+        .clipShape(shape)
+        .overlay { shape.inset(by: -0.5).stroke(look.tileHairline, lineWidth: 1) }
+        .shadow(color: look.tileShadow, radius: 1, x: 0, y: 1)
+        .accessibilityHidden(true)
+    } else if let icon {
+      MacProviderIcon(provider: icon, look: look, side: side)
+    } else {
+      AppLogoTile(name: name, look: look, side: side)
+    }
   }
 }
 

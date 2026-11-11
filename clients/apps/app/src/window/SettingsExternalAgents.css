@@ -144,3 +144,64 @@
   width: 32px;
   height: 32px;
 }
+
+/* A bot's mascot on Connect apps' tile (the account menu's `.menu-mascot`): white, #2c2c2e on dark, a hairline and a soft shadow, the mascot over the whole tile (11 November 2026, the founder: "the tab in dark mode should not have these white background"). */
+.bot-tile {
+  display: block;
+  flex: none;
+  overflow: hidden;
+  background: var(--logo-card);
+  box-shadow:
+    0 0 0 1px var(--logo-card-hairline),
+    0 1px 1px var(--logo-card-shadow);
+}
+
+.bot-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A coding agent's ways (Claude Code, Codex): each its title, its line and its field, 18 apart. */
+.bots-ways {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bots-way {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bots-way-title {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.bots-way-line {
+  margin-bottom: 8px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+/* A coding agent's sheet: 520 wide, so each address in its fields (41 characters at most) stays on one line. */
+.sheet.models-sheet.bots-sheet-ways {
+  width: 520px;
+}
+
+/* A command or the words for the agent: 13, wrapped at its spaces, so all of it shows and no address is cut; Copy stays at the field's end. */
+.bots-code .bots-address-text {
+  padding: 8px 0;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font-size: 13px;
+  line-height: 1.45;
+}

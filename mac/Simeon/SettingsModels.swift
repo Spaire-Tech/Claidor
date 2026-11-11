@@ -162,26 +162,30 @@ struct SettingsModelsPage: View {
 
 /**
  * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
- * and "Add a bot" for any other; the glass disc that closes it; who to give
- * the address to, in that bot's words ("Give this to your Muse."); the
- * address in its field with Copy inside it; MCP details, which open what the
- * bot can do once it is in. Simeon's tile stays white in dark mode too, as
- * an app's icon does (the founder: "keep it how it is for that frame. white").
+ * and "Add a bot" for any other; the glass disc that closes it. A bot in its
+ * maker's cloud: who to give the address to, in that bot's words ("Give
+ * this to your Muse."), the address in its field with Copy inside it. A
+ * coding agent (Claude Code, Codex; 11 November 2026, the founder: "we need
+ * to show the many ways to do it for both"): "Pick one…" and its ways, each
+ * a title, a line and what to copy, the sheet 520 wide so no address in
+ * them is cut. Then MCP details, which open what the bot can do once it is
+ * in. Simeon's tile stays white in dark mode too, as an app's icon does
+ * (the founder: "keep it how it is for that frame. white").
  */
 struct MacAddBotSheet: View {
   let bot: String
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
-  @State private var copied = false
   @State private var details = false
 
   var body: some View {
     let look = Look(scheme)
     let known = ExternalAgents.known.first { $0.kind == bot }
+    let ways = known?.ways ?? []
     VStack(alignment: .leading, spacing: 18) {
       HStack(spacing: 14) {
         if let known {
-          MacProviderIcon(provider: known.icon, look: look, side: 44)
+          MacBotIcon(icon: known.icon, name: known.name, look: look, side: 44)
         } else {
           Image("Providers/simeon-mark")
             .renderingMode(.template)
@@ -211,34 +215,25 @@ struct MacAddBotSheet: View {
       .foregroundStyle(look.ink)
       .fixedSize(horizontal: false, vertical: true)
       .padding(.top, 4)
-      HStack(spacing: 12) {
-        Text(verbatim: ExternalAgents.address(for: known?.kind))
-          .font(.system(size: 14, design: .monospaced))
-          .foregroundStyle(look.ink)
-          .lineLimit(1)
-          .truncationMode(.middle)
-          .textSelection(.enabled)
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Button {
-          NSPasteboard.general.clearContents()
-          NSPasteboard.general.setString(ExternalAgents.address(for: known?.kind), forType: .string)
-          copied = true
-        } label: {
-          Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
-            .font(.system(size: 14))
-            .foregroundStyle(look.ink)
-            .padding(.horizontal, 16)
-            .frame(height: 36)
-            .background(look.ink.opacity(0.07), in: Capsule())
-            .contentShape(Capsule())
+      if ways.isEmpty {
+        MacCopyField(text: ExternalAgents.address(for: known?.kind), code: false, look: look)
+      } else {
+        VStack(alignment: .leading, spacing: 18) {
+          ForEach(ways) { way in
+            VStack(alignment: .leading, spacing: 2) {
+              Text(verbatim: way.title)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(look.ink)
+              Text(verbatim: way.line)
+                .font(PanelType.detail)
+                .foregroundStyle(look.inkSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+              MacCopyField(text: way.text, code: true, look: look)
+                .padding(.top, 8)
+            }
+          }
         }
-        .buttonStyle(.hand)
       }
-      .padding(.leading, 16)
-      .padding(.trailing, 6)
-      .frame(minHeight: 52)
-      .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-      .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
       Button { details.toggle() } label: {
         Text("MCP details")
           .font(.system(size: 14))
@@ -255,8 +250,55 @@ struct MacAddBotSheet: View {
       }
     }
     .padding(28)
-    .frame(width: 460)
+    .frame(width: ways.isEmpty ? 460 : 520)
     .background(look.groupedRow)
+  }
+}
+
+/**
+ * What to copy in its field (14 round, a grey line), Copy a grey capsule
+ * inside it at its end, "Copied" once it is. An address stays on one line;
+ * a command or the words for a coding agent (`code`) wrap at their spaces,
+ * so all of it shows and no address is cut.
+ */
+private struct MacCopyField: View {
+  let text: String
+  let code: Bool
+  let look: Look
+  @State private var copied = false
+
+  var body: some View {
+    HStack(spacing: 12) {
+      Text(verbatim: text)
+        .font(.system(size: code ? 13 : 14, design: .monospaced))
+        .foregroundStyle(look.ink)
+        .lineLimit(code ? nil : 1)
+        .truncationMode(.middle)
+        .lineSpacing(code ? 3 : 0)
+        .fixedSize(horizontal: false, vertical: code)
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, code ? 10 : 0)
+      Button {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        copied = true
+      } label: {
+        Text(copied ? String(localized: "Copied") : String(localized: "Copy"))
+          .font(.system(size: 14))
+          .foregroundStyle(look.ink)
+          .padding(.horizontal, 16)
+          .frame(height: 36)
+          .background(look.ink.opacity(0.07), in: Capsule())
+          .contentShape(Capsule())
+      }
+      .buttonStyle(.hand)
+    }
+    .padding(.leading, 16)
+    .padding(.trailing, 6)
+    .frame(minHeight: 52)
+    .background(look.ground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    .overlay { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(look.ink.opacity(0.15), lineWidth: 1) }
   }
 }
 
