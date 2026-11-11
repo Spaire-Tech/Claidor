@@ -17,7 +17,10 @@ import SwiftUI
  * at the right.
  * Then the bots: a connected one with "Last used …" and a gear whose one
  * item is Disconnect, one not connected yet with its line and +; then Add,
- * for any other bot.
+ * for any other bot. Each bot's mascot on Connect apps' tile (`BotIcon`),
+ * white or #2c2c2e on dark (11 November 2026, the founder: "the tab in dark
+ * mode should not have these white background"); Claude Code and Codex
+ * with the founder's mascots, their sheets showing the ways to connect them.
  */
 struct ExternalAgentsPage: View {
   @Environment(SimeonCore.AppStore.self) private var store
@@ -124,15 +127,7 @@ private struct ExternalAgentLine: View {
 
   var body: some View {
     HStack(spacing: 14) {
-      if let icon = row.icon {
-        ProviderIcon(provider: icon, size: 30)
-      } else {
-        Text(verbatim: String(row.name.prefix(1)).uppercased())
-          .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(Ink.secondary)
-          .frame(width: 30, height: 30)
-          .background(Ink.pillButton, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-      }
+      BotIcon(icon: row.icon, name: row.name, size: 30)
       VStack(alignment: .leading, spacing: 2) {
         Text(verbatim: row.name).font(.system(size: 17)).foregroundStyle(Ink.primary).lineLimit(1)
         if let words = row.connected?.lastUsedWords() ?? row.line {
@@ -189,7 +184,7 @@ private struct ExternalAgentsPicture: View {
         }
         .stroke(Ink.primary.opacity(0.1), lineWidth: 1)
         ForEach(P.bots, id: \.icon) { bot in
-          ProviderIcon(provider: bot.icon, size: P.bot)
+          BotIcon(icon: bot.icon, name: bot.icon, size: P.bot)
             .shadow(color: .black.opacity(0.12), radius: 3, x: 0, y: 2)
             .position(x: bot.x, y: bot.y)
         }
@@ -221,6 +216,41 @@ private struct ExternalAgentsPicture: View {
     .clipShape(Circle())
     .overlay { Circle().strokeBorder(Color.white, lineWidth: 3).padding(-3) }
     .shadow(color: .black.opacity(0.16), radius: 9, x: 0, y: 6)
+  }
+}
+
+/**
+ * A bot's icon: its mascot cut out on Connect apps' tile (white, #2c2c2e on
+ * dark, a hairline and a soft shadow), round as an app's icon; else its
+ * maker's icon; else the first letter of its name.
+ */
+struct BotIcon: View {
+  let icon: String?
+  let name: String
+  var size: CGFloat = 30
+
+  var body: some View {
+    if let icon, ExternalAgents.mascots.contains(icon), UIImage(named: "Mascots/\(icon)") != nil {
+      let shape = RoundedRectangle(cornerRadius: size * ConnectorLogo.iconCorner, style: .continuous)
+      Image("Mascots/\(icon)")
+        .resizable()
+        .interpolation(.high)
+        .scaledToFill()
+        .frame(width: size, height: size)
+        .background(Ink.appsTile)
+        .clipShape(shape)
+        .overlay { shape.inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+        .accessibilityHidden(true)
+    } else if let icon {
+      ProviderIcon(provider: icon, size: size)
+    } else {
+      Text(verbatim: String(name.prefix(1)).uppercased())
+        .font(.system(size: size / 2, weight: .semibold))
+        .foregroundStyle(Ink.secondary)
+        .frame(width: size, height: size)
+        .background(Ink.pillButton, in: RoundedRectangle(cornerRadius: size * 0.23, style: .continuous))
+    }
   }
 }
 

@@ -11,13 +11,18 @@
 // and its picture; then the bots in one group, no title over it: a
 // connected one with "Last used …" and a gear whose one item is Disconnect,
 // one not connected yet with its line and +; then Add, for any other bot.
-// The model is the core's (`core/externalAgents.ts`).
+// Each bot's mascot on Connect apps' tile, white or #2c2c2e on dark (the
+// founder, 11 November 2026: "the tab in dark mode should not have these
+// white background"). Claude Code's and Codex's sheets show the ways to
+// connect them (the same day: "we need to show the many ways to do it for
+// both"). The model is the core's (`core/externalAgents.ts`).
 //
 // The web's own ways: Learn more opens in a new tab (in the Windows app, the
 // default browser); the address is copied with the window's clipboard.
 
 import { useEffect, useRef, useState } from 'react'
 import {
+  type BotWay,
   type ExternalAgentRow,
   ExternalAgentsModel,
   botAddress,
@@ -28,6 +33,7 @@ import {
   knownBots,
   lastUsedWords,
   learnMore,
+  mascotIcons,
 } from '../core/externalAgents'
 import { faceById, faceURL, simeonFaceId } from '../core/faces'
 import type { AppStore } from '../core/store'
@@ -37,6 +43,7 @@ import { AppLogoTile } from './ConnectCards'
 import './ConnectCards.css'
 import { ContextMenu } from './ContextMenu'
 import { Alert, Sheet } from './Dialogs'
+import { mascotURL } from './mascots'
 import './SettingsExternalAgents.css'
 import { ProviderIcon } from './SettingsModels'
 import './SettingsModels.css'
@@ -169,7 +176,7 @@ function ExternalAgentsPicture() {
             className="agents-mascot"
             style={{ left: x, top: y }}
           >
-            <ProviderIcon provider={icon} side={40} />
+            <BotIcon icon={icon} name={icon} side={40} />
           </span>
         ))}
         <span
@@ -215,11 +222,7 @@ function ExternalAgentLine({
   const line = row.connected ? lastUsedWords(row.connected) : row.line
   return (
     <div className={divided ? 'models-line divided' : 'models-line'}>
-      {row.icon ? (
-        <ProviderIcon provider={row.icon} side={28} />
-      ) : (
-        <AppLogoTile name={row.name} side={28} />
-      )}
+      <BotIcon icon={row.icon} name={row.name} side={28} />
       <span className="models-words">
         <span className="models-title">{row.name}</span>
         {line !== undefined && <span className="models-subtitle">{line}</span>}
@@ -263,27 +266,62 @@ function ExternalAgentLine({
 }
 
 /**
+ * A bot's icon: its mascot cut out on Connect apps' tile (`.bot-tile`:
+ * white, #2c2c2e on dark, a hairline and a soft shadow), round as an app's
+ * icon; else its maker's icon; else the first letter of its name.
+ */
+function BotIcon({
+  icon,
+  name,
+  side,
+}: {
+  icon?: string
+  name: string
+  side: number
+}) {
+  const mascot =
+    icon !== undefined && mascotIcons.has(icon) ? mascotURL(icon) : undefined
+  if (mascot)
+    return (
+      <span
+        className="bot-tile"
+        style={{ width: side, height: side, borderRadius: side * 0.2237 }}
+        aria-hidden="true"
+      >
+        <img src={mascot} alt="" />
+      </span>
+    )
+  if (icon !== undefined) return <ProviderIcon provider={icon} side={side} />
+  return <AppLogoTile name={name} side={side} />
+}
+
+/**
  * A bot's sheet (the reference): its mascot and its name, or Simeon's mark
- * and "Add a bot" for any other; the glass disc that closes it; who to give
- * the address to, in that bot's words ("Give this to your Muse."); the
- * address in its field with Copy inside it; MCP details, which open what the
- * bot can do once it is in.
+ * and "Add a bot" for any other; the glass disc that closes it. A bot in its
+ * maker's cloud: who to give the address to, in that bot's words ("Give
+ * this to your Muse."), the address in its field with Copy inside it. A
+ * coding agent (Claude Code, Codex): "Pick one…" and its ways, each a title,
+ * a line and what to copy. Then MCP details, which open what the bot can do
+ * once it is in.
  */
 function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
-  const [copied, setCopied] = useState(false)
   const [details, setDetails] = useState(false)
   const known = knownBots.find((one) => one.kind === bot)
   const title = known?.name ?? t('Add a bot')
-  const address = botAddress(known?.kind)
-  const copy = async () => {
-    await copyText(address)
-    setCopied(true)
-  }
+  const ways = known?.ways?.()
   return (
-    <Sheet label={title} close={close} className="models-sheet bots-sheet">
+    <Sheet
+      label={title}
+      close={close}
+      className={
+        ways
+          ? 'models-sheet bots-sheet bots-sheet-ways'
+          : 'models-sheet bots-sheet'
+      }
+    >
       <div className="models-sheet-head">
         {known ? (
-          <ProviderIcon provider={known.icon} side={44} />
+          <BotIcon icon={known.icon} name={known.name} side={44} />
         ) : (
           <span className="bots-simeon-tile" aria-hidden="true">
             <span className="bots-simeon-mark" />
@@ -297,12 +335,15 @@ function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
           ? known.give()
           : t('Give this to any bot that can add an MCP server.')}
       </p>
-      <div className="bots-address">
-        <span className="bots-address-text">{address}</span>
-        <button type="button" className="bots-copy" onClick={() => void copy()}>
-          {copied ? t('Copied') : t('Copy')}
-        </button>
-      </div>
+      {ways ? (
+        <ul className="bots-ways">
+          {ways.map((way) => (
+            <WayLine key={way.title} way={way} />
+          ))}
+        </ul>
+      ) : (
+        <CopyField text={botAddress(known?.kind)} />
+      )}
       <button
         type="button"
         className="bots-details-link"
@@ -319,5 +360,40 @@ function AddBotSheet({ bot, close }: { bot: string; close: () => void }) {
         </p>
       )}
     </Sheet>
+  )
+}
+
+/** One way to connect a coding agent: its title (15, medium), its line (13, grey), and what to copy in its field. */
+function WayLine({ way }: { way: BotWay }) {
+  return (
+    <li className="bots-way">
+      <span className="bots-way-title">{way.title}</span>
+      <span className="bots-way-line">{way.line}</span>
+      <CopyField text={way.text} code />
+    </li>
+  )
+}
+
+/**
+ * What to copy in its field (14 round, 1 grey line), Copy a grey capsule
+ * inside it at its end, "Copied" once it is. An address stays on one line;
+ * a command or the words for the agent wrap at their spaces, so all of it
+ * shows and no address is cut.
+ */
+function CopyField({ text, code }: { text: string; code?: boolean }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <div className={code ? 'bots-address bots-code' : 'bots-address'}>
+      <span className="bots-address-text">{text}</span>
+      <button
+        type="button"
+        className="bots-copy"
+        onClick={() => {
+          void copyText(text).then(() => setCopied(true))
+        }}
+      >
+        {copied ? t('Copied') : t('Copy')}
+      </button>
+    </div>
   )
 }

@@ -11,7 +11,9 @@ import {
   botsAddress,
   externalAgent,
   externalAgentRows,
+  knownBots,
   lastUsedWords,
+  mascotIcons,
 } from './externalAgents'
 import type { JSONValue } from './json'
 
@@ -45,17 +47,20 @@ describe('External Agents', () => {
     const agents = agentsOf(answer)
     expect(agents.map((one) => one.id)).toEqual(['grok-bot', 'claude-code'])
     const rows = externalAgentRows(agents)
+    // Claude Code connected isn't offered again; Codex is.
     expect(rows.map((row) => row.id)).toEqual([
       'grok-bot',
       'claude-code',
       'dots',
       'muse',
+      'codex',
     ])
     expect(rows.map((row) => row.icon)).toEqual([
       'grokbot',
-      'claude',
+      'claudecode',
       'dots',
       'muse',
+      'codex',
     ])
     expect(rows[0].connected).toBeDefined()
     expect(rows[0].line).toBeUndefined()
@@ -64,7 +69,37 @@ describe('External Agents', () => {
       'Dots',
       'Muse',
       'Grok Bot',
+      'Claude Code',
+      'Codex',
     ])
+  })
+
+  it('shows a coding agent the ways to connect it, and a hosted bot an address', () => {
+    const claude = knownBots.find((bot) => bot.kind === 'claude-code')
+    expect(claude?.ways?.().map((way) => way.title)).toEqual([
+      'Ask Claude Code',
+      'In Terminal',
+      'Every coding agent on your computer',
+    ])
+    expect(claude?.ways?.().map((way) => way.text)).toEqual([
+      'Follow the instructions at https://simeonlabs.com/network/skill.md',
+      'claude mcp add --transport http --scope user simeon https://api.simeonlabs.com/mcp; claude mcp login simeon',
+      'curl -fsSL https://simeonlabs.com/network/install.sh | bash',
+    ])
+    expect(claude?.give()).toBe(
+      'Pick one. Your browser opens once, to sign in to Simeon.',
+    )
+    const codex = knownBots.find((bot) => bot.kind === 'codex')
+    const ways = codex?.ways?.() ?? []
+    expect(ways[0].line).toBe('Paste this into Codex. It does the rest.')
+    // Codex signs in as it adds the server.
+    expect(ways[1].text).toBe(
+      'codex mcp add simeon --url https://api.simeonlabs.com/mcp',
+    )
+    expect(ways[1].line).toBe('Connects Codex alone.')
+    for (const kind of ['dots', 'muse', 'grok-bot'])
+      expect(knownBots.find((bot) => bot.kind === kind)?.ways).toBeUndefined()
+    for (const bot of knownBots) expect(mascotIcons.has(bot.icon)).toBe(true)
   })
 
   it('says when a bot was last used, as a date', () => {
@@ -89,7 +124,10 @@ describe('External Agents', () => {
     expect(botAddress('muse')).toBe('https://api.simeonlabs.com/mcp/muse')
     expect(botAddress(undefined)).toBe(botsAddress)
     expect(botAddress('any')).toBe(botsAddress)
-    expect(botIcon('codex')).toBe('openai')
+    expect(botIcon('codex')).toBe('codex')
+    // The founder's mascot for Claude Code; Claude in its own app keeps the app's icon.
+    expect(botIcon('claude-code')).toBe('claudecode')
+    expect(botIcon('claude')).toBe('claude')
     expect(botIcon('cursor')).toBeUndefined()
   })
 
@@ -128,6 +166,7 @@ describe('External Agents', () => {
       'dots',
       'muse',
       'grok-bot',
+      'codex',
     ])
     expect(calls).toEqual([
       ['external-agents', undefined],

@@ -3134,10 +3134,31 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   `SettingsExternalAgents.tsx`; what they show is SimeonCore's `ExternalAgents.swift`, the web's
   `core/externalAgents.ts`). A card says in a line what it is, with Learn more
   (`simeonlabs.com/docs/network`) and Simeon among Grok Bot, Muse and Dots on the website's grey;
-  then each bot let in, its mascot (its maker's mark for a coding agent), its name and "Last used
-  Nov 10, 2026", and a gear whose one item is Disconnect; then Dots, Muse and Grok Bot not let in
-  yet, each with its + and its sheet (the address and Copy); then Add, for any other. The account
-  menu has External Agents, the three mascots at its end (the iPhone's Settings row too).
+  then each bot let in, its mascot (its maker's mark for another coding agent), its name and
+  "Last used Nov 10, 2026", and a gear whose one item is Disconnect; then Dots, Muse, Grok Bot,
+  Claude Code and Codex not let in yet, each with its + and its sheet; then Add, for any other.
+  The account menu has External Agents, the three mascots at its end (the iPhone's Settings row
+  too).
+  - **The mascots on their tiles** (11 November 2026, the founder: "the tab in dark mode should
+    not have these white background"): each bot's mascot is cut out of its ground
+    (`Mascots/<icon>` on the Mac and the iPhone, `assets/mascots/` on the web) and drawn on
+    Connect apps' tile, white or #2c2c2e on dark, with a hairline and a soft shadow, in the
+    picture, the rows and the sheet (`MacBotIcon`, `BotIcon`). Claude Code's and Codex's mascots
+    are the founder's (the orange figure, the cloud with its prompt); the Claude app keeps its own
+    icon.
+  - **Claude Code and Codex** (the same day: "can we add claude code - and i'm guessing codex can
+    do that as well… we need to show the many ways to do it for both"). A bot in its maker's cloud
+    is given its address; a coding agent on the person's computer is shown three ways, each with
+    what to copy (SimeonCore's `ExternalAgents.ways`, the web's `codingAgentWays`): ask it
+    ("Follow the instructions at https://simeonlabs.com/network/skill.md", the network's skill,
+    which has it connect itself); its own command in Terminal; or the network's installer, for
+    every coding agent on the computer. The commands were read from the tools themselves:
+    `claude mcp add --transport http --scope user simeon https://api.simeonlabs.com/mcp; claude
+    mcp login simeon` (Claude Code 2.1.322 has `mcp login`; `;` so the sign-in runs when the
+    server was added before, and PowerShell 5 has no `&&`), and `codex mcp add simeon --url
+    https://api.simeonlabs.com/mcp` (Codex 0.167.1 signs in as it adds: "Detected OAuth support.
+    Starting OAuth flow"). Each opens the browser once to sign in to Simeon. The sheet is 520 wide
+    on the Mac and the web so no address in it is cut; on the iPhone, Copy sits under the text.
   - `GET /desktop/api/external-agents` (the desktop credential; `external_agents.py`): the OAuth
     clients holding a live token with the `agents` scope for the person (a refresh token not
     revoked, or an access token not revoked nor expired), one row per kind of bot, read from the
