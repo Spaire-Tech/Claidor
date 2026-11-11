@@ -91,7 +91,7 @@ from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 
 from . import grok, key_providers
-from .auth import get_desktop_session
+from .auth import get_desktop_or_box_session, get_desktop_session
 from .model_account_repository import ModelAccountRepository
 from .model_sign_in import (
     ProviderError,
@@ -1190,12 +1190,17 @@ async def claude_signed_out(
     name="desktop:model_accounts_claude_signed_out",
 )
 async def model_accounts_claude_signed_out(
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """The engine found Claude Code signed out on the computer (9 November
     2026: the app went on showing Claude as usable, and the agents tried it
-    at every turn, while each turn fell back to Simeon's models)."""
+    at every turn, while each turn fell back to Simeon's models).
+
+    The engine says it with the computer's own credential, so the route
+    takes it (11 November 2026: it took the app's sign-in only, every
+    report was refused with a 401, and AI Models went on showing Claude
+    connected while the chat said it wasn't)."""
     account = await claude_signed_out(session, desktop_session.user_id)
     if account is not None:
         log.info(
@@ -1215,12 +1220,14 @@ async def model_accounts_claude_signed_out(
 )
 async def model_accounts_claude_usage(
     body: _ClaudeUsageBody,
-    desktop_session: DesktopSession = Depends(get_desktop_session),
+    desktop_session: DesktopSession = Depends(get_desktop_or_box_session),
     session: AsyncSession = Depends(get_db_session),
 ) -> JSONResponse:
     """How much of the Claude plan is used, as Claude Code on the computer
     last said it (its stream's `rate_limit_event`: the 5-hour and weekly
-    windows); kept on the person's Claude account."""
+    windows); kept on the person's Claude account. Told by the engine with
+    the computer's own credential (until 11 November 2026 refused, so no
+    usage ever showed)."""
     repository = ModelAccountRepository.from_session(session)
     account = await repository.by_key(
         desktop_session.user_id, PROVIDER_CLAUDE, CLAUDE_ACCOUNT_KEY

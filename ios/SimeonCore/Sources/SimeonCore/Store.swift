@@ -596,6 +596,9 @@ public final class AppStore {
         streaming = entry.isStreaming
         let isNew = !current.contains { $0.id == entry.id }
         if isNew && agentId == openChat { arrived.insert(entry.id) }
+        // "Changed from ✳ Claude Opus 5.5 to ⌘ Simeon": the composer shows the model the agents are on now, read
+        // again from the server (11 November 2026: it went on naming Claude after Claude was signed out).
+        if isNew, entry.event?["type"]?.string == "model-changed" { Task { await aiModels.load() } }
         // The answer growing at the end of the chat: only its own row changes, unless a whole layout is already waiting.
         let growingLast = !isNew && streaming && current.last?.id == entry.id && outbox[agentId] == nil
         let wholeWaiting = pendingLayout.contains(agentId) && streamingOnly[agentId] == nil

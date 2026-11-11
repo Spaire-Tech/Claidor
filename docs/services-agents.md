@@ -2711,12 +2711,21 @@ a real sign-in.
 founder, after the Apple sign-in: "that computer was so hard to use i was lost. extremely
 laggy too. that hand icon should be the main thing, not an option." Now:
 
-- **Take control is the main button.** A big blue Take control at the foot. If the agent is
-  working, Take control stops it (and its helpers) at once, so it never fights the person for
-  the mouse; the ✓ at the top right hands the computer back and the agent carries on with the
-  task from where things stand, told that the person took over meanwhile.
-- **Stop task**, beside it while the agent works: stops the agent and every helper it sent,
-  and nothing wakes it again until the person writes.
+- **Watching or Take control, under the title** (11 November 2026; until then a big blue Take
+  control at the foot, with no way back to watching but closing). The founder: "there is no
+  picker for watching. when you click take control, there is no way to go back to watching
+  aside from the x of quitting." Apple's segmented control is the one switch, as the Mac's pill
+  is. If the agent is working, Take control pauses it (and its helpers) at once, so it never
+  fights the person for the mouse; Watching puts the keyboard away and lets it go on, and so
+  does the ✓ at the top right, which also closes the sheet; the agent carries on with the task
+  from where things stand, told that the person took over meanwhile. An agent that handed the
+  computer over keeps waiting on the person when they go back to watching.
+- **Stop task**, at the foot while the agent works and the person watches: stops the agent and
+  every helper it sent, and nothing wakes it again until the person writes.
+- **The keyboard waits for the picture** (11 November 2026). When the agent hands the computer
+  over, the sheet opens in control while the computer is still starting; the keyboard comes up
+  once the picture is there, and the picture moves above a keyboard already up
+  (`ComputerZoom.swift`'s `KeyboardSpot`), where it used to be drawn behind it.
 - **It opens in control when the agent asks for the person** (`request_box_help`: a sign-in, a
   code), and switches to control by itself if the agent asks while the person watches. ✓ hands
   it back; Skip step declines the step, as before.
@@ -2831,8 +2840,8 @@ opens, and is usable with fingers:
 - **The screen fills the space** between the top and the buttons, fitted to the phone, and
   **pinches up to four times larger**. Watching, one finger moves the zoomed picture and a
   double tap zooms in on a spot (and back out).
-- **Take control is the big blue button**, with **Stop task** beside it while the agent works
-  (§14). The hand among three icons is gone. The
+- **Watching or Take control is the switch under the title**, with **Stop task** at the foot
+  while the agent works (§14). The hand among three icons is gone. The
   view opens in control when the agent asks for the person, and switches to control if it asks
   while the person watches.
 - **In control:** a tap is a click where the finger was; a drag scrolls the page under it; a
@@ -3019,7 +3028,9 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   (`network.kind_of`): the bot its address names (each hosted bot has its own, given by its Bots
   sheet: `/mcp/grok-bot`, `/mcp/dots`, `/mcp/muse`, `/mcp/claude`, each with its own sign-in
   metadata at `/.well-known/oauth-protected-resource/mcp/<bot>`), then where its sign-in returned (`oauth2_tokens.redirect_uri`, kept through
-  refreshes: `grok.com` or `cursor.com/bot/` is Grok Bot, `chatgpt.com` Dots, `claude.ai` Claude,
+  refreshes: `grok.com` or any page of `cursor.com` is Grok Bot (since 11 November 2026: Grok Bot
+  added at `/mcp` returned to `cursor.com/agents/` and External Agents said Cursor; Cursor itself
+  returns to `cursor://` or the loopback), `chatgpt.com` Dots, `claude.ai` Claude,
   `meta.ai` Muse; a computer's own address says nothing), then its hello (`clientInfo.name`), then
   its registration (`client_name`). Grok Bot signs in with Cursor's registration (the same name,
   "Cursor", and the same addresses, `cursor.com/oauth/mcp-client.json`), so only where it returned
@@ -3132,7 +3143,9 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
     revoked, or an access token not revoked nor expired), one row per kind of bot, read from the
     network sessions their sign-ins opened (`network.kind_of`): a hosted bot that registered again
     for a conversation is still one row, and its older sign-in, left without a session, joins the
-    row of the client registered under the same name. A kind the server doesn't know is its
+    row of the client registered under the same name. A session kept as a coding agent before its
+    sign-in said which bot it is (Grok Bot as `cursor`) is listed as the bot where its sign-in
+    returned says (11 November 2026). A kind the server doesn't know is its
     client's own row (`client:<id>`, named as it registered). `lastUsedAt` is the newest session's
     last call, else the newest token's; `connectedAt` the first token's. Newest use first.
   - `POST /desktop/api/external-agents/disconnect` (`{"id"}`): revokes the row's tokens (the

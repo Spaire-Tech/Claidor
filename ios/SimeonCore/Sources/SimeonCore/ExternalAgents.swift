@@ -52,6 +52,16 @@ public enum ExternalAgents {
     public static let radius = 70.0
     public static let simeon = 64.0
     public static let bot = 40.0
+    /**
+     * Simeon's portrait in his circle: his whole head and his collar, the
+     * hair clear of the edge (11 November 2026, the founder: "way too
+     * zoomed. back it up. make it proportionate for it not to cut"). A
+     * square of 390 of the portrait's 512 around (257, 200): drawn 1.31
+     * times the circle and lowered by 0.144 of it, so his head is in its
+     * middle.
+     */
+    public static let simeonZoom = 1.31
+    public static let simeonLower = 0.144
     /** Each bot's mascot and where its middle is. */
     public static let bots: [(icon: String, x: Double, y: Double)] = [("grokbot", 90.0), ("muse", 210.0), ("dots", 330.0)].map { icon, angle in
       let radians = angle * .pi / 180

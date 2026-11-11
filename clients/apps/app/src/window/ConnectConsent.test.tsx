@@ -54,7 +54,7 @@ describe('the consent on screen', () => {
     expect(page).toContain(
       '<button type="button" class="consent-connect">Connect</button>',
     )
-    expect(page).toContain('Put Acme CRM to work')
+    expect(page).toContain('What it does')
     expect(page.match(/class="consent-point"/g)).toHaveLength(3)
   })
 

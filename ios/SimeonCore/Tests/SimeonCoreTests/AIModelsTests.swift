@@ -23,6 +23,16 @@ final class AIModelsTests: XCTestCase {
     XCTAssertNil(ModelAccount(json: nil))
   }
 
+  /** Usage & Billing's Subscriptions lists the plans only (11 November 2026, the founder: "api keys should not be there"). */
+  func testAKeyIsNoSubscription() throws {
+    let plan = try XCTUnwrap(ModelAccount(json: ["id": "a1", "provider": "claude", "kind": "subscription", "label": "Claude", "status": "available"]))
+    let unnamed = try XCTUnwrap(ModelAccount(json: ["id": "a2", "provider": "chatgpt", "label": "ChatGPT", "status": "available"]))
+    let key = try XCTUnwrap(ModelAccount(json: ["id": "a3", "provider": "anthropic", "kind": "api_key", "label": "…a1b2", "status": "available"]))
+    XCTAssertTrue(plan.isSubscription)
+    XCTAssertTrue(unnamed.isSubscription, "an account the server names no kind for is a plan's")
+    XCTAssertFalse(key.isSubscription)
+  }
+
   func testALimitSaysUntilWhenAndEndsOnItsOwn() throws {
     let now = Date(timeIntervalSince1970: 1_794_146_400)  // 8 November 2026, 14:00 UTC
     let until = now.addingTimeInterval(2 * 3600)

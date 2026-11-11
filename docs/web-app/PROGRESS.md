@@ -842,6 +842,32 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 11 November 2026: the founder's list (account menu, External Agents, the model on the composer)
+
+The founder's list of twelve; what the web and Windows app got from it:
+
+- **The account menu** bigger and taller ("not crazily tho"): words at 15, rows 30 high, the
+  usage figure a capsule 20 high (`account-menu`, a class the menu and its submenus take). External
+  Agents' mascots end where Weekly usage's figure ends ("look at where the usage is and where the
+  icons are?"), and sit on Connect apps' tiles, white or #2c2c2e on dark, turned −7°, 0°, 7°: the
+  mascots are cut out of their cream ground (`assets/mascots/`) so a dark tile stays dark.
+- **External Agents' card** on the groups' own grey, as the rows below it ("it shouldnt be
+  white"), the picture on the same grey; Simeon's face no longer zoomed: his whole head and his
+  collar, 1.31 times his circle and lowered by 0.144 of it (`Picture.simeonZoom`, `simeonLower`).
+- **Usage & Billing's Subscriptions** lists the plans only, never a key ("api keys should not be
+  there").
+- **The composer's model** read again when a "Changed from … to …" line arrives, so it names
+  Simeon once Claude is signed out. The server took no word of a sign-out (or of the plan's usage)
+  from the computer until now: both routes refused its credential.
+- **The lines in the middle** already have the room the founder asked for on the iPhone (a band
+  of 24, 8 above): looked at, left.
+- The consent page's test still asked for "Put Acme CRM to work", the title taken out this morning;
+  it asks for "What it does".
+
+Checked: the web tests, the type check, the words, the committed build. Not checked: the menu and
+the card in a browser beside the Mac's (no Mac here); the mascots' cut-outs were looked at on
+white and dark tiles at 120 points.
+
 ### 11 November 2026: no slogan titles
 
 The founder: "make a rule that we never use these kinds of title or phrasing. you x, handled. your

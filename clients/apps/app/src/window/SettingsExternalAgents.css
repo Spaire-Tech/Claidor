@@ -1,27 +1,16 @@
 /*
  * Settings › External Agents (SettingsExternalAgents.tsx) at the Mac's
  * measures (mac/Simeon/SettingsExternalAgents.swift): the card with its
- * words and its picture, the bots' gear. The rows, Add and the bot's sheet
+ * words and its picture, on the groups' grey, the bots' gear. The rows, Add and the bot's sheet
  * are AI Models' own (SettingsModels.css: `.models-line`, `.bots-*`).
  */
-:root {
-  /* The picture's ground: the website's grey (`--soft`, #f5f5f7), #1c1c1e on dark. */
-  --agents-picture: #f5f5f7;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --agents-picture: #1c1c1e;
-  }
-}
-
 .agents-page {
   display: flex;
   flex-direction: column;
   gap: 22px;
 }
 
-/* The card: on the page's ground, 16 round, a line at 8%, 14 in; its words beside its picture, 24 apart; the picture under the words, as wide as the card, when the panel is narrow. */
+/* The card: the groups' own grey, 16 round, 14 in (11 November 2026, the founder: "it shouldnt be white. make it grey like below"); its words beside its picture, 24 apart; the picture under the words, as wide as the card, when the panel is narrow. */
 .agents-hero {
   container-type: inline-size;
   display: flex;
@@ -29,8 +18,7 @@
   gap: 24px;
   padding: 14px;
   border-radius: 16px;
-  background: var(--grouped-ground);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 8%, transparent);
+  background: var(--grouped-row);
 }
 
 /* Its words: the line (15) over what it does (13, grey), Learn more at the foot, at least 14 under them. */
@@ -81,13 +69,11 @@
   outline-offset: 1px;
 }
 
-/* The picture: 320 by 200 on the website's grey, 12 round; the orbit a dashed line at 12%, Grok Bot at its top, Muse and Dots below either side, Simeon's tile in the middle. */
+/* The picture: 320 by 200 on the card's grey; the circle and the lines at 10%, Grok Bot at its top, Muse and Dots below either side, Simeon in the middle. */
 .agents-picture {
   position: relative;
   flex: 0 0 320px;
   height: 200px;
-  border-radius: 12px;
-  background: var(--agents-picture);
   overflow: hidden;
 }
 
@@ -146,9 +132,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* His face, not his whole portrait. */
-  transform: scale(1.6);
-  transform-origin: 50% 32%;
+  /* His whole head and his collar, the hair clear of the edge (SimeonCore's
+     `Picture.simeonZoom` and `simeonLower`): 1.31 times the circle, lowered by
+     0.144 of it. */
+  transform: translateY(14.4%) scale(1.31);
+  transform-origin: 50% 50%;
 }
 
 /* A connected bot's gear: the round glass disc (32), its gear at 15. */

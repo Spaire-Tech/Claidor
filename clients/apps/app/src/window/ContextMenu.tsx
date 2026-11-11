@@ -78,6 +78,7 @@ export function ContextMenu({
   label,
   foot,
   minWidth,
+  className,
 }: {
   items: MenuLine[]
   /** The pointer, in the window's coordinates. */
@@ -89,6 +90,8 @@ export function ContextMenu({
   foot?: boolean
   /** The least width of the menu and its submenus (the account menu's 228). */
   minWidth?: number
+  /** A class on the menu and its submenus (the account menu's own size, `account-menu`). */
+  className?: string
 }) {
   const holder = useRef<HTMLDivElement>(null)
   useDismiss(holder, close)
@@ -101,6 +104,7 @@ export function ContextMenu({
         label={label}
         foot={foot}
         minWidth={minWidth}
+        className={className}
       />
     </div>
   )
@@ -115,6 +119,7 @@ function MenuPanel({
   back,
   foot,
   minWidth,
+  className,
 }: {
   items: MenuLine[]
   at: { x: number; y: number }
@@ -125,6 +130,7 @@ function MenuPanel({
   back?: () => void
   foot?: boolean
   minWidth?: number
+  className?: string
 }) {
   const box = useRef<HTMLDivElement>(null)
   // The open submenu, by its item's key, so an item coming or going above it doesn't move it.
@@ -170,7 +176,7 @@ function MenuPanel({
     <>
       <div
         ref={box}
-        className="pop-menu context-menu"
+        className={`pop-menu context-menu${className ? ` ${className}` : ''}`}
         role="menu"
         aria-label={label}
         tabIndex={-1}
@@ -277,6 +283,7 @@ function MenuPanel({
               side={open.rect}
               close={close}
               minWidth={minWidth}
+              className={className}
               back={() => {
                 const index = openIndex
                 setOpen(undefined)

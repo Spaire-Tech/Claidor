@@ -81,9 +81,11 @@ enum ExternalAgentsPage {
 
 /**
  * The page's card, laid out as the reference's (Channels' "Reason for
- * Mac"): white, round 16 with a line at 8%, its words on the left (a line
- * at 15, what it does at 13 in grey, Learn more in a grey capsule at its
- * foot), the picture on the right.
+ * Mac"): the groups' own grey, round 16 (11 November 2026, the founder: "the
+ * box is white. and below is grey. it shouldnt be white. make it grey like
+ * below"), its words on the left (a line at 15, what it does at 13 in grey,
+ * Learn more in a grey capsule at its foot), the picture on the right, on
+ * the same grey.
  */
 private struct ExternalAgentsHero: View {
   let look: Look
@@ -122,18 +124,14 @@ private struct ExternalAgentsHero: View {
         .frame(width: ExternalAgents.Picture.width, height: ExternalAgents.Picture.height)
     }
     .padding(14)
-    .background(RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous).fill(look.groupedGround))
-    .overlay {
-      RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous).strokeBorder(look.ink.opacity(0.08), lineWidth: 1)
-    }
+    .background(RoundedRectangle(cornerRadius: SettingsRowSize.radius, style: .continuous).fill(look.groupedRow))
   }
 }
 
 /**
  * The card's picture (SimeonCore's `ExternalAgents.Picture`): Simeon's own
  * face in the middle, Grok Bot, Muse and Dots the same size around him,
- * each joined to him by a line, on the website's grey (`--soft`, #f5f5f7;
- * #1c1c1e on dark).
+ * each joined to him by a line, on the card's grey.
  */
 struct ExternalAgentsPicture: View {
   let look: Look
@@ -141,8 +139,6 @@ struct ExternalAgentsPicture: View {
 
   var body: some View {
     ZStack {
-      RoundedRectangle(cornerRadius: 12, style: .continuous)
-        .fill(look.dark ? Color(hex: 0x1c1c1e) : Color(hex: 0xf5f5f7))
       ZStack {
         Path { path in
           path.addEllipse(in: CGRect(x: P.centerX - P.radius, y: P.centerY - P.radius, width: P.radius * 2, height: P.radius * 2))
@@ -176,7 +172,8 @@ struct ExternalAgentsPicture: View {
         Image(nsImage: image)
           .resizable()
           .scaledToFill()
-          .scaleEffect(1.6, anchor: UnitPoint(x: 0.5, y: 0.32))
+          .scaleEffect(P.simeonZoom)
+          .offset(y: P.simeonLower * P.simeon)
       }
     }
     .frame(width: P.simeon, height: P.simeon)
@@ -268,42 +265,95 @@ private struct MacAddAnyBotLine: View {
 }
 
 /**
- * The account menu's row (the reference's "Reason with" and its icons):
- * "External Agents", the bots' mascots at its right, overlapping a little.
- * A title with a right tab, so the row keeps the menu's own highlight.
+ * The account menu's rows with something at their right (11 November 2026,
+ * the founder: "look at where the usage is and where the icons are? make
+ * it proportionate and can the icons look better than this? like connect
+ * apps icons. with a dark mode as well"; "that whole menu should be bigger
+ * and taller. not crazily tho"). The menu's words at 16 (Apple's own are
+ * 14), and each row's right-hand part at one right tab, so Weekly usage's
+ * figure and External Agents' mascots end on the same line. The figure is
+ * a grey capsule as Apple's badge is; the mascots are Connect apps' tiles
+ * (the sidebar's `LogoTile`): white, or #2c2c2e on dark, a hairline and a
+ * soft shadow, the first turned 7° left, the last 7° right, each over the
+ * last by 4. Titles with a right tab, so each row keeps the menu's own
+ * highlight.
  */
-enum ExternalAgentsMenuRow {
-  static func title(width: CGFloat) -> NSAttributedString {
+enum AccountMenuRows {
+  /** The menu's words. */
+  static let font = NSFont.menuFont(ofSize: 16)
+  /** Where each row's right-hand part ends, from where its words start. */
+  static let end: CGFloat = 236
+
+  /** A row's words, and `part` at its right, ending at `end`. */
+  static func title(_ words: String, part: NSImage?) -> NSAttributedString {
     let style = NSMutableParagraphStyle()
-    style.tabStops = [NSTextTab(textAlignment: .right, location: width)]
-    let font = NSFont.menuFont(ofSize: 0)
-    let title = NSMutableAttributedString(
-      string: String(localized: "External Agents") + "\t",
-      attributes: [.font: font, .paragraphStyle: style]
-    )
-    if let icons = icons() {
+    style.tabStops = [NSTextTab(textAlignment: .right, location: end)]
+    let title = NSMutableAttributedString(string: words, attributes: [.font: font, .paragraphStyle: style])
+    if let part {
+      title.append(NSAttributedString(string: "\t", attributes: [.font: font, .paragraphStyle: style]))
       let attachment = NSTextAttachment()
-      attachment.image = icons
-      attachment.bounds = CGRect(x: 0, y: (font.capHeight - icons.size.height) / 2, width: icons.size.width, height: icons.size.height)
+      attachment.image = part
+      attachment.bounds = CGRect(x: 0, y: (font.capHeight - part.size.height) / 2, width: part.size.width, height: part.size.height)
       title.append(NSAttributedString(attachment: attachment))
       title.addAttribute(.paragraphStyle, value: style, range: NSRange(location: 0, length: title.length))
     }
     return title
   }
 
-  /** The mascots side by side, 16 each, each over the last by 3, each round 4. */
-  private static func icons() -> NSImage? {
-    let images = ExternalAgents.menuIcons.compactMap { NSImage(named: "Providers/\($0)") }
-    guard !images.isEmpty else { return nil }
-    let side: CGFloat = 16
-    let step: CGFloat = side - 3
-    let size = NSSize(width: step * CGFloat(images.count - 1) + side, height: side)
+  /** Weekly usage's figure ("55%"): 13, in a grey capsule 20 high, 8 in, as Apple's badge. */
+  static func figure(_ text: String) -> NSImage {
+    let words = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium)])
+    let size = NSSize(width: ceil(words.size().width) + 16, height: 20)
+    return NSImage(size: size, flipped: false) { rect in
+      let dark = NSAppearance.currentDrawing().bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+      (dark ? NSColor.white.withAlphaComponent(0.14) : NSColor.black.withAlphaComponent(0.07)).setFill()
+      NSBezierPath(roundedRect: rect, xRadius: rect.height / 2, yRadius: rect.height / 2).fill()
+      let ink = dark ? NSColor.white.withAlphaComponent(0.85) : NSColor.black.withAlphaComponent(0.72)
+      let shown = NSAttributedString(string: text, attributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .medium), .foregroundColor: ink])
+      let spot = shown.size()
+      shown.draw(at: NSPoint(x: (rect.width - spot.width) / 2, y: (rect.height - spot.height) / 2))
+      return true
+    }
+  }
+
+  /** The bots' mascots on Connect apps' tiles: 17 each (the row's words' height, so the row is no taller than the others), round 4.5, the mascot cut out on its tile. */
+  static func mascots() -> NSImage? {
+    let images = ExternalAgents.menuIcons.compactMap { NSImage(named: "Mascots/\($0)") }
+    guard images.count == ExternalAgents.menuIcons.count else { return nil }
+    let side: CGFloat = 17
+    let step: CGFloat = side - 4
+    let turns: [CGFloat] = [-7, 0, 7]
+    // Room for the turned corners and the shadow on every side.
+    let margin: CGFloat = 1.5
+    let size = NSSize(width: step * CGFloat(images.count - 1) + side + margin * 2, height: side + margin * 2)
     return NSImage(size: size, flipped: false) { _ in
+      let dark = NSAppearance.currentDrawing().bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
       for (index, image) in images.enumerated() {
-        let rect = NSRect(x: step * CGFloat(index), y: 0, width: side, height: side)
+        let tile = NSRect(x: margin + step * CGFloat(index), y: margin, width: side, height: side)
         NSGraphicsContext.saveGraphicsState()
-        NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4).addClip()
-        image.draw(in: rect)
+        let turn = NSAffineTransform()
+        turn.translateX(by: tile.midX, yBy: tile.midY)
+        turn.rotate(byDegrees: -turns[index % turns.count])
+        turn.translateX(by: -tile.midX, yBy: -tile.midY)
+        turn.concat()
+        let shape = NSBezierPath(roundedRect: tile, xRadius: 4.5, yRadius: 4.5)
+        NSGraphicsContext.saveGraphicsState()
+        let shadow = NSShadow()
+        shadow.shadowColor = dark ? NSColor.black.withAlphaComponent(0.45) : NSColor.black.withAlphaComponent(0.10)
+        shadow.shadowOffset = NSSize(width: 0, height: -1)
+        shadow.shadowBlurRadius = 1.5
+        shadow.set()
+        (dark ? NSColor(red: 0x2c / 255, green: 0x2c / 255, blue: 0x2e / 255, alpha: 1) : NSColor.white).setFill()
+        shape.fill()
+        NSGraphicsContext.restoreGraphicsState()
+        NSGraphicsContext.saveGraphicsState()
+        shape.addClip()
+        image.draw(in: tile)
+        NSGraphicsContext.restoreGraphicsState()
+        (dark ? NSColor.white.withAlphaComponent(0.10) : NSColor.black.withAlphaComponent(0.08)).setStroke()
+        let edge = NSBezierPath(roundedRect: tile.insetBy(dx: -0.25, dy: -0.25), xRadius: 4.75, yRadius: 4.75)
+        edge.lineWidth = 0.5
+        edge.stroke()
         NSGraphicsContext.restoreGraphicsState()
       }
       return true

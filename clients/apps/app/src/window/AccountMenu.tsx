@@ -190,22 +190,42 @@ function AccountMenu({
       items={items}
       at={{ x: at.left, y: at.top - 4 }}
       foot
-      minWidth={228}
+      minWidth={248}
+      className="account-menu"
       close={close}
       label={coreT('Account')}
     />
   )
 }
 
-/** The bots' mascots at External Agents' end (the reference's "Reason with" and its icons): 16 each, each over the last by 3, each round 4. */
+/**
+ * The bots' mascots at External Agents' end, on Connect apps' tiles (11
+ * November 2026, the founder: "can the icons look better than this? like
+ * connect apps icons. with a dark mode as well"): each cut out of its cream
+ * ground on a white tile (#2c2c2e on dark), a hairline and a soft shadow,
+ * the first turned 7° left, the last 7° right, each over the last by 4.
+ */
 function BotMascots() {
   return (
     <span className="menu-mascots" aria-hidden="true">
       {menuIcons.map((icon) => (
-        <img key={icon} src={providerIconURL(icon)} alt="" />
+        <span key={icon} className="menu-mascot">
+          <img src={mascotURL(icon)} alt="" />
+        </span>
       ))}
     </span>
   )
+}
+
+const mascotURLs: Record<string, string> = {
+  grokbot: new URL('../assets/mascots/grokbot.png', import.meta.url).href,
+  muse: new URL('../assets/mascots/muse.png', import.meta.url).href,
+  dots: new URL('../assets/mascots/dots.png', import.meta.url).href,
+}
+
+/** A bot's mascot cut out of its ground (`assets/mascots/`), its app icon for any other. */
+function mascotURL(icon: string): string {
+  return mascotURLs[icon] ?? providerIconURL(icon)
 }
 
 // MARK: The disc

@@ -35,7 +35,7 @@ from simeon.postgres import AsyncSession, get_db_session
 from simeon.routing import APIRouter
 
 from .auth import get_desktop_session
-from .network import kind_of, label_of, ms
+from .network import HOSTED, kind_of, label_of, ms, redirect_kind
 from .network_repository import DesktopNetworkSessionRepository
 
 log = structlog.get_logger()
@@ -152,18 +152,30 @@ async def connected(session: AsyncSession, user_id: UUID) -> list[dict[str, Any]
     def key_of(kind: str, client_id: str) -> str:
         return kind if kind != "agent" else f"{CLIENT_PREFIX}{client_id}"
 
+    def known(kind: str, client_id: str) -> str:
+        # A session named before its bot was known: Grok Bot added at `/mcp`
+        # signs in as Cursor, and its session was kept as `cursor` (11
+        # November 2026: External Agents said Cursor). Where its sign-in
+        # returned says which bot it is, as it does for a new session.
+        if kind in HOSTED:
+            return kind
+        returned = redirect_kind(by_client[client_id][0].redirect_uri)
+        return (
+            returned.kind if returned is not None and returned.kind in HOSTED else kind
+        )
+
     alone: list[str] = []
     for client_id in by_client:
         mine = [s for s in sessions if s.client_id == client_id]
         if not mine:
             alone.append(client_id)
             continue
-        for kind in {s.kind for s in mine}:
+        for kind in {known(s.kind, client_id) for s in mine}:
             join(
                 key_of(kind, client_id),
                 kind,
                 client_id,
-                [ms(s.last_seen_at) for s in mine if s.kind == kind],
+                [ms(s.last_seen_at) for s in mine if known(s.kind, client_id) == kind],
             )
     for client_id in alone:
         newest = by_client[client_id][0]  # Newest first.

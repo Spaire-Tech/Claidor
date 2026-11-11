@@ -206,9 +206,14 @@ def _host_kind(host: str, path: str) -> str | None:
     if under("grok.com", "x.ai", "x.com"):
         return "grok-bot"
     if under("cursor.com", "cursor.sh"):
-        # Grok Bot signs in with Cursor's registration and returns to its
-        # bot page (cursor.com/oauth/mcp-client.json lists both).
-        return "grok-bot" if path.startswith("/bot/") else "cursor"
+        # Grok Bot signs in with Cursor's registration and returns to one of
+        # its pages (cursor.com/oauth/mcp-client.json lists `/bot/` and
+        # `/agents/`): added at `/mcp`, it came back to `/agents/` and showed
+        # as Cursor in External Agents (11 November 2026). Cursor itself, on
+        # the person's computer, returns to `cursor://` or the loopback, which
+        # say nothing; a sign-in that returns to Cursor's website is a bot in
+        # the cloud, Grok Bot.
+        return "grok-bot"
     if under("chatgpt.com", "openai.com"):
         return "dots"
     if under("claude.ai", "claude.com", "anthropic.com"):

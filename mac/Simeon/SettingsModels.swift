@@ -378,8 +378,9 @@ private struct MacModelAccountLine: View {
  * claude or chat gpt usage and we can click on it and it takes us to the
  * page"): each connected account, its app's icon, its name over how much of
  * its plan is used ("5-hour limit 42% · Weekly limit 18%"; its plan before
- * its first use; "Signed out" in red), and `›` to its page. None while
- * nothing is connected, so Usage & Billing stays as it was.
+ * its first use; "Signed out" in red), and `›` to its page. A plan's
+ * accounts only: an API key has no plan's usage (11 November 2026). None
+ * while nothing is connected, so Usage & Billing stays as it was.
  */
 struct SubscriptionsGroup: View {
   let look: Look
@@ -387,7 +388,7 @@ struct SubscriptionsGroup: View {
   @Environment(SettingsState.self) private var settings
 
   var body: some View {
-    let accounts = store.aiModels.accounts
+    let accounts = store.aiModels.subscriptions
     if !accounts.isEmpty {
       TimelineView(.periodic(from: .now, by: 30)) { context in
         SettingsGroup(title: String(localized: "Subscriptions"), look: look) {

@@ -362,3 +362,52 @@ test("Claude reads the person's own words: the turn keeps them wrapped, never as
     await dispose();
   }
 });
+
+test("Claude signed out: the server is told and the chat says Changed from Claude to Simeon, not the long line", async () => {
+  const { module: hook, dispose } = await load();
+  try {
+    const lines = [];
+    const notices = [];
+    hook.setTurnModelLine((agentId, event) => { lines.push({ agentId, event }); });
+    hook.setClaudeCodeFallbackNotice((agentId, why) => { notices.push({ agentId, why }); });
+    let signedOut = false;
+    const source = {
+      getAccessToken: async () => "simeon_db_stand_in",
+      backendUrl: "https://simeon.example",
+      fetch: async (url) => {
+        if (String(url).endsWith("/models/accounts/claude/signed-out")) { signedOut = true; return Response.json({ account: { status: "signed_out" } }); }
+        // Signed out, the server offers Claude no more: the roles go back to Simeon's.
+        return Response.json({ data: signedOut ? [] : [{ modelId: "own:claude:claude-opus-5-5", role: "primary", transportApi: "claude-code", claudeCodeModel: "claude-opus-5-5" }] });
+      },
+    };
+    hook.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    hook.setSimeonModelRolesSourceForTest(source, Date.now());
+    // The turn started on Claude.
+    await hook.noteTurnModel("agent-1");
+    assert.equal(lines.length, 0);
+
+    await hook.claudeCodeSignedOut("agent-1");
+    assert.deepEqual(notices, [], "no long line");
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0].agentId, "agent-1");
+    assert.equal(lines[0].event.type, "model-changed");
+    assert.equal(lines[0].event.from.provider, "claude");
+    assert.equal(lines[0].event.from.name, "Claude Opus 5.5");
+    assert.deepEqual(lines[0].event.to, { model: null, name: "Simeon", provider: null });
+    // The agent's next turn, on Simeon's: nothing more.
+    await hook.noteTurnModel("agent-1");
+    assert.equal(lines.length, 1);
+
+    // A server that doesn't take it: the choice is still Claude, so the long line says why.
+    hook.setSimeonModelRolesForTest({ claudeCode: "claude-opus-5-5" });
+    hook.setSimeonModelRolesSourceForTest({ ...source, fetch: async () => new Response("no", { status: 503 }) }, Date.now());
+    await hook.claudeCodeSignedOut("agent-2");
+    assert.deepEqual(notices, [{ agentId: "agent-2", why: "signed_out" }]);
+    assert.equal(lines.length, 1);
+  } finally {
+    hook.setSimeonModelRolesSourceForTest(undefined);
+    hook.setTurnModelLine(undefined);
+    hook.setClaudeCodeFallbackNotice(undefined);
+    await dispose();
+  }
+});

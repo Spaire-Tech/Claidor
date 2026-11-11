@@ -699,6 +699,10 @@ function said(error: unknown): string {
 
 export class AIModelsModel {
   accounts: ModelAccount[] = []
+  /** The plans' accounts, keys left out: Usage & Billing's Subscriptions (11 November 2026, the founder: "api keys should not be there. this was only for subscriptions"). */
+  get subscriptions(): ModelAccount[] {
+    return this.accounts.filter((one) => one.kind !== 'api_key')
+  }
   /** The models the person may choose (their accounts' signed-in providers'). */
   models: OwnModelChoice[] = []
   /** The providers a person can bring a key for, in the server's order (the founder's). */

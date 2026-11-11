@@ -13,7 +13,8 @@ import SwiftUI
  * it shows, the server says what is connected.
  *
  * On a phone the card stands its picture over its words: Simeon among the
- * bots on the website's grey, then the line, what it does and Learn more.
+ * bots on the website's grey, then the line, what it does and Learn more
+ * at the right.
  * Then the bots: a connected one with "Last used …" and a gear whose one
  * item is Disconnect, one not connected yet with its line and +; then Add,
  * for any other bot.
@@ -52,6 +53,8 @@ struct ExternalAgentsPage: View {
               .background(Ink.pillButton, in: Capsule())
           }
           .buttonStyle(.borderless)
+          // On the right, under the words (11 November 2026, the founder: "learn more in iphone should be on the right").
+          .frame(maxWidth: .infinity, alignment: .trailing)
           .padding(.top, 4)
         }
         .padding(.vertical, 8)
@@ -210,7 +213,8 @@ private struct ExternalAgentsPicture: View {
         Image(uiImage: image)
           .resizable()
           .scaledToFill()
-          .scaleEffect(1.6, anchor: UnitPoint(x: 0.5, y: 0.32))
+          .scaleEffect(P.simeonZoom)
+          .offset(y: P.simeonLower * P.simeon)
       }
     }
     .frame(width: P.simeon, height: P.simeon)
@@ -220,14 +224,53 @@ private struct ExternalAgentsPicture: View {
   }
 }
 
-/** The bots' mascots at the end of Settings' External Agents row (the reference's "Reason with" and its icons): 20 each, each over the last by 4. */
-struct ExternalAgentsMascots: View {
+/**
+ * Settings' External Agents row, drawn as Connect apps is (`ConnectAppsRow`;
+ * 11 November 2026, the founder: "iphone design it literally like connect
+ * apps. meaning blue text and the icons next to it"): the words in the
+ * window's blue, medium, then Grok Bot, Muse and Dots on Connect apps'
+ * tiles (white, #2c2c2e on dark, a hairline and a soft shadow), the first
+ * turned 7° left, the last 7° right, each over the last by 4.5. The
+ * mascots are cut out of their cream ground (`Mascots/`), so a dark tile
+ * stays dark.
+ */
+struct ExternalAgentsRow: View {
+  private static let turns: [Double] = [-7, 0, 7]
+
   var body: some View {
-    HStack(spacing: -4) {
-      ForEach(ExternalAgents.menuIcons, id: \.self) { icon in
-        ProviderIcon(provider: icon, size: 20)
+    HStack(spacing: 12) {
+      Text("External Agents")
+        .font(.system(size: 17, weight: .medium))
+        .foregroundStyle(Ink.appsBlue)
+        .fixedSize()
+      HStack(spacing: -4.5) {
+        ForEach(Array(ExternalAgents.menuIcons.enumerated()), id: \.element) { index, icon in
+          MascotTile(icon: icon, turn: Self.turns[index % Self.turns.count])
+        }
       }
+      .accessibilityHidden(true)
+      Spacer(minLength: 0)
     }
-    .accessibilityHidden(true)
+    .padding(.vertical, 4)
+    .contentShape(.rect)
+  }
+
+  /** One mascot on its tile: 30, round 8, the mascot over the whole tile. */
+  private struct MascotTile: View {
+    let icon: String
+    let turn: Double
+
+    var body: some View {
+      Image("Mascots/\(icon)")
+        .resizable()
+        .interpolation(.high)
+        .aspectRatio(contentMode: .fill)
+        .frame(width: 30, height: 30)
+        .background(Ink.appsTile)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay { RoundedRectangle(cornerRadius: 8).inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .shadow(color: Ink.appsTileShadow, radius: 1, x: 0, y: 1)
+        .rotationEffect(.degrees(turn))
+    }
   }
 }

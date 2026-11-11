@@ -373,7 +373,8 @@ function ModelAccountLine({
  * it takes us to the page"): each connected account, its app's icon, its
  * name over how much of its plan is used ("5-hour limit 42% · Weekly limit
  * 18%"; its plan before its first use; "Signed out" in red), and `›` to its
- * page. None while nothing is connected, so Usage & Billing stays as it was.
+ * page. A plan's accounts only: an API key has no plan's usage (11 November
+ * 2026). None while nothing is connected, so Usage & Billing stays as it was.
  */
 export function SubscriptionsGroup({ store }: { store: AppStore }) {
   const model = store.aiModels
@@ -385,10 +386,11 @@ export function SubscriptionsGroup({ store }: { store: AppStore }) {
     const timer = window.setInterval(() => setNow(new Date()), 30_000)
     return () => window.clearInterval(timer)
   }, [model])
-  if (model.accounts.length === 0) return null
+  const accounts = model.subscriptions
+  if (accounts.length === 0) return null
   return (
     <SettingsGroup title={t('Subscriptions')}>
-      {model.accounts.map((account, index) => {
+      {accounts.map((account, index) => {
         const signedOut = account.status === 'signed_out'
         return (
           <button
