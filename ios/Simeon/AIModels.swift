@@ -41,13 +41,9 @@ struct AIModelsPage: View {
 
   var body: some View {
     let model = store.aiModels
+    // The page starts with what is connected, then Subscriptions (11 November 2026, the founder: "remove the connect
+    // provider text in ai models in iphone. have it just start with connected of subscriptions").
     Form {
-      Section {
-        Text("Connect providers and choose the models your agents use.")
-          .font(.system(size: 15))
-          .foregroundStyle(Ink.secondary)
-      }
-      .listRowBackground(Color.clear)
       if let problem = model.problem, !model.loaded {
         Section {
           Text(problem).font(.system(size: 15)).foregroundStyle(Ink.danger)

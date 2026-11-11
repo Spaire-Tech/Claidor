@@ -310,7 +310,7 @@
 {"text": "Exit fullscreen", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/ComputerView.swift"], "old_web_app": true, "web_app": true},
 {"text": "Expand %@", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": [], "old_web_app": true, "web_app": true},
 {"text": "Expiry", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SettingsCredentials.swift"], "old_web_app": true, "web_app": true},
-{"text": "External Agents", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Account.swift", "mac/Simeon/SettingsExternalAgents.swift", "mac/Simeon/SettingsWindow.swift"], "old_web_app": false, "web_app": true},
+{"text": "External Agents", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Account.swift", "mac/Simeon/SettingsWindow.swift"], "old_web_app": false, "web_app": true},
 {"text": "Faces", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/AvatarEditor.swift", "ios/SimeonCore/Sources/SimeonCore/AgentFaces.swift", "ios/SimeonCore/Sources/SimeonCore/AvatarCrop.swift"], "old_web_app": true, "web_app": true},
 {"text": "Failed to send", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/ChatPane.swift", "ios/SimeonCore/Sources/SimeonCore/Chat.swift", "ios/SimeonCore/Sources/SimeonCore/Store.swift"], "old_web_app": true, "web_app": true},
 {"text": "Feedback sent", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Feedback.swift"], "old_web_app": false, "web_app": true},

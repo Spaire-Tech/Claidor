@@ -257,9 +257,17 @@ approve, paste the code back) is Claude Code's own sign-in.
   Models (red, with Connect Again), Claude is offered to the agents no more,
   and the engine reads its roles again, so turns go to Simeon's models
   without trying Claude first. Connecting again brings back the model chosen.
-  The chat's line saying so is written for the person (`forPerson`) and
-  shown as it is; the apps' check for a machine's words hid it, because it
-  names Claude.
+  The engine tells it with the computer's own credential; until 11 November
+  2026 the route took the app's sign-in only and answered every report 401,
+  so AI Models went on showing Claude connected and the composer went on
+  naming it while the chat said it wasn't (the same held for the plan's
+  usage, below). Once the server has taken it, the chat says so as it says
+  any change of model, "Changed from ✳ Claude Opus 5.5 to ⌘ Simeon"
+  (`claudeCodeSignedOut`, the founder: "can we change that massively long
+  text to the original changed from x to y"), and the apps read the model
+  again on that line, so the composer names Simeon at once. Only when the
+  server doesn't take it does the long line say why (written for the person,
+  `forPerson`, at most once an hour), since the choice is still Claude.
 - **The person's words reach Claude.** The handler read the turn's message
   as a plain string, which the engine never keeps it as (it is a wrapped
   `RedactedString`), so every turn Claude ran was given none of the person's
@@ -389,7 +397,12 @@ chat website ... you can click on chatgpt and claude, like with connectors".
   it said (`POST /desktop/api/models/accounts/claude/usage`, log line
   `desktop.models.usage provider=claude windows=five_hour=42,weekly=18`),
   again only when it changes or every fifteen minutes. Simeon never asks
-  Anthropic for it with the person's sign-in.
+  Anthropic for it with the person's sign-in. It sends it with the
+  computer's own credential, which the route refused until 11 November 2026
+  (401): no usage ever showed, and the page said "Shown after your agents
+  next use Claude" all day (the founder: "other models usage is a lie").
+- Usage & Billing's Subscriptions lists the plans' accounts only, never an
+  API key's, which has no plan to show (11 November 2026).
 - Kept in `desktop_model_accounts.usage` (migration
   `desktop_model_usage_1109`), in each account's JSON as `usage`.
 - **What reaches people when.** The server and the apps' pages with the

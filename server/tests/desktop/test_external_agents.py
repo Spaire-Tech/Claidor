@@ -6,9 +6,10 @@ from __future__ import annotations
 
 import httpx
 import pytest
+from sqlalchemy import select
 
 from simeon.desktop.service import desktop
-from simeon.models import User
+from simeon.models import DesktopNetworkSession, User
 from simeon.postgres import AsyncSession
 from tests.fixtures.database import SaveFixture
 
@@ -82,6 +83,69 @@ class TestExternalAgents:
             "Grok Bot",
         )
         assert bot["lastUsedAt"] >= bot["connectedAt"] > 0
+
+    async def test_grok_bot_added_at_mcp_is_grok_bot_not_cursor(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+    ) -> None:
+        """11 November 2026: Grok Bot added at `/mcp` signs in as Cursor and
+        returns to Cursor's website, and External Agents said Cursor. A
+        session kept as `cursor` before then is Grok Bot too; Cursor on the
+        person's computer (`cursor://`) stays Cursor."""
+        app = await _app(client, session, user)
+        hosted = await _bot(
+            save_fixture,
+            user,
+            ["agents"],
+            name="Cursor",
+            token="simeon_at_hostedbot",
+            redirect_uris=CURSORS,
+            returned="https://www.cursor.com/agents/mcp/oauth/callback",
+        )
+        await _said(client, await _hello(client, hosted, "Cursor"), "list_team")
+        (bot,) = await _listed(client, app)
+        assert (bot["id"], bot["kind"], bot["name"]) == (
+            "grok-bot",
+            "grok-bot",
+            "Grok Bot",
+        )
+
+        # As it was kept before: the session named `cursor`.
+        (kept,) = (
+            await session.execute(
+                select(DesktopNetworkSession).where(
+                    DesktopNetworkSession.user_id == user.id
+                )
+            )
+        ).scalars()
+        kept.kind = "cursor"
+        kept.name = "cursor"
+        await save_fixture(kept)
+        (bot,) = await _listed(client, app)
+        assert (bot["kind"], bot["name"]) == ("grok-bot", "Grok Bot")
+
+        # Cursor itself, signed in on the person's computer.
+        await _hello(
+            client,
+            await _bot(
+                save_fixture,
+                user,
+                ["agents"],
+                name="Cursor",
+                token="simeon_at_ide",
+                redirect_uris=["cursor://oauth/callback"],
+                returned="cursor://oauth/callback",
+                key="cursoride",
+            ),
+            "Cursor",
+        )
+        assert sorted(a["kind"] for a in await _listed(client, app)) == [
+            "cursor",
+            "grok-bot",
+        ]
 
     async def test_disconnect_lets_the_bot_out(
         self,

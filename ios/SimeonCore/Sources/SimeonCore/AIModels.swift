@@ -94,6 +94,9 @@ public struct ModelAccount: Identifiable, Equatable, Sendable {
     return named.isEmpty || named.contains("@") || keyEnding != nil ? providerName : named
   }
 
+  /** A plan's sign-in (ChatGPT, Claude, Grok), not a key: only a plan has a plan's usage, so only these are under Usage & Billing's Subscriptions (11 November 2026, the founder: "api keys should not be there. this was only for subscriptions"). */
+  public var isSubscription: Bool { kind != "api_key" }
+
   /** A key's last four characters as the server names it ("…a1b2"), until the person names it otherwise. */
   public var keyEnding: String? {
     let named = label.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -472,6 +475,9 @@ public final class AIModelsModel {
     guard let chosen else { return AIModels.simeonsModels }
     return models.first { $0.id == chosen }?.name ?? AIModels.simeonsModels
   }
+
+  /** The plans' accounts, keys left out: Usage & Billing's Subscriptions. */
+  public var subscriptions: [ModelAccount] { accounts.filter(\.isSubscription) }
 
   /** Whether an account of this provider is listed, signed in or not. */
   public func hasAccount(_ provider: String) -> Bool {

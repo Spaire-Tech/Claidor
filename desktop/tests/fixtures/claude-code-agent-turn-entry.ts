@@ -9,3 +9,6 @@ export { claudeCodeTurnWords } from "../../source/packages/agent/actions/user-me
 export { toRedactedUserMessage } from "../../source/packages/redacted-protos/generated/agent/v1/agent_redacted.js";
 export { UserMessage } from "../../source/packages/proto/generated/agent/v1/agent_pb.js";
 export { PrivacyMode } from "../../source/packages/redaction/privacy-mode.js";
+// Claude signed out: the roles the server gives, and the chat's model line.
+export { setSimeonModelRolesForTest, setSimeonModelRolesSourceForTest } from "../../source/host/extensions/inference/simeon-model-roles.js";
+export { noteTurnModel, setTurnModelLine } from "../../source/host/extensions/inference/turn-model.js";

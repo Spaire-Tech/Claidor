@@ -1224,6 +1224,45 @@ class TestClaudeThroughClaudeCode:
         ).json()["data"]
         assert rows[0]["transportApi"] == "claude-code"
 
+    async def test_the_computer_itself_says_signed_out_and_usage(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """11 November 2026: the engine tells both with the computer's own
+        credential, and the routes refused it (401), so AI Models went on
+        showing Claude connected while the chat said it wasn't, and no
+        usage ever showed."""
+        headers = await _headers(client, session, user)
+        await _claude(client, headers)
+        issued = await client.post(
+            "/desktop/api/box/renewal-credential", headers=headers
+        )
+        credential = issued.json()["data"]["credential"]
+        renewed = await client.post(
+            "/sand-box/inference-credential", json={"credential": credential}
+        )
+        computer = {"Authorization": f"Bearer {renewed.json()['accessToken']}"}
+
+        usage = await client.post(
+            "/desktop/api/models/accounts/claude/usage",
+            headers=computer,
+            json={"windows": [{"kind": "five_hour", "usedPercent": 12}]},
+        )
+        assert usage.status_code == 200, usage.text
+        with capture_logs() as logs:
+            told = await client.post(
+                "/desktop/api/models/accounts/claude/signed-out", headers=computer
+            )
+        assert told.status_code == 200, told.text
+        assert any(
+            one["event"] == "desktop.models.signed_out" and one["by"] == "computer"
+            for one in logs
+        )
+        [account] = (
+            await client.get("/desktop/api/models/accounts", headers=headers)
+        ).json()["accounts"]
+        assert account["status"] == "signed_out"
+        assert account["usage"]["windows"][0]["usedPercent"] == 12
+
     async def test_claude_signed_out_without_a_claude_account_is_nothing(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:

@@ -30,6 +30,7 @@
 import { join } from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
+import { currentTurnModel, noteTurnModel } from "../extensions/inference/turn-model.js";
 import { getSandRootDir } from "../host-paths.js";
 import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
 import { ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow } from "./claude-code-turn.js";
@@ -291,14 +292,32 @@ export function claudeCodeNoticeDue(agentId: string, why: ClaudeCodeFallback, no
   return true;
 }
 
+/**
+ * Claude Code signed out on this computer: the server is told, so AI Models
+ * shows it (red, with Connect Again) and the agents stop trying Claude until
+ * the person connects it again. Once the server has taken it, the person's
+ * model is Simeon's, and the chat says so as it says any change of model:
+ * "Changed from ✳ Claude Opus 5.5 to ⌘ Simeon" (11 November 2026, the
+ * founder: "can we change that massively long text to the original changed
+ * from x to y"); the agent's next turn, on Simeon's, then writes nothing
+ * more. Should the server not take it, the long line says why instead, at
+ * most once an hour, since the choice is still Claude.
+ */
+export async function claudeCodeSignedOut(agentId: string): Promise<void> {
+  if (await reportClaudeCodeSignedOut()) {
+    const now = currentTurnModel();
+    if (now.provider !== "claude") { await noteTurnModel(agentId, now); return; }
+  }
+  if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, "signed_out")) fallbackNotice(agentId, "signed_out");
+}
+
 /** The engine's hook, made at its first use: sessions on the data volume, lines in the host log. */
 export function claudeCodeTurnHook(): ClaudeCodeTurnHook {
   engineHook ??= createClaudeCodeAgentTurn({
     sessions: new ClaudeCodeSessions(join(getSandRootDir(), CLAUDE_CODE_SESSIONS_FILE)),
     log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
     onFallback: (agentId, why) => {
-      // Signed out: the app shows it, and the agents stop trying Claude until the person connects it again.
-      if (why === "signed_out") void reportClaudeCodeSignedOut();
+      if (why === "signed_out") { void claudeCodeSignedOut(agentId); return; }
       if (fallbackNotice !== undefined && claudeCodeNoticeDue(agentId, why)) fallbackNotice(agentId, why);
     },
     // How much of the plan is used: the apps show it in AI Models, like Usage & Billing.

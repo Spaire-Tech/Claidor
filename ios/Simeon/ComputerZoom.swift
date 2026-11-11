@@ -231,6 +231,7 @@ final class ScreenScroller: UIScrollView {
     screen.backgroundColor = .black
     screen.addSubview(web)
     addSubview(screen)
+    KeyboardSpot.watch()
     NotificationCenter.default.addObserver(self, selector: #selector(keyboardChanged(_:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     NotificationCenter.default.addObserver(self, selector: #selector(keyboardHidden(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
   }
@@ -240,6 +241,12 @@ final class ScreenScroller: UIScrollView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
+    // The keyboard where it is now, not only when it moves (11 November 2026: the agent handed the computer over, the
+    // keyboard came up while the computer was still starting, this view was made after it and put the picture behind it;
+    // the sheet still rising when the keyboard said where it was is the same).
+    let covered = overlap(with: KeyboardSpot.frame)
+    let moved = covered != keyboardOverlap
+    keyboardOverlap = covered
     // A new size (the phone turned) fits the picture again, from zoom 1; scrolling and zooming leave it alone.
     if bounds.size != fittedFor, bounds.width > 0, bounds.height > 0 {
       fittedFor = bounds.size
@@ -255,6 +262,7 @@ final class ScreenScroller: UIScrollView {
       return
     }
     center()
+    if moved && zoomScale <= 1.01 { recenter(animated: false) }
   }
 
   /** Back to the middle (zoom 1): the margins above and beside the picture are scrolled to. */
@@ -285,10 +293,27 @@ final class ScreenScroller: UIScrollView {
     if contentInset != inset { contentInset = inset }
   }
 
-  @objc private func keyboardChanged(_ notification: Notification) {
-    guard let window, let end = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    // Shown under a keyboard already up: the picture goes above it at once.
+    guard window != nil else { return }
+    let now = overlap(with: KeyboardSpot.frame)
+    guard now != keyboardOverlap else { return }
+    keyboardOverlap = now
+    center()
+    if zoomScale <= 1.01 { recenter(animated: false) }
+  }
+
+  /** How much of this view the keyboard covers (none while it is down). */
+  private func overlap(with keyboard: CGRect?) -> CGFloat {
+    guard let window, let keyboard, !keyboard.isEmpty else { return 0 }
     let mine = convert(bounds, to: window)
-    keyboardOverlap = max(0, mine.maxY - end.minY)
+    return max(0, mine.maxY - keyboard.minY)
+  }
+
+  @objc private func keyboardChanged(_ notification: Notification) {
+    guard window != nil, let end = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+    keyboardOverlap = overlap(with: end)
     center()
     // Not zoomed: the whole picture moves into the free part. Zoomed: the spot last tapped is kept in sight.
     if zoomScale <= 1.01 { recenter(animated: true) } else if keyboardOverlap > 0, let lastTap { reveal(lastTap) }
@@ -299,6 +324,30 @@ final class ScreenScroller: UIScrollView {
     center()
     // Not zoomed: the picture goes back to the middle.
     if zoomScale <= 1.01 { recenter(animated: true) }
+  }
+}
+
+/**
+ * Where the phone's keyboard is, kept from its own notices, so a screen
+ * made while it is already up knows (`ScreenScroller`); nil while it is
+ * down. Watched from the first screen on.
+ */
+@MainActor
+enum KeyboardSpot {
+  private(set) static var frame: CGRect?
+  private static var watching = false
+
+  static func watch() {
+    guard !watching else { return }
+    watching = true
+    // At once, on the main thread the keyboard says it from: kept before any screen reads it for the same notice.
+    NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification, object: nil, queue: nil) { notice in
+      let end = notice.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect
+      MainActor.assumeIsolated { KeyboardSpot.frame = end }
+    }
+    NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: nil) { _ in
+      MainActor.assumeIsolated { KeyboardSpot.frame = nil }
+    }
   }
 }
 #endif
