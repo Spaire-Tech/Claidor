@@ -24,6 +24,21 @@ export async function runWindowScript(ctx: Context, accessor: ShellAccessor, lab
 export async function runStartWindow(ctx: Context, accessor: ShellAccessor, windowIndex: number, ownerToken?: string): Promise<void> { await runWindowScript(ctx, accessor, "start-window", windowIndex, ownerToken == null ? {} : { ownerToken }); }
 export async function runStopWindow(ctx: Context, accessor: ShellAccessor, windowIndex: number): Promise<void> { await runWindowScript(ctx, accessor, "stop-window", windowIndex); }
 export async function touchSandMonitorBusyLease(ctx: Context, accessor: ShellAccessor, windowIndex: number): Promise<void> { if (!Number.isInteger(windowIndex) || windowIndex < 1) return; try { await accessor.get(shellExecutorResource).execute(ctx, buildHostShellArgs({ command: `touch /tmp/sand-monitor-busy-${windowIndex}`, name: "touch", workingDirectory: "/workspace", toolCallId: "sand-monitor-busy-lease" })); } catch {} }
+/**
+ * Keeps an agent's Chrome open while its computer is handed to the person
+ * (request_box_help, Take control): the browser helper on the computer
+ * closes a Chrome only after it has gone unused with nobody watching
+ * (`sand-browser-driver-source.ts`), and the person may come to a hand-off
+ * later than that. The mark is `/tmp/.sand-browser/hold-N` for the display
+ * the agent's own shell runs on; best-effort, like the busy lease.
+ */
+export function sandBrowserHoldCommand(held: boolean): string {
+  const display = 'n="${DISPLAY#:}"; n="${n%%.*}"; case "$n" in ""|*[!0-9]*) n=1;; esac';
+  return held
+    ? `${display}; mkdir -p /tmp/.sand-browser && touch "/tmp/.sand-browser/hold-$n"`
+    : `${display}; rm -f "/tmp/.sand-browser/hold-$n"`;
+}
+export async function setSandBrowserHold(ctx: Context, accessor: ShellAccessor, held: boolean): Promise<void> { try { await accessor.get(shellExecutorResource).execute(ctx, buildHostShellArgs({ command: sandBrowserHoldCommand(held), name: held ? "touch" : "rm", workingDirectory: "/workspace", toolCallId: "sand-browser-hold" })); } catch {} }
 export function sandBoxWindowKey(agentId: string, windowIndex: number): string { return `${agentId}#${windowIndex}`; }
 export function clearAgentWindowConnections(connections: Map<string, unknown>, agentId: string): void { const prefix = `${agentId}#`; for (const key of connections.keys()) if (key.startsWith(prefix)) connections.delete(key); }
 export function primarySandBoxWindow<T>(connection: { remoteAccessor: T; vncUrl: string }): { windowIndex: number; computerUse: T; vncUrl: string } { return { windowIndex: SAND_BOX_PRIMARY_WINDOW_INDEX, computerUse: connection.remoteAccessor, vncUrl: connection.vncUrl }; }

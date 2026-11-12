@@ -254,6 +254,7 @@ test("the helper attaches files without Chrome's file window, says when a click 
     await rm(workspaceFile, { force: true });
     if (madeWorkspace) await rm("/workspace", { recursive: true, force: true });
     await rm(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+    await rm(`/tmp/.sand-browser/used-${display}`, { force: true });
     await dispose();
   }
 });

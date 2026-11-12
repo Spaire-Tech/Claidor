@@ -2681,8 +2681,10 @@ helper had finished long before, and sent another helper to check. Now:
 - **A purchase that stalled at a popup, then locked the screen** (18 October 2026, Rhea buying a
   desk set from Deskery). Five things, each fixed where it happened:
   - A store popup over the button: Deskery's "Get 10% off" opened over "Add to cart"; the click
-    waited ten seconds and failed with Playwright's call log. Before a click (`click`, `type`,
-    `upload_file`) the driver now hit-tests the element's centre; when something else is on top,
+    waited ten seconds and failed with Playwright's call log. When a click (`click`, `type`,
+    `upload_file`) is held back because something intercepts it (a first try of 1.5 seconds says
+    so; until 12 November 2026 every click hit-tested its element first), the driver hit-tests the
+    element's centre; when something else is on top,
     it clicks that layer's own way out ("No, thanks", "Close", ×) or presses Escape, then clicks
     (`clickThroughPopups`, `COVER_FN` in `sand-browser-driver-source.ts`). Only a dismissal is
     ever clicked. A cover it can't clear fails at once with a sentence naming it ("something on
@@ -2820,6 +2822,105 @@ Mac or an iPhone. The tests (`desktop/tests/agent-browser-handoff.test.mjs`,
 against a fake helper, and the real driver against a fake Chrome and a fake `npm`. Whether
 the model uses OpenPage and hands over in one turn is up to the model, and is only known from
 a real sign-in.
+
+### Browser steps on the computer: one helper per display, and an idle Chrome closed
+
+**For the person (12 November 2026).** On the founder's cloud computer (E2B, 4 GB, 2 CPUs, no
+swap) every browser step cost a second or more, read off the engine's log: `browser_scroll`
+1.0 to 1.2 s, `browser_snapshot` 1.0 to 1.8 s, `browser_click` 1.7 to 2.1 s, `browser_navigate`
+3.8 to 5.5 s; and the helper took a snapshot after almost every click, so a click was two steps
+and one more model call. Each agent's own Chrome also stayed open for ever: three took about
+2.2 GB. Now:
+
+- **One helper per display stays running.** Every step used to start node, load Playwright,
+  connect to Chrome, map every tab with a DevTools session each, act, take the screenshot and
+  disconnect (the upstream app's way). The first step on a display now starts a helper that
+  keeps its connection, and each step is a small command that hands it the step over a local
+  socket. Measured on a headless Chromium (this repository's test machine on two CPUs, a page
+  of 60 elements and one frame, the median of seven rounds, the whole command as the host runs
+  it, screenshot included): navigate 884 to 287 ms, snapshot 821 to 194 ms, click 872 to 196 ms
+  (the click's own snapshot included; a click and the snapshot after it were 1.7 s in two
+  steps), scroll 991 to 339 ms (200 ms of it the scroll's own wait). The host's round trip to
+  the computer and the picture's download come on top, as before. Not yet measured on a cloud
+  computer.
+- **A click hands back the page.** `browser_click`, `browser_mouse_click_xy`, `browser_type`,
+  `browser_press_key` and `browser_select_option` return the page's snapshot after acting
+  ("Page snapshot after it (N interactive refs):"), so the helper acts on it without a
+  `browser_snapshot` of its own. Their descriptions and the helper's brief say so. A key press
+  or a click at a point waits for the page it opens (`followNavigation`). An element keeps its
+  ref while it is on the page, and a new element takes the next number, so the refs the helper
+  already holds still name the same elements after a snapshot (`SNAPSHOT_FN`); after a
+  navigation the page's refs start again.
+- **Less work in each step.** A popup over the element is looked for only when a click is held
+  back (above). Frames are read only when they are 20 pixels or more on a side, at most 5, all
+  at once within 1.5 seconds (until now up to 8, one after another, each question allowed 2
+  seconds). The host writes the helper and its playwright-core once per computer, not once per
+  turn, and asks nothing before a step. A screenshot the same as the last picture the helper was
+  shown (a snapshot, a key that changed nothing) is neither fetched nor shown again; the step
+  says "The screen looks the same as in the last picture." A screenshot asked for with
+  `browser_take_screenshot` is always shown. Every step still takes its picture on the computer:
+  it is the only way to know the screen is unchanged.
+- **An idle Chrome is closed.** After 10 minutes with no browser step and no Computer action,
+  nobody watching the agent's screen and the computer not handed to the person, the helper
+  closes the agent's Chrome and ends. It writes down the open tabs and the session cookies first
+  (`/tmp/.sand-browser/closed-N.json`, read once); the next browser step opens Chrome again on
+  the same profile with those tabs, each of the agent's views on its own tab again, and the
+  sign-ins that end with the browser restored. A watched screen is one whose VNC server has a
+  viewer (the app's Computer tab or full view, the phone, Take control). A hand-off
+  (`request_box_help`, or Take control while the agent works) marks the computer
+  (`/tmp/.sand-browser/hold-N`) until it ends.
+
+**How it works.**
+
+- The driver is one file, `SAND_BROWSER_DRIVER_SOURCE` in
+  `host/runner/tools/sand-browser-driver-source.ts`, written to
+  `/tmp/.sand-browser/driver-v3-<content>.mjs`. `node <file> --client <step>` hands the step to
+  the display's helper (`/tmp/.sand-browser/daemon-<content>-N.sock`), starting it when none
+  listens; `node <file> --serve N` is the helper; `node <file> <step>` is the one-step way, which
+  stays the fallback: a client whose helper doesn't start within 5 seconds, or is there but
+  doesn't take the step, runs it itself. A step is the helper's only once it said it was ready
+  and the client said go, so a step never runs twice. The helper runs steps one at a time, drops
+  its connection after a step past 90 seconds (as the one-step process ended), connects again
+  when Chrome restarted, and wakes sleeping tabs only when a step's tab is gone. Between steps
+  it leaves a page's dialogs and file windows to the person and sends downloads where Chrome
+  puts them; Playwright's own folder, where a connection sends them, is emptied when it
+  disconnects.
+- The idle close: `idleCloseVerdict` and `closeIdleChrome` in the driver; it reads
+  `/tmp/.sand-browser/used-N` (every step), `/tmp/sand-monitor-busy-N` (every Computer action,
+  `touchSandMonitorBusyLease`), `/tmp/.sand-browser/hold-N` (`setSandBrowserHold` in
+  `host/box/box-windows.ts`, set by the session's hand-off in
+  `host/extensions/session/production.ts`; a mark older than 12 hours is ignored) and the
+  display's VNC port (5900 for :1, 5900+N for a fork window) in `/proc/net/tcp`. It never
+  closes a Chrome it can't tell is unwatched.
+- The host: `SandBrowserDriver` in `sand-browser-tools.ts` (`browserIdleCloseMs`, the client
+  command, the picture's fingerprint). A computer that lost the helper's file, or its
+  playwright-core, has it written again and the step asked once more.
+
+**Setting.** `SIMEON_BROWSER_IDLE_CLOSE_MINUTES` (the earlier `CLAIDOR_BROWSER_IDLE_CLOSE_MINUTES`
+is still read), read by the engine from its own environment and sent with each step; 10 by
+default, 0 never closes. A helper also ends after that long with no Chrome open. The server
+gives a cloud computer a fixed environment (`environment()` in `server/simeon/sand/box_hosts.py`)
+without it, so cloud computers keep 10 minutes until it is passed there.
+
+**When it misbehaves.** On the computer, `/tmp/.sand-browser/daemon-N.log`: `started for display
+:N`, `connected to Chrome on port P`, `unused for … min, Chrome kept open: someone is watching
+the screen` (or `the computer is handed to the person`), `closed Chrome after … min unused,
+nobody watching, not handed over (K tab(s) kept to reopen)`, `reopened the tabs of the Chrome
+closed for being unused`, `ending: …`, and `a <op> step ran the one-step way: the helper did
+not start` (or `did not take it`) for each step that fell back; many of those mean the helper
+can't run on that computer.
+
+**What is not covered.** A purchase waiting on its approval longer than the idle time with
+nobody watching: Chrome is closed, and `pay_checkout` finds no checkout open until the next
+browser step reopens it. Chromes the browser steps never touched (the agent's Shell started
+one) are not closed.
+
+**Not yet verified.** None of this has run on a cloud computer or been seen in the app on a Mac
+or an iPhone; the milliseconds above are from a headless Chromium on the test machine.
+`desktop/tests/browser-helper-stays-running.test.mjs` runs the helper against a real Chromium
+(the steps served by it, a click's snapshot and its refs, Chrome restarted, the fallback, the
+idle close kept off by a viewer and by a hand-off, then closing and reopening with its tab and
+a session cookie) and the decision on a fake clock.
 
 ## 14. The phone's computer: Take control, Stop task, the keyboard
 
