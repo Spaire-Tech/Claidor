@@ -182,25 +182,87 @@ token. So for computers on Azure:
 
 ### Step 0. The Azure account (the founder)
 
-I'll give the exact clicks when we start. None of it needs a key in chat; the
-secret goes straight from Azure into Render.
+About an hour, on the Mac. No key goes in chat. The server's secret is printed
+once in the Mac's terminal and goes straight to Render.
 
-1. **Activate the credits** on a subscription, and note the end date (180 days
-   from activation).
-   - Microsoft for Startups wants a personal Microsoft account.
-   - The Sandboxes portal says personal accounts aren't supported. Our server
-     signs in as its own identity (an app registration), not as a person, so
-     this should not matter. The first test computer settles it.
-2. **Create a resource group** in `westus3`. It's closer to Render than most
-   regions and cheaper than `westus2` ($0.000024 per core-second against
-   $0.000034).
-3. **Create a sandbox group** in it (portal → Container Apps → Sandboxes).
-4. **Create a container registry, Basic** (about $5 a month).
-5. **Register an app** for our server. Give it the role "Container Apps
-   SandboxGroup Data Owner" on the sandbox group, plus pull rights on the
-   registry, and make a client secret.
-6. **Ask for more cores** before the launch: about 1,000 cores in `westus3`,
-   which is 500 awake computers. It goes through a support request.
+**The tools.** The `aca` installer is Microsoft's own, from its quickstart:
+
+```sh
+brew install azure-cli
+curl -fsSL https://aka.ms/aca-cli-install | sh
+```
+
+**1. The credits, with nothing that turns them off.**
+- Activate the $5,000 in Microsoft for Startups; it makes an Azure
+  subscription. Note the end date (180 days from activation).
+- In the Azure portal: Cost Management + Billing, then the subscription. Add a
+  card and choose **Remove spending limit** if it's shown. A credit-based
+  subscription that keeps its limit is disabled when the credits run out: all
+  its computers stop, and its storage turns read-only
+  ([subscription states](https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/subscription-states)).
+  With the card on file, use past the credits is billed instead.
+- Set a budget alert (for example $500 a month). It only sends an e-mail and
+  stops nothing.
+
+**2. The resource group, the sandbox group and the registry.**
+
+```sh
+az login
+az account set --subscription "<the new subscription's name>"
+SUB=$(az account show --query id -o tsv)
+az provider register --namespace Microsoft.App --wait
+az provider register --namespace Microsoft.ContainerRegistry --wait
+az group create --name simeon-computers --location westus3
+aca sandboxgroup create -g simeon-computers --name simeon-computers \
+  --location westus3 -s "$SUB" --set-config
+aca doctor
+az acr create --resource-group simeon-computers --name simeoncomputers \
+  --sku Basic --location westus3
+```
+
+- `westus3` is close to Render's Oregon and cheaper than `westus2`.
+- **If the registry name is taken:** registry names are global, so add digits
+  (`simeoncomputers2`).
+- **If `aca doctor` says personal accounts aren't supported:** that only
+  concerns `aca` itself. The server signs in as its own identity (next step).
+
+**3. The server's own identity.**
+
+```sh
+az ad sp create-for-rbac --name simeon-server \
+  --role "Container Apps SandboxGroup Data Owner" \
+  --scopes "/subscriptions/$SUB/resourceGroups/simeon-computers/providers/Microsoft.App/sandboxGroups/simeon-computers"
+APP=<the appId it printed>
+az role assignment create --assignee "$APP" --role AcrPull \
+  --scope "$(az acr show -n simeoncomputers --query id -o tsv)"
+az ad sp show --id "$APP" --query id -o tsv
+```
+
+- It prints `appId`, `tenant` and `password`.
+- **The password is the secret.** Put it on Render as
+  `SIMEON_AZURE_CLIENT_SECRET` and nowhere else. It does nothing until step 1
+  ships.
+- **What to send back** (none of these is a secret):
+  - the subscription id (`$SUB`);
+  - the tenant;
+  - the `appId`;
+  - the last command's output (the identity's object id, for the port lock);
+  - the registry's name.
+
+**4. Room for a spike.**
+
+Azure Portal → Help + support → Create a support request → Service and
+subscription limits (quotas) → Azure Container Apps, region `westus3`. Ask for:
+- **Sandbox cores: 2,000.** Learn's quotas page names that as the current cap
+  for Sandboxes; more goes through the same support request. 2,000 cores is
+  1,000 computers awake at once. Sleeping computers don't count, and ours
+  sleep 10 minutes after their last task.
+- **API requests: 10,000 a minute.** The default is 3,000. With 1,000 awake
+  computers, the server's own checks use about a third of that.
+
+Past 2,000 cores, a second region (`westus2` or `centralus`) doubles it. The
+server already spreads computers across several entries in
+`SIMEON_BOX_HOSTS`; it needs only a second sandbox group, with no code.
 
 ### Step 1. Azure support (me)
 
@@ -237,15 +299,24 @@ secret goes straight from Azure into Render.
 5. **The engine:** the gateway accepts its password from
    `x-simeon-box-authorization` (section 3). It works on E2B too, so it can be
    published at once.
-6. **A wake that fails:** a computer that can't be resumed within 2 minutes
+6. **No ceilings of our own:**
+   - The Azure entry runs with `"max_running": 0`, which means no limit of
+     ours. The code's default is 3.
+   - Azure's own limits (cores full, 429) show as "computers all in use,
+     trying again in a minute", never as an error.
+   - The sleeper checks the awake computers in parallel, not one after
+     another. Today it waits on each computer's state and health in turn,
+     every minute. At 1,000 awake computers that takes longer than the minute
+     itself.
+7. **A wake that fails:** a computer that can't be resumed within 2 minutes
    (bug #1869) is made again, logged as `sand.box.azure.resume_failed`. The
    person keeps what the backup holds. Without this, a stuck computer stays
    stuck.
-7. **A check:** `box/azure/check_sandbox.py`, like
+8. **A check:** `box/azure/check_sandbox.py`, like
    `box/e2b/check_template.py`. It makes one test computer, measures the
    checks below, prints JSON and removes it, so the image can be checked
    without switching.
-8. **Docs:** `docs/services-core.md`, and an "Azure" section in
+9. **Docs:** `docs/services-core.md`, and an "Azure" section in
    `docs/ops/box-host/render-env.md`.
 
 All of it is tested against a stand-in Azure server, like
@@ -258,8 +329,7 @@ Nothing changes on E2B until Render names the Azure entry.
 1. Publish the engine (it now reads the new header).
 2. Run `box/azure/build.sh` once (the image), then `check_sandbox.py`.
 3. **Render:** set the Azure settings, and set `SIMEON_BOX_HOSTS` to the Azure
-   entry alone, with `"users": ["*"]` and `"max_running"` at the core quota
-   divided by 2.
+   entry alone, with `"users": ["*"]` and `"max_running": 0`.
 4. Open the app: a fresh computer is made on Azure. Connect Claude again.
 5. Use it for real. The checks below are measured, never assumed, and each one
    either passes or sends us back.
@@ -289,6 +359,19 @@ back to E2B, and the credits go to an overflow server (section 5).
 
 **If check 5 fails:** we go back too. No computer stays on a port anyone can
 reach.
+
+### Other ceilings before a launch
+
+These aren't Azure's, but a spike hits them first. All computer traffic goes
+through the API, and every awake computer is checked every minute. The plans
+below are the ones in `render.yaml`; the dashboard may differ.
+
+| What | Today | Before launch |
+|---|---|---|
+| `claidor-api` | Starter: one process, 0.5 CPU, 512 MB | A larger plan. More instances once I've checked the API is safe with several |
+| `claidor-redis` | Free: 25 MB, 50 connections, nothing kept | A paid plan (Starter: 256 MB, 250 connections), so it keeps its data |
+| `claidor-postgres` | basic-256mb | A larger plan |
+| Model providers | Each key has its own rate limit | Check the tier of each key on Render |
 
 ## 5. Costs
 
