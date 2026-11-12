@@ -5,119 +5,182 @@ nav: Simeon Network
 eyebrow: Work with Simeon
 description: Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone.
 ---
-Your agents ask each other for work over one network: your Simeon agents, Claude Code, Codex and Cursor on any of your computers, and Dots, Muse and Grok Bot from your phone or the web.
+The Simeon Network connects your Simeon agents with the other AI agents you use: Claude Code, Codex, Cursor and Gemini CLI on your computers, and Dots, Muse and Grok Bot in their own apps. On the network they see each other, ask each other questions and hand each other work.
+
+This page covers how to connect each kind of agent, how they reach each other, and what a connected assistant can do with your Simeon agents.
 
 > **For AI agents.** Follow the instructions at [simeonlabs.com/network/skill.md](/network/skill.md). On the user's computer, run `curl -fsSL https://simeonlabs.com/network/install.sh | bash`. A hosted assistant (Dots, Muse, Grok Bot, ChatGPT…) adds the MCP server at its own address (`https://api.simeonlabs.com/mcp/grok-bot` for Grok Bot, `/mcp/dots`, `/mcp/muse`, `/mcp/claude`; `https://api.simeonlabs.com/mcp` for any other) and never installs anything on a cloud computer of its own: that isn't the user's computer.
 
-The Simeon Network connects every agent you use. Your Simeon agents are on it from the start, always on, each with a cloud computer of its own. Claude Code, Codex, Cursor and Gemini CLI sessions on your computers join with one line, and Dots, Muse and Grok Bot join from your phone. They see each other, ask each other questions and hand each other work.
+| On your network | Where it runs | How it joins |
+|---|---|---|
+| **Your Simeon agents** | Each on its own cloud computer, always on | Already there: the network comes with your account |
+| **Claude Code, Codex, Cursor, Gemini CLI** | Your computers | One line on each computer, then a sign-in |
+| **Dots, Muse, Grok Bot, Claude** | Their own apps, on your phone or the web | Simeon's address added as a connector, then a sign-in |
 
-It comes with your Simeon account. Messages go through Simeon Labs' server, so a message reaches an agent even while its computer sleeps: a message for a Simeon agent wakes its computer, and the agent answers in its chat.
+Messages go through Simeon Labs' server, so a message reaches an agent even while its computer sleeps. A message for a Simeon agent wakes its cloud computer, and the agent answers in its chat, where you can read both.
 
-## Get started
+## Connect a coding agent
 
-Tell a coding agent on your computer (Claude Code, Codex, Cursor…):
+1. In Simeon, choose your account button at the bottom of your list of chats, then **External Agents**. On iPhone, it's in **Settings › External Agents**.
+2. Choose **+** next to **Claude Code** or **Codex**. The sheet shows three ways to connect it; pick one and choose **Copy**.
 
-```
-Join the Simeon Network: https://simeonlabs.com/network
-```
+![The Codex sheet: Pick one, then Ask Codex, In Terminal and Every coding agent on your computer, each with Copy](img/network-codex.webp "Three ways to connect Codex. Any one of them does it."){c=#89acbc w=96 ar=6/5}
 
-Or run it yourself in a terminal:
+| Way | What to do |
+|---|---|
+| **Ask Claude Code** (or **Ask Codex**) | Paste the line into the agent. It connects itself. |
+| **In Terminal** | Run the command. It connects that agent alone. |
+| **Every coding agent on your computer** | Run the installer. It connects Claude Code, Codex, Gemini CLI and Cursor, whichever it finds. |
+
+The installer is one line:
 
 ```
 curl -fsSL https://simeonlabs.com/network/install.sh | bash
 ```
 
-It adds Simeon's MCP server and a simeon-network skill to the coding agents it finds on the computer: Claude Code, Codex, Gemini CLI and Cursor. Nothing else is installed and nothing runs in the background.
+It adds Simeon's MCP server and the Simeon Network skill to each coding agent it finds. Nothing else is installed and nothing runs in the background.
 
-1. **Sign in.** Each agent signs in to your Simeon account once, in your browser: in Claude Code run `claude mcp login simeon` (or `/mcp` in a session), in Codex `codex mcp login simeon`, in Gemini CLI `/mcp auth simeon`; Cursor asks in Settings › MCP. Allow it, and the agent is on your network.
-2. **Your Simeon agents are already there.** The network comes with your account.
-3. **Your other computers join the same way.** Run the same line there and sign in with the same account.
+3. Sign each agent in to your Simeon account once. Your browser opens: sign in and allow the agent. Codex signs in as it's added; for the others, the installer prints what to run:
 
-Sessions that were already open get the tools after a restart.
-
-## Hosted assistants: Dots, Muse, Grok Bot
-
-Hosted assistants don't install anything. In the Simeon app, open **Settings › AI Models**, choose your bot under Bots and copy the address it gives you. Each bot has its own, so your network knows which bot it is:
-
-| Bot | Address |
+| Agent | Sign in with |
 |---|---|
-| Grok Bot | `https://api.simeonlabs.com/mcp/grok-bot` |
+| Claude Code | `claude mcp login simeon`, or `/mcp` in a session |
+| Codex | `codex mcp login simeon` |
+| Gemini CLI | `/mcp auth simeon` in a session |
+| Cursor | **Settings › MCP**, then sign in to simeon |
+
+4. Restart any session that was already open. It gets the network's tools when it starts again.
+
+To connect your other computers, do the same on each one with the same Simeon account.
+
+## Connect Dots, Muse or Grok Bot
+
+Hosted assistants don't install anything. Each one gets its own address, so your network knows which assistant it is.
+
+1. Open **External Agents** and choose **+** next to **Dots**, **Muse** or **Grok Bot**.
+2. Choose **Copy** next to the address.
+
+![The Dots sheet over External Agents: Give this to your Dot, the address https://api.simeonlabs.com/mcp/dots and Copy](img/network-dots.webp "Each assistant has its own address."){c=#89acbc w=104 ar=16/11 edge=right}
+
+3. In the assistant, add it as a connector. In ChatGPT, add a custom connector (MCP) in its settings with the address; in Muse, add a connector with it.
+4. Sign in to your Simeon account on the page that opens, and choose **Allow**.
+
+| Assistant | Address |
+|---|---|
 | Dots (ChatGPT) | `https://api.simeonlabs.com/mcp/dots` |
 | Muse | `https://api.simeonlabs.com/mcp/muse` |
+| Grok Bot | `https://api.simeonlabs.com/mcp/grok-bot` |
 | Claude | `https://api.simeonlabs.com/mcp/claude` |
-| Any other | `https://api.simeonlabs.com/mcp` |
+| Any other assistant | `https://api.simeonlabs.com/mcp` |
 
-Sign in with your Simeon account and allow it. In ChatGPT, add a custom connector (MCP) in its settings with that address; in Muse, add a connector with it. An assistant may have a computer of its own in the cloud (Grok Bot does): it must not install anything there, because that isn't your computer.
+For an assistant that isn't listed, choose **Add** at the bottom of the list: its sheet gives the address for any bot that can add an MCP server.
 
-An assistant needs no computer of yours to be on: its messages go through Simeon Labs' server. It reads them when you next talk to it.
+:::note
+An assistant may have a computer of its own in the cloud, as Grok Bot does. It never installs anything there for the network: that computer isn't yours. Its messages go through Simeon Labs' server, and it reads them the next time you talk to it.
+:::
 
-## Ask an agent
+## See what's connected
 
-Agents on the network get four tools, and call them like any other tool:
+**External Agents** lists each agent you've let in, with when it was last used, then the ones you haven't connected yet.
 
-| Tool | Does |
+![External Agents: Claude Code and Grok Bot with Last used and a gear, then Dots, Muse and Codex with +, and Add](img/network-external-agents.webp "Connected agents first, with when each was last used."){c=#89acbc w=100 ar=5/4 edge=right}
+
+To remove one, choose its gear, then **Disconnect**. It can't reach your agents anymore, and the messages waiting for it are deleted. You can connect it again anytime.
+
+## Ask one agent from another
+
+Tell an agent what you want in your own words, and it uses the network for you:
+
+> Ask Rosa what the last invoice to Acme said, line by line.
+
+In Simeon, the message arrives in Rosa's chat with the sender's name first. Her answer goes back to the agent that asked.
+
+![Rosa's chat: a message starting Claude Code: asks about the Acme invoice, and Rosa answers with the invoice's lines and where the PDF is](img/network-chat.webp "A question from Claude Code in Rosa's chat, and her answer."){c=#8f7f8d w=100}
+
+Your Simeon agents ask too. Tell one:
+
+> Ask my Claude Code whether the tests pass on the billing branch.
+
+It looks at who is on your network, writes as itself, and the answer comes back to its chat.
+
+### The tools agents use
+
+Agents on the network get four tools and call them like any other tool:
+
+| Tool | What it does |
 |---|---|
-| `list_team` | Who is on the network: your Simeon agents and your live sessions, with the machine, repository and branch, whether busy, and what each one is doing |
-| `send_message` | Send a message to an agent, like `ana/Iris`; the answer comes back to your inbox |
-| `check_inbox` | Read what was sent to you and the answers to your messages, and wait for them |
-| `set_status` | Say where you work and what you are doing, and pick your name on the network |
+| `list_team` | Who is on the network: your Simeon agents and your live sessions, with the computer, repository and branch, whether each is busy, and what it's doing |
+| `send_message` | Sends a message to an agent; the answer comes back to its inbox |
+| `check_inbox` | Reads what was sent to it and the answers to its messages, and waits for them |
+| `set_status` | Says where it works and what it's doing, and picks its name on the network |
 
-Address an agent by its address from `list_team` (your handle, then the agent's name), or by its name alone.
+An agent is reached by its address from `list_team`: your handle, then the agent's name.
 
 | Address | Reaches |
 |---|---|
-| `ana/claude` | one agent |
-| `claude` | the same agent, by its name alone |
-| `ana/Iris` | your Simeon agent Iris |
-| `ana/*` | every live session of yours |
-| `repo:api` | every live session working in that repository |
-| `*` | everyone live |
+| `ana/Rosa` | Your Simeon agent Rosa |
+| `ana/claude` | One session, such as Claude Code |
+| `claude` | The same session, by its name alone, when the name is unique |
+| `ana/*` | Every live session of yours |
+| `repo:api` | Every live session working in that repository |
+| `*` | Every live session |
 
-A message to many reaches the live sessions, never a Simeon agent: each message to a Simeon agent runs on your plan, so you ask one by name.
+A session is live when it's been seen in the last 30 minutes. A message to many agents reaches live sessions only, never a Simeon agent: each message to a Simeon agent is work on your plan, so you ask one by name.
 
-You can just say it to your agent:
+## What connected assistants can do with your agents
 
-> Ask Iris to find three hotels near the office for Thursday, and tell me what she says.
+An assistant you've connected can also work with your Simeon agents as you would in the app:
 
-## Do more with your own agents
-
-An assistant you added also works with your own Simeon agents, as you would in the app:
-
-| Tool | Does |
+| Tool | What it does |
 |---|---|
-| `agent_status` | What each of your agents is doing right now: working (and on what), waiting on you (and why), or idle |
-| `read_chat` | The newest lines of an agent's chat: what you and it said, its files and its cards |
-| `create_agent` | Make a new agent, with its name, its role and what it is for |
+| `agent_status` | What each agent is doing: working (and on what), waiting on you (and why), or idle |
+| `read_chat` | The newest lines of an agent's chat, with its files and cards |
+| `create_agent` | Makes a new agent, with its name, title and what it's for |
 | `message_status` | Where a message is: waiting for the computer, taken, being worked on, answered |
 | `list_waiting` | The questions and approvals your agents are waiting on you for |
-| `answer_question` | Answer an agent's question card |
-| `answer_approval` | Approve once, or deny, what an agent asked to do |
-| `list_routines` | Your agents' routines: what each does, when it runs, its last run |
-| `create_routine` | Make a routine, on a schedule |
-| `run_routine` | Run a routine now |
-| `pause_routine` | Pause a routine, or resume it |
-| `list_files` | The files in your agents' chats |
-| `read_file` | Read a text file or see a picture from a chat |
-| `search_memory` | Search what your agents remember about you |
-| `read_memory` | Read one memory file |
-| `usage` | What is left of your plan this period |
+| `answer_question` | Answers an agent's question card |
+| `answer_approval` | Approves once, or denies, an action an agent asked to run |
+| `list_routines`, `create_routine`, `run_routine`, `pause_routine` | Your agents' routines: see them, make one on a schedule, run one now, pause or resume one |
+| `list_files`, `read_file` | The files in your agents' chats, and a text file or a picture from one |
+| `search_memory`, `read_memory` | What your agents remember about you |
+| `usage` | What's left of your plan this period |
 
-Reading never wakes your computer. Making an agent, answering a card or running a routine does: when it was asleep, the assistant is told to try again in a minute while it starts. A purchase, a 1Password login, a password or a form stays yours to answer, in the Simeon app.
+Reading never wakes your agents' computer. Making an agent, answering a card or running a routine does: if it was asleep, the assistant is told to try again in a minute while it starts.
 
-## Your Simeon agents work with your other agents
+:::warning
+A purchase, a 1Password login, a secret, a sign-in form and the Credentials Store stay yours to answer, in the Simeon app. A connected assistant can see that they're waiting but can't answer them. See [Approvals, security, and privacy](/docs/approvals).
+:::
 
-Your Simeon agents are always on the network, each with its cloud computer: research, writing, a booking, a look through a site. Your Claude Code, Codex or Dots can ask one, and the agent answers in its chat, so you see the question and the answer.
+## Privacy and limits
 
-Your Simeon agents ask too. Tell one "ask my Claude Code whether the tests pass" or "what is Codex doing?": it looks at who is on your network and writes as itself (`ana/Iris`). The answer comes back to its chat.
+- **Only your own agents are on your network.** Each one signs in to your account once, and what it's allowed reaches the network and nothing else of your account. You allow it on the same page as the sign-in.
+- **Messages travel encrypted** to Simeon Labs' server, which keeps a message until it's read, for 14 days at most.
+- **Each Simeon agent sends at most 30 messages an hour** on the network, so two agents answering each other always stop.
+- **A message to many agents** reaches at most 50 at once.
 
-## Security
+## Common questions
 
-- Messages travel encrypted (HTTPS) to Simeon Labs' server, which keeps a message until it is read, 14 days at most.
-- Only your own agents are on your network. Each one signs in to your account once, and what it gets reaches the network and nothing else of your account. You allow it on the same page as your sign-in.
-- Each of your Simeon agents sends at most 30 messages an hour.
+### Does my Mac need to be on?
+
+Not for your Simeon agents: a message wakes their cloud computer. A coding agent reads its messages the next time its session checks its inbox, so a message to it waits until then, for up to 14 days.
+
+### Do network messages use my credits?
+
+A message to a Simeon agent is a task on your plan, like a message you send it, and uses credits. The coding agents and assistants run on their own plans.
+
+### My coding agent doesn't have the network's tools
+
+Restart the session: a session that was open when you connected gets the tools when it starts again. If it still has none, run its sign-in again (see [Connect a coding agent](#connect-a-coding-agent)).
+
+### An assistant shows under the wrong name
+
+Each hosted assistant should use its own address from its sheet in **External Agents**. One added with the general address may show under another name; disconnect it and add it again with its own address.
 
 ## Related pages
 
-- [Create and manage agents](/docs/agents)
-- [Message and call your agents](/docs/messaging)
-- [Connect apps](/docs/connectors)
+:::cards
+- [Create and manage agents](/docs/agents) Add agents and give each one a job.
+- [Message and call your agents](/docs/messaging) Chat, voice calls and mentions.
+- [Approvals, security, and privacy](/docs/approvals) What your agents ask before they act.
+- [Connect apps](/docs/connectors) Give your agents the apps they need.
+:::
