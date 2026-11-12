@@ -1107,30 +1107,36 @@ function RowContent({
           <Marked words={row.text} />
         </div>
       )
-    case 'failedSend':
+    case 'failedSend': {
+      // Why, when it can be said plainly (`failureReason`).
+      const reason = control.store.failureReason(row.nonce, control.agentId)
       return (
-        <div className="send-state">
-          <span className="failed">{t('Failed to send')}</span>
-          <button
-            type="button"
-            className="link-button"
-            onClick={() =>
-              void control.store.resend(row.nonce, control.agentId)
-            }
-          >
-            {t('Resend')}
-          </button>
-          <button
-            type="button"
-            className="quiet-link"
-            onClick={() =>
-              control.store.discardFailed(row.nonce, control.agentId)
-            }
-          >
-            {t('Delete')}
-          </button>
+        <div className="send-failed">
+          <div className="send-state">
+            <span className="failed">{t('Failed to send')}</span>
+            <button
+              type="button"
+              className="link-button"
+              onClick={() =>
+                void control.store.resend(row.nonce, control.agentId)
+              }
+            >
+              {t('Resend')}
+            </button>
+            <button
+              type="button"
+              className="quiet-link"
+              onClick={() =>
+                control.store.discardFailed(row.nonce, control.agentId)
+              }
+            >
+              {t('Delete')}
+            </button>
+          </div>
+          {reason ? <div className="send-reason">{reason}</div> : null}
         </div>
       )
+    }
     case 'queuedSend':
       return (
         <div className="send-state">

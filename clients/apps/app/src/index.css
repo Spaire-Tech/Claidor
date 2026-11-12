@@ -1269,6 +1269,15 @@ button {
   color: var(--ink-secondary);
 }
 
+/* Why a message failed, under "Failed to send", when it can be said plainly. */
+.send-reason {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  text-align: right;
+  user-select: text;
+}
+
 .link-button,
 .quiet-link {
   border: 0;

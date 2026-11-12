@@ -12,6 +12,7 @@ import { type ChatRow, chatRows } from './chat'
 import { Entry } from './entry'
 import type { JSONValue } from './json'
 import { makeAgent } from './models'
+import { recentActivity } from './recentActivity'
 import { AppStore } from './store'
 import { FakeBackend, eventually, ms } from './testing'
 
@@ -275,6 +276,13 @@ describe('a message sent', () => {
       mine?.kind === 'bubble' && [mine.bubble.text, mine.bubble.fromPerson],
     ).toEqual(['Book the flight', true])
     expect(failed?.kind === 'failedSend' && failed.nonce).toBe(mine?.id)
+    // Why, under "Failed to send", and in the activity a report carries (12 November 2026).
+    expect(store.failureReason(mine!.id, 'theo')).toBe('offline')
+    expect(
+      recentActivity().some((line) =>
+        line.endsWith('send failed in theo: offline'),
+      ),
+    ).toBe(true)
 
     // Resend waits while sending is paused (Store.swift's `resend`: not while the computer is rebuilt, nor without access).
     backend.failSends = false

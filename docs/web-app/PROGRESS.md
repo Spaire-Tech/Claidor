@@ -842,6 +842,34 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: a message the edge refused is sent again in base64; "Failed to send" says why
+
+- The founder's long message, which had shell commands in it, said "Failed to send" on every
+  resend. Short ones went through. From their Mac: the message posted to the API answered 403
+  with Render's "Blocked" page, "hello" answered 405 (the server), and the message in base64
+  answered 405 too. The edge in front of the server refuses bodies that look like an attack,
+  before they reach it.
+- The server reads a body sent in base64 (`EncodedBodyMiddleware`, server PR of the same day).
+  The web app's fetch client now sends a body once more in base64 when the answer is the edge's
+  (a 403 with an HTML page, by its type or its first words): `sendPastEdge` and `edgeEncoded` in
+  `core/http.ts`, as the core's `EdgeFirewall`. Every other answer is kept. Bodies over 12 MB are
+  not sent again.
+- In a browser, the edge's page may come without CORS headers, and fetch then only fails as
+  unreachable. So a body that failed that way is sent once more in base64 too (the gateway
+  already resends a call that never arrived). A read without a body, and a call that timed out,
+  are not sent again.
+- A message that still fails keeps why (`failure`, `failureReason`). It is shown under "Failed to
+  send" when the words are plain (`plainError`), and noted in the activity a report carries
+  (`send failed in <agent>: …`).
+- No new words.
+
+Checked: `core/http.test.ts` against a stand-in edge on this machine (refused, then read as written,
+with the type and the bearer kept; let through once; nothing encoded without a body, past the
+limit or twice; an unreachable body sent once more, a read or a timeout not; the page known by its
+type or its first words), the store's send test (the reason and the activity line), the whole
+suite (1,276 passed), typecheck, eslint, the committed build. Not checked: in Chromium, against
+Render's real edge (whether its page carries CORS headers is not known), on a Windows PC.
+
 ### 12 November 2026: the picture viewer's title is the picture's own name
 
 - The founder's eight pictures opened under "8a67a733…1ded.png · 6 / 6": the computer keeps a
