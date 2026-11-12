@@ -38,6 +38,7 @@ import {
   PaneTextArea,
   windowLetGo,
 } from './AgentPane'
+import { CardButton } from './Cards'
 import { classes } from './classes'
 import './Routines.css'
 import { ClockGlyph, Plus, TriggerCard, XMark } from './RoutineTriggerCard'
@@ -378,25 +379,22 @@ function EditorPage({
         </span>
         <span className="pane-top-space" />
         <span className="routine-actions">
-          <button
-            type="button"
-            className="routine-button"
+          {/* The cards' own buttons (12 November 2026, the founder: "routine test run is not our design buttons"). */}
+          <CardButton
+            title={t('Delete')}
+            tone="danger"
             onClick={() => {
               // No question; a routine being made is deleted when its create comes back.
               editing.delete(store)
               model.backToRoutines()
             }}
-          >
-            {t('Delete')}
-          </button>
-          <button
-            type="button"
-            className="routine-button primary"
+          />
+          <CardButton
+            title={running ? t('Running…') : t('Test run')}
+            prominent
             disabled={editing.routineId === undefined || running}
             onClick={() => editing.testRun(store, store.routineRuns)}
-          >
-            {running ? t('Running…') : t('Test run')}
-          </button>
+          />
         </span>
         <span
           className="routine-control-line"

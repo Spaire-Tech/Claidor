@@ -227,8 +227,8 @@ agents. A turn for an agent always runs in its owner's computer.
 
 ## 4. Messaging channels: Slack and Discord
 
-**For the person.** An agent can talk in Slack: in the agent's Channels tab, + beside Slack
-opens Slack's own sign-in for Simeon's Slack app; the person picks a workspace and allows it,
+**For the person.** An agent can talk in Slack: in the agent's profile, under Notifications,
++ beside Slack opens Slack's own sign-in for Simeon's Slack app; the person picks a workspace and allows it,
 and the row turns Connected. People then message the Simeon app, or mention it in a channel it
 was invited to, and the agent answers there under its own name. No token is ever pasted. Since
 12 November 2026 ("Slack through Simeon's Slack app", below). Discord is hidden until Simeon has
@@ -259,10 +259,18 @@ engine for Discord, and for Slack bots connected before.
   minutes, used once) names the person and the agent, so the browser needs no Simeon sign-in.
   The install page goes on to Slack's authorize page (the routines' install, §2), and the
   callback keeps the workspace's bot token on the server (`sand_listener_connections`, sealed,
-  one row per workspace) with the agent in `extra.agents`. The apps' Channels row
-  (`ChannelsView.Manifest.connect == "app"`: Mac and iPhone `ChannelsPage.swift`, web
-  `ChannelsPage.tsx`) opens the link, then asks the computer every 3 s, five minutes at most,
-  until it says Connected.
+  one row per workspace) with the agent in `extra.agents`.
+- The Slack row in the agent's profile, under Notifications (12 November 2026, the founder:
+  "slack to be there below notifications", no Channels page on the way): Slack's logo, "Slack"
+  over the workspace once connected, else "Channels and DMs", and + / the spinner / the tick,
+  with "…" › Disconnect. It reads `POST /desktop/api/channels/slack/state` (`{available,
+  connected, workspace}`) from the server, so a profile never wakes the computer; it is drawn
+  only while the Slack app is registered or the agent is connected. + opens the link, then
+  asks the server every 3 s, five minutes at most, until it says connected; Disconnect calls
+  the server's disconnect route, and the computer takes the agent off at its next sync. One
+  model for the Mac and the iPhone (`SlackRowModel` in SimeonCore), the web's own
+  (`ChannelsPage.tsx`). The Channels page ("Channels" in ⌘K and "/") still lists Slack from
+  the computer's manifests and connects the same way.
 - Which agent hears a message (`route_event`): one whose name starts the message ("Theo, the
   deck?"); else the agent that last answered in that conversation (30 days); else the first
   agent connected in that workspace. Direct messages to the app (`message.im`) and mentions
@@ -274,11 +282,11 @@ engine for Discord, and for Slack bots connected before.
   mark `app` (`shared/channel-credential.ts`), and its answers go back through the server
   (`POST /desktop/api/channels/slack/send`, `host/extensions/channels/app-slack-connector.ts`),
   posted with the agent's name (`chat:write.customize`) in the thread they belong to; a file
-  under 10 MB is uploaded, a larger one or an https address is sent as a link. Disconnect in the
-  Channels tab tells the server (`POST /desktop/api/channels/slack/disconnect`); an agent the
+  under 10 MB is uploaded, a larger one or an https address is sent as a link. Disconnect on the
+  Channels page tells the server (`POST /desktop/api/channels/slack/disconnect`); an agent the
   server no longer names is taken off the computer.
 - The agent's own words (`shared/channels.ts`, the Slack manifest's connect guide): send the
-  person to Connect Slack in the Channels tab, never ask for a token; `/invite @Simeon` brings
+  person to + beside Slack in its profile, never ask for a token; `/invite @Simeon` brings
   it into a channel.
 - Discord: hidden unless the computer runs with `SAND_DISCORD_SERVED=1`. Hidden, a Discord bot
   connected before is not listened to either, until Discord comes back.
@@ -286,7 +294,7 @@ engine for Discord, and for Slack bots connected before.
 * **Settings on Render.** None new: the Slack app's four settings (§2). The Slack app itself
   needs the scopes `im:history`, `chat:write.customize`, `files:write`, the event `message.im`
   and the Messages Tab (§2); until they are added Slack refuses the sign-in (`invalid_scope`).
-* **Log lines.** Server: `desktop.channels.slack_link` (or `slack_link_refused`),
+* **Log lines.** Server (the state read logs nothing): `desktop.channels.slack_link` (or `slack_link_refused`),
   `sand.listeners.slack_install_refused`, `desktop.channels.slack_heard` (`agent_id`,
   `direct`, `queued`), `desktop.channels.slack_dropped`, `desktop.channels.slack_sent`,
   `desktop.channels.slack_send_failed` (Slack's `error`), `desktop.channels.slack_disconnected`.

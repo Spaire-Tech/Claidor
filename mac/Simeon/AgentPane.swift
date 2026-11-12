@@ -848,7 +848,7 @@ private struct TabGlyph: Shape {
  * go of the keys (Return does that for one line; in the description Return
  * is a new line); Escape puts the stored words back. An empty name is not
  * saved. The Chief of Staff's title and description are read only. Then, for
- * an agent, Notifications, 22 below.
+ * an agent, Notifications, 22 below, and Slack 18 under it.
  */
 private struct ProfileBody: View {
   let agent: Agent
@@ -872,7 +872,11 @@ private struct ProfileBody: View {
         }
       }
       if !agent.isGroup {
-        NotificationsCard(agent: agent, look: look)
+        VStack(alignment: .leading, spacing: 0) {
+          NotificationsCard(agent: agent, look: look)
+          // Slack right under it (12 November 2026), drawn once the server says it can be connected.
+          SlackProfileRow(agent: agent, look: look)
+        }
       }
     }
   }

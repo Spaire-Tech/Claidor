@@ -303,3 +303,108 @@ private struct ChannelRow: View {
     Task { await model.run(manifest.platform, agentId: agentId, store: store) { await store.connectChannel(agentId, platform: manifest.platform, token: value) } }
   }
 }
+
+/**
+ * Slack in the agent's Profile, under Notifications (12 November 2026, the
+ * founder: "slack to be there below notifications", no Channels page on the
+ * way), in Notifications' parts: Slack's 40 tile, "Slack" (15/20, medium)
+ * over the workspace once connected, else "Channels and DMs" (13/17, grey;
+ * red when the sign-in couldn't open), and at the right + (Slack's sign-in in
+ * the browser), the spinner while it is waited for, or the green tick. A
+ * connection's "…" (Disconnect) shows under the pointer. Read from Simeon
+ * Labs' server (`SlackRowModel`), so the profile never wakes the computer;
+ * drawn only while Slack can be connected, or the agent talks there.
+ */
+struct SlackProfileRow: View {
+  let agent: Agent
+  let look: Look
+  @Environment(AppStore.self) private var store
+  @State private var model = SlackRowModel()
+  @State private var hovering = false
+  @State private var menuOpen = false
+  @State private var menuSpot = WindowSpot()
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      if model.shown, let state = model.state {
+        HStack(spacing: 14) {
+          AppLogoTile(name: "Slack", look: look, side: 40, id: "slack")
+          VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: "Slack")
+              .font(.system(size: 15, weight: .medium))
+              .tracking(-0.16)
+              .foregroundStyle(look.paneInk)
+            Text(model.problem ?? state.subtitle)
+              .font(.system(size: 13))
+              .lineSpacing(LineBox.extra(size: 13, lineHeight: 17))
+              .foregroundStyle(model.problem == nil ? look.paneInk2 : look.danger)
+              .lineLimit(2)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          if state.connected && !model.busy {
+            more
+          }
+          mark(state)
+        }
+        .padding(.top, 18)
+        .contentShape(Rectangle())
+        .onHover { inside in withAnimation(.easeInOut(duration: 0.15)) { hovering = inside } }
+      } else {
+        // Something to hang the read on while the row is not drawn.
+        Color.clear.frame(height: 0)
+      }
+    }
+    .task(id: agent.id) { await model.load(agent.id, store: store) }
+    // Back from the browser: read at once.
+    .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+      Task { await model.load(agent.id, store: store) }
+    }
+  }
+
+  /** +, the spinner, or the tick. */
+  @ViewBuilder
+  private func mark(_ state: SlackState) -> some View {
+    if model.busy {
+      AddingSpinner(name: "Slack", look: look)
+    } else if state.connected {
+      AddedMark(look: look)
+    } else {
+      PlusMark(disabled: false, look: look) {
+        Task { await model.connect(agent.id, store: store) { url in NSWorkspace.shared.open(url) } }
+      }
+      .accessibilityLabel("Connect \("Slack")")
+    }
+  }
+
+  /** "…" under the pointer or while its menu is open: Disconnect, its icon red. */
+  private var more: some View {
+    Button { openMenu() } label: {
+      Image(systemName: "ellipsis")
+        .font(.system(size: 12))
+        .foregroundStyle(look.inkSecondary)
+        .frame(width: 28, height: 28)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.hand)
+    .background(WindowSpotReader(spot: menuSpot))
+    .opacity(hovering || menuOpen ? 1 : 0)
+    .accessibilityLabel("Connection actions")
+  }
+
+  private func openMenu() {
+    let menu = NSMenu(title: String(localized: "Connection actions"))
+    menu.autoenablesItems = false
+    let disconnect = BlockMenuItem(String(localized: "Disconnect")) {
+      Task { await model.disconnect(agent.id, store: store) }
+    }
+    disconnect.image = NSImage(systemSymbolName: "powerplug", accessibilityDescription: nil)?
+      .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [look.dark ? NSColor(red: 1, green: 0x56 / 255, blue: 0x67 / 255, alpha: 1) : NSColor(red: 0xc2 / 255, green: 0x1d / 255, blue: 0x2e / 255, alpha: 1)]))
+    disconnect.isEnabled = !model.busy
+    menu.addItem(disconnect)
+    menu.minimumWidth = 200
+    menuOpen = true
+    RoutineMenus.popUp(menu, under: menuSpot.frame)
+    menuOpen = false
+  }
+}

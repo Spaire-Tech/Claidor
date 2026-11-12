@@ -309,6 +309,32 @@ class LinkBody(BaseModel):
     agentId: str = Field(min_length=1, max_length=200)
 
 
+@router.post("/api/channels/slack/state", name="desktop:channels_slack_state")
+async def channels_slack_state(
+    body: LinkBody,
+    desktop_session: DesktopSession = Depends(get_desktop_session),
+    session: AsyncSession = Depends(get_db_session),
+) -> JSONResponse:
+    """Slack's row in an agent's profile (12 November 2026): whether Slack
+    can be connected here, and whether this agent talks in a workspace and
+    which. Read from this server, so the profile never wakes the computer."""
+    workspace: str | None = None
+    for row in await _connections(session, desktop_session.user_id):
+        if body.agentId in slack_agents(row):
+            workspace = row.external_name or "Slack"
+            break
+    return JSONResponse(
+        {
+            "code": 0,
+            "data": {
+                "available": registered(),
+                "connected": workspace is not None,
+                "workspace": workspace,
+            },
+        }
+    )
+
+
 @router.post("/api/channels/slack/link", name="desktop:channels_slack_link")
 async def channels_slack_link(
     body: LinkBody,

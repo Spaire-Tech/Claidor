@@ -842,6 +842,29 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: Slack under Notifications in the agent's profile; the routine bar's buttons
+
+- **Slack in the profile** (the founder: "no channel then click then slack. slack to be there
+  below notifications"): under Notifications, Slack's row in Notifications' parts (Slack's 40
+  tile, "Slack" over "Channels and DMs", or the workspace's name once connected) with + at the
+  right, the spinner while Slack's sign-in is waited for, the green tick once connected, and
+  "…" › Disconnect under the pointer. Read from the server (`channels/slack/state`), not the
+  computer, so opening a profile never wakes it; + opens the sign-in in a tab opened in the
+  click (the default browser in the Windows app) and asks the server every 3 s, five minutes
+  at most. `SlackProfileRow` and `SlackRowModel` in `ChannelsPage.tsx`; `slackState`,
+  `disconnectSlack` in the store; `SlackState` in `core/channels.ts`. The same row on the Mac
+  and the iPhone (the iPhone's "Channels" link under Notifications is gone).
+- **The routine bar** (the founder: "routine test run is not our design buttons"): Delete and
+  Test run are the cards' own buttons (`CardButton`): Delete a grey pill in red words, Test run
+  the pill in our blue, as on the Mac.
+
+Checked: the page's model tests with a stand-in store (the state read, + to Connected, a
+failed link, Disconnect, a failed Disconnect), typecheck, ESLint, the words, the committed
+build; in Chromium against the committed build, a stand-in computer and server, light, dark and
+French: the row under Notifications, + opening Slack's sign-in in a tab, the spinner, Connected
+with the workspace, "…" › Disconnect back to +, and the routine bar's two pills; no errors in
+the page. Not checked: against the real server and Slack; the Windows app run.
+
 ### 12 November 2026: Connect Slack in an agent's Channels; Discord hidden
 
 An agent talks in Slack through Simeon's own Slack app (`docs/services-agents.md`, section 4),

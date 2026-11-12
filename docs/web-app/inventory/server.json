@@ -299,7 +299,23 @@
   "old_web_app": false
  },
  {
+  "call": "channels/slack/disconnect",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Channels.swift"
+  ],
+  "old_web_app": false
+ },
+ {
   "call": "channels/slack/link",
+  "kind": "path",
+  "files": [
+   "ios/SimeonCore/Sources/SimeonCore/Channels.swift"
+  ],
+  "old_web_app": false
+ },
+ {
+  "call": "channels/slack/state",
   "kind": "path",
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Channels.swift"

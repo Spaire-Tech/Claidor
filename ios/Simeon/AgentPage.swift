@@ -120,7 +120,7 @@ private struct PageAvatar: View {
  * lets go of the keys (`saveProfileField`: the name and description always,
  * the title only when it is the field saved); unchanged, nothing is sent; an
  * empty name goes back. The Chief of Staff's title and description are read
- * only. Then, for an agent, Notifications.
+ * only. Then, for an agent, Notifications, and Slack under it.
  */
 struct ProfileTab: View {
   let agent: Agent
@@ -153,8 +153,10 @@ struct ProfileTab: View {
         }
         .padding(.top, 22)
       }
-      // Discord and Slack (the Mac's Channels page), only while this chat's computer offers one.
-      ChannelsLink(agentId: agent.id)
+      // Slack right under Notifications (12 November 2026), drawn once the server says it can be connected.
+      if !agent.isGroup {
+        SlackProfileRow(agentId: agent.id)
+      }
     }
   }
 

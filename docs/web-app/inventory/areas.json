@@ -270,19 +270,23 @@
    "mac/Simeon/RoutineTriggerCard.swift",
    "mac/Simeon/RoutinesPage.swift"
   ],
-  "mac_lines": 5339,
-  "core_lines": 2097,
+  "mac_lines": 5418,
+  "core_lines": 2197,
   "views": 67,
   "files_needing_a_mac": 6,
-  "strings": 401,
+  "strings": 402,
   "strings_in_old_web_app": 316,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [
-   "channels/slack/link"
+   "channels/slack/disconnect",
+   "channels/slack/link",
+   "channels/slack/state"
   ],
   "server_calls_not_in_old_web_app": [
-   "channels/slack/link"
+   "channels/slack/disconnect",
+   "channels/slack/link",
+   "channels/slack/state"
   ]
  },
  {

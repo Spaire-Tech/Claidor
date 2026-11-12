@@ -33,6 +33,23 @@
 
 /* MARK: Channels */
 
+/* Slack in the agent's Profile, 18 under Notifications, in its parts (`SlackProfileRow`); its "…" under the pointer. */
+.slack-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.slack-profile-row:hover .channel-more {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.notifications-line.error {
+  color: var(--danger);
+}
+
 .channels-body {
   display: flex;
   flex-direction: column;

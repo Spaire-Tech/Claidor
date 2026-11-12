@@ -290,46 +290,64 @@ private struct ChannelRows: View {
 }
 
 /**
- * "Channels" on the agent's page, shown only while its computer offers a
- * platform or holds a connection (the Mac offers "Channels" in its ⌘K and
- * "/" on the same answer, `mmt`): the Notifications row's look, the
- * platforms it offers under the word; a tap opens the page. Inside the
- * page's navigation stack (AgentPageSheet's).
+ * Slack on the agent's page, under Notifications (12 November 2026, the
+ * founder: "slack to be there below notifications", no Channels page on the
+ * way; the Mac's `SlackProfileRow`), in Notifications' parts: Slack's 40
+ * tile, "Slack" over the workspace once connected, else "Channels and DMs"
+ * (red when the sign-in couldn't open), and at the right + (Slack's sign-in
+ * in Safari), the spinner while it is waited for, or the green tick with
+ * "…" (Disconnect). Read from Simeon Labs' server (`SlackRowModel`), so the
+ * page never wakes the computer; drawn only while Slack can be connected,
+ * or the agent talks there.
  */
-struct ChannelsLink: View {
+struct SlackProfileRow: View {
   let agentId: String
   @Environment(AppStore.self) private var store
-  @State private var view: ChannelsView?
+  @Environment(\.openURL) private var openURL
+  @Environment(\.scenePhase) private var scenePhase
+  @State private var model = SlackRowModel()
 
   var body: some View {
     VStack(spacing: 0) {
-      if let view, view.hasChannels {
-        NavigationLink { ChannelsPage(agentId: agentId) } label: { row(view) }
-          .buttonStyle(.plain)
-          .padding(.top, 22)
+      if model.shown, let state = model.state {
+        HStack(spacing: 14) {
+          ConnectorTile(name: "Slack", size: 40, logo: ConnectorLogo.fill, id: "slack")
+          VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: "Slack").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
+            Text(model.problem ?? state.subtitle).font(.system(size: 13)).foregroundStyle(model.problem == nil ? Ink.secondary : Ink.danger).lineLimit(2)
+          }
+          Spacer(minLength: 8)
+          if model.busy {
+            ConnectorMark.busy()
+          } else if state.connected {
+            Menu {
+              Button("Disconnect", systemImage: "powerplug", role: .destructive) {
+                Task { await model.disconnect(agentId, store: store) }
+              }
+            } label: {
+              ConnectorMark.added()
+                .contentShape(.rect)
+            }
+            .accessibilityLabel("Connection actions")
+          } else {
+            Button {
+              Haptics.tap()
+              Task { await model.connect(agentId, store: store) { url in openURL(url) } }
+            } label: { ConnectorMark.plus() }
+              .buttonStyle(.borderless)
+              .accessibilityLabel("Connect \("Slack")")
+          }
+        }
+        .padding(.top, 18)
       } else {
         // Something to hang the read on while the row is not drawn.
         Color.clear.frame(height: 0)
       }
     }
-    .task(id: agentId) { view = await store.channels(agentId) }
-  }
-
-  private func row(_ view: ChannelsView) -> some View {
-    let offered = view.manifests.filter { $0.availability == "available" || view.connection($0) != nil }.map(\.displayName)
-    return HStack(spacing: 14) {
-      Image(systemName: "bubble.left.and.bubble.right").font(.system(size: 16)).foregroundStyle(Ink.primary)
-        .frame(width: 40, height: 40)
-        .background(Ink.bubbleTheirs, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-      VStack(alignment: .leading, spacing: 2) {
-        Text("Channels").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.primary)
-        if !offered.isEmpty {
-          Text(offered.joined(separator: ", ")).font(.system(size: 13)).foregroundStyle(Ink.secondary)
-        }
-      }
-      Spacer(minLength: 8)
-      Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.tertiary)
+    .task(id: agentId) { await model.load(agentId, store: store) }
+    // Back from Safari: read at once.
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { Task { await model.load(agentId, store: store) } }
     }
-    .contentShape(.rect)
   }
 }

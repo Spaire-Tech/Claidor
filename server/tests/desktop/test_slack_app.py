@@ -29,6 +29,7 @@ from tests.sand.test_listeners import SLACK_SECRET, _slack_signed
 from .test_chats import _signed_in_with_box
 
 LINK = "/desktop/api/channels/slack/link"
+STATE = "/desktop/api/channels/slack/state"
 SEND = "/desktop/api/channels/slack/send"
 DISCONNECT = "/desktop/api/channels/slack/disconnect"
 SYNC = "/desktop/api/channels/sync"
@@ -253,6 +254,47 @@ class TestConnect:
         assert row.access_token == "xoxb-workspace"
         sync = await client.post(SYNC, json={"channels": []}, headers=box)
         assert [one["agentId"] for one in sync.json()["data"]["hosted"]] == ["theo"]
+
+    async def test_the_profile_s_slack_row_reads_its_state_from_the_server(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        user: User,
+        slack: FakeSlack,
+        mocker: MockerFixture,
+    ) -> None:
+        app, _ = await _signed_in_with_box(client, session, user)
+
+        async def state(agent_id: str) -> dict[str, Any]:
+            answer = await client.post(STATE, json={"agentId": agent_id}, headers=app)
+            assert answer.status_code == 200, answer.text
+            data: dict[str, Any] = answer.json()["data"]
+            return data
+
+        assert await state("nora") == {
+            "available": True,
+            "connected": False,
+            "workspace": None,
+        }
+        assert (await _connect(client, app, "nora")).status_code == 200
+        assert await state("nora") == {
+            "available": True,
+            "connected": True,
+            "workspace": "Simeon Labs",
+        }
+        assert (await state("theo"))["connected"] is False
+
+        # Disconnect from the profile's row: the app's own session.
+        answer = await client.post(DISCONNECT, json={"agentId": "nora"}, headers=app)
+        assert answer.json() == {"code": 0, "data": {"removed": 1}}
+        assert (await state("nora"))["connected"] is False
+
+        mocker.patch.object(settings, "SLACK_CLIENT_ID", "")
+        assert (await state("nora"))["available"] is False
+        assert (await client.post(STATE, json={"agentId": "nora"})).status_code in (
+            401,
+            403,
+        )
 
 
 @pytest.mark.asyncio
