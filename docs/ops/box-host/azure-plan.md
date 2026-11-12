@@ -238,21 +238,20 @@ az role assignment create --role "Container Apps SandboxGroup Data Owner" \
   --assignee "$(az ad signed-in-user show --query id -o tsv)" --scope "$GROUP"
 ```
 
+- The first command prints `appId`, `tenant` and `password`.
+- **The password is the secret.** Put it on Render as
+  `SIMEON_AZURE_CLIENT_SECRET` and nowhere else. Azure shows it only once.
+- `az ad sp show` prints the identity's object id, for the port lock.
 - The last command gives your own account the same role, so
   `box/azure/build.sh` can make the disk image and the test computer from
   the Mac, signed in as you. The disk image is pulled from the registry with
   a short-lived token of yours, so the server's identity needs no access to
   the registry.
-
-- It prints `appId`, `tenant` and `password`.
-- **The password is the secret.** Put it on Render as
-  `SIMEON_AZURE_CLIENT_SECRET` and nowhere else. It does nothing until step 1
-  ships.
 - **What to send back** (none of these is a secret):
   - the subscription id (`$SUB`);
   - the tenant;
   - the `appId`;
-  - the last command's output (the identity's object id, for the port lock);
+  - the object id that `az ad sp show` printed;
   - the registry's name.
 
 **4. Room for a spike.**
