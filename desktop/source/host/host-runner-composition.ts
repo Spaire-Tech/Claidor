@@ -173,6 +173,9 @@ import {
   SAND_CLOUD_AGENT_CLASSIFIER_ERROR_REASON,
 } from "./runner/sand-cloud-agent-auto-review.js";
 import type { Context } from "../packages/context/core.js";
+import { createContext } from "../packages/context/core.js";
+import { loggerKey } from "../packages/context/logger.js";
+import { setSandBrowserHold, type ShellAccessor } from "./box/box-windows.js";
 import type {
   TurnShellAutoReviewInput,
   TurnToolsetHost,
@@ -374,6 +377,30 @@ function method(api: DynamicApi | undefined, name: string): ((...args: any[]) =>
   if (api == null) return undefined;
   const candidate = api[name];
   return typeof candidate === "function" ? candidate.bind(api) : undefined;
+}
+
+/**
+ * A checkout card's mark on the agent's computer (12 November 2026,
+ * `setSandBrowserHold`): set on the agent's window when RequestPurchase posts
+ * the card, so the idle close leaves its Chrome and the checkout tab open
+ * while the person takes their time; taken back when the purchase ends
+ * (`purchase-cards.ts`). Best-effort: the browser helper ignores a mark after
+ * two hours.
+ */
+async function markPurchaseBrowser(box: DynamicApi | undefined, agentId: string, entryId: string, held: boolean): Promise<void> {
+  try {
+    const ensureReady = method(box, "ensureReady");
+    if (ensureReady === undefined) return;
+    const context = createContext().with(loggerKey, { log: () => {} });
+    const connection = await ensureReady(context, agentId) as { readonly remoteAccessor?: unknown } | undefined;
+    const accessor = connection?.remoteAccessor;
+    if (accessor == null) return;
+    const display = boxAgentWindowIndex(box as any, agentId) ?? 1;
+    await setSandBrowserHold(context, accessor as ShellAccessor, held, { purchase: { agentId, entryId }, display });
+    logHostLine(`${HOST_LOG_PREFIX} [purchase] ${held ? `browser kept open on :${display} while the card waits` : "browser let go: the purchase ended"} (${agentId}/${entryId})`);
+  } catch (error) {
+    logHostLine(`${HOST_LOG_PREFIX} [purchase] browser ${held ? "hold" : "release"} failed for ${agentId}/${entryId}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function asSandAutoReviewController(value: unknown): SandAutoReviewController | undefined {
@@ -943,6 +970,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
     log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
   });
   method(extensions.api("transcript"), "setStoredCardWallet")?.(storedCardWallet);
+  // A purchase that ends lets go of the agent's Chrome its card kept open.
+  method(extensions.api("transcript"), "setPurchaseBrowserRelease")?.((agentId: string, entryId: string) => markPurchaseBrowser(extensions.api("forever-box").box as DynamicApi, agentId, entryId, false));
   const localToolPermission = extensions.api("local-tool-permission");
   const localToolPermissionSurfaces = new Map<string, () => void>();
   const ownedRunners = new Set<Runner>();
@@ -2644,6 +2673,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                     else turn.emitUpdate(update);
                     return hooks.transport.lastSentMessageId?.();
                   },
+                  // The checkout tab stays open while its card waits for the person.
+                  holdBrowser: (entryId) => { void markPurchaseBrowser(extensions.api("forever-box").box as DynamicApi, session.id, entryId, true); },
                   // PayWithSavedCard: the saved card typed into the checkout the person allowed (transcript/purchase-cards.ts).
                   payWithSavedCard: async (entryId) => {
                     const paid = await method(extensions.api("transcript"), "payWithSavedCard")?.({ agentId: session.id, entryId }) as Awaited<ReturnType<NonNullable<PurchaseToolDependencies["payWithSavedCard"]>>> | undefined;

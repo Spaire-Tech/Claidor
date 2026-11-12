@@ -11,7 +11,7 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import net from "node:net";
@@ -174,11 +174,52 @@ test("a hand-off keeps the agent's Chrome open: the mark is set when it starts a
     assert.ok(existsSync(`/tmp/.sand-browser/hold-${display}`));
     assert.equal(run(false).status, 0);
     assert.ok(!existsSync(`/tmp/.sand-browser/hold-${display}`));
+
+    // A checkout card's mark: its own per agent and entry, on the window it
+    // names, safe in the shell, taken back by name on any window.
+    const shell = (command) => spawnSync("bash", ["-c", command], { env: { ...process.env, DISPLAY: ":1" } });
+    const mark = (agentId, entryId) => `/tmp/.sand-browser/purchase-hold-${agentId}-${entryId}.${display}`;
+    assert.equal(shell(module.sandBrowserHoldCommand(true, { purchase: { agentId: "a1", entryId: "t3s1" }, display })).status, 0);
+    assert.equal(shell(module.sandBrowserHoldCommand(true, { purchase: { agentId: "x-a1", entryId: "t3s1" }, display })).status, 0);
+    assert.equal(shell(module.sandBrowserHoldCommand(true, { purchase: { agentId: "a/1;touch /tmp/x", entryId: "t3s1" }, display })).status, 0);
+    assert.ok(existsSync(mark("a1", "t3s1")), "on the window it names, not the shell's");
+    assert.ok(existsSync(mark("a_1_touch__tmp_x", "t3s1")), "nothing but letters, digits, _ and - reach the shell");
+    assert.ok(!existsSync(`/tmp/.sand-browser/hold-${display}`), "the hand-off's mark is another");
+    assert.equal(shell(module.sandBrowserHoldCommand(false, { purchase: { agentId: "a1", entryId: "t3s1" } })).status, 0);
+    assert.ok(!existsSync(mark("a1", "t3s1")));
+    assert.ok(existsSync(mark("x-a1", "t3s1")), "another agent's card keeps its own");
     const production = await readFile(path.join(repoRoot, "source/host/extensions/session/production.ts"), "utf8");
     assert.match(production, /onStarted: event => \{\n\s*void holdHandoffBrowser\(box, requestContext, event\.agentId, true\);/);
     assert.match(production, /onEnded: event => \{\n\s*void holdHandoffBrowser\(box, requestContext, event\.agentId, false\);/);
   } finally {
     await rm(`/tmp/.sand-browser/hold-${display}`, { force: true });
+    for (const name of readdirSync("/tmp/.sand-browser").filter((one) => one.startsWith("purchase-hold-") && one.endsWith(`.${display}`))) await rm(`/tmp/.sand-browser/${name}`, { force: true });
+    await dispose();
+  }
+});
+
+test("a checkout card's mark keeps Chrome open two hours at most, a hand-off's twelve, each on its own window (a fake clock)", async () => {
+  const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "held-by");
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-held-by-"));
+  try {
+    const source = module.SAND_BROWSER_DRIVER_SOURCE;
+    const slice = (from, to) => { const at = source.indexOf(from); return source.slice(at, source.indexOf(to, at)); };
+    const code = [slice("function holdPath", "\nfunction closedPath"), slice("function heldBy", "\nfunction noteUsed"), slice("function mtimeMs", "\n// The display's screen")].join("\n");
+    const hour = 60 * 60 * 1000;
+    const heldBy = new Function("STATE_DIR", "HOLD_MAX_MS", "PURCHASE_HOLD_MAX_MS", "statSync", "readdirSync", "unlinkSync", `${code}; return heldBy;`)(dir, 12 * hour, 2 * hour, statSync, readdirSync, unlinkSync);
+    const card = path.join(dir, "purchase-hold-a1-t3s1.7");
+    await writeFile(card, "");
+    const at = statSync(card).mtimeMs;
+    assert.equal(heldBy(7, at + 1000), "purchase");
+    assert.equal(heldBy(8, at + 1000), undefined, "another window's Chrome is not held");
+    assert.equal(heldBy(7, at + 2 * hour - 1000), "purchase");
+    assert.equal(heldBy(7, at + 2 * hour + 1000), undefined, "after two hours a card nobody answered no longer holds it");
+    assert.ok(!existsSync(card), "and its mark is removed");
+    await writeFile(path.join(dir, "hold-7"), "");
+    assert.equal(heldBy(7, at + 3 * hour), "handoff");
+    assert.equal(heldBy(7, at + 13 * hour), undefined);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
     await dispose();
   }
 });
@@ -301,8 +342,11 @@ test("the helper that stays running serves the steps, a click hands back the pag
   }
 });
 
-test("an unused Chrome is closed while nobody watches and it isn't handed over, then opens again with its tab and its sign-in", { skip: CHROMIUM === undefined ? "no Chromium here" : false, timeout: 120_000 }, async () => {
+test("an unused Chrome is closed while nobody watches, it isn't handed over and no checkout card waits, then opens again with its tab and its sign-in", { skip: CHROMIUM === undefined ? "no Chromium here" : false, timeout: 120_000 }, async () => {
   const { module, dispose } = await load("source/host/runner/tools/sand-browser-driver-source.ts", "driver-idle");
+  const windows = await load("source/host/box/box-windows.ts", "idle-windows");
+  const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "idle-cards");
+  const tool = await load("source/host/runner/tools/purchase-tool.ts", "idle-tool");
   const site = createServer((request, response) => {
     response.setHeader("content-type", "text/html; charset=utf-8");
     if (request.url === "/sign-in") {
@@ -367,10 +411,35 @@ test("an unused Chrome is closed while nobody watches and it isn't handed over, 
     assert.equal(await cdpUp(port), true, "a computer handed to the person keeps its Chrome");
     assert.match(await log(), /Chrome kept open: the computer is handed to the person/);
 
-    // Neither: closed, its tab and session cookie written down, the helper gone.
+    // A checkout card waits for the person (RequestPurchase's hold, as the
+    // host sets it): still open with nobody watching and no hand-off.
+    const shellOnThisComputer = { get: () => ({ execute: async (_context, shellArgs) => spawnSync("bash", ["-c", shellArgs.command]) }) };
+    const purchaseMark = `/tmp/.sand-browser/purchase-hold-a1-t3s1.${display}`;
+    await windows.module.setSandBrowserHold({}, shellOnThisComputer, true, { purchase: { agentId: "a1", entryId: "t3s1" }, display });
+    assert.ok(existsSync(purchaseMark));
     await rm(`/tmp/.sand-browser/hold-${display}`, { force: true });
+    await sleep(2500);
+    assert.equal(await cdpUp(port), true, "a checkout card waiting for the person keeps its Chrome");
+    assert.match(await log(), /Chrome kept open: a checkout card waits for the person/);
+
+    // The person answers it (Deny): the purchase ends, its mark goes, and the
+    // idle close runs again. Closed, its tab and session cookie written down,
+    // the helper gone.
+    const message = tool.module.purchaseCardFromArgs({ merchant_name: "Store", checkout_url: `https://store.example/checkout`, items: [{ name: "Shirt", quantity: 1, unit_amount: 2000 }], total: 2000, currency: "usd", credential_type: "card" }, { ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" } }, undefined);
+    const entries = [{ kind: "send-message", id: "t3s1", timestampMs: 42, message }];
+    const db = { getTranscriptEntries: () => entries, updateTranscriptEntry: (id, update) => { const index = entries.findIndex((item) => item.id === id); if (index >= 0) entries[index] = update(entries[index]); } };
+    const purchases = new cards.module.PurchaseCards({
+      sessions: { activeSession: { id: "a1", db }, liveSessions: new Map(), inMemoryTranscriptAgentId: "a1", isAgentGone: () => false },
+      sessionStore: { readAgentTranscriptEntries: () => [], withAgentDb: async () => undefined },
+      roster: { emit: () => {}, emitAgentUpdate: async () => undefined },
+      backgroundWakes: { runHiddenPromptWake: async () => {} },
+    }, { retryDelayMs: 0, log: () => undefined });
+    purchases.setPurchaseBrowserRelease((agentId, entryId) => windows.module.setSandBrowserHold({}, shellOnThisComputer, false, { purchase: { agentId, entryId } }));
+    await purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: false }, undefined);
+    assert.equal(entries[0].purchaseState, "denied");
+    await waitFor(() => !existsSync(purchaseMark), 5_000, "the card's mark to go");
     await waitFor(async () => !(await cdpUp(port)), 10_000, "the idle close");
-    await waitFor(async () => /closed Chrome after [\d.]+ min unused, nobody watching, not handed over \(1 tab\(s\) kept to reopen\)/.test(await log()), 5_000, "the close's log line");
+    await waitFor(async () => /closed Chrome after [\d.]+ min unused, nobody watching, not handed over, no checkout card waiting \(1 tab\(s\) kept to reopen\)/.test(await log()), 5_000, "the close's log line");
     const record = JSON.parse(await readFile(`/tmp/.sand-browser/closed-${display}.json`, "utf8"));
     assert.equal(record.tabs.length, 1);
     assert.equal(record.tabs[0].url, `${base}/`);
@@ -395,8 +464,8 @@ test("an unused Chrome is closed while nobody watches and it isn't handed over, 
     await sleep(300);
     await rm(driverDir, { recursive: true, force: true });
     await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-    for (const name of [`views-${display}.json`, `used-${display}`, `daemon-${display}.log`, `closed-${display}.json`, `hold-${display}`]) await rm(`/tmp/.sand-browser/${name}`, { force: true });
+    for (const name of [`views-${display}.json`, `used-${display}`, `daemon-${display}.log`, `closed-${display}.json`, `hold-${display}`, `purchase-hold-a1-t3s1.${display}`]) await rm(`/tmp/.sand-browser/${name}`, { force: true });
     await removeSockets(module.SAND_BROWSER_DRIVER_SOURCE, [display]);
-    await dispose();
+    await Promise.all([dispose(), windows.dispose(), cards.dispose(), tool.dispose()]);
   }
 });

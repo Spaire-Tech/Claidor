@@ -2861,14 +2861,23 @@ and one more model call. Each agent's own Chrome also stayed open for ever: thre
   `browser_take_screenshot` is always shown. Every step still takes its picture on the computer:
   it is the only way to know the screen is unchanged.
 - **An idle Chrome is closed.** After 10 minutes with no browser step and no Computer action,
-  nobody watching the agent's screen and the computer not handed to the person, the helper
-  closes the agent's Chrome and ends. It writes down the open tabs and the session cookies first
+  nobody watching the agent's screen, the computer not handed to the person and no checkout card
+  of that agent waiting, the helper closes the agent's Chrome and ends. It writes down the open tabs and the session cookies first
   (`/tmp/.sand-browser/closed-N.json`, read once); the next browser step opens Chrome again on
   the same profile with those tabs, each of the agent's views on its own tab again, and the
   sign-ins that end with the browser restored. A watched screen is one whose VNC server has a
   viewer (the app's Computer tab or full view, the phone, Take control). A hand-off
   (`request_box_help`, or Take control while the agent works) marks the computer
   (`/tmp/.sand-browser/hold-N`) until it ends.
+- **A checkout card keeps the checkout open.** When `RequestPurchase` posts a card paid with
+  Link, a saved card or Shop as the wallet, the agent's window is marked
+  (`/tmp/.sand-browser/purchase-hold-<agent>-<entry>.N`), so the checkout tab is still there
+  however long the person takes, and `pay_checkout` finds it. The mark goes when the purchase
+  ends: Deny, Link's request expiring or canceled, a failure, or `MarkPurchaseDone`. It stays
+  while the card is approved and the agent pays. A card for a Shop checkout (`shop_checkout`)
+  has no tab and marks nothing. A mark older than two hours is ignored and removed, so a card
+  nobody answers, or a mark the engine couldn't take back (the computer didn't answer), holds
+  Chrome no longer than that.
 
 **How it works.**
 
@@ -2889,8 +2898,11 @@ and one more model call. Each agent's own Chrome also stayed open for ever: thre
   `/tmp/.sand-browser/used-N` (every step), `/tmp/sand-monitor-busy-N` (every Computer action,
   `touchSandMonitorBusyLease`), `/tmp/.sand-browser/hold-N` (`setSandBrowserHold` in
   `host/box/box-windows.ts`, set by the session's hand-off in
-  `host/extensions/session/production.ts`; a mark older than 12 hours is ignored) and the
-  display's VNC port (5900 for :1, 5900+N for a fork window) in `/proc/net/tcp`. It never
+  `host/extensions/session/production.ts`; a mark older than 12 hours is ignored), the
+  checkout cards' `purchase-hold-*.N` (`holdBrowser` in `purchase-tool.ts`, set by
+  `markPurchaseBrowser` in `host-runner-composition.ts`; taken back from `stamp` in
+  `host/extensions/transcript/purchase-cards.ts` when the card reaches a final state, through
+  `setPurchaseBrowserRelease`; two hours at most) and the display's VNC port (5900 for :1, 5900+N for a fork window) in `/proc/net/tcp`. It never
   closes a Chrome it can't tell is unwatched.
 - The host: `SandBrowserDriver` in `sand-browser-tools.ts` (`browserIdleCloseMs`, the client
   command, the picture's fingerprint). A computer that lost the helper's file, or its
@@ -2904,23 +2916,29 @@ without it, so cloud computers keep 10 minutes until it is passed there.
 
 **When it misbehaves.** On the computer, `/tmp/.sand-browser/daemon-N.log`: `started for display
 :N`, `connected to Chrome on port P`, `unused for … min, Chrome kept open: someone is watching
-the screen` (or `the computer is handed to the person`), `closed Chrome after … min unused,
-nobody watching, not handed over (K tab(s) kept to reopen)`, `reopened the tabs of the Chrome
+the screen` (or `the computer is handed to the person`, or `a checkout card waits for the
+person`), `closed Chrome after … min unused, nobody watching, not handed over, no checkout card
+waiting (K tab(s) kept to reopen)`, `reopened the tabs of the Chrome
 closed for being unused`, `ending: …`, and `a <op> step ran the one-step way: the helper did
 not start` (or `did not take it`) for each step that fell back; many of those mean the helper
-can't run on that computer.
+can't run on that computer. The engine's box log has `[purchase] browser kept open on :N while
+the card waits (<agent>/<entry>)` when a card is posted and `[purchase] browser let go: the
+purchase ended` when it ends.
 
-**What is not covered.** A purchase waiting on its approval longer than the idle time with
-nobody watching: Chrome is closed, and `pay_checkout` finds no checkout open until the next
-browser step reopens it. Chromes the browser steps never touched (the agent's Shell started
-one) are not closed.
+**What is not covered.** A card left unanswered for more than two hours with nobody watching:
+Chrome is closed, and `pay_checkout` finds no checkout open until the next browser step reopens
+it with its tabs. Chromes the browser steps never touched (the agent's Shell started one) are
+not closed.
 
 **Not yet verified.** None of this has run on a cloud computer or been seen in the app on a Mac
 or an iPhone; the milliseconds above are from a headless Chromium on the test machine.
 `desktop/tests/browser-helper-stays-running.test.mjs` runs the helper against a real Chromium
 (the steps served by it, a click's snapshot and its refs, Chrome restarted, the fallback, the
-idle close kept off by a viewer and by a hand-off, then closing and reopening with its tab and
-a session cookie) and the decision on a fake clock.
+idle close kept off by a viewer, by a hand-off and by a waiting checkout card, the card's Deny
+through `PurchaseCards` taking its mark back, then closing and reopening with its tab and a
+session cookie) and the decision and the marks' limits on a fake clock;
+`desktop/tests/purchase-card.test.mjs` checks that each card holds once and is let go once at
+each ending, and that a Shop checkout holds nothing.
 
 ## 14. The phone's computer: Take control, Stop task, the keyboard
 

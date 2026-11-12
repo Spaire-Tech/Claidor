@@ -31,14 +31,38 @@ export async function touchSandMonitorBusyLease(ctx: Context, accessor: ShellAcc
  * (`sand-browser-driver-source.ts`), and the person may come to a hand-off
  * later than that. The mark is `/tmp/.sand-browser/hold-N` for the display
  * the agent's own shell runs on; best-effort, like the busy lease.
+ *
+ * A checkout card waiting for the person keeps it open too (12 November
+ * 2026): the card's checkout tab must still be there when they answer. Each
+ * card has its own mark, `/tmp/.sand-browser/purchase-hold-<agent>-<entry>.N`,
+ * on the agent's window N, taken back when the purchase ends; the browser
+ * helper ignores one older than two hours, so a card nobody answers, or a
+ * mark that couldn't be taken back, keeps Chrome open no longer than that.
  */
-export function sandBrowserHoldCommand(held: boolean): string {
-  const display = 'n="${DISPLAY#:}"; n="${n%%.*}"; case "$n" in ""|*[!0-9]*) n=1;; esac';
+export interface SandBrowserHoldMark {
+  /** The checkout card's agent and entry: a purchase's mark, not the hand-off's. */
+  readonly purchase?: { readonly agentId: string; readonly entryId: string };
+  /** The agent's window; the shell's own DISPLAY when not given. */
+  readonly display?: number;
+}
+const shellDisplay = 'n="${DISPLAY#:}"; n="${n%%.*}"; case "$n" in ""|*[!0-9]*) n=1;; esac';
+/** A mark's name part: letters, digits, `_` and `-` only, so it is safe in the shell and the file name. */
+function holdKeyPart(value: string): string { return value.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 80) || "_"; }
+export function sandBrowserHoldCommand(held: boolean, mark: SandBrowserHoldMark = {}): string {
+  const display = mark.display !== undefined && Number.isInteger(mark.display) && mark.display >= 0 ? `n=${mark.display}` : shellDisplay;
+  if (mark.purchase !== undefined) {
+    const key = `${holdKeyPart(mark.purchase.agentId)}-${holdKeyPart(mark.purchase.entryId)}`;
+    // Taken back on whichever window it was set: the key has no dot, so
+    // `.*` is only ever the window.
+    return held
+      ? `${display}; mkdir -p /tmp/.sand-browser && touch "/tmp/.sand-browser/purchase-hold-${key}.$n"`
+      : `rm -f /tmp/.sand-browser/purchase-hold-${key}.*`;
+  }
   return held
     ? `${display}; mkdir -p /tmp/.sand-browser && touch "/tmp/.sand-browser/hold-$n"`
     : `${display}; rm -f "/tmp/.sand-browser/hold-$n"`;
 }
-export async function setSandBrowserHold(ctx: Context, accessor: ShellAccessor, held: boolean): Promise<void> { try { await accessor.get(shellExecutorResource).execute(ctx, buildHostShellArgs({ command: sandBrowserHoldCommand(held), name: held ? "touch" : "rm", workingDirectory: "/workspace", toolCallId: "sand-browser-hold" })); } catch {} }
+export async function setSandBrowserHold(ctx: Context, accessor: ShellAccessor, held: boolean, mark: SandBrowserHoldMark = {}): Promise<void> { try { await accessor.get(shellExecutorResource).execute(ctx, buildHostShellArgs({ command: sandBrowserHoldCommand(held, mark), name: held ? "touch" : "rm", workingDirectory: "/workspace", toolCallId: mark.purchase === undefined ? "sand-browser-hold" : "sand-browser-purchase-hold" })); } catch {} }
 export function sandBoxWindowKey(agentId: string, windowIndex: number): string { return `${agentId}#${windowIndex}`; }
 export function clearAgentWindowConnections(connections: Map<string, unknown>, agentId: string): void { const prefix = `${agentId}#`; for (const key of connections.keys()) if (key.startsWith(prefix)) connections.delete(key); }
 export function primarySandBoxWindow<T>(connection: { remoteAccessor: T; vncUrl: string }): { windowIndex: number; computerUse: T; vncUrl: string } { return { windowIndex: SAND_BOX_PRIMARY_WINDOW_INDEX, computerUse: connection.remoteAccessor, vncUrl: connection.vncUrl }; }

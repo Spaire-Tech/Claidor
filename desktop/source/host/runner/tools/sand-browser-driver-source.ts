@@ -29,7 +29,7 @@ export const SAND_BROWSER_RESULT_MARKER = "__SAND_BROWSER_RESULT__";
 export const SAND_BROWSER_DRIVER_SOURCE = `
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFileSync, chmodSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { appendFileSync, chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import { fileURLToPath } from "node:url";
 
@@ -59,6 +59,9 @@ const MAX_RESTORED_TABS = 8;
 // A hand-off mark older than this is one its host forgot to take back (it
 // started again during the hand-off): it no longer keeps Chrome open.
 const HOLD_MAX_MS = 12 * 60 * 60 * 1000;
+// A checkout card's mark keeps Chrome open at most this long: a card nobody
+// answers, or a mark its host couldn't take back, no longer holds it after that.
+const PURCHASE_HOLD_MAX_MS = 2 * 60 * 60 * 1000;
 // Claude refuses a picture over 2000 pixels on a side once a request holds
 // more than twenty (provider-session.ts, CLAUDE_MANY_IMAGES_MAX_SIDE), and
 // a full-page screenshot of a long form is several thousand pixels tall
@@ -81,6 +84,9 @@ function sleep(ms) {
 //   box-windows.ts touchSandMonitorBusyLease);
 // - hold-N: there while the computer is handed to the person (request_box_help
 //   or Take control; box-windows.ts setSandBrowserHold);
+// - purchase-hold-<agent>-<entry>.N: there while a checkout card waits for
+//   the person, so its checkout tab is still open when they answer
+//   (RequestPurchase; taken back when the purchase ends, purchase-cards.ts);
 // - closed-N.json: the tabs and session cookies of a Chrome closed for being
 //   unused, read back when it opens again.
 function usedPath(display) {
@@ -96,9 +102,32 @@ function leasePath(display) {
   return "/tmp/sand-monitor-busy-" + String(display);
 }
 
-function handedOver(display, nowMs) {
+/**
+ * What keeps the display's Chrome open for the person, if anything: a
+ * hand-off ("handoff") or a checkout card waiting for them ("purchase"). A
+ * purchase mark past its two hours is removed.
+ */
+function heldBy(display, nowMs) {
   const at = mtimeMs(holdPath(display));
-  return at > 0 && nowMs - at < HOLD_MAX_MS;
+  if (at > 0 && nowMs - at < HOLD_MAX_MS) return "handoff";
+  let names = [];
+  try {
+    names = readdirSync(STATE_DIR);
+  } catch {}
+  const suffix = "." + String(display);
+  let purchase = false;
+  for (const name of names) {
+    if (!name.startsWith("purchase-hold-") || !name.endsWith(suffix)) continue;
+    const marked = mtimeMs(STATE_DIR + "/" + name);
+    if (marked > 0 && nowMs - marked < PURCHASE_HOLD_MAX_MS) {
+      purchase = true;
+    } else {
+      try {
+        unlinkSync(STATE_DIR + "/" + name);
+      } catch {}
+    }
+  }
+  return purchase ? "purchase" : undefined;
 }
 
 function noteUsed(display) {
@@ -1935,11 +1964,13 @@ async function serve(display) {
       if (now - lastUsed() >= quietMs) await end("unused for " + minutesText(quietMs) + ", no Chrome open");
       return;
     }
-    const verdict = idleCloseVerdict({ nowMs: now, lastUsedMs: lastUsed(), idleMs: live.idleMs, busy: false, watched: screenWatched(display), held: handedOver(display, now) });
-    if ((verdict === "watched" || verdict === "held") && live.kept !== verdict) {
-      log("unused for " + minutesText(now - lastUsed()) + ", Chrome kept open: " + (verdict === "held" ? "the computer is handed to the person" : "someone is watching the screen"));
+    const held = heldBy(display, now);
+    const verdict = idleCloseVerdict({ nowMs: now, lastUsedMs: lastUsed(), idleMs: live.idleMs, busy: false, watched: screenWatched(display), held: held !== undefined });
+    const kept = verdict === "held" ? "held:" + String(held) : verdict;
+    if ((verdict === "watched" || verdict === "held") && live.kept !== kept) {
+      log("unused for " + minutesText(now - lastUsed()) + ", Chrome kept open: " + (verdict === "watched" ? "someone is watching the screen" : held === "purchase" ? "a checkout card waits for the person" : "the computer is handed to the person"));
     }
-    live.kept = verdict;
+    live.kept = kept;
     if (verdict === "never") {
       if (now - lastUsed() >= quietMs) await end("unused for " + minutesText(quietMs) + "; Chrome left open, closing is off");
       return;
@@ -1947,11 +1978,11 @@ async function serve(display) {
     if (verdict !== "close") return;
     await enqueue(async () => {
       // Asked again in turn: a step may have come in meanwhile.
-      const again = idleCloseVerdict({ nowMs: Date.now(), lastUsedMs: lastUsed(), idleMs: live.idleMs, busy: live.waiting > 1, watched: screenWatched(display), held: handedOver(display, Date.now()) });
+      const again = idleCloseVerdict({ nowMs: Date.now(), lastUsedMs: lastUsed(), idleMs: live.idleMs, busy: live.waiting > 1, watched: screenWatched(display), held: heldBy(display, Date.now()) !== undefined });
       if (again !== "close" || !(await cdpAlive(port))) return;
       const context = await connect({ display, cdpPort: port });
       const tabs = await closeIdleChrome(live.browser, context, display, port);
-      log("closed Chrome after " + minutesText(Date.now() - lastUsed()) + " unused, nobody watching, not handed over (" + String(tabs) + " tab(s) kept to reopen)");
+      log("closed Chrome after " + minutesText(Date.now() - lastUsed()) + " unused, nobody watching, not handed over, no checkout card waiting (" + String(tabs) + " tab(s) kept to reopen)");
     }).catch((error) => log("could not close Chrome: " + (error instanceof Error ? error.message : String(error))));
     if (live.waiting === 0 && !(await cdpAlive(port))) await end("closed Chrome");
   };

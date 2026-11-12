@@ -558,3 +558,78 @@ test("the card is wired: the gateway takes answerPurchase, the turn ends on the 
   for (const words of ["Compare the set", "take (one short line", "one to three reasons", "a badge (two words", "or on none", "up to three replies"]) assert.ok(prompt.includes(words), words);
   assert.match(await src("host/runner/prompt-collector-glue.ts"), /press Place order \(or Pay\) once/);
 });
+
+test("a checkout card keeps the agent's Chrome open until its purchase ends: held when posted, let go once at Deny, Link's expiry or MarkPurchaseDone; a Shop checkout holds nothing (12 November 2026)", async () => {
+  const tool = await load("source/host/runner/tools/purchase-tool.ts", "purchase-hold-tool");
+  const cards = await load("source/host/extensions/transcript/purchase-cards.ts", "purchase-hold-cards");
+  try {
+    const holds = [];
+    let message;
+    const deps = {
+      checkoutFacts: () => Promise.resolve({ ok: true, paymentMethodId: "csmrpd_visa", card: { brand: "Visa", last4: "1234" } }),
+      capturePreview: async () => undefined,
+      emitCard: (posted) => { message = posted; return "t3s1"; },
+      markPurchaseDone: async () => ({ ok: true }),
+      holdBrowser: (entryId) => holds.push(entryId),
+    };
+    await run(tool.module.createRequestPurchaseTool(deps), ARGS);
+    assert.deepEqual(holds, ["t3s1"], "the card's checkout tab is held once the card is posted");
+    // A Shop checkout is paid by Shop: there is no tab to keep.
+    await run(tool.module.createRequestPurchaseTool({
+      ...deps,
+      checkoutFacts: () => assert.fail("not asked"),
+      shopCheckoutCard: async (handle) => ({ ok: true, merchant: "Fit2Run", url: "https://www.fit2run.com/products/shoe", domain: "fit2run.com", amount: 16095, currency: "usd", items: [{ name: "Shoe", quantity: 1, unitAmount: 13995 }], totals: [], facts: { ok: true, paymentMethodId: "saved-1", card: { brand: "Visa", last4: "4242", name: "" } }, handle }),
+      emitCard: () => "t3s9",
+    }), { merchant_name: "Fit2Run", checkout_url: "https://www.fit2run.com/products/shoe", items: [{ name: "Shoe", quantity: 1 }], total: 15000, shop_checkout: "chk_0123456789ab" });
+    assert.deepEqual(holds, ["t3s1"]);
+
+    const purchasesFor = (card) => {
+      const manager = fakeManager(card);
+      const purchases = new cards.module.PurchaseCards(manager.tm, { retryDelayMs: 0, log: () => undefined });
+      const releases = [];
+      purchases.setPurchaseBrowserRelease((agentId, entryId) => { releases.push(`${agentId}/${entryId}`); });
+      return { ...manager, purchases, releases };
+    };
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+    // Deny: let go once; a second Deny changes nothing.
+    const denied = purchasesFor(message);
+    await denied.purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: false }, fakeWallet());
+    await until(() => denied.releases.length === 1, "the release at Deny");
+    await denied.purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: false }, fakeWallet());
+    await settle();
+    assert.deepEqual(denied.releases, ["a1/t3s1"]);
+
+    // Link's request expires while the person waits: let go.
+    const expired = purchasesFor(message);
+    await expired.purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: true }, fakeWallet({ ok: true, id: "lsrq_2", status: "pending_approval" }, [{ ok: true, id: "lsrq_2", status: "expired" }]));
+    await until(() => expired.open.entries[0].purchaseState === "expired", "Link's expiry");
+    await until(() => expired.releases.length === 1, "the release at expiry");
+
+    // Approved: still held while the agent pays; let go when it marks the purchase done.
+    const ordered = purchasesFor(message);
+    const wallet = fakeWallet({ ok: true, id: "lsrq_3", status: "pending_approval" }, [{ ok: true, id: "lsrq_3", status: "approved" }]);
+    await ordered.purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: true }, wallet);
+    await until(() => ordered.open.entries[0].purchaseState === "approved", "Link's approval");
+    await settle();
+    assert.deepEqual(ordered.releases, [], "held while the agent pays");
+    assert.equal((await ordered.purchases.markPurchaseDone({ agentId: "a1", entryId: "t3s1", outcome: "ordered", order: "#7" }, wallet)).ok, true);
+    await until(() => ordered.releases.length === 1, "the release at MarkPurchaseDone");
+    assert.deepEqual(ordered.releases, ["a1/t3s1"]);
+
+    // A Shop checkout's card ending lets go of nothing: it held nothing.
+    const shop = purchasesFor({ ...structuredClone(message), purchase: { ...structuredClone(message.purchase), shopCheckout: { handle: "chk_1" } } });
+    await shop.purchases.answerPurchase({ agentId: "a1", entryId: "t3s1", allow: false }, fakeWallet());
+    await until(() => shop.open.entries[0].purchaseState === "denied", "the Deny");
+    await settle();
+    assert.deepEqual(shop.releases, []);
+
+    // The host wires both ends.
+    const host = await src("host/host-runner-composition.ts");
+    assert.match(host, /holdBrowser: \(entryId\) => \{ void markPurchaseBrowser\(extensions\.api\("forever-box"\)\.box as DynamicApi, session\.id, entryId, true\); \}/);
+    assert.match(host, /"setPurchaseBrowserRelease"\)\?\.\(\(agentId: string, entryId: string\) => markPurchaseBrowser\(extensions\.api\("forever-box"\)\.box as DynamicApi, agentId, entryId, false\)\)/);
+  } finally {
+    await cards.dispose();
+    await tool.dispose();
+  }
+});
