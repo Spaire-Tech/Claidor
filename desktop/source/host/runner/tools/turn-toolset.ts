@@ -370,7 +370,9 @@ export function createTurnShellAutoReviewOptions(input: {
     ...input.options,
     requestContext: review.requestContext,
     smartModeClassifierMode: review.mode === "enforce",
-    smartModeClassifierShadowMode: review.mode === "shadow",
+    // Never shadow (12 November 2026): a shadow review read the chat and the permission files before every
+    // command, awaited, then asked a model whose verdict was thrown away. Off and shadow both run the command.
+    smartModeClassifierShadowMode: false,
     smartModeApprovalSurface: review.surface,
     ...(review.controller === undefined || review.mode !== "enforce"
       ? {}

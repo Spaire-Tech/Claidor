@@ -18,8 +18,10 @@ import { envGateOverride } from "./simeon-experiments.js";
 //
 // `sand_auto_review` — the risky-or-safe review of the agent's own actions
 // (a shell command, a computer action, a routine write) with the confirm
-// card. Off in the bundled table, so every surface resolves to shadow: one
-// Luna call per action, verdict discarded, no card. On from 25 September
+// card. Off in the bundled table, so every surface resolves to shadow:
+// verdict discarded, no card, and since 12 November 2026 no model asked
+// either (`simeon-smart-mode-classifier-exec.ts`; until then one call per
+// action, on the person's Claude plan a `claude -p` each). On from 25 September
 // 2026 (design-audit-ledger.md F-340) to 8 October, when the founder's first
 // real job (the insurance log of 6 October) met the card over and over;
 // off again, as the upstream ships it. On again on 28 October 2026 (the

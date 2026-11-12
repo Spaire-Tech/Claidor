@@ -80,6 +80,26 @@ test("the classifier asks the cheap model with the action and the conversation, 
   }
 });
 
+test("in shadow the classifier asks no model: the verdict is discarded, so nothing is spent on it", async () => {
+  const { module: m, dispose } = await load("tests/fixtures/auto-review-classifier-entry.ts", "auto-review-classifier-shadow");
+  const bufbuild = await import("@bufbuild/protobuf");
+  try {
+    const args = new m.SmartModeClassifierArgs({ toolCallId: "call-2", target: new m.SmartModeRiskTarget({ action: "browser", arguments: bufbuild.Struct.fromJson({ action_kind: "browser_click" }) }) });
+    let asked = 0;
+    const executor = m.createSimeonSmartModeClassifierExecutor({ createExecutor: () => { asked += 1; return fakeExecutor('{"decision":"block","reason":"no"}'); }, log: () => {} });
+    const result = await executor.execute(m.createContext().with(m.smartModeClassifierModeKey, "shadow"), args);
+    assert.equal(result.result.case, "success");
+    assert.equal(result.result.value.decision, m.SmartModeClassifierDecision.ALLOW);
+    assert.equal(asked, 0);
+    // Enforced, it asks as before.
+    const enforced = await executor.execute(m.createContext().with(m.smartModeClassifierModeKey, "enforce"), args);
+    assert.equal(asked, 1);
+    assert.equal(enforced.result.value.decision, m.SmartModeClassifierDecision.BLOCK);
+  } finally {
+    await dispose();
+  }
+});
+
 test("the auto-review extension binds the Simeon classifier, not the upstream's", async () => {
   const extension = await readFile(path.join(repoRoot, "source/host/extensions/auto-review/extension.ts"), "utf8");
   assert.match(extension, /createSimeonSmartModeClassifierExecutor\(\{/);

@@ -34,6 +34,8 @@ export async function runSandAutoReviewClassifier(args: {
   readonly workspacePaths?: readonly string[];
   readonly errorReason: string;
 }): Promise<AutoReviewClassifierDecision> {
+  // In shadow nothing is read and no model asked (12 November 2026): the verdict was thrown away.
+  if (args.mode === "shadow") return { kind: "allow" };
   try {
     const executor = args.resourceAccessor.get(smartModeClassifierExecutorResource);
     const parentConversationId = getConversationId(args.ctx);
