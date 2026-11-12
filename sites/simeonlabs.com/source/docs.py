@@ -249,6 +249,16 @@ def inline(text, top=True):
 ARROW = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
 
+def shot_size(src):
+    """A picture's size in CSS pixels (the files are taken at twice that), or None."""
+    try:
+        from PIL import Image
+        w, h = Image.open(os.path.join(HERE, "docs", src)).size
+        return w // 2, h // 2
+    except Exception:
+        return None
+
+
 def render(md):
     """The page's HTML and its headings, [(level, id, text)]."""
     lines, out, heads, i = md.splitlines(), [], [], 0
@@ -273,6 +283,27 @@ def render(md):
             text = "\n".join(code)
             out.append(f'<div class="code"><pre><code>{html.escape(text)}</code></pre>'
                        f'<button type="button" class="copy-code" aria-label="Copy">{ICON["copy"]}<span>Copy</span></button></div>')
+        elif re.match(r"!\[[^\]]*\]\([^)]+\)\s*$", line.strip()):
+            # A picture of the app (12 November 2026, the founder: "stripe level of documentation, with details, pictures"):
+            # ![what it shows](img/<file> "caption"), the file in source/docs/img, framed on the site's grey
+            m = re.match(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)', line.strip())
+            alt, src, cap = m.group(1), m.group(2), m.group(3)
+            size = shot_size(src)
+            dims = f' width="{size[0]}" height="{size[1]}"' if size else ""
+            narrow = ' narrow' if size and size[0] <= size[1] * 1.15 else ''
+            out.append(f'<figure class="shot{narrow}"><img src="/docs/{html.escape(src)}" alt="{html.escape(alt)}"{dims} loading="lazy" decoding="async">'
+                       + (f"<figcaption>{inline(cap)}</figcaption>" if cap else "") + "</figure>")
+            i += 1
+        elif re.match(r":::(note|tip|warning)\s*$", line.strip()):
+            # A note, a tip or a warning, set apart from the words
+            kind, body, i = line.strip()[3:], [], i + 1
+            while i < len(lines) and lines[i].strip() != ":::":
+                body.append(lines[i].strip())
+                i += 1
+            i += 1
+            label = {"note": "Note", "tip": "Tip", "warning": "Important"}[kind]
+            paras = [x for x in "\n".join(body).split("\n\n") if x.strip()]
+            out.append(f'<div class="callout {kind}"><b>{label}</b>' + "".join(f"<p>{inline(' '.join(x.split()))}</p>" for x in paras) + "</div>")
         elif line.strip() == ":::cards":
             cards, i = [], i + 1
             while i < len(lines) and lines[i].strip() != ":::":
@@ -299,15 +330,16 @@ def render(md):
                        + "".join("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in r) + "</tr>" for r in body) + "</tbody></table></div>")
         elif re.match(r"(-|\d+\.)\s", line):
             ordered = bool(re.match(r"\d+\.", line))
+            first = int(re.match(r"(\d+)\.", line).group(1)) if ordered else 1   # steps carry on after a picture or an example
             items = []
             while i < len(lines) and re.match(r"(-|\d+\.)\s", lines[i]):
                 items.append(re.sub(r"^(-|\d+\.)\s+", "", lines[i]))
                 i += 1
             tag = "ol" if ordered else "ul"
-            out.append(f"<{tag}>" + "".join(f"<li>{inline(x)}</li>" for x in items) + f"</{tag}>")
+            out.append(f"<{tag}" + (f' start="{first}"' if first != 1 else "") + ">" + "".join(f"<li>{inline(x)}</li>" for x in items) + f"</{tag}>")
         else:
             para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"(#{2,3} |>|\||:::|```|-\s|\d+\.\s)", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"(#{2,3} |>|\||:::|```|-\s|\d+\.\s|!\[)", lines[i]):
                 para.append(lines[i].strip())
                 i += 1
             out.append(f"<p>{inline(' '.join(para))}</p>")
@@ -316,6 +348,7 @@ def render(md):
 
 def plain(md):
     """The words alone, for the search."""
+    md = re.sub(r"!\[[^\]]*\]\([^)]*\)", " ", md)
     t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)
     t = re.sub(r"[*`>#|]|:::\w*", " ", t)
     return re.sub(r"\s+", " ", t).strip()
@@ -382,7 +415,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -392,8 +425,18 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:8px 0 28px;padding:clamp(14px,2.2vw,28px);border-radius:18px;background:var(--soft)}
+.words .shot img{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 30px -16px rgba(20,30,60,.22)}
+.words .shot.narrow img{max-width:min(100%,380px);margin:0 auto}
+.words .shot figcaption{margin-top:14px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -585,6 +628,8 @@ def build(out=OUT):
     shutil.rmtree(root, ignore_errors=True)
     os.makedirs(root)
     LOGOS = Logos(root)
+    if os.path.isdir(os.path.join(HERE, "docs", "img")):
+        shutil.copytree(os.path.join(HERE, "docs", "img"), os.path.join(root, "img"))
     for s, p in pages.items():
         folder = root if s == "overview" else os.path.join(root, s)
         os.makedirs(folder, exist_ok=True)

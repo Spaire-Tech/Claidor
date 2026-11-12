@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,18 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:8px 0 28px;padding:clamp(14px,2.2vw,28px);border-radius:18px;background:var(--soft)}
+.words .shot img{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 30px -16px rgba(20,30,60,.22)}
+.words .shot.narrow img{max-width:min(100%,380px);margin:0 auto}
+.words .shot figcaption{margin-top:14px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
