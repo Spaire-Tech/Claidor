@@ -450,6 +450,15 @@ export class BackgroundWakes {
       if (runner.hasRunningBackgroundShellWork()) return true;
     return false;
   }
+  /** The latest any agent's running background command started, was watched again or wrote output (`host-busy.ts`); undefined when none runs. */
+  backgroundShellActiveAtMs(): number | undefined {
+    let latest: number | undefined;
+    for (const runner of this.tm.runnerRegistry.runners.values()) {
+      const at = runner.backgroundShellActiveAtMs?.();
+      if (typeof at === "number" && (latest === undefined || at > latest)) latest = at;
+    }
+    return latest;
+  }
 
   /**
    * A hidden turn for one agent with a prompt the host wrote (the draft card's

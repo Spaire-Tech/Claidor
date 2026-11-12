@@ -343,12 +343,28 @@ class BoxHealth:
     is_busy: bool = False
     busy_only_awaiting_approval: bool = False
     last_busy_at_ms: int | None = None
+    #: What holds the box awake, as an engine built since 12 November 2026
+    #: says (`busyReasons`, `desktop/source/host/host-busy.ts`): `turn`,
+    #: `background-shell`, `pending-wake`, `revival`, `coding`. None when
+    #: the engine does not say (an older one): unknown, not "nothing".
+    busy_reasons: tuple[str, ...] | None = None
+    #: A background command runs on the box but has been quiet past the
+    #: engine's limit (30 minutes), so it no longer holds the box. None:
+    #: the engine does not say.
+    quiet_background_shell: bool | None = None
 
     @property
     def holds_awake(self) -> bool:
         """Busy on real work. A box that only waits on the person's
         approval card may sleep: its `lastBusyAtMs` stopped moving."""
         return self.is_busy and not self.busy_only_awaiting_approval
+
+    @property
+    def busy_words(self) -> str:
+        """`busy_reasons` for a log line: `unknown` from an older engine."""
+        if self.busy_reasons is None:
+            return "unknown"
+        return ",".join(self.busy_reasons) or "none"
 
 
 HealthReport = Callable[..., Awaitable[BoxHealth]]
@@ -367,7 +383,15 @@ async def gateway_health_report(
         return BoxHealth(reachable=False)
     if not isinstance(body, dict):
         return BoxHealth(reachable=False)
+    return health_from_body(body)
+
+
+def health_from_body(body: dict[str, Any]) -> BoxHealth:
+    """A box's `/health` answer as the sleeper reads it. A field an older
+    engine does not send stays None: unknown."""
     last_busy = body.get("lastBusyAtMs")
+    reasons = body.get("busyReasons")
+    quiet = body.get("quietBackgroundShell")
     return BoxHealth(
         reachable=True,
         is_busy=body.get("isBusy") is True,
@@ -375,6 +399,10 @@ async def gateway_health_report(
         last_busy_at_ms=int(last_busy)
         if isinstance(last_busy, int | float) and last_busy > 0
         else None,
+        busy_reasons=tuple(str(reason)[:40] for reason in reasons[:10])
+        if isinstance(reasons, list)
+        else None,
+        quiet_background_shell=quiet if isinstance(quiet, bool) else None,
     )
 
 
@@ -399,11 +427,52 @@ def attached_key(box_id: UUID) -> str:
     return f"sand:box:attached:{box_id}"
 
 
-async def mark_attached(redis: Redis, box_id: UUID) -> None:
+@dataclass(frozen=True)
+class Attachment:
+    """What last marked a box in use through the proxy (12 November 2026),
+    for the sleeper's `sand.box.awake` line: the kind of connection
+    (`box_proxy.connection_kind`: `events`, `local-exec`, `command`,
+    `screen`…), its path on the box, and whether the request said the app
+    lets the box sleep (`x-simeon-lets-sleep: 1`). With that header sent, the
+    box was marked because the API's own `BOX_SLEEPS_WITH_APP_OPEN` is off;
+    without it, the app has not been told it may let the box sleep (one open
+    since before the switch, or built before 26 October 2026)."""
+
+    by: str = "unknown"
+    path: str = ""
+    header_sent: bool = False
+
+
+async def mark_attached(
+    redis: Redis,
+    box_id: UUID,
+    *,
+    by: str = "unknown",
+    path: str = "",
+    header_sent: bool = False,
+) -> None:
+    value = json.dumps({"by": by, "path": path[:80], "header": header_sent})
     try:
-        await redis.set(attached_key(box_id), "1", ex=ATTACHED_TTL_SECONDS)
+        await redis.set(attached_key(box_id), value, ex=ATTACHED_TTL_SECONDS)
     except Exception:
         return
+
+
+async def attachment_of(redis: Redis, box_id: UUID) -> Attachment:
+    """What marked the box in use (`mark_attached`); `unknown` when the
+    mark says nothing (one written before 12 November 2026) or Redis fails."""
+    try:
+        raw = await redis.get(attached_key(box_id))
+        value = json.loads(raw) if raw else None
+    except Exception:
+        return Attachment()
+    if not isinstance(value, dict):
+        return Attachment()
+    return Attachment(
+        by=str(value.get("by") or "unknown")[:40],
+        path=str(value.get("path") or "")[:80],
+        header_sent=value.get("header") is True,
+    )
 
 
 #: An app built since 26 October 2026 says on its requests that it lets the
@@ -448,6 +517,53 @@ INBOX_HOLDS_AWAKE = timedelta(hours=1)
 
 def update_key(box_id: UUID) -> str:
     return f"sand:box:update:{box_id}"
+
+
+#: The sleeper says why a box it leaves running stays awake
+#: (`sand.box.awake`) at most this often per box and reason (12 November
+#: 2026: the founder's computer never slept and no line said why).
+AWAKE_SAID_EVERY_SECONDS = 600
+
+
+def awake_said_key(box_id: UUID, reason: str) -> str:
+    return f"sand:box:awake-said:{box_id}:{reason}"
+
+
+async def say_awake(redis: Redis, box: SandBox, reason: str, **fields: Any) -> None:
+    """`sand.box.awake`, once every `AWAKE_SAID_EVERY_SECONDS` per box and
+    reason: `busy` (the box says it works: `busy` names what), `attached`
+    (an app holds it through the proxy: `attached_by` says which
+    connection), `idle` (idle, not for long enough yet)."""
+    try:
+        first = await redis.set(
+            awake_said_key(box.id, reason),
+            "1",
+            ex=AWAKE_SAID_EVERY_SECONDS,
+            nx=True,
+        )
+    except Exception:
+        first = False
+    if first:
+        log.info(
+            "sand.box.awake",
+            box=str(box.id),
+            reason=reason,
+            sleeps_with_app_open=settings.BOX_SLEEPS_WITH_APP_OPEN,
+            **fields,
+        )
+
+
+#: Said by the sleeper just before it asks a box's server to stop it, and
+#: read by the broker's record (`recorded_run_state`): an app whose stream
+#: dropped as the box was being stopped asked the record at once, read
+#: "running" (the sleeper's write commits only once its pass ends), and
+#: dialled, which woke the box again (12 November 2026). Holds until the
+#: record says so itself, or until something wakes the box.
+SLEEPING_TTL_SECONDS = 120
+
+
+def sleeping_key(box_id: UUID) -> str:
+    return f"sand:box:sleeping:{box_id}"
 
 
 # --- reaching a box ------------------------------------------------------------
@@ -1445,19 +1561,41 @@ class BoxBrokerService:
         )
         return RecreateOutcome(started=True, operation_id=operation_id)
 
-    async def recorded_run_state(self, db: AsyncSession, user_id: UUID) -> int:
+    async def recorded_run_state(
+        self, db: AsyncSession, user_id: UUID, redis: Redis | None = None
+    ) -> int:
         """The person's box as the broker last recorded it (running, asleep,
         none), without asking its server: what an app that lets the box sleep
         asks every few seconds while it waits for it to wake. None is an
         account whose box was never made (the app's first run makes it); one
         made and since removed reads as asleep, as its next task makes it
-        again and the account is not new."""
+        again and the account is not new. One the sleeper is putting to
+        sleep reads as asleep already (`sleeping_key`), unless something
+        woke it since (its `last_active_at` is later)."""
         box = await SandBoxRepository.from_session(db).get_by_user(user_id)
         if box is None:
             return RUN_STATE_ABSENT
         if box.state == "running":
+            if redis is not None and await self._going_to_sleep(redis, box):
+                return RUN_STATE_HIBERNATED
             return RUN_STATE_RUNNING
         return RUN_STATE_HIBERNATED
+
+    async def _going_to_sleep(self, redis: Redis, box: SandBox) -> bool:
+        try:
+            raw = await redis.get(sleeping_key(box.id))
+        except Exception:
+            return False
+        try:
+            said_at_ms = int(raw) if raw else None
+        except (TypeError, ValueError):
+            return False
+        if said_at_ms is None:
+            return False
+        woken_after = box.last_active_at is not None and (
+            box.last_active_at.timestamp() * 1000 > said_at_ms
+        )
+        return not woken_after
 
     async def run_state(
         self, db: AsyncSession, caller: DesktopSession
@@ -1694,6 +1832,10 @@ class BoxBrokerService:
             if health.holds_awake:
                 box.last_active_at = now
                 await repository.update(box, flush=True)
+                # What it says it works on (12 November 2026): `turn`,
+                # `background-shell`, `pending-wake`, `revival`, `coding`;
+                # `unknown` from an engine older than that.
+                await say_awake(redis, box, "busy", busy=health.busy_words)
                 continue
             if health.last_busy_at_ms is not None:
                 last_busy = datetime.fromtimestamp(health.last_busy_at_ms / 1000, UTC)
@@ -1701,6 +1843,15 @@ class BoxBrokerService:
                     box.last_active_at = min(last_busy, now)
                     await repository.update(box, flush=True)
             if await is_attached(redis, box.id):
+                attachment = await attachment_of(redis, box.id)
+                await say_awake(
+                    redis,
+                    box,
+                    "attached",
+                    attached_by=attachment.by,
+                    path=attachment.path,
+                    header_sent=attachment.header_sent,
+                )
                 # An app open on the box is the box in use, so its idle time
                 # starts when the app goes (16 October 2026). The upstream
                 # app's Mac asked for the box every 30 s while it was open
@@ -1789,6 +1940,14 @@ class BoxBrokerService:
                     # Sent already: one the update could not replace still
                     # sleeps by the usual rule, rather than stay awake.
             if now - idle_since < idle_after:
+                await say_awake(
+                    redis,
+                    box,
+                    "idle",
+                    idle_seconds=round((now - idle_since).total_seconds()),
+                    idle_after_seconds=round(idle_after.total_seconds()),
+                    quiet_background_shell=health.quiet_background_shell,
+                )
                 continue
             if not health.reachable and now - idle_since < max(idle_after, after):
                 # A box that did not answer may be busy: E2B's proxy lost it
@@ -1823,16 +1982,35 @@ class BoxBrokerService:
                 stale_image=seen.image if seen is not None else None,
                 stale_store=seen.store if seen is not None else None,
                 update_sent_before=update_sent,
+                quiet_background_shell=health.quiet_background_shell,
             )
+            # Asleep in the record from now (`sleeping_key`): an app whose
+            # stream drops while the box is being stopped waits instead of
+            # waking it again.
+            said_sleeping = False
+            try:
+                await redis.set(
+                    sleeping_key(box.id),
+                    str(int(now.timestamp() * 1000)),
+                    ex=SLEEPING_TTL_SECONDS,
+                )
+                said_sleeping = True
+            except Exception:
+                pass
             try:
                 outcome = await self.hibernate(
                     db, host, box, force=False, health=health
                 )
             except BoxHostError as error:
                 log.warning("sand.box.sleep.failed", box=str(box.id), error=str(error))
-                continue
+                outcome = RecreateOutcome(started=False, reason="failed")
             if outcome.started:
                 slept.append(box.id)
+            elif said_sleeping:
+                try:
+                    await redis.delete(sleeping_key(box.id))
+                except Exception:
+                    pass
         return slept
 
     async def wake(self, db: AsyncSession, user_id: UUID) -> str:
@@ -2029,11 +2207,13 @@ broker = BoxBrokerService()
 
 __all__ = [
     "EGRESS_TUNNEL_PORT",
+    "Attachment",
     "BoxBrokerRefused",
     "BoxBrokerService",
     "BoxHealth",
     "MigrationLog",
     "RecreateOutcome",
+    "attachment_of",
     "broker",
     "lets_sleep",
     "mark_attached",

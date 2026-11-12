@@ -27,6 +27,7 @@ import { withBotBlockDetection } from "./runner/bot-block-detection.js";
 import { withSiteVisitTracking, type ActionAuditor } from "./runner/site-visit-tracking.js";
 import type { ErasedProductionBoxGeneratedPorts } from "./box/production.js";
 import { SandHostEventBus } from "./host-event-bus.js";
+import { describeHostBusy, type HostBusyPendingWake, type HostBusyReason } from "./host-busy.js";
 import { createTypingFocus } from "./box/typing-focus.js";
 import {
   loadInitialTranscriptResiliently,
@@ -220,6 +221,10 @@ export interface SandHostHealth {
   readonly busyOnlyAwaitingApproval: boolean;
   readonly activeAgentId: string | null;
   readonly lastBusyAtMs: number;
+  /** What holds the computer awake (`host-busy.ts`); empty when nothing does. */
+  readonly busyReasons: readonly HostBusyReason[];
+  /** A background command runs but has been quiet past the limit, so it no longer holds the computer. */
+  readonly quietBackgroundShell: boolean;
 }
 
 interface Deferred<T> {
@@ -255,11 +260,14 @@ export class SandHost {
   /** What a tap on the phone's whole computer focused (`box/typing-focus.ts`), made when the gateway first asks. */
   private typingFocus: ((agentId: string, prepare?: boolean) => Promise<{ focus: string }>) | undefined;
   private lastBusyAtMs: number;
+  /** The last time a turn, a revival or coding was seen: what a background command's quiet time counts from too (`host-busy.ts`). */
+  private lastWorkAtMs: number;
 
   constructor(readonly runtime: SandHostRuntime) {
     const now = runtime.now ?? Date.now;
     this.startedAt = now();
     this.lastBusyAtMs = this.startedAt;
+    this.lastWorkAtMs = this.startedAt;
     this.hostEvents = new SandHostEventBus(report => {
       const logs = this.telemetryLogsOrUndefined();
       optionalMethod(logs ?? {}, "reportHostEventBusFailure")?.(report);
@@ -545,9 +553,7 @@ export class SandHost {
         else this.log.error(message, error);
       }
     });
-    this.requireRosterBookkeeping().apply(
-      optionalMethod(this.transcript, "getActiveAgentId")?.()
-    );
+    this.applyRoster(optionalMethod(this.transcript, "getActiveAgentId")?.());
     return entryCount;
   }
 
@@ -706,30 +712,59 @@ export class SandHost {
     this.runnerComposition?.forgetLocalToolPermission(agentId);
   }
 
+  /** The roster changed (a turn started or ended): a turn seen running or just ended restarts a background command's quiet time. */
+  private applyRoster(activeAgentId: string | null | undefined): void {
+    const bookkeeping = this.requireRosterBookkeeping();
+    const wasBusy = bookkeeping.isBusy;
+    bookkeeping.apply(activeAgentId);
+    if (wasBusy || bookkeeping.isBusy) {
+      this.lastWorkAtMs = (this.runtime.now ?? Date.now)();
+    }
+  }
+
   getHealth(): SandHostHealth {
     const transcript = this.transcript;
+    const now = (this.runtime.now ?? Date.now)();
     const runningTurnsBusy = this.rosterBookkeeping?.isBusy === true;
-    const otherWorkBusy = Boolean(
-      optionalMethod(transcript, "hasRunningBackgroundShellWork")?.() ||
-      optionalMethod(transcript, "hasCarryablePendingWake")?.() ||
-      optionalMethod(transcript, "hasMidDrainRevival")?.() ||
-      // A cloud agent's coding, done on this computer (11 November 2026):
-      // the sleeper must not put it to sleep under the work.
-      (this.hostExtensions === undefined ? undefined : optionalMethod(this.hostExtensions.api("cloud-agents"), "isCodingBusy"))?.()
-    );
+    const midDrainRevival = optionalMethod(transcript, "hasMidDrainRevival")?.() === true;
+    // A cloud agent's coding, done on this computer (11 November 2026):
+    // the sleeper must not put it to sleep under the work.
+    const coding = (this.hostExtensions === undefined ? undefined : optionalMethod(this.hostExtensions.api("cloud-agents"), "isCodingBusy"))?.() === true;
+    if (runningTurnsBusy || midDrainRevival || coding) this.lastWorkAtMs = now;
+    const listWakes = optionalMethod(transcript, "listRecreateCarryPendingWakes");
+    const pendingWakes: HostBusyPendingWake[] = listWakes !== undefined
+      ? (listWakes() as HostBusyPendingWake[] | undefined) ?? []
+      : optionalMethod(transcript, "hasCarryablePendingWake")?.() === true
+        // An engine without the list: a kept wake of unknown kind, held as before.
+        ? [{ kind: "unknown", markedAtMs: now }]
+        : [];
+    const shellActiveAtMs = optionalMethod(transcript, "backgroundShellActiveAtMs")?.();
+    const busy = describeHostBusy({
+      nowMs: now,
+      runningTurns: runningTurnsBusy,
+      backgroundShellRunning: optionalMethod(transcript, "hasRunningBackgroundShellWork")?.() === true,
+      backgroundShellActiveAtMs: typeof shellActiveAtMs === "number" ? shellActiveAtMs : undefined,
+      pendingWakes,
+      midDrainRevival,
+      coding,
+      lastWorkAtMs: this.lastWorkAtMs
+    });
+    const otherWorkBusy = busy.otherWorkBusy;
     const isBusy = runningTurnsBusy || otherWorkBusy;
     const busyOnlyAwaitingApproval =
       runningTurnsBusy && !otherWorkBusy && this.allRunningAgentsAwaitApproval();
 
     if (isBusy && !busyOnlyAwaitingApproval) {
-      this.lastBusyAtMs = (this.runtime.now ?? Date.now)();
+      this.lastBusyAtMs = now;
     }
 
     return {
       isBusy,
       busyOnlyAwaitingApproval,
       activeAgentId: this.rosterBookkeeping?.latestActiveAgentId ?? null,
-      lastBusyAtMs: this.lastBusyAtMs
+      lastBusyAtMs: this.lastBusyAtMs,
+      busyReasons: busy.busyReasons,
+      quietBackgroundShell: busy.quietBackgroundShell
     };
   }
 
@@ -941,7 +976,7 @@ export class SandHost {
       (payload: unknown) => this.emit({ channel: "client-side-tool-v2", payload })
     );
     optionalMethod(transcript, "subscribeAgents")?.((payload: any) => {
-      this.requireRosterBookkeeping().apply(payload.activeAgentId);
+      this.applyRoster(payload.activeAgentId);
       this.hostEvents.emit({
         kind: "notification-agents",
         event: payload,
@@ -955,7 +990,7 @@ export class SandHost {
       this.emit({ channel: "agents", payload });
     });
     optionalMethod(transcript, "subscribeAgentUpserted")?.((payload: any) => {
-      this.requireRosterBookkeeping().apply(payload.activeAgentId);
+      this.applyRoster(payload.activeAgentId);
       this.hostEvents.emit({
         kind: "notification-agent-upserted",
         event: payload,
