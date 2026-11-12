@@ -34,6 +34,20 @@ final class NotificationTests: XCTestCase {
     }
   }
 
+  /** As a message from its agent (the Mac and Windows since 12 November 2026, as the iPhone's pushes): who sends it, and what it says. */
+  func testAsAMessageFromItsAgent() {
+    func transition(_ kind: AgentNotifications.Kind, name: String = "  Iris ", reason: String? = nil, preview: String? = nil) -> AgentNotifications.Transition {
+      AgentNotifications.Transition(agentId: "a1", agentName: name, kind: kind, reason: reason, notifyEnabled: true, isHidden: false, lastMessageId: "m1", lastMessagePreview: preview)
+    }
+    XCTAssertEqual(AgentNotifications.message(transition(.needsInput)).sender, "Iris")
+    XCTAssertEqual(AgentNotifications.message(transition(.needsInput)).line, "Needs your input.")
+    XCTAssertEqual(AgentNotifications.message(transition(.needsInput, reason: " Waiting for your input. ")).line, "Needs your input.")
+    XCTAssertEqual(AgentNotifications.message(transition(.needsInput, reason: "Approve   the payment")).line, "Needs you: Approve the payment")
+    XCTAssertEqual(AgentNotifications.message(transition(.done, preview: "Done:  the report is ready")).line, "Done: the report is ready")
+    XCTAssertEqual(AgentNotifications.message(transition(.done)).line, "Open Simeon to see what it did.")
+    XCTAssertEqual(AgentNotifications.message(transition(.done, name: " ")).sender, "Your agent")
+  }
+
   func testWhenToNotify() {
     for row in cases("shouldNotify") {
       let input = row["input"]

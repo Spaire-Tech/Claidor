@@ -191,6 +191,14 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 # grep reads all of codesign's output: `grep -q` stops at the first match, codesign
 # then dies of SIGPIPE, and pipefail read that as unsigned (17 October 2026).
 codesign -dvv "$APP" 2>&1 | grep "Authority=Developer ID Application" >/dev/null || fail "Simeon.app is not signed with a Developer ID Application certificate."
+# Notifications as messages from the agents (12 November 2026) need their
+# entitlement and a profile that grants it: macOS refuses to open an app
+# that claims the one without the other.
+codesign -d --entitlements - "$APP" 2>&1 | grep "usernotifications.communication" >/dev/null \
+  || fail "Simeon.app does not carry the notifications entitlement (Simeon/SimeonRelease.entitlements)."
+[ -f "$APP/Contents/embedded.provisionprofile" ] \
+  && security cms -D -i "$APP/Contents/embedded.provisionprofile" 2>/dev/null | grep "usernotifications.communication" >/dev/null \
+  || fail "Simeon.app's profile does not grant the notifications entitlement. In Xcode, sign in to the team's account (Settings › Accounts) and run this again."
 shown=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
 [ "$shown" = "$VERSION" ] || fail "The app says version $shown, not $VERSION."
 [ "$(/usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$APP/Contents/Info.plist")" = "$KEY" ] || fail "The app does not carry Sparkle's public key."

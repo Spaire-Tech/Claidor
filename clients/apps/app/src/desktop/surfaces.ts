@@ -13,7 +13,7 @@ import {
   NotificationFeed,
   type NotificationTransition,
   type RosterNews,
-  notificationContent,
+  notificationMessage,
 } from '../core/agentNotifications'
 import { DockBadge } from '../core/dockBadge'
 import type { AppStore } from '../core/store'
@@ -21,6 +21,7 @@ import { t } from '../l10n'
 import { badgePicture } from './badge'
 import type { TrayMenu } from './contract'
 import type { Desktop } from './desktop'
+import { NoteFaces } from './noteFace'
 import { beforeQuit } from './quitting'
 
 /** The longest title and body the app takes for a notification (windows/src/main/surfaces/checks.ts). */
@@ -44,6 +45,8 @@ export interface SurfacesOptions {
   now?: () => number
   /** The taskbar's picture for a number (badge.ts). */
   picture?: (count: number) => string | undefined
+  /** A notification's picture, the agent's face drawn round (noteFace.ts): now, once drawn, or none. */
+  face?: (agentId: string) => string | undefined | Promise<string | undefined>
 }
 
 /** The tray's words, in the page's language (the Mac's catalogue). */
@@ -116,6 +119,9 @@ export class DesktopSurfaces {
   private readonly target?: EventTarget
   private readonly now: () => number
   private readonly picture: (count: number) => string | undefined
+  private readonly face: (
+    agentId: string,
+  ) => string | undefined | Promise<string | undefined>
   /** The account the notifications are for (MacServices.swift's `account`). */
   private account?: string
   private wasLive = false
@@ -135,6 +141,11 @@ export class DesktopSurfaces {
       options.target ?? (typeof window !== 'undefined' ? window : undefined)
     this.now = options.now ?? Date.now
     this.picture = options.picture ?? ((count) => badgePicture(count))
+    if (options.face) this.face = options.face
+    else {
+      const faces = new NoteFaces()
+      this.face = (agentId) => faces.face(this.store.agent(agentId))
+    }
   }
 
   private get store(): AppStore {
@@ -266,19 +277,35 @@ export class DesktopSurfaces {
     }
   }
 
-  /** "Iris needs you" with Windows' sound; a finished turn without one (`post`). */
+  /**
+   * A message from the agent, its face big and Simeon's icon small, as the
+   * iPhone and the Mac show them (`post`, `AgentMessage`): "Needs your
+   * input." with Windows' sound; a finished turn's message without one. A
+   * face drawn before goes at once; a new one waits until drawn.
+   */
   private post(transitions: readonly NotificationTransition[]): void {
     for (const transition of transitions) {
-      const words = notificationContent(transition)
-      void this.host
-        .call('notify', {
-          agentId: transition.agentId,
-          // A long name is cut to what the app takes, never refused whole.
-          title: words.title.slice(0, notificationTitleMost),
-          body: words.body.slice(0, notificationTitleMost),
-          sound: transition.kind === 'agent-needs-input',
-        })
-        .catch(() => {})
+      const said = notificationMessage(transition)
+      const send = (picture: string | undefined) =>
+        this.host
+          .call('notify', {
+            agentId: transition.agentId,
+            // A long name is cut to what the app takes, never refused whole.
+            title: said.sender.slice(0, notificationTitleMost),
+            body: said.line.slice(0, notificationTitleMost),
+            sound: transition.kind === 'agent-needs-input',
+            ...(picture ? { picture } : {}),
+          })
+          .catch(() => {})
+      let face: string | undefined | Promise<string | undefined>
+      try {
+        face = this.face(transition.agentId)
+      } catch {
+        face = undefined
+      }
+      if (face instanceof Promise)
+        void face.catch(() => undefined).then((picture) => send(picture))
+      else void send(face)
     }
   }
 

@@ -339,12 +339,13 @@ export interface DesktopEvents {
 
 // MARK: 7c's shapes
 
-/** A notification's words and sound (`AgentNotifications.content`): the Mac's sound for "needs you", none for "done". */
+/** A notification as a message from its agent (`AgentNotifications.message`): its name, what it says, the Mac's sound for "needs you" (none for "done"), and its face drawn round by the page (a square PNG data URL, 96 px), shown big with Simeon's icon small. */
 export interface AgentNote {
   agentId: string
   title: string
   body: string
   sound: boolean
+  picture?: string
 }
 
 /** The taskbar's number: the count, Windows' overlay drawn by the page (a square PNG data URL, 32 px for 16 on screen) and what it says to a screen reader. */

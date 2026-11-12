@@ -138,6 +138,9 @@ targets:
         # the stand-in server on this Mac (`SIMEON_API`).
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        # Notifications as messages from the agents (MacServices.swift's
+        # `AgentMessage`, 12 November 2026), as the iPhone shows pushes.
+        NSUserActivityTypes: [INSendMessageIntent]
         # Updates (Simeon/Updates.swift): the feed, served by the API from the
         # release bucket, and the release key's public half. The key is empty
         # in every build but a release (scripts/release.sh passes it), and a
@@ -158,6 +161,16 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: MacIcon
         ENABLE_HARDENED_RUNTIME: YES
         ENABLE_PREVIEWS: YES
+      configs:
+        # A release also carries notifications as messages from the agents,
+        # their faces where the app's icon would be (12 November 2026):
+        # Simeon/SimeonRelease.entitlements, Simeon.entitlements and that.
+        # The entitlement needs a provisioning profile, which Developer ID
+        # allows and the release asks Apple for (scripts/release.sh's
+        # -allowProvisioningUpdates, then checked there). A Debug build
+        # (scripts/build.sh) has none, so it shows the plain notification.
+        Release:
+          CODE_SIGN_ENTITLEMENTS: Simeon/SimeonRelease.entitlements
 schemes:
   Simeon:
     build:

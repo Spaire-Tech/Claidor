@@ -82,7 +82,12 @@ afterEach(() => {
   for (const stop of stops.splice(0)) stop()
 })
 
-async function started(options: { focused?: boolean } = {}) {
+async function started(
+  options: {
+    focused?: boolean
+    face?: (agentId: string) => string | undefined | Promise<string | undefined>
+  } = {},
+) {
   const fake = new FakeDesktop()
   for (const name of [
     'notify',
@@ -107,6 +112,7 @@ async function started(options: { focused?: boolean } = {}) {
     now: () => 10_000,
     picture: (count) =>
       count > 0 ? `data:image/png;base64,${count}` : undefined,
+    face: options.face ?? (() => undefined),
   })
   stops.push(surfaces.start())
   await session.store.attach(backend)
@@ -145,10 +151,80 @@ describe('Windows’ notifications (MacServices.swift’s `take`, `post`)', () =
       { agentId: 'iris', title: 'Iris', body: 'Booked it.', sound: false },
       {
         agentId: 'iris',
-        title: 'Iris needs you',
-        body: 'Approval needed: wire $40',
+        title: 'Iris',
+        body: 'Needs you: Approval needed: wire $40',
         sound: true,
       },
+    ])
+  })
+
+  it('sends the agent’s face with its message, at once when drawn, else once drawn', async () => {
+    let resolve: (png: string | undefined) => void = () => {}
+    const drawn = new Map<string, string>()
+    const asked: string[] = []
+    const { backend, calls } = await started({
+      face: (agentId) => {
+        asked.push(agentId)
+        const known = drawn.get(agentId)
+        if (known) return known
+        return new Promise<string | undefined>((done) => {
+          resolve = (png) => {
+            if (png) drawn.set(agentId, png)
+            done(png)
+          }
+        })
+      },
+    })
+    backend.push({ kind: 'agentUpserted', agent: iris({ isRunning: true }) })
+    backend.push({
+      kind: 'agentUpserted',
+      agent: iris({ lastMessageId: 'm1', lastMessagePreview: 'Booked it.' }),
+    })
+    // Not drawn yet: the notification waits for its face.
+    expect(calls('notify')).toEqual([])
+    resolve('data:image/png;base64,AAAA')
+    await ms(0)
+    expect(calls('notify') as AgentNote[]).toEqual([
+      {
+        agentId: 'iris',
+        title: 'Iris',
+        body: 'Booked it.',
+        sound: false,
+        picture: 'data:image/png;base64,AAAA',
+      },
+    ])
+    backend.push({
+      kind: 'agentUpserted',
+      agent: iris({
+        lastMessageId: 'm1',
+        awaitingUserResponse: true,
+        waitingReason: 'Waiting for your input.',
+      }),
+    })
+    // Drawn before: at once, the engine's waiting words as "Needs your input."
+    expect((calls('notify') as AgentNote[])[1]).toEqual({
+      agentId: 'iris',
+      title: 'Iris',
+      body: 'Needs your input.',
+      sound: true,
+      picture: 'data:image/png;base64,AAAA',
+    })
+    expect(asked).toEqual(['iris', 'iris'])
+  })
+
+  it('goes without a face that cannot be drawn', async () => {
+    const { backend, calls } = await started({
+      face: () => {
+        throw new Error('no canvas')
+      },
+    })
+    backend.push({ kind: 'agentUpserted', agent: iris({ isRunning: true }) })
+    backend.push({
+      kind: 'agentUpserted',
+      agent: iris({ lastMessageId: 'm1', lastMessagePreview: 'Done.' }),
+    })
+    expect(calls('notify') as AgentNote[]).toEqual([
+      { agentId: 'iris', title: 'Iris', body: 'Done.', sound: false },
     ])
   })
 
