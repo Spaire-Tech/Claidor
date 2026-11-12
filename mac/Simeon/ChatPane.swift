@@ -352,6 +352,20 @@ private struct Transcript: View {
   @State private var shown = false
   /** Where the opening chat stands, read without redrawing it. */
   @State private var opening = Opening()
+  /**
+   * How many of the newest rows are drawn (the iPhone's `ChatMessages.window`). A plain stack, not a lazy one: every
+   * drawn row is measured as it is, once. A lazy stack guesses the height of rows it has not drawn, and held to the
+   * newest each corrected guess moved the chat and brought other rows in, with words drawn and redrawn as they moved:
+   * the chat lagged, stood white, and would not scroll up (the founder, 12 November 2026). More rows are drawn as the
+   * chat is read near its top.
+   */
+  @State private var window = Transcript.firstWindow
+  /** Rows were just added above: for a moment, a change of size keeps the bottom where it is, so what shows does not move. */
+  @State private var growing = false
+  /** Counts the growths, so only the last one's moment ends `growing`. */
+  @State private var growth = 0
+  /** A Mac's window holds more than a phone's: 40 rows fill it and more. */
+  static let firstWindow = 40
 
   /** The chat's rows, or the open thread's. */
   private var allRows: [ChatRow] { threadRoot == nil ? store.rows(for: agentId) : store.threadRows[agentId] ?? [] }
@@ -378,7 +392,9 @@ private struct Transcript: View {
     }, uniquingKeysWith: { first, _ in first })
     // Each row as it is drawn: a message sent here keeps the id it had while it waited (`AppStore.rowKey`), so the
     // computer's copy of it is the same bubble, not one that comes in again (10 November 2026).
-    let keyed = rows.map { KeyedRow(id: store.rowKey($0.id), row: $0) }
+    // The newest rows the window holds (`window`); those above come in as the chat is read near its top.
+    let drawn = rows.count > window ? Array(rows.suffix(window)) : rows
+    let keyed = drawn.map { KeyedRow(id: store.rowKey($0.id), row: $0) }
     // Rows new since the last look, while pinned, come in (`KMt`); read as the rows are drawn, so a new row comes in from its first frame.
     let entering = arrivals.entering(keyed.map(\.id), of: "\(agentId)|\(threadRoot ?? "")", pinned: pinned)
     // Each entry's time, for a sideways swipe (`Lpt`'s `timestampMs`).
@@ -389,14 +405,17 @@ private struct Transcript: View {
       let side = ChatColumn.side(box.size.width)
       let width = max(0, box.size.width - 2 * side)
       ScrollView {
-        LazyVStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
           ForEach(keyed) { item in
             let row = item.row
             if case .thread(_, let root, _, _) = row, threads[root] != nil {
               EmptyView()
             } else {
               // Under the last message while the agent works, the working line meets its bubble (`isIndicatorSeamingBubble`).
+              // Equatable: a row is drawn again only when it changed, not each time the chat around it moves (the
+              // agent's working line, a new message below), as the iPhone's rows.
               TranscriptRow(row: row, agentId: agentId, isGroup: agent?.isGroup ?? false, run: runs[row.id] ?? RunFlags(), seamsBelow: activity != nil && row.id == rows.last?.id, threadCount: threads[row.id], threadRoot: threadRoot, visibleIds: bubbleIds, width: width, entering: entering.contains(item.id), time: Transcript.time(of: row, in: times), look: look)
+                .equatable()
                 .environment(\.findMarks, find?.marks(for: row.id))
                 // Where the row is, for a drag to know whose words it starts and ends in.
                 .onGeometryChange(for: CGRect.self) { proxy in
@@ -451,13 +470,13 @@ private struct Transcript: View {
         pinned = false
         // A line search found, in a chat just opened: the chat is on screen for the way to it.
         shown = true
-        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(jump.id), anchor: .center) }
+        bringIn(jump.id) { withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(jump.id), anchor: .center) } }
       }
       .onChange(of: control.reveal) { _, reveal in
         guard let reveal else { return }
         pinned = false
         shown = true
-        withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(reveal.id), anchor: .center) }
+        bringIn(reveal.id) { withAnimation(.easeInOut(duration: 0.3)) { position.scrollTo(id: store.rowKey(reveal.id), anchor: .center) } }
       }
       // The rows came: straight to the newest, unseen. Should the newest never say it is drawn, the chat is shown
       // all the same after 0.4 s, wherever it stands.
@@ -468,11 +487,15 @@ private struct Transcript: View {
         try? await Task.sleep(nanoseconds: 400_000_000)
         if !Task.isCancelled && !shown { show() }
       }
-      // Another chat or thread: the words chosen in this one go.
-      .onChange(of: agentId) { _, _ in selection.clear() }
+      // Another chat or thread: the words chosen in this one go, and the newest rows are drawn again.
+      .onChange(of: agentId) { _, _ in
+        selection.clear()
+        window = Transcript.firstWindow
+      }
       .onDisappear { selection.clear() }
       .onChange(of: threadRoot) { _, _ in
         selection.clear()
+        window = Transcript.firstWindow
         // A quote that opened the thread jumps to its message there; otherwise the thread opens at its newest.
         if let id = control.jumpAfterThread, rows.contains(where: { $0.id == id }) {
           control.jumpAfterThread = nil
@@ -486,7 +509,8 @@ private struct Transcript: View {
       .defaultScrollAnchor(.bottom, for: .initialOffset)
       // While at the newest, a change of size keeps the bottom where it is; else the scroll view keeps the top,
       // and opening or closing the agent's pane, which rewraps every row, carried the chat away from the newest.
-      .defaultScrollAnchor(pinned ? UnitPoint.bottom : nil, for: .sizeChanges)
+      // Rows just drawn above (`grow`) keep the bottom where it is too, so what shows does not move as they come in.
+      .defaultScrollAnchor(pinned || growing ? UnitPoint.bottom : nil, for: .sizeChanges)
       .onScrollPhaseChange { _, phase in
         userScrolling = phase == .tracking || phase == .interacting || phase == .decelerating
       }
@@ -495,6 +519,16 @@ private struct Transcript: View {
       } action: { old, new in
         follow(old, new)
       }
+      // Read near its top: the rows above the drawn ones come in. Asked again as the content grows, so a chat whose
+      // drawn rows do not fill the window draws more until they do.
+      .onScrollGeometryChange(for: Top.self) { geometry in
+        Top(near: geometry.visibleRect.minY < 400, height: geometry.contentSize.height.rounded())
+      } action: { _, top in
+        opening.nearTop = top.near
+        if top.near && shown && allRows.count > window { grow() }
+      }
+      // A message's Show more lets go of the newest (`ChatControl.letGoOfNewest`), at once.
+      .onAppear { control.letGoOfNewest = { pinned = false } }
       .onChange(of: pinned) { _, now in if now && unseen != 0 { unseen = 0 } }
       // New rows at the bottom. A message of the person's own just went out: to the newest, wherever the chat was, as the
       // iPhone's (the founder, 28 October 2026). Read further up, the agents' new messages are counted on ⌄.
@@ -502,6 +536,11 @@ private struct Transcript: View {
         let now = allRows
         guard let old, let from = now.lastIndex(where: { $0.id == old }) else { return }
         let added = now[(from + 1)...]
+        // Drawn too: the window grows by them, so a new row never pushes the drawn rows' first one out from under the reader.
+        window += added.count
+        // A chat kept open at its newest for long draws no more than it needs: the rows far above go (held at the
+        // bottom, nothing that shows moves).
+        if pinned && window > 3 * Transcript.firstWindow { window = Transcript.firstWindow }
         if added.contains(where: { row in if case .bubble(let bubble) = row { return bubble.fromPerson }; return false }) {
           toNewest()
           return
@@ -511,16 +550,49 @@ private struct Transcript: View {
       }
       // Read further up: ⌄ over the message field's right, as the iPhone's, with what came meanwhile.
       .overlay(alignment: .bottomTrailing) {
-        if !pinned {
-          ToEndButton(count: unseen, look: look) { toNewest() }
-            // Over the field's right, in the chat's column.
-            .padding(.trailing, side)
-            // 10 over the field's top (its height, and its 16 under it).
-            .padding(.bottom, control.composerHeight + 26)
-            .transition(.scale(scale: 0.6).combined(with: .opacity))
+        ZStack {
+          if !pinned {
+            ToEndButton(count: unseen, look: look) { toNewest() }
+              // Over the field's right, in the chat's column.
+              .padding(.trailing, side)
+              // 10 over the field's top (its height, and its 16 under it).
+              .padding(.bottom, control.composerHeight + 26)
+              .transition(.scale(scale: 0.6).combined(with: .opacity))
+          }
         }
+        // Only ⌄ comes and goes with the spring: given to the whole chat, every change made as the pin moved (rows
+        // taking their places, the chat following its newest) was animated with it, and the chat stood blank meanwhile.
+        .animation(.snappy, value: pinned)
       }
-      .animation(.snappy, value: pinned)
+    }
+  }
+
+  /** How near the chat is read to its top, and how tall its content is (`grow`). */
+  struct Top: Equatable {
+    let near: Bool
+    let height: CGFloat
+  }
+
+  /** The rows above the drawn ones come in, 40 at a time, the bottom kept where it is for a moment so what shows stays put. */
+  private func grow() {
+    growth += 1
+    let mine = growth
+    growing = true
+    window += Transcript.firstWindow
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 400_000_000)
+      if growth == mine { growing = false }
+    }
+  }
+
+  /** A row above the drawn ones (a quote's message, find's match): drawn first, then gone to (the iPhone's `reveal`). */
+  private func bringIn(_ id: String, then go: @escaping () -> Void) {
+    let all = allRows
+    guard let index = all.firstIndex(where: { $0.id == id }), all.count - index > window else { return go() }
+    window = all.count - index + 10
+    Task { @MainActor in
+      try? await Task.sleep(nanoseconds: 60_000_000)
+      go()
     }
   }
 
@@ -608,6 +680,8 @@ private struct Transcript: View {
   private func show() {
     shown = true
     resizedUntil = max(resizedUntil, Date().addingTimeInterval(0.5))
+    // Its drawn rows do not reach its top: more come in now, as a scroll there would bring them.
+    if opening.nearTop && allRows.count > window { grow() }
   }
 
   /**
@@ -625,6 +699,8 @@ private struct Transcript: View {
   final class Opening {
     var endsDrawn = 0
     var gap: CGFloat?
+    /** The chat is read near its top (or its rows do not fill it): where more rows come in. */
+    var nearTop = false
 
     var atNewest: Bool { endsDrawn > 0 && (gap ?? 0) <= 4 }
   }
@@ -692,7 +768,7 @@ private struct Transcript: View {
  * (someone else spoke before it) sits 12 lower, and a bubble that runs on
  * from or into the same sender's has its corner on that side 6 round.
  */
-private struct TranscriptRow: View {
+private struct TranscriptRow: View, Equatable {
   let row: ChatRow
   let agentId: String
   let isGroup: Bool
@@ -713,6 +789,13 @@ private struct TranscriptRow: View {
   @Environment(ChatControl.self) private var control
   @Environment(\.findMarks) private var findMarks
   @Environment(TranscriptSelection.self) private var selection: TranscriptSelection?
+
+  /** Drawn again only when what it shows changed (`.equatable()` in `Transcript`); what it reads from the chat's state and the environment still redraws it. */
+  static func == (a: TranscriptRow, b: TranscriptRow) -> Bool {
+    a.row == b.row && a.agentId == b.agentId && a.isGroup == b.isGroup && a.run == b.run && a.seamsBelow == b.seamsBelow
+      && a.threadCount == b.threadCount && a.threadRoot == b.threadRoot && a.width == b.width && a.entering == b.entering
+      && a.time == b.time && a.look.dark == b.look.dark && a.visibleIds == b.visibleIds
+  }
 
   private var startsGroup: Bool { run.startsGroup }
 
@@ -1132,9 +1215,10 @@ private struct BubbleRow: View {
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
         .frame(minWidth: isShort(trimmed) ? 36 : nil)
-        .background(look.theirs, in: shape)
+        // The shadow is the shape's own, not the message's: a shadow over the whole message was drawn from a picture of
+        // it, words and all, at each redraw, and a long message's picture was too tall to hold and showed white.
+        .background { shape.fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
         .overlay { shape.inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-        .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     }
   }
 
@@ -1490,9 +1574,9 @@ private struct FileCard: View {
     }
     .padding(8)
     .frame(width: FileCard.width(name: shown, meta: meta, limit: limit))
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 12))
+    // The shadow is the card's shape's own, as a message's (`BubbleRow`).
+    .background { RoundedRectangle(cornerRadius: 12).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .overlay { RoundedRectangle(cornerRadius: 12).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .padding(.vertical, 4)
     .task(id: url) {
       // A computer that rests is waited for, not woken (step 4).
@@ -1554,6 +1638,15 @@ private struct FileIcon: View {
  * The person's words in their bubble, folded at 160 points when longer,
  * with Show more under them (13) and Show less once open, as the window
  * folds a long message.
+ *
+ * Folded from its first layout: it was laid out whole, then folded once
+ * measured, and every row under it moved twice (12 November 2026). Long
+ * words are drawn in pieces of about 1,500 characters, the first alone
+ * while folded: one text of a whole pasted document was laid out at every
+ * redraw, folded or not, and drawn as one picture taller than the screen
+ * can hold, which showed white. Show more lets go of the chat's newest
+ * (`ChatControl.letGoOfNewest`), so the words open downward from where
+ * they are and the chat stays still.
  */
 private struct FoldingText: View {
   let text: String
@@ -1563,26 +1656,32 @@ private struct FoldingText: View {
   let marks: FindMarks?
   let look: Look
   @Environment(TranscriptSelection.self) private var selection: TranscriptSelection?
+  @Environment(ChatControl.self) private var control
+  /** The first piece's whole height, measured as it is laid out (not as it shows). */
   @State private var full: CGFloat = 0
   @State private var open = false
 
   var body: some View {
-    let folds = full > 161
+    let pieces = Self.pieces(text)
+    let folds = pieces.count > 1 || full > 161
+    let marking = selection?.active == true
     VStack(alignment: .leading, spacing: 4) {
-      // Chosen by a drag over the chat (`TranscriptSelection`), lit in white on the person's colour.
-      FindLine.marked(text, marks: marks, look: look, marksWords: selection?.active == true)
-        .modifier(Choosable(tint: Color.white.opacity(0.32)))
-        .font(.system(size: 14))
-        .tracking(-0.042)
-        .foregroundStyle(look.yoursText)
-        .multilineTextAlignment(centred ? .center : .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .cssLineHeight(lineHeight, size: 14)
-        .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.height } action: { value in full = value }
-        .frame(height: folds && !open ? 160 : nil, alignment: .top)
-        .clipped()
+      VStack(alignment: .leading, spacing: 0) {
+        piece(pieces[0], at: 0, of: pieces, marking: marking)
+          .onGeometryChange(for: CGFloat.self) { proxy in proxy.size.height } action: { value in full = value }
+        if open {
+          ForEach(1..<pieces.count, id: \.self) { index in
+            piece(pieces[index], at: index, of: pieces, marking: marking)
+          }
+        }
+      }
+      .frame(maxHeight: folds && !open ? 160 : nil, alignment: .top)
+      .clipped()
       if folds {
-        Button { open.toggle() } label: {
+        Button {
+          control.letGoOfNewest()
+          open.toggle()
+        } label: {
           HStack(spacing: 4) {
             Text(open ? "Show less" : "Show more")
               .font(.system(size: 13))
@@ -1598,6 +1697,63 @@ private struct FoldingText: View {
         .buttonStyle(.hand)
       }
     }
+  }
+
+  /** One piece of the words, chosen by a drag over the chat (`TranscriptSelection`), lit in white on the person's colour. */
+  private func piece(_ words: String, at index: Int, of pieces: [String], marking: Bool) -> some View {
+    FindLine.marked(words, marks: Self.marks(marks, at: index, of: pieces), look: look, marksWords: marking)
+      .modifier(Choosable(tint: Color.white.opacity(0.32)))
+      .font(.system(size: 14))
+      .tracking(-0.042)
+      .foregroundStyle(look.yoursText)
+      .multilineTextAlignment(centred ? .center : .leading)
+      .fixedSize(horizontal: false, vertical: true)
+      .cssLineHeight(lineHeight, size: 14)
+  }
+
+  /** About this many characters (UTF-16) a piece. */
+  static let pieceLength = 1_500
+
+  /**
+   * The words cut into pieces of about `pieceLength`, at a line's end where
+   * there is one, else at a space; one piece when short. The line break
+   * between two pieces is the pieces' own (they stack), so none is lost.
+   */
+  static func pieces(_ text: String) -> [String] {
+    let all = text as NSString
+    guard all.length > pieceLength else { return [text] }
+    var out: [String] = []
+    var from = 0
+    while from < all.length {
+      let rest = all.length - from
+      if rest <= pieceLength {
+        out.append(all.substring(from: from))
+        break
+      }
+      let window = NSRange(location: from, length: pieceLength)
+      let line = all.range(of: "\n", options: .backwards, range: window)
+      if line.location != NSNotFound && line.location > from {
+        out.append(all.substring(with: NSRange(location: from, length: line.location - from)))
+        from = line.location + 1
+        continue
+      }
+      let space = all.range(of: " ", options: .backwards, range: window)
+      let cut = space.location != NSNotFound && space.location > from ? space.location + 1 : from + pieceLength
+      // Never through a character outside the Basic Multilingual Plane.
+      let safe = all.rangeOfComposedCharacterSequence(at: cut - 1)
+      let end = max(from + 1, safe.location + safe.length)
+      out.append(all.substring(with: NSRange(location: from, length: end - from)))
+      from = end
+    }
+    return out.isEmpty ? [text] : out
+  }
+
+  /** Find's marks for one piece: its current match counted after the matches in the pieces before it. */
+  static func marks(_ marks: FindMarks?, at index: Int, of pieces: [String]) -> FindMarks? {
+    guard var marks, index > 0 else { return marks }
+    let before = pieces[..<index].reduce(0) { $0 + marks.ranges(in: $1).count }
+    marks.current = marks.current.map { $0 - before }
+    return marks
   }
 }
 
