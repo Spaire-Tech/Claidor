@@ -30,7 +30,7 @@ Simeon is your chief of staff and the first agent on your team. The quickest way
 3. If the job isn't clear, Simeon asks one or two questions. He then says what he assumed and hires.
 4. A card says the new agent **just joined your team**. Choose **Go to Chat** to talk to it, or **View Profile** to check its details.
 
-![Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team](img/agents-hire.webp "Simeon says what he'll hire, then the new agent's card appears in his chat.")
+![Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team](img/agents-hire.webp "Simeon says what he'll hire, then the new agent's card appears in his chat."){c=#89acbc edge=tl w=118 ar=16/11}
 
 Simeon gives the new agent a first name, a title that names the job, a description and a brief: what to do first and how you like it done. The agent starts on the work right away.
 
@@ -53,7 +53,7 @@ If you're not sure what to hand off, ask him what he'd recommend. He suggests a 
 3. Choose **Edit** under the face to pick a different face, generate one or upload your own (see [Faces and voices](#faces-and-voices)).
 4. Choose **Create**. The agent appears in your list and its chat opens.
 
-![The New Agent window with a face, Name, Title and Create](img/agents-new.webp "New Agent asks for a name and a title.")
+![The New Agent window with a face, Name, Title and Create](img/agents-new.webp "New Agent asks for a name and a title."){c=#a5835f edge=c w=48 ar=16/11}
 
 5. Tell the agent what you need in its chat, or write its description in its profile (below), so it knows its job from the first task.
 
@@ -71,7 +71,7 @@ An agent's profile holds its name, title and description, its routines and its c
 - Choose **View Profile** on the card that says it joined your team.
 - Right-click the agent in your list of chats and choose **Edit Profile**.
 
-![Rosa's profile: her face, name, title, description and notifications](img/agents-profile.webp "The profile's three tabs: Profile, Routines and Computer.")
+![Rosa's profile: her face, name, title, description and notifications](img/agents-profile.webp "The profile's three tabs: Profile, Routines and Computer."){c=#8f7f8d edge=t w=62 ar=16/12}
 
 | Tab | What you can do there |
 |---|---|
@@ -119,11 +119,11 @@ Agents can message each other, so you don't have to pass work between them. Ask 
 
 Simeon answers, and under his reply you see how many messages he's exchanged with the other agent:
 
-![Simeon replying that he's asking Rosa, with "2 messages with Rosa" under it](img/agents-handoff.webp "Under Simeon's reply: the exchange with Rosa.")
+![Simeon replying that he's asking Rosa, with "2 messages with Rosa" under it](img/agents-handoff.webp "Under Simeon's reply: the exchange with Rosa."){c=#89acbc edge=br w=118 ar=16/9}
 
 Choose it to read their whole exchange. It's view-only: you can follow it, but you give work in your own chats.
 
-![The exchange between Simeon and Rosa, with Close Chat at the bottom](img/agents-exchange.webp "What Simeon asked Rosa, and what she answered.")
+![The exchange between Simeon and Rosa, with Close Chat at the bottom](img/agents-exchange.webp "What Simeon asked Rosa, and what she answered."){c=#8f7f8d edge=t w=88 ar=16/9}
 
 :::tip
 Mention an agent in your message to bring it in directly. Type @ and choose it from the list, and its name appears as a pill in your message.

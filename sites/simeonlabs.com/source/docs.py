@@ -283,15 +283,20 @@ def render(md):
             text = "\n".join(code)
             out.append(f'<div class="code"><pre><code>{html.escape(text)}</code></pre>'
                        f'<button type="button" class="copy-code" aria-label="Copy">{ICON["copy"]}<span>Copy</span></button></div>')
-        elif re.match(r"!\[[^\]]*\]\([^)]+\)\s*$", line.strip()):
+        elif re.match(r"!\[[^\]]*\]\([^)]+\)(\{[^}]*\})?\s*$", line.strip()):
             # A picture of the app (12 November 2026, the founder: "stripe level of documentation, with details, pictures"):
             # ![what it shows](img/<file> "caption"), the file in source/docs/img, framed on the site's grey
-            m = re.match(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)', line.strip())
+            m = re.match(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)(?:\{([^}]*)\})?', line.strip())
             alt, src, cap = m.group(1), m.group(2), m.group(3)
+            opts = dict(kv.split("=", 1) for kv in (m.group(4) or "").split() if "=" in kv)
             size = shot_size(src)
             dims = f' width="{size[0]}" height="{size[1]}"' if size else ""
-            narrow = ' narrow' if size and size[0] <= size[1] * 1.15 else ''
-            out.append(f'<figure class="shot{narrow}"><img src="/docs/{html.escape(src)}" alt="{html.escape(alt)}"{dims} loading="lazy" decoding="async">'
+            # The window on a panel in the colour of the agent it shows (the founder, 12 November 2026: "apple like
+            # ... for the background color use whatever agent background color"): the window's own corner at `edge`
+            # (tl, tr, t, bl, br, b, or c for the whole window), running off the panel's other sides
+            colour, edge = opts.get("c", "#89acbc"), opts.get("edge", "tl")
+            style = f'--c:{colour};--w:{opts.get("w", "92")}%;aspect-ratio:{opts.get("ar", "16/10")}'
+            out.append(f'<figure class="shot"><div class="pane" style="{style}"><img class="e-{edge}" src="/docs/{html.escape(src)}" alt="{html.escape(alt)}"{dims} loading="lazy" decoding="async"></div>'
                        + (f"<figcaption>{inline(cap)}</figcaption>" if cap else "") + "</figure>")
             i += 1
         elif re.match(r":::(note|tip|warning)\s*$", line.strip()):
@@ -425,10 +430,13 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
-.words .shot{margin:8px 0 28px;padding:clamp(14px,2.2vw,28px);border-radius:18px;background:var(--soft)}
-.words .shot img{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 0 0 1px rgba(0,0,0,.06),0 12px 30px -16px rgba(20,30,60,.22)}
-.words .shot.narrow img{max-width:min(100%,380px);margin:0 auto}
-.words .shot figcaption{margin-top:14px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .e-tl{left:7%;top:9%}.words .shot .e-tr{right:7%;top:9%}.words .shot .e-t{left:50%;top:9%;transform:translateX(-50%)}
+.words .shot .e-bl{left:7%;bottom:9%}.words .shot .e-br{right:7%;bottom:9%}.words .shot .e-b{left:50%;bottom:9%;transform:translateX(-50%)}
+.words .shot .e-c{left:50%;top:50%;transform:translate(-50%,-50%)}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
 .words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
