@@ -10,9 +10,16 @@ export interface ConnectorManifest {
   readonly credentialLabel: string;
   readonly availability: "available" | "coming-soon";
   readonly connectGuide: string;
+  /**
+   * How the Channels tab connects it: `token`, a field for the bot's token;
+   * `app`, Connect opens Slack's own sign-in for Simeon's Slack app and no
+   * token is asked for (12 November 2026, `simeon/desktop/slack_app.py`).
+   */
+  readonly connect: "token" | "app";
 }
 
-// Discord and Slack are served since 25 September 2026: the connector
+// Discord and Slack are served since 25 September 2026 (Slack through
+// Simeon's own Slack app and Discord hidden since 12 November 2026): the connector
 // runtime in the box (`host/extensions/channels/`) opens Discord's Gateway
 // and Slack's Socket Mode with the token the person gives the Channels tab
 // (or a secret-request card), delivers through their REST APIs and wakes
@@ -27,6 +34,18 @@ export function isChannelsServed(env: NodeJS.ProcessEnv = process.env): boolean 
   return env[CHANNELS_SERVED_ENV]?.trim() === "0" ? false : true;
 }
 
+/**
+ * Discord is hidden until Simeon has a Discord app of its own, connected
+ * the way Slack now is (the founder, 12 November 2026: "hide discord until
+ * we do that"): neither the Channels tab nor the agent sees it, and a bot
+ * token stored earlier is not connected. `SAND_DISCORD_SERVED=1` shows it
+ * again, as it was.
+ */
+export const DISCORD_SERVED_ENV = "SAND_DISCORD_SERVED";
+export function isDiscordServed(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env[DISCORD_SERVED_ENV]?.trim() === "1";
+}
+
 export const CONNECTOR_MANIFESTS: readonly ConnectorManifest[] = [
   {
     platform: DISCORD_PLATFORM,
@@ -34,6 +53,7 @@ export const CONNECTOR_MANIFESTS: readonly ConnectorManifest[] = [
     blurb: "Message in Discord servers and DMs through a bot the user owns.",
     credentialLabel: "bot token",
     availability: "available",
+    connect: "token",
     connectGuide: [
       "The user creates an application at discord.com/developers, adds a Bot, turns on the Message Content Intent under Privileged Gateway Intents, and invites the bot to their server with the bot scope and the Send Messages and Read Message History permissions.",
       "Ask for the bot token with a secret-request (connector \"discord\", field \"token\"); the connection opens within a few seconds of it being stored. A DM to the bot or a message in a channel it can read wakes you; the address is discord:<channel id>.",
@@ -42,20 +62,22 @@ export const CONNECTOR_MANIFESTS: readonly ConnectorManifest[] = [
   {
     platform: SLACK_PLATFORM,
     displayName: "Slack",
-    blurb: "Message in Slack channels and DMs through a Socket Mode app the user owns.",
-    credentialLabel: "app token and bot token",
+    blurb: "Message in Slack channels and DMs through Simeon's Slack app.",
+    credentialLabel: "",
     availability: "available",
+    connect: "app",
     connectGuide: [
-      "The user creates an app at api.slack.com/apps, enables Socket Mode (which issues an app-level token, xapp-…, with connections:write), subscribes the bot to the message.channels, message.groups, message.im and reaction_added events, gives it the chat:write, channels:history, groups:history, im:history, users:read and files:write scopes, and installs it to the workspace (which issues the bot token, xoxb-…).",
-      "Two tokens are needed: ask for the app token with a secret-request (connector \"slack\", field \"token\") and the bot token with a second one (connector \"slack\", field \"botToken\"). The connection opens once both are stored. A DM to the app or a message in a channel it is a member of wakes you; the address is slack:<channel id>.",
+      "The user connects Slack from your Channels tab in the Simeon app (Connect Slack): Slack's own sign-in for Simeon's Slack app, where they pick the workspace and allow it. There is no token: never ask for one, and never send a secret-request for Slack. To suggest it, tell them to open your Channels tab and choose Connect Slack.",
+      "Once connected, a direct message to the Simeon app in Slack, or a mention of it in a channel it was invited to (/invite @Simeon), wakes you; the address is slack:<channel id>. Your answer appears under your own name, in the thread of the message that asked in a channel. Several of the user's agents can share the workspace: a message that starts with an agent's name goes to that agent, and a conversation stays with the agent who answered it.",
     ].join("\n"),
   },
 ];
 
 /** The manifests as a person or the agent should see them: coming soon when the served switch is off. */
 export function connectorManifests(env: NodeJS.ProcessEnv = process.env): readonly ConnectorManifest[] {
-  if (isChannelsServed(env)) return CONNECTOR_MANIFESTS;
-  return CONNECTOR_MANIFESTS.map((manifest) => ({ ...manifest, availability: "coming-soon" as const, blurb: `${manifest.blurb.replace(/\.$/, "")} (coming soon).` }));
+  const shown = CONNECTOR_MANIFESTS.filter((manifest) => manifest.platform !== DISCORD_PLATFORM || isDiscordServed(env));
+  if (isChannelsServed(env)) return shown;
+  return shown.map((manifest) => ({ ...manifest, availability: "coming-soon" as const, blurb: `${manifest.blurb.replace(/\.$/, "")} (coming soon).` }));
 }
 
 /** Each platform's words for the apps' Channels tab (`say`); the agent reads the English manifests. */
@@ -73,7 +95,8 @@ export function connectorManifestsForPerson(language: string | null | undefined,
     return {
       ...manifest,
       blurb: manifest.availability === "coming-soon" ? say(language, "channel.comingSoon", { blurb: blurb.replace(/\.$/, "") }) : blurb,
-      credentialLabel: say(language, words.credentialLabel),
+      // Connected through Simeon's own app, it asks for no token.
+      credentialLabel: manifest.connect === "app" ? "" : say(language, words.credentialLabel),
     };
   });
 }

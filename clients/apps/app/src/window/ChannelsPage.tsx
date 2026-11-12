@@ -1,19 +1,25 @@
 // An agent's channels in its pane (mac/Simeon/ChannelsPage.swift, O01,
-// `_0n`): Discord and Slack, a bot the person owns, run from the agent's
-// computer; "Channels" in ⌘K and "/", no tab of its own. In Settings' parts
-// (the founder, 28 October 2026: "this isn't our Apple design… too many
-// words"): one card, a row per platform, as the Connectors list draws an
-// app. Connecting is the bot's token, pasted here and kept by the computer;
-// nothing opens elsewhere. What the rows say is channels.ts'; the calls are
-// the store's. Drawn by AgentPane.tsx.
+// `_0n`): the platforms the agent's computer offers; "Channels" in ⌘K and
+// "/", no tab of its own. In Settings' parts (the founder, 28 October 2026:
+// "this isn't our Apple design… too many words"): one card, a row per
+// platform, as the Connectors list draws an app. Slack connects through
+// Simeon's own Slack app (12 November 2026): + opens Slack's sign-in in a
+// tab (the default browser in the Windows app), and the row waits until the
+// computer says it is connected; a platform that takes a bot's token opens
+// a field for it, kept by the computer. What the rows say is channels.ts';
+// the calls are the store's. Drawn by AgentPane.tsx.
 
 import { useEffect, useRef, useState } from 'react'
 import {
   type ChannelManifest,
   type ChannelsView,
   type RowState,
+  channelConnectPollSeconds,
+  channelConnectWaitSeconds,
   channelPlaceholder,
   channelSubtitle,
+  connectsInBrowser,
+  couldNotConnect,
   noChannels,
   rowState,
 } from '../core/channels'
@@ -26,6 +32,7 @@ import './ChannelsMembers.css'
 import { classes } from './classes'
 import { AppLogoTile } from './ConnectCards'
 import { reopenGap } from './GroupMembers'
+import { type PendingPage, openPending } from './outside'
 import { PaneMenu } from './PaneMenu'
 import { useWatched } from './useStore'
 
@@ -37,7 +44,7 @@ import { useWatched } from './useStore'
  * the last answer; those last two let a resting computer rest. Connect,
  * Disconnect and Refresh put their answer in place, then read again.
  */
-class ChannelsModel {
+export class ChannelsModel {
   private listeners = new Set<() => void>()
   private version = 0
 
@@ -56,6 +63,10 @@ class ChannelsModel {
   view?: ChannelsView
   /** Calls under way per platform: its row's buttons and menu wait while any is. */
   private busy = new Map<string, number>()
+  /** What went wrong opening a platform's sign-in, shown in its row until the next try. */
+  private problems = new Map<string, string>()
+  /** The page went away: a sign-in's wait stops asking. */
+  private stopped = false
   /** Each read and call numbered as it starts: an answer older than the one shown is dropped (the 4 s reads, the window coming forward and a call's own answer overlap). */
   private issued = 0
   private shown = 0
@@ -63,7 +74,17 @@ class ChannelsModel {
   constructor(
     private readonly store: AppStore,
     readonly agentId: string,
+    private readonly wait: (ms: number) => Promise<void> = (ms) =>
+      new Promise((done) => setTimeout(done, ms)),
   ) {}
+
+  stop(): void {
+    this.stopped = true
+  }
+
+  problem(platform: string): string | undefined {
+    return this.problems.get(platform)
+  }
 
   /** A read; with `wakes` false, one that lets a resting computer rest (`AppStore.channels`). */
   async load(wakes = true): Promise<void> {
@@ -81,6 +102,54 @@ class ChannelsModel {
 
   isBusy(platform: string): boolean {
     return (this.busy.get(platform) ?? 0) > 0
+  }
+
+  /**
+   * Connect through the browser (Slack through Simeon's own app, the Mac's
+   * `connectInBrowser`): `page`, opened in the click, goes to Slack's
+   * sign-in, and the row waits (its spinner) while the computer is asked
+   * every 3 s whether it is connected, five minutes at most.
+   */
+  async connectInBrowser(platform: string, page: PendingPage): Promise<void> {
+    if (this.isBusy(platform)) {
+      page.drop()
+      return
+    }
+    this.problems.delete(platform)
+    this.busy.set(platform, (this.busy.get(platform) ?? 0) + 1)
+    this.changed()
+    try {
+      const url = await this.store.channelConnectLink(this.agentId, platform)
+      if (!url) {
+        page.drop()
+        this.problems.set(platform, couldNotConnect())
+        return
+      }
+      page.go(url)
+      const deadline = Date.now() + channelConnectWaitSeconds * 1000
+      while (Date.now() < deadline && !this.stopped) {
+        await this.wait(channelConnectPollSeconds * 1000)
+        if (this.stopped) return
+        this.issued += 1
+        const number = this.issued
+        this.apply(
+          await this.store.refreshChannel(this.agentId, platform),
+          number,
+        )
+        const manifest = this.view?.manifests.find(
+          (row) => row.platform === platform,
+        )
+        if (
+          this.view &&
+          manifest &&
+          rowState(this.view, manifest).kind === 'connected'
+        )
+          return
+      }
+    } finally {
+      this.busy.set(platform, (this.busy.get(platform) ?? 1) - 1)
+      this.changed()
+    }
   }
 
   /** A call for one platform, then a read; its row waits meanwhile. */
@@ -126,6 +195,7 @@ export function ChannelsBody({
       live = false
       clearTimeout(timer)
       window.removeEventListener('focus', forward)
+      model.stop()
     }
   }, [model])
   const view = model.view
@@ -210,11 +280,18 @@ function ChannelRow({
     state.kind === 'connecting' ||
     state.kind === 'error'
 
-  /** + and Reconnect open the field, which takes the keys as it appears. */
+  /** The token's field opens, which takes the keys as it appears. */
   const openForm = () => {
     setBlank(true)
     setFormOpen(true)
   }
+  /** + and Reconnect: Slack's sign-in, its tab opened in the click, for a platform connected through Simeon's own app; else the token's field. */
+  const connect = () => {
+    if (connectsInBrowser(manifest))
+      void model.connectInBrowser(platform, openPending())
+    else openForm()
+  }
+  const problem = model.problem(platform)
   useEffect(() => {
     if (formOpen) field.current?.focus()
   }, [formOpen])
@@ -270,10 +347,10 @@ function ChannelRow({
           <span
             className={classes(
               'channel-detail',
-              state.kind === 'error' && 'error',
+              (state.kind === 'error' || problem !== undefined) && 'error',
             )}
           >
-            {channelSubtitle(view, manifest)}
+            {problem ?? channelSubtitle(view, manifest)}
           </span>
         </div>
         {hasMenu && (
@@ -301,7 +378,8 @@ function ChannelRow({
           busy={busy}
           name={manifest.displayName}
           formOpen={formOpen}
-          openForm={openForm}
+          inBrowser={connectsInBrowser(manifest)}
+          connect={connect}
         />
       </div>
       {formOpen && state.kind !== 'comingSoon' && (
@@ -349,19 +427,21 @@ function ChannelRow({
   )
 }
 
-/** The row's end (`mark`): +, the tick, the spinner, Coming soon, or Reconnect. */
+/** The row's end (`mark`): +, the tick, the spinner, Coming soon, or Reconnect (the spinner while Slack's sign-in is waited for). */
 function Mark({
   state,
   busy,
   name,
   formOpen,
-  openForm,
+  inBrowser,
+  connect,
 }: {
   state: RowState
   busy: boolean
   name: string
   formOpen: boolean
-  openForm: () => void
+  inBrowser: boolean
+  connect: () => void
 }) {
   switch (state.kind) {
     case 'available':
@@ -374,7 +454,7 @@ function Mark({
           disabled={formOpen}
           title={coreT('Connect')}
           aria-label={t`Connect ${name}`}
-          onClick={openForm}
+          onClick={connect}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <path
@@ -410,11 +490,13 @@ function Mark({
     case 'connecting':
       return <AddingSpinner name={name} />
     case 'error':
-      return (
+      return busy && inBrowser ? (
+        <AddingSpinner name={name} />
+      ) : (
         <SettingsPill
           title={t('Reconnect')}
           disabled={busy || formOpen}
-          onClick={openForm}
+          onClick={connect}
         />
       )
     case 'comingSoon':

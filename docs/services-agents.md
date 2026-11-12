@@ -156,11 +156,14 @@ failed check, a new issue).
 
 **What must be registered before it works.**
 
-- **Slack app**, display name Simeon. Bot scopes `app_mentions:read`, `channels:history`,
-  `channels:read`, `groups:history`, `groups:read`, `reactions:read`, `users:read`,
-  `chat:write`. Event request URL `https://api.simeonlabs.com/sand/ingress/slack/events`, bot
-  events `app_mention`, `message.channels`, `message.groups`, `reaction_added`. OAuth redirect
-  `https://api.simeonlabs.com/sand/slack/callback`.
+- **Slack app**, display name Simeon, registered in late September 2026 (public distribution
+  on). Bot scopes `app_mentions:read`, `channels:history`, `channels:read`, `groups:history`,
+  `groups:read`, `reactions:read`, `users:read`, `chat:write`, and since 12 November 2026, for
+  an agent's Slack (§4), `im:history`, `chat:write.customize`, `files:write`. Event request URL
+  `https://api.simeonlabs.com/sand/ingress/slack/events`, bot events `app_mention`,
+  `message.channels`, `message.groups`, `reaction_added`, and `message.im` (§4). App Home's
+  Messages Tab on, with "Allow users to send Slash commands and messages from the messages
+  tab". OAuth redirect `https://api.simeonlabs.com/sand/slack/callback`.
 - **GitHub App**, separate from the sign-in app. Webhook URL
   `https://api.simeonlabs.com/sand/ingress/github/events` with a secret; setup URL
   `https://api.simeonlabs.com/sand/github/callback` with "Redirect on update" on. Events: pull
@@ -179,8 +182,9 @@ failed check, a new issue).
 * **Known limits.** Microsoft Teams triggers are accepted and never fire (no bot). Nothing in
   the app mints a Linear, Sentry or PagerDuty URL yet; the route is there for the agent to call.
   A private Slack channel resolves only once the bot is invited.
-* **Not yet verified.** The Slack and GitHub apps are not registered, so no real event has
-  arrived. No routine has fired from the server against a real computer.
+* **Not yet verified.** The GitHub App is not registered. The Slack app is registered but not
+  installed in any workspace, so no real event has arrived. No routine has fired from the
+  server against a real computer.
 
 ## 3. Sharing between people
 
@@ -221,10 +225,15 @@ agents. A turn for an agent always runs in its owner's computer.
 * **Not yet verified.** No room has been shared between two Macs. Whether the shipped window
   draws the Share entry points from the gate is not measured.
 
-## 4. Messaging channels: Discord and Slack
+## 4. Messaging channels: Slack and Discord
 
-**For the person.** An agent can have its own Discord bot or Slack app: people message it
-there, and it answers there. The person makes the bot and gives Simeon its token.
+**For the person.** An agent can talk in Slack: in the agent's Channels tab, + beside Slack
+opens Slack's own sign-in for Simeon's Slack app; the person picks a workspace and allows it,
+and the row turns Connected. People then message the Simeon app, or mention it in a channel it
+was invited to, and the agent answers there under its own name. No token is ever pasted. Since
+12 November 2026 ("Slack through Simeon's Slack app", below). Discord is hidden until Simeon has
+a Discord app of its own; the way of an agent's own bot (its token pasted) is kept in the
+engine for Discord, and for Slack bots connected before.
 
 **How it works.**
 
@@ -241,6 +250,53 @@ there, and it answers there. The person makes the bot and gives Simeon its token
 - Slack needs two tokens. The Channels tab's one field takes both in any order (`xapp-…` app
   token, `xoxb-…` bot token; `shared/channel-credential.ts`). In chat the agent asks for them
   as two secret requests.
+
+**Slack through Simeon's Slack app (12 November 2026).**
+
+- The connect: the app asks the server for a one-time link (`POST
+  /desktop/api/channels/slack/link` with `agentId`; `server/simeon/desktop/slack_app.py`),
+  which is `https://api.simeonlabs.com/sand/slack/install?ticket=…`. The ticket (Redis, 15
+  minutes, used once) names the person and the agent, so the browser needs no Simeon sign-in.
+  The install page goes on to Slack's authorize page (the routines' install, §2), and the
+  callback keeps the workspace's bot token on the server (`sand_listener_connections`, sealed,
+  one row per workspace) with the agent in `extra.agents`. The apps' Channels row
+  (`ChannelsView.Manifest.connect == "app"`: Mac and iPhone `ChannelsPage.swift`, web
+  `ChannelsPage.tsx`) opens the link, then asks the computer every 3 s, five minutes at most,
+  until it says Connected.
+- Which agent hears a message (`route_event`): one whose name starts the message ("Theo, the
+  deck?"); else the agent that last answered in that conversation (30 days); else the first
+  agent connected in that workspace. Direct messages to the app (`message.im`) and mentions
+  (`app_mention`) only; a channel message without a mention is not heard. Each message goes to
+  the person's inbox (`desktop_chat_inbox`, kind `channel`, `app: true`) and wakes the computer,
+  as a bot heard on the runner does.
+- The computer holds no Slack token. The server names the agents that talk in Slack in the
+  channels sync's answer (`hosted`); the computer lists each with the workspace's name and the
+  mark `app` (`shared/channel-credential.ts`), and its answers go back through the server
+  (`POST /desktop/api/channels/slack/send`, `host/extensions/channels/app-slack-connector.ts`),
+  posted with the agent's name (`chat:write.customize`) in the thread they belong to; a file
+  under 10 MB is uploaded, a larger one or an https address is sent as a link. Disconnect in the
+  Channels tab tells the server (`POST /desktop/api/channels/slack/disconnect`); an agent the
+  server no longer names is taken off the computer.
+- The agent's own words (`shared/channels.ts`, the Slack manifest's connect guide): send the
+  person to Connect Slack in the Channels tab, never ask for a token; `/invite @Simeon` brings
+  it into a channel.
+- Discord: hidden unless the computer runs with `SAND_DISCORD_SERVED=1`. Hidden, a Discord bot
+  connected before is not listened to either, until Discord comes back.
+
+* **Settings on Render.** None new: the Slack app's four settings (§2). The Slack app itself
+  needs the scopes `im:history`, `chat:write.customize`, `files:write`, the event `message.im`
+  and the Messages Tab (§2); until they are added Slack refuses the sign-in (`invalid_scope`).
+* **Log lines.** Server: `desktop.channels.slack_link` (or `slack_link_refused`),
+  `sand.listeners.slack_install_refused`, `desktop.channels.slack_heard` (`agent_id`,
+  `direct`, `queued`), `desktop.channels.slack_dropped`, `desktop.channels.slack_sent`,
+  `desktop.channels.slack_send_failed` (Slack's `error`), `desktop.channels.slack_disconnected`.
+  Box: `[simeon] channel=slack agent=<id> event=app-connected`, `event=connect via=app`,
+  `event=app-disconnected`, `event=app-removed`.
+* **Known limits.** One Simeon account per Slack workspace: a second person connecting the same
+  workspace takes it over. The reply shows the agent's name, not its face. Only direct messages
+  and mentions are heard. The bot must be invited to a channel before a mention there reaches it.
+* **Not yet verified.** Nothing has run against the real Slack: the checks use a stand-in Slack
+  and a stand-in server. The connect has not been run in the apps on a Mac or an iPhone.
 
 **Listened to from the server (26 October 2026).**
 
@@ -284,7 +340,7 @@ there, and it answers there. The person makes the bot and gives Simeon its token
   `let go of <id>`, `reported N heard`, and each bot's `discord …` or `slack …` lines.
 * **Known limits.** A Slack reply goes to the thread of the last inbound message in that chat.
   Discord has no thread routing. An https attachment is sent as a link; only a local file is
-  uploaded. There is no hosted Simeon bot.
+  uploaded. Simeon has a Slack app of its own (above) but no Discord app.
 * **Not yet verified.** No real Discord or Slack token has been used, by the computer or the
   runner. Whether the Channels tab shows the live status is not measured.
 

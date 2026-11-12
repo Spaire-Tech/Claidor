@@ -13,7 +13,9 @@ The computer keeps sending the replies itself, with the same tokens.
   server lacks them, the tokens. Answers whether the server holds them
   (`held`) and each bot's state as the runner last reported it; a bot whose
   state is not fresh (`FRESH_FOR`) is one the computer keeps listening to
-  itself, so a runner that is down costs nothing.
+  itself, so a runner that is down costs nothing. Since 12 November 2026 it
+  also answers `hosted`: the agents that talk in Slack through Simeon's own
+  Slack app (`slack_app.py`), which hold no token at all.
 - `POST /maty/runner/channels`, from the runner (its own token): the bots to
   hold, with their tokens when the runner's copy is not current.
 - `POST /maty/runner/channels/report`, from the runner: each bot's state,
@@ -50,6 +52,7 @@ from simeon.redis import Redis, get_redis
 from simeon.routing import APIRouter
 from simeon.sand.notify import publish
 
+from . import slack_app
 from .auth import get_desktop_or_box_session
 from .channel_repository import DesktopChannelBotRepository
 from .chat_repository import DesktopChatInboxRepository
@@ -119,12 +122,17 @@ async def channels_sync(
 ) -> JSONResponse:
     bots = DesktopChannelBotRepository.from_session(session)
     user_id = desktop_session.user_id
+    # The agents that talk in Slack through Simeon's own app (12 November
+    # 2026, `slack_app.py`): no token on the computer, so none in `channels`.
+    hosted = await slack_app.hosted_for(session, user_id)
     if not held_on_server():
         # Nothing is kept while the server listens to no bot.
         removed = await bots.remove_for_user(user_id)
         if removed:
             log.info("desktop.channels.dropped", user_id=str(user_id), removed=removed)
-        return JSONResponse({"code": 0, "data": {"held": False, "channels": []}})
+        return JSONResponse(
+            {"code": 0, "data": {"held": False, "channels": [], "hosted": hosted}}
+        )
     held = {
         (bot.agent_id, bot.platform): bot for bot in await bots.list_by_user(user_id)
     }
@@ -185,7 +193,9 @@ async def channels_sync(
             changed=changed,
             removed=len(gone),
         )
-    return JSONResponse({"code": 0, "data": {"held": True, "channels": answers}})
+    return JSONResponse(
+        {"code": 0, "data": {"held": True, "channels": answers, "hosted": hosted}}
+    )
 
 
 # --- the runner --------------------------------------------------------------

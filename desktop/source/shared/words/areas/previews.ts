@@ -141,7 +141,7 @@ export const EN = {
 
   // Messaging channels (`shared/channels.ts`, `host/extensions/channels/`).
   "channel.discordBlurb": "Message in Discord servers and DMs through a bot the user owns.",
-  "channel.slackBlurb": "Message in Slack channels and DMs through a Socket Mode app the user owns.",
+  "channel.slackBlurb": "Message in Slack channels and DMs through Simeon's Slack app.",
   "channel.comingSoon": "{blurb} (coming soon).",
   "channel.discordCredential": "bot token",
   "channel.slackCredential": "app token and bot token",
@@ -305,7 +305,7 @@ export const FR: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Pour connecter « {name} », il faut l’app de bureau Simeon.",
 
   "channel.discordBlurb": "Échange dans les serveurs et les messages privés Discord via un bot qui t’appartient.",
-  "channel.slackBlurb": "Échange dans les canaux et les messages privés Slack via une app Socket Mode qui t’appartient.",
+  "channel.slackBlurb": "Échange dans les canaux et les messages privés Slack via l’app Slack de Simeon.",
   "channel.comingSoon": "{blurb} (bientôt).",
   "channel.discordCredential": "jeton du bot",
   "channel.slackCredential": "jeton de l’app et jeton du bot",
@@ -464,7 +464,7 @@ export const ES: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Para conectar “{name}” se necesita la app de escritorio de Simeon.",
 
   "channel.discordBlurb": "Escribe en servidores y mensajes directos de Discord con un bot que es tuyo.",
-  "channel.slackBlurb": "Escribe en canales y mensajes directos de Slack con una app de Socket Mode que es tuya.",
+  "channel.slackBlurb": "Escribe en canales y mensajes directos de Slack con la app de Slack de Simeon.",
   "channel.comingSoon": "{blurb} (próximamente).",
   "channel.discordCredential": "token del bot",
   "channel.slackCredential": "token de la app y token del bot",
@@ -623,7 +623,7 @@ export const DE: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Zum Verbinden von „{name}“ braucht es die Simeon-Desktop-App.",
 
   "channel.discordBlurb": "Schreibt in Discord-Servern und Direktnachrichten über einen Bot, der dir gehört.",
-  "channel.slackBlurb": "Schreibt in Slack-Kanälen und Direktnachrichten über eine Socket-Mode-App, die dir gehört.",
+  "channel.slackBlurb": "Schreibt in Slack-Kanälen und Direktnachrichten über die Slack-App von Simeon.",
   "channel.comingSoon": "{blurb} (demnächst).",
   "channel.discordCredential": "Bot-Token",
   "channel.slackCredential": "App-Token und Bot-Token",
@@ -782,7 +782,7 @@ export const NL: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Om “{name}” te koppelen is de desktop-app van Simeon nodig.",
 
   "channel.discordBlurb": "Stuur berichten in Discord-servers en DM’s via een bot die van jou is.",
-  "channel.slackBlurb": "Stuur berichten in Slack-kanalen en DM’s via een Socket Mode-app die van jou is.",
+  "channel.slackBlurb": "Stuur berichten in Slack-kanalen en DM’s via de Slack-app van Simeon.",
   "channel.comingSoon": "{blurb} (binnenkort).",
   "channel.discordCredential": "bottoken",
   "channel.slackCredential": "app-token en bottoken",
@@ -941,7 +941,7 @@ export const IT: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Per connettere “{name}” serve l’app desktop di Simeon.",
 
   "channel.discordBlurb": "Scrivi nei server e nei messaggi diretti di Discord tramite un bot di tua proprietà.",
-  "channel.slackBlurb": "Scrivi nei canali e nei messaggi diretti di Slack tramite un’app Socket Mode di tua proprietà.",
+  "channel.slackBlurb": "Scrivi nei canali e nei messaggi diretti di Slack tramite l’app Slack di Simeon.",
   "channel.comingSoon": "{blurb} (prossimamente).",
   "channel.discordCredential": "token del bot",
   "channel.slackCredential": "token dell’app e token del bot",
@@ -1100,7 +1100,7 @@ export const PT_BR: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Para conectar “{name}”, é preciso o app Simeon para desktop.",
 
   "channel.discordBlurb": "Converse em servidores e mensagens diretas do Discord por meio de um bot que é seu.",
-  "channel.slackBlurb": "Converse em canais e mensagens diretas do Slack por meio de um app Socket Mode que é seu.",
+  "channel.slackBlurb": "Converse em canais e mensagens diretas do Slack pelo app de Slack do Simeon.",
   "channel.comingSoon": "{blurb} (em breve).",
   "channel.discordCredential": "token do bot",
   "channel.slackCredential": "token do app e token do bot",
@@ -1259,7 +1259,7 @@ export const SV: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "För att ansluta ”{name}” behövs Simeons skrivbordsapp.",
 
   "channel.discordBlurb": "Skriv i Discord-servrar och direktmeddelanden via en bot som du äger.",
-  "channel.slackBlurb": "Skriv i Slack-kanaler och direktmeddelanden via en Socket Mode-app som du äger.",
+  "channel.slackBlurb": "Skriv i Slack-kanaler och direktmeddelanden via Simeons Slack-app.",
   "channel.comingSoon": "{blurb} (kommer snart).",
   "channel.discordCredential": "bot-token",
   "channel.slackCredential": "app-token och bot-token",
@@ -1418,7 +1418,7 @@ export const PL: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "Do połączenia „{name}” potrzebna jest aplikacja Simeon na komputer.",
 
   "channel.discordBlurb": "Wiadomości na serwerach i w wiadomościach prywatnych Discord przez twojego własnego bota.",
-  "channel.slackBlurb": "Wiadomości na kanałach i w wiadomościach prywatnych Slack przez twoją własną aplikację Socket Mode.",
+  "channel.slackBlurb": "Wiadomości na kanałach i w wiadomościach prywatnych Slack przez aplikację Slack od Simeon.",
   "channel.comingSoon": "{blurb} (wkrótce).",
   "channel.discordCredential": "token bota",
   "channel.slackCredential": "token aplikacji i token bota",
@@ -1577,7 +1577,7 @@ export const TR: Readonly<Record<keyof typeof EN, string>> = {
   "mcp.needsDesktopApp": "“{name}” bağlantısı için Simeon masaüstü uygulaması gerekiyor.",
 
   "channel.discordBlurb": "Sana ait bir bot üzerinden Discord sunucularında ve özel mesajlarda mesajlaşma.",
-  "channel.slackBlurb": "Sana ait bir Socket Mode uygulaması üzerinden Slack kanallarında ve özel mesajlarda mesajlaşma.",
+  "channel.slackBlurb": "Simeon’un Slack uygulaması üzerinden Slack kanallarında ve özel mesajlarda mesajlaşma.",
   "channel.comingSoon": "{blurb} (yakında).",
   "channel.discordCredential": "bot token’ı",
   "channel.slackCredential": "uygulama token’ı ve bot token’ı",

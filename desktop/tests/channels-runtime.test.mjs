@@ -148,7 +148,7 @@ test("Discord: connect with the stored token, an inbound DM wakes the agent with
   const configs = { a1: [{ platform: "discord", token: "DTOKEN.abc", label: "Discord", secrets: { token: "DTOKEN.abc" } }] };
   const fake = fakeTranscript(configs);
   const { module, dispose } = await load("source/host/extensions/channels/channel-runtime.ts", "channel-runtime-discord");
-  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: {}, log: (line) => lines.push(line), clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
+  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_DISCORD_SERVED: "1" }, log: (line) => lines.push(line), clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
   try {
     runtime.start();
     assert.equal(typeof fake.hooks.deliver, "function", "setChannelDelivery registered");
@@ -224,7 +224,7 @@ test("Discord: a refused token is a terminal error with Discord's sentence, not 
   const fake = fakeTranscript({ a1: [{ platform: "discord", token: "BAD", label: "Discord", secrets: { token: "BAD" } }] });
   const lines = [];
   const { module, dispose } = await load("source/host/extensions/channels/channel-runtime.ts", "channel-runtime-discord-refused");
-  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: {}, log: (line) => lines.push(line), clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
+  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_DISCORD_SERVED: "1" }, log: (line) => lines.push(line), clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
   try {
     runtime.start();
     await waitFor(() => fake.statuses.some((s) => s.status === "error"), { label: "error status" });
@@ -328,7 +328,7 @@ test("SAND_CHANNELS_SERVED=0 keeps every connector closed and the manifests comi
   const discord = await fakeDiscord({ token: "T" });
   const fake = fakeTranscript({ a1: [{ platform: "discord", token: "T", label: "Discord", secrets: { token: "T" } }] });
   const { module, dispose } = await load("source/host/extensions/channels/channel-runtime.ts", "channel-runtime-off");
-  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_CHANNELS_SERVED: "0" }, log: () => {}, clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
+  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_CHANNELS_SERVED: "0", SAND_DISCORD_SERVED: "1" }, log: () => {}, clock: immediateClock, pollMs: 50, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
   try {
     runtime.start();
     await runtime.reconcile();
@@ -342,10 +342,14 @@ test("SAND_CHANNELS_SERVED=0 keeps every connector closed and the manifests comi
   }
   const channels = await load("source/shared/channels.ts", "channels-manifests");
   try {
-    assert.deepEqual(channels.module.connectorManifests({}).map((m) => [m.platform, m.availability]), [["discord", "available"], ["slack", "available"]]);
-    assert.deepEqual(channels.module.connectorManifests({ SAND_CHANNELS_SERVED: "0" }).map((m) => [m.platform, m.availability]), [["discord", "coming-soon"], ["slack", "coming-soon"]]);
+    assert.deepEqual(channels.module.connectorManifests({ SAND_DISCORD_SERVED: "1" }).map((m) => [m.platform, m.availability]), [["discord", "available"], ["slack", "available"]]);
+    assert.deepEqual(channels.module.connectorManifests({ SAND_CHANNELS_SERVED: "0", SAND_DISCORD_SERVED: "1" }).map((m) => [m.platform, m.availability]), [["discord", "coming-soon"], ["slack", "coming-soon"]]);
+    // Discord is hidden until Simeon has a Discord app of its own (12 November 2026).
+    assert.deepEqual(channels.module.connectorManifests({}).map((m) => [m.platform, m.availability, m.connect]), [["slack", "available", "app"]]);
     assert.equal(channels.module.findConnectorManifest("slack", { SAND_CHANNELS_SERVED: "0" }).availability, "coming-soon");
-    assert.match(channels.module.findConnectorManifest("slack", {}).connectGuide, /field "botToken"/);
+    assert.match(channels.module.findConnectorManifest("slack", {}).connectGuide, /Connect Slack/);
+    assert.doesNotMatch(channels.module.findConnectorManifest("slack", {}).connectGuide, /botToken/);
+    assert.equal(channels.module.findConnectorManifest("discord", {}), undefined, "hidden");
   } finally { await channels.dispose(); }
 });
 
@@ -389,7 +393,11 @@ test("the channel store keeps the runtime's status beside the label, never a cre
     const prompt = messaging.module.renderChannelsSystemPrompt(messaging.module.CONNECTOR_MANIFESTS ?? (await load("source/shared/channels.ts", "m2")).module.CONNECTOR_MANIFESTS, [{ platform: "slack", label: "Work Slack", status: "error", detail: "Slack refused the token (invalid_auth)." }], "/home/box/sand-data/agents/a1/channels");
     assert.match(prompt, /- Slack "Work Slack" \[error\] \(Slack refused the token \(invalid_auth\)\.\)\. Address people on it as slack:<chat id>/);
     assert.match(prompt, /- Discord: Message in Discord servers and DMs through a bot the user owns\./);
-    assert.match(prompt, /Two tokens are needed/);
+    // Slack through Simeon's own app (12 November 2026): Connect Slack in the Channels tab, never a token.
+    assert.match(prompt, /- Slack: Message in Slack channels and DMs through Simeon's Slack app\./);
+    assert.match(prompt, /Channels tab in the Simeon app \(Connect Slack\)/);
+    assert.match(prompt, /There is no token: never ask for one, and never send a secret-request for Slack\./);
+    assert.doesNotMatch(prompt, /Two tokens are needed/);
     assert.doesNotMatch(prompt, /Coming soon \(not connectable yet\)/);
   } finally { await messaging.dispose(); }
 });

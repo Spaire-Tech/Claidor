@@ -842,6 +842,25 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: Connect Slack in an agent's Channels; Discord hidden
+
+An agent talks in Slack through Simeon's own Slack app (`docs/services-agents.md`, section 4),
+as the upstream app's agents did, at the founder's word ("do slack then hide discord until we do
+that"). In the agent's Channels, Slack's + no longer opens a field for tokens: the window asks
+the server for a one-time link (`channelConnectLink`, `POST channels/slack/link`), opens it in a
+tab opened in the click (the default browser in the Windows app; `openPending`), and the row
+shows its spinner while the computer is asked every 3 s, five minutes at most, until it says
+Connected. A link that can't be had closes the tab and the row says "Couldn't connect" in red;
+Reconnect does the same. The computer offers Slack this way (`connect: "app"` in its manifest);
+a manifest without `connect` still opens the token's field, so an older computer is unchanged.
+Discord is no longer offered by the computer until Simeon has a Discord app.
+
+Checked: the core's test (the manifest's `connect` read), the page's model tests with a stand-in
+store (the link sent to the tab, the 3 s asks until Connected, the tab closed and "Couldn't
+connect" when no link comes, the wait stopped when the page goes), typecheck, ESLint, the words,
+the committed build. Not checked: in Chromium, against a real computer and Slack; the Windows app
+run.
+
 ### 11 November 2026: the Connect GitHub card; a cloud agent Paused
 
 A cloud agent now codes on the person's own computer, in Claude Code on their plan

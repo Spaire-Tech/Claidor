@@ -152,6 +152,7 @@ from .service import (
 from .skill_store import archive as skill_archive_bytes
 from .skill_store import archive_path, marketplace_item
 from .skill_store import catalog as skill_store_catalog
+from .slack_app import router as slack_app_router
 from .video import VIDEO_CALL_LOG, count_video_parts, parse_gemini_call
 from .voice import router as voice_router
 from .words import say
@@ -1875,6 +1876,7 @@ router.include_router(cloud_agents_computer_router)
 router.include_router(network_router)
 router.include_router(external_agents_router)
 router.include_router(channel_bots_router)
+router.include_router(slack_app_router)
 # The Credentials Store (`credentials.py`): logins and contact info for the agents' sign-ins and sign-ups.
 router.include_router(credentials_router)
 # The website's contact form (`contact.py`): each message e-mailed to the founder.

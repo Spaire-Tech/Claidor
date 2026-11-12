@@ -167,7 +167,7 @@ test("a bot the runner listens to is let go here and still replies; tokens go on
   const server = fakeServer((n) => ({ held: true, channels: [n === 1 ? state({ missing: true }) : runnerWord] }));
   let clock = 1_000_000;
   const { module, dispose } = await load("source/host/extensions/channels/channel-runtime.ts", "channel-runtime-server");
-  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: {}, log: (line) => lines.push(line), clock: immediateClock, pollMs: 3_600_000, server, syncMs: 30_000, now: () => clock, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
+  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_DISCORD_SERVED: "1" }, log: (line) => lines.push(line), clock: immediateClock, pollMs: 3_600_000, server, syncMs: 30_000, now: () => clock, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
   try {
     runtime.start();
     await waitFor(() => discord.connections === 1, { label: "listened to here while the server lacks the tokens" });
@@ -240,7 +240,7 @@ test("a server that holds no bots gets no token; the extension takes the inbox's
   const server = fakeServer(() => ({ held: false, channels: [] }));
   let clock = 0;
   const { module, dispose } = await load("source/host/extensions/channels/channel-runtime.ts", "channel-runtime-server-off");
-  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: {}, log: () => {}, clock: immediateClock, pollMs: 3_600_000, server, syncMs: 30_000, now: () => clock, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
+  const runtime = module.createChannelRuntime({ transcript: fake.transcript, env: { SAND_DISCORD_SERVED: "1" }, log: () => {}, clock: immediateClock, pollMs: 3_600_000, server, syncMs: 30_000, now: () => clock, discord: { gatewayUrl: discord.gatewayUrl, apiBase: discord.apiBase } });
   try {
     runtime.start();
     for (let i = 0; i < 3; i += 1) { clock += 30_000; await runtime.reconcile(); }

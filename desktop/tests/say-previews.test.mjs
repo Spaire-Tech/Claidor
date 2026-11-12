@@ -72,8 +72,10 @@ test("in French: previews, notifications, summaries and the Channels tab", async
     assert.equal(module.summarizeSandSubagentAction({ action: "run", prompt: "Sort the inbox" }), "Exécuter une tâche sur l’ordinateur de Simeon : « Sort the inbox »");
     const slack = module.connectorManifestsForPerson("fr").find((manifest) => manifest.platform === "slack");
     assert.match(slack.blurb, /^Échange dans les canaux/);
-    assert.equal(slack.credentialLabel, "jeton de l’app et jeton du bot");
-    assert.equal(module.connectorManifests().find((manifest) => manifest.platform === "slack").blurb, "Message in Slack channels and DMs through a Socket Mode app the user owns.", "the agent's manifests stay English");
+    assert.equal(slack.blurb, "Échange dans les canaux et les messages privés Slack via l’app Slack de Simeon.");
+    // Slack through Simeon's own app (12 November 2026): no token asked for, so no field's label.
+    assert.equal(slack.credentialLabel, "");
+    assert.equal(module.connectorManifests().find((manifest) => manifest.platform === "slack").blurb, "Message in Slack channels and DMs through Simeon's Slack app.", "the agent's manifests stay English");
   } finally {
     module.pinUserLanguageReader(null);
     await dispose();
@@ -90,7 +92,8 @@ test("in Spanish: previews, notifications, summaries and the Channels tab", asyn
     assert.equal(module.voiceCallLineText({ type: "voice-call", status: "ended", seconds: 109 }), "Llamada de voz · 01:49");
     assert.equal(module.summarizeSandSubagentAction({ action: "run", prompt: "Sort the inbox" }), "Ejecutar una tarea en la computadora de Simeon: “Sort the inbox”");
     const slack = module.connectorManifestsForPerson("es").find((manifest) => manifest.platform === "slack");
-    assert.equal(slack.credentialLabel, "token de la app y token del bot");
+    assert.equal(slack.blurb, "Escribe en canales y mensajes directos de Slack con la app de Slack de Simeon.");
+    assert.equal(slack.credentialLabel, "");
   } finally {
     module.pinUserLanguageReader(null);
     await dispose();

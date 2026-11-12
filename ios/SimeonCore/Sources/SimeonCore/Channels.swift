@@ -14,6 +14,20 @@ public struct ChannelsView: Equatable, Sendable {
     public let blurb: String
     public let credentialLabel: String
     public let availability: String
+    /** `token`: + opens a field for the bot's token. `app`: + opens Slack's own sign-in for Simeon's Slack app, no token (12 November 2026). */
+    public let connect: String
+
+    public init(platform: String, displayName: String, blurb: String, credentialLabel: String, availability: String, connect: String = "token") {
+      self.platform = platform
+      self.displayName = displayName
+      self.blurb = blurb
+      self.credentialLabel = credentialLabel
+      self.availability = availability
+      self.connect = connect
+    }
+
+    /** Connected through Slack's sign-in in the browser, not a token typed here. */
+    public var connectsInBrowser: Bool { connect == "app" }
   }
 
   public struct Connection: Equatable, Sendable {
@@ -38,7 +52,7 @@ public struct ChannelsView: Equatable, Sendable {
     guard let manifests = json?["manifests"]?.array, let connections = json?["connections"]?.array else { return nil }
     self.manifests = manifests.compactMap { row in
       guard let platform = row["platform"]?.string else { return nil }
-      return Manifest(platform: platform, displayName: row["displayName"]?.string ?? platform, blurb: row["blurb"]?.string ?? "", credentialLabel: row["credentialLabel"]?.string ?? "", availability: row["availability"]?.string ?? "coming-soon")
+      return Manifest(platform: platform, displayName: row["displayName"]?.string ?? platform, blurb: row["blurb"]?.string ?? "", credentialLabel: row["credentialLabel"]?.string ?? "", availability: row["availability"]?.string ?? "coming-soon", connect: row["connect"]?.string ?? "token")
     }
     self.connections = connections.compactMap { row in
       guard let platform = row["platform"]?.string else { return nil }
@@ -101,6 +115,12 @@ public struct ChannelsView: Equatable, Sendable {
 
   public static let none = L10n.text("No connectors available.")
 
+  /** How long a row waits, after its sign-in opened in the browser, for the computer to say it is connected; asked every `connectPollSeconds`. */
+  public static let connectWaitSeconds: Double = 300
+  public static let connectPollSeconds: Double = 3
+  /** The row's line when the sign-in could not be opened. */
+  public static var couldNotConnect: String { L10n.text("Couldn't connect") }
+
   /** The field's words: the token it takes. */
   public static func placeholder(_ manifest: Manifest) -> String {
     switch manifest.platform {
@@ -136,6 +156,18 @@ extension AppStore {
 
   public func refreshChannel(_ agentId: String, platform: String) async -> ChannelsView? {
     await channelCall("refreshChannel", ["id": .string(agentId), "platform": .string(platform)])
+  }
+
+  /**
+   * Slack's own sign-in for Simeon's Slack app, for this agent (12 November
+   * 2026, `POST /desktop/api/channels/slack/link`): a one-time address the
+   * app opens in the browser; nil when it couldn't be had.
+   */
+  public func channelConnectLink(_ agentId: String, platform: String) async -> URL? {
+    guard platform == "slack", let backend else { return nil }
+    guard let answer = try? await backend.server("channels/slack/link", method: "POST", body: .object(["agentId": .string(agentId)])),
+          let address = answer["url"]?.string, let url = URL(string: address), url.scheme == "https" || url.scheme == "http" else { return nil }
+    return url
   }
 
   public func disconnectChannel(_ agentId: String, platform: String) async -> ChannelsView? {

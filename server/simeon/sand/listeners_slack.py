@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import time
 from typing import Any
 
@@ -19,16 +20,24 @@ import httpx
 SLACK_API = "https://slack.com/api"
 #: What the bot needs: to be mentioned, to read the channels it is in
 #: (public and private), to see reactions, to name channels and members,
-#: and to answer (the draft composer's Slack card).
+#: and to answer (the draft composer's Slack card). Since 12 November 2026
+#: also what an agent needs to talk in Slack through this app
+#: (`simeon.desktop.slack_app`): its direct messages (`im:history`), its
+#: own name on what it sends (`chat:write.customize`) and files
+#: (`files:write`). The app's settings on api.slack.com must list the same
+#: scopes, or Slack refuses the sign-in (`invalid_scope`).
 BOT_SCOPES = (
     "app_mentions:read",
     "channels:history",
     "channels:read",
     "groups:history",
     "groups:read",
+    "im:history",
     "reactions:read",
     "users:read",
     "chat:write",
+    "chat:write.customize",
+    "files:write",
 )
 SIGNATURE_MAX_AGE_SECONDS = 5 * 60
 
@@ -152,6 +161,88 @@ class SlackWebClient:
             if not cursor:
                 break
         return channels
+
+    async def post_message(
+        self,
+        token: str,
+        *,
+        channel: str,
+        text: str,
+        thread_ts: str | None = None,
+        username: str | None = None,
+    ) -> dict[str, Any]:
+        """One message, in the thread when one is named, under `username`
+        when given (`chat:write.customize`)."""
+        return await self._call(
+            "chat.postMessage",
+            token=token,
+            data={
+                "channel": channel,
+                "text": text,
+                **({"thread_ts": thread_ts} if thread_ts else {}),
+                **({"username": username} if username else {}),
+            },
+        )
+
+    async def user_name(self, token: str, user: str) -> str | None:
+        """A member's name as Slack shows it (`users:read`): the display
+        name, else the real name, else the handle."""
+        payload = await self._call("users.info", token=token, data={"user": user})
+        found = payload.get("user")
+        if not isinstance(found, dict):
+            return None
+        raw_profile = found.get("profile")
+        profile: dict[str, Any] = raw_profile if isinstance(raw_profile, dict) else {}
+        for candidate in (
+            profile.get("display_name"),
+            found.get("real_name"),
+            profile.get("real_name"),
+            found.get("name"),
+        ):
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        return None
+
+    async def upload_file(
+        self,
+        token: str,
+        *,
+        channel: str,
+        name: str,
+        data: bytes,
+        comment: str | None = None,
+        thread_ts: str | None = None,
+    ) -> None:
+        """A file in a channel (`files:write`): an upload address, the bytes,
+        then the file shared where it goes."""
+        ticket = await self._call(
+            "files.getUploadURLExternal",
+            token=token,
+            data={"filename": name, "length": str(len(data))},
+        )
+        upload_url = ticket.get("upload_url")
+        file_id = ticket.get("file_id")
+        if not isinstance(upload_url, str) or not isinstance(file_id, str):
+            raise SlackApiError("files.getUploadURLExternal", "no_upload_url")
+        async with self._client() as http:
+            response = await http.post(
+                upload_url,
+                content=data,
+                headers={"content-type": "application/octet-stream"},
+                timeout=60.0,
+            )
+        if response.status_code < 200 or response.status_code >= 300:
+            raise SlackApiError("upload", f"http_{response.status_code}")
+        await self._call(
+            "files.completeUploadExternal",
+            token=token,
+            data={
+                "files": json.dumps([{"id": file_id, "title": name}]),
+                "channel_id": channel,
+                **({"initial_comment": comment} if comment else {}),
+                **({"thread_ts": thread_ts} if thread_ts else {}),
+            },
+        )
 
 
 class _Borrowed:

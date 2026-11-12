@@ -620,8 +620,28 @@ export function createHostGatewayApi(
       method(manager, "disconnectChannel")(args.id, args.platform);
       return method(automations, "getAgentChannels")(args.id);
     },
-    refreshChannel: (args: any) =>
-      method(automations, "getAgentChannels")(args.id),
+    // Refresh asks the server first (12 November 2026): an app's Channels tab
+    // waiting for Connect Slack sees the agent connected in seconds, not at
+    // the next half-minute sync. Eight seconds at most.
+    refreshChannel: async (args: any) => {
+      try {
+        const channels = deps.extensions.api("channels") as {
+          syncNow?: () => Promise<void>;
+        };
+        if (typeof channels?.syncNow === "function") {
+          let timer: ReturnType<typeof setTimeout> | undefined;
+          await Promise.race([
+            channels.syncNow().catch(() => {}),
+            new Promise<void>((resolve) => {
+              timer = setTimeout(resolve, 8_000);
+              timer.unref?.();
+            }),
+          ]);
+          clearTimeout(timer);
+        }
+      } catch {}
+      return method(automations, "getAgentChannels")(args.id);
+    },
     getListenerIntegrations: () =>
       method(automations, "getListenerIntegrations")(),
     getListenerConnectUrl: async (args: any) => ({

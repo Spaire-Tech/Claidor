@@ -10,6 +10,7 @@ import {
   channelReach,
   channelSubtitle,
   channelsFrom,
+  connectsInBrowser,
   hasChannels,
   rowState,
 } from './channels'
@@ -71,6 +72,7 @@ describe('the Channels page’s rows', () => {
       blurb: 'Message in Teams.',
       credentialLabel: 'app password',
       availability: 'available',
+      connect: 'token',
     }
     expect(channelReach(other)).toBe('Message in Teams.')
     expect(channelPlaceholder(other)).toBe('App password')
@@ -98,6 +100,7 @@ describe('the Channels page’s rows', () => {
             blurb: '',
             credentialLabel: '',
             availability: 'coming-soon',
+            connect: 'token',
           },
         ],
         connections: [],
@@ -129,5 +132,27 @@ describe('the Channels page’s rows', () => {
     expect(channelSubtitle(connected, open.manifests[0]!)).toBe(
       'Servers and DMs',
     )
+  })
+
+  it('Slack through Simeon’s own Slack app: + opens Slack’s sign-in, no token; an older computer’s manifest still takes a token', () => {
+    const view = channelsFrom({
+      manifests: [
+        {
+          platform: 'slack',
+          displayName: 'Slack',
+          blurb:
+            'Message in Slack channels and DMs through Simeon’s Slack app.',
+          credentialLabel: '',
+          availability: 'available',
+          connect: 'app',
+        },
+      ],
+      connections: [],
+    })!
+    expect(view.manifests.map((row) => row.platform)).toEqual(['slack'])
+    expect(connectsInBrowser(view.manifests[0]!)).toBe(true)
+    expect(rowState(view, view.manifests[0]!)).toEqual({ kind: 'available' })
+    const older = channelsFrom(answer)!
+    expect(older.manifests.map(connectsInBrowser)).toEqual([false, false])
   })
 })

@@ -104,6 +104,8 @@ class TestChannelBots:
                     "fresh": False,
                 }
             ],
+            # No agent talks in Slack through Simeon's own app here.
+            "hosted": [],
         }
         (row,) = await DesktopChannelBotRepository.from_session(session).list_by_user(
             user.id
@@ -260,6 +262,7 @@ class TestChannelBots:
         assert await _sync(client, box, _bot("f1", {"token": DISCORD_TOKEN})) == {
             "held": False,
             "channels": [],
+            "hosted": [],
         }
         assert (
             await DesktopChannelBotRepository.from_session(session).list_by_user(

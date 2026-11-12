@@ -17,6 +17,8 @@ final class ChannelsModel {
   private(set) var view: ChannelsView?
   /** Calls under way per platform: its section's buttons wait while any is. */
   private(set) var busy: [String: Int] = [:]
+  /** What went wrong opening a platform's sign-in, shown in its row until the next try. */
+  private(set) var problem: [String: String] = [:]
   /** The first read has answered or given up: until then the page says it is reading. */
   private(set) var firstReadDone = false
   /** Each read and call numbered as it starts: an answer older than the one shown is dropped (the 4 s reads, the app coming forward and a call's own answer overlap). */
@@ -38,6 +40,32 @@ final class ChannelsModel {
   }
 
   func isBusy(_ platform: String) -> Bool { (busy[platform] ?? 0) > 0 }
+
+  /**
+   * Connect through the browser (Slack through Simeon's own app, the Mac's
+   * `connectInBrowser`): Slack's sign-in opens, and the row waits (its
+   * spinner) while the computer is asked every 3 s whether it is connected,
+   * five minutes at most.
+   */
+  func connectInBrowser(_ platform: String, agentId: String, store: AppStore, open: @escaping @MainActor (URL) -> Void) async {
+    guard !isBusy(platform) else { return }
+    problem[platform] = nil
+    busy[platform, default: 0] += 1
+    defer { busy[platform, default: 1] -= 1 }
+    guard let url = await store.channelConnectLink(agentId, platform: platform) else {
+      problem[platform] = ChannelsView.couldNotConnect
+      return
+    }
+    open(url)
+    let deadline = Date().addingTimeInterval(ChannelsView.connectWaitSeconds)
+    while Date() < deadline, !Task.isCancelled {
+      try? await Task.sleep(nanoseconds: UInt64(ChannelsView.connectPollSeconds * 1_000_000_000))
+      issued += 1
+      let number = issued
+      apply(await store.refreshChannel(agentId, platform: platform), number)
+      if let view, let manifest = view.manifests.first(where: { $0.platform == platform }), view.state(manifest) == .connected { return }
+    }
+  }
 
   /** A call for one platform, then a read; its section waits meanwhile. */
   func run(_ platform: String, agentId: String, store: AppStore, _ call: @escaping @MainActor () async -> ChannelsView?) async {
@@ -118,12 +146,14 @@ private struct ChannelRows: View {
   let view: ChannelsView
   let model: ChannelsModel
   @Environment(AppStore.self) private var store
+  @Environment(\.openURL) private var openURL
   @State private var formOpen = false
   @State private var token = ""
   @FocusState private var fieldFocused: Bool
 
   var body: some View {
     let state = view.state(manifest)
+    let problem = model.problem[manifest.platform]
     let busy = model.isBusy(manifest.platform)
     HStack(spacing: 14) {
       ConnectorTile(name: manifest.displayName, size: 40, logo: ConnectorLogo.fill, id: manifest.platform)
@@ -131,9 +161,9 @@ private struct ChannelRows: View {
         Text(manifest.displayName)
           .font(.system(size: 17))
           .foregroundStyle(Ink.primary)
-        Text(view.subtitle(manifest))
+        Text(problem ?? view.subtitle(manifest))
           .font(.system(size: 15))
-          .foregroundStyle(isError(state) ? Ink.danger : Ink.secondary)
+          .foregroundStyle(isError(state) || problem != nil ? Ink.danger : Ink.secondary)
           .lineLimit(2)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -188,7 +218,7 @@ private struct ChannelRows: View {
         if busy {
           ConnectorMark.busy()
         } else {
-          Button { openForm() } label: { ConnectorMark.plus() }
+          Button { connect() } label: { ConnectorMark.plus() }
             .buttonStyle(.borderless)
             .accessibilityLabel("Connect \(manifest.displayName)")
         }
@@ -197,10 +227,14 @@ private struct ChannelRows: View {
       case .connecting:
         ConnectorMark.busy()
       case .error:
-        Button("Reconnect") { openForm() }
-          .font(.system(size: 15, weight: .medium))
-          .buttonStyle(.borderless)
-          .disabled(busy)
+        if busy && manifest.connectsInBrowser {
+          ConnectorMark.busy()
+        } else {
+          Button("Reconnect") { connect() }
+            .font(.system(size: 15, weight: .medium))
+            .buttonStyle(.borderless)
+            .disabled(busy)
+        }
       case .comingSoon:
         ConnectorMark.soon()
       }
@@ -230,7 +264,16 @@ private struct ChannelRows: View {
     .accessibilityLabel("Connection actions")
   }
 
-  /** + and Reconnect open the field (it takes the keys as it appears). */
+  /** + and Reconnect: Slack's sign-in in Safari for a platform connected through Simeon's own app, else the token's field. */
+  private func connect() {
+    if manifest.connectsInBrowser {
+      Task { await model.connectInBrowser(manifest.platform, agentId: agentId, store: store) { url in openURL(url) } }
+    } else {
+      openForm()
+    }
+  }
+
+  /** The token's field opens (it takes the keys as it appears). */
   private func openForm() {
     token = ""
     formOpen = true

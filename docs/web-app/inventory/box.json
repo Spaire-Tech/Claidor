@@ -237,6 +237,13 @@
    "old_web_app": true
   },
   {
+   "command": "getGitHubSignIn",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
    "command": "getHostSettings",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
@@ -618,6 +625,7 @@
   "getCloudAgentInfo",
   "getConversationOutline",
   "getForeverBoxStatus",
+  "getGitHubSignIn",
   "getHostSettings",
   "getHostStatus",
   "getListenerConnectUrl",

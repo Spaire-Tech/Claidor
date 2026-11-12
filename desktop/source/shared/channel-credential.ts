@@ -5,6 +5,19 @@ export const CHANNEL_TOKEN_FIELD = "token";
 export const SLACK_BOT_TOKEN_FIELD = "botToken";
 export const SLACK_APP_TOKEN_PREFIX = "xapp-";
 export const SLACK_BOT_TOKEN_PREFIX = "xoxb-";
+/**
+ * The mark an agent's Slack through Simeon's own Slack app leaves in the
+ * secret store (12 November 2026): not a credential (the workspace's token
+ * stays on Simeon Labs' server), only what lists the connection like any
+ * other and tells the connector runtime it has no token to open.
+ */
+export const CHANNEL_APP_FIELD = "app";
+export const CHANNEL_APP_VALUE = "simeon";
+
+/** Whether a stored connection is one through Simeon's own app. */
+export function isAppConnection(secrets: Readonly<Record<string, string>> | undefined): boolean {
+  return secrets?.[CHANNEL_APP_FIELD] === CHANNEL_APP_VALUE;
+}
 
 /**
  * What the Channels tab's one credential field holds, as [field, value]

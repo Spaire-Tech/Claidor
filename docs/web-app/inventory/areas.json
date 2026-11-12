@@ -191,12 +191,12 @@
    "mac/Simeon/Tapback.swift",
    "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 7703,
-  "core_lines": 4957,
+  "mac_lines": 7707,
+  "core_lines": 5037,
   "views": 62,
   "files_needing_a_mac": 15,
-  "strings": 312,
-  "strings_in_old_web_app": 234,
+  "strings": 323,
+  "strings_in_old_web_app": 241,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [],
@@ -220,11 +220,11 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 4485,
+  "mac_lines": 4574,
   "core_lines": 1786,
-  "views": 66,
+  "views": 67,
   "files_needing_a_mac": 3,
-  "strings": 306,
+  "strings": 307,
   "strings_in_old_web_app": 145,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
@@ -270,16 +270,20 @@
    "mac/Simeon/RoutineTriggerCard.swift",
    "mac/Simeon/RoutinesPage.swift"
   ],
-  "mac_lines": 5299,
-  "core_lines": 2065,
+  "mac_lines": 5339,
+  "core_lines": 2097,
   "views": 67,
   "files_needing_a_mac": 6,
   "strings": 401,
   "strings_in_old_web_app": 316,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
-  "server_calls": [],
-  "server_calls_not_in_old_web_app": []
+  "server_calls": [
+   "channels/slack/link"
+  ],
+  "server_calls_not_in_old_web_app": [
+   "channels/slack/link"
+  ]
  },
  {
   "area": "computer",
@@ -509,7 +513,7 @@
    "ios/SimeonCore/Sources/SimeonCore/StoreSaved.swift"
   ],
   "mac_lines": 0,
-  "core_lines": 5717,
+  "core_lines": 5723,
   "views": 0,
   "files_needing_a_mac": 0,
   "strings": 91,
@@ -538,6 +542,7 @@
    "getAgentTranscriptTail",
    "getAgentWorkflows",
    "getCloudAgentInfo",
+   "getGitHubSignIn",
    "getHostSettings",
    "getListenerConnectUrl",
    "getListenerIntegrations",
@@ -575,6 +580,7 @@
    "connectOnePassword",
    "dismissOnePasswordConnect",
    "dismissUserForm",
+   "getGitHubSignIn",
    "startFlightBooking",
    "submitFlightPassengers",
    "submitUserForm"

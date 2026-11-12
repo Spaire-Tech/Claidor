@@ -1,3 +1,4 @@
+import { CHANNEL_APP_FIELD, CHANNEL_APP_VALUE } from "../../../shared/channel-credential.js";
 import { SAND_DEFAULT_AGENT_NAME } from "../../../shared/agents/agents.js";
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
@@ -231,6 +232,8 @@ export class SandAgentSessionStore {
   /** Every credential field of the platform rides along (`secrets`): Slack's Socket Mode needs `botToken` beside `token` (25 September 2026). A row whose `token` is missing is listed too, so the runtime can say what is pending. */
   listChannelConfigs(agentId: string): Array<{ platform: string; token: string; label: string; secrets: Record<string, string> }> { const store = this.openChannelStore(agentId), configs = []; for (const platform of store.listPlatforms()) { const record = this.connectorSecrets.read(agentId, platform), secrets: Record<string, string> = {}; for (const [field, value] of Object.entries(record)) if (typeof value === "string" && value.length > 0) secrets[field] = value; if (Object.keys(secrets).length === 0) continue; configs.push({ platform, token: secrets.token ?? "", label: store.readLabel(platform) ?? platform, secrets }); } return configs; }
   storeConnectorCredential(agentId: string, platform: string, field: string, value: string): boolean { if (!this.connectorSecrets.setSecret(agentId, platform, field, value)) return false; this.openChannelStore(agentId).writeMetadata(platform, ""); return true; }
+  /** An agent's Slack through Simeon's own app (12 November 2026): listed with the workspace's name and the app's mark, no token (`CHANNEL_APP_FIELD`). */
+  storeAppChannel(agentId: string, platform: string, label: string): boolean { if (!this.connectorSecrets.setSecret(agentId, platform, CHANNEL_APP_FIELD, CHANNEL_APP_VALUE)) return false; return this.openChannelStore(agentId).writeMetadata(platform, label); }
   writeChannelStatus(agentId: string, platform: string, status: "configured" | "connecting" | "connected" | "pending" | "error", detail: string | null = null): boolean { return this.openChannelStore(agentId).writeStatus(platform, status, detail); }
   disconnectChannel(agentId: string, platform: string): boolean { this.connectorSecrets.removeAgentPlatform(agentId, platform); return this.openChannelStore(agentId).remove(platform); }
   async listAllAutomationsFrom(options: { definitionsOnly: boolean }) { const result = []; for (const agentId of await this.listAgentIds()) { try { const store = this.automationStoreFor(agentId), automations = options.definitionsOnly ? store.listDefinitions() : store.list(); for (const automation of automations) result.push({ agentId, automation }); } catch {} } return result; }

@@ -3694,6 +3694,28 @@ export class AppStore {
     return this.channelCall('disconnectChannel', { id: agentId, platform })
   }
 
+  /**
+   * Slack's own sign-in for Simeon's Slack app, for this agent
+   * (`channelConnectLink`, 12 November 2026: `POST
+   * /desktop/api/channels/slack/link`): a one-time address the window opens
+   * in the browser; undefined when it couldn't be had.
+   */
+  async channelConnectLink(
+    agentId: string,
+    platform: string,
+  ): Promise<string | undefined> {
+    const backend = this.backend
+    if (platform !== 'slack' || !backend) return undefined
+    try {
+      const answer = await backend.server('channels/slack/link', 'POST', {
+        agentId,
+      })
+      return webPage(text(field(answer, 'url')))
+    } catch {
+      return undefined
+    }
+  }
+
   /** A channel call (`I$n`): it answers the whole view, and gives up after 15 s (a failure keeps the last answer on screen). */
   private async channelCall(
     method: string,
