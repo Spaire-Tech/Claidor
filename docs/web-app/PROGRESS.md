@@ -842,6 +842,23 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: Cancel Trial's question says what the server does
+
+- The question under Settings › Usage & Billing › Cancel Trial said the trial ends now and its
+  credits are removed, and that a trial never turns into a paid plan on its own. Neither is so:
+  the server (`plans/service.py`, `cancel_trial`) sets the card trial's subscription to end with
+  the trial, so the trial runs to its last day and the card is not charged; and a card trial
+  that is not cancelled becomes the plan, charged when the trial ends (`create_checkout`:
+  "charged on day eight"). Only such a trial is offered Cancel Trial (`trialCancelable`).
+- The founder, 12 November 2026: "Fix this". The words are now "Your trial keeps going until its
+  last day, then ends, and your card won’t be charged. If you keep it, your plan starts when the
+  trial ends and your card is charged then.", the same in the web app (`SettingsUsage.tsx`), the
+  Mac (`SettingsUsage.swift`) and the iPhone (`Settings.swift`), translated into the nine
+  languages in both String Catalogs; `pnpm words` and the committed build follow.
+
+Checked: `check_translations.py`, `check_names.py`, the whole suite (1,276 passed), the build.
+Not checked: the question on a Mac, an iPhone or a Windows PC.
+
 ### 12 November 2026: a message the edge refused is sent again in base64; "Failed to send" says why
 
 - The founder's long message, which had shell commands in it, said "Failed to send" on every

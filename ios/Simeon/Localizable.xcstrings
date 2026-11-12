@@ -40189,60 +40189,60 @@
         }
       }
     },
-    "This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own." : {
+    "Your trial keeps going until its last day, then ends, and your card won’t be charged. If you keep it, your plan starts when the trial ends and your card is charged then." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Damit endet deine Simeon-Testphase sofort, und deine restlichen Test-Credits werden entfernt. Deine Karte wird so oder so nicht belastet – die Testphase wird nie von selbst zu einem bezahlten Tarif."
+            "value" : "Deine Testphase läuft bis zu ihrem letzten Tag weiter und endet dann, ohne dass deine Karte belastet wird. Wenn du sie behältst, beginnt dein Tarif am Ende der Testphase und deine Karte wird dann belastet."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esto termina tu prueba de Simeon ahora y quita los créditos de prueba que te quedan. No se hará ningún cargo a tu tarjeta en ningún caso — la prueba nunca se convierte en un plan de pago por sí sola."
+            "value" : "Tu prueba sigue hasta su último día y luego termina, sin ningún cargo a tu tarjeta. Si la conservas, tu plan empieza cuando termina la prueba y se hace el cargo a tu tarjeta en ese momento."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ton essai Simeon s’arrête maintenant et tes crédits d’essai restants sont retirés. Ta carte ne sera pas débitée dans tous les cas — l’essai ne devient jamais un forfait payant tout seul."
+            "value" : "Ton essai continue jusqu’à son dernier jour, puis s’arrête, et ta carte ne sera pas débitée. Si tu le gardes, ton forfait commence à la fin de l’essai et ta carte est débitée à ce moment-là."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua prova di Simeon termina ora e i crediti di prova rimanenti vengono rimossi. In ogni caso la tua carta non verrà addebitata — la prova non diventa mai un piano a pagamento da sola."
+            "value" : "La tua prova continua fino all’ultimo giorno, poi termina, e la tua carta non verrà addebitata. Se la mantieni, il tuo piano inizia alla fine della prova e la carta viene addebitata in quel momento."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hiermee stopt je Simeon-proefperiode nu en vervallen je resterende proefcredits. Je kaart wordt hoe dan ook niet belast — de proefperiode wordt nooit vanzelf een betaald abonnement."
+            "value" : "Je proefperiode loopt door tot de laatste dag en stopt dan, zonder dat je kaart wordt belast. Als je hem houdt, begint je abonnement aan het einde van de proefperiode en wordt je kaart dan belast."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Twój okres próbny Simeona zakończy się teraz, a pozostałe kredyty próbne zostaną usunięte. Twoja karta i tak nie zostanie obciążona — okres próbny nigdy sam nie zamienia się w płatny plan."
+            "value" : "Twój okres próbny potrwa do ostatniego dnia, a potem się zakończy, a karta nie zostanie obciążona. Jeśli go zachowasz, plan zacznie się po zakończeniu okresu próbnego i wtedy karta zostanie obciążona."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Isso encerra agora seu teste do Simeon e remove os créditos de teste restantes. Seu cartão não será cobrado de jeito nenhum — o teste nunca vira um plano pago sozinho."
+            "value" : "Seu teste continua até o último dia e depois termina, sem cobrança no seu cartão. Se você mantiver, seu plano começa quando o teste terminar e o cartão é cobrado nesse momento."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det här avslutar din provperiod för Simeon nu och tar bort dina återstående provkrediter. Ditt kort debiteras inte i något fall – provperioden blir aldrig ett betalt abonnemang av sig själv."
+            "value" : "Din provperiod fortsätter till sista dagen och avslutas sedan, utan att ditt kort debiteras. Om du behåller den börjar ditt abonnemang när provperioden slutar och ditt kort debiteras då."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bu işlem Simeon denemeni hemen bitirir ve kalan deneme kredilerini kaldırır. Her iki durumda da kartından ücret alınmaz — deneme hiçbir zaman kendiliğinden ücretli bir plana dönüşmez."
+            "value" : "Denemen son gününe kadar sürer, sonra biter ve kartından ücret alınmaz. Devam edersen, plan deneme bittiğinde başlar ve kartından o zaman ücret alınır."
           }
         }
       }

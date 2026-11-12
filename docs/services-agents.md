@@ -2405,7 +2405,10 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   the agent titled Chief of Staff (`agent-lifecycle.ts`), told the hello already sent: one message,
   the question card, "What's the
   first thing you'd hand to a person if you hired one today?", its options drawn from the apps
-  connected during setup (he reads GetMcpServerStatus first; he proposes no connectors for himself).
+  already connected (he reads GetMcpServerStatus first; he proposes no connectors for himself). The
+  first run no longer asks about apps (12 October 2026, below), so most people have none yet and he
+  offers the jobs a founder hands off first; his cue (`chiefOfStaffKickstartPrompt`) still says "the
+  apps they connected during setup", which now means any connected before his first turn.
   On the answer he hires with CreateAgent: a first name, a title that names the job, a description,
   and a `brief`. Unclear answer: one more question, two at most, then he hires with what he has and
   says what he assumed. "I don't know" or "what do you recommend": he recommends and says why. A
@@ -2456,20 +2459,33 @@ the agent, him creating it, and giving him directions." `desktop/source/shared/a
   question, the hire (Nora, Inbox, appears in the sidebar with Simeon's brief and her first words
   in her chat), the report. Not verified in the packaged app on a Mac yet.
 
-**For the person.** Onboarding ends by making Simeon, their Chief of Staff: the
-first agent, made for them (name Simeon, title Chief of Staff, Ocean), who manages
-their other agents and pulls them in for decisions. There is no "Create your first
-Agent" form. He is pinned, hidden, moved or deleted like any agent; his name and
-avatar are theirs to change, his title and description are read only. The apps
-step ("What do you use every day?") offers "Skip for later" under Next.
+**For the person** (since 12 October 2026, the founder: "simple onboarding … asked the
+necessary"). After sign-in the first run is one screen in every app: "What should we call
+you?", one field with the name from the person's Google account already in it until they type,
+and Continue (dim until there is a name). Nothing else is asked: no apps step, no tour. While
+the screen shows, their computer wakes out of sight; Continue saves the name, Simeon is made
+once it is saved (so his first words call them by it), and the window opens on his chat. Simeon
+is their Chief of Staff: the first agent, made for them (name Simeon, title Chief of Staff,
+Simeon's own face and voice), who hires and manages their other agents and pulls them in for
+decisions. He is pinned, hidden, moved or deleted like any agent; his name and avatar are
+theirs to change, his title and description are read only.
 
-**How it works.** All in the window (`desktop/scripts/lib/router-renderer-patch.mjs`):
+**How it works.**
 
-- The flow is landing, meet, Chief of Staff ("Your Personal Chief of Staff"),
-  computer, name ("How should they call you?"), apps, then the hand-off screen.
-  Next or Skip for later on the apps step runs the flow's own create-and-finish
-  with `SIMEON_COO_PROFILE`; agent creation carries a `title` (`n5n`), which the
-  host stores (`host/host-gateway-api.ts`, `mintAgent`).
+- The screen: `mac/Simeon/FirstRun.swift` (`FirstRunScreen`, `NameScreen`), the iPhone's in
+  `ios/Simeon/SimeonApp.swift`, the web and Windows app's `clients/apps/app/src/window/FirstRun.tsx`.
+- The hand-off, shared by the Mac and the iPhone (`Onboarding.handOff` in
+  `ios/SimeonCore/Sources/SimeonCore/Onboarding.swift`; the web app's in `clients/apps/app/src/core/onboarding.ts`): it
+  asks the computer every 2.5 s, a minute at most; waits for the name step's end
+  (`finishNameStep`, `POST user/name`), then `refreshUserName` so the computer reads the name
+  given; sets `userLanguage`; makes Simeon with `createAgent` (`Onboarding.chiefOfStaff`: name
+  Simeon, title Chief of Staff, `templateId` chief-of-staff, Simeon's face, a nonce named for
+  the device) and `kickstartAgent`; marks `hasSeenOnboarding`. It stays at least 1.5 s on
+  screen. An account that already has agents, or `hasSeenOnboarding`, makes nothing. A second
+  try after a failure makes no second Simeon.
+- Until 12 October 2026 it was the retired Electron window's six scenes (landing, meet, Chief
+  of Staff, computer, name "How should they call you?", apps "What do you use every day?"),
+  in `desktop/scripts/lib/router-renderer-patch.mjs`, which still holds them.
 - The Chief of Staff is the oldest agent titled "Chief of Staff", or "COO", the
   title from 3 October 2026 (`__simeonFindCoo`, noted on every roster read). His
   title and description fields are read only, so the title that marks him cannot

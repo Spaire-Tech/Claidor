@@ -841,7 +841,7 @@ struct UsagePage: View {
         }
       }
     } message: {
-      Text("This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own.")
+      Text("Your trial keeps going until its last day, then ends, and your card won’t be charged. If you keep it, your plan starts when the trial ends and your card is charged then.")
     }
     .sheet(isPresented: $showsPlans, onDismiss: { Task { await store.refreshUsage() } }) {
       PlansSheet(preselect: plansTier).presentationBackground(Ink.groupedGround)
