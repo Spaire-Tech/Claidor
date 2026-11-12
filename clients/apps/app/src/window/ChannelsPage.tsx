@@ -14,6 +14,7 @@ import {
   type ChannelManifest,
   type ChannelsView,
   type RowState,
+  type SlackState,
   channelConnectPollSeconds,
   channelConnectWaitSeconds,
   channelPlaceholder,
@@ -22,6 +23,8 @@ import {
   couldNotConnect,
   noChannels,
   rowState,
+  slackShown,
+  slackSubtitle,
 } from '../core/channels'
 import { comingSoonWord, connectedWord } from '../core/connectCards'
 import { t as coreT } from '../core/l10n'
@@ -579,5 +582,209 @@ function RowGlyph({
         strokeLinejoin="round"
       />
     </svg>
+  )
+}
+
+/**
+ * Slack's row in a profile (`SlackRowModel`): its state as Simeon Labs'
+ * server last answered; + sends the tab opened in the click to Slack's
+ * sign-in and waits, asking the server every 3 s for five minutes at most,
+ * until the agent is connected; and Disconnect. One call at a time.
+ */
+export class SlackRowModel {
+  private listeners = new Set<() => void>()
+  private version = 0
+  state?: SlackState
+  /** A sign-in waited for, or Disconnect under way: the row shows its spinner. */
+  busy = false
+  /** What went wrong, in red under "Slack", until the next try. */
+  problem?: string
+  private stopped = false
+
+  constructor(
+    private readonly store: AppStore,
+    readonly agentId: string,
+    private readonly wait: (ms: number) => Promise<void> = (ms) =>
+      new Promise((done) => setTimeout(done, ms)),
+  ) {}
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  getVersion = (): number => this.version
+
+  private changed(): void {
+    this.version += 1
+    for (const listener of [...this.listeners]) listener()
+  }
+
+  stop(): void {
+    this.stopped = true
+  }
+
+  async load(): Promise<void> {
+    const next = await this.store.slackState(this.agentId)
+    if (!next || this.stopped) return
+    this.state = next
+    this.changed()
+  }
+
+  async connect(page: PendingPage): Promise<void> {
+    if (this.busy) {
+      page.drop()
+      return
+    }
+    this.problem = undefined
+    this.busy = true
+    this.changed()
+    try {
+      const url = await this.store.channelConnectLink(this.agentId, 'slack')
+      if (!url) {
+        page.drop()
+        this.problem = couldNotConnect()
+        return
+      }
+      page.go(url)
+      const deadline = Date.now() + channelConnectWaitSeconds * 1000
+      while (Date.now() < deadline && !this.stopped) {
+        await this.wait(channelConnectPollSeconds * 1000)
+        if (this.stopped) return
+        await this.load()
+        if (this.state?.connected) return
+      }
+    } finally {
+      this.busy = false
+      this.changed()
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    if (this.busy) return
+    this.problem = undefined
+    this.busy = true
+    this.changed()
+    try {
+      if (await this.store.disconnectSlack(this.agentId))
+        this.state = {
+          available: this.state?.available ?? true,
+          connected: false,
+        }
+      else
+        this.problem = coreT(
+          'Something didn’t work here. Try again in a little while.',
+        )
+    } finally {
+      this.busy = false
+      this.changed()
+    }
+    await this.load()
+  }
+}
+
+/**
+ * Slack in the agent's Profile, under Notifications (the Mac's
+ * `SlackProfileRow`; 12 November 2026, the founder: "slack to be there below
+ * notifications", no Channels page on the way), in Notifications' parts:
+ * Slack's 40 tile, "Slack" over the workspace once connected, else "Channels
+ * and DMs" (red when the sign-in couldn't open), and at the right + (Slack's
+ * sign-in in a tab, the default browser in the Windows app), the spinner
+ * while it is waited for, or the green tick. A connection's "…"
+ * (Disconnect) shows under the pointer. Read from the server, so the
+ * profile never wakes the computer; drawn only while Slack can be
+ * connected, or the agent talks there.
+ */
+export function SlackProfileRow({
+  store,
+  agent,
+}: {
+  store: AppStore
+  agent: Agent
+}) {
+  const [model] = useState(() => new SlackRowModel(store, agent.id))
+  useWatched(model)
+  const [menuUnder, setMenuUnder] = useState<HTMLElement>()
+  const menuClosed = useRef(0)
+  useEffect(() => {
+    void model.load()
+    // Back from the browser: read at once.
+    const forward = () => void model.load()
+    window.addEventListener('focus', forward)
+    return () => {
+      window.removeEventListener('focus', forward)
+      model.stop()
+    }
+  }, [model])
+  const state = model.state
+  if (!state || !slackShown(state)) return null
+  const name = 'Slack'
+  return (
+    <div className="slack-profile-row">
+      <AppLogoTile name={name} side={40} id="slack" />
+      <span className="notifications-words">
+        <span className="notifications-title">{name}</span>
+        <span
+          className={classes(
+            'notifications-line',
+            model.problem !== undefined && 'error',
+          )}
+        >
+          {model.problem ?? slackSubtitle(state)}
+        </span>
+      </span>
+      {state.connected && !model.busy && (
+        <button
+          type="button"
+          className={classes('channel-more', menuUnder && 'open')}
+          aria-label={t('Connection actions')}
+          aria-haspopup="menu"
+          aria-expanded={menuUnder !== undefined}
+          onClick={(event) => {
+            if (Date.now() - menuClosed.current < reopenGap) return
+            setMenuUnder(event.currentTarget)
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              d="M3.2 9.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4ZM8 9.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4ZM12.8 9.2a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4Z"
+              fill="currentColor"
+            />
+          </svg>
+        </button>
+      )}
+      <Mark
+        state={
+          model.busy
+            ? { kind: 'connecting' }
+            : state.connected
+              ? { kind: 'connected' }
+              : { kind: 'available' }
+        }
+        busy={model.busy}
+        name={name}
+        formOpen={false}
+        inBrowser
+        connect={() => void model.connect(openPending())}
+      />
+      {menuUnder && (
+        <PaneMenu
+          under={menuUnder}
+          label={t('Connection actions')}
+          close={() => {
+            menuClosed.current = Date.now()
+            setMenuUnder(undefined)
+          }}
+          items={[
+            {
+              label: t('Disconnect'),
+              icon: <RowGlyph name="plug" danger />,
+              disabled: model.busy,
+              action: () => void model.disconnect(),
+            },
+          ]}
+        />
+      )}
+    </div>
   )
 }

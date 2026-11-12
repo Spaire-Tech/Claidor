@@ -29,7 +29,7 @@ import { t } from '../l10n'
 import { AgentMark } from './AgentMark'
 import './AgentPane.css'
 import { AvatarEditorPopover } from './AvatarEditor'
-import { ChannelsBody } from './ChannelsPage'
+import { ChannelsBody, SlackProfileRow } from './ChannelsPage'
 import { classes } from './classes'
 import { ComputerPreview } from './ComputerView'
 import { BookFlightButton, FlightPage } from './FlightCards'
@@ -560,7 +560,7 @@ function PaneTabs({
  * it lets go of the keys (Return does that for one line; in the description
  * Return is a new line); Escape puts the stored words back. An empty name
  * is not saved. The Chief of Staff's title and description are read only.
- * Then, for an agent, Notifications, 22 below.
+ * Then, for an agent, Notifications, 22 below, and Slack 18 under it.
  */
 function ProfileBody({ store, agent }: { store: AppStore; agent: Agent }) {
   const locked = chiefOfStaff(store.agents)?.id === agent.id
@@ -612,7 +612,13 @@ function ProfileBody({ store, agent }: { store: AppStore; agent: Agent }) {
           commit={(description) => save({ description })}
         />
       </div>
-      {!agent.isGroup && <NotificationsCard store={store} agent={agent} />}
+      {!agent.isGroup && (
+        <div>
+          <NotificationsCard store={store} agent={agent} />
+          {/* Slack right under it (12 November 2026), drawn once the server says it can be connected. */}
+          <SlackProfileRow key={agent.id} store={store} agent={agent} />
+        </div>
+      )}
     </div>
   )
 }

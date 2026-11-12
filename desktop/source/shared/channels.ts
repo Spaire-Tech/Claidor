@@ -67,7 +67,7 @@ export const CONNECTOR_MANIFESTS: readonly ConnectorManifest[] = [
     availability: "available",
     connect: "app",
     connectGuide: [
-      "The user connects Slack from your Channels tab in the Simeon app (Connect Slack): Slack's own sign-in for Simeon's Slack app, where they pick the workspace and allow it. There is no token: never ask for one, and never send a secret-request for Slack. To suggest it, tell them to open your Channels tab and choose Connect Slack.",
+      "The user connects Slack from your profile in the Simeon app: the + beside Slack, under Notifications, opens Slack's own sign-in for Simeon's Slack app, where they pick the workspace and allow it. There is no token: never ask for one, and never send a secret-request for Slack. To suggest it, tell them to open your profile and press + beside Slack.",
       "Once connected, a direct message to the Simeon app in Slack, or a mention of it in a channel it was invited to (/invite @Simeon), wakes you; the address is slack:<channel id>. Your answer appears under your own name, in the thread of the message that asked in a channel. Several of the user's agents can share the workspace: a message that starts with an agent's name goes to that agent, and a conversation stays with the agent who answered it.",
     ].join("\n"),
   },

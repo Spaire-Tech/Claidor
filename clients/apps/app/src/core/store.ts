@@ -62,7 +62,13 @@ import {
   autoReviewJSON,
   proposedRule,
 } from './cards'
-import { type ChannelsView, channelDeadline, channelsFrom } from './channels'
+import {
+  type ChannelsView,
+  type SlackState,
+  channelDeadline,
+  channelsFrom,
+  slackStateFrom,
+} from './channels'
 import {
   type ChatRow,
   chatRows,
@@ -3692,6 +3698,31 @@ export class AppStore {
     platform: string,
   ): Promise<ChannelsView | undefined> {
     return this.channelCall('disconnectChannel', { id: agentId, platform })
+  }
+
+  /** Slack's row in the profile (`slackState`): undefined when the server couldn't be asked. */
+  async slackState(agentId: string): Promise<SlackState | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return slackStateFrom(
+        await backend.server('channels/slack/state', 'POST', { agentId }),
+      )
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Slack's row's Disconnect (`disconnectSlack`): the agent no longer talks in the workspace; its computer takes it off at its next sync. */
+  async disconnectSlack(agentId: string): Promise<boolean> {
+    const backend = this.backend
+    if (!backend) return false
+    try {
+      await backend.server('channels/slack/disconnect', 'POST', { agentId })
+      return true
+    } catch {
+      return false
+    }
   }
 
   /**

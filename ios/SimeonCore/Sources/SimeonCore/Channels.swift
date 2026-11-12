@@ -136,6 +136,106 @@ public struct ChannelsView: Equatable, Sendable {
  * stored, a connection refreshed or dropped; each answers the whole view,
  * and gives up after 15 seconds (a failure keeps the last answer on screen).
  */
+/**
+ * Slack's row in an agent's profile, under Notifications (12 November 2026,
+ * the founder: "slack to be there below notifications"), as Simeon Labs'
+ * server answers (`POST /desktop/api/channels/slack/state`): whether Slack
+ * can be connected, and whether this agent talks in a workspace and which.
+ * Read from the server, so opening a profile never wakes the computer.
+ */
+public struct SlackState: Equatable, Sendable {
+  public let available: Bool
+  public let connected: Bool
+  public let workspace: String?
+
+  public init(available: Bool, connected: Bool, workspace: String?) {
+    self.available = available
+    self.connected = connected
+    self.workspace = workspace
+  }
+
+  public init?(json: JSON?) {
+    guard let json, let available = json["available"]?.bool else { return nil }
+    self.init(available: available, connected: json["connected"]?.bool ?? false, workspace: json["workspace"]?.string)
+  }
+
+  /** The line under "Slack": the workspace's name once connected, else what it reaches. */
+  public var subtitle: String {
+    if connected, let workspace, !workspace.isEmpty { return workspace }
+    return L10n.text("Channels and DMs")
+  }
+}
+
+/**
+ * Slack's row in a profile (the Mac's and the iPhone's): its state as the
+ * server last answered; +, which opens Slack's sign-in (`open`, each app's
+ * browser) and waits, asking the server every 3 s for five minutes at most,
+ * until the agent is connected; and Disconnect. One call at a time.
+ */
+@MainActor
+@Observable
+public final class SlackRowModel {
+  public private(set) var state: SlackState?
+  /** A sign-in waited for, or Disconnect under way: the row shows its spinner. */
+  public private(set) var busy = false
+  /** What went wrong, in red under "Slack", until the next try. */
+  public private(set) var problem: String?
+
+  public init() {}
+
+  /** Drawn while Slack can be connected here, or the agent talks there. */
+  public var shown: Bool { state.map { $0.available || $0.connected } ?? false }
+
+  public func load(_ agentId: String, store: AppStore) async {
+    if let next = await store.slackState(agentId) { state = next }
+  }
+
+  public func connect(_ agentId: String, store: AppStore, open: @MainActor (URL) -> Void) async {
+    guard !busy else { return }
+    problem = nil
+    busy = true
+    defer { busy = false }
+    guard let url = await store.channelConnectLink(agentId, platform: "slack") else {
+      problem = ChannelsView.couldNotConnect
+      return
+    }
+    open(url)
+    let deadline = Date().addingTimeInterval(ChannelsView.connectWaitSeconds)
+    while Date() < deadline, !Task.isCancelled {
+      try? await Task.sleep(nanoseconds: UInt64(ChannelsView.connectPollSeconds * 1_000_000_000))
+      await load(agentId, store: store)
+      if state?.connected == true { return }
+    }
+  }
+
+  public func disconnect(_ agentId: String, store: AppStore) async {
+    guard !busy else { return }
+    problem = nil
+    busy = true
+    defer { busy = false }
+    if await store.disconnectSlack(agentId) {
+      state = SlackState(available: state?.available ?? true, connected: false, workspace: nil)
+    } else {
+      problem = L10n.text("Something didn’t work here. Try again in a little while.")
+    }
+    await load(agentId, store: store)
+  }
+}
+
+extension AppStore {
+  /** Slack's row: nil when the server couldn't be asked (the row stays as it was, or isn't drawn). */
+  public func slackState(_ agentId: String) async -> SlackState? {
+    guard let backend else { return nil }
+    return SlackState(json: try? await backend.server("channels/slack/state", method: "POST", body: .object(["agentId": .string(agentId)])))
+  }
+
+  /** Slack's row's Disconnect: the agent no longer talks in the workspace; its computer takes it off at its next sync. */
+  public func disconnectSlack(_ agentId: String) async -> Bool {
+    guard let backend else { return false }
+    return (try? await backend.server("channels/slack/disconnect", method: "POST", body: .object(["agentId": .string(agentId)]))) != nil
+  }
+}
+
 extension AppStore {
   /** How long a channel call may take (`I$n`). */
   public static let channelDeadline: Double = 15

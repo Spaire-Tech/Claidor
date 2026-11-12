@@ -347,7 +347,7 @@ test("SAND_CHANNELS_SERVED=0 keeps every connector closed and the manifests comi
     // Discord is hidden until Simeon has a Discord app of its own (12 November 2026).
     assert.deepEqual(channels.module.connectorManifests({}).map((m) => [m.platform, m.availability, m.connect]), [["slack", "available", "app"]]);
     assert.equal(channels.module.findConnectorManifest("slack", { SAND_CHANNELS_SERVED: "0" }).availability, "coming-soon");
-    assert.match(channels.module.findConnectorManifest("slack", {}).connectGuide, /Connect Slack/);
+    assert.match(channels.module.findConnectorManifest("slack", {}).connectGuide, /\+ beside Slack, under Notifications/);
     assert.doesNotMatch(channels.module.findConnectorManifest("slack", {}).connectGuide, /botToken/);
     assert.equal(channels.module.findConnectorManifest("discord", {}), undefined, "hidden");
   } finally { await channels.dispose(); }
@@ -393,9 +393,9 @@ test("the channel store keeps the runtime's status beside the label, never a cre
     const prompt = messaging.module.renderChannelsSystemPrompt(messaging.module.CONNECTOR_MANIFESTS ?? (await load("source/shared/channels.ts", "m2")).module.CONNECTOR_MANIFESTS, [{ platform: "slack", label: "Work Slack", status: "error", detail: "Slack refused the token (invalid_auth)." }], "/home/box/sand-data/agents/a1/channels");
     assert.match(prompt, /- Slack "Work Slack" \[error\] \(Slack refused the token \(invalid_auth\)\.\)\. Address people on it as slack:<chat id>/);
     assert.match(prompt, /- Discord: Message in Discord servers and DMs through a bot the user owns\./);
-    // Slack through Simeon's own app (12 November 2026): Connect Slack in the Channels tab, never a token.
+    // Slack through Simeon's own app (12 November 2026): + beside Slack in the agent's profile, never a token.
     assert.match(prompt, /- Slack: Message in Slack channels and DMs through Simeon's Slack app\./);
-    assert.match(prompt, /Channels tab in the Simeon app \(Connect Slack\)/);
+    assert.match(prompt, /your profile in the Simeon app: the \+ beside Slack, under Notifications/);
     assert.match(prompt, /There is no token: never ask for one, and never send a secret-request for Slack\./);
     assert.doesNotMatch(prompt, /Two tokens are needed/);
     assert.doesNotMatch(prompt, /Coming soon \(not connectable yet\)/);

@@ -170,6 +170,19 @@ final class ChannelsTests: XCTestCase {
     XCTAssertFalse(older.manifests[1].connectsInBrowser)
     XCTAssertEqual(ChannelsView.couldNotConnect, "Couldn't connect")
   }
+
+  /** Slack's row in the profile, from the server: the workspace once connected, what it reaches before. */
+  func testSlackState() throws {
+    let off = try XCTUnwrap(SlackState(json: ["available": true, "connected": false, "workspace": .null]))
+    XCTAssertTrue(off.available)
+    XCTAssertFalse(off.connected)
+    XCTAssertEqual(off.subtitle, "Channels and DMs")
+    let on = try XCTUnwrap(SlackState(json: ["available": true, "connected": true, "workspace": "Simeon Labs"]))
+    XCTAssertEqual(on.subtitle, "Simeon Labs")
+    XCTAssertFalse(try XCTUnwrap(SlackState(json: ["available": false])).available)
+    XCTAssertNil(SlackState(json: ["connected": true]))
+    XCTAssertNil(SlackState(json: nil))
+  }
 }
 
 /** The channel calls, as the window makes them: each answers the whole view. */

@@ -9,10 +9,6 @@
   --routine-fill-hover: rgb(119 119 119 / 0.17);
   /* Green words and signs (`success`): an active routine's clock, a run that went well */
   --routine-success: #009957;
-  /* A primary button (`primaryFill`, its hover) and its words (`onPrimary`) */
-  --routine-primary: #070707;
-  --routine-primary-hover: #2f2f2f;
-  --routine-on-primary: #fcfcfc;
   /* A field's and the card's line: the ink at 15% */
   --routine-line: rgb(20 20 20 / 0.15);
   /* The popover's two shadows, on light only */
@@ -27,9 +23,6 @@
   :root {
     --routine-fill-hover: rgb(119 119 119 / 0.32);
     --routine-success: #38d591;
-    --routine-primary: #fafafa;
-    --routine-primary-hover: #d5d5d5;
-    --routine-on-primary: #141414;
     --routine-line: rgb(252 252 252 / 0.15);
     --routine-popover-shadow: 0 0 0 transparent;
     --routine-tick: #0a84ff;
@@ -273,38 +266,6 @@
 }
 
 /* Delete (the grey, darker under the pointer) and Test run (the ink; pale while it can't be pressed): 32 high, padded 10, round 8, 14. */
-.routine-button {
-  height: 32px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--row-hover);
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.routine-button:hover {
-  background: var(--routine-fill-hover);
-}
-
-.routine-button.primary {
-  background: var(--routine-primary);
-  color: var(--routine-on-primary);
-}
-
-.routine-button.primary:hover {
-  background: var(--routine-primary-hover);
-}
-
-.routine-button.primary:disabled {
-  background: color-mix(in srgb, var(--ink) 15%, transparent);
-  color: color-mix(in srgb, var(--ink) 30%, transparent);
-  cursor: default;
-}
-
 .routine-editor-scroll {
   flex: 1;
   min-height: 0;
@@ -758,7 +719,6 @@ img.trigger-logo {
 .new-routine:focus-visible,
 .routine-row:focus-visible,
 .create-routine:focus-visible,
-.routine-button:focus-visible,
 .trigger-open:focus-visible,
 .trigger-remove:focus-visible,
 .add-trigger:focus-visible,

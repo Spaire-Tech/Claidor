@@ -161,7 +161,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/NetworkTests.swift",
-  "tests": 10
+  "tests": 11
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/NewChatTests.swift",

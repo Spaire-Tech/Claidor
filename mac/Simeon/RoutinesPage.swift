@@ -737,9 +737,11 @@ private struct RoutineTopBar: View {
 
 /**
  * The control bar (16 left, 12 right): the Mac's switch and "Active"
- * (6 apart); Delete (secondary) and Test run (primary), 8 apart, each 32
- * high, round 8. Test run waits for a new routine to be saved, and reads
- * "Running…" while its run is on its way or going.
+ * (6 apart); Delete and Test run, 8 apart, in the cards' own buttons (12
+ * November 2026, the founder: "routine test run is not our design
+ * buttons"): Delete a grey pill in red words, Test run the pill in our
+ * blue. Test run waits for a new routine to be saved, and reads "Running…"
+ * while its run is on its way or going.
  */
 private struct RoutineControlBar: View {
   @Bindable var model: RoutineEditorModel
@@ -766,48 +768,16 @@ private struct RoutineControlBar: View {
       }
       Spacer(minLength: 0)
       HStack(spacing: 8) {
-        RoutineButton(title: String(localized: "Delete"), primary: false, disabled: false, look: look, action: delete)
-        RoutineButton(title: running ? String(localized: "Running\u{2026}") : String(localized: "Test run"), primary: true, disabled: model.routineId == nil || running, look: look) {
+        CardButton(title: String(localized: "Delete"), tone: .danger, look: look, action: delete)
+        CardButton(title: running ? String(localized: "Running\u{2026}") : String(localized: "Test run"), prominent: true, look: look) {
           model.testRun(store: store, blocks: pane.runBlocks)
         }
+        .disabled(model.routineId == nil || running)
       }
     }
     .padding(.leading, 16)
     .padding(.trailing, 12)
     .frame(height: 44)
-  }
-}
-
-/** Delete (the grey fill, darker under the pointer) and Test run (the ink fill; pale and not pressable while disabled): 32 high, padded 10, round 8, 14/20. */
-private struct RoutineButton: View {
-  let title: String
-  let primary: Bool
-  let disabled: Bool
-  let look: Look
-  let action: () -> Void
-  @State private var hovering = false
-
-  var body: some View {
-    Button(action: action) {
-      Text(title)
-        .font(.system(size: 14))
-        .foregroundStyle(primary ? (disabled ? look.ink.opacity(0.3) : look.onPrimary) : look.ink)
-        .padding(.horizontal, 10)
-        .frame(height: 32)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fill))
-        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-    .buttonStyle(.hand)
-    .disabled(disabled)
-    .onHover { hovering = $0 }
-  }
-
-  private var fill: Color {
-    if primary {
-      if disabled { return look.ink.opacity(0.15) }
-      return hovering ? look.primaryFillHover : look.primaryFill
-    }
-    return hovering ? look.fillHover : look.rowHover
   }
 }
 

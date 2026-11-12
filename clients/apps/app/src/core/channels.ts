@@ -5,7 +5,7 @@
 // `B0n`, `A0n`, `P0n`, `O0n`). The calls themselves are the store's
 // (`channels`, `connectChannel`, `refreshChannel`, `disconnectChannel`).
 
-import { arr, field, str } from './json'
+import { arr, bool, field, str } from './json'
 import { t, tk } from './l10n'
 
 /** A platform the computer offers (`Manifest`). */
@@ -193,6 +193,41 @@ export const channelConnectPollSeconds = 3
 /** The row's line when the sign-in could not be opened (`couldNotConnect`). */
 export function couldNotConnect(): string {
   return t("Couldn't connect")
+}
+
+/**
+ * Slack's row in an agent's profile, under Notifications (`SlackState`, 12
+ * November 2026, the founder: "slack to be there below notifications"), as
+ * Simeon Labs' server answers (`channels/slack/state`): whether Slack can be
+ * connected, and whether this agent talks in a workspace and which. Read
+ * from the server, so opening a profile never wakes the computer.
+ */
+export interface SlackState {
+  available: boolean
+  connected: boolean
+  workspace?: string
+}
+
+/** The server's answer read; undefined without `available` (`init?(json:)`). */
+export function slackStateFrom(json: unknown): SlackState | undefined {
+  const available = bool(field(json, 'available'))
+  if (available === undefined) return undefined
+  return {
+    available,
+    connected: bool(field(json, 'connected')) ?? false,
+    workspace: str(field(json, 'workspace')),
+  }
+}
+
+/** Drawn while Slack can be connected here, or the agent talks there (`shown`). */
+export function slackShown(state: SlackState | undefined): boolean {
+  return state !== undefined && (state.available || state.connected)
+}
+
+/** The line under "Slack": the workspace's name once connected, else what it reaches (`subtitle`). */
+export function slackSubtitle(state: SlackState): string {
+  if (state.connected && state.workspace) return state.workspace
+  return t('Channels and DMs')
 }
 
 /** How long a channel call may take, in seconds (`channelDeadline`, `I$n`). */
