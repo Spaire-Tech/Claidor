@@ -20,8 +20,11 @@ settings:
     # app, the short first run, Face ID, the simpler plans; build 5: pushes
     # as messages from the agents, the notifications switch, the account
     # page with Delete Account; build 31, 5 November 2026: search's tabs on
-    # the tap, the icon's real number, the Help Center).
-    CURRENT_PROJECT_VERSION: "31"
+    # the tap, the icon's real number, the Help Center; build 32, 12
+    # November 2026: AI Models and the model on the composer, the
+    # Credentials Store's cards, External Agents, the cards' new style,
+    # Slack under Notifications in the agent's page).
+    CURRENT_PROJECT_VERSION: "32"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
