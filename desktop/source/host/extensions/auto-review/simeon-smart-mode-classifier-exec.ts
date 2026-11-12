@@ -161,6 +161,12 @@ export function createSimeonSmartModeClassifierExecutor(deps: SimeonSmartModeCla
     async execute(ctx: Context, args: SmartModeClassifierArgs): Promise<SmartModeClassifierResult> {
       const mode = ctx.get(smartModeClassifierModeKey) ?? "enforce";
       const action = args.target?.action ?? "";
+      // In shadow the verdict is discarded (`sand_auto_review` off: no card, nothing blocked), so no model is
+      // asked (12 November 2026). Until then every reviewed click and command made one call, on the person's
+      // Claude plan a new `claude -p` on the computer of 3 to 19 s, beside the work, with 109 MB of memory free.
+      if (mode === "shadow") {
+        return new SmartModeClassifierResult({ result: { case: "success", value: new SmartModeClassifierSuccess({ decision: SmartModeClassifierDecision.ALLOW }) } });
+      }
       try {
         const language = currentUserLanguage();
         const languageLine = reviewerLanguageLine(language);

@@ -1492,13 +1492,17 @@ for an allow-or-block decision (`host/extensions/auto-review/simeon-smart-mode-c
 30 s deadline). A block always carries a `proposedAllowRule`, so "Always allow" saves a rule;
 when the model leaves it out, `fallbackAllowRule` builds one from the command. Review is
 off by default: the `sand_auto_review` gate is off in `simeon-gate-defaults.ts`, so every
-action is only shadowed (reviewed, verdict logged, no card). It was on from 25 September to
+action is only shadowed: no card, and since 12 November 2026 nothing read and no model asked
+either. Until then each shadowed click, command and routine write read the page or the chat
+first, awaited, and asked a model whose verdict was thrown away; on the person's Claude plan
+that was a new `claude -p` of 3 to 19 s per click, on a computer with 109 MB of memory free
+(Tessa's log). Enforce is unchanged. It was on from 25 September to
 7 October 2026 (off after the insurance log of 6 October, where the card came over and over),
 and on again for a day on 28 October before the founder switched it off for the same reason.
 `SAND_FEATURE_GATE_OVERRIDES=sand_auto_review=1` turns it on. A new
 message from the person retires the previous approvals (`beginAutoReviewUserMessageEpoch`).
 
-* **Log line.** Box: `[simeon] auto-review action=… mode=… verdict=allow|block|unparseable|error …`.
+* **Log line.** Box: `[simeon] auto-review action=… mode=… verdict=allow|block|unparseable|error …` Written in enforce only since 12 November 2026; a shadowed action writes none.
 * **Known limits.** Connector (MCP) calls are not classified: the turn's `CallMcpTool` is built
   with no approval provider or classifier (`callOptions: {}` in `host-runner-composition.ts`),
   where the upstream app reviews them too.
@@ -2060,10 +2064,11 @@ the background while the call goes on, and says how it is going when asked.
     on the agent's display). That shell refuses in three cases: an Auto-review approval is
     pending for the agent ("Another action is waiting…"), the box is not ready, or the turn was
     cancelled. Since 7 October 2026 the message carries the shell's own reason, and a
-    cancellation stays a cancellation; before, every case read the same. Since 8 October,
-    when the review only shadows (the default since 8 October), a failed probe
-    no longer stops the action: the host logs `auto-review probe failed in shadow, action
-    allowed: <reason>` and the action runs. In enforce it still refuses, with the reason.
+    cancellation stays a cancellation; before, every case read the same. The probe runs only
+    in enforce: a shadowed review (the default) has not read the page since 12 November 2026,
+    so this message never stops an action there (from 8 October a failed probe in shadow was
+    logged as `auto-review probe failed in shadow, action allowed`). In enforce it still
+    refuses, with the reason.
   - **"Not run: this is the third time you have sent exactly this action to exactly this
     screen."** The Computer tool's loop guard (8 October 2026, `sand-computer-tool.ts`): the
     third identical action on a screen that did not change after the first two is refused

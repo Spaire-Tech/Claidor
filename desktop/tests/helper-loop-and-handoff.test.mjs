@@ -2,8 +2,10 @@
  * From the insurance log of 6 October 2026 (the founder: "fix this based on
  * how the upstream app did it"), offline:
  *
- * - a shadow review survives a failed page-state probe: the action runs and
- *   the host log says why; enforce still refuses, with the cause;
+ * - a shadow review never reads the page (12 November 2026: it read it and
+ *   asked a model on every click, then threw the verdict away), so a page
+ *   that cannot be read never stops the action; enforce still refuses, with
+ *   the cause;
  * - the Computer tool refuses the third identical action on an unchanged
  *   screen;
  * - the helpers and the main agent are told to stop at a form that needs
@@ -30,19 +32,20 @@ async function loadModule(entry, name) {
   return module;
 }
 
-test("a shadow review survives a failed page-state probe; enforce refuses with the cause", async () => {
+test("a shadow review never reads the page or the screen; enforce refuses with the cause", async () => {
   const browser = await loadModule("source/host/runner/sand-browser-auto-review.ts", "browser-review");
   const computer = await loadModule("source/host/runner/sand-computer-auto-review.ts", "computer-review");
-  const logged = [];
-  const failing = async () => { throw new Error("curl: (7) Failed to connect"); };
-  const base = { agentId: "a1", boxIdentity: { boxId: "b", windowGeneration: "g" }, resolveDisplayNumber: async () => 1, onShadowCaptureFailed: (message) => logged.push(message) };
+  let reads = 0;
+  const failing = async () => { reads += 1; throw new Error("curl: (7) Failed to connect"); };
+  const base = { agentId: "a1", boxIdentity: { boxId: "b", windowGeneration: "g" }, resolveDisplayNumber: async () => 1 };
   await browser.runSandBrowserAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { op: "click", element: "Next" }, toolCallId: "t1", options: { ...base, mode: "shadow", captureReviewState: failing } });
   await computer.runSandComputerAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { action: "click", coordinates: { x: 1, y: 2 } }, description: "Next", toolCallId: "t2", options: { ...base, mode: "shadow", captureDisplayStateIdentity: failing } });
-  assert.deepEqual(logged, ["curl: (7) Failed to connect", "curl: (7) Failed to connect"], "the action ran and the log says why the review was skipped");
+  await browser.runSandBrowserAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { op: "click" }, toolCallId: "t2b", options: { ...base, mode: "shadow", captureReviewState: failing } });
+  assert.equal(reads, 0, "in shadow the actions ran with nothing read first");
   await assert.rejects(browser.runSandBrowserAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { op: "click", element: "Next" }, toolCallId: "t3", options: { ...base, mode: "enforce", captureReviewState: failing } }), /Failed to connect/);
   await assert.rejects(computer.runSandComputerAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { action: "click", coordinates: { x: 1, y: 2 } }, description: "Next", toolCallId: "t4", options: { ...base, mode: "enforce", captureDisplayStateIdentity: failing } }), /Failed to connect/);
-  const aborted = Object.assign(new Error("gone"), { name: "AbortError" });
-  await assert.rejects(browser.runSandBrowserAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { op: "click", element: "Next" }, toolCallId: "t5", options: { ...base, mode: "shadow", captureReviewState: async () => { throw aborted; } } }), /gone/, "a cancelled turn stays a cancellation");
+  assert.equal(reads, 2, "enforce reads the page and the screen");
+  await assert.rejects(browser.runSandBrowserAutoReviewPreflight({ ctx: {}, resourceAccessor: {}, exactAction: { op: "click" }, toolCallId: "t5", options: { ...base, mode: "enforce", captureReviewState: failing } }), /element field/, "enforce still wants the click's target named");
 });
 
 test("the Computer tool refuses the third identical action on an unchanged screen, and a changed screen starts again", async () => {
