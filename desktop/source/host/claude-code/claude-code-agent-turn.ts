@@ -33,7 +33,7 @@ import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } fr
 import { currentTurnModel, noteTurnModel } from "../extensions/inference/turn-model.js";
 import { getSandRootDir } from "../host-paths.js";
 import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
-import { ClaudeCodeMemorySessions, ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeSessionStore } from "./claude-code-turn.js";
+import { ClaudeCodeMemorySessions, ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeImage, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeSessionStore } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
 
 /**
@@ -54,6 +54,8 @@ export interface ClaudeCodeTurnInput {
   readonly brief: string;
   readonly context?: string;
   readonly text: string;
+  /** The person's pictures with the message, in the order sent. */
+  readonly images?: readonly ClaudeCodeImage[];
   readonly tools: readonly unknown[];
   readonly listener: unknown;
   readonly stateHandler: unknown;
@@ -218,8 +220,10 @@ export function claudeCodeBriefNote(kind: ClaudeCodeTurnKind = "agent"): string 
 }
 
 /** The prompt Claude Code gets: the context on a session's first turn, then the person's words. */
-export function claudeCodePrompt(text: string, context: string | undefined, firstOfSession: boolean): string {
-  const words = text.trim() === "" ? "(The person sent nothing to read: continue as the brief says.)" : text;
+export function claudeCodePrompt(text: string, context: string | undefined, firstOfSession: boolean, pictures = 0): string {
+  const words = text.trim() !== "" ? text
+    : pictures > 0 ? `(The person sent ${pictures === 1 ? "a picture" : `${pictures} pictures`} and no words: answer as the brief says.)`
+    : "(The person sent nothing to read: continue as the brief says.)";
   return firstOfSession && context !== undefined && context.trim() !== "" ? `${context.trim()}\n\n${words}` : words;
 }
 
@@ -274,7 +278,8 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       const server = await startSimeonMcpServer({ tools: () => [...tools, permissionBridgeTool(review)], signal: input.signal, log: options.log });
       try {
         outcome = await runAgentClaudeCodeTurn(sessionKey, sessions, {
-          prompt: claudeCodePrompt(input.text, input.context, sessions.get(sessionKey) === undefined),
+          prompt: claudeCodePrompt(input.text, input.context, sessions.get(sessionKey) === undefined, input.images?.length ?? 0),
+          ...(input.images === undefined || input.images.length === 0 ? {} : { images: input.images }),
           model: chosenModel,
           effort: chosenEffort,
           brief: [claudeCodeBriefLead(kind), input.brief, claudeCodeBriefNote(kind)].filter((part) => part.trim() !== "").join("\n\n"),

@@ -192,7 +192,7 @@
    "mac/Simeon/TranscriptSelection.swift"
   ],
   "mac_lines": 7707,
-  "core_lines": 5037,
+  "core_lines": 5040,
   "views": 62,
   "files_needing_a_mac": 15,
   "strings": 323,
@@ -243,7 +243,7 @@
    "mac/Simeon/Viewers.swift"
   ],
   "mac_lines": 1756,
-  "core_lines": 623,
+  "core_lines": 634,
   "views": 16,
   "files_needing_a_mac": 4,
   "strings": 50,
@@ -271,7 +271,7 @@
    "mac/Simeon/RoutinesPage.swift"
   ],
   "mac_lines": 5418,
-  "core_lines": 2197,
+  "core_lines": 2198,
   "views": 67,
   "files_needing_a_mac": 6,
   "strings": 402,

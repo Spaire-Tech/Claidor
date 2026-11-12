@@ -335,6 +335,17 @@ approve, paste the code back) is Claude Code's own sign-in.
   his next two messages were answered on Simeon's model). Before each agent
   turn, the roles are now read again when the last read is more than fifteen
   seconds old, the turn waiting at most three seconds for it.
+- **The person's pictures go to Claude** (12 November 2026: an agent on
+  Claude answered eight pictures with "None of the 8 reached me"). A picture
+  sent in the chat travels on the message as a selected image, never in its
+  words, and the turn handed Claude Code only the words. Now each picture is
+  read from the turn's message (its bytes, or the blob it was kept under),
+  made as small as Simeon's own model gets it (1024 pixels a side, 1 MB), and
+  sent before the words as an image in Claude Code's stream-json message, at
+  most 20 a turn; the words say how many came, where their files are (to
+  upload or attach), and any that couldn't be read
+  (`claude-code-turn-images.ts`). Host log when one can't be read:
+  `claude-code turn pictures not read`.
 
 **The steps:**
 

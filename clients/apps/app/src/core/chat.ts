@@ -46,6 +46,8 @@ export interface ChatImage {
   alt: string
   width?: number
   height?: number
+  /** The file's own name, for one the person sent ("IMG_0412.png"): the computer keeps it under one made from its contents. */
+  name?: string
 }
 
 export function chatImageFrom(json: unknown): ChatImage | undefined {
@@ -1021,6 +1023,7 @@ function mediaAttachment(entry: Entry): ChatImage | undefined {
       alt: '',
       width: positive(entry.get('width')),
       height: positive(entry.get('height')),
+      ...(name === '' ? {} : { name }),
     }
   }
   const message = entry.message

@@ -754,6 +754,12 @@ describe('notices, pictures and links', () => {
     expect(
       aspect(bubbles(rows).find((b) => b.id === 'p1')!.images[0]!),
     ).toBeCloseTo(1170 / 2532, 3)
+    // Each keeps its own name for the viewer's title (the computer keeps it under one made from its contents).
+    expect(
+      bubbles(rows)
+        .find((b) => b.id === 'p1')!
+        .images.map((image) => image.name),
+    ).toEqual(['Photo 1.png', undefined])
   })
 
   it('says “Sent while offline” only on what this app held and sent', () => {

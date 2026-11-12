@@ -842,6 +842,22 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: the picture viewer's title is the picture's own name
+
+- The founder's eight pictures opened under "8a67a733…1ded.png · 6 / 6": the computer keeps a
+  sent picture under a name made from its contents, and the gallery handed the viewer only its
+  path. A sent picture now keeps its own name (`file_name`, `ChatImage.name`), the strip passes
+  it to the viewer, and a name that is only such a fingerprint (32 or more hexadecimal
+  characters before the extension, `isFingerprintName`) is never shown: the count alone
+  ("6 / 6"). The same in the Mac's viewer and the iPhone's Quick Look gallery ("Photo" when a
+  picture has no name of its own).
+- Not this app's part, the same day: an agent on Claude now sees the pictures (the engine hands
+  them to Claude Code with the words).
+
+Checked: the core's tests (the shared caption cases, with the fingerprint ones, and the sent
+pictures keeping their names), typecheck, the committed build. Not checked: in Chromium, on a
+Mac, on an iPhone.
+
 ### 12 November 2026: Slack under Notifications in the agent's profile; the routine bar's buttons
 
 - **Slack in the profile** (the founder: "no channel then click then slack. slack to be there

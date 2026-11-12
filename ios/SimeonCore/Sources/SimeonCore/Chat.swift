@@ -724,9 +724,11 @@ public struct ChatImage: Hashable, Sendable {
   public let alt: String
   public let width: Double?
   public let height: Double?
+  /** The file's own name, for one the person sent ("IMG_0412.png"): the computer keeps it under one made from its contents. */
+  public let name: String?
 
-  public init(url: String, alt: String = "", width: Double? = nil, height: Double? = nil) {
-    self.url = url; self.alt = alt; self.width = width; self.height = height
+  public init(url: String, alt: String = "", width: Double? = nil, height: Double? = nil, name: String? = nil) {
+    self.url = url; self.alt = alt; self.width = width; self.height = height; self.name = name
   }
 
   init?(_ json: JSON) {
@@ -735,6 +737,7 @@ public struct ChatImage: Hashable, Sendable {
     alt = json["alt"]?.string ?? ""
     width = json["width"]?.double.flatMap { $0 > 0 ? $0 : nil }
     height = json["height"]?.double.flatMap { $0 > 0 ? $0 : nil }
+    name = nil
   }
 
   /** Width over height; 4:3 when the shape is not known (the window's gallery). */
@@ -1164,7 +1167,7 @@ public enum Chat {
       let name = entry["file_name"]?.text ?? entry["fileName"]?.text ?? ""
       guard isPictureOrVideo(path) || isPictureOrVideo(name) else { return nil }
       let positive: (Double?) -> Double? = { value in value.flatMap { $0 > 0 ? $0 : nil } }
-      return ChatImage(url: path, alt: "", width: positive(entry["width"]?.double), height: positive(entry["height"]?.double))
+      return ChatImage(url: path, alt: "", width: positive(entry["width"]?.double), height: positive(entry["height"]?.double), name: name.isEmpty ? nil : name)
     }
     if entry.kind == "send-message", let message = entry.message, message["type"]?.string == "attachment",
        let url = message["url"]?.text, isPictureOrVideo(url) {

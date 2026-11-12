@@ -165,8 +165,11 @@ struct GalleryTile: View {
   static func fileName(_ image: ChatImage, position: Int) -> String {
     let own = SimeonCore.fileName(ofURL: image.url)
     let ext = (own as NSString).pathExtension.isEmpty ? "png" : (own as NSString).pathExtension
-    let words = image.alt.components(separatedBy: CharacterSet(charactersIn: "/:\\\n")).joined(separator: " ").trimmingCharacters(in: .whitespaces)
-    let base = words.isEmpty ? (own as NSString).deletingPathExtension : String(words.prefix(80))
+    let plain: (String) -> String = { $0.components(separatedBy: CharacterSet(charactersIn: "/:\\\n")).joined(separator: " ").trimmingCharacters(in: .whitespaces) }
+    let words = plain(image.alt)
+    // Quick Look's title is the file's name: the person's own, never the computer's fingerprint of it ("Photo" when that is all there is).
+    let named = [image.name, own].compactMap { $0 }.first { !$0.isEmpty && !FilePreview.isFingerprintName($0) }.map { plain(($0 as NSString).deletingPathExtension) }
+    let base = words.isEmpty ? (named ?? L10n.text("Photo")) : String(words.prefix(80))
     return "\(position + 1) \(base).\(ext)"
   }
 }

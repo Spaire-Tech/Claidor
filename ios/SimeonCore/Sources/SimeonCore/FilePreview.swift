@@ -106,10 +106,21 @@ public enum FilePreview {
 
   /** Its caption (`c7n`): the caption or the file's name, then "2 / 3" when there are several. */
   public static func mediaCaption(caption: String?, name: String?, source: String, index: Int, total: Int) -> String {
-    let words = caption ?? name ?? lastPart(source)
+    // A stored copy's fingerprint says nothing to the person: the count alone, then (12 November 2026, the founder: "whats with that long gibberish title").
+    let words = caption ?? [name, lastPart(source)].compactMap { $0 }.first { !isFingerprintName($0) } ?? ""
     let count = total > 1 ? "\(index + 1) / \(total)" : ""
     if words.isEmpty { return count }
     return count.isEmpty ? words : "\(words) · \(count)"
+  }
+
+  /**
+   * A name made from a file's contents, as the computer keeps the person's
+   * pictures ("8a67a733…1ded.png"): 32 or more hexadecimal characters
+   * before the extension.
+   */
+  public static func isFingerprintName(_ name: String) -> Bool {
+    let base = split(name).base
+    return base.count >= 32 && base.allSatisfy(\.isHexDigit)
   }
 
   /** Previous and next wrap round (`ove`). */
