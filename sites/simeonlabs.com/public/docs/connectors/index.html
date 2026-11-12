@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Connect apps</title>
-<meta name="description" content="Give your agents Gmail, Slack, Notion, QuickBooks and 230 more apps with one Connect button and the app&#x27;s own sign-in.">
+<meta name="description" content="Connect Gmail, Slack, QuickBooks and more than 200 other apps so your agents can work in them, choose which tools they may use, and add a second account.">
 <link rel="canonical" href="https://simeonlabs.com/docs/connectors">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/connectors">
 <meta property="og:title" content="SimeonLabs | Docs | Connect apps">
-<meta property="og:description" content="Give your agents Gmail, Slack, Notion, QuickBooks and 230 more apps with one Connect button and the app&#x27;s own sign-in.">
+<meta property="og:description" content="Connect Gmail, Slack, QuickBooks and more than 200 other apps so your agents can work in them, choose which tools they may use, and add a second account.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -131,10 +131,10 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
-.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
 /* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
    (the founder, 12 November 2026: "either left or right. but not ... middle") */
-.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
@@ -216,67 +216,226 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Connect apps</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/connectors.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Connectors let your agents work inside the apps you already use. There are more than 230, from <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> and <span class="brand" style="color:#000000"><i class="logo" style="--m:url(/docs/brands/notion.png?v=0f66ddf8);background:#000000" aria-hidden="true"></i>Notion</span> to <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>, <span class="brand" style="color:#cc6247"><i class="logo" style="--m:url(/docs/brands/hubspot.png?v=13a00e71);background:#cc6247" aria-hidden="true"></i>HubSpot</span>, <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span> and <span class="brand" style="color:#f24e1e"><i class="logo" style="--m:url(/docs/brands/figma.png?v=d7ef582f);background:#f24e1e" aria-hidden="true"></i>Figma</span>. Browse them all in the <a href="/connectors">connector directory</a>.</p>
+<p>A connector lets your agents work inside one of your apps: read and draft email in <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, update records in <span class="brand" style="color:#cc6247"><i class="logo" style="--m:url(/docs/brands/hubspot.png?v=13a00e71);background:#cc6247" aria-hidden="true"></i>HubSpot</span>, file documents in <span class="brand" style="color:#1d9c5e"><img class="logo" src="/docs/brands/google-drive.png?v=6dd8a1ef" alt="" aria-hidden="true">Google Drive</span>. You sign in once on the app's own page, and every agent on your team can use it.</p>
+<p>This page covers how to connect an app, what your agents can do with it, and how to limit or remove that access. To see every app, browse the <a href="/connectors">connector directory</a>.</p>
+<div class="table"><table><thead><tr><th>Where</th><th>What you do there</th></tr></thead><tbody><tr><td><strong>Connect apps</strong>, at the bottom of your list of chats</td><td>Browse and connect apps, see the ones you've connected, and open each app's page. On iPhone, it's in <strong>Settings</strong>.</td></tr><tr><td><strong>A card in an agent's chat</strong></td><td>Connect an app the agent needs for the task you gave it.</td></tr><tr><td><strong>An app's page</strong></td><td>Add another account, turn tools off, or uninstall the app.</td></tr></tbody></table></div>
 <h2 id="connect-an-app">Connect an app</h2>
-<p>Every app has one button, <strong>Connect</strong>, on the Mac and on iPhone.</p>
-<ol><li>Find the app in <strong>Connect apps</strong>, or choose <strong>Connect</strong> on the card an agent shows in the chat.</li><li>Confirm, then sign in on the app's own page.</li><li>The app shows as <strong>Connected</strong>. Your agents can use it right away.</li></ol>
-<p>You sign in once; you never paste a password or an API key into Simeon. If you cancel the sign-in, nothing is left half-connected.</p>
-<h2 id="when-an-agent-asks">When an agent asks</h2>
-<p>You don't have to connect everything up front. When an agent needs an app it doesn't have yet, it shows a <strong>Connect</strong> card in the chat and continues once you've signed in.</p>
-<h2 id="apps-without-a-connector">Apps without a connector</h2>
-<p>Agents can still use most websites in their browser, on <a href="/docs/computer">their own computer</a>. A connector is faster and more reliable, so use one when it exists.</p>
-<h2 id="your-own-servers">Your own servers</h2>
-<p>If you or your developers run an MCP server, you can add it by its address in <strong>Connect apps</strong>, and your agents can use its tools like any other connector.</p>
-<h2 id="buying-things-for-you">Buying things for you</h2>
-<p>Two connectors let an agent buy what you asked for:</p>
-<ul><li><strong><span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong> (by <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>) pays with a one-time card, never your real one, and nothing is paid until you approve the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app. Link can also let an agent read the bank and card accounts you choose to share, to answer questions about your spending.</li><li><strong><span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span></strong> (by <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span>) finds products across <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span> stores, pays with your <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span> card, and tracks your orders.</li></ul>
-<p>Every purchase shows a checkout card in the chat first, with <strong>Allow</strong> or <strong>Deny</strong>. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
-<h2 id="disconnect">Disconnect</h2>
-<p>Open the app in <strong>Connect apps</strong> to sign out or remove it. Your agents lose access at once.</p>
+<ol><li>Choose <strong>Connect apps</strong> at the bottom of your list of chats. The <strong>Connectors</strong> window opens on <strong>Available</strong>.</li><li>Find the app. Type its name in <strong>Search connectors</strong>, or pick a group from <strong>All Categories</strong>, such as <strong>Finance &amp; Money</strong> or <strong>Mail &amp; Calendar</strong>. Choose a group's name to see all of its apps.</li><li>Choose <strong>+</strong> beside the app.</li><li>A sheet says what your agents will be able to do in the app and who handles the sign-in. Read it, then choose <strong>Connect</strong>.</li><li>The app's own sign-in page opens. Sign in and allow access.</li><li>Back in Simeon, the <strong>+</strong> turns into a green tick. The app is connected.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-window.webp" alt="The Connectors window, with Available selected, the search, All Categories and apps in groups" width="780" height="600" loading="lazy" decoding="async"></div><figcaption>Connect apps opens the Connectors window: every app, in groups, with + to connect it.</figcaption></figure>
+<p>You never type a password or an API key into Simeon. If you close the sign-in page before you finish, nothing is left half-connected: the app goes back to <strong>+</strong>.</p>
+<div class="callout note"><b>Note</b><p>On the Mac and iPhone, the sign-in page opens in a sheet inside Simeon. In the web app, it opens in a new browser tab; in the Windows app, in your default browser.</p></div>
+<h3 id="what-the-sheet-tells-you">What the sheet tells you</h3>
+<p>The sheet that opens before the sign-in is the same for every app:</p>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-consent.webp" alt="The sheet before QuickBooks&#x27; sign-in: What it does, Control, Check their work, and Connect" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>Before the sign-in: what your agents can reach in the app, and how you stay in control.</figcaption></figure>
+<div class="table"><table><thead><tr><th>Part</th><th>What it says</th></tr></thead><tbody><tr><td><strong>What it does</strong></td><td>What your agents can read and use in the app, such as your books, invoices, bills and expenses in <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>.</td></tr><tr><td><strong>Control</strong></td><td>Steps that look risky wait for your OK, and you can turn off any of the app's tools or remove it.</td></tr><tr><td><strong>Check their work</strong></td><td>Look over what your agents do in the app, especially at first.</td></tr><tr><td>The lines at the foot</td><td>Who runs the sign-in, and that what your agents read in the app becomes part of your chats with them.</td></tr></tbody></table></div>
+<p>For apps that move money, the sheet also reminds you that what happens there is real.</p>
+<h2 id="connect-an-app-from-the-chat">Connect an app from the chat</h2>
+<p>You don't have to connect everything up front. Give an agent a task, and if it needs an app you haven't connected, it says so and shows a card with the app and its reason.</p>
+<blockquote><p>Can you match last month's <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span> payouts against our invoices and tell me what's missing?</p></blockquote>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-card.webp" alt="Rosa explaining that she needs QuickBooks, with a QuickBooks card and its Connect button" width="780" height="600" loading="lazy" decoding="async"></div><figcaption>Rosa asks you to connect an app with a card in her chat.</figcaption></figure>
+<ol><li>Choose <strong>Connect</strong> on the card.</li><li>Read the sheet and choose <strong>Connect</strong>, then sign in on the app's page.</li><li>When the card says <strong>Connected</strong>, tell the agent to go on:</li></ol>
+<blockquote><p>Done, it's connected.</p></blockquote>
+<p>When an app has a connector, agents ask you to connect it rather than going to the website. An agent never connects an app you haven't asked for or approved on a card.</p>
+<div class="callout tip"><b>Tip</b><p>You can also ask for an app by name: "Connect <span class="brand" style="color:#000000"><i class="logo" style="--m:url(/docs/brands/notion.png?v=0f66ddf8);background:#000000" aria-hidden="true"></i>Notion</span> so you can keep our meeting notes there." The agent shows the card, and you sign in.</p></div>
+<h2 id="see-the-apps-you-ve-connected">See the apps you've connected</h2>
+<p>In the <strong>Connectors</strong> window, choose <strong>Yours</strong>. <strong>Installed</strong> lists every app you've connected, each with a green tick. Choose an app to open its page.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-yours.webp" alt="The Yours tab, with Gmail, Google Calendar, Google Drive, Notion and Slack under Installed" width="780" height="600" loading="lazy" decoding="async"></div><figcaption>Yours lists the apps you've connected.</figcaption></figure>
+<p><strong>Yours</strong> also lists, under <strong>Private</strong>, the skills of the agent whose chat is open. See <a href="/docs/routines#skills">Skills</a>.</p>
+<h2 id="add-another-account">Add another account</h2>
+<p>Some apps, such as <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, <span class="brand" style="color:#0078d4"><img class="logo" src="/docs/brands/outlook.png?v=f5ac048b" alt="" aria-hidden="true">Outlook</span> and <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, can be connected more than once: a work and a personal mailbox, or two <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> workspaces.</p>
+<ol><li>Open the app's page from <strong>Yours</strong>.</li><li>Under <strong>Accounts</strong>, choose <strong>Add Another Account</strong>, and sign in with the other account.</li><li>To tell them apart, choose the pencil beside an account and give it a name, such as Personal.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-accounts.webp" alt="Gmail&#x27;s page with two accounts, the pencil and Remove beside each, and Add Another Account" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>Two accounts of one app, one named Personal, and Add Another Account.</figcaption></figure>
+<p>You can connect up to five accounts of one app. With more than one, say which account to use in your message ("from my personal <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>"); if you don't, the agent asks. <strong>Remove</strong> beside an account disconnects that account only.</p>
+<h2 id="choose-which-tools-agents-can-use">Choose which tools agents can use</h2>
+<p>Each app gives your agents a set of tools, one for each thing they can do in it, such as searching email, writing a draft or sending. You can turn off the ones you don't want any agent to use.</p>
+<ol><li>Open the app's page from <strong>Yours</strong>.</li><li>Under <strong>Tools</strong>, open the line that says how many are enabled, such as <strong>9 of 9 enabled</strong>. Each tool has a switch.</li><li>Turn off the switch beside a tool.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/connectors-tools.webp" alt="Gmail&#x27;s tools, each with a switch, and Trash email turned off" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>One tool turned off: no agent can move email to the bin.</figcaption></figure>
+<p>The change applies to every agent at once. Turn the switch back on to give the tool back.</p>
+<div class="callout tip"><b>Tip</b><p>Turning off a tool is the surest way to keep agents from an action. For example, turn off <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>'s tool for sending email if you want every email left as a draft for you.</p></div>
+<h2 id="disconnect-an-app">Disconnect an app</h2>
+<ol><li>Open the app's page from <strong>Yours</strong>.</li><li>At the foot of the page, choose <strong>Uninstall</strong>.</li></ol>
+<p>The app is removed right away, without a question, and your agents can no longer use it. To use it again, connect it again. To disconnect one account of an app and keep the others, use <strong>Remove</strong> beside that account instead.</p>
+<h2 id="apps-that-pay-for-things">Apps that pay for things</h2>
+<p>Two connectors let an agent buy what you ask for:</p>
+<ul><li><strong><span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong>, by <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>: pays with a one-time card, never your real one, and nothing is paid until you approve the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app. It can also read the bank accounts you choose to share with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span>, to answer questions about your spending. US only.</li><li><strong><span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span></strong>, by <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span>: finds products across <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span> stores, pays with your <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span> card, and tracks your orders.</li></ul>
+<p>Before anything is paid, a checkout card appears in the chat with <strong>Allow</strong> and <strong>Deny</strong>. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<h2 id="add-your-own-mcp-server">Add your own MCP server</h2>
+<p>If you or your developers run an MCP server, an agent can add it to your account. Give the agent the server's web address:</p>
+<blockquote><p>Add our MCP server at https://mcp.northwindcoffee.com/mcp so you can read our stock levels.</p></blockquote>
+<p>The agent asks you to confirm before it adds the server. If the server has its own sign-in, a Connect card appears in the chat. Only servers reached by a web address can be added. Don't paste API keys or tokens into the chat.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="do-all-my-agents-get-the-app">Do all my agents get the app?</h3>
+<p>Yes. A connected app belongs to your account, so every agent on your team can use it. To keep agents from an action, turn off that tool on the app's page.</p>
+<h3 id="can-an-agent-send-or-delete-things-without-asking-me">Can an agent send or delete things without asking me?</h3>
+<p>An email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message that would go out under your name comes to you as a draft card first, unless you asked the agent to send it. Steps that look risky wait for your OK. To rule an action out completely, turn off its tool. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<h3 id="an-app-says-coming-soon-why">An app says Coming soon. Why?</h3>
+<p>Some apps are listed before they can be connected. They show <strong>Coming soon</strong> in place of <strong>+</strong> until their sign-in works.</p>
+<h3 id="why-can-t-i-connect-canva-or-dropbox-in-my-browser">Why can't I connect <span class="brand" style="color:#009399"><i class="logo" style="--m:url(/docs/brands/canva.png?v=149e17a3);background:#009399" aria-hidden="true"></i>Canva</span> or <span class="brand" style="color:#0061ff"><i class="logo" style="--m:url(/docs/brands/dropbox.png?v=8e820b8b);background:#0061ff" aria-hidden="true"></i>Dropbox</span> in my browser?</h3>
+<p>A few apps, including <span class="brand" style="color:#009399"><i class="logo" style="--m:url(/docs/brands/canva.png?v=149e17a3);background:#009399" aria-hidden="true"></i>Canva</span>, <span class="brand" style="color:#0061ff"><i class="logo" style="--m:url(/docs/brands/dropbox.png?v=8e820b8b);background:#0061ff" aria-hidden="true"></i>Dropbox</span>, <span class="brand" style="color:#000000"><img class="logo" src="/docs/brands/square.png?v=e96d453b" alt="" aria-hidden="true">Square</span> and <span class="brand" style="color:#000000"><i class="logo" style="--m:url(/docs/brands/vercel.png?v=c84cc51e);background:#000000" aria-hidden="true"></i>Vercel</span>, only send their sign-in back to an app installed on your computer. Connect them from the Mac, iPhone or Windows app; once connected, they work everywhere.</p>
+<h3 id="what-if-the-app-i-need-isn-t-listed">What if the app I need isn't listed?</h3>
+<p>Agents can still use most websites in the browser on <a href="/docs/computer">their computer</a>. A connector is faster and more reliable, so use one when it exists.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/connectors"><span><h3>Connector directory</h3><p>Every app you can connect.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>What waits for your OK.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/routines"><span><h3>Routines and skills</h3><p>Run work in your apps on a schedule.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/credentials"><span><h3>Credentials Store</h3><p>Logins for sites without a connector.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
     <p class="updated">Last updated: November 2, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#connect-an-app">Connect an app</a><a class="t l2" href="#when-an-agent-asks">When an agent asks</a><a class="t l2" href="#apps-without-a-connector">Apps without a connector</a><a class="t l2" href="#your-own-servers">Your own servers</a><a class="t l2" href="#buying-things-for-you">Buying things for you</a><a class="t l2" href="#disconnect">Disconnect</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#connect-an-app">Connect an app</a><a class="t l3" href="#what-the-sheet-tells-you">What the sheet tells you</a><a class="t l2" href="#connect-an-app-from-the-chat">Connect an app from the chat</a><a class="t l2" href="#see-the-apps-you-ve-connected">See the apps you&#x27;ve connected</a><a class="t l2" href="#add-another-account">Add another account</a><a class="t l2" href="#choose-which-tools-agents-can-use">Choose which tools agents can use</a><a class="t l2" href="#disconnect-an-app">Disconnect an app</a><a class="t l2" href="#apps-that-pay-for-things">Apps that pay for things</a><a class="t l2" href="#add-your-own-mcp-server">Add your own MCP server</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#do-all-my-agents-get-the-app">Do all my agents get the app?</a><a class="t l3" href="#can-an-agent-send-or-delete-things-without-asking-me">Can an agent send or delete things without asking me?</a><a class="t l3" href="#an-app-says-coming-soon-why">An app says Coming soon. Why?</a><a class="t l3" href="#why-can-t-i-connect-canva-or-dropbox-in-my-browser">Why can&#x27;t I connect Canva or Dropbox in my browser?</a><a class="t l3" href="#what-if-the-app-i-need-isn-t-listed">What if the app I need isn&#x27;t listed?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Connect apps
 
-Connectors let your agents work inside the apps you already use. There are more than 230, from Gmail, Slack and Notion to QuickBooks, HubSpot, Shopify and Figma. Browse them all in the [connector directory](/connectors).
+A connector lets your agents work inside one of your apps: read and draft email in Gmail, update records in HubSpot, file documents in Google Drive. You sign in once on the app&#x27;s own page, and every agent on your team can use it.
+
+This page covers how to connect an app, what your agents can do with it, and how to limit or remove that access. To see every app, browse the [connector directory](/connectors).
+
+| Where | What you do there |
+|---|---|
+| **Connect apps**, at the bottom of your list of chats | Browse and connect apps, see the ones you&#x27;ve connected, and open each app&#x27;s page. On iPhone, it&#x27;s in **Settings**. |
+| **A card in an agent&#x27;s chat** | Connect an app the agent needs for the task you gave it. |
+| **An app&#x27;s page** | Add another account, turn tools off, or uninstall the app. |
 
 ## Connect an app
 
-Every app has one button, **Connect**, on the Mac and on iPhone.
+1. Choose **Connect apps** at the bottom of your list of chats. The **Connectors** window opens on **Available**.
+2. Find the app. Type its name in **Search connectors**, or pick a group from **All Categories**, such as **Finance &amp; Money** or **Mail &amp; Calendar**. Choose a group&#x27;s name to see all of its apps.
+3. Choose **+** beside the app.
+4. A sheet says what your agents will be able to do in the app and who handles the sign-in. Read it, then choose **Connect**.
+5. The app&#x27;s own sign-in page opens. Sign in and allow access.
+6. Back in Simeon, the **+** turns into a green tick. The app is connected.
 
-1. Find the app in **Connect apps**, or choose **Connect** on the card an agent shows in the chat.
-2. Confirm, then sign in on the app&#x27;s own page.
-3. The app shows as **Connected**. Your agents can use it right away.
+![The Connectors window, with Available selected, the search, All Categories and apps in groups](img/connectors-window.webp &quot;Connect apps opens the Connectors window: every app, in groups, with + to connect it.&quot;){c=#89acbc}
 
-You sign in once; you never paste a password or an API key into Simeon. If you cancel the sign-in, nothing is left half-connected.
+You never type a password or an API key into Simeon. If you close the sign-in page before you finish, nothing is left half-connected: the app goes back to **+**.
 
-## When an agent asks
+:::note
+On the Mac and iPhone, the sign-in page opens in a sheet inside Simeon. In the web app, it opens in a new browser tab; in the Windows app, in your default browser.
+:::
 
-You don&#x27;t have to connect everything up front. When an agent needs an app it doesn&#x27;t have yet, it shows a **Connect** card in the chat and continues once you&#x27;ve signed in.
+### What the sheet tells you
 
-## Apps without a connector
+The sheet that opens before the sign-in is the same for every app:
 
-Agents can still use most websites in their browser, on [their own computer](/docs/computer). A connector is faster and more reliable, so use one when it exists.
+![The sheet before QuickBooks&#x27; sign-in: What it does, Control, Check their work, and Connect](img/connectors-consent.webp &quot;Before the sign-in: what your agents can reach in the app, and how you stay in control.&quot;){c=#8f7f8d}
 
-## Your own servers
+| Part | What it says |
+|---|---|
+| **What it does** | What your agents can read and use in the app, such as your books, invoices, bills and expenses in QuickBooks. |
+| **Control** | Steps that look risky wait for your OK, and you can turn off any of the app&#x27;s tools or remove it. |
+| **Check their work** | Look over what your agents do in the app, especially at first. |
+| The lines at the foot | Who runs the sign-in, and that what your agents read in the app becomes part of your chats with them. |
 
-If you or your developers run an MCP server, you can add it by its address in **Connect apps**, and your agents can use its tools like any other connector.
+For apps that move money, the sheet also reminds you that what happens there is real.
 
-## Buying things for you
+## Connect an app from the chat
 
-Two connectors let an agent buy what you asked for:
+You don&#x27;t have to connect everything up front. Give an agent a task, and if it needs an app you haven&#x27;t connected, it says so and shows a card with the app and its reason.
 
-- **Link** (by Stripe) pays with a one-time card, never your real one, and nothing is paid until you approve the purchase in the Link app. Link can also let an agent read the bank and card accounts you choose to share, to answer questions about your spending.
-- **Shop** (by Shopify) finds products across Shopify stores, pays with your Shop card, and tracks your orders.
+&gt; Can you match last month&#x27;s Stripe payouts against our invoices and tell me what&#x27;s missing?
 
-Every purchase shows a checkout card in the chat first, with **Allow** or **Deny**. See [Approvals, security, and privacy](/docs/approvals).
+![Rosa explaining that she needs QuickBooks, with a QuickBooks card and its Connect button](img/connectors-card.webp &quot;Rosa asks you to connect an app with a card in her chat.&quot;){c=#8f7f8d}
 
-## Disconnect
+1. Choose **Connect** on the card.
+2. Read the sheet and choose **Connect**, then sign in on the app&#x27;s page.
+3. When the card says **Connected**, tell the agent to go on:
 
-Open the app in **Connect apps** to sign out or remove it. Your agents lose access at once.
+&gt; Done, it&#x27;s connected.
+
+When an app has a connector, agents ask you to connect it rather than going to the website. An agent never connects an app you haven&#x27;t asked for or approved on a card.
+
+:::tip
+You can also ask for an app by name: &quot;Connect Notion so you can keep our meeting notes there.&quot; The agent shows the card, and you sign in.
+:::
+
+## See the apps you&#x27;ve connected
+
+In the **Connectors** window, choose **Yours**. **Installed** lists every app you&#x27;ve connected, each with a green tick. Choose an app to open its page.
+
+![The Yours tab, with Gmail, Google Calendar, Google Drive, Notion and Slack under Installed](img/connectors-yours.webp &quot;Yours lists the apps you&#x27;ve connected.&quot;){c=#89acbc}
+
+**Yours** also lists, under **Private**, the skills of the agent whose chat is open. See [Skills](/docs/routines#skills).
+
+## Add another account
+
+Some apps, such as Gmail, Outlook and Slack, can be connected more than once: a work and a personal mailbox, or two Slack workspaces.
+
+1. Open the app&#x27;s page from **Yours**.
+2. Under **Accounts**, choose **Add Another Account**, and sign in with the other account.
+3. To tell them apart, choose the pencil beside an account and give it a name, such as Personal.
+
+![Gmail&#x27;s page with two accounts, the pencil and Remove beside each, and Add Another Account](img/connectors-accounts.webp &quot;Two accounts of one app, one named Personal, and Add Another Account.&quot;){c=#89acbc}
+
+You can connect up to five accounts of one app. With more than one, say which account to use in your message (&quot;from my personal Gmail&quot;); if you don&#x27;t, the agent asks. **Remove** beside an account disconnects that account only.
+
+## Choose which tools agents can use
+
+Each app gives your agents a set of tools, one for each thing they can do in it, such as searching email, writing a draft or sending. You can turn off the ones you don&#x27;t want any agent to use.
+
+1. Open the app&#x27;s page from **Yours**.
+2. Under **Tools**, open the line that says how many are enabled, such as **9 of 9 enabled**. Each tool has a switch.
+3. Turn off the switch beside a tool.
+
+![Gmail&#x27;s tools, each with a switch, and Trash email turned off](img/connectors-tools.webp &quot;One tool turned off: no agent can move email to the bin.&quot;){c=#89acbc}
+
+The change applies to every agent at once. Turn the switch back on to give the tool back.
+
+:::tip
+Turning off a tool is the surest way to keep agents from an action. For example, turn off Gmail&#x27;s tool for sending email if you want every email left as a draft for you.
+:::
+
+## Disconnect an app
+
+1. Open the app&#x27;s page from **Yours**.
+2. At the foot of the page, choose **Uninstall**.
+
+The app is removed right away, without a question, and your agents can no longer use it. To use it again, connect it again. To disconnect one account of an app and keep the others, use **Remove** beside that account instead.
+
+## Apps that pay for things
+
+Two connectors let an agent buy what you ask for:
+
+- **Link**, by Stripe: pays with a one-time card, never your real one, and nothing is paid until you approve the purchase in the Link app. It can also read the bank accounts you choose to share with Link, to answer questions about your spending. US only.
+- **Shop**, by Shopify: finds products across Shopify stores, pays with your Shop card, and tracks your orders.
+
+Before anything is paid, a checkout card appears in the chat with **Allow** and **Deny**. See [Approvals, security, and privacy](/docs/approvals).
+
+## Add your own MCP server
+
+If you or your developers run an MCP server, an agent can add it to your account. Give the agent the server&#x27;s web address:
+
+&gt; Add our MCP server at https://mcp.northwindcoffee.com/mcp so you can read our stock levels.
+
+The agent asks you to confirm before it adds the server. If the server has its own sign-in, a Connect card appears in the chat. Only servers reached by a web address can be added. Don&#x27;t paste API keys or tokens into the chat.
+
+## Common questions
+
+### Do all my agents get the app?
+
+Yes. A connected app belongs to your account, so every agent on your team can use it. To keep agents from an action, turn off that tool on the app&#x27;s page.
+
+### Can an agent send or delete things without asking me?
+
+An email or a Slack message that would go out under your name comes to you as a draft card first, unless you asked the agent to send it. Steps that look risky wait for your OK. To rule an action out completely, turn off its tool. See [Approvals, security, and privacy](/docs/approvals).
+
+### An app says Coming soon. Why?
+
+Some apps are listed before they can be connected. They show **Coming soon** in place of **+** until their sign-in works.
+
+### Why can&#x27;t I connect Canva or Dropbox in my browser?
+
+A few apps, including Canva, Dropbox, Square and Vercel, only send their sign-in back to an app installed on your computer. Connect them from the Mac, iPhone or Windows app; once connected, they work everywhere.
+
+### What if the app I need isn&#x27;t listed?
+
+Agents can still use most websites in the browser on [their computer](/docs/computer). A connector is faster and more reliable, so use one when it exists.
+
+## Related pages
+
+:::cards
+- [Connector directory](/connectors) Every app you can connect.
+- [Approvals, security, and privacy](/docs/approvals) What waits for your OK.
+- [Routines and skills](/docs/routines) Run work in your apps on a schedule.
+- [Credentials Store](/docs/credentials) Logins for sites without a connector.
+:::
 </script>
 </main>
 

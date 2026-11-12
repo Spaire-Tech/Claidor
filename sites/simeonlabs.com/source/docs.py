@@ -295,7 +295,7 @@ def render(md):
             # ... for the background color use whatever agent background color"): the window's own corner at `edge`
             # (tl, tr, t, bl, br, b, or c for the whole window), running off the panel's other sides
             colour, edge = opts.get("c", "#89acbc"), ("right" if opts.get("edge") == "right" else "left")
-            style = f'--c:{colour};--w:{opts.get("w", "112")}%;aspect-ratio:{opts.get("ar", "16/10")}'
+            style = f'--c:{colour};--w:{opts.get("w", "100")}%;aspect-ratio:{opts.get("ar", "16/10")}'
             out.append(f'<figure class="shot"><div class="pane" style="{style}"><img class="e-{edge}" src="/docs/{html.escape(src)}" alt="{html.escape(alt)}"{dims} loading="lazy" decoding="async"></div>'
                        + (f"<figcaption>{inline(cap)}</figcaption>" if cap else "") + "</figure>")
             i += 1
@@ -432,10 +432,10 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
-.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
 /* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
    (the founder, 12 November 2026: "either left or right. but not ... middle") */
-.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}

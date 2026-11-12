@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Routines and skills</title>
-<meta name="description" content="Set agents to work on a schedule or when something happens, and save what works as a skill.">
+<meta name="description" content="Have an agent run a task on a schedule or when someone mentions it in Slack, change when and how it runs, and save the way it does a task as a skill.">
 <link rel="canonical" href="https://simeonlabs.com/docs/routines">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/routines">
 <meta property="og:title" content="SimeonLabs | Docs | Routines and skills">
-<meta property="og:description" content="Set agents to work on a schedule or when something happens, and save what works as a skill.">
+<meta property="og:description" content="Have an agent run a task on a schedule or when someone mentions it in Slack, change when and how it runs, and save the way it does a task as a skill.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -131,10 +131,10 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
-.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
 /* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
    (the founder, 12 November 2026: "either left or right. but not ... middle") */
-.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
@@ -216,61 +216,251 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Routines and skills</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/routines.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>A routine is a task an agent runs on its own: on a schedule, or when something happens. Because each agent works on its own cloud computer, routines keep running while your Mac is closed.</p>
-<h2 id="set-up-a-routine">Set up a routine</h2>
-<p>Ask the agent in plain words:</p>
-<blockquote><p>Every weekday at 8am, sort my inbox and send me a short summary of what needs me.</p></blockquote>
-<p>The agent creates the routine and confirms when it will run. You can also make one yourself: open the agent, choose <strong>Routines</strong>, then <strong>New Routine</strong>, and give it a name, an instruction and when to run.</p>
-<p>Each routine has <strong>Active</strong> to turn it on or off, <strong>Test run</strong> to try it now, and <strong>Run history</strong> to see what it did. <strong>Delete</strong> removes it.</p>
-<h2 id="run-on-an-event">Run on an event</h2>
-<p>A routine can also start when something happens in another app, such as:</p>
-<ul><li>a mention in <strong><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></strong>,</li><li>a new pull request or a failed check in <strong><span class="brand" style="color:#181717"><i class="logo" style="--m:url(/docs/brands/github.png?v=7d925863);background:#181717" aria-hidden="true"></i>GitHub</span></strong>,</li><li>a new issue in <strong><span class="brand" style="color:#5e6ad2"><i class="logo" style="--m:url(/docs/brands/linear.png?v=b0fbd15e);background:#5e6ad2" aria-hidden="true"></i>Linear</span></strong>,</li><li>an error in <strong><span class="brand" style="color:#362d59"><i class="logo" style="--m:url(/docs/brands/sentry.png?v=1a707061);background:#362d59" aria-hidden="true"></i>Sentry</span></strong>,</li><li>an incident in <strong><span class="brand" style="color:#059b32"><img class="logo" src="/docs/brands/pagerduty.png?v=7b96fea2" alt="" aria-hidden="true">PagerDuty</span></strong>.</li></ul>
-<blockquote><p>When someone mentions me in the #support channel, draft a reply and show it to me.</p></blockquote>
+<p>A routine is a task an agent runs on its own: every weekday at 8 AM, on the first of the month, or each time someone mentions it in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>. Routines are kept on Simeon's side and run on your team's cloud computer, so they keep running while your Mac is closed.</p>
+<p>A skill is a way of doing something that an agent keeps and reuses, such as your investor update format or your steps for a new client.</p>
+<p>This page covers how to set up routines, how to change them, and how skills work.</p>
+<div class="table"><table><thead><tr><th>What a routine has</th><th>What it's for</th></tr></thead><tbody><tr><td><strong>Name</strong></td><td>How it shows in the agent's list, such as Morning inbox summary.</td></tr><tr><td><strong>Instruction</strong></td><td>What the agent does each time it runs, in your words.</td></tr><tr><td><strong>When to run</strong></td><td>A schedule, a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message, or several of these.</td></tr><tr><td><strong>Active</strong></td><td>Whether it runs. Turn it off to pause the routine without deleting it.</td></tr><tr><td><strong>Run history</strong></td><td>When it ran, and whether each run finished.</td></tr></tbody></table></div>
+<h2 id="set-up-a-routine-in-the-chat">Set up a routine in the chat</h2>
+<p>The quickest way is to ask the agent whose job it is.</p>
+<ol><li>Open the agent's chat.</li><li>Say what to do and when:</li></ol>
+<blockquote><p>Every weekday at 8am, sort my inbox and send me a short summary of what needs my reply.</p></blockquote>
+<ol start="3"><li>The agent sets up the routine and says when it will run. A line under its reply shows <strong>Created routine</strong> and the routine's name.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/routines-chat.webp" alt="Nia confirming the routine, with &quot;Created routine · Morning inbox summary&quot; under her reply" width="780" height="600" loading="lazy" decoding="async"></div><figcaption>Nia sets up the routine and names it under her reply.</figcaption></figure>
+<p>Choose the routine's name on that line to open it and check what the agent saved. To change a routine later, you can also ask in the chat:</p>
+<blockquote><p>Move my morning summary to 7:30, and skip Fridays.</p></blockquote>
+<h2 id="set-up-a-routine-yourself">Set up a routine yourself</h2>
+<ol><li>Open the agent's profile: choose its face or name at the top of its chat.</li><li>Choose the <strong>Routines</strong> tab, the clock.</li><li>Choose <strong>New Routine</strong>.</li><li>Give it a <strong>Name</strong> and an <strong>Instruction</strong>: what the agent should do each time it runs.</li><li>Under <strong>When to run</strong>, choose <strong>Add trigger</strong> and pick when it runs (see the next section).</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:8/7"><img class="e-right" src="/docs/img/routines-list.webp" alt="Nia&#x27;s Routines tab: New Routine, two active routines and one paused" width="720" height="550" loading="lazy" decoding="async"></div><figcaption>An agent's routines, in its profile. A paused routine says Paused.</figcaption></figure>
+<p>The routine is created once it has a name, an instruction and a trigger. After that, a field is saved as soon as you leave it. An agent can have up to 50 routines.</p>
+<h2 id="choose-when-it-runs">Choose when it runs</h2>
+<p>In the routine, <strong>When to run</strong> lists its triggers. Choose <strong>Add trigger</strong> (or <strong>Add another</strong>) and pick one:</p>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:1/1"><img class="e-right" src="/docs/img/routines-when.webp" alt="The Add another menu, On a schedule open: Every hour, Every day, Weekdays, Every week, Every month, Interval, Advanced" width="720" height="590" loading="lazy" decoding="async"></div><figcaption>On a schedule, with its choices, in the routine's When to run.</figcaption></figure>
+<div class="table"><table><thead><tr><th>Choice</th><th>Runs</th></tr></thead><tbody><tr><td><strong>Every hour</strong></td><td>Each hour, at the minute you pick.</td></tr><tr><td><strong>Every day</strong></td><td>Each day, at the time you pick.</td></tr><tr><td><strong>Weekdays</strong></td><td>Monday to Friday, at the time you pick.</td></tr><tr><td><strong>Every week</strong></td><td>On the day of the week and at the time you pick.</td></tr><tr><td><strong>Every month</strong></td><td>On the day of the month and at the time you pick.</td></tr><tr><td><strong>Interval</strong></td><td>Every so many minutes, hours or days.</td></tr><tr><td><strong>Advanced…</strong></td><td>Choose months, days and times together: for example, at 9 AM and 4 PM on Mondays and Thursdays, or every 30 minutes between 9 AM and 6 PM.</td></tr><tr><td><strong><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message</strong></td><td>When a message, a reaction or a mention of the agent arrives in a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> channel. See <a href="#run-a-routine-from-slack">Run a routine from Slack</a>.</td></tr></tbody></table></div>
+<p>To change a trigger, choose its line: its settings open under it, such as <strong>Weekdays</strong> at <strong>8:00 AM</strong>. To remove one, point at its line and choose the <strong>×</strong> at its end. A routine can have up to eight triggers, and it runs when any of them fires.</p>
+<div class="callout note"><b>Note</b><p><strong>Add trigger</strong> also lists Git, Teams, <span class="brand" style="color:#5e6ad2"><i class="logo" style="--m:url(/docs/brands/linear.png?v=b0fbd15e);background:#5e6ad2" aria-hidden="true"></i>Linear</span>, <span class="brand" style="color:#362d59"><i class="logo" style="--m:url(/docs/brands/sentry.png?v=1a707061);background:#362d59" aria-hidden="true"></i>Sentry</span> and <span class="brand" style="color:#059b32"><img class="logo" src="/docs/brands/pagerduty.png?v=7b96fea2" alt="" aria-hidden="true">PagerDuty</span> events. Those don't start routines yet. Use a schedule or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message.</p></div>
+<h2 id="run-a-routine-from-slack">Run a routine from <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></h2>
+<p>A routine can start when something happens in a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> channel: a new message, a reaction, or a mention of the agent.</p>
+<ol><li>Ask the agent, and name the channel:</li></ol>
+<blockquote><p>When someone mentions you in #support, draft a reply from our help docs for me to check.</p></blockquote>
+<ol start="2"><li>The first time, the agent shows a <strong>Connect <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></strong> card. Choose <strong>Connect</strong>, pick your workspace on <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>'s page and allow Simeon.</li><li>The card says <strong>Connected</strong>. The routine starts with the next matching message.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/routines-slack.webp" alt="Nia&#x27;s chat: the routine created, and the Connect Slack card that says &quot;Connect Slack so this routine can fire.&quot;" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>The first routine that listens to a channel asks for the Simeon app in your workspace.</figcaption></figure>
+<p>You can set the same thing up yourself: <strong>Add trigger</strong> › <strong><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message</strong>, then choose the channel, what to listen for, and words the message must contain if you like.</p>
+<div class="callout tip"><b>Tip</b><p>For a private channel, invite the Simeon app to it in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> first. A routine can't hear a private channel it hasn't been invited to.</p></div>
+<h2 id="change-test-and-pause-a-routine">Change, test and pause a routine</h2>
+<p>Open a routine from the agent's <strong>Routines</strong> tab, or from its name in the chat.</p>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:1/1"><img class="e-right" src="/docs/img/routines-editor.webp" alt="The routine Morning inbox summary: Active, Delete, Test run, Name, Instruction, When to run and Run history" width="720" height="620" loading="lazy" decoding="async"></div><figcaption>A routine's page: its switch and buttons, what it does, when, and its last runs.</figcaption></figure>
+<div class="table"><table><thead><tr><th>Control</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Active</strong></td><td>Turn it off to pause the routine. It stays in the list as <strong>Paused</strong> until you turn it back on.</td></tr><tr><td><strong>Test run</strong></td><td>Runs the routine now, once, without changing its schedule.</td></tr><tr><td><strong>Delete</strong></td><td>Deletes the routine at once, without a question.</td></tr><tr><td><strong>Run history</strong></td><td>Its last runs, newest first: a tick for one that finished, a mark for one that didn't. Point at a failed run to read why.</td></tr></tbody></table></div>
+<p>A run that doesn't finish tries again at the routine's next time.</p>
+<h2 id="write-a-good-routine">Write a good routine</h2>
+<ul><li><strong>Start with a task that already worked in the chat.</strong> Once the result is what you want, ask the agent to do it on a schedule.</li><li><strong>Say what to do with the result:</strong> send it to you, post it in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, or save it in <span class="brand" style="color:#1d9c5e"><img class="logo" src="/docs/brands/google-drive.png?v=6dd8a1ef" alt="" aria-hidden="true">Google Drive</span>.</li><li><strong>Say when to stay quiet.</strong> "Only message me if something needs my reply" keeps an empty run from sending you a message.</li><li><strong>Approvals still apply.</strong> A routine that would send something under your name, or spend money, waits for your OK like any other task. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</li></ul>
+<div class="table"><table><thead><tr><th>Instead of</th><th>Write</th></tr></thead><tbody><tr><td>Check email</td><td>Every weekday at 8 AM, archive newsletters and receipts, label anything from investors, and send me what needs my reply today.</td></tr><tr><td>Do the books</td><td>On the 1st of each month, match last month's <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span> payouts against <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span> and list anything that doesn't match.</td></tr><tr><td>Watch <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></td><td>When someone mentions you in #support, draft a reply from our help docs and show it to me before posting.</td></tr></tbody></table></div>
 <h2 id="skills">Skills</h2>
-<p>A skill is a way of doing something that an agent can reuse, like your report format or your steps for onboarding a client. Teach an agent once and ask it to save the process as a skill. You can keep a skill to yourself or share it with your team, and it's added to every agent it's shared with.</p>
-<h2 id="good-routines">Good routines</h2>
-<ul><li><strong>Start with a task that already worked once</strong> in the chat, then make it a routine.</li><li><strong>Say what to do with the result:</strong> send it to you, post it in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, or file it in <span class="brand" style="color:#1d9c5e"><img class="logo" src="/docs/brands/google-drive.png?v=6dd8a1ef" alt="" aria-hidden="true">Google Drive</span>.</li><li><strong>Keep approvals on</strong> for anything that sends, pays or posts. A routine still asks first.</li></ul>
+<p>A skill is a set of instructions an agent saves and uses again: your investor update, your steps for a new client, the checks you want before an invoice goes out. Each skill has a name, a line on when to use it, and the steps.</p>
+<h3 id="save-a-skill">Save a skill</h3>
+<p>When a task has gone the way you want, ask the agent to keep it:</p>
+<blockquote><p>Save how you just wrote the investor update as a skill, and use it every month.</p></blockquote>
+<p>The agent saves the skill with a line that says when it applies, such as "Use this when Alex asks for the monthly investor update." From then on, it follows the skill whenever that comes up.</p>
+<h3 id="see-and-change-an-agent-s-skills">See and change an agent's skills</h3>
+<ol><li>Open the agent's chat.</li><li>Choose <strong>Connect apps</strong> at the bottom of your list of chats, then <strong>Yours</strong>.</li><li>Under <strong>Private</strong>, you see that agent's skills. Turn a skill's switch off to stop the agent using it.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/5"><img class="e-left" src="/docs/img/routines-skills.webp" alt="Connect apps, Yours: under Private, Nia&#x27;s skills Investor update, New client onboarding and Weekly inbox report, each with a switch" width="732" height="213" loading="lazy" decoding="async"></div><figcaption>Nia's skills, under Private, while her chat is open.</figcaption></figure>
+<ol start="4"><li>Choose a skill to open it. Change its <strong>Name</strong>, <strong>Description</strong> or <strong>Instructions</strong>, then choose <strong>Save</strong>. <strong>Delete skill</strong> removes it.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/routines-skill.webp" alt="The Investor update skill: Name, Description, Instructions, Save and Delete skill" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>A skill's page: what it's called, when to use it, and its steps.</figcaption></figure>
+<div class="callout note"><b>Note</b><p>A skill belongs to the agent that saved it. To give another agent the same way of working, ask that agent to save it too.</p></div>
+<h3 id="skills-and-routines-together">Skills and routines together</h3>
+<p>A routine says when to do something; a skill says how. A routine can name a skill:</p>
+<blockquote><p>Every first Monday of the month at 9am, write the investor update using your Investor update skill, and save it as a draft in <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>.</p></blockquote>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="do-routines-run-when-my-mac-is-closed">Do routines run when my Mac is closed?</h3>
+<p>Yes. Routines are kept on Simeon's side and run on your team's cloud computer, not on your Mac.</p>
+<h3 id="where-do-i-see-what-a-routine-did">Where do I see what a routine did?</h3>
+<p>In the agent's chat: it works there and posts what it found or did. The routine's <strong>Run history</strong> shows when each run happened and whether it finished.</p>
+<h3 id="i-don-t-want-a-routine-any-more-should-i-delete-it">I don't want a routine any more. Should I delete it?</h3>
+<p>If you might need it again, turn off <strong>Active</strong> to pause it. <strong>Delete</strong> removes it at once and doesn't ask first.</p>
+<h3 id="can-a-routine-use-my-apps">Can a routine use my apps?</h3>
+<p>Yes, any app you've connected, as in any other task. See <a href="/docs/connectors">Connect apps</a>.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Give each agent its job.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>The apps routines work in.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>What still waits for your OK.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/computer"><span><h3>The agent's computer</h3><p>Where the work happens.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
     <p class="updated">Last updated: November 2, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#set-up-a-routine">Set up a routine</a><a class="t l2" href="#run-on-an-event">Run on an event</a><a class="t l2" href="#skills">Skills</a><a class="t l2" href="#good-routines">Good routines</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#set-up-a-routine-in-the-chat">Set up a routine in the chat</a><a class="t l2" href="#set-up-a-routine-yourself">Set up a routine yourself</a><a class="t l2" href="#choose-when-it-runs">Choose when it runs</a><a class="t l2" href="#run-a-routine-from-slack">Run a routine from Slack</a><a class="t l2" href="#change-test-and-pause-a-routine">Change, test and pause a routine</a><a class="t l2" href="#write-a-good-routine">Write a good routine</a><a class="t l2" href="#skills">Skills</a><a class="t l3" href="#save-a-skill">Save a skill</a><a class="t l3" href="#see-and-change-an-agent-s-skills">See and change an agent&#x27;s skills</a><a class="t l3" href="#skills-and-routines-together">Skills and routines together</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#do-routines-run-when-my-mac-is-closed">Do routines run when my Mac is closed?</a><a class="t l3" href="#where-do-i-see-what-a-routine-did">Where do I see what a routine did?</a><a class="t l3" href="#i-don-t-want-a-routine-any-more-should-i-delete-it">I don&#x27;t want a routine any more. Should I delete it?</a><a class="t l3" href="#can-a-routine-use-my-apps">Can a routine use my apps?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Routines and skills
 
-A routine is a task an agent runs on its own: on a schedule, or when something happens. Because each agent works on its own cloud computer, routines keep running while your Mac is closed.
+A routine is a task an agent runs on its own: every weekday at 8 AM, on the first of the month, or each time someone mentions it in Slack. Routines are kept on Simeon&#x27;s side and run on your team&#x27;s cloud computer, so they keep running while your Mac is closed.
 
-## Set up a routine
+A skill is a way of doing something that an agent keeps and reuses, such as your investor update format or your steps for a new client.
 
-Ask the agent in plain words:
+This page covers how to set up routines, how to change them, and how skills work.
 
-&gt; Every weekday at 8am, sort my inbox and send me a short summary of what needs me.
+| What a routine has | What it&#x27;s for |
+|---|---|
+| **Name** | How it shows in the agent&#x27;s list, such as Morning inbox summary. |
+| **Instruction** | What the agent does each time it runs, in your words. |
+| **When to run** | A schedule, a Slack message, or several of these. |
+| **Active** | Whether it runs. Turn it off to pause the routine without deleting it. |
+| **Run history** | When it ran, and whether each run finished. |
 
-The agent creates the routine and confirms when it will run. You can also make one yourself: open the agent, choose **Routines**, then **New Routine**, and give it a name, an instruction and when to run.
+## Set up a routine in the chat
 
-Each routine has **Active** to turn it on or off, **Test run** to try it now, and **Run history** to see what it did. **Delete** removes it.
+The quickest way is to ask the agent whose job it is.
 
-## Run on an event
+1. Open the agent&#x27;s chat.
+2. Say what to do and when:
 
-A routine can also start when something happens in another app, such as:
+&gt; Every weekday at 8am, sort my inbox and send me a short summary of what needs my reply.
 
-- a mention in **Slack**,
-- a new pull request or a failed check in **GitHub**,
-- a new issue in **Linear**,
-- an error in **Sentry**,
-- an incident in **PagerDuty**.
+3. The agent sets up the routine and says when it will run. A line under its reply shows **Created routine** and the routine&#x27;s name.
 
-&gt; When someone mentions me in the #support channel, draft a reply and show it to me.
+![Nia confirming the routine, with &quot;Created routine · Morning inbox summary&quot; under her reply](img/routines-chat.webp &quot;Nia sets up the routine and names it under her reply.&quot;){c=#af8fa0}
+
+Choose the routine&#x27;s name on that line to open it and check what the agent saved. To change a routine later, you can also ask in the chat:
+
+&gt; Move my morning summary to 7:30, and skip Fridays.
+
+## Set up a routine yourself
+
+1. Open the agent&#x27;s profile: choose its face or name at the top of its chat.
+2. Choose the **Routines** tab, the clock.
+3. Choose **New Routine**.
+4. Give it a **Name** and an **Instruction**: what the agent should do each time it runs.
+5. Under **When to run**, choose **Add trigger** and pick when it runs (see the next section).
+
+![Nia&#x27;s Routines tab: New Routine, two active routines and one paused](img/routines-list.webp &quot;An agent&#x27;s routines, in its profile. A paused routine says Paused.&quot;){c=#af8fa0 edge=right ar=8/7}
+
+The routine is created once it has a name, an instruction and a trigger. After that, a field is saved as soon as you leave it. An agent can have up to 50 routines.
+
+## Choose when it runs
+
+In the routine, **When to run** lists its triggers. Choose **Add trigger** (or **Add another**) and pick one:
+
+![The Add another menu, On a schedule open: Every hour, Every day, Weekdays, Every week, Every month, Interval, Advanced](img/routines-when.webp &quot;On a schedule, with its choices, in the routine&#x27;s When to run.&quot;){c=#af8fa0 edge=right ar=1/1}
+
+| Choice | Runs |
+|---|---|
+| **Every hour** | Each hour, at the minute you pick. |
+| **Every day** | Each day, at the time you pick. |
+| **Weekdays** | Monday to Friday, at the time you pick. |
+| **Every week** | On the day of the week and at the time you pick. |
+| **Every month** | On the day of the month and at the time you pick. |
+| **Interval** | Every so many minutes, hours or days. |
+| **Advanced…** | Choose months, days and times together: for example, at 9 AM and 4 PM on Mondays and Thursdays, or every 30 minutes between 9 AM and 6 PM. |
+| **Slack message** | When a message, a reaction or a mention of the agent arrives in a Slack channel. See [Run a routine from Slack](#run-a-routine-from-slack). |
+
+To change a trigger, choose its line: its settings open under it, such as **Weekdays** at **8:00 AM**. To remove one, point at its line and choose the **×** at its end. A routine can have up to eight triggers, and it runs when any of them fires.
+
+:::note
+**Add trigger** also lists Git, Teams, Linear, Sentry and PagerDuty events. Those don&#x27;t start routines yet. Use a schedule or a Slack message.
+:::
+
+## Run a routine from Slack
+
+A routine can start when something happens in a Slack channel: a new message, a reaction, or a mention of the agent.
+
+1. Ask the agent, and name the channel:
+
+&gt; When someone mentions you in #support, draft a reply from our help docs for me to check.
+
+2. The first time, the agent shows a **Connect Slack** card. Choose **Connect**, pick your workspace on Slack&#x27;s page and allow Simeon.
+3. The card says **Connected**. The routine starts with the next matching message.
+
+![Nia&#x27;s chat: the routine created, and the Connect Slack card that says &quot;Connect Slack so this routine can fire.&quot;](img/routines-slack.webp &quot;The first routine that listens to a channel asks for the Simeon app in your workspace.&quot;){c=#af8fa0}
+
+You can set the same thing up yourself: **Add trigger** › **Slack message**, then choose the channel, what to listen for, and words the message must contain if you like.
+
+:::tip
+For a private channel, invite the Simeon app to it in Slack first. A routine can&#x27;t hear a private channel it hasn&#x27;t been invited to.
+:::
+
+## Change, test and pause a routine
+
+Open a routine from the agent&#x27;s **Routines** tab, or from its name in the chat.
+
+![The routine Morning inbox summary: Active, Delete, Test run, Name, Instruction, When to run and Run history](img/routines-editor.webp &quot;A routine&#x27;s page: its switch and buttons, what it does, when, and its last runs.&quot;){c=#af8fa0 edge=right ar=1/1}
+
+| Control | What it does |
+|---|---|
+| **Active** | Turn it off to pause the routine. It stays in the list as **Paused** until you turn it back on. |
+| **Test run** | Runs the routine now, once, without changing its schedule. |
+| **Delete** | Deletes the routine at once, without a question. |
+| **Run history** | Its last runs, newest first: a tick for one that finished, a mark for one that didn&#x27;t. Point at a failed run to read why. |
+
+A run that doesn&#x27;t finish tries again at the routine&#x27;s next time.
+
+## Write a good routine
+
+- **Start with a task that already worked in the chat.** Once the result is what you want, ask the agent to do it on a schedule.
+- **Say what to do with the result:** send it to you, post it in Slack, or save it in Google Drive.
+- **Say when to stay quiet.** &quot;Only message me if something needs my reply&quot; keeps an empty run from sending you a message.
+- **Approvals still apply.** A routine that would send something under your name, or spend money, waits for your OK like any other task. See [Approvals, security, and privacy](/docs/approvals).
+
+| Instead of | Write |
+|---|---|
+| Check email | Every weekday at 8 AM, archive newsletters and receipts, label anything from investors, and send me what needs my reply today. |
+| Do the books | On the 1st of each month, match last month&#x27;s Stripe payouts against QuickBooks and list anything that doesn&#x27;t match. |
+| Watch Slack | When someone mentions you in #support, draft a reply from our help docs and show it to me before posting. |
 
 ## Skills
 
-A skill is a way of doing something that an agent can reuse, like your report format or your steps for onboarding a client. Teach an agent once and ask it to save the process as a skill. You can keep a skill to yourself or share it with your team, and it&#x27;s added to every agent it&#x27;s shared with.
+A skill is a set of instructions an agent saves and uses again: your investor update, your steps for a new client, the checks you want before an invoice goes out. Each skill has a name, a line on when to use it, and the steps.
 
-## Good routines
+### Save a skill
 
-- **Start with a task that already worked once** in the chat, then make it a routine.
-- **Say what to do with the result:** send it to you, post it in Slack, or file it in Google Drive.
-- **Keep approvals on** for anything that sends, pays or posts. A routine still asks first.
+When a task has gone the way you want, ask the agent to keep it:
+
+&gt; Save how you just wrote the investor update as a skill, and use it every month.
+
+The agent saves the skill with a line that says when it applies, such as &quot;Use this when Alex asks for the monthly investor update.&quot; From then on, it follows the skill whenever that comes up.
+
+### See and change an agent&#x27;s skills
+
+1. Open the agent&#x27;s chat.
+2. Choose **Connect apps** at the bottom of your list of chats, then **Yours**.
+3. Under **Private**, you see that agent&#x27;s skills. Turn a skill&#x27;s switch off to stop the agent using it.
+
+![Connect apps, Yours: under Private, Nia&#x27;s skills Investor update, New client onboarding and Weekly inbox report, each with a switch](img/routines-skills.webp &quot;Nia&#x27;s skills, under Private, while her chat is open.&quot;){c=#af8fa0 ar=16/5}
+
+4. Choose a skill to open it. Change its **Name**, **Description** or **Instructions**, then choose **Save**. **Delete skill** removes it.
+
+![The Investor update skill: Name, Description, Instructions, Save and Delete skill](img/routines-skill.webp &quot;A skill&#x27;s page: what it&#x27;s called, when to use it, and its steps.&quot;){c=#af8fa0}
+
+:::note
+A skill belongs to the agent that saved it. To give another agent the same way of working, ask that agent to save it too.
+:::
+
+### Skills and routines together
+
+A routine says when to do something; a skill says how. A routine can name a skill:
+
+&gt; Every first Monday of the month at 9am, write the investor update using your Investor update skill, and save it as a draft in Gmail.
+
+## Common questions
+
+### Do routines run when my Mac is closed?
+
+Yes. Routines are kept on Simeon&#x27;s side and run on your team&#x27;s cloud computer, not on your Mac.
+
+### Where do I see what a routine did?
+
+In the agent&#x27;s chat: it works there and posts what it found or did. The routine&#x27;s **Run history** shows when each run happened and whether it finished.
+
+### I don&#x27;t want a routine any more. Should I delete it?
+
+If you might need it again, turn off **Active** to pause it. **Delete** removes it at once and doesn&#x27;t ask first.
+
+### Can a routine use my apps?
+
+Yes, any app you&#x27;ve connected, as in any other task. See [Connect apps](/docs/connectors).
+
+## Related pages
+
+:::cards
+- [Create and manage agents](/docs/agents) Give each agent its job.
+- [Connect apps](/docs/connectors) The apps routines work in.
+- [Approvals, security, and privacy](/docs/approvals) What still waits for your OK.
+- [The agent&#x27;s computer](/docs/computer) Where the work happens.
+:::
 </script>
 </main>
 

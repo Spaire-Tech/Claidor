@@ -53,7 +53,7 @@ If you're not sure what to hand off, ask him what he'd recommend. He suggests a 
 3. Choose **Edit** under the face to pick a different face, generate one or upload your own (see [Faces and voices](#faces-and-voices)).
 4. Choose **Create**. The agent appears in your list and its chat opens.
 
-![The New Agent window with a face, Name, Title and Create](img/agents-new.webp "New Agent asks for a name and a title."){c=#a5835f edge=right w=118}
+![The New Agent window with a face, Name, Title and Create](img/agents-new.webp "New Agent asks for a name and a title."){c=#a5835f edge=right}
 
 5. Tell the agent what you need in its chat, or write its description in its profile (below), so it knows its job from the first task.
 
@@ -71,7 +71,7 @@ An agent's profile holds its name, title and description, its routines and its c
 - Choose **View Profile** on the card that says it joined your team.
 - Right-click the agent in your list of chats and choose **Edit Profile**.
 
-![Rosa's profile: her face, name, title, description and notifications](img/agents-profile.webp "The profile's three tabs: Profile, Routines and Computer."){c=#8f7f8d edge=right w=112 ar=16/11}
+![Rosa's profile: her face, name, title, description and notifications](img/agents-profile.webp "The profile's three tabs: Profile, Routines and Computer."){c=#8f7f8d edge=right ar=16/11}
 
 | Tab | What you can do there |
 |---|---|

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs</title>
-<meta name="description" content="Simeon is a team of AI agents you hire for real jobs. Each agent has its own cloud computer and your apps, and asks before anything important.">
+<meta name="description" content="What Simeon is, what your agents can do, what stays in your hands, and what you need to start.">
 <link rel="canonical" href="https://simeonlabs.com/docs">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs">
 <meta property="og:title" content="SimeonLabs | Docs">
-<meta property="og:description" content="Simeon is a team of AI agents you hire for real jobs. Each agent has its own cloud computer and your apps, and asks before anything important.">
+<meta property="og:description" content="What Simeon is, what your agents can do, what stays in your hands, and what you need to start.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -131,10 +131,10 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
-.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
 /* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
    (the founder, 12 November 2026: "either left or right. but not ... middle") */
-.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
@@ -216,95 +216,152 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Simeon</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/overview.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Simeon gives you a team of AI agents you can keep: teammates with names, faces, jobs, and context that builds over time. Each agent works on a cloud computer of its own, with a browser and files, so work gets finished in your real tools instead of ending as a chat draft. <a href="/docs/get-started">Get started</a> with your first agent, or see <a href="/docs/use-cases">what teams people build</a>.</p>
-<p>You work with an agent by messaging it. Type, dictate, or call it. Give it a job, the context it needs, and access to the apps it uses. It takes on work that spans several apps and websites, keeps you updated in the chat, and comes back when something needs your approval.</p>
-<p>Simeon runs on Mac and iPhone. Every plan starts with a 7-day free trial; see <a href="/docs/billing">Plans and billing</a>.</p>
-<h2 id="what-makes-simeon-different">What makes Simeon different</h2>
-<ul><li><strong>You start with Simeon, your chief of staff.</strong> Tell him what you need and he hires the right agent for it: a name, a face, a job title and a brief. You can also create agents yourself.</li><li><strong>Each agent has a computer.</strong> Your agents work on a cloud computer with a browser and files. They use <a href="/docs/connectors">connected apps</a> where they can and the browser for everything else, and their routines keep running while your Mac is closed.</li><li><strong>Setup is a message, not a workflow builder.</strong> Describe the job in a sentence. When an agent needs one of your apps, it asks you to sign in once, on that app's own page.</li><li><strong>Nothing important happens without you.</strong> Before an agent sends an email, makes a payment or publishes something, it asks in the chat, and you allow or refuse it. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</li><li><strong>Context builds up.</strong> An agent remembers your preferences and how you like things done, so the tenth task needs less explaining than the first.</li></ul>
-<h2 id="a-good-first-handoff">A good first handoff</h2>
-<p>Start with a real task that spans a few tools and has a clear finish line:</p>
-<blockquote><p>Go through my inbox from this week. Reply to anything that only needs a yes or a date, flag what needs me, and put every invoice in the Finance folder in <span class="brand" style="color:#1d9c5e"><img class="logo" src="/docs/brands/google-drive.png?v=6dd8a1ef" alt="" aria-hidden="true">Google Drive</span>. Ask me before sending anything to a client.</p></blockquote>
-<p>This tells the agent what to do, where to work, what to leave for you, and where to stop. Review the result, correct it, and turn what works into a <a href="/docs/routines">routine</a>.</p>
-<h2 id="faq">FAQ</h2>
+<p>Simeon is a team of AI agents you hire for real jobs: an inbox manager, a bookkeeper, a travel agent, a recruiter. Each agent has a name, a face, a title that says what it does, and a chat with you. It works on your team's cloud computer, on a desktop of its own, and in the apps you connect.</p>
+<p>This page covers what's in Simeon, how work moves through your team, what agents can and can't do without you, and what you need to start. To set it up, go to <a href="/docs/get-started">Get started</a>.</p>
+<div class="table"><table><thead><tr><th>Part</th><th>What it is</th></tr></thead><tbody><tr><td><strong>Simeon</strong></td><td>Your chief of staff and the first agent on your team. He hires the other agents, briefs them and passes work to the right one.</td></tr><tr><td><strong>Agents</strong></td><td>Teammates with one job each. You give them work in their chat; they message each other to hand work on. See <a href="/docs/agents">Create and manage agents</a>.</td></tr><tr><td><strong>The cloud computer</strong></td><td>Where your agents work: a browser, files and a desktop for each agent. You can watch an agent work or take over. See <a href="/docs/computer">The agent's computer</a>.</td></tr><tr><td><strong>Connected apps</strong></td><td><span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, <span class="brand" style="color:#4285f4"><img class="logo" src="/docs/brands/google-calendar.png?v=c7d1bc2d" alt="" aria-hidden="true">Google Calendar</span>, <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, <span class="brand" style="color:#000000"><i class="logo" style="--m:url(/docs/brands/notion.png?v=0f66ddf8);background:#000000" aria-hidden="true"></i>Notion</span>, <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>, <span class="brand" style="color:#cc6247"><i class="logo" style="--m:url(/docs/brands/hubspot.png?v=13a00e71);background:#cc6247" aria-hidden="true"></i>HubSpot</span> and more than 200 others. You sign in once, on the app's own page. See <a href="/docs/connectors">Connect apps</a>.</td></tr><tr><td><strong>Routines</strong></td><td>Work an agent does on a schedule or when something happens, even while your Mac is closed. See <a href="/docs/routines">Routines</a>.</td></tr><tr><td><strong>The apps</strong></td><td>Simeon for Mac, and <a href="/docs/iphone">Simeon for iPhone</a>. Your agents and chats are the same on both.</td></tr></tbody></table></div>
+<h2 id="how-work-moves-through-your-team">How work moves through your team</h2>
+<p>You give work to an agent by messaging it: type, dictate, or call it and talk. You can ask the agent whose job it is, or ask Simeon and let him pass it on.</p>
+<blockquote><p>Can you make sure Acme pays their invoice this week, and get me to Austin for the conference on December 3?</p></blockquote>
+<p>Simeon answers in a line, sends each part to the agent whose job it is, and shows the messages he sent under his reply:</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/overview-team.webp" alt="Simeon passing an invoice to Rosa and a flight to Kai, with &quot;Messaged 2 agents&quot; under his reply" width="780" height="500" loading="lazy" decoding="async"></div><figcaption>One request to Simeon, passed to Rosa, the bookkeeper, and Kai, who does travel.</figcaption></figure>
+<p>Each agent then works in its own chat: it reports progress there, asks you questions with cards you answer in a click, and tells you when it's done. Choose <strong>Messaged 2 agents</strong> to read what Simeon asked them.</p>
+<p>When there's no one on your team for a job, Simeon hires someone: he picks a name and a title, writes a description and a brief, and the new agent starts on the work. See <a href="/docs/agents#hire-an-agent-through-simeon">Hire an agent through Simeon</a>.</p>
+<h2 id="what-agents-can-do">What agents can do</h2>
+<p>An agent does the work itself, in your real tools, instead of handing you a draft to finish:</p>
+<ul><li><strong>Email and calendar.</strong> Sort an inbox, draft replies, book meetings, prepare you for them.</li><li><strong>Money.</strong> Match payments to invoices, chase late ones, file receipts, keep the books up to date.</li><li><strong>Research and writing.</strong> Look things up across the web, compare options, write documents and reports.</li><li><strong>Websites without a connector.</strong> Sign in, fill in forms, download files, using the browser on its computer. When a site needs a password or a code, the agent asks you, and you type it in a secure form it never sees.</li><li><strong>Travel and shopping.</strong> Find flights and show you the options on a card, book the one you choose, and buy what you asked for once you allow it.</li><li><strong>Recurring work.</strong> A <a href="/docs/routines">routine</a> runs on a schedule, such as every weekday at 8 a.m., or when something happens, such as a mention in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>.</li></ul>
+<p>Agents keep what they learn about you and your work, such as how you like a report laid out or which clients matter most, so you explain less over time.</p>
+<h2 id="what-stays-in-your-hands">What stays in your hands</h2>
+<p>Agents work on their own, but some things wait for you:</p>
+<div class="table"><table><thead><tr><th>What</th><th>How you decide</th></tr></thead><tbody><tr><td><strong>An email or <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message in your name</strong></td><td>It comes as a draft card. You can edit it, then choose <strong>Send email</strong> or <strong>Discard</strong>. Nothing is sent until you do.</td></tr><tr><td><strong>A payment</strong></td><td>It comes as a checkout card with what you're buying and the total. Nothing is paid until you choose <strong>Allow</strong>; with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span>, you also approve it in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app.</td></tr><tr><td><strong>A password or code</strong></td><td>The agent asks with a card. You type it into a secure form, the computer fills it into the page, and the agent never sees what you typed.</td></tr><tr><td><strong>A new app</strong></td><td>The agent asks with a <strong>Connect</strong> card. You sign in on the app's own page, and you can turn the app off or remove it at any time.</td></tr></tbody></table></div>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:6/5"><img class="e-right" src="/docs/img/overview-draft.webp" alt="Rosa&#x27;s reminder to Acme as a draft card, with Discard and Send email" width="780" height="660" loading="lazy" decoding="async"></div><figcaption>A reminder Rosa drafted. It goes out only when you choose Send email.</figcaption></figure>
+<p>Agents don't send email or messages you didn't ask for, whether from a routine, a web page or another agent's request. If you discard a draft, the agent doesn't send it another way. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<p>Your data stays in your account, and it's never used to train AI models.</p>
+<h2 id="what-you-need">What you need</h2>
+<div class="table"><table><thead><tr><th></th><th></th></tr></thead><tbody><tr><td><strong>A Mac</strong></td><td>With Apple silicon, on macOS 15 or later. <a href="https://api.simeonlabs.com/desktop/download/mac">Download Simeon for macOS</a>.</td></tr><tr><td><strong>An account</strong></td><td>Sign up with your email, Google or Apple.</td></tr><tr><td><strong>A plan</strong></td><td>Standard is $30 a month, Pro $100 and Max $200. Each starts with a 7-day free trial. Plans differ in how much your agents can do each week. See <a href="/docs/billing">Plans and billing</a>.</td></tr></tbody></table></div>
+<p>You don't need API keys or accounts with AI companies: the models your agents use are included in your plan.</p>
+<h2 id="common-questions">Common questions</h2>
 <h3 id="does-simeon-keep-working-when-my-mac-is-closed">Does Simeon keep working when my Mac is closed?</h3>
-<p>Routines do. Your agents work on their own cloud computers, so a routine runs on schedule even when your Mac is asleep or closed. See <a href="/docs/routines">Routines and skills</a>.</p>
+<p>Yes. Your agents work on the cloud computer, not on your Mac, so routines run on schedule while your Mac is asleep or closed. The computer sleeps when nobody uses it and wakes when there's work.</p>
 <h3 id="can-several-agents-work-at-the-same-time">Can several agents work at the same time?</h3>
-<p>Yes. Each agent has its own chat, its own job and its own computer, and they can hand work to each other.</p>
+<p>Yes. Each agent has its own chat, its own job and its own desktop on the computer, and they hand work to each other.</p>
 <h3 id="what-does-an-agent-remember">What does an agent remember?</h3>
-<p>Your preferences, its job, and what it has learned about how you work. Your data stays in your account and is never used to train a model.</p>
+<p>Its job, your preferences and what it has learned about how you work. To change what it knows, tell it in its chat or edit its description in its profile.</p>
 <h3 id="can-an-agent-use-any-website">Can an agent use any website?</h3>
-<p>Agents can use most websites in their browser, including services without a connector. Some sites need a sign-in, a code or a human check; the agent then asks you to fill it in, or hands you the computer.</p>
-<h3 id="which-platforms-are-supported">Which platforms are supported?</h3>
-<p>A Mac with Apple silicon on macOS 15 or later, and iPhone. Your agents and chats are the same on both.</p>
+<p>Most of them, in the browser on its computer, including services with no connector. When a site asks for a sign-in, a code or a check that you're human, the agent asks you to fill it in, or you take over the computer and do it yourself.</p>
+<h3 id="which-languages-do-agents-speak">Which languages do agents speak?</h3>
+<p>Your agents write to you, and to each other, in the language your app uses. Change it in <strong>Settings</strong> › <strong>General</strong> › <strong>Language</strong>.</p>
 <h3 id="how-much-does-simeon-cost">How much does Simeon cost?</h3>
 <p>Standard is $30 a month, Pro $100 and Max $200, each with a 7-day free trial. See <a href="/docs/billing">Plans and billing</a>.</p>
-<h2 id="next-steps">Next steps</h2>
-<div class="cards"><a class="card" href="/docs/get-started"><span><h3>Get started</h3><p>Install the app, meet Simeon, and hand your first agent a useful task.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/use-cases"><span><h3>Use cases</h3><p>Ready-made teams and first tasks you can adapt.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/agents"><span><h3>Work with your agents</h3><p>Hiring, messaging, the computer, and apps, one page each.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>Gmail, Slack, Notion, QuickBooks and 230 more.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals and privacy</h3><p>What agents ask before acting, and how your data is kept.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/billing"><span><h3>Plans and billing</h3><p>Plans, the free trial, and extra credits.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/get-started"><span><h3>Get started</h3><p>Install the app, meet Simeon and give your first agent a task.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/use-cases"><span><h3>Use cases</h3><p>Ready-made teams and first tasks you can copy.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Hire agents, set their jobs and manage your team.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>What agents ask before acting, and how your data is kept.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#what-makes-simeon-different">What makes Simeon different</a><a class="t l2" href="#a-good-first-handoff">A good first handoff</a><a class="t l2" href="#faq">FAQ</a><a class="t l3" href="#does-simeon-keep-working-when-my-mac-is-closed">Does Simeon keep working when my Mac is closed?</a><a class="t l3" href="#can-several-agents-work-at-the-same-time">Can several agents work at the same time?</a><a class="t l3" href="#what-does-an-agent-remember">What does an agent remember?</a><a class="t l3" href="#can-an-agent-use-any-website">Can an agent use any website?</a><a class="t l3" href="#which-platforms-are-supported">Which platforms are supported?</a><a class="t l3" href="#how-much-does-simeon-cost">How much does Simeon cost?</a><a class="t l2" href="#next-steps">Next steps</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#how-work-moves-through-your-team">How work moves through your team</a><a class="t l2" href="#what-agents-can-do">What agents can do</a><a class="t l2" href="#what-stays-in-your-hands">What stays in your hands</a><a class="t l2" href="#what-you-need">What you need</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#does-simeon-keep-working-when-my-mac-is-closed">Does Simeon keep working when my Mac is closed?</a><a class="t l3" href="#can-several-agents-work-at-the-same-time">Can several agents work at the same time?</a><a class="t l3" href="#what-does-an-agent-remember">What does an agent remember?</a><a class="t l3" href="#can-an-agent-use-any-website">Can an agent use any website?</a><a class="t l3" href="#which-languages-do-agents-speak">Which languages do agents speak?</a><a class="t l3" href="#how-much-does-simeon-cost">How much does Simeon cost?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Simeon
 
-Simeon gives you a team of AI agents you can keep: teammates with names, faces, jobs, and context that builds over time. Each agent works on a cloud computer of its own, with a browser and files, so work gets finished in your real tools instead of ending as a chat draft. [Get started](/docs/get-started) with your first agent, or see [what teams people build](/docs/use-cases).
+Simeon is a team of AI agents you hire for real jobs: an inbox manager, a bookkeeper, a travel agent, a recruiter. Each agent has a name, a face, a title that says what it does, and a chat with you. It works on your team&#x27;s cloud computer, on a desktop of its own, and in the apps you connect.
 
-You work with an agent by messaging it. Type, dictate, or call it. Give it a job, the context it needs, and access to the apps it uses. It takes on work that spans several apps and websites, keeps you updated in the chat, and comes back when something needs your approval.
+This page covers what&#x27;s in Simeon, how work moves through your team, what agents can and can&#x27;t do without you, and what you need to start. To set it up, go to [Get started](/docs/get-started).
 
-Simeon runs on Mac and iPhone. Every plan starts with a 7-day free trial; see [Plans and billing](/docs/billing).
+| Part | What it is |
+|---|---|
+| **Simeon** | Your chief of staff and the first agent on your team. He hires the other agents, briefs them and passes work to the right one. |
+| **Agents** | Teammates with one job each. You give them work in their chat; they message each other to hand work on. See [Create and manage agents](/docs/agents). |
+| **The cloud computer** | Where your agents work: a browser, files and a desktop for each agent. You can watch an agent work or take over. See [The agent&#x27;s computer](/docs/computer). |
+| **Connected apps** | Gmail, Google Calendar, Slack, Notion, QuickBooks, HubSpot and more than 200 others. You sign in once, on the app&#x27;s own page. See [Connect apps](/docs/connectors). |
+| **Routines** | Work an agent does on a schedule or when something happens, even while your Mac is closed. See [Routines](/docs/routines). |
+| **The apps** | Simeon for Mac, and [Simeon for iPhone](/docs/iphone). Your agents and chats are the same on both. |
 
-## What makes Simeon different
+## How work moves through your team
 
-- **You start with Simeon, your chief of staff.** Tell him what you need and he hires the right agent for it: a name, a face, a job title and a brief. You can also create agents yourself.
-- **Each agent has a computer.** Your agents work on a cloud computer with a browser and files. They use [connected apps](/docs/connectors) where they can and the browser for everything else, and their routines keep running while your Mac is closed.
-- **Setup is a message, not a workflow builder.** Describe the job in a sentence. When an agent needs one of your apps, it asks you to sign in once, on that app&#x27;s own page.
-- **Nothing important happens without you.** Before an agent sends an email, makes a payment or publishes something, it asks in the chat, and you allow or refuse it. See [Approvals, security, and privacy](/docs/approvals).
-- **Context builds up.** An agent remembers your preferences and how you like things done, so the tenth task needs less explaining than the first.
+You give work to an agent by messaging it: type, dictate, or call it and talk. You can ask the agent whose job it is, or ask Simeon and let him pass it on.
 
-## A good first handoff
+&gt; Can you make sure Acme pays their invoice this week, and get me to Austin for the conference on December 3?
 
-Start with a real task that spans a few tools and has a clear finish line:
+Simeon answers in a line, sends each part to the agent whose job it is, and shows the messages he sent under his reply:
 
-&gt; Go through my inbox from this week. Reply to anything that only needs a yes or a date, flag what needs me, and put every invoice in the Finance folder in Google Drive. Ask me before sending anything to a client.
+![Simeon passing an invoice to Rosa and a flight to Kai, with &quot;Messaged 2 agents&quot; under his reply](img/overview-team.webp &quot;One request to Simeon, passed to Rosa, the bookkeeper, and Kai, who does travel.&quot;){c=#89acbc ar=16/11}
 
-This tells the agent what to do, where to work, what to leave for you, and where to stop. Review the result, correct it, and turn what works into a [routine](/docs/routines).
+Each agent then works in its own chat: it reports progress there, asks you questions with cards you answer in a click, and tells you when it&#x27;s done. Choose **Messaged 2 agents** to read what Simeon asked them.
 
-## FAQ
+When there&#x27;s no one on your team for a job, Simeon hires someone: he picks a name and a title, writes a description and a brief, and the new agent starts on the work. See [Hire an agent through Simeon](/docs/agents#hire-an-agent-through-simeon).
+
+## What agents can do
+
+An agent does the work itself, in your real tools, instead of handing you a draft to finish:
+
+- **Email and calendar.** Sort an inbox, draft replies, book meetings, prepare you for them.
+- **Money.** Match payments to invoices, chase late ones, file receipts, keep the books up to date.
+- **Research and writing.** Look things up across the web, compare options, write documents and reports.
+- **Websites without a connector.** Sign in, fill in forms, download files, using the browser on its computer. When a site needs a password or a code, the agent asks you, and you type it in a secure form it never sees.
+- **Travel and shopping.** Find flights and show you the options on a card, book the one you choose, and buy what you asked for once you allow it.
+- **Recurring work.** A [routine](/docs/routines) runs on a schedule, such as every weekday at 8 a.m., or when something happens, such as a mention in Slack.
+
+Agents keep what they learn about you and your work, such as how you like a report laid out or which clients matter most, so you explain less over time.
+
+## What stays in your hands
+
+Agents work on their own, but some things wait for you:
+
+| What | How you decide |
+|---|---|
+| **An email or Slack message in your name** | It comes as a draft card. You can edit it, then choose **Send email** or **Discard**. Nothing is sent until you do. |
+| **A payment** | It comes as a checkout card with what you&#x27;re buying and the total. Nothing is paid until you choose **Allow**; with Link, you also approve it in the Link app. |
+| **A password or code** | The agent asks with a card. You type it into a secure form, the computer fills it into the page, and the agent never sees what you typed. |
+| **A new app** | The agent asks with a **Connect** card. You sign in on the app&#x27;s own page, and you can turn the app off or remove it at any time. |
+
+![Rosa&#x27;s reminder to Acme as a draft card, with Discard and Send email](img/overview-draft.webp &quot;A reminder Rosa drafted. It goes out only when you choose Send email.&quot;){c=#8f7f8d edge=right ar=6/5}
+
+Agents don&#x27;t send email or messages you didn&#x27;t ask for, whether from a routine, a web page or another agent&#x27;s request. If you discard a draft, the agent doesn&#x27;t send it another way. See [Approvals, security, and privacy](/docs/approvals).
+
+Your data stays in your account, and it&#x27;s never used to train AI models.
+
+## What you need
+
+| | |
+|---|---|
+| **A Mac** | With Apple silicon, on macOS 15 or later. [Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac). |
+| **An account** | Sign up with your email, Google or Apple. |
+| **A plan** | Standard is $30 a month, Pro $100 and Max $200. Each starts with a 7-day free trial. Plans differ in how much your agents can do each week. See [Plans and billing](/docs/billing). |
+
+You don&#x27;t need API keys or accounts with AI companies: the models your agents use are included in your plan.
+
+## Common questions
 
 ### Does Simeon keep working when my Mac is closed?
 
-Routines do. Your agents work on their own cloud computers, so a routine runs on schedule even when your Mac is asleep or closed. See [Routines and skills](/docs/routines).
+Yes. Your agents work on the cloud computer, not on your Mac, so routines run on schedule while your Mac is asleep or closed. The computer sleeps when nobody uses it and wakes when there&#x27;s work.
 
 ### Can several agents work at the same time?
 
-Yes. Each agent has its own chat, its own job and its own computer, and they can hand work to each other.
+Yes. Each agent has its own chat, its own job and its own desktop on the computer, and they hand work to each other.
 
 ### What does an agent remember?
 
-Your preferences, its job, and what it has learned about how you work. Your data stays in your account and is never used to train a model.
+Its job, your preferences and what it has learned about how you work. To change what it knows, tell it in its chat or edit its description in its profile.
 
 ### Can an agent use any website?
 
-Agents can use most websites in their browser, including services without a connector. Some sites need a sign-in, a code or a human check; the agent then asks you to fill it in, or hands you the computer.
+Most of them, in the browser on its computer, including services with no connector. When a site asks for a sign-in, a code or a check that you&#x27;re human, the agent asks you to fill it in, or you take over the computer and do it yourself.
 
-### Which platforms are supported?
+### Which languages do agents speak?
 
-A Mac with Apple silicon on macOS 15 or later, and iPhone. Your agents and chats are the same on both.
+Your agents write to you, and to each other, in the language your app uses. Change it in **Settings** › **General** › **Language**.
 
 ### How much does Simeon cost?
 
 Standard is $30 a month, Pro $100 and Max $200, each with a 7-day free trial. See [Plans and billing](/docs/billing).
 
-## Next steps
+## Related pages
 
 :::cards
-- [Get started](/docs/get-started) Install the app, meet Simeon, and hand your first agent a useful task.
-- [Use cases](/docs/use-cases) Ready-made teams and first tasks you can adapt.
-- [Work with your agents](/docs/agents) Hiring, messaging, the computer, and apps, one page each.
-- [Connect apps](/docs/connectors) Gmail, Slack, Notion, QuickBooks and 230 more.
-- [Approvals and privacy](/docs/approvals) What agents ask before acting, and how your data is kept.
-- [Plans and billing](/docs/billing) Plans, the free trial, and extra credits.
+- [Get started](/docs/get-started) Install the app, meet Simeon and give your first agent a task.
+- [Use cases](/docs/use-cases) Ready-made teams and first tasks you can copy.
+- [Create and manage agents](/docs/agents) Hire agents, set their jobs and manage your team.
+- [Approvals, security, and privacy](/docs/approvals) What agents ask before acting, and how your data is kept.
 :::
 </script>
 </main>

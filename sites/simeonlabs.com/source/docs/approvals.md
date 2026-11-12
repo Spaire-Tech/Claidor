@@ -88,7 +88,7 @@ Purchases with Link work for accounts in the US and Canada. Add or remove cards 
 
 When an agent needs something only you know, such as who a gift is for, your budget or a date, it asks with a question card before it searches or picks.
 
-![Kai's chat with a question card: What matters most for this stay? with three answers, Something else, Skip and Send](img/approvals-question.webp "Choose an answer and it's sent."){c=#a5835f w=104 ar=16/11}
+![Kai's chat with a question card: What matters most for this stay? with three answers, Something else, Skip and Send](img/approvals-question.webp "Choose an answer and it's sent."){c=#a5835f w=100 ar=16/11}
 
 - Choose an answer and it's sent at once. The agent's suggested answer is shown in blue.
 - **Something else** lets you write your own answer, then **Send**.

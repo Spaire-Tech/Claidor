@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Simeon for iPhone</title>
-<meta name="description" content="Message, call and approve your agents from your iPhone, and watch or take over their computers.">
+<meta name="description" content="Message and call your agents from your iPhone, answer their questions, get notified when they need you, and watch or take over their computer.">
 <link rel="canonical" href="https://simeonlabs.com/docs/iphone">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/iphone">
 <meta property="og:title" content="SimeonLabs | Docs | Simeon for iPhone">
-<meta property="og:description" content="Message, call and approve your agents from your iPhone, and watch or take over their computers.">
+<meta property="og:description" content="Message and call your agents from your iPhone, answer their questions, get notified when they need you, and watch or take over their computer.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -131,10 +131,10 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .table{margin:0 0 24px;overflow-x:auto}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
-.words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
 /* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
    (the founder, 12 November 2026: "either left or right. but not ... middle") */
-.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
@@ -216,41 +216,210 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Simeon for iPhone</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/iphone.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Simeon for iPhone connects to the same agents, chats and computers as the Mac app. Sign in with the same account and everything is there.</p>
-<blockquote><p>Simeon for iPhone isn't in the App Store yet. When it is, you'll find the download on <a href="/">simeonlabs.com</a>.</p></blockquote>
-<h2 id="what-you-can-do-on-iphone">What you can do on iPhone</h2>
-<ul><li><strong>Message your agents.</strong> Type or dictate, attach photos, files and short videos.</li><li><strong>Call an agent.</strong> Talk to it out loud; it works in the background while the call goes on. See <a href="/docs/messaging">Message and call your agents</a>.</li><li><strong>Approve or refuse.</strong> Approval cards show up in the chat and as notifications, so an agent is never stuck waiting for your desk.</li><li><strong>Watch the computer and take control.</strong> Open an agent's computer to see its screen. <strong>Take control</strong> stops the agent at once and hands you the screen; give it back when you're done. See <a href="/docs/computer">The agent's computer</a>.</li><li><strong>Connect apps.</strong> The same <strong>Connect</strong> button as on the Mac.</li></ul>
-<h2 id="requirements">Requirements</h2>
-<p>An iPhone on iOS 26 or later.</p>
+<p>Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac. Sign in with the same account and everything is there: a message you send on your iPhone shows on your Mac, and the other way round. Your agents keep working whether the app is open or not.</p>
+<p>This page covers setting up the app and what's different on a phone.</p>
+<div class="callout note"><b>Note</b><p>Simeon for iPhone isn't in the App Store yet. When it is, you'll find the download on <a href="/">simeonlabs.com</a>.</p></div>
+<div class="table"><table><thead><tr><th>On your iPhone you can</th><th></th></tr></thead><tbody><tr><td><strong>Message your agents</strong></td><td>Type or dictate, and send photos, files and videos.</td></tr><tr><td><strong>Call an agent</strong></td><td>Talk to it out loud while it works.</td></tr><tr><td><strong>Answer its cards</strong></td><td>Questions, drafts, approvals and sign-in forms, as on the Mac.</td></tr><tr><td><strong>Get notified</strong></td><td>When an agent finishes or needs you, with your Mac open or closed.</td></tr><tr><td><strong>Use its computer</strong></td><td>Watch the agent's screen, or take control with your fingers.</td></tr><tr><td><strong>Manage your team</strong></td><td>Hire and create agents, edit profiles, connect apps.</td></tr></tbody></table></div>
+<h2 id="set-up-the-app">Set up the app</h2>
+<ol><li>Open Simeon and sign in with the same account you use on your Mac: <strong>Continue with Apple</strong>, <strong>Continue with Google</strong>, or your email.</li><li>If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in <strong>Settings</strong>.</li><li>Allow notifications, so you hear when an agent finishes or needs you.</li></ol>
+<p>Your list of chats opens. Choose an agent to open its chat.</p>
+<h2 id="message-an-agent">Message an agent</h2>
+<p>Messaging works as on the Mac: write in the field at the bottom and send. See <a href="/docs/messaging">Message and call your agents</a>.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:46%;aspect-ratio:16/13"><img class="e-left" src="/docs/img/iphone-hire.webp" alt="Simeon&#x27;s chat on iPhone, with the card saying Rosa just joined the team" width="430" height="902" loading="lazy" decoding="async"></div><figcaption>A chat on iPhone. Back, Find in Chat and Call are at the top.</figcaption></figure>
+<ul><li><strong>Attach something:</strong> tap <strong>+</strong> and choose <strong>Photo or Video</strong>, <strong>Take Photo</strong>, <strong>Choose File</strong> or <strong>Paste Picture</strong>.</li><li><strong>Dictate:</strong> tap the microphone in the message field, speak, then tap to stop. Check the words, then send.</li><li><strong>React, reply or start a thread:</strong> touch and hold a message.</li><li><strong>Mention an agent:</strong> type @ and choose it from the list.</li><li><strong>Find in the chat:</strong> tap the magnifying glass at the top.</li></ul>
+<h2 id="answer-questions-and-cards">Answer questions and cards</h2>
+<p>Every card an agent sends on the Mac also works on iPhone: questions, email and <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> drafts, approvals, secure sign-in forms and requests to use the computer. Tap the answer, the button or the form, the same way.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:46%;aspect-ratio:21/20"><img class="e-right" src="/docs/img/iphone-question.webp" alt="Kai&#x27;s question card on iPhone: where to stay in Lisbon" width="430" height="902" loading="lazy" decoding="async"></div><figcaption>Answer a question card with a tap, wherever you are.</figcaption></figure>
+<p>So an agent doesn't wait for you to get back to your desk: if it needs a decision, you get a notification, and you answer from the card.</p>
+<h2 id="notifications">Notifications</h2>
+<p>Your iPhone gets a notification when an agent finishes a task or needs you, whether your Mac is open or closed. It shows the agent's name and its last message, or what it needs. Tap it to open that agent's chat.</p>
+<p>You don't get a notification for the chat you're reading.</p>
+<div class="table"><table><thead><tr><th>To</th><th>Do this</th></tr></thead><tbody><tr><td>Turn off notifications from one agent</td><td>Touch and hold its chat in the list and choose <strong>Hide Alerts</strong>, or turn off <strong>Notifications</strong> in its profile.</td></tr><tr><td>Turn off all notifications on this iPhone</td><td><strong>Settings</strong> › <strong>Notifications</strong>.</td></tr></tbody></table></div>
+<h2 id="call-an-agent">Call an agent</h2>
+<ol><li>Open the agent's chat.</li><li>Tap the phone at the top right.</li><li>Talk. The call shows as a bar in the chat with <strong>Mute</strong>, <strong>Transcript</strong> and the red <strong>End</strong>. Tap the bar for the full screen.</li></ol>
+<p>You can keep reading and writing in the chat during the call. When you hang up, the call stays in the chat as a line with its length; tap it to read what you both said.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:46%;aspect-ratio:11/10"><img class="e-left" src="/docs/img/iphone-call.webp" alt="Kai&#x27;s chat on iPhone after a call: &quot;Voice chat · 02:48&quot; and his follow-up message" width="430" height="902" loading="lazy" decoding="async"></div><figcaption>After a call, the agent's follow-up comes in the chat.</figcaption></figure>
+<h2 id="watch-or-take-over-the-computer">Watch or take over the computer</h2>
+<p>On iPhone the agent's computer opens as a sheet that fills the screen.</p>
+<ol><li>Open the agent's profile: tap its face at the top of its chat.</li><li>Tap the screen icon for the <strong>Computer</strong> tab, then tap the screen.</li></ol>
+<p>It also opens when you tap <strong>Take over</strong> on a card where the agent needs you. Then it opens with you already in control.</p>
+<div class="table"><table><thead><tr><th>Control</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Watching</strong>, <strong>Take control</strong></td><td>The switch under the title. <strong>Take control</strong> pauses the agent if it's working; <strong>Watching</strong> lets it carry on.</td></tr><tr><td><strong>Stop task</strong></td><td>At the bottom while the agent works: stops the agent and anything it started, until you write to it again.</td></tr><tr><td><strong>Skip step</strong></td><td>When the agent asked for your help: declines the step.</td></tr><tr><td><strong>✓</strong></td><td>Hands the computer back to the agent and closes the sheet.</td></tr><tr><td><strong>Clipboard</strong></td><td>At the top left: <strong>Paste from Phone</strong> or <strong>Copy to Phone</strong>.</td></tr></tbody></table></div>
+<h3 id="use-the-screen-with-your-fingers">Use the screen with your fingers</h3>
+<div class="table"><table><thead><tr><th>Gesture</th><th>Watching</th><th>In control</th></tr></thead><tbody><tr><td>Pinch</td><td>Zooms in, up to four times.</td><td>Zooms in.</td></tr><tr><td>Double tap</td><td>Zooms in on that spot, or back out.</td><td></td></tr><tr><td>One finger</td><td>Moves the zoomed picture.</td><td>A tap is a click; a drag scrolls the page.</td></tr><tr><td>Touch, hold, then drag</td><td></td><td>Holds the mouse button down, to select text or move a slider.</td></tr></tbody></table></div>
+<p>In control, tapping a text field on the page brings up your keyboard, of the right kind for the field (an email, a number, a password). Tap elsewhere to put it away. Return presses Enter on the computer.</p>
+<div class="callout tip"><b>Tip</b><p>For a sign-in or a code, an agent usually sends a secure form in the chat instead of handing you the computer. Typing in the form is easier on a phone than on the remote screen. See <a href="/docs/computer#type-a-sign-in-or-a-code-in-a-secure-form">The agent's computer</a>.</p></div>
+<h2 id="settings-on-iphone">Settings on iPhone</h2>
+<p>Tap your picture or initials at the top left of your list of chats to open <strong>Settings</strong>.</p>
+<div class="table"><table><thead><tr><th>Setting</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Notifications</strong></td><td>Turns notifications on or off for this iPhone.</td></tr><tr><td><strong>Face ID</strong></td><td>Asks for Face ID when Simeon opens, and when you come back after 15 minutes away. Only on this iPhone.</td></tr><tr><td><strong>Appearance</strong></td><td>System, Light or Dark.</td></tr><tr><td><strong>Language</strong></td><td>The app's language. Close and reopen Simeon to use it.</td></tr><tr><td><strong>Haptics</strong></td><td>Taps you feel on buttons, clicks and the computer.</td></tr><tr><td><strong>Connect apps</strong></td><td>The same apps as on the Mac. An app you connect on one works on both.</td></tr><tr><td><strong>Credentials Store</strong></td><td>Logins, cards and contact details your agents can fill in. See <a href="/docs/credentials">Credentials Store</a>.</td></tr></tbody></table></div>
 <h2 id="plans-on-iphone">Plans on iPhone</h2>
-<p>On iPhone, plans are bought through the App Store, with a 7-day free trial that needs no card. You manage or cancel the subscription in your Apple ID settings. See <a href="/docs/billing">Plans and billing</a>.</p>
+<p>On iPhone, plans are bought through the App Store, and billed by Apple each month. To change or cancel, open your iPhone's <strong>Settings</strong>, tap your name, then <strong>Subscriptions</strong>. See <a href="/docs/billing">Plans and billing</a>.</p>
+<h2 id="requirements">Requirements</h2>
+<p>An iPhone with iOS 26 or later.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="do-my-agents-stop-when-i-close-the-app">Do my agents stop when I close the app?</h3>
+<p>No. They run on your cloud computer, not on your phone. Close the app, lock your phone or switch it off: they carry on, and you get a notification when one finishes or needs you.</p>
+<h3 id="can-i-use-my-iphone-and-my-mac-at-the-same-time">Can I use my iPhone and my Mac at the same time?</h3>
+<p>Yes. They show the same chats. A message sent from one shows on the other.</p>
+<h3 id="can-i-create-agents-on-iphone">Can I create agents on iPhone?</h3>
+<p>Yes. Tap the compose button at the top of your list for <strong>New Agent</strong>, or ask Simeon to hire one. See <a href="/docs/agents">Create and manage agents</a>.</p>
+<h3 id="why-can-t-i-swipe-the-computer-away">Why can't I swipe the computer away?</h3>
+<p>While you're in control, the sheet stays open so you don't close it by accident. Tap <strong>✓</strong> to hand the computer back, or switch to <strong>Watching</strong> first.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/messaging"><span><h3>Message and call your agents</h3><p>Chat, voice calls, files and drafts.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/computer"><span><h3>The agent's computer</h3><p>Watch an agent work, or take control.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>The cards agents use to ask you first.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/billing"><span><h3>Plans and billing</h3><p>Plans, usage and how to cancel.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#what-you-can-do-on-iphone">What you can do on iPhone</a><a class="t l2" href="#requirements">Requirements</a><a class="t l2" href="#plans-on-iphone">Plans on iPhone</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#set-up-the-app">Set up the app</a><a class="t l2" href="#message-an-agent">Message an agent</a><a class="t l2" href="#answer-questions-and-cards">Answer questions and cards</a><a class="t l2" href="#notifications">Notifications</a><a class="t l2" href="#call-an-agent">Call an agent</a><a class="t l2" href="#watch-or-take-over-the-computer">Watch or take over the computer</a><a class="t l3" href="#use-the-screen-with-your-fingers">Use the screen with your fingers</a><a class="t l2" href="#settings-on-iphone">Settings on iPhone</a><a class="t l2" href="#plans-on-iphone">Plans on iPhone</a><a class="t l2" href="#requirements">Requirements</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#do-my-agents-stop-when-i-close-the-app">Do my agents stop when I close the app?</a><a class="t l3" href="#can-i-use-my-iphone-and-my-mac-at-the-same-time">Can I use my iPhone and my Mac at the same time?</a><a class="t l3" href="#can-i-create-agents-on-iphone">Can I create agents on iPhone?</a><a class="t l3" href="#why-can-t-i-swipe-the-computer-away">Why can&#x27;t I swipe the computer away?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Simeon for iPhone
 
-Simeon for iPhone connects to the same agents, chats and computers as the Mac app. Sign in with the same account and everything is there.
+Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac. Sign in with the same account and everything is there: a message you send on your iPhone shows on your Mac, and the other way round. Your agents keep working whether the app is open or not.
 
-&gt; Simeon for iPhone isn&#x27;t in the App Store yet. When it is, you&#x27;ll find the download on [simeonlabs.com](/).
+This page covers setting up the app and what&#x27;s different on a phone.
 
-## What you can do on iPhone
+:::note
+Simeon for iPhone isn&#x27;t in the App Store yet. When it is, you&#x27;ll find the download on [simeonlabs.com](/).
+:::
 
-- **Message your agents.** Type or dictate, attach photos, files and short videos.
-- **Call an agent.** Talk to it out loud; it works in the background while the call goes on. See [Message and call your agents](/docs/messaging).
-- **Approve or refuse.** Approval cards show up in the chat and as notifications, so an agent is never stuck waiting for your desk.
-- **Watch the computer and take control.** Open an agent&#x27;s computer to see its screen. **Take control** stops the agent at once and hands you the screen; give it back when you&#x27;re done. See [The agent&#x27;s computer](/docs/computer).
-- **Connect apps.** The same **Connect** button as on the Mac.
+| On your iPhone you can | |
+|---|---|
+| **Message your agents** | Type or dictate, and send photos, files and videos. |
+| **Call an agent** | Talk to it out loud while it works. |
+| **Answer its cards** | Questions, drafts, approvals and sign-in forms, as on the Mac. |
+| **Get notified** | When an agent finishes or needs you, with your Mac open or closed. |
+| **Use its computer** | Watch the agent&#x27;s screen, or take control with your fingers. |
+| **Manage your team** | Hire and create agents, edit profiles, connect apps. |
 
-## Requirements
+## Set up the app
 
-An iPhone on iOS 26 or later.
+1. Open Simeon and sign in with the same account you use on your Mac: **Continue with Apple**, **Continue with Google**, or your email.
+2. If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in **Settings**.
+3. Allow notifications, so you hear when an agent finishes or needs you.
+
+Your list of chats opens. Choose an agent to open its chat.
+
+## Message an agent
+
+Messaging works as on the Mac: write in the field at the bottom and send. See [Message and call your agents](/docs/messaging).
+
+![Simeon&#x27;s chat on iPhone, with the card saying Rosa just joined the team](img/iphone-hire.webp &quot;A chat on iPhone. Back, Find in Chat and Call are at the top.&quot;){c=#89acbc w=46 ar=16/13}
+
+- **Attach something:** tap **+** and choose **Photo or Video**, **Take Photo**, **Choose File** or **Paste Picture**.
+- **Dictate:** tap the microphone in the message field, speak, then tap to stop. Check the words, then send.
+- **React, reply or start a thread:** touch and hold a message.
+- **Mention an agent:** type @ and choose it from the list.
+- **Find in the chat:** tap the magnifying glass at the top.
+
+## Answer questions and cards
+
+Every card an agent sends on the Mac also works on iPhone: questions, email and Slack drafts, approvals, secure sign-in forms and requests to use the computer. Tap the answer, the button or the form, the same way.
+
+![Kai&#x27;s question card on iPhone: where to stay in Lisbon](img/iphone-question.webp &quot;Answer a question card with a tap, wherever you are.&quot;){c=#a5835f edge=right w=46 ar=21/20}
+
+So an agent doesn&#x27;t wait for you to get back to your desk: if it needs a decision, you get a notification, and you answer from the card.
+
+## Notifications
+
+Your iPhone gets a notification when an agent finishes a task or needs you, whether your Mac is open or closed. It shows the agent&#x27;s name and its last message, or what it needs. Tap it to open that agent&#x27;s chat.
+
+You don&#x27;t get a notification for the chat you&#x27;re reading.
+
+| To | Do this |
+|---|---|
+| Turn off notifications from one agent | Touch and hold its chat in the list and choose **Hide Alerts**, or turn off **Notifications** in its profile. |
+| Turn off all notifications on this iPhone | **Settings** › **Notifications**. |
+
+## Call an agent
+
+1. Open the agent&#x27;s chat.
+2. Tap the phone at the top right.
+3. Talk. The call shows as a bar in the chat with **Mute**, **Transcript** and the red **End**. Tap the bar for the full screen.
+
+You can keep reading and writing in the chat during the call. When you hang up, the call stays in the chat as a line with its length; tap it to read what you both said.
+
+![Kai&#x27;s chat on iPhone after a call: &quot;Voice chat · 02:48&quot; and his follow-up message](img/iphone-call.webp &quot;After a call, the agent&#x27;s follow-up comes in the chat.&quot;){c=#a5835f w=46 ar=11/10}
+
+## Watch or take over the computer
+
+On iPhone the agent&#x27;s computer opens as a sheet that fills the screen.
+
+1. Open the agent&#x27;s profile: tap its face at the top of its chat.
+2. Tap the screen icon for the **Computer** tab, then tap the screen.
+
+It also opens when you tap **Take over** on a card where the agent needs you. Then it opens with you already in control.
+
+| Control | What it does |
+|---|---|
+| **Watching**, **Take control** | The switch under the title. **Take control** pauses the agent if it&#x27;s working; **Watching** lets it carry on. |
+| **Stop task** | At the bottom while the agent works: stops the agent and anything it started, until you write to it again. |
+| **Skip step** | When the agent asked for your help: declines the step. |
+| **✓** | Hands the computer back to the agent and closes the sheet. |
+| **Clipboard** | At the top left: **Paste from Phone** or **Copy to Phone**. |
+
+### Use the screen with your fingers
+
+| Gesture | Watching | In control |
+|---|---|---|
+| Pinch | Zooms in, up to four times. | Zooms in. |
+| Double tap | Zooms in on that spot, or back out. | |
+| One finger | Moves the zoomed picture. | A tap is a click; a drag scrolls the page. |
+| Touch, hold, then drag | | Holds the mouse button down, to select text or move a slider. |
+
+In control, tapping a text field on the page brings up your keyboard, of the right kind for the field (an email, a number, a password). Tap elsewhere to put it away. Return presses Enter on the computer.
+
+:::tip
+For a sign-in or a code, an agent usually sends a secure form in the chat instead of handing you the computer. Typing in the form is easier on a phone than on the remote screen. See [The agent&#x27;s computer](/docs/computer#type-a-sign-in-or-a-code-in-a-secure-form).
+:::
+
+## Settings on iPhone
+
+Tap your picture or initials at the top left of your list of chats to open **Settings**.
+
+| Setting | What it does |
+|---|---|
+| **Notifications** | Turns notifications on or off for this iPhone. |
+| **Face ID** | Asks for Face ID when Simeon opens, and when you come back after 15 minutes away. Only on this iPhone. |
+| **Appearance** | System, Light or Dark. |
+| **Language** | The app&#x27;s language. Close and reopen Simeon to use it. |
+| **Haptics** | Taps you feel on buttons, clicks and the computer. |
+| **Connect apps** | The same apps as on the Mac. An app you connect on one works on both. |
+| **Credentials Store** | Logins, cards and contact details your agents can fill in. See [Credentials Store](/docs/credentials). |
 
 ## Plans on iPhone
 
-On iPhone, plans are bought through the App Store, with a 7-day free trial that needs no card. You manage or cancel the subscription in your Apple ID settings. See [Plans and billing](/docs/billing).
+On iPhone, plans are bought through the App Store, and billed by Apple each month. To change or cancel, open your iPhone&#x27;s **Settings**, tap your name, then **Subscriptions**. See [Plans and billing](/docs/billing).
+
+## Requirements
+
+An iPhone with iOS 26 or later.
+
+## Common questions
+
+### Do my agents stop when I close the app?
+
+No. They run on your cloud computer, not on your phone. Close the app, lock your phone or switch it off: they carry on, and you get a notification when one finishes or needs you.
+
+### Can I use my iPhone and my Mac at the same time?
+
+Yes. They show the same chats. A message sent from one shows on the other.
+
+### Can I create agents on iPhone?
+
+Yes. Tap the compose button at the top of your list for **New Agent**, or ask Simeon to hire one. See [Create and manage agents](/docs/agents).
+
+### Why can&#x27;t I swipe the computer away?
+
+While you&#x27;re in control, the sheet stays open so you don&#x27;t close it by accident. Tap **✓** to hand the computer back, or switch to **Watching** first.
+
+## Related pages
+
+:::cards
+- [Message and call your agents](/docs/messaging) Chat, voice calls, files and drafts.
+- [The agent&#x27;s computer](/docs/computer) Watch an agent work, or take control.
+- [Approvals, security, and privacy](/docs/approvals) The cards agents use to ask you first.
+- [Plans and billing](/docs/billing) Plans, usage and how to cancel.
+:::
 </script>
 </main>
 

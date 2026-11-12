@@ -91,7 +91,7 @@ If you'd rather explain in your own words, write a message instead. To decline a
 
 When an agent writes an email or a Slack message for you, it can show it as a draft card first. Drafting sends nothing.
 
-![Nia's reply to Dana as a draft card, with To, Cc, Subject, the message, Discard and Send email](img/messaging-draft.webp "An email draft. Everything in the white box can be changed."){c=#af8fa0 edge=right w=110 ar=19/20}
+![Nia's reply to Dana as a draft card, with To, Cc, Subject, the message, Discard and Send email](img/messaging-draft.webp "An email draft. Everything in the white box can be changed."){c=#af8fa0 edge=right w=100 ar=19/20}
 
 1. Read the draft. For an email you can change **To**, **Cc**, **Subject** and the message; for a Slack message, the message.
 2. Choose **Send email** (or **Send message** for Slack) to send it as it is now, or **Discard** to drop it.

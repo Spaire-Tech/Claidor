@@ -60,7 +60,7 @@ Hosted assistants don't install anything. Each one gets its own address, so your
 1. Open **External Agents** and choose **+** next to **Dots**, **Muse** or **Grok Bot**.
 2. Choose **Copy** next to the address.
 
-![The Dots sheet over External Agents: Give this to your Dot, the address https://api.simeonlabs.com/mcp/dots and Copy](img/network-dots.webp "Each assistant has its own address."){c=#89acbc w=104 ar=16/11 edge=right}
+![The Dots sheet over External Agents: Give this to your Dot, the address https://api.simeonlabs.com/mcp/dots and Copy](img/network-dots.webp "Each assistant has its own address."){c=#89acbc w=100 ar=16/11 edge=right}
 
 3. In the assistant, add it as a connector. In ChatGPT, add a custom connector (MCP) in its settings with the address; in Muse, add a connector with it.
 4. Sign in to your Simeon account on the page that opens, and choose **Allow**.
