@@ -41,6 +41,7 @@ from simeon.logging import Logger
 from simeon.logging import configure as configure_logging
 from simeon.maty.endpoints import router as maty_router
 from simeon.middlewares import (
+    EncodedBodyMiddleware,
     FlushEnqueuedWorkerJobsMiddleware,
     LogCorrelationIdMiddleware,
     PathRewriteMiddleware,
@@ -284,6 +285,10 @@ def create_app() -> FastAPI:
     app.add_middleware(LogCorrelationIdMiddleware)
     if not settings.is_testing():
         app.add_middleware(HttpMetricsMiddleware)
+    # Outside the others, so every route and the computer's proxy read the
+    # body as the app wrote it (an app's message sent in base64 past Render's
+    # edge firewall, `EncodedBodyMiddleware`).
+    app.add_middleware(EncodedBodyMiddleware)
 
     configure_cors(app)
 
