@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,79 +216,142 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>FAQ</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/faq.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<h2 id="what-is-simeon">What is Simeon?</h2>
-<p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.</p>
-<h2 id="do-i-need-to-set-anything-up">Do I need to set anything up?</h2>
+<h2 id="simeon">Simeon</h2>
+<h3 id="what-is-simeon">What is Simeon?</h3>
+<p>A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you connect. You ask in plain words, and they do the work. See <a href="/docs/agents">Create and manage agents</a>.</p>
+<h3 id="do-i-need-to-set-anything-up">Do I need to set anything up?</h3>
 <p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app's own page.</p>
-<h2 id="where-does-the-work-happen">Where does the work happen?</h2>
-<p>On each agent's own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.</p>
-<h2 id="will-an-agent-act-without-asking">Will an agent act without asking?</h2>
-<p>Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.</p>
-<h2 id="is-my-data-safe">Is my data safe?</h2>
-<p>Your data is encrypted, kept apart from every other customer, and never used to train a model. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
-<h2 id="what-do-i-need">What do I need?</h2>
-<p>A Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial.</p>
-<h2 id="how-many-agents-can-i-have">How many agents can I have?</h2>
-<p>As many as your work needs. Your plan sets how much they can do each week, not how many there are.</p>
-<h2 id="can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don't have a connector?</h2>
-<p>Yes. They can use most websites in their browser. A connector is faster and more reliable when there is one. See <a href="/docs/connectors">Connect apps</a>.</p>
-<h2 id="can-i-talk-to-an-agent">Can I talk to an agent?</h2>
-<p>Yes. Call any agent and talk it through out loud. See <a href="/docs/messaging">Message and call your agents</a>.</p>
-<h2 id="how-do-i-cancel">How do I cancel?</h2>
-<p>On the web, from your account's billing page; on iPhone, in your Apple ID settings. See <a href="/docs/billing">Plans and billing</a>.</p>
-<h2 id="something-isn-t-working">Something isn't working</h2>
-<p>Quit and reopen the app first. If that doesn't fix it, <a href="/contact">contact us</a> and tell us what you were doing.</p>
+<h3 id="what-do-i-need-to-use-it">What do I need to use it?</h3>
+<p>A Mac with Apple silicon on macOS 15 or later, or an iPhone on iOS 26 or later. The same account works on both. See <a href="/docs/get-started">Get started</a> and <a href="/docs/iphone">Simeon on iPhone</a>.</p>
+<h2 id="agents-and-their-work">Agents and their work</h2>
+<h3 id="how-many-agents-can-i-have">How many agents can I have?</h3>
+<p>Up to 50, on every plan. Your plan sets how much they can do each week, not how many there are.</p>
+<h3 id="where-does-the-work-happen">Where does the work happen?</h3>
+<p>On each agent's own desktop on your team's cloud computer, with a browser and files. You can watch it work or take control at any time. Routines keep running while your Mac is closed. See <a href="/docs/computer">The agent's computer</a>.</p>
+<h3 id="can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don't have a connector?</h3>
+<p>Yes. They can use most websites in their browser, signed in as you. A connector is faster and more reliable when there is one. See <a href="/docs/connectors">Connect apps</a>.</p>
+<h3 id="can-i-talk-to-an-agent">Can I talk to an agent?</h3>
+<p>Yes. Call any agent from its chat and talk it through out loud. See <a href="/docs/messaging">Message and call your agents</a>.</p>
+<h3 id="can-my-agents-work-with-claude-code-codex-or-chatgpt">Can my agents work with Claude Code, Codex or ChatGPT?</h3>
+<p>Yes. Connect them in <strong>External Agents</strong> and they join your Simeon Network: they can ask your Simeon agents for work, and your agents can ask them. See <a href="/docs/network">Simeon Network</a>.</p>
+<h2 id="approvals-and-privacy">Approvals and privacy</h2>
+<h3 id="will-an-agent-act-without-asking">Will an agent act without asking?</h3>
+<p>Not on what matters. An email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message in your name comes as a draft you send yourself, and a purchase waits on a checkout card until you choose <strong>Allow</strong>. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<h3 id="can-an-agent-spend-my-money">Can an agent spend my money?</h3>
+<p>Only through <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> or <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop Pay</span>, once you've added one in <strong>Settings › Wallet</strong>, and only after you allow the checkout card, confirmed with Face ID or Touch ID. Each Link purchase uses a one-time card, and the agent never sees a card number.</p>
+<h3 id="do-agents-see-my-passwords">Do agents see my passwords?</h3>
+<p>A password you type in an agent's sign-in form goes straight into the page, and the agent doesn't see it. Logins you save in the Credentials Store are there for your agents to use. See <a href="/docs/credentials">Credentials Store and secure sign-in</a>.</p>
+<h3 id="is-my-data-used-to-train-ai">Is my data used to train AI?</h3>
+<p>No. We never use your content to train AI models, and the AI providers we use work under terms that don't let them train on it. Your data is encrypted in transit and kept apart from every other customer's. See the <a href="/privacy">Privacy Policy</a>.</p>
+<h2 id="plans-and-billing">Plans and billing</h2>
+<h3 id="how-much-does-simeon-cost">How much does Simeon cost?</h3>
+<p>Standard is $30 a month, Pro $100 (3.5 times Standard's usage) and Max $200 (9 times). Every plan has every feature; they differ in how much your agents can do each week. See <a href="/docs/billing">Plans and billing</a>.</p>
+<h3 id="is-there-a-free-trial">Is there a free trial?</h3>
+<p>Yes, 7 days with one week of Standard credits. On iPhone it starts when you first sign in, with no card. On the web and the Mac it starts with a card, and becomes your plan when the 7 days end unless you cancel it.</p>
+<h3 id="what-happens-when-my-credits-run-out">What happens when my credits run out?</h3>
+<p>Your agents wait until your week resets. To keep going sooner, upgrade your plan or buy extra credits: $10 for 3,000,000 credits, valid for 12 months.</p>
+<h3 id="can-i-use-my-own-chatgpt-or-claude-plan">Can I use my own ChatGPT or Claude plan?</h3>
+<p>Yes. Connect it in <strong>Settings › AI Models</strong> and choose its model. Your agents' work on it uses no Simeon credits; you still need a Simeon plan for their computers.</p>
+<h3 id="how-do-i-cancel">How do I cancel?</h3>
+<p>For a plan bought on the web or the Mac, choose <strong>Manage Billing</strong> in <strong>Settings › Usage &amp; Billing</strong> and cancel on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s page. For a plan bought on iPhone, open the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p>
+<h2 id="your-account">Your account</h2>
+<h3 id="how-do-i-delete-my-account">How do I delete my account?</h3>
+<p>In the Simeon app on your Mac or iPhone, open <strong>Settings</strong> and choose <strong>Delete Account</strong>. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can't be undone. A plan billed through Apple isn't cancelled by this: cancel it in the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p>
+<h3 id="something-isn-t-working">Something isn't working</h3>
+<p>Quit and reopen the app first. If that doesn't fix it, choose <strong>Report an issue</strong> in the account menu, or <a href="/contact">contact us</a> and tell us what you were doing.</p>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#what-is-simeon">What is Simeon?</a><a class="t l2" href="#do-i-need-to-set-anything-up">Do I need to set anything up?</a><a class="t l2" href="#where-does-the-work-happen">Where does the work happen?</a><a class="t l2" href="#will-an-agent-act-without-asking">Will an agent act without asking?</a><a class="t l2" href="#is-my-data-safe">Is my data safe?</a><a class="t l2" href="#what-do-i-need">What do I need?</a><a class="t l2" href="#how-many-agents-can-i-have">How many agents can I have?</a><a class="t l2" href="#can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don&#x27;t have a connector?</a><a class="t l2" href="#can-i-talk-to-an-agent">Can I talk to an agent?</a><a class="t l2" href="#how-do-i-cancel">How do I cancel?</a><a class="t l2" href="#something-isn-t-working">Something isn&#x27;t working</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#simeon">Simeon</a><a class="t l3" href="#what-is-simeon">What is Simeon?</a><a class="t l3" href="#do-i-need-to-set-anything-up">Do I need to set anything up?</a><a class="t l3" href="#what-do-i-need-to-use-it">What do I need to use it?</a><a class="t l2" href="#agents-and-their-work">Agents and their work</a><a class="t l3" href="#how-many-agents-can-i-have">How many agents can I have?</a><a class="t l3" href="#where-does-the-work-happen">Where does the work happen?</a><a class="t l3" href="#can-my-agents-use-apps-that-don-t-have-a-connector">Can my agents use apps that don&#x27;t have a connector?</a><a class="t l3" href="#can-i-talk-to-an-agent">Can I talk to an agent?</a><a class="t l3" href="#can-my-agents-work-with-claude-code-codex-or-chatgpt">Can my agents work with Claude Code, Codex or ChatGPT?</a><a class="t l2" href="#approvals-and-privacy">Approvals and privacy</a><a class="t l3" href="#will-an-agent-act-without-asking">Will an agent act without asking?</a><a class="t l3" href="#can-an-agent-spend-my-money">Can an agent spend my money?</a><a class="t l3" href="#do-agents-see-my-passwords">Do agents see my passwords?</a><a class="t l3" href="#is-my-data-used-to-train-ai">Is my data used to train AI?</a><a class="t l2" href="#plans-and-billing">Plans and billing</a><a class="t l3" href="#how-much-does-simeon-cost">How much does Simeon cost?</a><a class="t l3" href="#is-there-a-free-trial">Is there a free trial?</a><a class="t l3" href="#what-happens-when-my-credits-run-out">What happens when my credits run out?</a><a class="t l3" href="#can-i-use-my-own-chatgpt-or-claude-plan">Can I use my own ChatGPT or Claude plan?</a><a class="t l3" href="#how-do-i-cancel">How do I cancel?</a><a class="t l2" href="#your-account">Your account</a><a class="t l3" href="#how-do-i-delete-my-account">How do I delete my account?</a><a class="t l3" href="#something-isn-t-working">Something isn&#x27;t working</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># FAQ
 
-## What is Simeon?
+## Simeon
 
-A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you already use. You ask in plain words, and they do the work.
+### What is Simeon?
 
-## Do I need to set anything up?
+A team of AI agents for your business. Each agent has a job you give it, a computer of its own in the cloud, and access to the apps you connect. You ask in plain words, and they do the work. See [Create and manage agents](/docs/agents).
+
+### Do I need to set anything up?
 
 No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app&#x27;s own page.
 
-## Where does the work happen?
+### What do I need to use it?
 
-On each agent&#x27;s own computer in the cloud, with a browser and files. You can watch it work or take over at any time, and routines keep running when your Mac is closed.
+A Mac with Apple silicon on macOS 15 or later, or an iPhone on iOS 26 or later. The same account works on both. See [Get started](/docs/get-started) and [Simeon on iPhone](/docs/iphone).
 
-## Will an agent act without asking?
+## Agents and their work
 
-Not on anything that matters. Before it sends an email, makes a payment or publishes something, it asks you in the chat, and you allow or refuse it.
+### How many agents can I have?
 
-## Is my data safe?
+Up to 50, on every plan. Your plan sets how much they can do each week, not how many there are.
 
-Your data is encrypted, kept apart from every other customer, and never used to train a model. See [Approvals, security, and privacy](/docs/approvals).
+### Where does the work happen?
 
-## What do I need?
+On each agent&#x27;s own desktop on your team&#x27;s cloud computer, with a browser and files. You can watch it work or take control at any time. Routines keep running while your Mac is closed. See [The agent&#x27;s computer](/docs/computer).
 
-A Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial.
+### Can my agents use apps that don&#x27;t have a connector?
 
-## How many agents can I have?
+Yes. They can use most websites in their browser, signed in as you. A connector is faster and more reliable when there is one. See [Connect apps](/docs/connectors).
 
-As many as your work needs. Your plan sets how much they can do each week, not how many there are.
+### Can I talk to an agent?
 
-## Can my agents use apps that don&#x27;t have a connector?
+Yes. Call any agent from its chat and talk it through out loud. See [Message and call your agents](/docs/messaging).
 
-Yes. They can use most websites in their browser. A connector is faster and more reliable when there is one. See [Connect apps](/docs/connectors).
+### Can my agents work with Claude Code, Codex or ChatGPT?
 
-## Can I talk to an agent?
+Yes. Connect them in **External Agents** and they join your Simeon Network: they can ask your Simeon agents for work, and your agents can ask them. See [Simeon Network](/docs/network).
 
-Yes. Call any agent and talk it through out loud. See [Message and call your agents](/docs/messaging).
+## Approvals and privacy
 
-## How do I cancel?
+### Will an agent act without asking?
 
-On the web, from your account&#x27;s billing page; on iPhone, in your Apple ID settings. See [Plans and billing](/docs/billing).
+Not on what matters. An email or a Slack message in your name comes as a draft you send yourself, and a purchase waits on a checkout card until you choose **Allow**. See [Approvals, security, and privacy](/docs/approvals).
 
-## Something isn&#x27;t working
+### Can an agent spend my money?
 
-Quit and reopen the app first. If that doesn&#x27;t fix it, [contact us](/contact) and tell us what you were doing.
+Only through Link or Shop Pay, once you&#x27;ve added one in **Settings › Wallet**, and only after you allow the checkout card, confirmed with Face ID or Touch ID. Each Link purchase uses a one-time card, and the agent never sees a card number.
+
+### Do agents see my passwords?
+
+A password you type in an agent&#x27;s sign-in form goes straight into the page, and the agent doesn&#x27;t see it. Logins you save in the Credentials Store are there for your agents to use. See [Credentials Store and secure sign-in](/docs/credentials).
+
+### Is my data used to train AI?
+
+No. We never use your content to train AI models, and the AI providers we use work under terms that don&#x27;t let them train on it. Your data is encrypted in transit and kept apart from every other customer&#x27;s. See the [Privacy Policy](/privacy).
+
+## Plans and billing
+
+### How much does Simeon cost?
+
+Standard is $30 a month, Pro $100 (3.5 times Standard&#x27;s usage) and Max $200 (9 times). Every plan has every feature; they differ in how much your agents can do each week. See [Plans and billing](/docs/billing).
+
+### Is there a free trial?
+
+Yes, 7 days with one week of Standard credits. On iPhone it starts when you first sign in, with no card. On the web and the Mac it starts with a card, and becomes your plan when the 7 days end unless you cancel it.
+
+### What happens when my credits run out?
+
+Your agents wait until your week resets. To keep going sooner, upgrade your plan or buy extra credits: $10 for 3,000,000 credits, valid for 12 months.
+
+### Can I use my own ChatGPT or Claude plan?
+
+Yes. Connect it in **Settings › AI Models** and choose its model. Your agents&#x27; work on it uses no Simeon credits; you still need a Simeon plan for their computers.
+
+### How do I cancel?
+
+For a plan bought on the web or the Mac, choose **Manage Billing** in **Settings › Usage &amp; Billing** and cancel on Stripe&#x27;s page. For a plan bought on iPhone, open the iPhone&#x27;s **Settings › your name › Subscriptions**.
+
+## Your account
+
+### How do I delete my account?
+
+In the Simeon app on your Mac or iPhone, open **Settings** and choose **Delete Account**. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can&#x27;t be undone. A plan billed through Apple isn&#x27;t cancelled by this: cancel it in the iPhone&#x27;s **Settings › your name › Subscriptions**.
+
+### Something isn&#x27;t working
+
+Quit and reopen the app first. If that doesn&#x27;t fix it, choose **Report an issue** in the account menu, or [contact us](/contact) and tell us what you were doing.
 </script>
 </main>
 

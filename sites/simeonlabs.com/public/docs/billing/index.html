@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,60 +216,221 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Plans and billing</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/billing.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Every plan gives you the whole product: your agents, their computers, connectors, routines and voice calls. Plans differ in how much your agents can do each week.</p>
-<h2 id="plans">Plans</h2>
-<div class="table"><table><thead><tr><th>Plan</th><th>Price</th><th>Usage each week</th></tr></thead><tbody><tr><td><strong>Standard</strong></td><td>$30 a month</td><td>The base allowance</td></tr><tr><td><strong>Pro</strong></td><td>$100 a month</td><td>3.5 times Standard</td></tr><tr><td><strong>Max</strong></td><td>$200 a month</td><td>9 times Standard, and earliest access to new products</td></tr></tbody></table></div>
-<p>On the web, each plan is also sold yearly at 20% off. See <a href="/pricing">Pricing</a>.</p>
-<h2 id="free-trial">Free trial</h2>
-<p>Every plan starts with a 7-day free trial. On the web it starts with a card and becomes your plan when the week ends, unless you cancel. On iPhone it needs no card. A trial includes one week of Standard usage, whichever plan you chose.</p>
-<h2 id="usage">Usage</h2>
-<p>Your agents' work uses credits, and each plan gives you a number of credits a week. The week resets on its own. If you run out before it resets, you can wait, move to a bigger plan, or buy extra credits.</p>
+<p>Every plan gives you the whole product: your agents, their cloud computers, connected apps, routines, <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> and <span class="brand" style="color:#5865f2"><i class="logo" style="--m:url(/docs/brands/discord.png?v=8c4e5b28);background:#5865f2" aria-hidden="true"></i>Discord</span>, and voice calls. Plans differ in how much work your agents can do each week.</p>
+<p>This page covers the plans, the free trial, how usage is counted, extra credits, and how to change or cancel your plan on the web and on iPhone.</p>
+<div class="table"><table><thead><tr><th>Plan</th><th>Price</th><th>Credits each week</th></tr></thead><tbody><tr><td><strong>Standard</strong></td><td>$30 a month</td><td>10,000,000</td></tr><tr><td><strong>Pro</strong></td><td>$100 a month</td><td>35,000,000, 3.5 times Standard</td></tr><tr><td><strong>Max</strong></td><td>$200 a month</td><td>90,000,000, 9 times Standard, and earliest access to new products</td></tr></tbody></table></div>
+<p>Every plan lets you have up to 50 agents. Your plan sets how much they can do each week, not how many there are. See <a href="/pricing">Pricing</a>.</p>
+<h2 id="start-your-free-trial">Start your free trial</h2>
+<p>Every account gets one 7-day free trial, with one week of Standard credits, whichever plan you choose. How it starts depends on where you sign up.</p>
+<p><strong>On iPhone.</strong> The trial starts when you first sign in, with no card. When the 7 days or the credits run out, the app shows the plans so you can choose one.</p>
+<p><strong>On the web or the Mac:</strong></p>
+<ol><li>Go to <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a>, or choose <strong>Start Free Trial</strong> in the Mac app, and sign in.</li><li>Under <strong>Choose your plan</strong>, choose <strong>Start your Standard Trial</strong> (or Pro, or Max).</li><li>Add a card on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s checkout page. Nothing is charged today.</li><li>The page says <strong>You're all set!</strong> Open Simeon and sign in with the same account.</li></ol>
+<p>When the 7 days end, your plan starts and your card is charged, unless you cancel the trial first.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:5/4"><img class="e-right" src="/docs/img/billing-trial.webp" alt="Usage &amp; Billing during a trial: Trial usage at 31%, Ends in 5 days, Cancel Trial, then the plan with Start Plan Now and Upgrade to Pro" width="732" height="536" loading="lazy" decoding="async"></div><figcaption>During a trial, Usage &amp; Billing shows your trial credits and when the trial ends.</figcaption></figure>
+<p>During a trial you can:</p>
+<ul><li><strong>Start Plan Now</strong> to end the trial today and start your plan with a fresh week of credits. You pay for the plan today.</li><li><strong>Upgrade to Pro</strong> (or Max) to change the plan your trial turns into. The trial goes on.</li><li><strong>Cancel Trial</strong> so your card isn't charged and the trial doesn't turn into a plan.</li></ul>
+<div class="callout note"><b>Note</b><p>The trial is one per person, and on the web one per card. A plan you buy after it starts right away, with no second trial.</p></div>
+<h2 id="how-usage-is-counted">How usage is counted</h2>
+<p>Your agents' work uses credits: every message they think through, every page they read, every step on their computer. Each plan gives you a number of credits a week.</p>
+<ul><li><strong>Your week</strong> starts on the day your plan started, not on a Monday, and resets every seven days. A renewal always starts a fresh week.</li><li><strong>Unused credits</strong> don't carry over to the next week.</li><li><strong>When the week's credits run out</strong>, your agents wait until they reset. To keep going sooner, upgrade or add extra credits.</li></ul>
+<p>To see where you are, open <strong>Settings › Usage &amp; Billing</strong> on the Mac, the web or iPhone. You can also choose the account button at the bottom of your list of chats: <strong>Weekly usage</strong> shows the share used and when it resets.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:5/4"><img class="e-right" src="/docs/img/billing-usage.webp" alt="Usage &amp; Billing on Pro: Weekly usage at 42%, Resets in 4 days, Extra credits 3,000,000, then Current plan: Pro with Upgrade to Max, Add Credits and Manage Billing" width="732" height="536" loading="lazy" decoding="async"></div><figcaption>Settings › Usage &amp; Billing: this week's usage, extra credits and your plan.</figcaption></figure>
+<div class="table"><table><thead><tr><th>On the page</th><th>What it shows</th></tr></thead><tbody><tr><td><strong>Weekly usage</strong></td><td>The share of this week's credits used, and when they reset. The bar turns red past 90%.</td></tr><tr><td><strong>Extra credits</strong></td><td>The extra credits you have left, when you've bought some.</td></tr><tr><td><strong>Current plan</strong></td><td>Your plan, and the date your usage resets or your trial ends.</td></tr><tr><td><strong>Upgrade to</strong></td><td>Moves you to the next plan up.</td></tr><tr><td><strong>Add Credits</strong></td><td>Buys extra credits (on a paid plan, on the web).</td></tr><tr><td><strong>Manage Billing</strong></td><td>Opens <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s billing page: your card, invoices, receipts and cancelling.</td></tr></tbody></table></div>
+<h3 id="when-you-re-near-the-limit">When you're near the limit</h3>
+<p>From 80% of the week's credits, and again from 95%, a line over the message field tells you how much is used and when it resets. Its button upgrades your plan, or adds credits on Max. Close it with the <strong>×</strong> and it stays closed until the next step.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/billing-limit.webp" alt="Simeon&#x27;s chat with the line over the message field: You&#x27;re approaching your usage limit, You&#x27;ve used 86% of this week&#x27;s credits. They reset on Saturday, with Upgrade" width="780" height="450" loading="lazy" decoding="async"></div><figcaption>Near the limit, a line over the message field says how much is left.</figcaption></figure>
+<p>When the credits are used up, the line says <strong>This week's credits are used</strong> and when they reset.</p>
+<div class="callout tip"><b>Tip</b><p>If an agent uses credits very fast in a short time, it pauses and carries on as the hour passes. This stops a task that's gone wrong from using a whole week in one go.</p></div>
 <h2 id="extra-credits">Extra credits</h2>
-<p>On a paid plan you can buy extra credits on the web: $10 for a pack. Extra credits are used only after the week's credits run out, and they last 12 months.</p>
+<p>Extra credits let your agents keep working after the week's credits run out, without changing plan.</p>
+<ul><li>A pack is <strong>3,000,000 credits for $10</strong>. You can buy up to 10 packs at a time.</li><li>They're used only after your week's credits are used up, and they <strong>last 12 months</strong>.</li><li>You can buy them on a paid plan, not during a trial.</li></ul>
+<p>To buy them, choose <strong>Add Credits</strong> in <strong>Settings › Usage &amp; Billing</strong>, or <strong>Add credits</strong> on <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a>, and pay on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s page. If your plan is billed through Apple, buy them on the web.</p>
+<div class="callout note"><b>Note</b><p>Per dollar, each plan gives more credits than extra credits do. If you buy packs most weeks, a bigger plan costs less.</p></div>
 <h2 id="change-your-plan">Change your plan</h2>
-<ul><li><strong>Upgrade:</strong> starts today. You pay the new plan, less what's left of your current one, and get a fresh week.</li><li><strong>Downgrade:</strong> takes effect at your next renewal; you keep your current plan until then.</li></ul>
+<p>On the web and the Mac, choose <strong>Upgrade to Pro</strong> (or Max) in <strong>Settings › Usage &amp; Billing</strong>, or open <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a> and choose <strong>Adjust your plan</strong>. A page says what the change does and costs before you choose <strong>Confirm</strong>.</p>
+<div class="table"><table><thead><tr><th>Change</th><th>When it takes effect</th><th>What you pay</th></tr></thead><tbody><tr><td><strong>Upgrade</strong></td><td>Today, with a fresh week of credits.</td><td>The new plan's price, less the unused time on your current plan, charged now.</td></tr><tr><td><strong>Downgrade</strong></td><td>At your next renewal. You keep your current plan until then.</td><td>The smaller plan's price, from the renewal.</td></tr><tr><td><strong>During a trial</strong></td><td>The trial goes on, and the new plan starts when it ends.</td><td>Nothing until the trial ends.</td></tr></tbody></table></div>
+<p>A downgrade waiting for your renewal shows on the billing page with <strong>Keep</strong> and your current plan's name, to cancel the switch.</p>
+<h2 id="plans-on-iphone">Plans on iPhone</h2>
+<p>On iPhone, plans are bought with Apple's in-app purchase, at the same monthly prices.</p>
+<ol><li>Open <strong>Settings › Usage</strong> and choose <strong>Choose a plan</strong>, or choose the button on the line over the message field.</li><li>Pick <strong>Standard</strong>, <strong>Pro</strong> or <strong>Max</strong>.</li><li>Choose <strong>Subscribe</strong> and confirm the purchase with Apple.</li></ol>
+<p>Apple bills the plan and emails your receipts. To change or cancel it, choose <strong>Manage Subscription</strong> in <strong>Usage &amp; Billing</strong>, or open the iPhone's <strong>Settings › your name › Subscriptions</strong>. On a new iPhone, <strong>Restore Purchases</strong> finds a plan bought with the same Apple Account.</p>
+<p>A plan bought on the web works on iPhone too, and a plan bought on iPhone works on the Mac and the web. Extra credits aren't sold in the iPhone app; buy them on the web.</p>
+<h2 id="run-your-agents-on-your-own-ai-account">Run your agents on your own AI account</h2>
+<p>If you have a ChatGPT or Claude plan, or an API key from an AI provider, your agents can use it. Open <strong>Settings › AI Models</strong>, which lists every provider you can connect, choose <strong>Connect</strong> next to yours and sign in, then choose its model in the menu on the message field.</p>
+<p>Your agents' work on your own account uses no Simeon credits. If your account reaches its plan's limit, your agents carry on with Simeon's models, on your credits, until it resets. Voice calls, dictation and video still use your Simeon credits, and you still need a Simeon plan for your agents' cloud computers. With an API key, the provider bills the calls on your key.</p>
 <h2 id="cancel">Cancel</h2>
-<p>On the web, manage or cancel your subscription from your account's billing page. On iPhone, plans are bought through the App Store, so manage or cancel them in your Apple ID settings.</p>
+<ul><li><strong>Plan bought on the web or the Mac:</strong> choose <strong>Manage Billing</strong> in <strong>Settings › Usage &amp; Billing</strong>, or <strong>Manage billing on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span></strong> on <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a>, and cancel on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s page. Your plan runs until the end of the period you paid for.</li><li><strong>Plan bought on iPhone:</strong> open the iPhone's <strong>Settings › your name › Subscriptions</strong> and cancel there.</li></ul>
+<div class="callout warning"><b>Important</b><p>Deleting your Simeon account doesn't cancel a plan billed through Apple. Cancel it in the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p></div>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="what-uses-the-most-credits">What uses the most credits?</h3>
+<p>Long work on the agent's computer, such as filling in forms or going through a website page by page, uses more than answering in the chat. Routines that run often add up over a week.</p>
+<h3 id="my-payment-didn-t-go-through-what-happens">My payment didn't go through. What happens?</h3>
+<p>Your agents, chats and computers stay, but you can't send messages until the card is updated. A line over the message field says so, with <strong>Update card</strong>. For a plan billed through Apple, update your payment method in your Apple Account.</p>
+<h3 id="can-i-pay-yearly">Can I pay yearly?</h3>
+<p>Plans are billed monthly.</p>
+<h3 id="do-i-get-a-receipt">Do I get a receipt?</h3>
+<p>For a plan on the web, your invoices and receipts are under <strong>Manage Billing</strong>, on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s page. For a plan on iPhone, Apple emails them.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>What your agents ask before they act.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/iphone"><span><h3>Simeon on iPhone</h3><p>Your agents on your phone.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Add agents and give each one a job.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/routines"><span><h3>Routines</h3><p>Work that runs on a schedule.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#plans">Plans</a><a class="t l2" href="#free-trial">Free trial</a><a class="t l2" href="#usage">Usage</a><a class="t l2" href="#extra-credits">Extra credits</a><a class="t l2" href="#change-your-plan">Change your plan</a><a class="t l2" href="#cancel">Cancel</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#start-your-free-trial">Start your free trial</a><a class="t l2" href="#how-usage-is-counted">How usage is counted</a><a class="t l3" href="#when-you-re-near-the-limit">When you&#x27;re near the limit</a><a class="t l2" href="#extra-credits">Extra credits</a><a class="t l2" href="#change-your-plan">Change your plan</a><a class="t l2" href="#plans-on-iphone">Plans on iPhone</a><a class="t l2" href="#run-your-agents-on-your-own-ai-account">Run your agents on your own AI account</a><a class="t l2" href="#cancel">Cancel</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#what-uses-the-most-credits">What uses the most credits?</a><a class="t l3" href="#my-payment-didn-t-go-through-what-happens">My payment didn&#x27;t go through. What happens?</a><a class="t l3" href="#can-i-pay-yearly">Can I pay yearly?</a><a class="t l3" href="#do-i-get-a-receipt">Do I get a receipt?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Plans and billing
 
-Every plan gives you the whole product: your agents, their computers, connectors, routines and voice calls. Plans differ in how much your agents can do each week.
+Every plan gives you the whole product: your agents, their cloud computers, connected apps, routines, Slack and Discord, and voice calls. Plans differ in how much work your agents can do each week.
 
-## Plans
+This page covers the plans, the free trial, how usage is counted, extra credits, and how to change or cancel your plan on the web and on iPhone.
 
-| Plan | Price | Usage each week |
+| Plan | Price | Credits each week |
 |---|---|---|
-| **Standard** | $30 a month | The base allowance |
-| **Pro** | $100 a month | 3.5 times Standard |
-| **Max** | $200 a month | 9 times Standard, and earliest access to new products |
+| **Standard** | $30 a month | 10,000,000 |
+| **Pro** | $100 a month | 35,000,000, 3.5 times Standard |
+| **Max** | $200 a month | 90,000,000, 9 times Standard, and earliest access to new products |
 
-On the web, each plan is also sold yearly at 20% off. See [Pricing](/pricing).
+Every plan lets you have up to 50 agents. Your plan sets how much they can do each week, not how many there are. See [Pricing](/pricing).
 
-## Free trial
+## Start your free trial
 
-Every plan starts with a 7-day free trial. On the web it starts with a card and becomes your plan when the week ends, unless you cancel. On iPhone it needs no card. A trial includes one week of Standard usage, whichever plan you chose.
+Every account gets one 7-day free trial, with one week of Standard credits, whichever plan you choose. How it starts depends on where you sign up.
 
-## Usage
+**On iPhone.** The trial starts when you first sign in, with no card. When the 7 days or the credits run out, the app shows the plans so you can choose one.
 
-Your agents&#x27; work uses credits, and each plan gives you a number of credits a week. The week resets on its own. If you run out before it resets, you can wait, move to a bigger plan, or buy extra credits.
+**On the web or the Mac:**
+
+1. Go to [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), or choose **Start Free Trial** in the Mac app, and sign in.
+2. Under **Choose your plan**, choose **Start your Standard Trial** (or Pro, or Max).
+3. Add a card on Stripe&#x27;s checkout page. Nothing is charged today.
+4. The page says **You&#x27;re all set!** Open Simeon and sign in with the same account.
+
+When the 7 days end, your plan starts and your card is charged, unless you cancel the trial first.
+
+![Usage &amp; Billing during a trial: Trial usage at 31%, Ends in 5 days, Cancel Trial, then the plan with Start Plan Now and Upgrade to Pro](img/billing-trial.webp &quot;During a trial, Usage &amp; Billing shows your trial credits and when the trial ends.&quot;){c=#89acbc w=100 ar=5/4 edge=right}
+
+During a trial you can:
+
+- **Start Plan Now** to end the trial today and start your plan with a fresh week of credits. You pay for the plan today.
+- **Upgrade to Pro** (or Max) to change the plan your trial turns into. The trial goes on.
+- **Cancel Trial** so your card isn&#x27;t charged and the trial doesn&#x27;t turn into a plan.
+
+:::note
+The trial is one per person, and on the web one per card. A plan you buy after it starts right away, with no second trial.
+:::
+
+## How usage is counted
+
+Your agents&#x27; work uses credits: every message they think through, every page they read, every step on their computer. Each plan gives you a number of credits a week.
+
+- **Your week** starts on the day your plan started, not on a Monday, and resets every seven days. A renewal always starts a fresh week.
+- **Unused credits** don&#x27;t carry over to the next week.
+- **When the week&#x27;s credits run out**, your agents wait until they reset. To keep going sooner, upgrade or add extra credits.
+
+To see where you are, open **Settings › Usage &amp; Billing** on the Mac, the web or iPhone. You can also choose the account button at the bottom of your list of chats: **Weekly usage** shows the share used and when it resets.
+
+![Usage &amp; Billing on Pro: Weekly usage at 42%, Resets in 4 days, Extra credits 3,000,000, then Current plan: Pro with Upgrade to Max, Add Credits and Manage Billing](img/billing-usage.webp &quot;Settings › Usage &amp; Billing: this week&#x27;s usage, extra credits and your plan.&quot;){c=#89acbc w=100 ar=5/4 edge=right}
+
+| On the page | What it shows |
+|---|---|
+| **Weekly usage** | The share of this week&#x27;s credits used, and when they reset. The bar turns red past 90%. |
+| **Extra credits** | The extra credits you have left, when you&#x27;ve bought some. |
+| **Current plan** | Your plan, and the date your usage resets or your trial ends. |
+| **Upgrade to** | Moves you to the next plan up. |
+| **Add Credits** | Buys extra credits (on a paid plan, on the web). |
+| **Manage Billing** | Opens Stripe&#x27;s billing page: your card, invoices, receipts and cancelling. |
+
+### When you&#x27;re near the limit
+
+From 80% of the week&#x27;s credits, and again from 95%, a line over the message field tells you how much is used and when it resets. Its button upgrades your plan, or adds credits on Max. Close it with the **×** and it stays closed until the next step.
+
+![Simeon&#x27;s chat with the line over the message field: You&#x27;re approaching your usage limit, You&#x27;ve used 86% of this week&#x27;s credits. They reset on Saturday, with Upgrade](img/billing-limit.webp &quot;Near the limit, a line over the message field says how much is left.&quot;){c=#89acbc w=100}
+
+When the credits are used up, the line says **This week&#x27;s credits are used** and when they reset.
+
+:::tip
+If an agent uses credits very fast in a short time, it pauses and carries on as the hour passes. This stops a task that&#x27;s gone wrong from using a whole week in one go.
+:::
 
 ## Extra credits
 
-On a paid plan you can buy extra credits on the web: $10 for a pack. Extra credits are used only after the week&#x27;s credits run out, and they last 12 months.
+Extra credits let your agents keep working after the week&#x27;s credits run out, without changing plan.
+
+- A pack is **3,000,000 credits for $10**. You can buy up to 10 packs at a time.
+- They&#x27;re used only after your week&#x27;s credits are used up, and they **last 12 months**.
+- You can buy them on a paid plan, not during a trial.
+
+To buy them, choose **Add Credits** in **Settings › Usage &amp; Billing**, or **Add credits** on [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), and pay on Stripe&#x27;s page. If your plan is billed through Apple, buy them on the web.
+
+:::note
+Per dollar, each plan gives more credits than extra credits do. If you buy packs most weeks, a bigger plan costs less.
+:::
 
 ## Change your plan
 
-- **Upgrade:** starts today. You pay the new plan, less what&#x27;s left of your current one, and get a fresh week.
-- **Downgrade:** takes effect at your next renewal; you keep your current plan until then.
+On the web and the Mac, choose **Upgrade to Pro** (or Max) in **Settings › Usage &amp; Billing**, or open [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing) and choose **Adjust your plan**. A page says what the change does and costs before you choose **Confirm**.
+
+| Change | When it takes effect | What you pay |
+|---|---|---|
+| **Upgrade** | Today, with a fresh week of credits. | The new plan&#x27;s price, less the unused time on your current plan, charged now. |
+| **Downgrade** | At your next renewal. You keep your current plan until then. | The smaller plan&#x27;s price, from the renewal. |
+| **During a trial** | The trial goes on, and the new plan starts when it ends. | Nothing until the trial ends. |
+
+A downgrade waiting for your renewal shows on the billing page with **Keep** and your current plan&#x27;s name, to cancel the switch.
+
+## Plans on iPhone
+
+On iPhone, plans are bought with Apple&#x27;s in-app purchase, at the same monthly prices.
+
+1. Open **Settings › Usage** and choose **Choose a plan**, or choose the button on the line over the message field.
+2. Pick **Standard**, **Pro** or **Max**.
+3. Choose **Subscribe** and confirm the purchase with Apple.
+
+Apple bills the plan and emails your receipts. To change or cancel it, choose **Manage Subscription** in **Usage &amp; Billing**, or open the iPhone&#x27;s **Settings › your name › Subscriptions**. On a new iPhone, **Restore Purchases** finds a plan bought with the same Apple Account.
+
+A plan bought on the web works on iPhone too, and a plan bought on iPhone works on the Mac and the web. Extra credits aren&#x27;t sold in the iPhone app; buy them on the web.
+
+## Run your agents on your own AI account
+
+If you have a ChatGPT or Claude plan, or an API key from an AI provider, your agents can use it. Open **Settings › AI Models**, which lists every provider you can connect, choose **Connect** next to yours and sign in, then choose its model in the menu on the message field.
+
+Your agents&#x27; work on your own account uses no Simeon credits. If your account reaches its plan&#x27;s limit, your agents carry on with Simeon&#x27;s models, on your credits, until it resets. Voice calls, dictation and video still use your Simeon credits, and you still need a Simeon plan for your agents&#x27; cloud computers. With an API key, the provider bills the calls on your key.
 
 ## Cancel
 
-On the web, manage or cancel your subscription from your account&#x27;s billing page. On iPhone, plans are bought through the App Store, so manage or cancel them in your Apple ID settings.
+- **Plan bought on the web or the Mac:** choose **Manage Billing** in **Settings › Usage &amp; Billing**, or **Manage billing on Stripe** on [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), and cancel on Stripe&#x27;s page. Your plan runs until the end of the period you paid for.
+- **Plan bought on iPhone:** open the iPhone&#x27;s **Settings › your name › Subscriptions** and cancel there.
+
+:::warning
+Deleting your Simeon account doesn&#x27;t cancel a plan billed through Apple. Cancel it in the iPhone&#x27;s **Settings › your name › Subscriptions**.
+:::
+
+## Common questions
+
+### What uses the most credits?
+
+Long work on the agent&#x27;s computer, such as filling in forms or going through a website page by page, uses more than answering in the chat. Routines that run often add up over a week.
+
+### My payment didn&#x27;t go through. What happens?
+
+Your agents, chats and computers stay, but you can&#x27;t send messages until the card is updated. A line over the message field says so, with **Update card**. For a plan billed through Apple, update your payment method in your Apple Account.
+
+### Can I pay yearly?
+
+Plans are billed monthly.
+
+### Do I get a receipt?
+
+For a plan on the web, your invoices and receipts are under **Manage Billing**, on Stripe&#x27;s page. For a plan on iPhone, Apple emails them.
+
+## Related pages
+
+:::cards
+- [Approvals, security, and privacy](/docs/approvals) What your agents ask before they act.
+- [Simeon on iPhone](/docs/iphone) Your agents on your phone.
+- [Create and manage agents](/docs/agents) Add agents and give each one a job.
+- [Routines](/docs/routines) Work that runs on a schedule.
+:::
 </script>
 </main>
 

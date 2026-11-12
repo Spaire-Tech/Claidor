@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,62 +216,227 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Approvals, security, and privacy</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/approvals.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Your agents do the work, but nothing important happens without you.</p>
-<h2 id="what-agents-ask-first">What agents ask first</h2>
-<p>Before an agent sends an email, makes a payment or publishes something, it stops and asks in the chat. The approval card says what it wants to do and why, and you choose to allow or refuse it. The same goes for risky steps on its computer, like a command that would delete files.</p>
-<ul><li><strong>Allow once</strong> lets this one action go ahead.</li><li><strong>Always allow</strong> stops asking for that kind of action.</li><li><strong>Refuse</strong> and the agent waits, or finds another way.</li></ul>
-<p>Approval cards also come to your iPhone as notifications, so an agent isn't stuck while you're away from your desk.</p>
+<p>Your agents work on their own, but some things wait for you: an email that goes out under your name, a payment, an answer only you know, a password. For each of these the agent puts a card in its chat and stops until you answer it.</p>
+<p>This page covers each card and what happens when you answer, how purchases are approved, how agents use your Mac, and how your data is kept.</p>
+<div class="table"><table><thead><tr><th>Card</th><th>When you see it</th><th>Your answer</th></tr></thead><tbody><tr><td><strong>Email or <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> draft</strong></td><td>An agent wrote something that would go out under your name.</td><td><strong>Send email</strong> (or <strong>Send message</strong>), or <strong>Discard</strong></td></tr><tr><td><strong>Checkout</strong></td><td>An agent has an order ready to pay.</td><td><strong>Allow</strong> or <strong>Deny</strong></td></tr><tr><td><strong>Question</strong></td><td>The agent needs something only you know, like a budget or a date.</td><td>Pick an answer, write your own, or <strong>Skip</strong></td></tr><tr><td><strong>Secrets</strong></td><td>A task needs an API key or another secret.</td><td><strong>Save securely</strong> or <strong>Not now</strong></td></tr><tr><td><strong>Sign-in</strong></td><td>A page on the agent's computer needs a login or a code.</td><td><strong>Open</strong> the secure form and <strong>Fill in</strong>, or <strong>Not now</strong></td></tr><tr><td><strong>Your turn on the computer</strong></td><td>A step only you can do, like a passkey or a captcha.</td><td><strong>Take over</strong>, then <strong>I'm done</strong>, or <strong>Skip</strong></td></tr><tr><td><strong>Run commands on your computer</strong></td><td>An agent wants to run a command or open files on your Mac.</td><td><strong>Always allow</strong>, <strong>Allow once</strong> or <strong>Never</strong></td></tr></tbody></table></div>
+<p>Cards look and work the same on the Mac, on iPhone and on the web. When an agent stops on a card, you get a notification that it needs you, with what it's asking.</p>
+<h2 id="emails-and-messages">Emails and messages</h2>
+<p>An email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message that would go out under your name comes as a draft card first. Nothing is sent until you send it.</p>
+<ol><li>Ask an agent to write or answer something:</li></ol>
+<blockquote><p>Can you reply to Priya at Northwind? Tell her Thursday at 2pm works for the demo.</p></blockquote>
+<ol start="2"><li>The agent puts the draft in its chat. An email shows <strong>From</strong>, <strong>To</strong>, <strong>Cc</strong>, <strong>Subject</strong>, the message and any attached files; a reply to a thread says <strong>Reply</strong> at the top.</li><li>Change anything you like on the card: who it goes to, the subject, the words. <strong>From</strong> is the mailbox it goes from, <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span> or <span class="brand" style="color:#0078d4"><img class="logo" src="/docs/brands/outlook.png?v=f5ac048b" alt="" aria-hidden="true">Outlook</span>, and can't be changed on the card.</li><li>Choose <strong>Send email</strong>. The card says <strong>Sending…</strong>, then <strong>Sent</strong>.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:6/5"><img class="e-left" src="/docs/img/approvals-email.webp" alt="Nia&#x27;s chat with a reply to Priya as a card: From, To, Cc, Subject, the message, Discard and Send email" width="780" height="650" loading="lazy" decoding="async"></div><figcaption>The draft waits on Send email or Discard.</figcaption></figure>
+<p><strong>Discard</strong> throws the draft away, and the agent takes it as a no: it won't send it another way or write it again unless you ask. If an email can't be sent, the card becomes editable again and the agent tells you why.</p>
+<p>A <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message works the same way: the card shows the <strong>Workspace</strong>, who it goes <strong>To</strong> and the <strong>Thread</strong>, and you choose <strong>Send message</strong>.</p>
+<div class="callout note"><b>Note</b><p>An agent sends without a card only when you've asked it, in that chat, to send that exact message to those people. It never sends email or messages because a routine, a web page or another agent asked it to.</p></div>
 <h2 id="purchases">Purchases</h2>
-<p>When an agent buys something for you through <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> or <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span>, a checkout card shows what it's buying, the total and the card that pays, with <strong>Allow</strong> (confirmed with Face ID) or <strong>Deny</strong>. Link pays with a one-time card, never your real one. See <a href="/docs/connectors">Connect apps</a>.</p>
+<p>Agents can buy things for you with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> or <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop Pay</span>. Add one first in <strong>Settings › Wallet</strong>, under <strong>Payment methods</strong>; it opens the app's page in Connect apps, where you sign in with the app's own sign-in. Every purchase waits for your approval.</p>
+<ol><li>Ask for what you need:</li></ol>
+<blockquote><p>We're out of printer paper. Order two boxes, same as last time.</p></blockquote>
+<ol start="2"><li>When there's a choice to make, the agent shows what it found as product cards: the picture, the price and the store. Open one to see why it fits, and choose <strong>Buy with</strong> and the agent's name, or <strong>View at</strong> to see it on the store's site.</li><li>The agent fills the cart and the delivery details on the shop's own site, on its computer, and stops at the last step before paying.</li><li>A <strong>Checkout</strong> card comes in the chat: what it's buying, the card that pays and the <strong>Total</strong>.</li><li>Choose <strong>Review order</strong> to open the agent's computer on the checkout page and check the items, the delivery and the terms.</li><li>To pay with another card, choose the card's row and pick one under <strong>Pay with</strong>.</li><li>Choose <strong>Allow</strong> and confirm with Face ID or Touch ID. On the web, you confirm in a window that names the amount and the site. <strong>Deny</strong> stops the purchase and the agent is told.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:6/5"><img class="e-left" src="/docs/img/approvals-checkout.webp" alt="Simeon&#x27;s chat with a Checkout card at harboroffice.com: the items, Review order, Mastercard Debit •••• 1005 with Link by Stripe, the total, Deny and Allow" width="780" height="650" loading="lazy" decoding="async"></div><figcaption>The checkout card: what's bought, the card that pays and the total.</figcaption></figure>
+<p>Once you allow it, the card follows the order. Link may ask you to approve the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app as well: the card then says <strong>Approve with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong>, with <strong>Get the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app</strong> and <strong>Open <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong>. When the order is placed, the card says <strong>Ordered</strong> with the order number.</p>
+<div class="table"><table><thead><tr><th>The card says</th><th>What it means</th></tr></thead><tbody><tr><td><strong>In progress</strong></td><td>Simeon is asking Link to pay.</td></tr><tr><td><strong>Approve with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong></td><td>Link is waiting for you to approve the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app.</td></tr><tr><td><strong>Approved · placing your order</strong></td><td>The agent is placing the order on the shop's site.</td></tr><tr><td><strong>Ordered</strong></td><td>The order went through. The order number is under it.</td></tr><tr><td><strong>Denied</strong>, <strong>Expired</strong>, <strong>Canceled</strong></td><td>Nothing was paid.</td></tr><tr><td><strong>Didn't go through</strong></td><td>The order failed. The line under it says why.</td></tr></tbody></table></div>
+<p>How the money is kept safe:</p>
+<ul><li><strong>Each Link purchase gets its own one-time card</strong>, made for that amount. Your real card number is never used at the shop.</li><li><strong>The agent never sees a card number.</strong> Simeon types the one-time card into the checkout itself, only on that shop's site, and the agent is told only which fields were filled.</li><li><strong>The total is checked against the checkout page</strong> before the card is shown. If they don't match, nothing is asked of Link and the agent is told the page's total.</li><li><strong>Link limits what agents can spend:</strong> $500 a purchase, $500 a day and $20,000 in 30 days. A total over a limit is refused before a card is shown.</li></ul>
+<p>With <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span>, a <span class="brand" style="color:#62914a"><i class="logo" style="--m:url(/docs/brands/shopify.png?v=e4e7ed63);background:#62914a" aria-hidden="true"></i>Shopify</span> store's checkout is paid through <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span> with the card you pick, and the card ends on <strong>Ordered</strong> with the order number. At any other store, Shop asks you to approve a one-time card in the <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span> app, and the card says <strong>Approve it in the <span class="brand" style="color:#5433eb"><img class="logo" src="/docs/brands/shop.png?v=dfb7124e" alt="" aria-hidden="true">Shop</span> app</strong> until you do.</p>
+<div class="callout tip"><b>Tip</b><p>Purchases with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> work for accounts in the US and Canada. Add or remove cards in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app or at link.com: the checkout card lists the ones it lets agents use.</p></div>
+<h2 id="questions">Questions</h2>
+<p>When an agent needs something only you know, such as who a gift is for, your budget or a date, it asks with a question card before it searches or picks.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/approvals-question.webp" alt="Kai&#x27;s chat with a question card: What matters most for this stay? with three answers, Something else, Skip and Send" width="780" height="560" loading="lazy" decoding="async"></div><figcaption>Choose an answer and it's sent.</figcaption></figure>
+<ul><li>Choose an answer and it's sent at once. The agent's suggested answer is shown in blue.</li><li><strong>Something else</strong> lets you write your own answer, then <strong>Send</strong>.</li><li>With several questions in one card, the card moves to the next as you answer, and sends all your answers together. <strong>Back</strong> goes to the previous one.</li><li><strong>Skip</strong> tells the agent you'd rather not answer. It carries on without it.</li></ul>
+<p>A question stays open until you answer or skip it, so you can come back to it later.</p>
+<h2 id="secrets-sign-ins-and-your-turn-on-the-computer">Secrets, sign-ins and your turn on the computer</h2>
+<p>Agents never ask for a password, a code or a key in the chat. They ask with a card instead:</p>
+<ul><li><strong>Secrets.</strong> For an API key or a token, a card under <strong>Secrets</strong> says what it's for. Paste it and choose <strong>Save securely</strong>: it's stored securely and never shown to your agent.</li><li><strong>Sign-ins.</strong> When a page needs a login, a one-time code or an address, a card opens a secure form. You type there and choose <strong>Fill in</strong>, and Simeon types it into the page. What you type isn't shown to the agent. A login you saved in the Credentials Store is filled without a card, and with 1Password connected, a card offers <strong>Fill with 1Password</strong>, confirmed with Face ID or Touch ID. See <a href="/docs/credentials">Credentials Store and secure sign-in</a>.</li><li><strong>Your turn on the computer.</strong> For a step the form can't do, like a passkey, a captcha or signing in with Google, the card says <strong>Action needed</strong>. Choose <strong>Take over</strong> to work on the agent's computer, then <strong>I'm done</strong>. <strong>Skip</strong> tells the agent to carry on without that step. See <a href="/docs/computer">The agent's computer</a>.</li></ul>
+<p><strong>Not now</strong> on any of these cards is a no, and the agent hears it right away.</p>
+<h2 id="agents-on-your-mac">Agents on your Mac</h2>
+<p>An agent can run commands and open files on your Mac, for example to work in a project on your computer. The first time it needs to, a card over the message field asks: <strong>Allow Simeon and all agents to run commands on your local computer?</strong></p>
+<ul><li><strong>Allow once</strong> lets this one command run.</li><li><strong>Always allow</strong> lets agents run commands on this Mac without asking.</li><li><strong>Never</strong> stops agents from using this Mac.</li></ul>
+<p>To change your answer later, open <strong>Settings › Computer</strong> and, under <strong>Your Computer</strong>, set <strong>Execution on Local Computer</strong> to <strong>Always allow</strong>, <strong>Ask every time</strong> or <strong>Never allow</strong>. <strong>Ask every time</strong> is the default. The same setting is in the Windows app.</p>
+<div class="callout note"><b>Note</b><p>Whatever you choose, agents can't read the folders where your Mac keeps passwords and browser sign-ins, such as your keychain and Chrome's profile.</p></div>
+<h2 id="assistants-you-ve-connected">Assistants you've connected</h2>
+<p>Assistants you've connected to Simeon, like Claude Code or Dots, can see what your agents are waiting on and answer an agent's question for you. Purchases, 1Password logins, secrets, sign-in forms and Credentials Store entries can only be answered by you, in the Simeon app. See <a href="/docs/network">Simeon Network</a>.</p>
 <h2 id="your-data">Your data</h2>
-<ul><li><strong>Encrypted</strong> at rest and in transit.</li><li><strong>Isolated:</strong> each customer's data is kept apart from every other customer's.</li><li><strong>Never used to train a model.</strong></li></ul>
-<h2 id="passwords-and-codes">Passwords and codes</h2>
-<p>Agents never see your passwords or one-time codes. Sign-ins are filled from the <a href="/docs/credentials">Credentials Store</a> or 1Password after Face ID or Touch ID, or typed by you in a masked form. You sign in to connected apps on their own pages, so Simeon never holds those passwords either.</p>
-<h2 id="watch-and-step-in">Watch and step in</h2>
-<p>You can open an agent's computer at any time to watch it work, and <strong>Take control</strong> to stop it and take over. See <a href="/docs/computer">The agent's computer</a>.</p>
-<h2 id="your-mac">Your Mac</h2>
-<p>An agent only runs commands or works with files on your Mac after you allow it. You can choose <strong>Never</strong>, and change your choice in <strong>Settings</strong>.</p>
+<div class="table"><table><thead><tr><th>Your data</th><th>How it's kept</th></tr></thead><tbody><tr><td><strong>Encrypted</strong></td><td>Connections between your devices and our servers are encrypted, and the logins of your connected apps are kept only for your account.</td></tr><tr><td><strong>Kept apart</strong></td><td>Each customer's agents and cloud computers are separate from every other customer's.</td></tr><tr><td><strong>Not used for training</strong></td><td>We never use your content to train AI models. The AI providers we use work under business terms that don't let them train on what we send.</td></tr><tr><td><strong>Where it's stored</strong></td><td>In the United States and the European Union.</td></tr><tr><td><strong>Deleted when you ask</strong></td><td>Deleting your account deletes your agents, their computers and files, your chats, memory and routines, and disconnects your apps.</td></tr></tbody></table></div>
+<p>The full details are in the <a href="/privacy">Privacy Policy</a>.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="what-happens-if-i-don-t-answer-a-card">What happens if I don't answer a card?</h3>
+<p>The agent waits. A card ends the agent's turn, so it doesn't carry on around it or ask again. Answer whenever you're ready: the agent's row in your chat list shows what it's asking.</p>
+<h3 id="can-a-routine-or-another-agent-approve-a-purchase">Can a routine or another agent approve a purchase?</h3>
+<p>No. Only you can allow a checkout, in the Simeon app on your Mac, iPhone or the web. Other agents and the assistants you've connected can't answer it.</p>
+<h3 id="i-chose-allow-by-mistake-can-i-stop-the-purchase">I chose Allow by mistake. Can I stop the purchase?</h3>
+<p>If the card still says <strong>Approve with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong>, decline the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app and nothing is paid. Once the card says <strong>Ordered</strong>, the order is placed: cancel it with the shop, as you would any order.</p>
+<h3 id="can-an-agent-send-a-message-without-the-draft-card">Can an agent send a message without the draft card?</h3>
+<p>Only when you've told it, in that chat, to send that exact message to those people. To make sure every email waits for you, add it to the agent's description: "Never send an email without my OK."</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/credentials"><span><h3>Credentials Store and secure sign-in</h3><p>Logins, contact details and sign-ins filled with Face ID.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/computer"><span><h3>The agent's computer</h3><p>Watch an agent work, or take control.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>Link, Shop, Gmail and the other apps your agents use.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/billing"><span><h3>Plans and billing</h3><p>Plans, weekly usage and extra credits.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#what-agents-ask-first">What agents ask first</a><a class="t l2" href="#purchases">Purchases</a><a class="t l2" href="#your-data">Your data</a><a class="t l2" href="#passwords-and-codes">Passwords and codes</a><a class="t l2" href="#watch-and-step-in">Watch and step in</a><a class="t l2" href="#your-mac">Your Mac</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#emails-and-messages">Emails and messages</a><a class="t l2" href="#purchases">Purchases</a><a class="t l2" href="#questions">Questions</a><a class="t l2" href="#secrets-sign-ins-and-your-turn-on-the-computer">Secrets, sign-ins and your turn on the computer</a><a class="t l2" href="#agents-on-your-mac">Agents on your Mac</a><a class="t l2" href="#assistants-you-ve-connected">Assistants you&#x27;ve connected</a><a class="t l2" href="#your-data">Your data</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#what-happens-if-i-don-t-answer-a-card">What happens if I don&#x27;t answer a card?</a><a class="t l3" href="#can-a-routine-or-another-agent-approve-a-purchase">Can a routine or another agent approve a purchase?</a><a class="t l3" href="#i-chose-allow-by-mistake-can-i-stop-the-purchase">I chose Allow by mistake. Can I stop the purchase?</a><a class="t l3" href="#can-an-agent-send-a-message-without-the-draft-card">Can an agent send a message without the draft card?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Approvals, security, and privacy
 
-Your agents do the work, but nothing important happens without you.
+Your agents work on their own, but some things wait for you: an email that goes out under your name, a payment, an answer only you know, a password. For each of these the agent puts a card in its chat and stops until you answer it.
 
-## What agents ask first
+This page covers each card and what happens when you answer, how purchases are approved, how agents use your Mac, and how your data is kept.
 
-Before an agent sends an email, makes a payment or publishes something, it stops and asks in the chat. The approval card says what it wants to do and why, and you choose to allow or refuse it. The same goes for risky steps on its computer, like a command that would delete files.
+| Card | When you see it | Your answer |
+|---|---|---|
+| **Email or Slack draft** | An agent wrote something that would go out under your name. | **Send email** (or **Send message**), or **Discard** |
+| **Checkout** | An agent has an order ready to pay. | **Allow** or **Deny** |
+| **Question** | The agent needs something only you know, like a budget or a date. | Pick an answer, write your own, or **Skip** |
+| **Secrets** | A task needs an API key or another secret. | **Save securely** or **Not now** |
+| **Sign-in** | A page on the agent&#x27;s computer needs a login or a code. | **Open** the secure form and **Fill in**, or **Not now** |
+| **Your turn on the computer** | A step only you can do, like a passkey or a captcha. | **Take over**, then **I&#x27;m done**, or **Skip** |
+| **Run commands on your computer** | An agent wants to run a command or open files on your Mac. | **Always allow**, **Allow once** or **Never** |
 
-- **Allow once** lets this one action go ahead.
-- **Always allow** stops asking for that kind of action.
-- **Refuse** and the agent waits, or finds another way.
+Cards look and work the same on the Mac, on iPhone and on the web. When an agent stops on a card, you get a notification that it needs you, with what it&#x27;s asking.
 
-Approval cards also come to your iPhone as notifications, so an agent isn&#x27;t stuck while you&#x27;re away from your desk.
+## Emails and messages
+
+An email or a Slack message that would go out under your name comes as a draft card first. Nothing is sent until you send it.
+
+1. Ask an agent to write or answer something:
+
+&gt; Can you reply to Priya at Northwind? Tell her Thursday at 2pm works for the demo.
+
+2. The agent puts the draft in its chat. An email shows **From**, **To**, **Cc**, **Subject**, the message and any attached files; a reply to a thread says **Reply** at the top.
+3. Change anything you like on the card: who it goes to, the subject, the words. **From** is the mailbox it goes from, Gmail or Outlook, and can&#x27;t be changed on the card.
+4. Choose **Send email**. The card says **Sending…**, then **Sent**.
+
+![Nia&#x27;s chat with a reply to Priya as a card: From, To, Cc, Subject, the message, Discard and Send email](img/approvals-email.webp &quot;The draft waits on Send email or Discard.&quot;){c=#af8fa0 w=100 ar=6/5}
+
+**Discard** throws the draft away, and the agent takes it as a no: it won&#x27;t send it another way or write it again unless you ask. If an email can&#x27;t be sent, the card becomes editable again and the agent tells you why.
+
+A Slack message works the same way: the card shows the **Workspace**, who it goes **To** and the **Thread**, and you choose **Send message**.
+
+:::note
+An agent sends without a card only when you&#x27;ve asked it, in that chat, to send that exact message to those people. It never sends email or messages because a routine, a web page or another agent asked it to.
+:::
 
 ## Purchases
 
-When an agent buys something for you through Link or Shop, a checkout card shows what it&#x27;s buying, the total and the card that pays, with **Allow** (confirmed with Face ID) or **Deny**. Link pays with a one-time card, never your real one. See [Connect apps](/docs/connectors).
+Agents can buy things for you with Link or Shop Pay. Add one first in **Settings › Wallet**, under **Payment methods**; it opens the app&#x27;s page in Connect apps, where you sign in with the app&#x27;s own sign-in. Every purchase waits for your approval.
+
+1. Ask for what you need:
+
+&gt; We&#x27;re out of printer paper. Order two boxes, same as last time.
+
+2. When there&#x27;s a choice to make, the agent shows what it found as product cards: the picture, the price and the store. Open one to see why it fits, and choose **Buy with** and the agent&#x27;s name, or **View at** to see it on the store&#x27;s site.
+3. The agent fills the cart and the delivery details on the shop&#x27;s own site, on its computer, and stops at the last step before paying.
+4. A **Checkout** card comes in the chat: what it&#x27;s buying, the card that pays and the **Total**.
+5. Choose **Review order** to open the agent&#x27;s computer on the checkout page and check the items, the delivery and the terms.
+6. To pay with another card, choose the card&#x27;s row and pick one under **Pay with**.
+7. Choose **Allow** and confirm with Face ID or Touch ID. On the web, you confirm in a window that names the amount and the site. **Deny** stops the purchase and the agent is told.
+
+![Simeon&#x27;s chat with a Checkout card at harboroffice.com: the items, Review order, Mastercard Debit •••• 1005 with Link by Stripe, the total, Deny and Allow](img/approvals-checkout.webp &quot;The checkout card: what&#x27;s bought, the card that pays and the total.&quot;){c=#89acbc w=100 ar=6/5}
+
+Once you allow it, the card follows the order. Link may ask you to approve the purchase in the Link app as well: the card then says **Approve with Link**, with **Get the Link app** and **Open Link**. When the order is placed, the card says **Ordered** with the order number.
+
+| The card says | What it means |
+|---|---|
+| **In progress** | Simeon is asking Link to pay. |
+| **Approve with Link** | Link is waiting for you to approve the purchase in the Link app. |
+| **Approved · placing your order** | The agent is placing the order on the shop&#x27;s site. |
+| **Ordered** | The order went through. The order number is under it. |
+| **Denied**, **Expired**, **Canceled** | Nothing was paid. |
+| **Didn&#x27;t go through** | The order failed. The line under it says why. |
+
+How the money is kept safe:
+
+- **Each Link purchase gets its own one-time card**, made for that amount. Your real card number is never used at the shop.
+- **The agent never sees a card number.** Simeon types the one-time card into the checkout itself, only on that shop&#x27;s site, and the agent is told only which fields were filled.
+- **The total is checked against the checkout page** before the card is shown. If they don&#x27;t match, nothing is asked of Link and the agent is told the page&#x27;s total.
+- **Link limits what agents can spend:** $500 a purchase, $500 a day and $20,000 in 30 days. A total over a limit is refused before a card is shown.
+
+With Shop, a Shopify store&#x27;s checkout is paid through Shop with the card you pick, and the card ends on **Ordered** with the order number. At any other store, Shop asks you to approve a one-time card in the Shop app, and the card says **Approve it in the Shop app** until you do.
+
+:::tip
+Purchases with Link work for accounts in the US and Canada. Add or remove cards in the Link app or at link.com: the checkout card lists the ones it lets agents use.
+:::
+
+## Questions
+
+When an agent needs something only you know, such as who a gift is for, your budget or a date, it asks with a question card before it searches or picks.
+
+![Kai&#x27;s chat with a question card: What matters most for this stay? with three answers, Something else, Skip and Send](img/approvals-question.webp &quot;Choose an answer and it&#x27;s sent.&quot;){c=#a5835f w=100 ar=16/11}
+
+- Choose an answer and it&#x27;s sent at once. The agent&#x27;s suggested answer is shown in blue.
+- **Something else** lets you write your own answer, then **Send**.
+- With several questions in one card, the card moves to the next as you answer, and sends all your answers together. **Back** goes to the previous one.
+- **Skip** tells the agent you&#x27;d rather not answer. It carries on without it.
+
+A question stays open until you answer or skip it, so you can come back to it later.
+
+## Secrets, sign-ins and your turn on the computer
+
+Agents never ask for a password, a code or a key in the chat. They ask with a card instead:
+
+- **Secrets.** For an API key or a token, a card under **Secrets** says what it&#x27;s for. Paste it and choose **Save securely**: it&#x27;s stored securely and never shown to your agent.
+- **Sign-ins.** When a page needs a login, a one-time code or an address, a card opens a secure form. You type there and choose **Fill in**, and Simeon types it into the page. What you type isn&#x27;t shown to the agent. A login you saved in the Credentials Store is filled without a card, and with 1Password connected, a card offers **Fill with 1Password**, confirmed with Face ID or Touch ID. See [Credentials Store and secure sign-in](/docs/credentials).
+- **Your turn on the computer.** For a step the form can&#x27;t do, like a passkey, a captcha or signing in with Google, the card says **Action needed**. Choose **Take over** to work on the agent&#x27;s computer, then **I&#x27;m done**. **Skip** tells the agent to carry on without that step. See [The agent&#x27;s computer](/docs/computer).
+
+**Not now** on any of these cards is a no, and the agent hears it right away.
+
+## Agents on your Mac
+
+An agent can run commands and open files on your Mac, for example to work in a project on your computer. The first time it needs to, a card over the message field asks: **Allow Simeon and all agents to run commands on your local computer?**
+
+- **Allow once** lets this one command run.
+- **Always allow** lets agents run commands on this Mac without asking.
+- **Never** stops agents from using this Mac.
+
+To change your answer later, open **Settings › Computer** and, under **Your Computer**, set **Execution on Local Computer** to **Always allow**, **Ask every time** or **Never allow**. **Ask every time** is the default. The same setting is in the Windows app.
+
+:::note
+Whatever you choose, agents can&#x27;t read the folders where your Mac keeps passwords and browser sign-ins, such as your keychain and Chrome&#x27;s profile.
+:::
+
+## Assistants you&#x27;ve connected
+
+Assistants you&#x27;ve connected to Simeon, like Claude Code or Dots, can see what your agents are waiting on and answer an agent&#x27;s question for you. Purchases, 1Password logins, secrets, sign-in forms and Credentials Store entries can only be answered by you, in the Simeon app. See [Simeon Network](/docs/network).
 
 ## Your data
 
-- **Encrypted** at rest and in transit.
-- **Isolated:** each customer&#x27;s data is kept apart from every other customer&#x27;s.
-- **Never used to train a model.**
+| Your data | How it&#x27;s kept |
+|---|---|
+| **Encrypted** | Connections between your devices and our servers are encrypted, and the logins of your connected apps are kept only for your account. |
+| **Kept apart** | Each customer&#x27;s agents and cloud computers are separate from every other customer&#x27;s. |
+| **Not used for training** | We never use your content to train AI models. The AI providers we use work under business terms that don&#x27;t let them train on what we send. |
+| **Where it&#x27;s stored** | In the United States and the European Union. |
+| **Deleted when you ask** | Deleting your account deletes your agents, their computers and files, your chats, memory and routines, and disconnects your apps. |
 
-## Passwords and codes
+The full details are in the [Privacy Policy](/privacy).
 
-Agents never see your passwords or one-time codes. Sign-ins are filled from the [Credentials Store](/docs/credentials) or 1Password after Face ID or Touch ID, or typed by you in a masked form. You sign in to connected apps on their own pages, so Simeon never holds those passwords either.
+## Common questions
 
-## Watch and step in
+### What happens if I don&#x27;t answer a card?
 
-You can open an agent&#x27;s computer at any time to watch it work, and **Take control** to stop it and take over. See [The agent&#x27;s computer](/docs/computer).
+The agent waits. A card ends the agent&#x27;s turn, so it doesn&#x27;t carry on around it or ask again. Answer whenever you&#x27;re ready: the agent&#x27;s row in your chat list shows what it&#x27;s asking.
 
-## Your Mac
+### Can a routine or another agent approve a purchase?
 
-An agent only runs commands or works with files on your Mac after you allow it. You can choose **Never**, and change your choice in **Settings**.
+No. Only you can allow a checkout, in the Simeon app on your Mac, iPhone or the web. Other agents and the assistants you&#x27;ve connected can&#x27;t answer it.
+
+### I chose Allow by mistake. Can I stop the purchase?
+
+If the card still says **Approve with Link**, decline the purchase in the Link app and nothing is paid. Once the card says **Ordered**, the order is placed: cancel it with the shop, as you would any order.
+
+### Can an agent send a message without the draft card?
+
+Only when you&#x27;ve told it, in that chat, to send that exact message to those people. To make sure every email waits for you, add it to the agent&#x27;s description: &quot;Never send an email without my OK.&quot;
+
+## Related pages
+
+:::cards
+- [Credentials Store and secure sign-in](/docs/credentials) Logins, contact details and sign-ins filled with Face ID.
+- [The agent&#x27;s computer](/docs/computer) Watch an agent work, or take control.
+- [Connect apps](/docs/connectors) Link, Shop, Gmail and the other apps your agents use.
+- [Plans and billing](/docs/billing) Plans, weekly usage and extra credits.
+:::
 </script>
 </main>
 

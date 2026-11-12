@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Get started</title>
-<meta name="description" content="Install Simeon on your Mac, meet Simeon your chief of staff, and hand your first agent a real task.">
+<meta name="description" content="Install Simeon on your Mac, sign in, start your free trial, meet Simeon, hire your first agent and give it a first task.">
 <link rel="canonical" href="https://simeonlabs.com/docs/get-started">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/get-started">
 <meta property="og:title" content="SimeonLabs | Docs | Get started">
-<meta property="og:description" content="Install Simeon on your Mac, meet Simeon your chief of staff, and hand your first agent a real task.">
+<meta property="og:description" content="Install Simeon on your Mac, sign in, start your free trial, meet Simeon, hire your first agent and give it a first task.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,90 +216,211 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Get started</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/get-started.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>This guide takes you from install to your first finished task. You'll set up the Mac app, meet Simeon, hire your first agent and review its work.</p>
-<h2 id="before-you-begin">Before you begin</h2>
-<p>You need a Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial, so you can try Simeon before you pay; see <a href="/docs/billing">Plans and billing</a>.</p>
+<p>This guide takes you from the download to your first finished task. You'll install the Mac app, sign in, meet Simeon, let him hire your first agent, connect the app it needs and check its work.</p>
+<div class="table"><table><thead><tr><th>You need</th><th>Details</th></tr></thead><tbody><tr><td><strong>A Mac</strong></td><td>With Apple silicon, on macOS 15 or later.</td></tr><tr><td><strong>An email address</strong></td><td>Or a Google or Apple account to sign in with.</td></tr><tr><td><strong>A card, for the trial</strong></td><td>Every plan starts with a 7-day free trial. You add a card on the web and can cancel at any time. See <a href="/docs/billing">Plans and billing</a>.</td></tr></tbody></table></div>
 <h2 id="1-install-the-mac-app">1. Install the Mac app</h2>
-<p><a href="https://api.simeonlabs.com/desktop/download/mac">Download Simeon for macOS</a>, open the file and drag Simeon into Applications. Then open it from Applications or Spotlight.</p>
+<ol><li><a href="https://api.simeonlabs.com/desktop/download/mac">Download Simeon for macOS</a>.</li><li>Open the downloaded file and drag <strong>Simeon</strong> into your <strong>Applications</strong> folder.</li><li>Open Simeon from Applications or Spotlight.</li></ol>
+<p>Simeon updates itself. You can check for an update in <strong>Settings</strong> › <strong>Updates</strong>.</p>
 <h2 id="2-sign-in">2. Sign in</h2>
-<p>Choose <strong>Continue with Google</strong>, <strong>Continue with Apple</strong>, or sign in with your email and the code we send you. The same account works on the Mac and on iPhone.</p>
-<p>The app then sets up your agents' cloud computer and asks what your agents should call you. You can change your name later in <strong>Settings › Account</strong>.</p>
-<h2 id="3-meet-simeon">3. Meet Simeon</h2>
-<p>Simeon is your chief of staff. He introduces himself, then asks what you'd hand to a person if you hired one today. Answer in a sentence; he hires the right agent for it, with a name, a face, a job title and a brief.</p>
-<p>If you're not sure, ask him what he recommends. For a bigger project he proposes a small team, three agents at most to start.</p>
-<h2 id="4-give-it-a-first-task">4. Give it a first task</h2>
-<p>Open the new agent's chat and type, or dictate. A strong request says what you want, which sources matter, what you want back, and where the agent should stop and check with you. For example:</p>
-<blockquote><p>Find the five accounts we haven't heard from in a month, draft a short check-in for each in my voice, and show me the drafts before anything is sent.</p></blockquote>
-<h2 id="5-connect-the-apps-it-needs">5. Connect the apps it needs</h2>
-<p>When the agent needs one of your apps, it shows a <strong>Connect</strong> card in the chat. Choose <strong>Connect</strong>, sign in on the app's own page, and you're done; the agent picks up where it left off. You can also connect apps ahead of time; see <a href="/docs/connectors">Connect apps</a>.</p>
-<h2 id="6-review-the-result-and-make-it-stick">6. Review the result and make it stick</h2>
-<p>Check what the agent did, correct it, and tell it what to remember, like a report format or the hours you keep for meetings. When a task works well, turn it into a <a href="/docs/routines">routine</a> so it runs on its own.</p>
-<p>Before an agent sends an email, pays for something or posts anything, it asks you first. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/get-started-signin.webp" alt="The Simeon window&#x27;s first screen, Sign in to Simeon, with Continue to sign in and Sign up" width="780" height="480" loading="lazy" decoding="async"></div><figcaption>The first screen. Both buttons continue in your browser.</figcaption></figure>
+<ol><li>Choose <strong>Continue to sign in</strong>, or <strong>Sign up</strong> if you don't have an account yet. Your browser opens, and the app says <strong>Continue in your browser</strong>.</li><li>In the browser, type your email and choose <strong>Continue</strong>, then type the six-character code we email you. Or choose <strong>Continue with Google</strong> or <strong>Continue with Apple</strong>.</li><li>The page asks you to confirm the account: choose <strong>Continue as</strong> with your email, or <strong>Use a different account</strong>.</li><li>The page says <strong>You're signed in to Simeon</strong>. Go back to the app; it carries on by itself.</li></ol>
+<p>If you closed the browser tab, choose <strong>Reopen link</strong> in the app. <strong>Cancel</strong> takes you back to the first screen.</p>
+<h2 id="3-tell-simeon-your-name">3. Tell Simeon your name</h2>
+<p>While the app sets up your agents' computer, it asks one question: <strong>What should we call you?</strong> Your first name from Google or Apple is already filled in when there is one.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/get-started-name.webp" alt="What should we call you?, with Alex typed in the Name field and Continue" width="780" height="480" loading="lazy" decoding="async"></div><figcaption>The only question before Simeon's chat opens.</figcaption></figure>
+<p>Type the name your agents should use and choose <strong>Continue</strong>. Your chat with Simeon opens; if his computer is still starting, the app says <strong>Getting your team ready…</strong> first. You can change your name later in <strong>Settings</strong> › <strong>General</strong> › <strong>Simeon Account</strong>.</p>
+<div class="callout note"><b>Note</b><p>The Mac asks whether Simeon can send you notifications. Allow them, so you know when an agent finishes a task or needs your answer.</p></div>
+<h2 id="4-start-your-free-trial">4. Start your free trial</h2>
+<p>If your account has no plan yet, the bottom of the chat says <strong>Start your free trial to send messages</strong>, and sending waits until you start it.</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:3/2"><img class="e-right" src="/docs/img/get-started-trial.webp" alt="The notice above the message box: Start your free trial to send messages, with Start Free Trial" width="780" height="470" loading="lazy" decoding="async"></div><figcaption>The notice above the message box, on an account with no plan yet.</figcaption></figure>
+<ol><li>Choose <strong>Start Free Trial</strong>. The plans page opens in your browser.</li><li>Choose a plan and add a card. You aren't charged during the 7 days, and you can cancel before they end.</li><li>Go back to the app. Once the trial has started, the notice goes away and you can send messages.</li></ol>
+<h2 id="5-meet-simeon-and-hire-your-first-agent">5. Meet Simeon and hire your first agent</h2>
+<p>Simeon is your chief of staff. His job is to build your team: he hires agents, briefs them and passes work to them. He introduces himself in four short messages, then asks what you'd hand off first:</p>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:4/3"><img class="e-left" src="/docs/img/get-started-question.webp" alt="Simeon&#x27;s question card: What&#x27;s the first thing you&#x27;d hand to a person if you hired one today?, with four options, Something else, Skip and Send" width="780" height="560" loading="lazy" decoding="async"></div><figcaption>Simeon's first question. The options depend on the apps you've connected.</figcaption></figure>
+<ol><li>Choose the job you'd hand off first, such as <strong>My inbox</strong>. Your answer is sent as soon as you choose it. If the job isn't on the list, choose <strong>Something else</strong>, describe it in your own words and choose <strong>Send</strong>:</li></ol>
+<blockquote><p>Chase the invoices clients haven't paid and keep our books up to date.</p></blockquote>
+<ol start="2"><li>If the job isn't clear yet, Simeon asks one or two more questions. If you're not sure what to hand off, tell him so and he recommends a first hire and says why.</li><li>Simeon hires the agent. A card says it <strong>just joined your team</strong>, and Simeon says what it will do first.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#c47256;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/get-started-hired.webp" alt="Ava&#x27;s card in Simeon&#x27;s chat: Ava just joined your team, with Go to Chat and View Profile" width="780" height="500" loading="lazy" decoding="async"></div><figcaption>Simeon hires Ava for the inbox, then says what she'll do first.</figcaption></figure>
+<p>The new agent has a first name, a title that names the job, a description and a brief from Simeon that tells it what to do first. Simeon then asks whether there's anything else you'd hand off today. Pick another job, or choose <strong>That's all for now</strong>.</p>
+<div class="callout tip"><b>Tip</b><p>For a bigger project, describe the project instead of one job. Simeon says who he'd hire, up to three agents for a first team, and hires each one. See <a href="/docs/agents#ask-for-a-whole-team">Ask for a whole team</a>.</p></div>
+<h2 id="6-connect-the-app-your-agent-needs">6. Connect the app your agent needs</h2>
+<p>Choose <strong>Go to Chat</strong> on the card, or choose the new agent in your list of chats. At the top of its chat is <strong>Message from Simeon</strong>: the brief he sent it. Choose it to read the brief.</p>
+<p>The agent introduces itself and asks for the app it needs, with a card:</p>
+<figure class="shot"><div class="pane" style="--c:#c47256;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/get-started-connect.webp" alt="Ava&#x27;s chat: Message from Simeon, her introduction, and a Gmail card with Connect" width="780" height="480" loading="lazy" decoding="async"></div><figcaption>Ava asks for <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span> with a card in her chat.</figcaption></figure>
+<ol><li>Choose <strong>Connect</strong> on the card. A window says what the app lets your agents do.</li><li>Choose <strong>Connect</strong> again. The app's own sign-in page opens in your browser.</li><li>Sign in and allow access. The page says <strong>Connected</strong>; close the tab and go back to Simeon.</li></ol>
+<p>The agent picks up where it stopped. Simeon never sees your password for the app. To connect apps ahead of time, choose <strong>Connect apps</strong> at the bottom of your list of chats; see <a href="/docs/connectors">Connect apps</a>.</p>
+<h2 id="7-give-it-a-first-task">7. Give it a first task</h2>
+<p>The agent starts on Simeon's brief right away. To give it something specific, write in its chat, or choose the microphone and dictate. A good first task is real, spans a few steps, and says where the agent should stop and check with you:</p>
+<blockquote><p>Find the five customers we haven't heard from in a month and draft a short check-in for each, in my voice. Show me the drafts before anything is sent.</p></blockquote>
+<div class="table"><table><thead><tr><th>A good request says</th><th>For example</th></tr></thead><tbody><tr><td>What you want done</td><td>Find five quiet customers and draft a check-in for each.</td></tr><tr><td>Where to look</td><td>In my <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, from the last month.</td></tr><tr><td>What you want back</td><td>One draft per customer.</td></tr><tr><td>Where to stop</td><td>Show me the drafts before anything is sent.</td></tr></tbody></table></div>
+<h2 id="8-check-the-result">8. Check the result</h2>
+<p>The agent reports in its chat as it goes. An email in your name comes as a draft card:</p>
+<figure class="shot"><div class="pane" style="--c:#c47256;--w:100%;aspect-ratio:5/4"><img class="e-right" src="/docs/img/get-started-draft.webp" alt="An email draft card in Ava&#x27;s chat: New email, Ready to send, From, To, Subject, the message, Discard and Send email" width="780" height="620" loading="lazy" decoding="async"></div><figcaption>The first check-in, ready for you to edit and send.</figcaption></figure>
+<ol><li>Read the draft. To change it, edit the text on the card, or tell the agent what to change.</li><li>Choose <strong>Send email</strong> to send it, or <strong>Discard</strong> to drop it. Nothing is sent until you choose <strong>Send email</strong>.</li><li>Tell the agent what to keep doing differently, the way you would a colleague:</li></ol>
+<blockquote><p>Good. Keep them shorter, and sign them "Alex" without "Best".</p></blockquote>
+<p>Ask it to remember this, and it will for the next tasks. When a task goes well, ask the agent to do it on a schedule, such as every Monday morning; see <a href="/docs/routines">Routines</a>.</p>
 <h2 id="use-simeon-on-your-iphone">Use Simeon on your iPhone</h2>
-<p>The iPhone app connects to the same agents, chats and computers. Sign in with the same account to message your agents, call them, approve their requests and watch their computers. See <a href="/docs/iphone">Simeon for iPhone</a>.</p>
-<h2 id="if-something-doesn-t-work">If something doesn't work</h2>
-<p>Most problems clear after you quit and reopen the app. For anything else, see the <a href="/docs/faq">FAQ</a> or <a href="/contact">contact us</a>.</p>
+<p>Simeon for iPhone shows the same agents and chats. Sign in with the same account to message and call your agents, answer their cards and watch their computers. See <a href="/docs/iphone">Simeon for iPhone</a>.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="simeon-says-he-couldn-t-finish-setting-up-what-do-i-do">Simeon says he couldn't finish setting up. What do I do?</h3>
+<p>Choose <strong>Try again</strong>. If it keeps failing, check your internet connection, then quit and reopen the app.</p>
+<h3 id="i-closed-the-browser-before-signing-in-how-do-i-finish">I closed the browser before signing in. How do I finish?</h3>
+<p>Choose <strong>Reopen link</strong> in the app to open the sign-in page again, or <strong>Cancel</strong> and start over with <strong>Continue to sign in</strong>.</p>
+<h3 id="do-i-have-to-hire-through-simeon">Do I have to hire through Simeon?</h3>
+<p>No. You can create an agent yourself with the <strong>New Agent</strong> button at the top of your list of chats, or add a ready-made team of five from the <a href="/marketplace">Marketplace</a>. See <a href="/docs/agents#create-an-agent-yourself">Create an agent yourself</a> and <a href="/docs/use-cases">Use cases</a>.</p>
+<h3 id="can-i-skip-connecting-an-app">Can I skip connecting an app?</h3>
+<p>Yes. The agent can't work in that app until it's connected, but it can still use websites in the browser on its computer. Connect the app later from <strong>Connect apps</strong> at the bottom of your list of chats.</p>
 <h2 id="related-pages">Related pages</h2>
-<ul><li><a href="/docs/agents">Create and manage agents</a></li><li><a href="/docs/use-cases">Use cases</a></li><li><a href="/docs/billing">Plans and billing</a></li></ul>
+<div class="cards"><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Hire agents, set their jobs and manage your team.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>Give your agents the apps they need.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/use-cases"><span><h3>Use cases</h3><p>Ready-made teams and first tasks you can copy.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/billing"><span><h3>Plans and billing</h3><p>Plans, the free trial and extra credits.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#before-you-begin">Before you begin</a><a class="t l2" href="#1-install-the-mac-app">1. Install the Mac app</a><a class="t l2" href="#2-sign-in">2. Sign in</a><a class="t l2" href="#3-meet-simeon">3. Meet Simeon</a><a class="t l2" href="#4-give-it-a-first-task">4. Give it a first task</a><a class="t l2" href="#5-connect-the-apps-it-needs">5. Connect the apps it needs</a><a class="t l2" href="#6-review-the-result-and-make-it-stick">6. Review the result and make it stick</a><a class="t l2" href="#use-simeon-on-your-iphone">Use Simeon on your iPhone</a><a class="t l2" href="#if-something-doesn-t-work">If something doesn&#x27;t work</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#1-install-the-mac-app">1. Install the Mac app</a><a class="t l2" href="#2-sign-in">2. Sign in</a><a class="t l2" href="#3-tell-simeon-your-name">3. Tell Simeon your name</a><a class="t l2" href="#4-start-your-free-trial">4. Start your free trial</a><a class="t l2" href="#5-meet-simeon-and-hire-your-first-agent">5. Meet Simeon and hire your first agent</a><a class="t l2" href="#6-connect-the-app-your-agent-needs">6. Connect the app your agent needs</a><a class="t l2" href="#7-give-it-a-first-task">7. Give it a first task</a><a class="t l2" href="#8-check-the-result">8. Check the result</a><a class="t l2" href="#use-simeon-on-your-iphone">Use Simeon on your iPhone</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#simeon-says-he-couldn-t-finish-setting-up-what-do-i-do">Simeon says he couldn&#x27;t finish setting up. What do I do?</a><a class="t l3" href="#i-closed-the-browser-before-signing-in-how-do-i-finish">I closed the browser before signing in. How do I finish?</a><a class="t l3" href="#do-i-have-to-hire-through-simeon">Do I have to hire through Simeon?</a><a class="t l3" href="#can-i-skip-connecting-an-app">Can I skip connecting an app?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Get started
 
-This guide takes you from install to your first finished task. You&#x27;ll set up the Mac app, meet Simeon, hire your first agent and review its work.
+This guide takes you from the download to your first finished task. You&#x27;ll install the Mac app, sign in, meet Simeon, let him hire your first agent, connect the app it needs and check its work.
 
-## Before you begin
-
-You need a Mac with Apple silicon on macOS 15 or later. Every plan starts with a 7-day free trial, so you can try Simeon before you pay; see [Plans and billing](/docs/billing).
+| You need | Details |
+|---|---|
+| **A Mac** | With Apple silicon, on macOS 15 or later. |
+| **An email address** | Or a Google or Apple account to sign in with. |
+| **A card, for the trial** | Every plan starts with a 7-day free trial. You add a card on the web and can cancel at any time. See [Plans and billing](/docs/billing). |
 
 ## 1. Install the Mac app
 
-[Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac), open the file and drag Simeon into Applications. Then open it from Applications or Spotlight.
+1. [Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac).
+2. Open the downloaded file and drag **Simeon** into your **Applications** folder.
+3. Open Simeon from Applications or Spotlight.
+
+Simeon updates itself. You can check for an update in **Settings** › **Updates**.
 
 ## 2. Sign in
 
-Choose **Continue with Google**, **Continue with Apple**, or sign in with your email and the code we send you. The same account works on the Mac and on iPhone.
+![The Simeon window&#x27;s first screen, Sign in to Simeon, with Continue to sign in and Sign up](img/get-started-signin.webp &quot;The first screen. Both buttons continue in your browser.&quot;){c=#89acbc ar=16/11}
 
-The app then sets up your agents&#x27; cloud computer and asks what your agents should call you. You can change your name later in **Settings › Account**.
+1. Choose **Continue to sign in**, or **Sign up** if you don&#x27;t have an account yet. Your browser opens, and the app says **Continue in your browser**.
+2. In the browser, type your email and choose **Continue**, then type the six-character code we email you. Or choose **Continue with Google** or **Continue with Apple**.
+3. The page asks you to confirm the account: choose **Continue as** with your email, or **Use a different account**.
+4. The page says **You&#x27;re signed in to Simeon**. Go back to the app; it carries on by itself.
 
-## 3. Meet Simeon
+If you closed the browser tab, choose **Reopen link** in the app. **Cancel** takes you back to the first screen.
 
-Simeon is your chief of staff. He introduces himself, then asks what you&#x27;d hand to a person if you hired one today. Answer in a sentence; he hires the right agent for it, with a name, a face, a job title and a brief.
+## 3. Tell Simeon your name
 
-If you&#x27;re not sure, ask him what he recommends. For a bigger project he proposes a small team, three agents at most to start.
+While the app sets up your agents&#x27; computer, it asks one question: **What should we call you?** Your first name from Google or Apple is already filled in when there is one.
 
-## 4. Give it a first task
+![What should we call you?, with Alex typed in the Name field and Continue](img/get-started-name.webp &quot;The only question before Simeon&#x27;s chat opens.&quot;){c=#89acbc ar=16/11}
 
-Open the new agent&#x27;s chat and type, or dictate. A strong request says what you want, which sources matter, what you want back, and where the agent should stop and check with you. For example:
+Type the name your agents should use and choose **Continue**. Your chat with Simeon opens; if his computer is still starting, the app says **Getting your team ready…** first. You can change your name later in **Settings** › **General** › **Simeon Account**.
 
-&gt; Find the five accounts we haven&#x27;t heard from in a month, draft a short check-in for each in my voice, and show me the drafts before anything is sent.
+:::note
+The Mac asks whether Simeon can send you notifications. Allow them, so you know when an agent finishes a task or needs your answer.
+:::
 
-## 5. Connect the apps it needs
+## 4. Start your free trial
 
-When the agent needs one of your apps, it shows a **Connect** card in the chat. Choose **Connect**, sign in on the app&#x27;s own page, and you&#x27;re done; the agent picks up where it left off. You can also connect apps ahead of time; see [Connect apps](/docs/connectors).
+If your account has no plan yet, the bottom of the chat says **Start your free trial to send messages**, and sending waits until you start it.
 
-## 6. Review the result and make it stick
+![The notice above the message box: Start your free trial to send messages, with Start Free Trial](img/get-started-trial.webp &quot;The notice above the message box, on an account with no plan yet.&quot;){c=#89acbc edge=right ar=3/2}
 
-Check what the agent did, correct it, and tell it what to remember, like a report format or the hours you keep for meetings. When a task works well, turn it into a [routine](/docs/routines) so it runs on its own.
+1. Choose **Start Free Trial**. The plans page opens in your browser.
+2. Choose a plan and add a card. You aren&#x27;t charged during the 7 days, and you can cancel before they end.
+3. Go back to the app. Once the trial has started, the notice goes away and you can send messages.
 
-Before an agent sends an email, pays for something or posts anything, it asks you first. See [Approvals, security, and privacy](/docs/approvals).
+## 5. Meet Simeon and hire your first agent
+
+Simeon is your chief of staff. His job is to build your team: he hires agents, briefs them and passes work to them. He introduces himself in four short messages, then asks what you&#x27;d hand off first:
+
+![Simeon&#x27;s question card: What&#x27;s the first thing you&#x27;d hand to a person if you hired one today?, with four options, Something else, Skip and Send](img/get-started-question.webp &quot;Simeon&#x27;s first question. The options depend on the apps you&#x27;ve connected.&quot;){c=#89acbc ar=4/3}
+
+1. Choose the job you&#x27;d hand off first, such as **My inbox**. Your answer is sent as soon as you choose it. If the job isn&#x27;t on the list, choose **Something else**, describe it in your own words and choose **Send**:
+
+&gt; Chase the invoices clients haven&#x27;t paid and keep our books up to date.
+
+2. If the job isn&#x27;t clear yet, Simeon asks one or two more questions. If you&#x27;re not sure what to hand off, tell him so and he recommends a first hire and says why.
+3. Simeon hires the agent. A card says it **just joined your team**, and Simeon says what it will do first.
+
+![Ava&#x27;s card in Simeon&#x27;s chat: Ava just joined your team, with Go to Chat and View Profile](img/get-started-hired.webp &quot;Simeon hires Ava for the inbox, then says what she&#x27;ll do first.&quot;){c=#c47256 ar=16/11}
+
+The new agent has a first name, a title that names the job, a description and a brief from Simeon that tells it what to do first. Simeon then asks whether there&#x27;s anything else you&#x27;d hand off today. Pick another job, or choose **That&#x27;s all for now**.
+
+:::tip
+For a bigger project, describe the project instead of one job. Simeon says who he&#x27;d hire, up to three agents for a first team, and hires each one. See [Ask for a whole team](/docs/agents#ask-for-a-whole-team).
+:::
+
+## 6. Connect the app your agent needs
+
+Choose **Go to Chat** on the card, or choose the new agent in your list of chats. At the top of its chat is **Message from Simeon**: the brief he sent it. Choose it to read the brief.
+
+The agent introduces itself and asks for the app it needs, with a card:
+
+![Ava&#x27;s chat: Message from Simeon, her introduction, and a Gmail card with Connect](img/get-started-connect.webp &quot;Ava asks for Gmail with a card in her chat.&quot;){c=#c47256 ar=16/11}
+
+1. Choose **Connect** on the card. A window says what the app lets your agents do.
+2. Choose **Connect** again. The app&#x27;s own sign-in page opens in your browser.
+3. Sign in and allow access. The page says **Connected**; close the tab and go back to Simeon.
+
+The agent picks up where it stopped. Simeon never sees your password for the app. To connect apps ahead of time, choose **Connect apps** at the bottom of your list of chats; see [Connect apps](/docs/connectors).
+
+## 7. Give it a first task
+
+The agent starts on Simeon&#x27;s brief right away. To give it something specific, write in its chat, or choose the microphone and dictate. A good first task is real, spans a few steps, and says where the agent should stop and check with you:
+
+&gt; Find the five customers we haven&#x27;t heard from in a month and draft a short check-in for each, in my voice. Show me the drafts before anything is sent.
+
+| A good request says | For example |
+|---|---|
+| What you want done | Find five quiet customers and draft a check-in for each. |
+| Where to look | In my Gmail, from the last month. |
+| What you want back | One draft per customer. |
+| Where to stop | Show me the drafts before anything is sent. |
+
+## 8. Check the result
+
+The agent reports in its chat as it goes. An email in your name comes as a draft card:
+
+![An email draft card in Ava&#x27;s chat: New email, Ready to send, From, To, Subject, the message, Discard and Send email](img/get-started-draft.webp &quot;The first check-in, ready for you to edit and send.&quot;){c=#c47256 edge=right ar=5/4}
+
+1. Read the draft. To change it, edit the text on the card, or tell the agent what to change.
+2. Choose **Send email** to send it, or **Discard** to drop it. Nothing is sent until you choose **Send email**.
+3. Tell the agent what to keep doing differently, the way you would a colleague:
+
+&gt; Good. Keep them shorter, and sign them &quot;Alex&quot; without &quot;Best&quot;.
+
+Ask it to remember this, and it will for the next tasks. When a task goes well, ask the agent to do it on a schedule, such as every Monday morning; see [Routines](/docs/routines).
 
 ## Use Simeon on your iPhone
 
-The iPhone app connects to the same agents, chats and computers. Sign in with the same account to message your agents, call them, approve their requests and watch their computers. See [Simeon for iPhone](/docs/iphone).
+Simeon for iPhone shows the same agents and chats. Sign in with the same account to message and call your agents, answer their cards and watch their computers. See [Simeon for iPhone](/docs/iphone).
 
-## If something doesn&#x27;t work
+## Common questions
 
-Most problems clear after you quit and reopen the app. For anything else, see the [FAQ](/docs/faq) or [contact us](/contact).
+### Simeon says he couldn&#x27;t finish setting up. What do I do?
+
+Choose **Try again**. If it keeps failing, check your internet connection, then quit and reopen the app.
+
+### I closed the browser before signing in. How do I finish?
+
+Choose **Reopen link** in the app to open the sign-in page again, or **Cancel** and start over with **Continue to sign in**.
+
+### Do I have to hire through Simeon?
+
+No. You can create an agent yourself with the **New Agent** button at the top of your list of chats, or add a ready-made team of five from the [Marketplace](/marketplace). See [Create an agent yourself](/docs/agents#create-an-agent-yourself) and [Use cases](/docs/use-cases).
+
+### Can I skip connecting an app?
+
+Yes. The agent can&#x27;t work in that app until it&#x27;s connected, but it can still use websites in the browser on its computer. Connect the app later from **Connect apps** at the bottom of your list of chats.
 
 ## Related pages
 
-- [Create and manage agents](/docs/agents)
-- [Use cases](/docs/use-cases)
-- [Plans and billing](/docs/billing)
+:::cards
+- [Create and manage agents](/docs/agents) Hire agents, set their jobs and manage your team.
+- [Connect apps](/docs/connectors) Give your agents the apps they need.
+- [Use cases](/docs/use-cases) Ready-made teams and first tasks you can copy.
+- [Plans and billing](/docs/billing) Plans, the free trial and extra credits.
+:::
 </script>
 </main>
 

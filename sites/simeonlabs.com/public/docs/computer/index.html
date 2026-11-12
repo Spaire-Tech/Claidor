@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | The agent&#x27;s computer</title>
-<meta name="description" content="Each agent works on a cloud computer with a browser and files. Watch it work, take control, and fill in sign-ins without the agent seeing them.">
+<meta name="description" content="Each agent works on a desktop of its own on your cloud computer. Watch its screen, take control, type sign-ins in a secure form, and let agents use your Mac.">
 <link rel="canonical" href="https://simeonlabs.com/docs/computer">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/computer">
 <meta property="og:title" content="SimeonLabs | Docs | The agent&#x27;s computer">
-<meta property="og:description" content="Each agent works on a cloud computer with a browser and files. Watch it work, take control, and fill in sign-ins without the agent seeing them.">
+<meta property="og:description" content="Each agent works on a desktop of its own on your cloud computer. Watch its screen, take control, type sign-ins in a secure form, and let agents use your Mac.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,52 +216,219 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>The agent&#x27;s computer</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/computer.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Each agent works on a cloud computer of its own, with a browser and files. That's why work gets finished in your real tools instead of ending as a chat draft: the agent can open a website, sign in, fill in a form, download a file and send it to you.</p>
-<h2 id="watch-it-work">Watch it work</h2>
-<p>Open an agent's computer to see its screen live. You can keep working while it works; the chat tells you what it's doing.</p>
+<p>Your agents work on a computer in the cloud that belongs to your account. Each agent has its own desktop there, with a Chrome browser and its own files, so it can open websites, sign in, fill in forms and download files the way you would. That's how work gets finished in your real tools instead of ending as a suggestion in the chat.</p>
+<p>This page covers how to watch an agent's screen, take control of it, answer when an agent needs you at the computer, and let agents use your Mac.</p>
+<div class="table"><table><thead><tr><th>What you can do</th><th>Where</th></tr></thead><tbody><tr><td>See what an agent is doing</td><td>The <strong>Computer</strong> tab of its profile.</td></tr><tr><td>Watch its screen full size</td><td>Choose the screen in the <strong>Computer</strong> tab.</td></tr><tr><td>Do a step yourself</td><td><strong>Take control</strong> under the screen.</td></tr><tr><td>Answer when the agent needs you</td><td>The <strong>Computer</strong> card in its chat, or a secure form.</td></tr><tr><td>Let agents use your Mac</td><td><strong>Settings</strong> › <strong>Computer</strong>.</td></tr></tbody></table></div>
+<h2 id="see-an-agent-s-screen">See an agent's screen</h2>
+<ol><li>Open the agent's profile: choose its face or name at the top of its chat.</li><li>Choose the <strong>Computer</strong> tab, the screen icon at the right.</li><li>The agent's screen shows live, with its name under it.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:16/10"><img class="e-right" src="/docs/img/computer-tab.webp" alt="Rosa&#x27;s profile with the Computer tab open, showing her browser on a supplier&#x27;s invoices page" width="720" height="400" loading="lazy" decoding="async"></div><figcaption>The Computer tab shows the agent's screen as it works.</figcaption></figure>
+<p>If the computer is asleep or starting, the tab says so instead of showing the screen. Opening the full view (below) starts it; that can take a little while.</p>
+<h2 id="watch-it-full-size">Watch it full size</h2>
+<p>Choose the screen in the <strong>Computer</strong> tab. It opens over the whole window.</p>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:11/9"><img class="e-left" src="/docs/img/computer-watching.webp" alt="Rosa&#x27;s screen full size, with Watching and Take control under it" width="900" height="600" loading="lazy" decoding="async"></div><figcaption>The full view opens in Watching: the agent keeps working and your clicks don't reach the screen.</figcaption></figure>
+<p>The view opens in <strong>Watching</strong>, so you can't click on the agent's screen by accident while it works. If the agent has sent helpers to work on other screens at the same time, their screens show under the main one; choose one to watch it.</p>
+<p>Choose the arrows at the top right to close the view.</p>
 <h2 id="take-control">Take control</h2>
-<p>Choose <strong>Take control</strong> to use the computer yourself. If the agent is working, it stops at once, so it never fights you for the mouse. When you're done, hand the computer back and the agent carries on.</p>
-<p>This is handy for a step only you can do, like a human check or a payment page you'd rather complete yourself.</p>
-<h2 id="sign-ins-and-codes">Sign-ins and codes</h2>
-<p>When a page needs your sign-in, a one-time code or an address, the agent asks with a form in the chat instead of handing you the whole computer. Type in the card and the computer fills the page; a password or code is masked and never shown to the agent.</p>
-<p>Logins you save in the <a href="/docs/credentials">Credentials Store</a>, and logins in 1Password if you connect it, can fill a sign-in for you after Face ID or Touch ID.</p>
-<h2 id="on-your-mac">On your Mac</h2>
-<p>With your OK, an agent can also run commands and work with files on your Mac, as well as on its own computer. It asks first, and you choose <strong>Allow once</strong>, <strong>Always allow</strong> or <strong>Never</strong>; you can change this later in <strong>Settings</strong>.</p>
+<p>When there's a step you'd rather do yourself, such as a payment page or a choice on a website, take over the computer.</p>
+<ol><li>In the full view, choose <strong>Take control</strong> under the screen.</li><li>If the agent was working, it pauses at once, so it never fights you for the mouse. The view says so: <strong>Rosa is paused while you're in control.</strong></li><li>Use the screen as you would your own computer. Your keyboard types on it, and on a Mac you can copy and paste between your Mac and the agent's computer.</li><li>When you're done, choose <strong>Stop</strong>, or close the view. The agent picks up from where things stand, including anything you changed.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:12/5"><img class="e-left" src="/docs/img/computer-control.webp" alt="Under the screen: You&#x27;re in control, Stop, and &quot;Rosa is paused while you&#x27;re in control.&quot;" width="450" height="160" loading="lazy" decoding="async"></div><figcaption>In control, the agent waits until you choose Stop.</figcaption></figure>
+<div class="callout tip"><b>Tip</b><p>You don't need to explain what you did. When you hand the computer back, the agent looks at the screen and carries on from there.</p></div>
+<h2 id="when-an-agent-needs-you-at-the-computer">When an agent needs you at the computer</h2>
+<p>Some steps only you can do: a security check that asks you to prove you're a person, a sign-in through another company's account or a passkey, a page the agent can't get past. The agent then stops and asks you in the chat with a <strong>Computer</strong> card. It shows what the agent needs and a picture of the screen.</p>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:20/21"><img class="e-right" src="/docs/img/computer-handoff.webp" alt="The Computer card in Rosa&#x27;s chat: Action needed, her instruction, the screen, and Skip, I&#x27;m done, Take over" width="500" height="500" loading="lazy" decoding="async"></div><figcaption>The agent says what it needs and waits for you.</figcaption></figure>
+<ol><li>Choose <strong>Take over</strong> (or the picture). The computer opens with you already in control, and the agent's instruction across the top.</li><li>Do the step on the page.</li><li>Choose <strong>I'm done, continue</strong>. The view closes and the agent carries on.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:11/9"><img class="e-left" src="/docs/img/computer-handoff-open.webp" alt="The computer open in control, with the agent&#x27;s instruction across the top and Skip this step, I&#x27;m done, continue" width="900" height="600" loading="lazy" decoding="async"></div><figcaption>The agent's instruction stays at the top while you work.</figcaption></figure>
+<div class="table"><table><thead><tr><th>Button</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Take over</strong></td><td>Opens the computer in control, to do the step.</td></tr><tr><td><strong>I'm done</strong></td><td>Tells the agent the step is done, without opening the computer.</td></tr><tr><td><strong>Skip</strong></td><td>Declines the step. The agent carries on without it, or tells you what it couldn't do.</td></tr></tbody></table></div>
+<p>The card then shows how it ended: <strong>Done</strong>, <strong>Answered</strong>, <strong>Skipped</strong> or <strong>Canceled</strong>. The same request also shows over the screen in the agent's <strong>Computer</strong> tab, as <strong>Needs your attention</strong>.</p>
+<h2 id="type-a-sign-in-or-a-code-in-a-secure-form">Type a sign-in or a code in a secure form</h2>
+<p>When a page only needs something typed, such as your email and password, a one-time code or an address, the agent doesn't hand you the whole computer. It sends a form in the chat, and the computer types what you enter into the page.</p>
+<ol><li>In the chat, find the card, such as <strong>Sign in to Harbor Supply</strong>, and choose <strong>Open</strong>.</li><li>Type in the form. A password or a code is hidden; choose the eye to see it.</li><li>For a sign-in, leave <strong>Save to your Credentials Store</strong> on to keep the login for next time, or turn it off.</li><li>Choose <strong>Fill in</strong>. The computer types it into the page, and the card then shows whether each field went in.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/computer-form.webp" alt="The secure form &quot;Sign in to Harbor Supply&quot; with Email, Password, Save to your Credentials Store, Not now and Fill in" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>What you type is filled only on the site named at the bottom, and never shown to the agent.</figcaption></figure>
+<p>What you type goes only into that one site, and the agent never sees it: it learns only which fields went in. Choose <strong>Not now</strong> to decline.</p>
+<p>If you've connected 1Password and the login is there, the agent asks to fill it from 1Password instead, and you confirm with Touch ID or Face ID. For the logins you keep in Simeon, see <a href="/docs/credentials">Credentials Store</a>.</p>
+<div class="callout note"><b>Note</b><p>Agents don't ask for passwords or codes in a message. If one ever does, don't type it in the chat: use the form, or take control and type it on the page yourself.</p></div>
+<h2 id="let-agents-use-your-mac">Let agents use your Mac</h2>
+<p>An agent can also run commands and work with files on your Mac, not only on its cloud computer, if you allow it. This works while Simeon is open and signed in on your Mac.</p>
+<p>When an agent needs your Mac and you haven't allowed it for good, a card above the message field asks: <strong>Allow Simeon and all agents to run commands on your local computer?</strong></p>
+<div class="table"><table><thead><tr><th>Choice</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Allow once</strong></td><td>Allows this one command or file.</td></tr><tr><td><strong>Always allow</strong></td><td>Allows agents to use your Mac from now on, without asking.</td></tr><tr><td><strong>Never</strong></td><td>Agents can't use your Mac until you change it in Settings.</td></tr><tr><td><strong>✕</strong></td><td>Declines this one request.</td></tr></tbody></table></div>
+<p>The choice applies to Simeon and every agent. To change it later:</p>
+<ol><li>Open <strong>Settings</strong> and choose <strong>Computer</strong>.</li><li>Under <strong>Your Computer</strong>, set <strong>Execution on Local Computer</strong> to <strong>Always allow</strong>, <strong>Ask every time</strong> or <strong>Never allow</strong>.</li><li>To withdraw the permissions you gave with <strong>Allow once</strong>, choose <strong>Forget</strong> beside <strong>Commands Allowed Once</strong>.</li></ol>
+<p>If you're on a team whose admin limits this, the menu says the most your team allows. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
 <h2 id="when-your-mac-is-closed">When your Mac is closed</h2>
-<p>Your agents' computers are in the cloud, so <a href="/docs/routines">routines</a> keep running on schedule while your Mac is asleep or closed.</p>
+<p>Your agents' computer is in the cloud, so their work and their <a href="/docs/routines">routines</a> carry on while your Mac is asleep or closed. The computer sleeps when nothing is running and wakes when an agent or a routine needs it.</p>
+<h2 id="if-the-computer-doesn-t-respond">If the computer doesn't respond</h2>
+<p><strong>Settings</strong> › <strong>Computer</strong> shows the state of your agents' computer under <strong>Agents' Computer</strong>:</p>
+<div class="table"><table><thead><tr><th>What you see</th><th>What to do</th></tr></thead><tbody><tr><td><strong>Connected</strong></td><td>Nothing: it's working.</td></tr><tr><td><strong>Connecting…</strong></td><td>Wait a moment; it's starting or waking up.</td></tr><tr><td><strong>Can't reach it</strong></td><td>Check your internet connection. If it stays that way, choose <strong>Recover Simeon's Computer</strong>.</td></tr><tr><td><strong>A new version is available</strong></td><td>Choose <strong>Update</strong> to update the computer.</td></tr></tbody></table></div>
+<p><strong>Recover Simeon's Computer</strong> recreates the computer and reconnects. Your agents, files and logins are kept.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="can-the-agent-see-my-screen">Can the agent see my screen?</h3>
+<p>Not on its own. Agents work on their own desktops on your cloud computer. They use your Mac only if you allow it, as described in <a href="#let-agents-use-your-mac">Let agents use your Mac</a>.</p>
+<h3 id="do-agents-share-one-computer">Do agents share one computer?</h3>
+<p>They share your account's cloud computer, but each agent works on a desktop of its own, so two agents don't type into the same page.</p>
+<h3 id="what-happens-to-the-agent-s-work-if-i-take-control">What happens to the agent's work if I take control?</h3>
+<p>It pauses where it was. When you choose <strong>Stop</strong> or close the view, it looks at the screen and continues from there.</p>
+<h3 id="where-are-the-files-an-agent-downloads">Where are the files an agent downloads?</h3>
+<p>On its computer. When a file is for you, the agent sends it in the chat, where you can open or save it, or puts it where you asked, such as a <span class="brand" style="color:#1d9c5e"><img class="logo" src="/docs/brands/google-drive.png?v=6dd8a1ef" alt="" aria-hidden="true">Google Drive</span> folder.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/messaging"><span><h3>Message and call your agents</h3><p>Chat, voice calls, files and drafts.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/credentials"><span><h3>Credentials Store</h3><p>Logins, cards and contact details your agents can fill in.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/approvals"><span><h3>Approvals, security, and privacy</h3><p>What agents ask before they act.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/iphone"><span><h3>Simeon for iPhone</h3><p>Watch and take over the computer from your phone.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#watch-it-work">Watch it work</a><a class="t l2" href="#take-control">Take control</a><a class="t l2" href="#sign-ins-and-codes">Sign-ins and codes</a><a class="t l2" href="#on-your-mac">On your Mac</a><a class="t l2" href="#when-your-mac-is-closed">When your Mac is closed</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#see-an-agent-s-screen">See an agent&#x27;s screen</a><a class="t l2" href="#watch-it-full-size">Watch it full size</a><a class="t l2" href="#take-control">Take control</a><a class="t l2" href="#when-an-agent-needs-you-at-the-computer">When an agent needs you at the computer</a><a class="t l2" href="#type-a-sign-in-or-a-code-in-a-secure-form">Type a sign-in or a code in a secure form</a><a class="t l2" href="#let-agents-use-your-mac">Let agents use your Mac</a><a class="t l2" href="#when-your-mac-is-closed">When your Mac is closed</a><a class="t l2" href="#if-the-computer-doesn-t-respond">If the computer doesn&#x27;t respond</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#can-the-agent-see-my-screen">Can the agent see my screen?</a><a class="t l3" href="#do-agents-share-one-computer">Do agents share one computer?</a><a class="t l3" href="#what-happens-to-the-agent-s-work-if-i-take-control">What happens to the agent&#x27;s work if I take control?</a><a class="t l3" href="#where-are-the-files-an-agent-downloads">Where are the files an agent downloads?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># The agent&#x27;s computer
 
-Each agent works on a cloud computer of its own, with a browser and files. That&#x27;s why work gets finished in your real tools instead of ending as a chat draft: the agent can open a website, sign in, fill in a form, download a file and send it to you.
+Your agents work on a computer in the cloud that belongs to your account. Each agent has its own desktop there, with a Chrome browser and its own files, so it can open websites, sign in, fill in forms and download files the way you would. That&#x27;s how work gets finished in your real tools instead of ending as a suggestion in the chat.
 
-## Watch it work
+This page covers how to watch an agent&#x27;s screen, take control of it, answer when an agent needs you at the computer, and let agents use your Mac.
 
-Open an agent&#x27;s computer to see its screen live. You can keep working while it works; the chat tells you what it&#x27;s doing.
+| What you can do | Where |
+|---|---|
+| See what an agent is doing | The **Computer** tab of its profile. |
+| Watch its screen full size | Choose the screen in the **Computer** tab. |
+| Do a step yourself | **Take control** under the screen. |
+| Answer when the agent needs you | The **Computer** card in its chat, or a secure form. |
+| Let agents use your Mac | **Settings** › **Computer**. |
+
+## See an agent&#x27;s screen
+
+1. Open the agent&#x27;s profile: choose its face or name at the top of its chat.
+2. Choose the **Computer** tab, the screen icon at the right.
+3. The agent&#x27;s screen shows live, with its name under it.
+
+![Rosa&#x27;s profile with the Computer tab open, showing her browser on a supplier&#x27;s invoices page](img/computer-tab.webp &quot;The Computer tab shows the agent&#x27;s screen as it works.&quot;){c=#8f7f8d edge=right ar=16/10}
+
+If the computer is asleep or starting, the tab says so instead of showing the screen. Opening the full view (below) starts it; that can take a little while.
+
+## Watch it full size
+
+Choose the screen in the **Computer** tab. It opens over the whole window.
+
+![Rosa&#x27;s screen full size, with Watching and Take control under it](img/computer-watching.webp &quot;The full view opens in Watching: the agent keeps working and your clicks don&#x27;t reach the screen.&quot;){c=#8f7f8d ar=11/9}
+
+The view opens in **Watching**, so you can&#x27;t click on the agent&#x27;s screen by accident while it works. If the agent has sent helpers to work on other screens at the same time, their screens show under the main one; choose one to watch it.
+
+Choose the arrows at the top right to close the view.
 
 ## Take control
 
-Choose **Take control** to use the computer yourself. If the agent is working, it stops at once, so it never fights you for the mouse. When you&#x27;re done, hand the computer back and the agent carries on.
+When there&#x27;s a step you&#x27;d rather do yourself, such as a payment page or a choice on a website, take over the computer.
 
-This is handy for a step only you can do, like a human check or a payment page you&#x27;d rather complete yourself.
+1. In the full view, choose **Take control** under the screen.
+2. If the agent was working, it pauses at once, so it never fights you for the mouse. The view says so: **Rosa is paused while you&#x27;re in control.**
+3. Use the screen as you would your own computer. Your keyboard types on it, and on a Mac you can copy and paste between your Mac and the agent&#x27;s computer.
+4. When you&#x27;re done, choose **Stop**, or close the view. The agent picks up from where things stand, including anything you changed.
 
-## Sign-ins and codes
+![Under the screen: You&#x27;re in control, Stop, and &quot;Rosa is paused while you&#x27;re in control.&quot;](img/computer-control.webp &quot;In control, the agent waits until you choose Stop.&quot;){c=#8f7f8d w=100 ar=12/5}
 
-When a page needs your sign-in, a one-time code or an address, the agent asks with a form in the chat instead of handing you the whole computer. Type in the card and the computer fills the page; a password or code is masked and never shown to the agent.
+:::tip
+You don&#x27;t need to explain what you did. When you hand the computer back, the agent looks at the screen and carries on from there.
+:::
 
-Logins you save in the [Credentials Store](/docs/credentials), and logins in 1Password if you connect it, can fill a sign-in for you after Face ID or Touch ID.
+## When an agent needs you at the computer
 
-## On your Mac
+Some steps only you can do: a security check that asks you to prove you&#x27;re a person, a sign-in through another company&#x27;s account or a passkey, a page the agent can&#x27;t get past. The agent then stops and asks you in the chat with a **Computer** card. It shows what the agent needs and a picture of the screen.
 
-With your OK, an agent can also run commands and work with files on your Mac, as well as on its own computer. It asks first, and you choose **Allow once**, **Always allow** or **Never**; you can change this later in **Settings**.
+![The Computer card in Rosa&#x27;s chat: Action needed, her instruction, the screen, and Skip, I&#x27;m done, Take over](img/computer-handoff.webp &quot;The agent says what it needs and waits for you.&quot;){c=#8f7f8d edge=right w=100 ar=20/21}
+
+1. Choose **Take over** (or the picture). The computer opens with you already in control, and the agent&#x27;s instruction across the top.
+2. Do the step on the page.
+3. Choose **I&#x27;m done, continue**. The view closes and the agent carries on.
+
+![The computer open in control, with the agent&#x27;s instruction across the top and Skip this step, I&#x27;m done, continue](img/computer-handoff-open.webp &quot;The agent&#x27;s instruction stays at the top while you work.&quot;){c=#8f7f8d ar=11/9}
+
+| Button | What it does |
+|---|---|
+| **Take over** | Opens the computer in control, to do the step. |
+| **I&#x27;m done** | Tells the agent the step is done, without opening the computer. |
+| **Skip** | Declines the step. The agent carries on without it, or tells you what it couldn&#x27;t do. |
+
+The card then shows how it ended: **Done**, **Answered**, **Skipped** or **Canceled**. The same request also shows over the screen in the agent&#x27;s **Computer** tab, as **Needs your attention**.
+
+## Type a sign-in or a code in a secure form
+
+When a page only needs something typed, such as your email and password, a one-time code or an address, the agent doesn&#x27;t hand you the whole computer. It sends a form in the chat, and the computer types what you enter into the page.
+
+1. In the chat, find the card, such as **Sign in to Harbor Supply**, and choose **Open**.
+2. Type in the form. A password or a code is hidden; choose the eye to see it.
+3. For a sign-in, leave **Save to your Credentials Store** on to keep the login for next time, or turn it off.
+4. Choose **Fill in**. The computer types it into the page, and the card then shows whether each field went in.
+
+![The secure form &quot;Sign in to Harbor Supply&quot; with Email, Password, Save to your Credentials Store, Not now and Fill in](img/computer-form.webp &quot;What you type is filled only on the site named at the bottom, and never shown to the agent.&quot;){c=#8f7f8d ar=16/11}
+
+What you type goes only into that one site, and the agent never sees it: it learns only which fields went in. Choose **Not now** to decline.
+
+If you&#x27;ve connected 1Password and the login is there, the agent asks to fill it from 1Password instead, and you confirm with Touch ID or Face ID. For the logins you keep in Simeon, see [Credentials Store](/docs/credentials).
+
+:::note
+Agents don&#x27;t ask for passwords or codes in a message. If one ever does, don&#x27;t type it in the chat: use the form, or take control and type it on the page yourself.
+:::
+
+## Let agents use your Mac
+
+An agent can also run commands and work with files on your Mac, not only on its cloud computer, if you allow it. This works while Simeon is open and signed in on your Mac.
+
+When an agent needs your Mac and you haven&#x27;t allowed it for good, a card above the message field asks: **Allow Simeon and all agents to run commands on your local computer?**
+
+| Choice | What it does |
+|---|---|
+| **Allow once** | Allows this one command or file. |
+| **Always allow** | Allows agents to use your Mac from now on, without asking. |
+| **Never** | Agents can&#x27;t use your Mac until you change it in Settings. |
+| **✕** | Declines this one request. |
+
+The choice applies to Simeon and every agent. To change it later:
+
+1. Open **Settings** and choose **Computer**.
+2. Under **Your Computer**, set **Execution on Local Computer** to **Always allow**, **Ask every time** or **Never allow**.
+3. To withdraw the permissions you gave with **Allow once**, choose **Forget** beside **Commands Allowed Once**.
+
+If you&#x27;re on a team whose admin limits this, the menu says the most your team allows. See [Approvals, security, and privacy](/docs/approvals).
 
 ## When your Mac is closed
 
-Your agents&#x27; computers are in the cloud, so [routines](/docs/routines) keep running on schedule while your Mac is asleep or closed.
+Your agents&#x27; computer is in the cloud, so their work and their [routines](/docs/routines) carry on while your Mac is asleep or closed. The computer sleeps when nothing is running and wakes when an agent or a routine needs it.
+
+## If the computer doesn&#x27;t respond
+
+**Settings** › **Computer** shows the state of your agents&#x27; computer under **Agents&#x27; Computer**:
+
+| What you see | What to do |
+|---|---|
+| **Connected** | Nothing: it&#x27;s working. |
+| **Connecting…** | Wait a moment; it&#x27;s starting or waking up. |
+| **Can&#x27;t reach it** | Check your internet connection. If it stays that way, choose **Recover Simeon&#x27;s Computer**. |
+| **A new version is available** | Choose **Update** to update the computer. |
+
+**Recover Simeon&#x27;s Computer** recreates the computer and reconnects. Your agents, files and logins are kept.
+
+## Common questions
+
+### Can the agent see my screen?
+
+Not on its own. Agents work on their own desktops on your cloud computer. They use your Mac only if you allow it, as described in [Let agents use your Mac](#let-agents-use-your-mac).
+
+### Do agents share one computer?
+
+They share your account&#x27;s cloud computer, but each agent works on a desktop of its own, so two agents don&#x27;t type into the same page.
+
+### What happens to the agent&#x27;s work if I take control?
+
+It pauses where it was. When you choose **Stop** or close the view, it looks at the screen and continues from there.
+
+### Where are the files an agent downloads?
+
+On its computer. When a file is for you, the agent sends it in the chat, where you can open or save it, or puts it where you asked, such as a Google Drive folder.
+
+## Related pages
+
+:::cards
+- [Message and call your agents](/docs/messaging) Chat, voice calls, files and drafts.
+- [Credentials Store](/docs/credentials) Logins, cards and contact details your agents can fill in.
+- [Approvals, security, and privacy](/docs/approvals) What agents ask before they act.
+- [Simeon for iPhone](/docs/iphone) Watch and take over the computer from your phone.
+:::
 </script>
 </main>
 

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Message and call your agents</title>
-<meta name="description" content="Type, dictate or call your agents, attach files and videos, and edit their drafts before anything is sent.">
+<meta name="description" content="Write, dictate or call your agents, send them files, mention teammates, answer their questions and edit their drafts, and talk to them from Slack.">
 <link rel="canonical" href="https://simeonlabs.com/docs/messaging">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/messaging">
 <meta property="og:title" content="SimeonLabs | Docs | Message and call your agents">
-<meta property="og:description" content="Type, dictate or call your agents, attach files and videos, and edit their drafts before anything is sent.">
+<meta property="og:description" content="Write, dictate or call your agents, send them files, mention teammates, answer their questions and edit their drafts, and talk to them from Slack.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,58 +216,245 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Message and call your agents</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/messaging.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>You work with an agent the way you would with a colleague: in its chat, or on a call.</p>
-<h2 id="messages">Messages</h2>
-<p>Type in the message field, or dictate. Give the agent the outcome you want, what matters, and where it should check with you. It replies as it works and tells you when it's done.</p>
-<ul><li><strong>Mention an agent</strong> by name to point it out to another agent or bring it into the work.</li><li><strong>Attach</strong> photos, files and short videos. An agent can read documents and say what happens in a video.</li><li><strong>Files back.</strong> When an agent makes a file, it shows its name and kind in the chat; save or open it from there.</li></ul>
-<h2 id="drafts-you-can-edit">Drafts you can edit</h2>
-<p>When an agent writes an email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message for you, it can show it as a draft card. Edit the text in the card, then <strong>Send</strong> or <strong>Discard</strong>. Nothing goes out until you send it.</p>
-<h2 id="questions-and-forms">Questions and forms</h2>
-<p>When an agent needs a decision, it asks with a short question card. When a page on its computer needs something only you can type, like a sign-in or a one-time code, it asks with a form in the chat. You type in the card and the computer fills it in; a password or a code is masked, and the agent never sees what you typed.</p>
-<h2 id="voice-calls">Voice calls</h2>
-<p>Call an agent and talk to it out loud. It answers in a sentence or two and hands anything that needs doing to its work in the background, while the call goes on. Ask how it's going at any time.</p>
-<h2 id="slack-and-discord"><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> and <span class="brand" style="color:#5865f2"><i class="logo" style="--m:url(/docs/brands/discord.png?v=8c4e5b28);background:#5865f2" aria-hidden="true"></i>Discord</span></h2>
-<p>An agent can also have its own <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> app or <span class="brand" style="color:#5865f2"><i class="logo" style="--m:url(/docs/brands/discord.png?v=8c4e5b28);background:#5865f2" aria-hidden="true"></i>Discord</span> bot, so your team can message it there and it answers there. You create the bot in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> or <span class="brand" style="color:#5865f2"><i class="logo" style="--m:url(/docs/brands/discord.png?v=8c4e5b28);background:#5865f2" aria-hidden="true"></i>Discord</span> and give Simeon its token.</p>
+<p>Each agent has its own chat. You give it work there, it tells you what it's doing and what it found, and it asks you when it needs a decision. You can also call an agent and talk to it out loud, or let your team message it from <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>.</p>
+<p>This page covers what you can send, what agents send back, voice calls and <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>.</p>
+<div class="table"><table><thead><tr><th>You want to</th><th>Do this</th></tr></thead><tbody><tr><td>Give an agent work</td><td>Write or dictate in its chat.</td></tr><tr><td>Show it a document, a picture or a video</td><td>Attach the file to your message.</td></tr><tr><td>Point it to a teammate</td><td>Type @ and choose the agent.</td></tr><tr><td>Talk it through</td><td>Choose the phone button beside the agent's name.</td></tr><tr><td>Check something before it goes out</td><td>Edit the draft card the agent shows, then send it.</td></tr><tr><td>Let your colleagues ask it things</td><td>Connect the agent to <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>.</td></tr></tbody></table></div>
+<h2 id="write-to-an-agent">Write to an agent</h2>
+<ol><li>Choose the agent in your list of chats.</li><li>Write in the message field at the bottom, which reads <strong>Message</strong> and the agent's name.</li><li>Press Return to send. Shift-Return starts a new line.</li></ol>
+<p>Say what you want done, what matters to you, and when the agent should check with you first:</p>
+<blockquote><p>Find three venues in Austin for a 40-person offsite on March 12. Under $6,000, walking distance from downtown. Don't contact anyone yet, just send me the options.</p></blockquote>
+<p>The agent replies as it works and tells you when it's done. While it works, a dot on its row in your list shows it's busy. You can keep writing in the meantime.</p>
+<p>To dictate instead of typing, choose the microphone at the right of the message field, speak, and choose it again to stop. What you said appears in the field for you to check before you send it.</p>
+<div class="callout tip"><b>Tip</b><p>One clear outcome per message works best. If you have several unrelated tasks, give each to the agent whose job it is, or ask Simeon to hand them out.</p></div>
+<h3 id="react-reply-and-start-a-thread">React, reply and start a thread</h3>
+<p>Right-click a message (on iPhone, touch and hold it) for these:</p>
+<div class="table"><table><thead><tr><th>Action</th><th>What it does</th></tr></thead><tbody><tr><td><strong>Add reaction</strong></td><td>Adds an emoji under the message.</td></tr><tr><td><strong>Reply</strong></td><td>Quotes the message in your next one, so it's clear what you're answering.</td></tr><tr><td><strong>Start a thread</strong></td><td>Opens a thread on that message, to keep a side topic out of the main chat.</td></tr><tr><td><strong>Copy</strong></td><td>Copies the message's text.</td></tr></tbody></table></div>
+<h2 id="send-files-pictures-and-videos">Send files, pictures and videos</h2>
+<p>Choose <strong>+</strong> beside the message field to attach a file, or drag files onto the chat, or paste a picture. You can add up to six files to one message, each up to 25 MB, or 200 MB for a video. Add a line about what you want, then send.</p>
+<p>Agents read documents and spreadsheets, look at pictures, and can say what happens in a short video. Files the agent makes come back as cards with the file's name, its kind and its size.</p>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/messaging-files.webp" alt="Nia&#x27;s chat: a contract sent as a PDF, her answer, and the review she wrote as a file" width="780" height="540" loading="lazy" decoding="async"></div><figcaption>Your file on the right, the agent's file on the left. Choose a file to open it, or the arrow to save it.</figcaption></figure>
+<p>Choose a file's name to open it, or the arrow to save it to your computer.</p>
+<h2 id="mention-a-teammate">Mention a teammate</h2>
+<p>Type @ in the message field to bring another agent into what you're writing.</p>
+<ol><li>Type <strong>@</strong>. A list of your agents opens over the field.</li><li>Keep typing to narrow it, then choose the agent (or use the arrow keys and Return).</li><li>The agent's name goes into your message as a pill with its face.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:6/5"><img class="e-left" src="/docs/img/messaging-mention.webp" alt="The mention list open over Simeon&#x27;s message field, listing Rosa, Nia and Kai" width="460" height="360" loading="lazy" decoding="async"></div><figcaption>Type @ and choose an agent from the list.</figcaption></figure>
+<p>The agent you're writing to then knows exactly which teammate you mean, and can pass work to them:</p>
+<blockquote><p>Ask @Rosa to send Acme their first invoice once the contract is signed.</p></blockquote>
+<p>The same list offers your routines and your connected apps. Type / instead to point the agent to one of its skills.</p>
+<p>In any message, choose a mention pill to open that agent's chat.</p>
+<h2 id="answer-an-agent-s-questions">Answer an agent's questions</h2>
+<p>When only you can decide something, such as your budget, who a gift is for or which of two options you prefer, the agent asks with a question card instead of guessing.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:100%;aspect-ratio:1/1"><img class="e-left" src="/docs/img/messaging-question.webp" alt="Kai&#x27;s question card: where to stay in Lisbon, with three choices and Something else" width="460" height="420" loading="lazy" decoding="async"></div><figcaption>A question card. The agent's recommended choice is in blue.</figcaption></figure>
+<ol><li>Choose an answer, or choose <strong>Something else</strong> and type your own.</li><li>If the card has several questions, the dots show how many. Choose <strong>Next</strong> to go on, <strong>Back</strong> to change an answer, or <strong>Skip</strong> to leave one out.</li><li>Your answers go to the agent together, and it carries on.</li></ol>
+<p>If you'd rather explain in your own words, write a message instead. To decline a question, choose <strong>Skip</strong>. See <a href="/docs/approvals">Approvals, security, and privacy</a> for the other cards agents use to ask you.</p>
+<h2 id="edit-a-draft-before-it-s-sent">Edit a draft before it's sent</h2>
+<p>When an agent writes an email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message for you, it can show it as a draft card first. Drafting sends nothing.</p>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:19/20"><img class="e-right" src="/docs/img/messaging-draft.webp" alt="Nia&#x27;s reply to Dana as a draft card, with To, Cc, Subject, the message, Discard and Send email" width="630" height="550" loading="lazy" decoding="async"></div><figcaption>An email draft. Everything in the white box can be changed.</figcaption></figure>
+<ol><li>Read the draft. For an email you can change <strong>To</strong>, <strong>Cc</strong>, <strong>Subject</strong> and the message; for a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message, the message.</li><li>Choose <strong>Send email</strong> (or <strong>Send message</strong> for <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>) to send it as it is now, or <strong>Discard</strong> to drop it.</li><li>The card says <strong>Sending…</strong>, then <strong>Sent</strong>. If sending fails, the card comes back so you can try again.</li></ol>
+<div class="callout note"><b>Note</b><p>The agent sends the draft the best way it has: through an app you've connected, such as <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>, <span class="brand" style="color:#0078d4"><img class="logo" src="/docs/brands/outlook.png?v=f5ac048b" alt="" aria-hidden="true">Outlook</span> or <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, or on its own computer. See <a href="/docs/connectors">Connect apps</a>.</p></div>
+<h2 id="call-an-agent">Call an agent</h2>
+<p>You can talk to any agent out loud, the way you'd call a colleague. It answers in its own voice, in a sentence or two, and hands anything that needs doing to its work in the background while you keep talking.</p>
+<ol><li>Open the agent's chat.</li><li>Choose the phone button beside its name at the top. On a Mac, a small call window opens at the top right of your screen and stays over your other windows.</li><li>Talk. Ask for something, change your mind, or ask how it's going at any time.</li><li>Use <strong>Mute</strong> to mute your microphone and <strong>Transcript</strong> to see what you've both said. Choose <strong>End</strong> to hang up.</li></ol>
+<blockquote><p>Kai, I need to be in Lisbon by Sunday evening. Nonstop if you can, aisle seat, under $900.</p></blockquote>
+<p>The call stays in the chat as a line with its length. The agent's work carries on in the chat after you hang up.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:100%;aspect-ratio:9/8"><img class="e-left" src="/docs/img/messaging-call.webp" alt="Kai&#x27;s chat: &quot;Voice chat · 02:48&quot;, then Kai&#x27;s message holding the flight" width="460" height="380" loading="lazy" decoding="async"></div><figcaption>A call in the chat, followed by the agent's written follow-up.</figcaption></figure>
+<p>Choose the call's line to read the whole conversation. It's view-only; choose <strong>Close Chat</strong> to go back.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:100%;aspect-ratio:6/5"><img class="e-right" src="/docs/img/messaging-call-transcript.webp" alt="The call&#x27;s transcript open over the chat, with &quot;This chat is view-only&quot; and Close Chat" width="780" height="520" loading="lazy" decoding="async"></div><figcaption>What you and the agent said on the call.</figcaption></figure>
+<div class="table"><table><thead><tr><th>Good to know</th><th></th></tr></thead><tbody><tr><td><strong>Length</strong></td><td>A call lasts up to 30 minutes, and ends after about 25 seconds of silence.</td></tr><tr><td><strong>Cost</strong></td><td>Calls use your Simeon credits, by the second. If you're out of credit, the call says <strong>Out of credit for calls</strong>. See <a href="/docs/billing">Plans and billing</a>.</td></tr><tr><td><strong>Recording</strong></td><td>Your voice isn't kept after the call. The words of the call are saved in the chat.</td></tr><tr><td><strong>One at a time</strong></td><td>You can be on one call at a time. Choosing the phone button again brings the call forward.</td></tr></tbody></table></div>
+<h2 id="talk-to-an-agent-from-slack">Talk to an agent from <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></h2>
+<p>Connect an agent to your <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> workspace, and people there can message it directly or mention it in a channel. It answers in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> under its own name.</p>
+<ol><li>Open the agent's profile: choose its face or name at the top of its chat.</li><li>Under <strong>Notifications</strong>, find <strong><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></strong> and choose <strong>+</strong>.</li><li><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> opens in your browser. Pick your workspace and allow access.</li><li>Back in Simeon, the <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> row shows your workspace's name once it's connected.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:100%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/messaging-slack.webp" alt="Rosa&#x27;s profile with Slack connected to Northwind Studio, and a message from Slack in her chat" width="920" height="440" loading="lazy" decoding="async"></div><figcaption>Messages from <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> show in the agent's chat with a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> tag.</figcaption></figure>
+<p>In <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, message the Simeon app, or invite it to a channel and mention it. The agent only hears messages sent to it directly or that mention it. What's said in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> also shows in the agent's chat in Simeon, tagged <strong><span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span></strong>, so you can follow along.</p>
+<p>To disconnect, choose <strong>⋯</strong> on the <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> row, then <strong>Disconnect</strong>.</p>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="does-the-agent-keep-working-if-i-close-the-app">Does the agent keep working if I close the app?</h3>
+<p>Yes. Your agents run on your cloud computer, not on your Mac or iPhone, so they carry on with the work while the app is closed. You'll get a notification when an agent finishes or needs you. To turn that off for one agent, use the <strong>Notifications</strong> switch in its profile.</p>
+<h3 id="can-i-send-a-message-while-the-agent-is-busy">Can I send a message while the agent is busy?</h3>
+<p>Yes. Write as you normally would. Your message goes to the agent like any other, and it takes it into account.</p>
+<h3 id="what-can-i-attach">What can I attach?</h3>
+<p>Documents, spreadsheets, presentations, PDFs, pictures and videos: up to six files in one message, each up to 25 MB, or 200 MB for a video. For a video, keep it short: the agent watches it to say what happens.</p>
+<h3 id="can-my-colleagues-use-my-agents">Can my colleagues use my agents?</h3>
+<p>Through <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>, yes: anyone in the workspace can message the agent you connected. They see its answers in <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span>; they don't see your chats in Simeon.</p>
+<h3 id="why-didn-t-the-agent-send-the-email-itself">Why didn't the agent send the email itself?</h3>
+<p>Anything that goes out under your name comes to you as a draft card first. Nothing is sent until you choose <strong>Send email</strong>. See <a href="/docs/approvals">Approvals, security, and privacy</a>.</p>
 <h2 id="related-pages">Related pages</h2>
-<ul><li><a href="/docs/agents">Create and manage agents</a></li><li><a href="/docs/approvals">Approvals, security, and privacy</a></li></ul>
+<div class="cards"><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Hire agents, give each a job, and change its profile.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/computer"><span><h3>The agent's computer</h3><p>Watch an agent work, or take control.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>The apps your agents send and read through.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/iphone"><span><h3>Simeon for iPhone</h3><p>Message and call your agents from your phone.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#messages">Messages</a><a class="t l2" href="#drafts-you-can-edit">Drafts you can edit</a><a class="t l2" href="#questions-and-forms">Questions and forms</a><a class="t l2" href="#voice-calls">Voice calls</a><a class="t l2" href="#slack-and-discord">Slack and Discord</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#write-to-an-agent">Write to an agent</a><a class="t l3" href="#react-reply-and-start-a-thread">React, reply and start a thread</a><a class="t l2" href="#send-files-pictures-and-videos">Send files, pictures and videos</a><a class="t l2" href="#mention-a-teammate">Mention a teammate</a><a class="t l2" href="#answer-an-agent-s-questions">Answer an agent&#x27;s questions</a><a class="t l2" href="#edit-a-draft-before-it-s-sent">Edit a draft before it&#x27;s sent</a><a class="t l2" href="#call-an-agent">Call an agent</a><a class="t l2" href="#talk-to-an-agent-from-slack">Talk to an agent from Slack</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#does-the-agent-keep-working-if-i-close-the-app">Does the agent keep working if I close the app?</a><a class="t l3" href="#can-i-send-a-message-while-the-agent-is-busy">Can I send a message while the agent is busy?</a><a class="t l3" href="#what-can-i-attach">What can I attach?</a><a class="t l3" href="#can-my-colleagues-use-my-agents">Can my colleagues use my agents?</a><a class="t l3" href="#why-didn-t-the-agent-send-the-email-itself">Why didn&#x27;t the agent send the email itself?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Message and call your agents
 
-You work with an agent the way you would with a colleague: in its chat, or on a call.
+Each agent has its own chat. You give it work there, it tells you what it&#x27;s doing and what it found, and it asks you when it needs a decision. You can also call an agent and talk to it out loud, or let your team message it from Slack.
 
-## Messages
+This page covers what you can send, what agents send back, voice calls and Slack.
 
-Type in the message field, or dictate. Give the agent the outcome you want, what matters, and where it should check with you. It replies as it works and tells you when it&#x27;s done.
+| You want to | Do this |
+|---|---|
+| Give an agent work | Write or dictate in its chat. |
+| Show it a document, a picture or a video | Attach the file to your message. |
+| Point it to a teammate | Type @ and choose the agent. |
+| Talk it through | Choose the phone button beside the agent&#x27;s name. |
+| Check something before it goes out | Edit the draft card the agent shows, then send it. |
+| Let your colleagues ask it things | Connect the agent to Slack. |
 
-- **Mention an agent** by name to point it out to another agent or bring it into the work.
-- **Attach** photos, files and short videos. An agent can read documents and say what happens in a video.
-- **Files back.** When an agent makes a file, it shows its name and kind in the chat; save or open it from there.
+## Write to an agent
 
-## Drafts you can edit
+1. Choose the agent in your list of chats.
+2. Write in the message field at the bottom, which reads **Message** and the agent&#x27;s name.
+3. Press Return to send. Shift-Return starts a new line.
 
-When an agent writes an email or a Slack message for you, it can show it as a draft card. Edit the text in the card, then **Send** or **Discard**. Nothing goes out until you send it.
+Say what you want done, what matters to you, and when the agent should check with you first:
 
-## Questions and forms
+&gt; Find three venues in Austin for a 40-person offsite on March 12. Under $6,000, walking distance from downtown. Don&#x27;t contact anyone yet, just send me the options.
 
-When an agent needs a decision, it asks with a short question card. When a page on its computer needs something only you can type, like a sign-in or a one-time code, it asks with a form in the chat. You type in the card and the computer fills it in; a password or a code is masked, and the agent never sees what you typed.
+The agent replies as it works and tells you when it&#x27;s done. While it works, a dot on its row in your list shows it&#x27;s busy. You can keep writing in the meantime.
 
-## Voice calls
+To dictate instead of typing, choose the microphone at the right of the message field, speak, and choose it again to stop. What you said appears in the field for you to check before you send it.
 
-Call an agent and talk to it out loud. It answers in a sentence or two and hands anything that needs doing to its work in the background, while the call goes on. Ask how it&#x27;s going at any time.
+:::tip
+One clear outcome per message works best. If you have several unrelated tasks, give each to the agent whose job it is, or ask Simeon to hand them out.
+:::
 
-## Slack and Discord
+### React, reply and start a thread
 
-An agent can also have its own Slack app or Discord bot, so your team can message it there and it answers there. You create the bot in Slack or Discord and give Simeon its token.
+Right-click a message (on iPhone, touch and hold it) for these:
+
+| Action | What it does |
+|---|---|
+| **Add reaction** | Adds an emoji under the message. |
+| **Reply** | Quotes the message in your next one, so it&#x27;s clear what you&#x27;re answering. |
+| **Start a thread** | Opens a thread on that message, to keep a side topic out of the main chat. |
+| **Copy** | Copies the message&#x27;s text. |
+
+## Send files, pictures and videos
+
+Choose **+** beside the message field to attach a file, or drag files onto the chat, or paste a picture. You can add up to six files to one message, each up to 25 MB, or 200 MB for a video. Add a line about what you want, then send.
+
+Agents read documents and spreadsheets, look at pictures, and can say what happens in a short video. Files the agent makes come back as cards with the file&#x27;s name, its kind and its size.
+
+![Nia&#x27;s chat: a contract sent as a PDF, her answer, and the review she wrote as a file](img/messaging-files.webp &quot;Your file on the right, the agent&#x27;s file on the left. Choose a file to open it, or the arrow to save it.&quot;){c=#af8fa0 ar=16/11}
+
+Choose a file&#x27;s name to open it, or the arrow to save it to your computer.
+
+## Mention a teammate
+
+Type @ in the message field to bring another agent into what you&#x27;re writing.
+
+1. Type **@**. A list of your agents opens over the field.
+2. Keep typing to narrow it, then choose the agent (or use the arrow keys and Return).
+3. The agent&#x27;s name goes into your message as a pill with its face.
+
+![The mention list open over Simeon&#x27;s message field, listing Rosa, Nia and Kai](img/messaging-mention.webp &quot;Type @ and choose an agent from the list.&quot;){c=#89acbc w=100 ar=6/5}
+
+The agent you&#x27;re writing to then knows exactly which teammate you mean, and can pass work to them:
+
+&gt; Ask @Rosa to send Acme their first invoice once the contract is signed.
+
+The same list offers your routines and your connected apps. Type / instead to point the agent to one of its skills.
+
+In any message, choose a mention pill to open that agent&#x27;s chat.
+
+## Answer an agent&#x27;s questions
+
+When only you can decide something, such as your budget, who a gift is for or which of two options you prefer, the agent asks with a question card instead of guessing.
+
+![Kai&#x27;s question card: where to stay in Lisbon, with three choices and Something else](img/messaging-question.webp &quot;A question card. The agent&#x27;s recommended choice is in blue.&quot;){c=#a5835f w=100 ar=1/1}
+
+1. Choose an answer, or choose **Something else** and type your own.
+2. If the card has several questions, the dots show how many. Choose **Next** to go on, **Back** to change an answer, or **Skip** to leave one out.
+3. Your answers go to the agent together, and it carries on.
+
+If you&#x27;d rather explain in your own words, write a message instead. To decline a question, choose **Skip**. See [Approvals, security, and privacy](/docs/approvals) for the other cards agents use to ask you.
+
+## Edit a draft before it&#x27;s sent
+
+When an agent writes an email or a Slack message for you, it can show it as a draft card first. Drafting sends nothing.
+
+![Nia&#x27;s reply to Dana as a draft card, with To, Cc, Subject, the message, Discard and Send email](img/messaging-draft.webp &quot;An email draft. Everything in the white box can be changed.&quot;){c=#af8fa0 edge=right w=100 ar=19/20}
+
+1. Read the draft. For an email you can change **To**, **Cc**, **Subject** and the message; for a Slack message, the message.
+2. Choose **Send email** (or **Send message** for Slack) to send it as it is now, or **Discard** to drop it.
+3. The card says **Sending…**, then **Sent**. If sending fails, the card comes back so you can try again.
+
+:::note
+The agent sends the draft the best way it has: through an app you&#x27;ve connected, such as Gmail, Outlook or Slack, or on its own computer. See [Connect apps](/docs/connectors).
+:::
+
+## Call an agent
+
+You can talk to any agent out loud, the way you&#x27;d call a colleague. It answers in its own voice, in a sentence or two, and hands anything that needs doing to its work in the background while you keep talking.
+
+1. Open the agent&#x27;s chat.
+2. Choose the phone button beside its name at the top. On a Mac, a small call window opens at the top right of your screen and stays over your other windows.
+3. Talk. Ask for something, change your mind, or ask how it&#x27;s going at any time.
+4. Use **Mute** to mute your microphone and **Transcript** to see what you&#x27;ve both said. Choose **End** to hang up.
+
+&gt; Kai, I need to be in Lisbon by Sunday evening. Nonstop if you can, aisle seat, under $900.
+
+The call stays in the chat as a line with its length. The agent&#x27;s work carries on in the chat after you hang up.
+
+![Kai&#x27;s chat: &quot;Voice chat · 02:48&quot;, then Kai&#x27;s message holding the flight](img/messaging-call.webp &quot;A call in the chat, followed by the agent&#x27;s written follow-up.&quot;){c=#a5835f w=100 ar=9/8}
+
+Choose the call&#x27;s line to read the whole conversation. It&#x27;s view-only; choose **Close Chat** to go back.
+
+![The call&#x27;s transcript open over the chat, with &quot;This chat is view-only&quot; and Close Chat](img/messaging-call-transcript.webp &quot;What you and the agent said on the call.&quot;){c=#a5835f edge=right ar=6/5}
+
+| Good to know | |
+|---|---|
+| **Length** | A call lasts up to 30 minutes, and ends after about 25 seconds of silence. |
+| **Cost** | Calls use your Simeon credits, by the second. If you&#x27;re out of credit, the call says **Out of credit for calls**. See [Plans and billing](/docs/billing). |
+| **Recording** | Your voice isn&#x27;t kept after the call. The words of the call are saved in the chat. |
+| **One at a time** | You can be on one call at a time. Choosing the phone button again brings the call forward. |
+
+## Talk to an agent from Slack
+
+Connect an agent to your Slack workspace, and people there can message it directly or mention it in a channel. It answers in Slack under its own name.
+
+1. Open the agent&#x27;s profile: choose its face or name at the top of its chat.
+2. Under **Notifications**, find **Slack** and choose **+**.
+3. Slack opens in your browser. Pick your workspace and allow access.
+4. Back in Simeon, the Slack row shows your workspace&#x27;s name once it&#x27;s connected.
+
+![Rosa&#x27;s profile with Slack connected to Northwind Studio, and a message from Slack in her chat](img/messaging-slack.webp &quot;Messages from Slack show in the agent&#x27;s chat with a Slack tag.&quot;){c=#8f7f8d ar=16/10}
+
+In Slack, message the Simeon app, or invite it to a channel and mention it. The agent only hears messages sent to it directly or that mention it. What&#x27;s said in Slack also shows in the agent&#x27;s chat in Simeon, tagged **Slack**, so you can follow along.
+
+To disconnect, choose **⋯** on the Slack row, then **Disconnect**.
+
+## Common questions
+
+### Does the agent keep working if I close the app?
+
+Yes. Your agents run on your cloud computer, not on your Mac or iPhone, so they carry on with the work while the app is closed. You&#x27;ll get a notification when an agent finishes or needs you. To turn that off for one agent, use the **Notifications** switch in its profile.
+
+### Can I send a message while the agent is busy?
+
+Yes. Write as you normally would. Your message goes to the agent like any other, and it takes it into account.
+
+### What can I attach?
+
+Documents, spreadsheets, presentations, PDFs, pictures and videos: up to six files in one message, each up to 25 MB, or 200 MB for a video. For a video, keep it short: the agent watches it to say what happens.
+
+### Can my colleagues use my agents?
+
+Through Slack, yes: anyone in the workspace can message the agent you connected. They see its answers in Slack; they don&#x27;t see your chats in Simeon.
+
+### Why didn&#x27;t the agent send the email itself?
+
+Anything that goes out under your name comes to you as a draft card first. Nothing is sent until you choose **Send email**. See [Approvals, security, and privacy](/docs/approvals).
 
 ## Related pages
 
-- [Create and manage agents](/docs/agents)
-- [Approvals, security, and privacy](/docs/approvals)
+:::cards
+- [Create and manage agents](/docs/agents) Hire agents, give each a job, and change its profile.
+- [The agent&#x27;s computer](/docs/computer) Watch an agent work, or take control.
+- [Connect apps](/docs/connectors) The apps your agents send and read through.
+- [Simeon for iPhone](/docs/iphone) Message and call your agents from your phone.
+:::
 </script>
 </main>
 

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SimeonLabs | Docs | Use cases</title>
-<meta name="description" content="Ready-made teams of five agents for your kind of work, and first tasks you can copy.">
+<meta name="description" content="Add a ready-made team of five agents for your kind of work, or hand off one job at a time with first tasks you can copy.">
 <link rel="canonical" href="https://simeonlabs.com/docs/use-cases">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://simeonlabs.com/docs/use-cases">
 <meta property="og:title" content="SimeonLabs | Docs | Use cases">
-<meta property="og:description" content="Ready-made teams of five agents for your kind of work, and first tasks you can copy.">
+<meta property="og:description" content="Add a ready-made team of five agents for your kind of work, or hand off one job at a time with first tasks you can copy.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -119,7 +119,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words li{padding-left:4px;margin:0 0 8px}
 .words ul li::marker{color:var(--ink3)}
 .words ol li::marker{color:var(--ink2)}
-.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);font-style:italic;color:var(--ink2)}
+.words blockquote{margin:0 0 24px;padding:0 0 0 16px;border-left:3px solid var(--blue);color:var(--ink)}
 .words blockquote p{margin:0}
 .words code{padding:1px 5px;border-radius:5px;background:var(--soft);font:500 .85em/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--blue)}
 .words .code{position:relative;margin:0 0 24px;border-radius:12px;background:var(--soft)}
@@ -129,8 +129,21 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .copy-code svg{width:14px;height:14px}
 .words .copy-code:hover{color:var(--ink)}
 .words .table{margin:0 0 24px;overflow-x:auto}
+.words .shot{margin:12px 0 32px}
+.words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
+.words .shot .pane>img{position:absolute;display:block;width:var(--w);max-width:none;height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
+/* the window in from the left or from the right, running off the other side and the bottom, as the founder's reference docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .pane>.e-left{left:7%;top:12%}.words .shot .pane>.e-right{right:7%;top:12%}
+.words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
+.words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
+.words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
+.words .callout p{margin:0;font-size:var(--t-small);line-height:1.6;color:var(--ink2)}
+.words .callout p+p{margin-top:8px}
+.words .callout.tip b{color:var(--blue)}
+.words .callout.warning{background:#fff6ec}.words .callout.warning b{color:#b4530a}
 .words table{width:100%;border-collapse:collapse;font-size:var(--t-body)}
-.words th{padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
+.words th{white-space:nowrap;padding:10px 16px 10px 0;text-align:left;font-weight:var(--w-title);border-bottom:1px solid var(--line)}
 .words td{padding:12px 16px 12px 0;vertical-align:top;border-bottom:1px solid var(--line)}
 /* An app's name, as a message in the apps names it: its logo (1.05 em, .04 em before and .26 em after, .18 em under the line) and its colour at 500 */
 .brand{font-weight:var(--w-title);white-space:nowrap}
@@ -203,78 +216,199 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Use cases</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/use-cases.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Simeon works best when each agent has one clear job. The <a href="/marketplace">Marketplace</a> has ready-made teams of five agents for common kinds of work; add one to Simeon in a click, then rename the agents or change their jobs.</p>
-<h2 id="ready-made-teams">Ready-made teams</h2>
-<div class="table"><table><thead><tr><th>Team</th><th>What the agents do</th></tr></thead><tbody><tr><td><a href="/marketplace/coffee-shop/">Coffee Shops</a></td><td>Stock, shifts, socials, customers and money</td></tr><tr><td><a href="/marketplace/founders/">Founders</a></td><td>Design, marketing, engineering, inboxes and finance</td></tr><tr><td><a href="/marketplace/agencies/">Agencies</a></td><td>Projects, reports, new business, clients and billing</td></tr><tr><td><a href="/marketplace/freelancers/">Freelancers</a></td><td>Inbox, proposals, invoices, time and leads</td></tr><tr><td><a href="/marketplace/creators/">Creators</a></td><td>Ideas, scripts, sponsors, community and stats</td></tr><tr><td><a href="/marketplace/online-stores/">Online Stores</a></td><td>Orders, support, products, stock and marketing</td></tr><tr><td><a href="/marketplace/real-estate/">Real Estate Agents</a></td><td>Leads, listings, showings, deals and the market</td></tr><tr><td><a href="/marketplace/life/">Busy Professionals</a></td><td>Inbox, travel, errands, money and family</td></tr></tbody></table></div>
-<p>The Marketplace has more, for salespeople, recruiters, law firms, accountants, landlords, contractors and salons.</p>
+<p>Simeon works best when each agent has one clear job. There are two ways to build a team around your work: add a ready-made team of five from the <a href="/marketplace">Marketplace</a>, or ask Simeon to hire for one job at a time.</p>
+<p>This page covers both, with first tasks for the jobs people hand off most, and how to write a request an agent can finish.</p>
+<h2 id="add-a-ready-made-team">Add a ready-made team</h2>
+<p>Each team in the Marketplace has five agents for one kind of work, already named, each with a face, a job, instructions and the three apps it asks to connect. Adding a team is free.</p>
+<ol><li>Open the <a href="/marketplace">Marketplace</a> and choose a team.</li><li>Choose <strong>Add to Simeon</strong>. The Simeon app opens and shows the team: each agent, what it does and the apps it uses.</li><li>Choose <strong>Add to Simeon</strong> in the app.</li></ol>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:7/5"><img class="e-left" src="/docs/img/use-cases-pack.webp" alt="The Founders team in the Simeon app: five faces, Rafael for Design, Tess for Marketing, and Add to Simeon" width="780" height="520" loading="lazy" decoding="async"></div><figcaption>Simeon for Founders, as the app shows it before you add it.</figcaption></figure>
+<p>The five agents appear together in your list of chats, in a folder named after the team, such as <strong>Founder Team</strong>, and the first one's chat opens. Each agent sends you a first message right away: it names the apps it needs, with a <strong>Connect</strong> card for each one you haven't connected yet, and asks what to start on.</p>
+<div class="table"><table><thead><tr><th>Team</th><th>Agents</th></tr></thead><tbody><tr><td><a href="/marketplace/coffee-shop/">Coffee Shops</a></td><td>Bruno (Stock), Clara (Shifts), Mae (Socials), Ines (Customers), Hugo (Money)</td></tr><tr><td><a href="/marketplace/founders/">Founders</a></td><td>Rafael (Design), Tess (Marketing), Otis (Engineering), Margot (Inboxes), Arlo (Finance)</td></tr><tr><td><a href="/marketplace/agencies/">Agencies</a></td><td>Isla (Projects), Ravi (Reporting), Jonas (New business), Nadia (Clients), Camille (Billing)</td></tr><tr><td><a href="/marketplace/real-estate/">Real Estate Agents</a></td><td>Nora (Leads), Felix (Listings), Ada (Showings), Owen (Deals), Lena (Market)</td></tr><tr><td><a href="/marketplace/online-stores/">Online Stores</a></td><td>Gus (Orders), Pia (Support), Rafa (Products), Wren (Stock), Kai (Marketing)</td></tr><tr><td><a href="/marketplace/freelancers/">Freelancers</a></td><td>Elsa (Inbox), Marco (Proposals), Talia (Invoices), Sam (Time), Lucia (Leads)</td></tr><tr><td><a href="/marketplace/creators/">Creators</a></td><td>Milo (Ideas), Rosa (Scripts), Dex (Sponsors), Zoe (Community), Nico (Stats)</td></tr><tr><td><a href="/marketplace/sales/">Salespeople</a></td><td>Ivy (Research), Omar (Outreach), Greta (CRM), Rory (Coaching), Petra (Pipeline)</td></tr><tr><td><a href="/marketplace/recruiters/">Recruiters</a></td><td>Jonah (Sourcing), Esme (Screening), Paolo (Interviews), Freya (Candidates), Anton (Offers)</td></tr><tr><td><a href="/marketplace/law-firms/">Law Firms</a></td><td>Maya (Intake), Ezra (Paralegal), Vera (Deadlines), Elias (Billing), Hana (Research)</td></tr><tr><td><a href="/marketplace/accountants/">Accountants</a></td><td>Otto (Documents), Noor (Expenses), Arlo (Fees), Sofia (Deadlines), Ravi (Updates)</td></tr><tr><td><a href="/marketplace/property/">Landlords</a></td><td>Dalia (Tenants), Bram (Repairs), Nadia (Rent), Cyrus (Leases), Tess (Vacancies)</td></tr><tr><td><a href="/marketplace/trades/">Contractors</a></td><td>Wes (Quotes), Rita (Schedule), Hal (Supplies), Joan (Invoices), Max (Reviews)</td></tr><tr><td><a href="/marketplace/salons/">Salons and Spas</a></td><td>Lola (Bookings), Remi (Reminders), Nell (Reviews), Kira (Socials), Dora (Win-back)</td></tr><tr><td><a href="/marketplace/life/">Busy Professionals</a></td><td>Eva (Inbox), Jasper (Travel), Ruby (Errands), Victor (Money), Pippa (Family)</td></tr></tbody></table></div>
+<p>A team is a starting point. Rename its agents, change their jobs in their profiles, or delete the ones you don't need; see <a href="/docs/agents#edit-an-agents-profile">Edit an agent's profile</a>.</p>
+<div class="callout note"><b>Note</b><p>A few apps the teams ask for can't be connected yet. Their card says <strong>Coming soon</strong>; the agent can still work in that app's website in its browser.</p></div>
+<h2 id="hire-for-one-job-at-a-time">Hire for one job at a time</h2>
+<p>If no team fits, tell Simeon what's taking up your time, in a sentence. He hires an agent for it and briefs it. See <a href="/docs/agents#hire-an-agent-through-simeon">Hire an agent through Simeon</a>.</p>
+<blockquote><p>I run a small design studio. I lose hours every week to client emails, invoices and booking calls. Who should I hire first?</p></blockquote>
+<p>Simeon recommends a first hire and says why. For a project, he proposes a small team, up to three agents to start.</p>
 <h2 id="first-tasks-to-try">First tasks to try</h2>
-<p>Each of these is a good first message. Change the details to fit your work.</p>
-<h3 id="inbox">Inbox</h3>
-<blockquote><p>Every morning, sort my inbox. Reply to anything that only needs a yes or a date, flag what needs me, and give me a short summary at 9.</p></blockquote>
-<h3 id="finance">Finance</h3>
-<blockquote><p>Match this month's transactions in <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>, chase any invoice more than 14 days late with a friendly reminder, and tell me where the money went.</p></blockquote>
+<p>Each of these is a first message for an agent with that job. Change the details to fit your work. The apps after each heading are the ones the agent would ask you to connect.</p>
+<h3 id="inbox-gmail-or-outlook">Inbox (<span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span> or <span class="brand" style="color:#0078d4"><img class="logo" src="/docs/brands/outlook.png?v=f5ac048b" alt="" aria-hidden="true">Outlook</span>)</h3>
+<blockquote><p>Every morning at 8, sort my inbox. Draft replies to anything that only needs a yes or a date, file receipts and newsletters, and send me a summary of what needs me.</p></blockquote>
+<figure class="shot"><div class="pane" style="--c:#af8fa0;--w:100%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/use-cases-inbox.webp" alt="Nia&#x27;s morning summary: 38 new emails, 2 that need you, 6 quick replies drafted, 30 filed" width="780" height="500" loading="lazy" decoding="async"></div><figcaption>Nia's summary of the night's email.</figcaption></figure>
+<p>Each reply comes as a draft card in the agent's chat. Read it, edit it if you like, and choose <strong>Send email</strong>. An agent sends an email without a card only when you've asked it, in the chat, to send that message to those people.</p>
+<h3 id="finance-quickbooks-stripe-or-xero">Finance (<span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>, <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span> or <span class="brand" style="color:#0f91bb"><i class="logo" style="--m:url(/docs/brands/xero.png?v=bdd6cd7d);background:#0f91bb" aria-hidden="true"></i>Xero</span>)</h3>
+<blockquote><p>Match October's <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span> payouts against our invoices in <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span>, chase any invoice more than 14 days late with a friendly reminder, and tell me where the money went.</p></blockquote>
 <h3 id="travel">Travel</h3>
-<blockquote><p>Find me the cheapest refundable flight from Seattle to LA tomorrow, landing before 2pm. Show me the options before booking.</p></blockquote>
-<h3 id="social-media">Social media</h3>
-<blockquote><p>Turn what we shipped this week into three posts for <span class="brand" style="color:#ff0069"><i class="logo" style="--m:url(/docs/brands/instagram.png?v=e45611e6);background:#ff0069" aria-hidden="true"></i>Instagram</span> and <span class="brand" style="color:#0a66c2"><i class="logo" style="--m:url(/docs/brands/linkedin.png?v=e70a19fc);background:#0a66c2" aria-hidden="true"></i>LinkedIn</span>. Show me the drafts and schedule the ones I approve.</p></blockquote>
+<blockquote><p>Find me a flight from Seattle to LA tomorrow.</p></blockquote>
+<p>The agent answers with a card of up to four flights, its pick in one line, and a panel for each flight with the times, the stops, the bags and the refund terms.</p>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:100%;aspect-ratio:4/3"><img class="e-left" src="/docs/img/use-cases-flights.webp" alt="Kai&#x27;s flight card: Seattle to Los Angeles, four flights with times and prices, and his pick under it" width="780" height="600" loading="lazy" decoding="async"></div><figcaption>Flights on a card, and Kai's pick in one line.</figcaption></figure>
+<p>Choose a flight to see its details, then <strong>Book with Simeon</strong> to book it. You fill in the traveller's details in a form, and nothing is paid until you allow the checkout.</p>
+<h3 id="calendar-google-calendar-or-outlook">Calendar (<span class="brand" style="color:#4285f4"><img class="logo" src="/docs/brands/google-calendar.png?v=c7d1bc2d" alt="" aria-hidden="true">Google Calendar</span> or <span class="brand" style="color:#0078d4"><img class="logo" src="/docs/brands/outlook.png?v=f5ac048b" alt="" aria-hidden="true">Outlook</span>)</h3>
+<blockquote><p>Keep my mornings free for deep work. Move internal meetings to the afternoon, and send me a one-page brief before every call with someone outside the company.</p></blockquote>
+<h3 id="social-media-instagram-linkedin-canva">Social media (<span class="brand" style="color:#ff0069"><i class="logo" style="--m:url(/docs/brands/instagram.png?v=e45611e6);background:#ff0069" aria-hidden="true"></i>Instagram</span>, <span class="brand" style="color:#0a66c2"><i class="logo" style="--m:url(/docs/brands/linkedin.png?v=e70a19fc);background:#0a66c2" aria-hidden="true"></i>LinkedIn</span>, <span class="brand" style="color:#009399"><i class="logo" style="--m:url(/docs/brands/canva.png?v=149e17a3);background:#009399" aria-hidden="true"></i>Canva</span>)</h3>
+<blockquote><p>Turn what we shipped this week into three posts for <span class="brand" style="color:#ff0069"><i class="logo" style="--m:url(/docs/brands/instagram.png?v=e45611e6);background:#ff0069" aria-hidden="true"></i>Instagram</span> and <span class="brand" style="color:#0a66c2"><i class="logo" style="--m:url(/docs/brands/linkedin.png?v=e70a19fc);background:#0a66c2" aria-hidden="true"></i>LinkedIn</span>. Show me the drafts, and schedule the ones I approve for when our followers are online.</p></blockquote>
 <h3 id="research">Research</h3>
-<blockquote><p>Find the ten companies most likely to need what we sell, with the right person to contact at each and why.</p></blockquote>
-<h2 id="tips-for-a-good-brief">Tips for a good brief</h2>
-<ul><li><strong>One job per agent.</strong> "Inbox" and "Finance" work better as two agents than one "assistant".</li><li><strong>Say where to stop.</strong> Tell the agent what it may do alone and what it should show you first.</li><li><strong>Teach it once.</strong> Correct the first results and ask the agent to remember how you like things done.</li></ul>
+<blockquote><p>Find the ten companies most likely to need what we sell, with the right person to contact at each and one line on why. Put it in a Google Sheet.</p></blockquote>
+<h3 id="sales-hubspot-or-salesforce">Sales (<span class="brand" style="color:#cc6247"><i class="logo" style="--m:url(/docs/brands/hubspot.png?v=13a00e71);background:#cc6247" aria-hidden="true"></i>HubSpot</span> or <span class="brand" style="color:#0091ca"><i class="logo" style="--m:url(/docs/brands/salesforce.png?v=e8ba24b4);background:#0091ca" aria-hidden="true"></i>Salesforce</span>)</h3>
+<blockquote><p>After each sales call, update the deal in <span class="brand" style="color:#cc6247"><i class="logo" style="--m:url(/docs/brands/hubspot.png?v=13a00e71);background:#cc6247" aria-hidden="true"></i>HubSpot</span>, log the next step, and draft the follow-up email for me to send.</p></blockquote>
+<h3 id="hiring">Hiring</h3>
+<blockquote><p>Screen the new applicants for the designer role against the job description, and book a 30-minute call with the three best in my free slots next week.</p></blockquote>
+<h2 id="write-a-request-an-agent-can-finish">Write a request an agent can finish</h2>
+<div class="table"><table><thead><tr><th>Say</th><th>For example</th></tr></thead><tbody><tr><td><strong>What you want done</strong></td><td>Chase every invoice more than 14 days late.</td></tr><tr><td><strong>Where the work is</strong></td><td>In <span class="brand" style="color:#2a981b"><i class="logo" style="--m:url(/docs/brands/quickbooks.png?v=9182dd60);background:#2a981b" aria-hidden="true"></i>QuickBooks</span> and my <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>.</td></tr><tr><td><strong>What you want back</strong></td><td>A list of who you chased and how much is still out.</td></tr><tr><td><strong>Where to stop</strong></td><td>Show me each reminder before it goes out.</td></tr><tr><td><strong>When to do it again</strong></td><td>Every Monday at 9.</td></tr></tbody></table></div>
+<div class="callout tip"><b>Tip</b><p>Correct the first results the way you would a new colleague, and ask the agent to remember how you like it done. Once a task comes back right, ask for it on a schedule and it becomes a <a href="/docs/routines">routine</a>.</p></div>
+<h2 id="common-questions">Common questions</h2>
+<h3 id="should-i-add-a-whole-team-or-start-with-one-agent">Should I add a whole team or start with one agent?</h3>
+<p>Start with what takes the most of your time. If a team in the Marketplace matches your work, adding it gives you five agents briefed for it at once. If you only need one or two jobs done, hire through Simeon instead; you can add more agents at any time.</p>
+<h3 id="can-i-add-the-same-team-twice">Can I add the same team twice?</h3>
+<p>No. If the team's agents are still in your list, the app shows <strong>Open</strong> with the team's folder name instead of <strong>Add to Simeon</strong>, and opens them.</p>
+<h3 id="do-the-agents-in-a-team-work-together">Do the agents in a team work together?</h3>
+<p>Yes. Agents message each other to hand work on, and Simeon passes work to whichever agent's job it is. See <a href="/docs/agents#how-agents-work-together">How agents work together</a>.</p>
+<h3 id="what-if-an-agent-needs-an-app-i-don-t-use">What if an agent needs an app I don't use?</h3>
+<p>Tell it which app you use instead, or that you'd rather it work in the website. Change its description so it remembers.</p>
+<h2 id="related-pages">Related pages</h2>
+<div class="cards"><a class="card" href="/docs/get-started"><span><h3>Get started</h3><p>Install the app, meet Simeon and give your first agent a task.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/agents"><span><h3>Create and manage agents</h3><p>Hire agents, set their jobs and manage your team.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/connectors"><span><h3>Connect apps</h3><p>Give your agents the apps they need.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a><a class="card" href="/docs/routines"><span><h3>Routines</h3><p>Work that runs on a schedule.</p></span><span class="go">Explore <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></a></div>
     </div>
-    <p class="updated">Last updated: November 2, 2026</p>
+    <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#ready-made-teams">Ready-made teams</a><a class="t l2" href="#first-tasks-to-try">First tasks to try</a><a class="t l3" href="#inbox">Inbox</a><a class="t l3" href="#finance">Finance</a><a class="t l3" href="#travel">Travel</a><a class="t l3" href="#social-media">Social media</a><a class="t l3" href="#research">Research</a><a class="t l2" href="#tips-for-a-good-brief">Tips for a good brief</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#add-a-ready-made-team">Add a ready-made team</a><a class="t l2" href="#hire-for-one-job-at-a-time">Hire for one job at a time</a><a class="t l2" href="#first-tasks-to-try">First tasks to try</a><a class="t l3" href="#inbox-gmail-or-outlook">Inbox (Gmail or Outlook)</a><a class="t l3" href="#finance-quickbooks-stripe-or-xero">Finance (QuickBooks, Stripe or Xero)</a><a class="t l3" href="#travel">Travel</a><a class="t l3" href="#calendar-google-calendar-or-outlook">Calendar (Google Calendar or Outlook)</a><a class="t l3" href="#social-media-instagram-linkedin-canva">Social media (Instagram, LinkedIn, Canva)</a><a class="t l3" href="#research">Research</a><a class="t l3" href="#sales-hubspot-or-salesforce">Sales (HubSpot or Salesforce)</a><a class="t l3" href="#hiring">Hiring</a><a class="t l2" href="#write-a-request-an-agent-can-finish">Write a request an agent can finish</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#should-i-add-a-whole-team-or-start-with-one-agent">Should I add a whole team or start with one agent?</a><a class="t l3" href="#can-i-add-the-same-team-twice">Can I add the same team twice?</a><a class="t l3" href="#do-the-agents-in-a-team-work-together">Do the agents in a team work together?</a><a class="t l3" href="#what-if-an-agent-needs-an-app-i-don-t-use">What if an agent needs an app I don&#x27;t use?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Use cases
 
-Simeon works best when each agent has one clear job. The [Marketplace](/marketplace) has ready-made teams of five agents for common kinds of work; add one to Simeon in a click, then rename the agents or change their jobs.
+Simeon works best when each agent has one clear job. There are two ways to build a team around your work: add a ready-made team of five from the [Marketplace](/marketplace), or ask Simeon to hire for one job at a time.
 
-## Ready-made teams
+This page covers both, with first tasks for the jobs people hand off most, and how to write a request an agent can finish.
 
-| Team | What the agents do |
+## Add a ready-made team
+
+Each team in the Marketplace has five agents for one kind of work, already named, each with a face, a job, instructions and the three apps it asks to connect. Adding a team is free.
+
+1. Open the [Marketplace](/marketplace) and choose a team.
+2. Choose **Add to Simeon**. The Simeon app opens and shows the team: each agent, what it does and the apps it uses.
+3. Choose **Add to Simeon** in the app.
+
+![The Founders team in the Simeon app: five faces, Rafael for Design, Tess for Marketing, and Add to Simeon](img/use-cases-pack.webp &quot;Simeon for Founders, as the app shows it before you add it.&quot;){c=#89acbc ar=7/5}
+
+The five agents appear together in your list of chats, in a folder named after the team, such as **Founder Team**, and the first one&#x27;s chat opens. Each agent sends you a first message right away: it names the apps it needs, with a **Connect** card for each one you haven&#x27;t connected yet, and asks what to start on.
+
+| Team | Agents |
 |---|---|
-| [Coffee Shops](/marketplace/coffee-shop/) | Stock, shifts, socials, customers and money |
-| [Founders](/marketplace/founders/) | Design, marketing, engineering, inboxes and finance |
-| [Agencies](/marketplace/agencies/) | Projects, reports, new business, clients and billing |
-| [Freelancers](/marketplace/freelancers/) | Inbox, proposals, invoices, time and leads |
-| [Creators](/marketplace/creators/) | Ideas, scripts, sponsors, community and stats |
-| [Online Stores](/marketplace/online-stores/) | Orders, support, products, stock and marketing |
-| [Real Estate Agents](/marketplace/real-estate/) | Leads, listings, showings, deals and the market |
-| [Busy Professionals](/marketplace/life/) | Inbox, travel, errands, money and family |
+| [Coffee Shops](/marketplace/coffee-shop/) | Bruno (Stock), Clara (Shifts), Mae (Socials), Ines (Customers), Hugo (Money) |
+| [Founders](/marketplace/founders/) | Rafael (Design), Tess (Marketing), Otis (Engineering), Margot (Inboxes), Arlo (Finance) |
+| [Agencies](/marketplace/agencies/) | Isla (Projects), Ravi (Reporting), Jonas (New business), Nadia (Clients), Camille (Billing) |
+| [Real Estate Agents](/marketplace/real-estate/) | Nora (Leads), Felix (Listings), Ada (Showings), Owen (Deals), Lena (Market) |
+| [Online Stores](/marketplace/online-stores/) | Gus (Orders), Pia (Support), Rafa (Products), Wren (Stock), Kai (Marketing) |
+| [Freelancers](/marketplace/freelancers/) | Elsa (Inbox), Marco (Proposals), Talia (Invoices), Sam (Time), Lucia (Leads) |
+| [Creators](/marketplace/creators/) | Milo (Ideas), Rosa (Scripts), Dex (Sponsors), Zoe (Community), Nico (Stats) |
+| [Salespeople](/marketplace/sales/) | Ivy (Research), Omar (Outreach), Greta (CRM), Rory (Coaching), Petra (Pipeline) |
+| [Recruiters](/marketplace/recruiters/) | Jonah (Sourcing), Esme (Screening), Paolo (Interviews), Freya (Candidates), Anton (Offers) |
+| [Law Firms](/marketplace/law-firms/) | Maya (Intake), Ezra (Paralegal), Vera (Deadlines), Elias (Billing), Hana (Research) |
+| [Accountants](/marketplace/accountants/) | Otto (Documents), Noor (Expenses), Arlo (Fees), Sofia (Deadlines), Ravi (Updates) |
+| [Landlords](/marketplace/property/) | Dalia (Tenants), Bram (Repairs), Nadia (Rent), Cyrus (Leases), Tess (Vacancies) |
+| [Contractors](/marketplace/trades/) | Wes (Quotes), Rita (Schedule), Hal (Supplies), Joan (Invoices), Max (Reviews) |
+| [Salons and Spas](/marketplace/salons/) | Lola (Bookings), Remi (Reminders), Nell (Reviews), Kira (Socials), Dora (Win-back) |
+| [Busy Professionals](/marketplace/life/) | Eva (Inbox), Jasper (Travel), Ruby (Errands), Victor (Money), Pippa (Family) |
 
-The Marketplace has more, for salespeople, recruiters, law firms, accountants, landlords, contractors and salons.
+A team is a starting point. Rename its agents, change their jobs in their profiles, or delete the ones you don&#x27;t need; see [Edit an agent&#x27;s profile](/docs/agents#edit-an-agents-profile).
+
+:::note
+A few apps the teams ask for can&#x27;t be connected yet. Their card says **Coming soon**; the agent can still work in that app&#x27;s website in its browser.
+:::
+
+## Hire for one job at a time
+
+If no team fits, tell Simeon what&#x27;s taking up your time, in a sentence. He hires an agent for it and briefs it. See [Hire an agent through Simeon](/docs/agents#hire-an-agent-through-simeon).
+
+&gt; I run a small design studio. I lose hours every week to client emails, invoices and booking calls. Who should I hire first?
+
+Simeon recommends a first hire and says why. For a project, he proposes a small team, up to three agents to start.
 
 ## First tasks to try
 
-Each of these is a good first message. Change the details to fit your work.
+Each of these is a first message for an agent with that job. Change the details to fit your work. The apps after each heading are the ones the agent would ask you to connect.
 
-### Inbox
+### Inbox (Gmail or Outlook)
 
-&gt; Every morning, sort my inbox. Reply to anything that only needs a yes or a date, flag what needs me, and give me a short summary at 9.
+&gt; Every morning at 8, sort my inbox. Draft replies to anything that only needs a yes or a date, file receipts and newsletters, and send me a summary of what needs me.
 
-### Finance
+![Nia&#x27;s morning summary: 38 new emails, 2 that need you, 6 quick replies drafted, 30 filed](img/use-cases-inbox.webp &quot;Nia&#x27;s summary of the night&#x27;s email.&quot;){c=#af8fa0 ar=16/11}
 
-&gt; Match this month&#x27;s transactions in QuickBooks, chase any invoice more than 14 days late with a friendly reminder, and tell me where the money went.
+Each reply comes as a draft card in the agent&#x27;s chat. Read it, edit it if you like, and choose **Send email**. An agent sends an email without a card only when you&#x27;ve asked it, in the chat, to send that message to those people.
+
+### Finance (QuickBooks, Stripe or Xero)
+
+&gt; Match October&#x27;s Stripe payouts against our invoices in QuickBooks, chase any invoice more than 14 days late with a friendly reminder, and tell me where the money went.
 
 ### Travel
 
-&gt; Find me the cheapest refundable flight from Seattle to LA tomorrow, landing before 2pm. Show me the options before booking.
+&gt; Find me a flight from Seattle to LA tomorrow.
 
-### Social media
+The agent answers with a card of up to four flights, its pick in one line, and a panel for each flight with the times, the stops, the bags and the refund terms.
 
-&gt; Turn what we shipped this week into three posts for Instagram and LinkedIn. Show me the drafts and schedule the ones I approve.
+![Kai&#x27;s flight card: Seattle to Los Angeles, four flights with times and prices, and his pick under it](img/use-cases-flights.webp &quot;Flights on a card, and Kai&#x27;s pick in one line.&quot;){c=#a5835f ar=4/3}
+
+Choose a flight to see its details, then **Book with Simeon** to book it. You fill in the traveller&#x27;s details in a form, and nothing is paid until you allow the checkout.
+
+### Calendar (Google Calendar or Outlook)
+
+&gt; Keep my mornings free for deep work. Move internal meetings to the afternoon, and send me a one-page brief before every call with someone outside the company.
+
+### Social media (Instagram, LinkedIn, Canva)
+
+&gt; Turn what we shipped this week into three posts for Instagram and LinkedIn. Show me the drafts, and schedule the ones I approve for when our followers are online.
 
 ### Research
 
-&gt; Find the ten companies most likely to need what we sell, with the right person to contact at each and why.
+&gt; Find the ten companies most likely to need what we sell, with the right person to contact at each and one line on why. Put it in a Google Sheet.
 
-## Tips for a good brief
+### Sales (HubSpot or Salesforce)
 
-- **One job per agent.** &quot;Inbox&quot; and &quot;Finance&quot; work better as two agents than one &quot;assistant&quot;.
-- **Say where to stop.** Tell the agent what it may do alone and what it should show you first.
-- **Teach it once.** Correct the first results and ask the agent to remember how you like things done.
+&gt; After each sales call, update the deal in HubSpot, log the next step, and draft the follow-up email for me to send.
+
+### Hiring
+
+&gt; Screen the new applicants for the designer role against the job description, and book a 30-minute call with the three best in my free slots next week.
+
+## Write a request an agent can finish
+
+| Say | For example |
+|---|---|
+| **What you want done** | Chase every invoice more than 14 days late. |
+| **Where the work is** | In QuickBooks and my Gmail. |
+| **What you want back** | A list of who you chased and how much is still out. |
+| **Where to stop** | Show me each reminder before it goes out. |
+| **When to do it again** | Every Monday at 9. |
+
+:::tip
+Correct the first results the way you would a new colleague, and ask the agent to remember how you like it done. Once a task comes back right, ask for it on a schedule and it becomes a [routine](/docs/routines).
+:::
+
+## Common questions
+
+### Should I add a whole team or start with one agent?
+
+Start with what takes the most of your time. If a team in the Marketplace matches your work, adding it gives you five agents briefed for it at once. If you only need one or two jobs done, hire through Simeon instead; you can add more agents at any time.
+
+### Can I add the same team twice?
+
+No. If the team&#x27;s agents are still in your list, the app shows **Open** with the team&#x27;s folder name instead of **Add to Simeon**, and opens them.
+
+### Do the agents in a team work together?
+
+Yes. Agents message each other to hand work on, and Simeon passes work to whichever agent&#x27;s job it is. See [How agents work together](/docs/agents#how-agents-work-together).
+
+### What if an agent needs an app I don&#x27;t use?
+
+Tell it which app you use instead, or that you&#x27;d rather it work in the website. Change its description so it remembers.
+
+## Related pages
+
+:::cards
+- [Get started](/docs/get-started) Install the app, meet Simeon and give your first agent a task.
+- [Create and manage agents](/docs/agents) Hire agents, set their jobs and manage your team.
+- [Connect apps](/docs/connectors) Give your agents the apps they need.
+- [Routines](/docs/routines) Work that runs on a schedule.
+:::
 </script>
 </main>
 
