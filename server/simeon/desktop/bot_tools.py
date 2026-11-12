@@ -48,7 +48,7 @@ from simeon.postgres import AsyncSession
 from simeon.redis import Redis
 from simeon.sand.box_hosts import GATEWAY_PORT
 from simeon.sand.box_repository import SandBoxRepository
-from simeon.sand.box_service import broker, dial_headers
+from simeon.sand.box_service import broker, dial_headers, with_dial
 from simeon.worker import enqueue_job
 
 from .chat_repository import (
@@ -124,12 +124,14 @@ async def gateway_send(box: SandBox, method: str, args: dict[str, Any]) -> Any:
     async with httpx.AsyncClient(timeout=COMMAND_TIMEOUT_S) as client:
         response = await client.post(
             f"{url}/api/{method}",
-            headers={
-                **dial_headers(box),
-                "authorization": f"Bearer {box.gateway_token}",
-                # Agents without their pictures inline (`gateway-wire.ts`).
-                SLIM_AVATARS_HEADER: "1",
-            },
+            headers=with_dial(
+                {
+                    "authorization": f"Bearer {box.gateway_token}",
+                    # Agents without their pictures inline (`gateway-wire.ts`).
+                    SLIM_AVATARS_HEADER: "1",
+                },
+                await dial_headers(box),
+            ),
             json=args,
         )
     if response.status_code in (502, 503, 504):

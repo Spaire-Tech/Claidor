@@ -1492,6 +1492,37 @@ computer hibernated to a snapshot. What differs from Docker:
 
 Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
 
+**Computers on Azure** (12 November 2026, `server/simeon/sand/box_azure.py`).
+An entry with `"kind": "azure"` puts computers on Azure Container Apps
+Sandboxes, the same design as E2B on Microsoft's service
+(`docs/ops/box-host/azure-plan.md`). The server speaks Azure's data-plane
+REST API itself (version `2026-09-01-preview`) over httpx, signed in as its
+own identity (client credentials). What differs from E2B:
+
+- **Making one.** The disk image is box2's image with `simeon-vm-init` as its
+  first process (`box/azure/`). The server writes the settings to
+  `/var/lib/simeon` (on the disk, so a computer started fresh starts again
+  on its own), the randomness, the machine id and the engine, then the mark
+  `ready`. Size: 2 cores, 4 GiB, 40 GiB. Auto-suspend is off, so the broker
+  decides when a computer sleeps.
+- **Sleep and wake.** Sleep is `stop` (a snapshot of the whole VM in Memory
+  mode). Wake is `resume`, asked again every 10 seconds while the computer
+  still sleeps, then the clock is set. A wake that has not ended after two
+  minutes (Azure's bug #1869) removes the computer, and the app's next try
+  makes a new one from the backup (`sand.box.azure.resume_failed`).
+- **Reaching it.** Each port is `https://<sandbox>--<port>.<region>.adcproxy.io`
+  and admits only the server's identity (a Microsoft token in
+  `Authorization`, which Azure's proxy removes). The app's own
+  `Authorization` (the gateway's password) moves into
+  `x-simeon-box-authorization`, which the engine's gateway reads too
+  (`box_service.with_dial`). No port wakes a sleeping computer on its own.
+- **No ceiling of ours.** `max_running` is 0 for Azure (no limit); Azure's
+  own limits show as the capacity hold. The sleeper asks the awake computers
+  in parallel, 32 at once.
+
+Run against a stand-in Azure (`server/tests/sand/test_box_azure.py`); not yet
+on a real computer. Setting it up: `docs/ops/box-host/render-env.md`, "Azure".
+
 **Capacity and sleep.**
 
 - **Size.** Each box is capped at `SIMEON_BOX_MEMORY_LIMIT_MB` (4096, no swap
@@ -1511,6 +1542,10 @@ Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
     `EnsureSandBox` every 30 seconds while it was open.
   - Any other box idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER` (30 minutes) is
     stopped with its files kept, and the app shows it as sleeping.
+  - It asks 32 boxes at a time (`SLEEPER_LOOKS_AT_ONCE`, 12 November 2026):
+    each one's state on its server, then its `/health`. One after another, a
+    thousand awake boxes took longer than the minute between rounds. What it
+    then writes to the database and Redis is still done one box at a time.
 - **Wake.** `EnsureSandBox` wakes a sleeping box. So does `sand.box.wake`,
   which is queued whenever the server publishes something for the box, such
   as a routine's fire or a shared room's turn. A wake refused for capacity is

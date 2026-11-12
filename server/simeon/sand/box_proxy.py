@@ -62,6 +62,7 @@ from .box_service import (
     dial_headers,
     lets_sleep,
     mark_attached,
+    with_dial,
 )
 
 log = structlog.get_logger()
@@ -138,7 +139,7 @@ def read_network_token(headers: Any, query: Any) -> str:
     return str(query.get(NETWORK_TOKEN_QUERY, "") or "").strip()
 
 
-def upstream_target(box: SandBox, port: int) -> tuple[str, dict[str, str]] | None:
+async def upstream_target(box: SandBox, port: int) -> tuple[str, dict[str, str]] | None:
     """The box's port as the API dials it (`broker.internal_url`: a Docker
     server's published port, or E2B's per-port address) and the headers
     that dial needs (an E2B box's traffic token)."""
@@ -147,7 +148,7 @@ def upstream_target(box: SandBox, port: int) -> tuple[str, dict[str, str]] | Non
     base = broker.internal_url(box, port)
     if base is None:
         return None
-    return base, dial_headers(box)
+    return base, await dial_headers(box)
 
 
 def _redis_of(connection: Request | WebSocket) -> Any:
@@ -241,7 +242,7 @@ async def _resolve(
             network_token_sent=bool(token),
         )
         return JSONResponse({"error": "network token refused"}, status_code=401)
-    target = upstream_target(box, port)
+    target = await upstream_target(box, port)
     if target is None:
         return JSONResponse({"error": f"port {port} is not proxied"}, status_code=404)
     return box, target[0], target[1]
@@ -327,7 +328,7 @@ async def _replacement(
         if current is None:
             return None
         if current.provider_box_id != box.provider_box_id or (waited and not ensuring):
-            target = upstream_target(current, port)
+            target = await upstream_target(current, port)
             return None if target is None else (current, target[0], target[1])
         if not ensuring or time.monotonic() >= deadline:
             return None
@@ -415,7 +416,7 @@ async def _woken(
         current = await _lookup(db, box.id, token)
     if current is None:
         return outcome, None
-    target = upstream_target(current, port)
+    target = await upstream_target(current, port)
     return outcome, None if target is None else (current, target[0], target[1])
 
 
@@ -447,7 +448,7 @@ async def _proxy_http(
         upstream = client.build_request(
             request.method,
             f"{base}/{path}" + (f"?{query}" if query else ""),
-            headers={**forwardable(request.headers), **dial},
+            headers=with_dial(forwardable(request.headers), dial),
             content=request.stream() if kept is None else kept,
         )
         try:
@@ -668,11 +669,14 @@ async def _proxy_ws(
         for p in websocket.headers.get("sec-websocket-protocol", "").split(",")
         if p.strip()
     ]
-    headers = {
-        k: v
-        for k, v in websocket.headers.items()
-        if k.lower() in ("authorization", NETWORK_TOKEN_HEADER)
-    } | dial
+    headers = with_dial(
+        {
+            k: v
+            for k, v in websocket.headers.items()
+            if k.lower() in ("authorization", NETWORK_TOKEN_HEADER)
+        },
+        dial,
+    )
     try:
         upstream = await connect(
             url,

@@ -229,14 +229,20 @@ az acr create --resource-group simeon-computers --name simeoncomputers \
 **3. The server's own identity.**
 
 ```sh
+GROUP="/subscriptions/$SUB/resourceGroups/simeon-computers/providers/Microsoft.App/sandboxGroups/simeon-computers"
 az ad sp create-for-rbac --name simeon-server \
-  --role "Container Apps SandboxGroup Data Owner" \
-  --scopes "/subscriptions/$SUB/resourceGroups/simeon-computers/providers/Microsoft.App/sandboxGroups/simeon-computers"
+  --role "Container Apps SandboxGroup Data Owner" --scopes "$GROUP"
 APP=<the appId it printed>
-az role assignment create --assignee "$APP" --role AcrPull \
-  --scope "$(az acr show -n simeoncomputers --query id -o tsv)"
 az ad sp show --id "$APP" --query id -o tsv
+az role assignment create --role "Container Apps SandboxGroup Data Owner" \
+  --assignee "$(az ad signed-in-user show --query id -o tsv)" --scope "$GROUP"
 ```
+
+- The last command gives your own account the same role, so
+  `box/azure/build.sh` can make the disk image and the test computer from
+  the Mac, signed in as you. The disk image is pulled from the registry with
+  a short-lived token of yours, so the server's identity needs no access to
+  the registry.
 
 - It prints `appId`, `tenant` and `password`.
 - **The password is the secret.** Put it on Render as
@@ -266,6 +272,10 @@ server already spreads computers across several entries in
 
 ### Step 1. Azure support (me)
 
+Built on 12 November 2026, on branch `claude/zen-cerf-w9w3i4`. What each
+item became is under it. All of it ran against stand-ins only: no Azure
+account was used.
+
 1. **The image:** `box/azure/Dockerfile`, which adds to box2's image (the
    pinned digest E2B uses today):
    - `start-simeon-vm`;
@@ -278,6 +288,12 @@ server already spreads computers across several entries in
 
    `box/azure/build.sh` builds the image in Azure (`az acr build`, so nothing
    builds on the Mac) and turns it into a disk image.
+
+   *Built:* `box/azure/Dockerfile`, `simeon-vm-init` and `build.sh`. The
+   disk image is made by `box/azure/disk_image.py` (`POST …/diskimages` with
+   a registry token of the person running it), named
+   `simeon-box-<commit>-<time>`. A new name on Render gives each person a new
+   computer at their next start, as a new image does on Docker.
 2. **The host:** `server/simeon/sand/box_azure.py`, an `AzureBoxHost` with
    every call in the table in section 1.
    - It uses our own small REST client over `httpx`, with Microsoft's
@@ -293,9 +309,20 @@ server already spreads computers across several entries in
    - `_DISK_IMAGE`, `_SERVER_OBJECT_ID`.
 
    Plus `"kind": "azure"` in `SIMEON_BOX_HOSTS`.
+
+   *Built:* `server/simeon/sand/box_azure.py` and the settings, with tests
+   against a stand-in Azure in `server/tests/sand/test_box_azure.py`.
 4. **Reaching it:** the address and the Microsoft token in `dial_headers` and
    `internal_url`; the app's own `Authorization` moved into
    `x-simeon-box-authorization`; Azure's "gone" answer in `box_proxy`.
+
+   *Built,* except the "gone" answer: what Azure's proxy says for a removed
+   computer is not documented, so `check_sandbox.py` measures it
+   (`port_after_removed`) and it is added once known. Until then a request
+   to a removed Azure computer fails like any unreachable one. When the
+   server cannot get Microsoft's token for a port, the request goes on
+   without it and the computer looks unreachable, never a server error
+   (`sand.box.azure.port_sign_in_failed`).
 5. **The engine:** the gateway accepts its password from
    `x-simeon-box-authorization` (section 3). It works on E2B too, so it can be
    published at once.
@@ -316,6 +343,15 @@ server already spreads computers across several entries in
    `box/e2b/check_template.py`. It makes one test computer, measures the
    checks below, prints JSON and removes it, so the image can be checked
    without switching.
+
+   *Built.* It also measures what no document says: whether commands run as
+   root, whether a file's mode is read as written (600), whether a
+   200-second command answers, whether the image's first process runs,
+   what a port answers while the computer sleeps and once it is removed,
+   and whether auto-suspend stays off for ten idle minutes. The port lock is
+   checked with the runner's own token: ports locked to them answer, a port
+   locked to another identity answers 403. Run through the stand-in Azure
+   only.
 9. **Docs:** `docs/services-core.md`, and an "Azure" section in
    `docs/ops/box-host/render-env.md`.
 
@@ -327,7 +363,8 @@ Nothing changes on E2B until Render names the Azure entry.
 ### Step 2. The switch (the founder, about ten minutes)
 
 1. Publish the engine (it now reads the new header).
-2. Run `box/azure/build.sh` once (the image), then `check_sandbox.py`.
+2. Run `bash box/azure/build.sh` once: the image, the disk image, then the
+   measurements (`check_sandbox.py`, about 20 minutes). Send the JSON back.
 3. **Render:** set the Azure settings, and set `SIMEON_BOX_HOSTS` to the Azure
    entry alone, with `"users": ["*"]` and `"max_running": 0`.
 4. Open the app: a fresh computer is made on Azure. Connect Claude again.
@@ -417,5 +454,8 @@ These are what the checks in step 2 answer:
 - Whether a personal-account subscription allows our server's identity
   (check 1).
 - How big snapshots are and how long they're kept (check 10).
-- What Azure answers for a machine that's gone (measured).
-- How long an exec may run (`check_sandbox.py`).
+- What Azure answers for a machine that's gone (`check_sandbox.py`,
+  `port_after_removed`).
+- Whether commands may run as root, and how long one may run
+  (`check_sandbox.py`).
+- Whether auto-suspend stays off (`check_sandbox.py`).

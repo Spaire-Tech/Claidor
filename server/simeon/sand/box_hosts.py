@@ -181,8 +181,9 @@ class ProvisionedBox:
     #: (`box_store.py`). None on a container made without.
     box_store: str | None = None
     #: What the API needs to reach a box that is not a published Docker
-    #: port: `{"kind": "e2b", "traffic_token": …}` (`box_service.dial_headers`).
-    #: Empty for Docker.
+    #: port: `{"kind": "e2b", "traffic_token": …}`, or `{"kind": "azure",
+    #: "region": …, "url_<port>": …}` (`box_service.dial_headers`,
+    #: `internal_url`). Empty for Docker.
     host_meta: dict[str, str] = field(default_factory=dict)
 
 
@@ -825,8 +826,10 @@ EVERYONE = "*"
 @dataclass(frozen=True)
 class BoxHostEntry:
     """One box server in `SIMEON_BOX_HOSTS`: `kind` "docker" (the default,
-    with `docker_host`) or "e2b" (with `template`, default
-    `SIMEON_E2B_TEMPLATE`). `users` (e-mail addresses or user ids, or
+    with `docker_host`), "e2b" (with `template`, default
+    `SIMEON_E2B_TEMPLATE`) or "azure" (with `template` naming the disk
+    image, default `SIMEON_AZURE_DISK_IMAGE`; `max_running` none: no limit
+    of ours). `users` (e-mail addresses or user ids, or
     `EVERYONE`), when given, is who has their computer there; when it has
     no room, theirs is made on a server that names nobody
     (`BoxBrokerService.place`) and moved back later; `idle_minutes` is how long a
@@ -870,15 +873,15 @@ def box_host_entries() -> list[BoxHostEntry]:
         name = str(item.get("name") or "").strip()
         kind = str(item.get("kind") or "docker").strip().lower()
         docker_host = str(item.get("docker_host") or "").strip()
-        if kind not in ("docker", "e2b"):
+        if kind not in ("docker", "e2b", "azure"):
             raise BoxHostUnavailable(
                 f"SIMEON_BOX_HOSTS entry {name!r} has kind {kind!r}; "
-                'use "docker" or "e2b".'
+                'use "docker", "e2b" or "azure".'
             )
         if not name or (kind == "docker" and not docker_host):
             raise BoxHostUnavailable(
                 "Each SIMEON_BOX_HOSTS entry needs a name and a docker_host "
-                '(or "kind": "e2b").'
+                '(or "kind": "e2b" or "azure").'
             )
         max_running = item.get("max_running")
         users = item.get("users") or []
@@ -914,12 +917,12 @@ async def resolve_box_hosts() -> list[BoxHost]:
     if _host_override is not None:
         return _host_override
     provider = settings.BOX_HOST_PROVIDER.strip().lower()
-    if provider not in ("docker", "e2b"):
+    if provider not in ("docker", "e2b", "azure"):
         raise BoxHostUnavailable(BOX_HOST_UNAVAILABLE_SENTENCE)
     bundle = await load_host_bundle(settings.BOX_HOST_BUNDLE_URL)
-    if provider == "e2b" and not settings.BOX_HOSTS.strip():
-        # Every computer on E2B, under the one name "e2b".
-        entries = [BoxHostEntry(name="e2b", kind="e2b")]
+    if provider in ("e2b", "azure") and not settings.BOX_HOSTS.strip():
+        # Every computer on E2B (or Azure), under the one name "e2b" ("azure").
+        entries = [BoxHostEntry(name=provider, kind=provider)]
     else:
         entries = box_host_entries()
     key = json.dumps(
@@ -941,6 +944,18 @@ def _host_of(entry: BoxHostEntry, bundle: HostBundle | None) -> BoxHost:
         if entry.idle_minutes is not None
         else None
     )
+    if entry.kind == "azure":
+        from .box_azure import AzureBoxHost
+
+        return AzureBoxHost(
+            name=entry.name,
+            disk_image=entry.template or settings.AZURE_DISK_IMAGE,
+            bundle=bundle,
+            max_running=entry.max_running,
+            accepting=entry.accepting,
+            users=entry.users,
+            idle_after=idle_after,
+        )
     if entry.kind == "e2b":
         from .box_e2b import E2BBoxHost
 

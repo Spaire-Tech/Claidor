@@ -48,6 +48,8 @@ from simeon.redis import Redis
 from simeon.user.repository import UserRepository
 
 from . import box_store
+from .box_azure import KIND as AZURE_KIND
+from .box_azure import port_headers as azure_port_headers
 from .box_e2b import KIND as E2B_KIND
 from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
@@ -229,8 +231,28 @@ migrations = MigrationLog()
 HealthCheck = Callable[..., Awaitable[bool]]
 
 
+#: The header the gateway also reads its password from (`gateway-server.ts`,
+#: `GATEWAY_BOX_AUTH_HEADER`, 12 November 2026): on Azure, Microsoft's
+#: sign-in on the computer's ports takes `Authorization` for itself and
+#: removes it before the request arrives (docs/ops/box-host/azure-plan.md,
+#: section 3).
+BOX_AUTH_HEADER = "x-simeon-box-authorization"
+
+
+def with_dial(sent: Mapping[str, str], dial: Mapping[str, str]) -> dict[str, str]:
+    """The headers a request to a box goes with: what the app or the server
+    sent, then what the dial needs (`dial_headers`). When the dial carries
+    `Authorization` itself (Azure's token), the one sent moves to
+    `BOX_AUTH_HEADER`; everywhere else nothing moves."""
+    out = dict(sent)
+    if any(name.lower() == "authorization" for name in dial):
+        for name in [name for name in out if name.lower() == "authorization"]:
+            out[BOX_AUTH_HEADER] = out.pop(name)
+    return {**out, **dial}
+
+
 def _with(token: str, headers: Mapping[str, str] | None) -> dict[str, str]:
-    return {**(headers or {}), "authorization": f"Bearer {token}"}
+    return with_dial({"authorization": f"Bearer {token}"}, headers or {})
 
 
 async def gateway_health(
@@ -561,6 +583,24 @@ async def say_awake(redis: Redis, box: SandBox, reason: str, **fields: Any) -> N
 #: record says so itself, or until something wakes the box.
 SLEEPING_TTL_SECONDS = 120
 
+#: How many awake computers the sleeper asks at once (12 November 2026). It
+#: asked them one after another; each answer takes up to a few seconds (the
+#: server's state, then the computer's health), so at a thousand awake
+#: computers one round took longer than the minute between rounds
+#: (docs/ops/box-host/azure-plan.md, "No ceilings of our own"). Only the
+#: asking runs side by side; what is written to the database and Redis is
+#: still done one computer at a time.
+SLEEPER_LOOKS_AT_ONCE = 32
+
+
+@dataclass(frozen=True)
+class _SleeperLook:
+    """What the sleeper heard from one awake computer, before it decides."""
+
+    state: str | None = None
+    error: BoxHostError | None = None
+    health: BoxHealth | None = None
+
 
 def sleeping_key(box_id: UUID) -> str:
     return f"sand:box:sleeping:{box_id}"
@@ -569,18 +609,34 @@ def sleeping_key(box_id: UUID) -> str:
 # --- reaching a box ------------------------------------------------------------
 
 
-def dial_headers(box: SandBox) -> dict[str, str]:
+async def dial_headers(box: SandBox) -> dict[str, str]:
     """What the API sends to a box besides its own request: an E2B box's
     traffic token, without which E2B's proxy refuses the request (public
-    traffic to the box is off, `box_e2b.py`). Empty for Docker."""
-    token = (box.host_meta or {}).get("traffic_token")
+    traffic to the box is off, `box_e2b.py`), or the server's own Microsoft
+    token for an Azure box's port. Empty for Docker. Join it to
+    a request's own headers with `with_dial`."""
+    meta = box.host_meta or {}
+    if meta.get("kind") == AZURE_KIND:
+        # Each port admits only the server's own identity: Microsoft's token
+        # in `Authorization`, which Azure's proxy removes (`box_azure.py`).
+        # Without one (Microsoft's sign-in refused or unreachable) the
+        # request goes on bare, Azure answers 401, and the caller sees an
+        # unreachable box, never a server error.
+        try:
+            return await azure_port_headers()
+        except BoxHostError as error:
+            log.warning(
+                "sand.box.azure.port_sign_in_failed", box=str(box.id), error=str(error)
+            )
+            return {}
+    token = meta.get("traffic_token")
     return {E2B_TRAFFIC_HEADER: token} if token else {}
 
 
-def _dial(box: SandBox) -> dict[str, Any]:
+async def _dial(box: SandBox) -> dict[str, Any]:
     """`dial_headers` as the gateway checks take it: only when there are
     some, so a check written for Docker boxes keeps its two arguments."""
-    headers = dial_headers(box)
+    headers = await dial_headers(box)
     return {"headers": headers} if headers else {}
 
 
@@ -686,8 +742,15 @@ class BoxBrokerService:
         check: the box host's published port (Docker), or E2B's
         `https://<port>-<sandbox>.<domain>`, which wants the box's traffic
         token as well (`dial_headers`)."""
-        if (box.host_meta or {}).get("kind") == E2B_KIND:
+        meta = box.host_meta or {}
+        if meta.get("kind") == E2B_KIND:
             return f"https://{inner_port}-{box.provider_box_id}.{box.host_address}"
+        if meta.get("kind") == AZURE_KIND:
+            # The port's own address as Azure gave it, else its shape
+            # (`https://<id>--<port>.<region>.adcproxy.io`).
+            return meta.get(f"url_{inner_port}") or (
+                f"https://{box.provider_box_id}--{inner_port}.{box.host_address}"
+            )
         host_port = box.host_port(inner_port)
         if host_port is None:
             return None
@@ -1115,7 +1178,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        return await _token_check(url, box.gateway_token, **_dial(box))
+        return await _token_check(url, box.gateway_token, **await _dial(box))
 
     async def wait_ready(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -1123,7 +1186,7 @@ class BoxBrokerService:
             return False
         deadline = utc_now() + settings.BOX_READY_TIMEOUT
         while True:
-            if await _health_check(url, box.gateway_token, **_dial(box)):
+            if await _health_check(url, box.gateway_token, **await _dial(box)):
                 return True
             if utc_now() >= deadline:
                 return False
@@ -1744,7 +1807,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        flushed = await _flush_box_store(url, box.gateway_token, **_dial(box))
+        flushed = await _flush_box_store(url, box.gateway_token, **await _dial(box))
         log.info("sand.box.store.flush", box=str(box.id), flushed=flushed)
         return flushed
 
@@ -1752,7 +1815,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return BoxHealth(reachable=False)
-        return await _health_report(url, box.gateway_token, **_dial(box))
+        return await _health_report(url, box.gateway_token, **await _dial(box))
 
     async def hibernate(
         self,
@@ -1778,6 +1841,40 @@ class BoxBrokerService:
         log.info("sand.box.hibernated", box=str(box.id), user=str(box.user_id))
         return RecreateOutcome(started=True)
 
+    async def _look_at_awake(
+        self, awake: list[tuple[BoxHost, SandBox]]
+    ) -> list[_SleeperLook]:
+        """Each awake computer asked how it is, `SLEEPER_LOOKS_AT_ONCE` at a
+        time, in the order given: its server's state, the server's timeout
+        pushed out where it has one, then its health. Nothing here writes to
+        the database, so the asking can run side by side."""
+        gate = asyncio.Semaphore(SLEEPER_LOOKS_AT_ONCE)
+
+        async def look(host: BoxHost, box: SandBox) -> _SleeperLook:
+            async with gate:
+                try:
+                    state = await host.run_state(box.provider_box_id)
+                except BoxHostError as error:
+                    return _SleeperLook(error=error)
+                if state != "running":
+                    return _SleeperLook(state=state)
+                keep_alive = getattr(host, "keep_alive", None)
+                if keep_alive is not None:
+                    # E2B pauses a box whose timeout passes; while it is awake,
+                    # the timeout is pushed out here, so the broker, not E2B,
+                    # decides when it sleeps (`box_e2b.py`).
+                    try:
+                        await keep_alive(box.provider_box_id)
+                    except BoxHostError as error:
+                        log.warning(
+                            "sand.box.keep_alive_failed",
+                            box=str(box.id),
+                            error=str(error),
+                        )
+                return _SleeperLook(state=state, health=await self.health_of(box))
+
+        return list(await asyncio.gather(*(look(h, b) for h, b in awake)))
+
     async def hibernate_idle(
         self,
         db: AsyncSession,
@@ -1802,33 +1899,24 @@ class BoxBrokerService:
         repository = SandBoxRepository.from_session(db)
         now = utc_now()
         slept: list[UUID] = []
-        for host, box in [
+        awake = [
             (host, box)
             for host in hosts
             for box in await repository.list_awake(host.name)
-        ]:
-            try:
-                state = await host.run_state(box.provider_box_id)
-            except BoxHostError as error:
-                log.warning("sand.box.sleep.unknown", box=str(box.id), error=str(error))
+        ]
+        looks = await self._look_at_awake(awake)
+        for (host, box), look in zip(awake, looks, strict=True):
+            if look.error is not None:
+                log.warning(
+                    "sand.box.sleep.unknown", box=str(box.id), error=str(look.error)
+                )
                 continue
-            if state != "running":
+            if look.state != "running" or look.health is None:
                 # Stopped or removed outside the broker: record it.
-                mark_stopped(box, "hibernated" if state == "stopped" else "absent")
+                mark_stopped(box, "hibernated" if look.state == "stopped" else "absent")
                 await repository.update(box, flush=True)
                 continue
-            keep_alive = getattr(host, "keep_alive", None)
-            if keep_alive is not None:
-                # E2B pauses a box whose timeout passes; while it is awake,
-                # the timeout is pushed out here, so the broker, not E2B,
-                # decides when it sleeps (`box_e2b.py`).
-                try:
-                    await keep_alive(box.provider_box_id)
-                except BoxHostError as error:
-                    log.warning(
-                        "sand.box.keep_alive_failed", box=str(box.id), error=str(error)
-                    )
-            health = await self.health_of(box)
+            health = look.health
             if health.holds_awake:
                 box.last_active_at = now
                 await repository.update(box, flush=True)
