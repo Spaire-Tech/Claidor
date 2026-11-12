@@ -74,3 +74,26 @@ test("the health probe sends the gateway token and a healthy box keeps its conne
     await dispose();
   }
 });
+
+/**
+ * On Azure, Microsoft's sign-in on the computer's ports takes `Authorization`
+ * for itself and removes it, so the server passes the gateway's password in
+ * `x-simeon-box-authorization` (docs/ops/box-host/azure-plan.md, section 3).
+ * The gateway takes it from either header, checked the same way.
+ */
+test("the gateway takes its password from Authorization or x-simeon-box-authorization", async () => {
+  const { module, dispose } = await load("source/host/gateway-server.ts", "gateway-server");
+  try {
+    const request = (headers) => ({ headers });
+    assert.equal(module.GATEWAY_BOX_AUTH_HEADER, "x-simeon-box-authorization");
+    assert.equal(module.isAuthorized(request({ authorization: "Bearer gw" }), "gw"), true);
+    assert.equal(module.isAuthorized(request({ "x-simeon-box-authorization": "Bearer gw" }), "gw"), true);
+    assert.equal(module.isAuthorized(request({ authorization: "Bearer azure-token", "x-simeon-box-authorization": "Bearer gw" }), "gw"), true, "Microsoft's token beside ours");
+    assert.equal(module.isAuthorized(request({ "x-simeon-box-authorization": ["Bearer gw"] }), "gw"), true);
+    assert.equal(module.isAuthorized(request({ "x-simeon-box-authorization": "Bearer other" }), "gw"), false);
+    assert.equal(module.isAuthorized(request({ "x-simeon-box-authorization": "gw" }), "gw"), false, "the scheme is required");
+    assert.equal(module.isAuthorized(request({}), "gw"), false);
+  } finally {
+    await dispose();
+  }
+});
