@@ -148,6 +148,84 @@ MODE_FILE = 0o644
 MODE_PRIVATE = 0o600
 MODE_SCRIPT = 0o755
 
+#: Chrome's policy that trusts Azure's egress certificate (`EGRESS_CA`).
+EGRESS_CA_POLICY = "/etc/opt/chrome/policies/managed/simeon-egress-ca.json"
+#: Azure's egress proxy re-signs every site's certificate with its own
+#: authority ("ADC Egress Proxy Intermediate CA"), and gives the box a
+#: certificate bundle that trusts it (`SSL_CERT_FILE`): the shell and curl
+#: work, but Chrome keeps its own trust and showed "Your connection is not
+#: private" (NET::ERR_CERT_AUTHORITY_INVALID) on every https page (12
+#: November 2026, the first computer on Azure). Run as root at the box's
+#: start and at each wake, since the authority can be renewed: every
+#: certificate the box's bundles hold that is not one of Debian's own
+#: (`/usr/share/ca-certificates`) goes into Chrome's `CACertificates`
+#: policy, which Chrome reads from that file (and again when it changes);
+#: none, and the file goes. With `certutil` on the box, the box user's own
+#: store gets them too. Prints `ca=<count>` for the log.
+EGRESS_CA = r"""python3 - <<'SIMEON_EGRESS_CA'
+import base64, json, os, re, shutil, ssl, subprocess, tempfile
+POLICY = os.environ.get("SIMEON_EGRESS_CA_POLICY", "__POLICY__")
+DEBIAN = os.environ.get("SIMEON_EGRESS_CA_DEBIAN", "/usr/share/ca-certificates")
+PEM = re.compile(r"-----BEGIN CERTIFICATE-----.+?-----END CERTIFICATE-----", re.S)
+def certs(path):
+    try:
+        with open(path, encoding="utf-8", errors="ignore") as handle:
+            text = handle.read()
+    except OSError:
+        return []
+    out = []
+    for block in PEM.findall(text):
+        try:
+            out.append(ssl.PEM_cert_to_DER_cert(block))
+        except ValueError:
+            pass
+    return out
+def files(root):
+    found = []
+    for folder, _, names in os.walk(root):
+        found += [os.path.join(folder, name) for name in sorted(names)]
+    return found
+debian = {der for path in files(DEBIAN) for der in certs(path)}
+envs = [dict(os.environ)]
+try:
+    with open(os.environ.get("SIMEON_EGRESS_CA_PROC1", "/proc/1/environ"), "rb") as handle:
+        envs.append(dict(item.decode(errors="ignore").split("=", 1) for item in handle.read().split(b"\0") if b"=" in item))
+except OSError:
+    pass
+bundles = []
+for env in envs:
+    for name in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "NODE_EXTRA_CA_CERTS"):
+        path = env.get(name)
+        if path and os.path.isfile(path) and path not in bundles:
+            bundles.append(path)
+bundles += [os.environ.get("SIMEON_EGRESS_CA_SYSTEM", "/etc/ssl/certs/ca-certificates.crt")]
+bundles += files(os.environ.get("SIMEON_EGRESS_CA_LOCAL", "/usr/local/share/ca-certificates"))
+added = []
+for path in bundles:
+    for der in certs(path):
+        if der not in debian and der not in added:
+            added.append(der)
+added = added[:20]
+if added:
+    os.makedirs(os.path.dirname(POLICY), exist_ok=True)
+    fd, part = tempfile.mkstemp(dir=os.path.dirname(POLICY))
+    with os.fdopen(fd, "w") as handle:
+        json.dump({"CACertificates": [base64.b64encode(der).decode() for der in added]}, handle)
+    os.chmod(part, 0o644)
+    os.replace(part, POLICY)
+elif os.path.exists(POLICY):
+    os.remove(POLICY)
+store = "/home/box/.pki/nssdb"
+if added and shutil.which("certutil") and os.path.isdir("/home/box"):
+    os.makedirs(store, exist_ok=True)
+    if not os.path.exists(os.path.join(store, "cert9.db")):
+        subprocess.run(["certutil", "-d", "sql:" + store, "-N", "--empty-password"], check=False)
+    for number, der in enumerate(added):
+        subprocess.run(["certutil", "-d", "sql:" + store, "-A", "-t", "C,,", "-n", "simeon-egress-%d" % number], input=der, check=False)
+    subprocess.run(["chown", "-R", "box:box", "/home/box/.pki"], check=False)
+print("ca=%d" % len(added))
+SIMEON_EGRESS_CA""".replace("__POLICY__", EGRESS_CA_POLICY)
+
 
 # --- Microsoft's sign-in ---------------------------------------------------------
 
@@ -793,8 +871,32 @@ class AzureBoxHost:
         if tmp == "kept":
             log.warning("sand.box.azure.tmp_in_memory", sandbox=sandbox_id)
         await self._exec(sandbox_id, f"date -u -s @{int(time.time())} >/dev/null 2>&1")
+        # Before the stack starts, so Chrome opens trusting Azure's egress.
+        egress = await self._trust_egress(sandbox_id)
         await self._write(sandbox_id, READY_FILE, f"{int(time.time())}\n")
-        return {"workers": workers, "tmp": tmp}
+        return {"workers": workers, "tmp": tmp, "egress_ca": egress}
+
+    async def _trust_egress(self, sandbox_id: str) -> str:
+        """Chrome trusts Azure's egress certificate (`EGRESS_CA`): the
+        count of certificates given it, or "failed" (logged; the box starts
+        all the same, its browser refusing https pages)."""
+        try:
+            code, out = await self._exec(sandbox_id, EGRESS_CA, timeout=30)
+        except BoxHostError as error:
+            log.warning(
+                "sand.box.azure.egress_ca_failed", sandbox=sandbox_id, error=str(error)
+            )
+            return "failed"
+        said = out.strip().splitlines()[-1] if out.strip() else ""
+        if code != 0 or not said.startswith("ca="):
+            log.warning(
+                "sand.box.azure.egress_ca_failed",
+                sandbox=sandbox_id,
+                code=code,
+                said=said[:200],
+            )
+            return "failed"
+        return said.removeprefix("ca=")
 
     async def inspect(self, provider_box_id: str) -> ProvisionedBox | None:
         sandbox = await self._get(provider_box_id)
@@ -889,6 +991,9 @@ class AzureBoxHost:
                 sandbox=provider_box_id,
                 error=str(error),
             )
+        # Azure's egress certificate may have been renewed while it slept; a
+        # box made before Chrome was given it gets it now.
+        await self._trust_egress(provider_box_id)
 
     async def _post(self, sandbox_id: str, verb: str, action: str) -> None:
         response = await self._call(

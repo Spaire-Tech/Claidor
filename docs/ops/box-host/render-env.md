@@ -369,6 +369,17 @@ was labelled `azure:<name>` and the engine's 64-character fingerprint whole.
 The labels are now `disk_image` (the name) and `host_sha256_a`/`_b` (the
 fingerprint in halves); `test_box_azure.py`'s stand-in refuses as Azure does.
 
+**Chrome on the computer: "Your connection is not private"
+(NET::ERR_CERT_AUTHORITY_INVALID) on every https page.** Azure's egress proxy
+re-signs every site with its own authority ("ADC Egress Proxy Intermediate
+CA"); the shell trusts it through the bundle Azure gives (`SSL_CERT_FILE`),
+Chrome does not. The server gives it to Chrome at each start and each wake
+(`EGRESS_CA` in `box_azure.py`): the certificates the computer's bundles hold
+beyond Debian's own go into Chrome's `CACertificates` policy
+(`/etc/opt/chrome/policies/managed/simeon-egress-ca.json`). The log's
+`sand.box.azure.created` carries `egress_ca` (how many); a failure logs
+`sand.box.azure.egress_ca_failed` and the computer starts all the same.
+
 **Every call answers "Azure refused Simeon's identity".** The server's
 identity lacks the role "Container Apps SandboxGroup Data Owner" on the
 sandbox group, or it was given in the last minute or two.

@@ -9,8 +9,11 @@ Microsoft.
 
 from __future__ import annotations
 
+import base64
+import datetime
 import json
 import os
+import ssl
 import subprocess
 import time
 from collections.abc import Iterator
@@ -21,6 +24,10 @@ from urllib.parse import parse_qs
 
 import httpx
 import pytest
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.x509.oid import NameOID
 from pytest_mock import MockerFixture
 from structlog.testing import capture_logs
 
@@ -33,6 +40,8 @@ from simeon.sand import box_azure, box_hosts, box_proxy, box_service
 from simeon.sand.box_azure import (
     API_VERSION,
     DATA_SCOPES,
+    EGRESS_CA,
+    EGRESS_CA_POLICY,
     ENV_FILE,
     MODE_PRIVATE,
     MODE_SCRIPT,
@@ -137,6 +146,7 @@ class FakeAzure:
         #: The image holds the host's workers (box2's image does).
         self.image_workers = False
         self.tmp_answer = "tmp=moved"
+        self.egress_answer = "ca=1\n"
         self.engine_answer = "engine=restarted"
         #: Sandboxes listed one per page, to follow `nextLink`.
         self.one_per_page = False
@@ -297,6 +307,8 @@ class FakeAzure:
             out = self.tmp_answer
         elif command == f"bash {ENGINE_UPDATE_SCRIPT}":
             out = f"stopping\n{self.engine_answer}\n"
+        elif command == EGRESS_CA:
+            out = self.egress_answer
         return httpx.Response(200, json={"exitCode": 0, "stdout": out, "stderr": ""})
 
     def _resume(self, sandbox: dict[str, Any]) -> httpx.Response:
@@ -497,6 +509,9 @@ class TestAzureHost:
         commands = [command for _, command in azure.execs]
         assert TMP_ON_DISK in commands
         assert any(command.startswith("date -u -s @") for command in commands)
+        # Chrome is given Azure's egress certificate before the stack starts.
+        assert commands.index(EGRESS_CA) < len(commands)
+        assert azure.writes.index(READY_FILE) == len(azure.writes) - 1
 
         # What the broker keeps: the region's proxy and each port's address.
         assert made.provider_box_id == "sb1"
@@ -594,6 +609,27 @@ class TestAzureHost:
         assert await host.run_state("gone") is None
         assert await host.inspect("gone") is None
 
+    async def test_a_box_whose_chrome_could_not_be_given_the_certificate_starts_all_the_same(
+        self,
+    ) -> None:
+        azure = FakeAzure()
+        azure.egress_answer = "Traceback (most recent call last): ...\n"
+        host = _host(azure)
+        with capture_logs() as logs:
+            made = await host.create(_spec())
+        assert made.provider_box_id == "sb1"
+        assert azure.writes[-1] == READY_FILE
+        failed = [
+            entry
+            for entry in logs
+            if entry["event"] == "sand.box.azure.egress_ca_failed"
+        ]
+        assert len(failed) == 1
+        created = [
+            entry for entry in logs if entry["event"] == "sand.box.azure.created"
+        ]
+        assert created[0]["egress_ca"] == "failed"
+
     async def test_sleep_waits_for_the_freeze_and_wake_sets_the_clock(self) -> None:
         azure = FakeAzure()
         host = _host(azure)
@@ -607,8 +643,10 @@ class TestAzureHost:
         await host.start("sb1")
         assert azure.sandboxes["sb1"]["state"] == "Running"
         assert len(azure.asked("resume")) == 1
-        ((_, command),) = azure.execs
-        assert command.startswith("date -u -s @")
+        # The clock set, then Chrome given Azure's egress certificate again (it may have been renewed).
+        (_, clock), (_, egress) = azure.execs
+        assert clock.startswith("date -u -s @")
+        assert egress == EGRESS_CA
 
         # A box already awake is not asked to wake.
         await host.start("sb1")
@@ -794,6 +832,72 @@ class TestAzureHost:
 
 
 # --- the settings -----------------------------------------------------------------
+
+
+def _cert(name: str) -> bytes:
+    """A self-signed certificate (DER), as Azure's egress authority is to Chrome."""
+    key = ec.generate_private_key(ec.SECP256R1())
+    subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name)])
+    now = datetime.datetime(2026, 11, 12, tzinfo=datetime.UTC)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(subject)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=30))
+        .sign(key, hashes.SHA256())
+    )
+    return cert.public_bytes(serialization.Encoding.DER)
+
+
+def _pem(der: bytes) -> str:
+    return ssl.DER_cert_to_PEM_cert(der)
+
+
+def test_chrome_is_given_azures_egress_certificate_and_only_it(tmp_path: Path) -> None:
+    """Azure re-signs every site; Chrome refused them all until given its authority (12 November 2026)."""
+    debian_root, egress = (
+        _cert("A Debian root"),
+        _cert("ADC Egress Proxy Intermediate CA v1.35"),
+    )
+    (tmp_path / "debian").mkdir()
+    (tmp_path / "debian" / "root.crt").write_text(_pem(debian_root))
+    bundle = tmp_path / "bundle.pem"
+    bundle.write_text(_pem(debian_root) + _pem(egress))
+    proc1 = tmp_path / "environ"
+    proc1.write_bytes(b"PATH=/usr/bin\0SSL_CERT_FILE=" + str(bundle).encode() + b"\0")
+    policy = tmp_path / "policies" / "simeon-egress-ca.json"
+    env = {
+        "PATH": os.environ["PATH"],
+        "SIMEON_EGRESS_CA_POLICY": str(policy),
+        "SIMEON_EGRESS_CA_DEBIAN": str(tmp_path / "debian"),
+        "SIMEON_EGRESS_CA_SYSTEM": str(tmp_path / "none.crt"),
+        "SIMEON_EGRESS_CA_LOCAL": str(tmp_path / "none"),
+        "SIMEON_EGRESS_CA_PROC1": str(proc1),
+    }
+
+    def run() -> str:
+        done = subprocess.run(
+            ["bash", "-c", EGRESS_CA], env=env, capture_output=True, text=True
+        )
+        assert done.returncode == 0, done.stderr
+        return done.stdout.strip()
+
+    # Found through the first process's settings (`SSL_CERT_FILE`), not Debian's own.
+    assert run() == "ca=1"
+    assert json.loads(policy.read_text()) == {
+        "CACertificates": [base64.b64encode(egress).decode()]
+    }
+    assert oct(policy.stat().st_mode & 0o777) == "0o644"
+    # Run again (each wake): the same.
+    assert run() == "ca=1"
+    # The authority gone from the box's bundle: Chrome's policy goes too.
+    bundle.write_text(_pem(debian_root))
+    assert run() == "ca=0"
+    assert not policy.exists()
+    assert EGRESS_CA_POLICY == "/etc/opt/chrome/policies/managed/simeon-egress-ca.json"
 
 
 def test_labels_follow_azures_rule() -> None:
