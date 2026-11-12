@@ -224,6 +224,7 @@ export function claudeCodeBriefNote(kind: ClaudeCodeTurnKind = "agent"): string 
     `Ask the person a question with a question card, \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` with type widget, as the brief says: your own AskUserQuestion is off, because the person would never see it.`,
     "When you answer the person's message and end your turn without having sent them the answer, your final words are sent to them as your reply: write them to the person, not as notes to yourself.",
     `Once you have sent them a message, nothing you write after it reaches them. When you go on working after a message, send what came of it with \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` before you end your turn, written to them: never about them.`,
+    `A \`mcp__${SIMEON_MCP_SERVER}__Shell\` command that goes to the background (\`block_until_ms: 0\`, or one still running when its wait ends) wakes you with its result in a new turn when it finishes, even after your turn has ended; nothing else wakes you. Before you tell the person something takes a few minutes and end your turn, start a background command that waits for it to be done (the tool's own \`--wait\`, or a loop that checks until it's ready). A turn whose message says "[A background command just completed]" is that wake: only what you send with \`mcp__${SIMEON_MCP_SERVER}__SendMessage\` reaches the person in it.`,
   ].join("\n");
 }
 

@@ -552,12 +552,24 @@ function serializeShellError(error: unknown): ToolCall {
   return createShellToolCall(new ShellToolCall({ result: new ShellResult({ result }) }));
 }
 
+/** Said after a command moved to the background, where its end wakes the agent (12 November 2026, the computer's Shell). */
+export const SHELL_BACKGROUND_WAKE_NOTE = "It keeps running in the background. When it finishes you're woken with its result in a new turn, even if this turn has ended, so you needn't wait for it here.";
+
 function renderShellOutput(result: ShellResult, options: ShellToolOptions): string {
+  const success = result.result.case === "success" ? result.result.value : undefined;
+  const backgrounded = success !== undefined && success.shellId !== undefined && success.shellId !== 0;
+  // One moved there after its wait says so, with the output it wrote first; one started there is just started
+  // (the person's computer says a wait of 0 for that).
+  const startedInBackground = result.isBackground === true && (success?.msToWait === undefined || success.msToWait === 0);
   const common = {
     ...(result.sandboxPolicy === undefined ? {} : { sandboxPolicy: result.sandboxPolicy }),
-    ...(result.isBackground === undefined ? {} : { isBackground: result.isBackground }),
+    ...(result.isBackground === undefined ? {} : { isBackground: startedInBackground }),
     ...(options.terminalsFolder === undefined ? {} : { terminalsFolder: options.terminalsFolder }),
   };
+  if (success !== undefined) {
+    const text = renderShellResultToString({ ...common, result: { case: "success", value: success } }, { promptVersion: options.promptVersion, sandboxPromptEnabled: options.sandboxPromptEnabled ?? options.sandboxEnabled, useMinimalHarness: options.useMinimalHarness });
+    return backgrounded && options.enableJobCompletionNotifications === true ? `${text}\n\n${SHELL_BACKGROUND_WAKE_NOTE}` : text;
+  }
   switch (result.result.case) {
     case "success": return renderShellResultToString({ ...common, result: { case: "success", value: result.result.value } }, { promptVersion: options.promptVersion, sandboxPromptEnabled: options.sandboxPromptEnabled ?? options.sandboxEnabled, useMinimalHarness: options.useMinimalHarness });
     case "failure": return renderShellResultToString({ ...common, result: { case: "failure", value: result.result.value } }, { promptVersion: options.promptVersion, sandboxPromptEnabled: options.sandboxPromptEnabled ?? options.sandboxEnabled, useMinimalHarness: options.useMinimalHarness });

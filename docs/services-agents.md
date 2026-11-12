@@ -2844,6 +2844,95 @@ against a fake helper, and the real driver against a fake Chrome and a fake `npm
 the model uses OpenPage and hands over in one turn is up to the model, and is only known from
 a real sign-in.
 
+### A long command keeps running in the background, and its end wakes the agent
+
+**For the person (12 November 2026).** Tessa, on the founder's Claude plan, wrote "Now I'm switching on
+the two Azure services. That takes a few minutes, then I'll build out the rest of Part 2." and
+then nothing came until the founder wrote "let me know". Her brief said a slow command "keeps
+running in the background on its own, and you're notified the moment it completes"; none of
+that was true on the computer. The command runner stopped a Shell command when its wait
+(`block_until_ms`, 30 seconds unless set) ran out, ran one started with `block_until_ms: 0` in
+the foreground until it ended, and nothing watched a command after its turn. Claude Code ended
+its turn trusting the brief, and only the person's next message started it again. Now:
+
+- **The command goes on.** A Shell command still running when its wait ends is moved to the
+  background, and one started with `block_until_ms: 0` starts there. The Shell result says so,
+  with the output written so far and the file the rest goes to
+  (`/root/.simeon/projects/workspace/terminals/<id>.txt`), and adds that the agent is woken with
+  the result when it finishes, even if its turn has ended.
+- **Its end wakes the agent.** The engine watches the command's file and, when its footer says
+  it ended, wakes the agent in a hidden turn with how it ended (`[A background command just
+  completed]`), whether the agent runs on Simeon's model or in Claude Code. A wake waits for a
+  turn still running. A command whose end the agent read itself in a turn (`AwaitShell`, or
+  reading its file) wakes no one.
+- **Two hours at most.** The runner stops a background command after two hours, and the agent
+  is woken then with "It was stopped after running 2 hours, the limit for a background command".
+- **The computer stays awake under it.** A running background command holds the computer for
+  as long as it runs, quiet or not (`background-shell` in `/health`, `docs/services-core.md`).
+- **Stop task** stops the wakes too: the agent's background commands run on to their end or
+  limit, but none of them wakes it.
+- **The instructions say what happens.** The brief's "Long-running commands" tells the agent to
+  start a long command with `block_until_ms: 0` and carry on or end its turn; that only a
+  background command wakes it, so before saying something "takes a few minutes" it starts one
+  that waits for it (`az … --wait`, or a loop that checks); that ExternalShell commands on the
+  person's own computer wake no one, so it waits for those with `ExternalAwaitShell`. On Claude,
+  the note added to the brief says the same (`claudeCodeBriefNote`).
+
+**How it works.**
+
+- The runner: `shellStream` in `desktop/source/box-exec-daemon/server.ts`. A command the Shell
+  tool lets go on (`timeoutBehavior` BACKGROUND, which it always sets) is handed to the
+  background list at its wait (`adoptBackground`), and the stream ends with `backgrounded` and
+  its shell id. Its file gets the header, the output so far, everything after, and a footer
+  (`exit_code`, `elapsed_ms`, `ended_at`, and `stopped` when it was stopped at the limit). Any
+  other caller's command is still stopped at its timeout. Shell ids start at a random number
+  and skip any id whose file is still there; at its start the runner closes every file left
+  without a footer by an earlier runner (`closeUnfinishedTerminalFiles`), so a watch never
+  waits for a footer that cannot come.
+- The limit: `BACKGROUND_COMMAND_LIMIT_MS` in `desktop/source/shared/background-commands.ts`,
+  or the Shell call's shorter `hardTimeout`; one shared footer reader
+  (`parseShellTerminalFooter`) for the runner and the engine.
+- The engine: every Shell call to the computer goes through the turn's accessor
+  (`createRemoteBoxResourceAccessor`, `host/runner/remote-box-resources.ts`), also when Claude
+  Code calls Simeon's Shell over MCP. A `backgrounded` answer calls `onShellBackgrounded`, which
+  `host-runner-composition.ts` sends to the agent's runner (`watchBackgroundShell`,
+  `host/runner/background-work.ts`): the wake is kept (`pending-wake` store, so it survives a
+  restart), and the file is read every 10 seconds (`pollShellTerminalFile`). Its end goes to
+  `CompletionRevivals.handleBackgroundShellCompletion` (`completion-revivals.ts`), which existed
+  and was never reached. A read of a finished file through the same accessor calls
+  `onBackgroundShellSeenFinished`: the watch ends (`forgetBackgroundShell`), and a wake already
+  queued for it is dropped when its turn comes (`takeBackgroundShellEndSeen`).
+- A helper's Shell moves commands to the background too, but its description does not promise a
+  wake (a helper's task ends with its turn) and tells it to wait with `AwaitShell`. A command a
+  helper leaves running wakes the agent that owns the helper.
+- The Shell's description for the agent says "You'll be notified when the backgrounded command
+  completes" (`enableJobCompletionNotifications` in `turn-agent-composition.ts`), and the result
+  ends with `SHELL_BACKGROUND_WAKE_NOTE` (`create-shell-tool.ts`).
+
+**Switches.** None. It reaches the cloud computers with the next host bundle, which carries the
+runner and the engine together. An engine with an earlier runner gets no `backgrounded` answers
+and behaves as before.
+
+**When it misbehaves.** Box log, `/tmp/sand-host.log`, and the terminals folder
+(`/tmp/sand-box-terminals` on the computer):
+
+- The Shell result in the turn says "was sent to the background" with a shell id, and
+  `<id>.txt` is in the terminals folder, growing. No such line, and a command that timed out:
+  the runner is an earlier one.
+- When the command ends, the file's last lines are the footer, and within about 10 seconds the
+  agent's hidden turn starts (`callReason` `wake`). The telemetry event `sand.shell.revival`
+  (`reportShellRevival`) says `delivered`, `superseded` (the person wrote first), or `dropped`
+  with its reason (`seen_in_turn`: the agent read the end itself).
+- `/health` says `busyReasons: ["background-shell"]` while a command runs.
+
+**Not yet verified.** None of this has run on a cloud computer or been seen in the app on a Mac
+or an iPhone. The tests run the real runner on Linux with short commands
+(`desktop/tests/box-exec-daemon-background.test.mjs`), the real Shell tool through the Claude
+Code bridge and the loop's call against a fake computer, the real watch and runner, and the wake
+against a fake transcript (`desktop/tests/background-command-wake.test.mjs`). Whether an agent
+starts long commands in the background and waits on a cloud service with `--wait`, as its
+instructions now say, is up to the model, and is only known from a real task.
+
 ### Browser steps on the computer: one helper per display, and an idle Chrome closed
 
 **For the person (12 November 2026).** On the founder's cloud computer (E2B, 4 GB, 2 CPUs, no

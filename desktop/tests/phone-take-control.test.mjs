@@ -121,8 +121,12 @@ test("Stop task interrupts the run and every helper, and a stopped helper's resu
     interruptAll: (reason) => { events.push(["interruptAll", reason]); return true; },
     // The helper settles while the run drains: its result arrives mid-stop.
     drainBackgroundSubagents: async () => { revivals.handleBackgroundSubagentCompletion({ parentAgentId: "a1", subagentAgentId: "h1", subagentType: "browserUse" }); },
+    // A command it left running in the background wakes it no more (12 November 2026).
+    forgetBackgroundShells: () => { events.push(["forgetBackgroundShells"]); return 1; },
   };
-  tm.backgroundWakes = { completionRevivals: revivals, pendingSubagentCompletions: revivals.pendingSubagentCompletions };
+  tm.backgroundWakes = { completionRevivals: revivals, pendingSubagentCompletions: revivals.pendingSubagentCompletions, pendingShellCompletions: revivals.pendingShellCompletions };
+  // A command's end already queued for a wake is dropped with the stop.
+  revivals.pendingShellCompletions.set("a1", [{ agentId: "a1", shellId: "4242", title: "npm run build", status: "success" }]);
   tm.runnerRegistry = { runners: new Map([["a1", runner]]), activeGroupMemberRunners: new Map() };
   tm.runLifecycle = { runningAgentIds: () => new Set(["a1"]), drainExclusiveRuns: async () => {} };
   const lifecycle = new AgentLifecycle(tm);
@@ -131,9 +135,11 @@ test("Stop task interrupts the run and every helper, and a stopped helper's resu
   assert.deepEqual(events, [
     ["interruptAll", "stopped by the person"],
     ["interrupt", "stopped_by_person", true],
+    ["forgetBackgroundShells"],
     ["revival", "dropped", "stopped_by_person"],
     ["update", "a1"],
   ]);
+  assert.equal(revivals.pendingShellCompletions.has("a1"), false, "no wake for a background command after the stop");
   assert.equal(revivals.stoppingAgentIds.size, 0, "after the stop, results wake the agent again");
   revivals.handleBackgroundSubagentCompletion({ parentAgentId: "a1", subagentAgentId: "h2", subagentType: "browserUse" });
   assert.deepEqual(events.at(-1), ["revived", "a1"], "a helper started after the stop is heard");

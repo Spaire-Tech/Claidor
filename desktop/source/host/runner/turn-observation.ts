@@ -53,7 +53,7 @@ export interface TurnObservationHost {
   shellRewatchEntries?(): Iterable<
     readonly [
       string,
-      { readonly title: string; readonly startedAtMs: number },
+      { readonly title: string; readonly startedAtMs: number; readonly afterRestart?: boolean },
     ]
   >;
   cloudAgentWatchEntries?(): Iterable<
@@ -309,7 +309,8 @@ export function createTurnObservation(
         label: rewatch.title,
         status: "running",
         startedAtMs: rewatch.startedAtMs,
-        detail: "reattached after a host restart",
+        // A command watched since the engine restarted says so; one moved to the background in a turn is just running.
+        ...(rewatch.afterRestart === false ? {} : { detail: "reattached after a host restart" }),
       });
     }
 

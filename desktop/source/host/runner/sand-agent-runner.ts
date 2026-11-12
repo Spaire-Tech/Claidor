@@ -335,6 +335,8 @@ export class SandAgentRunner<T = unknown> {
     | undefined;
   #onPendingWakeArmed: ((event: unknown) => void) | undefined;
   #onPendingWakeDisarmed: ((event: unknown) => void) | undefined;
+  /** Background commands whose end the agent saw itself in a turn (`forgetBackgroundShell`). */
+  readonly #backgroundShellEndsSeen = new Set<string>();
 
   readonly isSubagentRunner: boolean;
   readonly isSharedRoomRunner: boolean;
@@ -522,6 +524,7 @@ export class SandAgentRunner<T = unknown> {
         getConversationId: () => this.getConversationId(),
         emitAsyncTasksChanged: () => this.observation.emitAsyncTasksChanged?.(),
         pendingWakeArmedHandler: () => this.#onPendingWakeArmed,
+        pendingWakeDisarmedHandler: () => this.#onPendingWakeDisarmed,
         backgroundShellSettledHandler: () => event => {
           this.#onBackgroundShellSettled?.(
             event as unknown as BackgroundSubagentCompletion,
@@ -901,11 +904,43 @@ export class SandAgentRunner<T = unknown> {
     this.#backgroundWatches?.watchCloudAgent(id, options);
   }
 
+  /** A command this agent left running in the background: watched, so its end wakes the agent (`background-work.ts`). */
   watchBackgroundShell(
     id: string,
-    options?: { readonly title?: string; readonly quietOrigin?: string },
+    options?: { readonly title?: string; readonly quietOrigin?: string; readonly afterRestart?: boolean },
   ): void {
     this.#backgroundWatches?.watchBackgroundShell(id, options);
+  }
+
+  /**
+   * The agent already has this command's result (it read the end of its output file in a turn), or was stopped: no
+   * wake for it. Its watch ends; and should its end have been seen by the watch first, the wake already queued is
+   * dropped when it comes to run (`takeBackgroundShellEndSeen`). True when it was still watched.
+   */
+  forgetBackgroundShell(id: string): boolean {
+    const key = id.trim();
+    if (key.length === 0) return false;
+    this.#backgroundShellEndsSeen.add(key);
+    // Kept small: the oldest go first (a wake waits behind at most a turn or two).
+    if (this.#backgroundShellEndsSeen.size > 200) {
+      const oldest = this.#backgroundShellEndsSeen.values().next().value;
+      if (oldest !== undefined) this.#backgroundShellEndsSeen.delete(oldest);
+    }
+    return this.#backgroundWatches?.forgetBackgroundShell(key) ?? false;
+  }
+
+  /** Whether the agent already had this command's result, once: the wake for it is then dropped (`completion-revivals.ts`). */
+  takeBackgroundShellEndSeen(id: string): boolean {
+    return this.#backgroundShellEndsSeen.delete(id.trim());
+  }
+
+  /** The person stopped the agent (Stop task): none of its background commands wakes it; they run on to their end or limit. */
+  forgetBackgroundShells(): number {
+    let forgotten = 0;
+    for (const id of this.getPendingShellRewatchIds()) {
+      if (this.forgetBackgroundShell(id)) forgotten += 1;
+    }
+    return forgotten;
   }
 
   dispose(): void {

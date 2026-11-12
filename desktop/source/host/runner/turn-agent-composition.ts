@@ -146,6 +146,7 @@ import type {
 import type { SmartModeClassifierConversationMessage } from "../../packages/proto/generated/agent/v1/smart_mode_classifier_exec_pb.js";
 
 import { resolveSandAgentStepCap } from "../../shared/inference/turn-step-budget.js";
+import { BOX_TERMINALS_FOLDER } from "../box/loopback-sand-box.js";
 export { SAND_AGENT_MAX_STEPS, SAND_HIDDEN_TURN_MAX_STEPS, resolveSandAgentStepCap } from "../../shared/inference/turn-step-budget.js";
 
 export interface TurnProfileIdentity {
@@ -550,6 +551,11 @@ export function createTurnAgentToolsHandoff(input: {
                 awaitToolIdentifier: "BOX_AWAIT",
                 enableBlockUntilMs: true,
                 defaultBlockUntilMs: 30_000,
+                // Where a background command's output goes, as the agent reads it (the runner's virtual path).
+                terminalsFolder: BOX_TERMINALS_FOLDER,
+                // A command moved to the background wakes the agent when it ends (12 November 2026,
+                // `remote-box-resources.ts`); a helper's task ends with its turn, so it waits on its own commands.
+                ...(input.toolHost.isSubagentRunner ? {} : { enableJobCompletionNotifications: true }),
                 },
                 ...(effectiveTurn.shellAutoReview?.box === undefined
                   ? {}

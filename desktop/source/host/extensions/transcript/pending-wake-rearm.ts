@@ -223,6 +223,7 @@ export class PendingWakeRearm {
     this.tm.runnerRegistry
       .getRunner(session)
       .watchBackgroundShell(marker.workId, {
+        afterRestart: true,
         ...(marker.title == null ? {} : { title: marker.title }),
         ...(marker.quietOrigin == null
           ? {}

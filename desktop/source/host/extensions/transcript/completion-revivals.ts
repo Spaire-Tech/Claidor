@@ -301,6 +301,16 @@ export class CompletionRevivals {
     await this.tm.runLifecycle.enqueueExclusiveRun(
       session.id,
       async () => {
+        // Read when the wake's turn comes, after the turn it waited for: a command whose end the agent read there
+        // itself (AwaitShell, Read) wakes no one (12 November 2026).
+        const due = completions.filter(
+          (completion) => runner.takeBackgroundShellEndSeen?.(completion.shellId) !== true,
+        );
+        if (due.length === 0) {
+          report("dropped", { reason: "seen_in_turn" });
+          this.tm.runLifecycle.endSessionRun(session);
+          return;
+        }
         this.tm.turnRuntime.activeRequestPrompts.delete(session.id);
         this.tm.turnRuntime.activeRequestSources.set(
           session.id,
@@ -308,7 +318,7 @@ export class CompletionRevivals {
         );
         try {
           const runResult = await runner.run(
-            buildShellRevivalPrompt(completions),
+            buildShellRevivalPrompt(due),
             {
               hidden: true,
               callReason: "wake",

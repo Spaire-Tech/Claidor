@@ -216,11 +216,14 @@ export async function pollShellTerminalFile<Context>(
         const footer = parseShellTerminalFooter(snapshot.content);
         if (footer.isComplete) {
           const status = footer.exitCode === 0 ? "success" : "error";
-          const detail = footer.exitCode === 0
-            ? undefined
-            : footer.isStreamFailure === true
-              ? "the command's output stream failed; read its output file for the error"
-              : `exit_code=${footer.exitCode ?? "unknown"}`;
+          const detail = footer.stopped !== undefined
+            // The computer's runner stopped it at its limit (`shared/background-commands.ts`).
+            ? `It was ${footer.stopped} (exit_code=${footer.exitCode ?? "unknown"}).`
+            : footer.exitCode === 0
+              ? undefined
+              : footer.isStreamFailure === true
+                ? "the command's output stream failed; read its output file for the error"
+                : `exit_code=${footer.exitCode ?? "unknown"}`;
           settle(status, detail, outputPath);
           return;
         }
