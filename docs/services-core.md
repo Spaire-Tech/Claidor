@@ -1901,18 +1901,17 @@ says it (`busyReasons`, `desktop/source/host/host-busy.ts`), and the sleeper
 logs it (`sand.box.awake`, below):
 
 - `turn`: an agent's turn is running.
-- `background-shell`: a background command an agent started is running, or
-  its result is awaited after a restart, and it was active in the last 30
-  minutes: it wrote output (the watch reads its output file every 10 s), was
-  started or watched again, or a turn ran since (a turn may read it). One
-  quiet for longer (a dev server, a `tail -f`) no longer holds the computer,
-  which sleeps by the usual rule; E2B freezes the whole computer, and the
-  command goes on where it was when it wakes. An update that replaces the
-  computer while it is idle ends the command. Before, it held the computer
-  until it ended. Thirty minutes is three times
-  `SIMEON_BOX_IDLE_AFTER_RUN`, so a build or a test run started at the end of
-  a turn still holds it. `/health` also says `quietBackgroundShell: true` for
-  a command running past that.
+- `background-shell`: a command an agent left running in the background is
+  running, or its result is awaited after a restart. It holds the computer
+  for as long as it runs, quiet or not, since its end wakes the agent
+  (12 November 2026, `docs/services-agents.md`, "A long command keeps running
+  in the background"). The computer's runner stops a background command
+  after two hours, so one not seen at work (started, watched again, output
+  written, or a turn since) for two hours and ten minutes no longer holds the
+  computer, which then sleeps by the usual rule; `/health` says
+  `quietBackgroundShell: true` for it. Earlier on 12 November a command quiet
+  for thirty minutes stopped counting, and a long quiet one (`az … --wait`)
+  could be put to sleep under, its wake with it.
 - `pending-wake`: a cloud agent's result is awaited.
 - `revival`: a wake turn is delivering a finished task's result.
 - `coding`: a cloud agent's coding runs on this computer.

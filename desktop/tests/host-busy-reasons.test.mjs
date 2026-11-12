@@ -3,9 +3,12 @@
  *
  * The founder switched on `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` and the cloud
  * computer still never slept; nothing said why. `/health` now names what
- * holds it (`busyReasons`), and a background command an agent left running
- * (a dev server, `tail -f`) stops holding it once it has been quiet for
- * thirty minutes: no output, and no turn since.
+ * holds it (`busyReasons`). A command an agent left running in the
+ * background holds it for as long as it runs, since its end wakes the agent
+ * (12 November 2026); the computer's runner stops one at two hours, so a
+ * command (or its kept wake) not seen at work for that long and ten minutes
+ * more stops holding it. Until then a command quiet for thirty minutes
+ * stopped counting, and a long quiet one could be put to sleep under.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -35,7 +38,7 @@ test("each kind of work is named, and nothing is named when nothing runs", async
   const { module, dispose } = await load("source/host/host-busy.ts", "host-busy");
   try {
     const now = 100 * MINUTE;
-    assert.equal(module.BACKGROUND_SHELL_QUIET_MS, 30 * MINUTE);
+    assert.equal(module.BACKGROUND_SHELL_QUIET_MS, 130 * MINUTE, "the two-hour limit and ten minutes");
     assert.deepEqual(module.describeHostBusy(idle(now)), { otherWorkBusy: false, busyReasons: [], quietBackgroundShell: false });
     assert.deepEqual(module.describeHostBusy({ ...idle(now), runningTurns: true, lastWorkAtMs: now }).busyReasons, ["turn"]);
     assert.deepEqual(module.describeHostBusy({ ...idle(now), midDrainRevival: true }).busyReasons, ["revival"]);
@@ -51,23 +54,26 @@ test("each kind of work is named, and nothing is named when nothing runs", async
   }
 });
 
-test("a background command holds the computer for thirty quiet minutes, then lets it sleep", async () => {
+test("a background command holds the computer while it runs, quiet or not, up to its limit; then it lets it sleep", async () => {
   const { module, dispose } = await load("source/host/host-busy.ts", "host-busy");
   try {
     const started = 10 * MINUTE;
     const shell = (now, extra = {}) => module.describeHostBusy({ ...idle(now), backgroundShellRunning: true, backgroundShellActiveAtMs: started, lastWorkAtMs: started, ...extra });
-    assert.deepEqual(shell(started + 29 * MINUTE).busyReasons, ["background-shell"]);
-    assert.equal(shell(started + 29 * MINUTE).otherWorkBusy, true);
-    const quiet = shell(started + 30 * MINUTE);
-    assert.deepEqual(quiet.busyReasons, [], "a dev server left running no longer holds it");
-    assert.equal(quiet.otherWorkBusy, false);
-    assert.equal(quiet.quietBackgroundShell, true);
-    // Output written since restarts the quiet time.
-    assert.deepEqual(shell(started + 40 * MINUTE, { backgroundShellActiveAtMs: started + 20 * MINUTE }).busyReasons, ["background-shell"]);
+    // `az provider register … --wait` writes nothing for minutes: the computer stays awake under it.
+    assert.deepEqual(shell(started + 45 * MINUTE).busyReasons, ["background-shell"]);
+    assert.equal(shell(started + 45 * MINUTE).otherWorkBusy, true);
+    // Up to the runner's two-hour limit, when it is stopped (and the agent woken), and a little more.
+    assert.deepEqual(shell(started + 129 * MINUTE).busyReasons, ["background-shell"]);
+    const past = shell(started + 130 * MINUTE);
+    assert.deepEqual(past.busyReasons, [], "a command not seen at work past its limit no longer holds it");
+    assert.equal(past.otherWorkBusy, false);
+    assert.equal(past.quietBackgroundShell, true);
+    // Output written since counts from then.
+    assert.deepEqual(shell(started + 140 * MINUTE, { backgroundShellActiveAtMs: started + 20 * MINUTE }).busyReasons, ["background-shell"]);
     // So does a turn (one may have read its output).
-    assert.deepEqual(shell(started + 40 * MINUTE, { lastWorkAtMs: started + 15 * MINUTE }).busyReasons, ["background-shell"]);
+    assert.deepEqual(shell(started + 140 * MINUTE, { lastWorkAtMs: started + 15 * MINUTE }).busyReasons, ["background-shell"]);
     // A turn running is named on its own, and the command with it.
-    assert.deepEqual(shell(started + 40 * MINUTE, { runningTurns: true, lastWorkAtMs: started + 40 * MINUTE }).busyReasons, ["turn", "background-shell"]);
+    assert.deepEqual(shell(started + 140 * MINUTE, { runningTurns: true, lastWorkAtMs: started + 140 * MINUTE }).busyReasons, ["turn", "background-shell"]);
   } finally {
     await dispose();
   }
@@ -79,8 +85,9 @@ test("a command's kept wake counts as the command, with the same limit", async (
     const marked = 50 * MINUTE;
     const kept = (now) => module.describeHostBusy({ ...idle(now), pendingWakes: [{ kind: "shell", markedAtMs: marked }, { kind: "cloud-agent", markedAtMs: 0 }] });
     assert.deepEqual(kept(marked + 5 * MINUTE).busyReasons, ["background-shell", "pending-wake"]);
-    assert.deepEqual(kept(marked + 31 * MINUTE).busyReasons, ["pending-wake"]);
-    const alone = module.describeHostBusy({ ...idle(marked + 31 * MINUTE), pendingWakes: [{ kind: "shell", markedAtMs: marked }] });
+    assert.deepEqual(kept(marked + 90 * MINUTE).busyReasons, ["background-shell", "pending-wake"]);
+    assert.deepEqual(kept(marked + 131 * MINUTE).busyReasons, ["pending-wake"]);
+    const alone = module.describeHostBusy({ ...idle(marked + 131 * MINUTE), pendingWakes: [{ kind: "shell", markedAtMs: marked }] });
     assert.deepEqual(alone, { otherWorkBusy: false, busyReasons: [], quietBackgroundShell: true });
   } finally {
     await dispose();

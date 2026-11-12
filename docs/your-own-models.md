@@ -290,8 +290,10 @@ approve, paste the code back) is Claude Code's own sign-in.
   per agent), in place of the engine's own loop. Simeon's tools (messages to
   the person, reactions, cards and forms, the browser and the screen, the
   person's connected apps, other agents) are given to it as an MCP server the
-  engine runs on the computer; Claude Code's own tools (shell, files, web
-  search) are its own. Its permission prompts go to the engine's safety review
+  engine runs on the computer; Claude Code's own tools (files, web search)
+  are its own. Its own shell is turned off: commands run in Simeon's Shell,
+  over the same MCP server, under the person's safety review (C4 part 4,
+  `CLAUDE_CODE_TOOLS_OFF`). Its permission prompts go to the engine's safety review
   (`--permission-prompt-tool`), so auto-review still decides. The model
   calls are Claude Code's, on the person's plan: no Simeon credits, no
   usage row.
@@ -305,12 +307,29 @@ approve, paste the code back) is Claude Code's own sign-in.
   engine poked Claude three more times in hidden turns ("they received
   nothing and are still waiting"), the person's next message waiting behind
   them. After a turn the person started, Claude's last words are now sent as
-  its reply when nothing else reached them, or when it worked on after its
-  last message ("On it", then the result in its own words); no hidden turn
-  pokes it, and the closing nudge, which reads the engine's own history that
-  Claude Code doesn't write, is not asked (`claudeCodeReplyToSend`,
-  `turn-runtime.ts`). The brief tells Claude so. The host log's own lines
-  showed every turn `outcome=done`: Claude was answering.
+  its reply when nothing else reached them; no hidden turn pokes it, and the
+  closing nudge, which reads the engine's own history that Claude Code
+  doesn't write, is not asked (`claudeCodeReplyToSend`, `turn-runtime.ts`).
+  From 9 to 10 November they were also sent when it worked on after its last
+  message; its notes to itself then reached the person ("I told Bass I'll
+  use Nov 15…"), so once it has sent a message its later words stay its own,
+  and the brief tells it to send what came of the work itself. The host
+  log's own lines showed every turn `outcome=done`: Claude was answering.
+- **A long command wakes it when it ends** (12 November 2026). Tessa wrote
+  "Now I'm switching on the two Azure services. That takes a few minutes"
+  and then nothing came until the founder wrote "let me know": Claude Code
+  ended its turn trusting the brief's "you're notified the moment it
+  completes", and nothing ever did, on Claude or on Simeon's model. Now a
+  Shell command still running when its wait ends, or started with
+  `block_until_ms: 0`, keeps running in the background on the computer, and
+  its end wakes the agent in a hidden turn, which Claude Code runs like any
+  other (`docs/services-agents.md`, "A long command keeps running in the
+  background"). Claude Code's Shell is Simeon's, over MCP, so the same
+  watch catches it. The brief and the note added to it
+  (`claudeCodeBriefNote`) say that only such a command wakes it: before
+  saying something "takes a few minutes" it starts one that waits for it
+  (`--wait`, or a loop that checks). In the wake's turn only what it sends
+  with SendMessage reaches the person.
 - **Who it is, first.** Claude Code's own instructions, which the agent's
   brief is added to, make it a coding assistant: it looked around the
   computer with a command or two before answering (each first command waits

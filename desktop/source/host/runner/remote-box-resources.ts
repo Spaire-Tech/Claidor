@@ -43,6 +43,9 @@ import {
   SAND_BOX_NOT_READY_MESSAGE,
 } from "../ports/box.js";
 import { requestIdKey } from "../../packages/chat-inference-proto/client.js";
+import { parseShellTerminalFooter, terminalFileShellId } from "../../shared/background-commands.js";
+import { sandQuietWorkOriginKey } from "../sand-quiet-work-origin.js";
+import { BOX_TERMINALS_FOLDER } from "../box/loopback-sand-box.js";
 
 export class SandBoxNotReadyError extends Error {
   override readonly name = "SandBoxNotReadyError";
@@ -93,6 +96,31 @@ export interface RemoteBoxResourceHost {
     SmartModeClassifierArgs,
     SmartModeClassifierResult
   >;
+  /**
+   * A Shell command on the computer went on in the background (12 November
+   * 2026): past its wait, or started there with `block_until_ms: 0`. The
+   * runner watches it (`watchBackgroundShell`), so its end wakes the agent,
+   * whether the turn that started it runs on Simeon's model or in Claude Code
+   * (whose Shell is this same tool, offered over MCP).
+   */
+  onShellBackgrounded?(shell: { readonly shellId: string; readonly title: string; readonly quietOrigin?: string }): void;
+  /**
+   * The agent read the end of a background command's output file in a turn
+   * (AwaitShell, Read): it has the result, and no wake is due for it.
+   */
+  onBackgroundShellSeenFinished?(shellId: string): void;
+}
+
+/** What a read of a background command's output file shows of its end: the command's id when the file has its footer. */
+export function finishedTerminalRead(args: Pick<ReadArgs, "path">, result: ReadResult, folders: readonly string[]): string | undefined {
+  if (result.result.case !== "success") return undefined;
+  const shellId = terminalFileShellId(args.path, folders);
+  if (shellId === undefined) return undefined;
+  const output = (result.result.value as { readonly output?: { readonly case?: string; readonly value?: unknown } }).output;
+  const content = output?.case === "content" && typeof output.value === "string"
+    ? output.value
+    : output?.case === "data" && output.value instanceof Uint8Array ? new TextDecoder().decode(output.value) : undefined;
+  return content !== undefined && parseShellTerminalFooter(content).isComplete ? shellId : undefined;
 }
 
 export function createRemoteBoxResourceAccessor(host: RemoteBoxResourceHost) {
@@ -132,6 +160,20 @@ export function createRemoteBoxResourceAccessor(host: RemoteBoxResourceHost) {
     });
   };
   const guardAutoReviewBarrier = (): void => host.autoReviewGate.assertNoPendingApproval();
+  const noteBackgrounded = (context: Context, args: ShellArgs, shellId: number): void => {
+    if (host.onShellBackgrounded === undefined || shellId <= 0) return;
+    const described = args.description?.trim() ?? "";
+    const quietOrigin = context.get(sandQuietWorkOriginKey);
+    try {
+      host.onShellBackgrounded({
+        shellId: String(shellId),
+        title: described.length > 0 ? described : args.command,
+        ...(typeof quietOrigin === "string" ? { quietOrigin } : {}),
+      });
+    } catch {
+      // The command runs on; only its wake is lost.
+    }
+  };
 
   const ownsMonitorForShellNavigationAudit = (connection: RemoteConnection): boolean => {
     if (!host.remoteBoxHasDesktop) return false;
@@ -175,11 +217,15 @@ export function createRemoteBoxResourceAccessor(host: RemoteBoxResourceHost) {
       await awaitShellNavigationBaseline(context, connection);
       guardAutoReviewBarrier();
       try {
-        yield* connection.remoteAccessor.get(shellStreamExecutorResource).execute(
+        for await (const event of connection.remoteAccessor.get(shellStreamExecutorResource).execute(
           context,
           args,
           options,
-        );
+        )) {
+          // Watched before the tool answers: the wake is armed whatever the turn does next.
+          if (event.event.case === "backgrounded") noteBackgrounded(context, args, event.event.value.shellId);
+          yield event;
+        }
       } finally {
         probeNavigationAfterShell(context, connection);
       }
@@ -215,11 +261,18 @@ export function createRemoteBoxResourceAccessor(host: RemoteBoxResourceHost) {
       options,
     ): Promise<ReadResult> => {
       const connection = await connect(context);
-      return await connection.remoteAccessor.get(readExecutorResource).execute(
+      const result = await connection.remoteAccessor.get(readExecutorResource).execute(
         context,
         args,
         options,
       );
+      if (host.onBackgroundShellSeenFinished !== undefined) {
+        const finished = finishedTerminalRead(args, result, [connection.terminalsFolder, BOX_TERMINALS_FOLDER]);
+        if (finished !== undefined) {
+          try { host.onBackgroundShellSeenFinished(finished); } catch { /* the read is answered all the same */ }
+        }
+      }
+      return result;
     },
   } satisfies Executor<ReadArgs, ReadResult>);
   accessor.register(shellExecutorResource, {

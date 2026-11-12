@@ -1,3 +1,5 @@
+import { BACKGROUND_COMMAND_HOLD_MS } from "../shared/background-commands.js";
+
 /**
  * What keeps this computer awake (12 November 2026). The server's sleeper
  * reads `/health` every minute and leaves a busy computer running; until
@@ -5,27 +7,25 @@
  * not say why. `busyReasons` names each kind of work that holds it:
  *
  * - `turn`: an agent's turn is running.
- * - `background-shell`: a background command an agent started is running
- *   (or its result is still awaited after a restart), and it has been
- *   active in the last `BACKGROUND_SHELL_QUIET_MS`.
+ * - `background-shell`: a command an agent left running in the background
+ *   is running (or its result is still awaited after a restart).
  * - `pending-wake`: a cloud agent's result is awaited (a kept wake).
  * - `revival`: a wake turn is delivering a finished task's result.
  * - `coding`: a cloud agent's coding runs on this computer.
  *
- * A background command alone no longer holds the computer awake for ever.
- * An agent that leaves a dev server or a `tail -f` running kept `isBusy`
- * true until the command ended, so the computer never slept. Now one that
- * has written no output, and that no turn has looked at, for
- * `BACKGROUND_SHELL_QUIET_MS` stops counting: the computer sleeps by the
- * usual rule, and the command, frozen with the whole computer, goes on
- * where it was when the computer wakes. Thirty minutes is three times the
- * server's quick sleep (`SIMEON_BOX_IDLE_AFTER_RUN`, 10 minutes), so a build
- * or a test suite started at the end of a turn still holds the computer
- * while it plausibly runs, and it is well under the five hours a command
- * watched after a restart is waited for (`SHELL_REWATCH_MAX_WAIT_MS`).
+ * A background command holds the computer for as long as it runs, quiet or
+ * not (12 November 2026, the founder: the agent is woken when it finishes,
+ * so the computer must not sleep under it). It cannot hold it for ever: the
+ * computer's command runner stops a background command at its limit
+ * (`BACKGROUND_COMMAND_LIMIT_MS`, two hours), so a command, or the wake kept
+ * for one, that has not been seen at work for that long and ten minutes more
+ * (`BACKGROUND_SHELL_QUIET_MS`) stops counting, and the computer sleeps by
+ * the usual rule. Earlier on 12 November 2026 a command quiet for thirty
+ * minutes stopped counting, so a long quiet one (a cloud service being set
+ * up, `az … --wait`) could be put to sleep under, and its wake with it.
  */
 
-export const BACKGROUND_SHELL_QUIET_MS = 30 * 60 * 1_000;
+export const BACKGROUND_SHELL_QUIET_MS = BACKGROUND_COMMAND_HOLD_MS;
 
 export type HostBusyReason =
   | "turn"

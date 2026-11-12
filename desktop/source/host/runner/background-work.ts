@@ -1,6 +1,7 @@
 import { decodeBackgroundWorkMetadata } from "../../packages/agent-exec/background-work-metadata.js";
 import { say } from "../../shared/say.js";
 import { currentUserLanguage } from "../../shared/user-language.js";
+import { parseShellTerminalFooter } from "../../shared/background-commands.js";
 
 export interface BackgroundWorkRecord { readonly id: string; readonly kind: string; readonly state: string; readonly ownerId?: string; readonly abort?: () => void; readonly metadata?: unknown }
 export interface BackgroundWakeup { readonly id?: string; readonly conversationId?: string; readonly payload: { readonly kind: string; readonly reason?: string; readonly taskId: string; readonly title?: string; readonly status?: string; readonly detail?: string; readonly outputPath?: string } }
@@ -36,12 +37,15 @@ export const SHELL_REWATCH_POLL_DEFAULT_MS = 10_000;
 export const SHELL_REWATCH_MAX_WAIT_MS = 5 * 60 * 60 * 1_000;
 export const SHELL_REWATCH_MISSING_FILE_GIVE_UP = 5;
 export function shellRewatchPollMs(env: NodeJS.ProcessEnv = process.env): number { const parsed = Number.parseInt(env.SAND_SHELL_REWATCH_POLL_MS?.trim() ?? "", 10); return Number.isFinite(parsed) && parsed > 0 ? parsed : SHELL_REWATCH_POLL_DEFAULT_MS; }
-export function parseShellTerminalFooter(content: string): { isComplete: boolean; exitCode?: number; isStreamFailure?: boolean } { const match = content.match(/\n---\n([\s\S]*?)\n---\s*$/); if (match == null) return { isComplete: false }; const footer = match[1] ?? "", exit = footer.match(/(?:^|\n)exit_code:\s*([^\n]*)/); if (exit != null) { const raw = (exit[1] ?? "").trim(), parsed = Number(raw); return { isComplete: true, ...(raw && Number.isInteger(parsed) ? { exitCode: parsed } : {}) }; } return /(?:^|\n)error:\s*([^\n]*)/.test(footer) && /(?:^|\n)ended_at:\s*\S/.test(footer) ? { isComplete: true, isStreamFailure: true } : { isComplete: false }; }
+/** What a background command's output file says of its end (`shared/background-commands.ts`, which the computer's command runner writes it by). */
+export { parseShellTerminalFooter };
 export function deriveBackgroundSubagentTitle(prompt: string): string { const oneLine = prompt.replace(/\s+/g, " ").trim(); if (oneLine.length === 0) return say(currentUserLanguage(), "subagent.backgroundTask"); const maxLength = 80; return oneLine.length <= maxLength ? oneLine : `${oneLine.slice(0, maxLength - 1)}\u2026`; }
 export function formatSteerPrompt(message: string): string { return ["[Steering message from the parent agent that dispatched you]", message.trim(), "Take this into account and continue your task from where you are — do not start over."].join("\n\n"); }
 export interface BackgroundWatchesHost {
   getConversationId(): string; emitAsyncTasksChanged(): void;
   pendingWakeArmedHandler(): ((event: unknown) => void) | undefined;
+  /** The kept wake for a command no longer awaited (`forgetBackgroundShell`) is cleared through this. */
+  pendingWakeDisarmedHandler?(): ((event: unknown) => void) | undefined;
   backgroundShellSettledHandler(): ((event: unknown) => void) | undefined;
   notifyBackgroundWorkSettled(completion: unknown): void;
   cloudAgentWatcher(): { awaitCompletion(id: string, options: { waitForRestart: boolean }): Promise<{ status: string; text: string }> } | null;
@@ -51,14 +55,53 @@ export interface BackgroundWatchesHost {
 }
 export function createBackgroundWatches(host: BackgroundWatchesHost) {
   const now = host.now ?? Date.now;
-  const cloud = new Map<string, { title: string; startedAtMs: number }>(), shell = new Map<string, { cancel(): void; title: string; startedAtMs: number; activeAtMs: number }>(); let registryValue: RevivingBackgroundWorkRegistry | undefined;
+  const cloud = new Map<string, { title: string; startedAtMs: number }>(), shell = new Map<string, { cancel(): void; title: string; startedAtMs: number; activeAtMs: number; afterRestart: boolean }>(); let registryValue: RevivingBackgroundWorkRegistry | undefined;
   const cancelShellRewatch = (shellId: string): void => { shell.get(shellId)?.cancel(); };
   const registry = () => registryValue ??= new RevivingBackgroundWorkRegistry((item, quietOrigin) => host.backgroundShellSettledHandler()?.({ agentId: host.getConversationId(), shellId: item.taskId, title: item.title, status: item.status, detail: item.detail, outputPath: item.outputPath, ...(quietOrigin == null ? {} : { quietOrigin }) }), (record, quietOrigin) => { cancelShellRewatch(record.id); const metadata = typeof record.metadata === "object" && record.metadata !== null && !Array.isArray(record.metadata) ? Object.fromEntries(Object.entries(record.metadata)) : undefined; const title = decodeBackgroundWorkMetadata(metadata).title ?? `Background command ${record.id}`; host.pendingWakeArmedHandler()?.({ parentAgentId: host.getConversationId(), kind: "shell", workId: record.id, title, ...(quietOrigin == null ? {} : { quietOrigin }) }); }, () => host.emitAsyncTasksChanged(), now);
   /** The latest a running background command started, was watched again or wrote output; undefined when none runs. */
   const backgroundShellActiveAtMs = (): number | undefined => { let latest = registryValue?.lastActiveAtMs({ kind: "shell" }); for (const watch of shell.values()) if (latest === undefined || watch.activeAtMs > latest) latest = watch.activeAtMs; return latest; };
   const watchCloudAgent = (bcId: string, options?: { quietOrigin?: string; afterFollowup?: boolean }): void => { const id = bcId.trim(), watcher = host.cloudAgentWatcher(); if (!id || watcher == null || cloud.has(id)) return; const title = `Cloud agent ${id}`, startedAtMs = Date.now(), entry = { title, startedAtMs }; cloud.set(id, entry); host.pendingWakeArmedHandler()?.({ parentAgentId: host.getConversationId(), kind: "cloud-agent", workId: id, title, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) }); host.emitAsyncTasksChanged(); const base = { parentAgentId: host.getConversationId(), subagentAgentId: id, subagentType: "cloud-agent", toolCallId: "", title, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) }; void watcher.awaitCompletion(id, { waitForRestart: options?.afterFollowup ?? false }).then((result) => { if (cloud.get(id) !== entry) return; cloud.delete(id); host.emitAsyncTasksChanged(); host.notifyBackgroundWorkSettled({ ...base, status: result.status === "error" ? "error" : "completed", result: result.text.trim() || "(the cloud agent finished without producing any output)" }); }, (error) => { if (cloud.get(id) !== entry) return; cloud.delete(id); host.emitAsyncTasksChanged(); host.notifyBackgroundWorkSettled({ ...base, status: "error", result: error instanceof Error ? error.message : String(error) }); }); };
-  const watchBackgroundShell = (shellId: string, options?: { title?: string; quietOrigin?: string }): void => { const id = shellId.trim(); if (!id) return; const title = options?.title ?? `Background command ${id}`; host.pendingWakeArmedHandler()?.({ parentAgentId: host.getConversationId(), kind: "shell", workId: id, title, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) }); if (shell.has(id) || registry().listWork({ kind: "shell" }).some((work) => work.id === id)) return; let cancelled = false; const cancel = () => { cancelled = true; shell.delete(id); host.emitAsyncTasksChanged(); }; const startedAtMs = now(); const entry = { cancel, title, startedAtMs, activeAtMs: startedAtMs }; shell.set(id, entry); host.emitAsyncTasksChanged(); host.pollShellTerminalFile(id, () => cancelled, (status, detail, outputPath) => { if (cancelled) return; shell.delete(id); host.emitAsyncTasksChanged(); host.backgroundShellSettledHandler()?.({ agentId: host.getConversationId(), shellId: id, title, status, detail, outputPath, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) }); }, () => { entry.activeAtMs = now(); }); };
+  /**
+   * A command left running in the background on the computer (12 November 2026): the Shell tool's result said it was
+   * moved there (`remote-box-resources.ts`), or the engine restarted with its wake kept (`afterRestart`,
+   * `pending-wake-rearm.ts`). Its wake is kept (it survives a restart, and holds the computer awake, `host-busy.ts`),
+   * and its output file is read every few seconds until its footer says it ended; then the agent is woken with the
+   * result (`CompletionRevivals.handleBackgroundShellCompletion`), whether its turn is still running (the wake waits
+   * for it) or ended long ago.
+   */
+  const watchBackgroundShell = (shellId: string, options?: { title?: string; quietOrigin?: string; afterRestart?: boolean }): void => {
+    const id = shellId.trim();
+    if (!id) return;
+    const title = options?.title ?? `Background command ${id}`;
+    host.pendingWakeArmedHandler()?.({ parentAgentId: host.getConversationId(), kind: "shell", workId: id, title, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) });
+    if (shell.has(id) || registry().listWork({ kind: "shell" }).some((work) => work.id === id)) return;
+    let cancelled = false;
+    const cancel = () => { cancelled = true; shell.delete(id); host.emitAsyncTasksChanged(); };
+    const startedAtMs = now();
+    const entry = { cancel, title, startedAtMs, activeAtMs: startedAtMs, afterRestart: options?.afterRestart === true };
+    shell.set(id, entry);
+    host.emitAsyncTasksChanged();
+    host.pollShellTerminalFile(id, () => cancelled, (status, detail, outputPath) => {
+      if (cancelled) return;
+      shell.delete(id);
+      host.emitAsyncTasksChanged();
+      host.backgroundShellSettledHandler()?.({ agentId: host.getConversationId(), shellId: id, title, status, detail, outputPath, ...(options?.quietOrigin == null ? {} : { quietOrigin: options.quietOrigin }) });
+    }, () => { entry.activeAtMs = now(); });
+  };
+  /**
+   * The agent has a background command's result already (it read the end of its output file in a turn, `AwaitShell`
+   * or `Read`), or the person stopped the agent: no wake is due for it. Its watch ends and its kept wake is cleared;
+   * the command itself runs on until it ends or reaches its limit. True when it was watched.
+   */
+  const forgetBackgroundShell = (shellId: string): boolean => {
+    const id = shellId.trim();
+    const entry = shell.get(id);
+    if (entry === undefined) return false;
+    entry.cancel();
+    host.pendingWakeDisarmedHandler?.()?.({ parentAgentId: host.getConversationId(), kind: "shell", workId: id });
+    return true;
+  };
   const cancelBackgroundShellRewatches = () => { for (const watch of shell.values()) watch.cancel(); shell.clear(); };
   const cancelBackgroundWatches = () => { cancelBackgroundShellRewatches(); registryValue?.abortAllWork({ kind: "shell" }); cloud.clear(); host.emitAsyncTasksChanged(); };
-  return { registry, listRegisteredShellWork: (filter?: { kind?: string }) => registryValue?.listWork(filter), watchCloudAgent, watchBackgroundShell, pendingCloudAgentWatchBcIds: () => [...cloud.keys()], pendingShellRewatchIds: () => [...shell.keys()], hasRunningBackgroundShellWork: () => shell.size > 0 || (registryValue?.hasRunningWork({ kind: "shell" }) ?? false), backgroundShellActiveAtMs, cancelBackgroundShellRewatches, cancelBackgroundWatches, shellRewatchEntries: () => shell.entries(), cloudAgentWatchEntries: () => cloud.entries() };
+  return { registry, listRegisteredShellWork: (filter?: { kind?: string }) => registryValue?.listWork(filter), watchCloudAgent, watchBackgroundShell, forgetBackgroundShell, pendingCloudAgentWatchBcIds: () => [...cloud.keys()], pendingShellRewatchIds: () => [...shell.keys()], hasRunningBackgroundShellWork: () => shell.size > 0 || (registryValue?.hasRunningWork({ kind: "shell" }) ?? false), backgroundShellActiveAtMs, cancelBackgroundShellRewatches, cancelBackgroundWatches, shellRewatchEntries: () => shell.entries(), cloudAgentWatchEntries: () => cloud.entries() };
 }

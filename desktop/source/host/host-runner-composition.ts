@@ -1881,6 +1881,8 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           target: "box" | "user_machine",
           attribution?: { readonly turnId?: string; readonly boxId?: string },
         ): void;
+        watchBackgroundShell?(id: string, options?: { readonly title?: string; readonly quietOrigin?: string }): void;
+        forgetBackgroundShell?(id: string): boolean;
       } | undefined;
       if (
         owner === undefined
@@ -1909,6 +1911,11 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
         computerUse: runner.computerUse,
         probeNavigationAfterComputerUse: (probeContext, connection) =>
           runner.probeNavigationAfterComputerUse?.(probeContext, connection),
+        // A command left running in the background wakes this agent when it ends (12 November 2026); one its helper
+        // left wakes the agent too, which owns the helper. Reading its end in a turn means no wake is due.
+        onShellBackgrounded: ({ shellId, title, quietOrigin }) =>
+          runner.watchBackgroundShell?.(shellId, { title, ...(quietOrigin === undefined ? {} : { quietOrigin }) }),
+        onBackgroundShellSeenFinished: shellId => { runner.forgetBackgroundShell?.(shellId); },
         ...(autoReview.autoReviewClassifierExecutor === undefined
           ? {}
           : { autoReviewClassifierExecutor: autoReview.autoReviewClassifierExecutor }),

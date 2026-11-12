@@ -628,7 +628,8 @@ export class AgentLifecycle {
    * Stop task (15 October 2026): the person stops what the agent is doing,
    * from the phone. Its turn and every helper are interrupted, as deleting
    * an agent does, but the agent stays; a stopped helper's result does not
-   * wake it again (`CompletionRevivals.stoppingAgentIds`), so it stays
+   * wake it again (`CompletionRevivals.stoppingAgentIds`), nor does a command
+   * it left running in the background (`forgetBackgroundShells`), so it stays
    * stopped until the person writes to it.
    */
   async stopAgentTask(agentId: string): Promise<{ readonly stopped: boolean }> {
@@ -647,10 +648,13 @@ export class AgentLifecycle {
         hadActiveRun,
         wasInFlight,
       });
+      // Its background commands run on to their end or limit, but none of them wakes it (12 November 2026).
+      runner?.forgetBackgroundShells?.();
       await this.tm.runLifecycle.drainExclusiveRuns(agentId);
       await runner?.drainBackgroundSubagents();
       await groupRunner?.drainBackgroundSubagents();
       this.tm.backgroundWakes.pendingSubagentCompletions.delete(agentId);
+      this.tm.backgroundWakes.pendingShellCompletions.delete(agentId);
       await this.tm.roster.emitAgentUpdate(agentId);
       return { stopped: hadActiveRun || wasInFlight || hadHelpers };
     } finally {
