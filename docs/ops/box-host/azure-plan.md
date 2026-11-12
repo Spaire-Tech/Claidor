@@ -368,9 +368,9 @@ below are the ones in `render.yaml`; the dashboard may differ.
 
 | What | Today | Before launch |
 |---|---|---|
-| `claidor-api` | Starter: one process, 0.5 CPU, 512 MB | A larger plan. More instances once I've checked the API is safe with several |
-| `claidor-redis` | Free: 25 MB, 50 connections, nothing kept | A paid plan (Starter: 256 MB, 250 connections), so it keeps its data |
-| `claidor-postgres` | basic-256mb | A larger plan |
+| The API | Starter: one process, 0.5 CPU, 512 MB | A larger plan. More instances once I've checked the API is safe with several |
+| Redis | Free: 25 MB, 50 connections, nothing kept | A paid plan (Starter: 256 MB, 250 connections), so it keeps its data |
+| Postgres | basic-256mb | A larger plan |
 | Model providers | Each key has its own rate limit | Check the tier of each key on Render |
 
 ## 5. Costs
