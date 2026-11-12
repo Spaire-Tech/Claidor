@@ -10,8 +10,12 @@ Microsoft.
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import time
 from collections.abc import Iterator
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -972,3 +976,80 @@ async def test_the_proxy_dials_azure_with_the_servers_token_and_moves_ours_aside
     assert headers["authorization"] == PORT_TOKEN["authorization"]
     assert headers[BOX_AUTH_HEADER] == "Bearer gw-password"
     assert headers["host"] == f"sb1--1340.{REGION}.adcproxy.io"
+
+
+# --- the image ---------------------------------------------------------------------
+
+BOX_AZURE = Path(__file__).resolve().parents[3] / "box" / "azure"
+
+
+def test_the_image_is_the_image_box2_runs_with_the_servers_paths() -> None:
+    """box/azure/Dockerfile adds to the same image Docker runs on box2 and
+    E2B runs as a template; its first process waits where the server writes
+    (`box_azure.py`)."""
+    dockerfile = (BOX_AZURE / "Dockerfile").read_text()
+    image = f"{settings.BOX_IMAGE.split(':')[0]}@sha256:{settings.BOX_IMAGE_DIGEST}"
+    assert f"FROM {image}\n" in dockerfile
+    assert f'ENTRYPOINT ["{VM_INIT}"]' in dockerfile
+    init = (BOX_AZURE / "simeon-vm-init").read_text()
+    for path in (ENV_FILE, SEED_FILE, READY_FILE):
+        directory, _, name = path.rpartition("/")
+        assert f"STATE_DIR=${{SIMEON_STATE_DIR:-{directory}}}" in init
+        assert f'"$STATE_DIR/{name}"' in init
+
+
+def test_the_first_process_waits_for_the_server_then_starts_the_stack(
+    tmp_path: Path,
+) -> None:
+    state, run, started = tmp_path / "state", tmp_path / "run", tmp_path / "started"
+    start = tmp_path / "start"
+    start.write_text(f"#!/usr/bin/env bash\ncat {run}/box.env > {started}\n")
+    start.chmod(0o755)
+    process = subprocess.Popen(
+        ["bash", str(BOX_AZURE / "simeon-vm-init")],
+        env={
+            "PATH": os.environ["PATH"],
+            "SIMEON_STATE_DIR": str(state),
+            "SIMEON_RUN_DIR": str(run),
+            "SIMEON_VM_START": str(start),
+            "SIMEON_VM_INIT_POLL_S": "0.05",
+        },
+    )
+    try:
+        # Nothing starts before the mark, whatever is already written.
+        deadline = time.monotonic() + 5
+        while not (state / "init.log").exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        (state / "box.env").write_text("export SIMEON_X='1'\n")
+        (state / "seed").write_bytes(b"r" * 64)
+        time.sleep(0.3)
+        assert process.poll() is None
+        assert not started.exists()
+
+        (state / "ready").write_text("1\n")
+        assert process.wait(timeout=5) == 0
+    finally:
+        process.kill()
+    assert started.read_text() == "export SIMEON_X='1'\n"
+    assert oct((run / "box.env").stat().st_mode & 0o777) == "0o600"
+    assert (run / "seed").read_bytes() == b"r" * 64
+    assert not (state / "seed").exists(), "the randomness is used once"
+    assert (state / "box.env").exists(), "the settings stay for a fresh start"
+    assert "waiting for the server" in (state / "init.log").read_text()
+
+
+def test_a_ready_mark_without_settings_starts_nothing(tmp_path: Path) -> None:
+    state = tmp_path / "state"
+    state.mkdir()
+    (state / "ready").write_text("1\n")
+    done = subprocess.run(
+        ["bash", str(BOX_AZURE / "simeon-vm-init")],
+        env={
+            "PATH": os.environ["PATH"],
+            "SIMEON_STATE_DIR": str(state),
+            "SIMEON_RUN_DIR": str(tmp_path / "run"),
+            "SIMEON_VM_START": "/bin/false",
+        },
+        timeout=10,
+    )
+    assert done.returncode == 64
