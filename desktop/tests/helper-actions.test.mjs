@@ -212,6 +212,7 @@ test("the page reader reads a sign-in drawn in a shadow root and in frames, and 
     await rm(driverDir, { recursive: true, force: true });
     await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     await rm(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+    await rm(`/tmp/.sand-browser/used-${display}`, { force: true });
     await dispose();
   }
 });

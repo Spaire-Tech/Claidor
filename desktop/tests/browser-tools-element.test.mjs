@@ -103,14 +103,22 @@ test("the host writes its playwright-core beside the helper once, library last, 
     const request = JSON.parse(Buffer.from(commands.find((c) => c.startsWith("node ")).split(" ").at(-1), "base64").toString("utf8"));
     assert.equal(request.playwrightRoot, dir);
 
+    // A later turn on the same computer (12 November 2026): nothing is
+    // asked of it again nor written, the helper's file included.
     uploads.length = 0;
-    present = true;
+    commands.length = 0;
     await module.createSandBrowserTools(deps).find((t) => t.name === "browser_snapshot").execute({}, {}, { toolCallId: "b" });
+    assert.deepEqual(uploads, [], "a computer already written to is not written again");
+    assert.deepEqual(commands.filter((c) => c.startsWith("test -s")), [], "nor asked again");
+
+    // Another computer that has it: asked once, not written.
+    present = true;
+    await module.createSandBrowserTools({ ...deps, getBoxId: () => "box-with-copy" }).find((t) => t.name === "browser_snapshot").execute({}, {}, { toolCallId: "b2" });
     assert.deepEqual(uploads.filter((p) => p.startsWith(dir)), [], "a computer that has it is not written again");
 
     present = false;
     commands.length = 0;
-    const failing = { ...deps, async uploadFile(_c, _b, p) { if (p.startsWith(dir)) throw new Error("disk full"); } };
+    const failing = { ...deps, getBoxId: () => "box-full", async uploadFile(_c, _b, p) { if (p.startsWith(dir)) throw new Error("disk full"); } };
     await module.createSandBrowserTools(failing).find((t) => t.name === "browser_snapshot").execute({}, {}, { toolCallId: "c" });
     const fallback = JSON.parse(Buffer.from(commands.find((c) => c.startsWith("node ")).split(" ").at(-1), "base64").toString("utf8"));
     assert.equal(fallback.playwrightRoot, undefined, "without our copy the helper still tries the image's own");

@@ -658,6 +658,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["buyProduct", "purchaseCards"],
   ["markPurchaseDone", "purchaseCards"],
   ["setStoredCardWallet", "purchaseCards"],
+  ["setPurchaseBrowserRelease", "purchaseCards"],
   ["payWithSavedCard", "purchaseCards"],
   ["setFlightBookingServices", "flightBookings"],
   ["prepareFlightForm", "flightBookings"],

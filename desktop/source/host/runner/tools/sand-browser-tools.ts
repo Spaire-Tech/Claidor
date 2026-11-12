@@ -37,6 +37,36 @@ export const PENDING_SCREENSHOT_CAP = 32;
 /** The longest one browser step may take, the driver's own 90-second limit and some. */
 export const SAND_BROWSER_STEP_LIMIT_MS = 120_000;
 
+/**
+ * How long an agent's Chrome may go unused (no browser step, no Computer
+ * action, nobody watching its screen, the computer not handed to the
+ * person) before the browser helper on the computer closes it, freeing its
+ * memory; the next browser step opens it again on the same profile with
+ * its tabs (12 November 2026: three idle Chromes held 2.2 GB of a 4 GB
+ * computer). `SIMEON_BROWSER_IDLE_CLOSE_MINUTES` (the earlier
+ * `CLAIDOR_BROWSER_IDLE_CLOSE_MINUTES` is still read); 0 never closes it.
+ */
+export const SAND_BROWSER_IDLE_CLOSE_DEFAULT_MINUTES = 10;
+
+export function browserIdleCloseMs(env: Record<string, string | undefined> = process.env): number {
+  const raw = (env.SIMEON_BROWSER_IDLE_CLOSE_MINUTES ?? "").trim() || (env.CLAIDOR_BROWSER_IDLE_CLOSE_MINUTES ?? "").trim();
+  const minutes = raw.length === 0 ? Number.NaN : Number(raw);
+  return Math.round((Number.isFinite(minutes) && minutes >= 0 ? minutes : SAND_BROWSER_IDLE_CLOSE_DEFAULT_MINUTES) * 60_000);
+}
+
+// What the host has written on each computer, by box: the helper (named by
+// its content) and our playwright-core. Asked once per computer, not once
+// per turn (12 November 2026); a computer that lost them (made again) says
+// so on its next step, and they are written again.
+const writtenDrivers = new Map<string, Promise<void>>();
+const writtenPlaywright = new Map<string, Promise<string | undefined>>();
+
+/** The shell's answer when node could not find the helper's file. */
+function driverFileMissing(shell: { readonly stderr?: string; readonly stdout?: string }): boolean {
+  return /Cannot find module|ERR_MODULE_NOT_FOUND/.test(`${shell.stderr ?? ""}\n${shell.stdout ?? ""}`)
+    && `${shell.stderr ?? ""}${shell.stdout ?? ""}`.includes(SAND_BROWSER_DRIVER_BOX_DIR);
+}
+
 const pendingScreenshots = new Map<string, string>();
 
 export function stashScreenshot(imageB64: string): string {
@@ -89,6 +119,12 @@ export interface BrowserDriverResponse {
   readonly title?: string | undefined;
   readonly viewId?: string | undefined;
   readonly screenshot?: boolean | undefined;
+  /** The screenshot's fingerprint: the same picture has the same one. */
+  readonly shot?: string | undefined;
+  /** "playwright" when the computer had no playwright-core to drive Chrome with. */
+  readonly missing?: string | undefined;
+  /** How the step ran: "daemon" (the helper that stays running) or "once". */
+  readonly served?: string | undefined;
 }
 
 function optionalString(
@@ -133,6 +169,15 @@ export function toDriverResponse(
     ...(optionalBoolean(parsed, "screenshot") == null
       ? {}
       : { screenshot: optionalBoolean(parsed, "screenshot") }),
+    ...(optionalString(parsed, "shot") == null
+      ? {}
+      : { shot: optionalString(parsed, "shot") }),
+    ...(optionalString(parsed, "missing") == null
+      ? {}
+      : { missing: optionalString(parsed, "missing") }),
+    ...(optionalString(parsed, "served") == null
+      ? {}
+      : { served: optionalString(parsed, "served") }),
   };
 }
 
@@ -214,9 +259,9 @@ export interface BrowserDriverOutput {
 }
 
 export class SandBrowserDriver<Context = unknown> {
-  #uploaded: Promise<void> | undefined;
-  #playwright: Promise<string | undefined> | undefined;
   #windowIndex: Promise<number> | undefined;
+  /** The fingerprint of the last picture this driver's conversation was shown. */
+  #lastPicture: string | undefined;
 
   constructor(readonly dependencies: BrowserDriverDependencies<Context>) {}
 
@@ -242,44 +287,55 @@ export class SandBrowserDriver<Context = unknown> {
     return this.#windowIndex;
   }
 
+  /** The helper's file on the computer, written once per computer and content. */
   ensureUploaded(context: Context): Promise<void> {
-    this.#uploaded ??= this.dependencies.uploadFile(
-      context,
-      this.dependencies.getBoxId(),
-      SAND_BROWSER_DRIVER_BOX_PATH,
-      Buffer.from(SAND_BROWSER_DRIVER_SOURCE, "utf8"),
-    ).catch((error: unknown) => {
-      this.#uploaded = undefined;
-      throw new SandBrowserDriverError(
-        `The browser on this computer isn't ready yet; try again in a moment. (Setup failed: ${error instanceof Error ? error.message : String(error)})`,
-      );
-    });
-    return this.#uploaded;
+    const boxId = this.dependencies.getBoxId();
+    let written = writtenDrivers.get(boxId);
+    if (written === undefined) {
+      written = this.dependencies.uploadFile(
+        context,
+        boxId,
+        SAND_BROWSER_DRIVER_BOX_PATH,
+        Buffer.from(SAND_BROWSER_DRIVER_SOURCE, "utf8"),
+      ).catch((error: unknown) => {
+        writtenDrivers.delete(boxId);
+        throw new SandBrowserDriverError(
+          `The browser on this computer isn't ready yet; try again in a moment. (Setup failed: ${error instanceof Error ? error.message : String(error)})`,
+        );
+      });
+      writtenDrivers.set(boxId, written);
+    }
+    return written;
   }
 
-  /** Our copy of playwright-core on the computer, written once; undefined when it could not be, and the helper then relies on the image's own. */
+  /** Our copy of playwright-core on the computer, written once per computer; undefined when it could not be, and the helper then relies on the image's own. */
   ensurePlaywright(context: Context): Promise<string | undefined> {
-    this.#playwright ??= (async () => {
-      const dir = SAND_BROWSER_PLAYWRIGHT_BOX_DIR;
-      const library = `${dir}/${PLAYWRIGHT_LIBRARY}`;
-      const probe = await this.dependencies.executeShell(context, {
-        command: `test -s ${library} && echo present || echo absent`,
-        name: "test",
-        workingDirectory: "/workspace",
-        toolCallId: "sand-browser-playwright-probe",
+    const boxId = this.dependencies.getBoxId();
+    let found = writtenPlaywright.get(boxId);
+    if (found === undefined) {
+      found = (async () => {
+        const dir = SAND_BROWSER_PLAYWRIGHT_BOX_DIR;
+        const library = `${dir}/${PLAYWRIGHT_LIBRARY}`;
+        const probe = await this.dependencies.executeShell(context, {
+          command: `test -s ${library} && echo present || echo absent`,
+          name: "test",
+          workingDirectory: "/workspace",
+          toolCallId: "sand-browser-playwright-probe",
+        });
+        if (probe.case === "success" && (probe.stdout ?? "").includes("present")) return dir;
+        const names = Object.keys(SAND_BROWSER_PLAYWRIGHT_FILES).sort((a, b) => Number(a === PLAYWRIGHT_LIBRARY) - Number(b === PLAYWRIGHT_LIBRARY));
+        for (const name of names) {
+          const bytes = gunzipSync(Buffer.from(SAND_BROWSER_PLAYWRIGHT_FILES[name]!.gzipBase64, "base64"));
+          await this.dependencies.uploadFile(context, boxId, `${dir}/${name}`, bytes);
+        }
+        return dir;
+      })().catch(() => {
+        writtenPlaywright.delete(boxId);
+        return undefined;
       });
-      if (probe.case === "success" && (probe.stdout ?? "").includes("present")) return dir;
-      const names = Object.keys(SAND_BROWSER_PLAYWRIGHT_FILES).sort((a, b) => Number(a === PLAYWRIGHT_LIBRARY) - Number(b === PLAYWRIGHT_LIBRARY));
-      for (const name of names) {
-        const bytes = gunzipSync(Buffer.from(SAND_BROWSER_PLAYWRIGHT_FILES[name]!.gzipBase64, "base64"));
-        await this.dependencies.uploadFile(context, this.dependencies.getBoxId(), `${dir}/${name}`, bytes);
-      }
-      return dir;
-    })().catch(() => {
-      this.#playwright = undefined;
-      return undefined;
-    });
-    return this.#playwright;
+      writtenPlaywright.set(boxId, found);
+    }
+    return found;
   }
 
   async run(
@@ -300,45 +356,19 @@ export class SandBrowserDriver<Context = unknown> {
     const screenshotPath = input.skipScreenshot === true
       ? undefined
       : `${SAND_BROWSER_DRIVER_BOX_DIR}/shot-${sanitizeForBoxPath(input.toolCallId)}.png`;
-    const requestedViewId = input.args.viewId;
-    const request = {
-      ...input.args,
-      op: input.op,
-      display: windowIndex,
-      cdpPort: BOX_CDP_PORT_BASE + windowIndex,
-      viewId: typeof requestedViewId === "string" && requestedViewId.length > 0
-        ? requestedViewId
-        : this.dependencies.getDefaultViewId(),
-      ...(screenshotPath == null ? {} : { screenshotPath }),
-      ...(playwrightRoot === undefined ? {} : { playwrightRoot }),
-    };
-    const encoded = Buffer.from(
-      JSON.stringify(request),
-      "utf8",
-    ).toString("base64");
-
-    // The driver ends itself after 90 seconds; a command that still hasn't
-    // come back after two minutes is given up here, so a browser step can
-    // never hold a helper (and the screen) for ever (18 October 2026).
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const shell = await Promise.race([
-      this.dependencies.executeShell(context, {
-        command: `node ${SAND_BROWSER_DRIVER_BOX_PATH} ${encoded}`,
-        name: "node",
-        workingDirectory: "/workspace",
-        toolCallId: `sand-browser-${input.op}-${sanitizeForBoxPath(input.toolCallId)}`,
-      }),
-      new Promise<never>((_resolve, reject) => {
-        timer = setTimeout(() => reject(new SandBrowserDriverError(`The browser on this computer didn't answer within ${SAND_BROWSER_STEP_LIMIT_MS / 60_000} minutes; try the step again.`)), SAND_BROWSER_STEP_LIMIT_MS);
-      }),
-    ]).finally(() => clearTimeout(timer));
-    if (shell.case !== "success") {
-      throw new SandBrowserDriverError(
-        `The browser on this computer did not respond (${shell.case || "unknown"}).`,
-      );
+    let { shell, response } = await this.#send(context, input, windowIndex, playwrightRoot, screenshotPath);
+    // The computer lost what the host wrote (it was made again): written
+    // again and asked once more; nothing ran on the first try.
+    if (response === undefined && driverFileMissing(shell)) {
+      writtenDrivers.delete(this.dependencies.getBoxId());
+      await this.ensureUploaded(context);
+      ({ shell, response } = await this.#send(context, input, windowIndex, playwrightRoot, screenshotPath));
+    } else if (response?.missing === "playwright") {
+      writtenPlaywright.delete(this.dependencies.getBoxId());
+      const again = await this.ensurePlaywright(context);
+      if (again !== undefined) ({ shell, response } = await this.#send(context, input, windowIndex, again, screenshotPath));
     }
 
-    const response = parseDriverResponse(shell.stdout ?? "");
     if (response === undefined) {
       const detail = [shell.stderr ?? "", shell.stdout ?? ""]
         .map((part) => part.trim().slice(-400))
@@ -363,13 +393,72 @@ export class SandBrowserDriver<Context = unknown> {
       parts.push(response.data);
     }
 
-    const imageB64 = response.screenshot === true && screenshotPath != null
+    // A picture the same as the last one this conversation was shown (a
+    // snapshot, a key that changed nothing on the screen) is not fetched
+    // nor shown again; the agent is told the screen is unchanged. An asked
+    // screenshot is always shown (12 November 2026).
+    const unchanged = response.screenshot === true
+      && response.shot !== undefined
+      && response.shot === this.#lastPicture
+      && input.op !== "screenshot";
+    if (unchanged) parts.push("The screen looks the same as in the last picture.");
+    const imageB64 = response.screenshot === true && screenshotPath != null && !unchanged
       ? await this.fetchScreenshot(context, screenshotPath)
       : undefined;
+    if (imageB64 != null) this.#lastPicture = response.shot;
     return {
       text: parts.join("\n\n"),
       ...(imageB64 == null ? {} : { imageB64 }),
     };
+  }
+
+  /** The step on the computer: the client command, which hands it to the display's helper. */
+  async #send(
+    context: Context,
+    input: { readonly op: string; readonly toolCallId: string; readonly args: Record<string, unknown> },
+    windowIndex: number,
+    playwrightRoot: string | undefined,
+    screenshotPath: string | undefined,
+  ): Promise<{ shell: { readonly stdout?: string; readonly stderr?: string; readonly exitCode?: number }; response: BrowserDriverResponse | undefined }> {
+    const requestedViewId = input.args.viewId;
+    const request = {
+      ...input.args,
+      op: input.op,
+      display: windowIndex,
+      cdpPort: BOX_CDP_PORT_BASE + windowIndex,
+      viewId: typeof requestedViewId === "string" && requestedViewId.length > 0
+        ? requestedViewId
+        : this.dependencies.getDefaultViewId(),
+      idleCloseMs: browserIdleCloseMs(),
+      ...(screenshotPath == null ? {} : { screenshotPath }),
+      ...(playwrightRoot === undefined ? {} : { playwrightRoot }),
+    };
+    const encoded = Buffer.from(
+      JSON.stringify(request),
+      "utf8",
+    ).toString("base64");
+
+    // The driver ends itself after 90 seconds; a command that still hasn't
+    // come back after two minutes is given up here, so a browser step can
+    // never hold a helper (and the screen) for ever (18 October 2026).
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const shell = await Promise.race([
+      this.dependencies.executeShell(context, {
+        command: `node ${SAND_BROWSER_DRIVER_BOX_PATH} --client ${encoded}`,
+        name: "node",
+        workingDirectory: "/workspace",
+        toolCallId: `sand-browser-${input.op}-${sanitizeForBoxPath(input.toolCallId)}`,
+      }),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new SandBrowserDriverError(`The browser on this computer didn't answer within ${SAND_BROWSER_STEP_LIMIT_MS / 60_000} minutes; try the step again.`)), SAND_BROWSER_STEP_LIMIT_MS);
+      }),
+    ]).finally(() => clearTimeout(timer));
+    if (shell.case !== "success") {
+      throw new SandBrowserDriverError(
+        `The browser on this computer did not respond (${shell.case || "unknown"}).`,
+      );
+    }
+    return { shell, response: parseDriverResponse(shell.stdout ?? "") };
   }
 
   async fetchScreenshot(
@@ -627,21 +716,21 @@ const ELEMENT_DESCRIPTION = "A short description of the target and why you are a
 
 const BROWSER_TOOL_SPECS: readonly BrowserToolSpec[] = [
   { id: "BROWSER_NAVIGATE", name: "browser_navigate", op: "navigate", description: "Navigate the box browser to a URL. By default reuses your tab; set newTab: true to open in a new tab. Returns the resulting page state with a screenshot.", schema: { required: ["url"] }, canNavigate: true },
-  { id: "BROWSER_SNAPSHOT", name: "browser_snapshot", op: "snapshot", description: "Capture a structured snapshot of the current page with [ref=eN] handles for interactive elements. This is the source of truth for page structure; refs are tied to the latest snapshot for that tab. Better than a screenshot for deciding what to click or type." },
-  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from browser_snapshot. Scrolls the element into view first. Pass ref and element. For a \"press and hold\" button, pass holdDurationMs (up to 5000) to keep it pressed that long.", schema: { required: ["ref", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
-  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible. Pass x, y and element.", schema: { required: ["x", "y", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
-  { id: "BROWSER_TYPE", name: "browser_type", op: "type", description: "Type text into an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "text"] }, canNavigate: true },
+  { id: "BROWSER_SNAPSHOT", name: "browser_snapshot", op: "snapshot", description: "Capture a structured snapshot of the current page with [ref=eN] handles for interactive elements. This is the source of truth for page structure. A ref keeps naming its element while that element is on the page; after a navigation use the refs of a newer snapshot. browser_click, browser_mouse_click_xy, browser_type, browser_press_key and browser_select_option already return the page's snapshot after acting, so take one only for a page you have not acted on yet or one that changed by itself. Better than a screenshot for deciding what to click or type." },
+  { id: "BROWSER_CLICK", name: "browser_click", op: "click", description: "Click an element by ref from a snapshot. Scrolls the element into view first. Pass ref and element. For a \"press and hold\" button, pass holdDurationMs (up to 5000) to keep it pressed that long. Returns the page's snapshot after the click, with its refs: no browser_snapshot is needed after it.", schema: { required: ["ref", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
+  { id: "BROWSER_MOUSE_CLICK_XY", name: "browser_mouse_click_xy", op: "mouse_click_xy", description: "Click at viewport coordinates. Prefer browser_click with refs when possible. Pass x, y and element. Returns the page's snapshot after the click.", schema: { required: ["x", "y", "element"], describe: { element: ELEMENT_DESCRIPTION } }, canNavigate: true },
+  { id: "BROWSER_TYPE", name: "browser_type", op: "type", description: "Type text into an input, textarea, or contenteditable element by ref. Returns the page's snapshot after typing (and after Enter, with submit).", schema: { required: ["ref", "text"] }, canNavigate: true },
   { id: "BROWSER_FILL", name: "browser_fill", op: "fill", description: "Set the value of an input, textarea, or contenteditable element by ref.", schema: { required: ["ref", "value"] } },
-  { id: "BROWSER_SELECT_OPTION", name: "browser_select_option", op: "select_option", description: "Select one or more options in a select element by ref.", schema: { required: ["ref", "values"] } },
+  { id: "BROWSER_SELECT_OPTION", name: "browser_select_option", op: "select_option", description: "Select one or more options in a select element by ref. Returns the page's snapshot after the choice.", schema: { required: ["ref", "values"] } },
   { id: "BROWSER_UPLOAD_FILE", name: "browser_upload_file", op: "upload_file", description: "Attach files from your computer to a page: a résumé, a photo, a document. Pass the ref of the page's upload button, drop zone or file field, and paths: the files' full paths on your computer (the person's attachments are in /workspace/uploads; only files in /workspace can be attached). Never browser_click an upload button to attach a file: that opens a system file window no tool can use.", schema: { required: ["ref", "paths", "element"], describe: { paths: "The files to attach, as full paths on your computer, for example [\"/workspace/uploads/resume.pdf\"].", element: ELEMENT_DESCRIPTION } }, canNavigate: true },
-  { id: "BROWSER_PRESS_KEY", name: "browser_press_key", op: "press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character.", schema: { required: ["key"] }, canNavigate: true },
+  { id: "BROWSER_PRESS_KEY", name: "browser_press_key", op: "press_key", description: "Press a key in the browser page, for example Enter, Escape, Tab, ArrowDown, or a single character. Returns the page's snapshot after the key.", schema: { required: ["key"] }, canNavigate: true },
   { id: "BROWSER_SCROLL", name: "browser_scroll", op: "scroll", description: "Scroll the page or scroll an element into view (pass its ref)." },
   { id: "BROWSER_DRAG", name: "browser_drag", op: "drag", description: "Drag an element by ref to another ref (targetRef) or viewport coordinates (targetX, targetY). Pass sourceRef and element.", schema: { required: ["sourceRef", "element"], describe: { element: ELEMENT_DESCRIPTION } } },
   { id: "BROWSER_GET_BOUNDING_BOX", name: "browser_get_bounding_box", op: "get_bounding_box", description: "Get the viewport bounding box for an element ref.", schema: { required: ["ref"] }, skipScreenshot: true },
   { id: "BROWSER_HIGHLIGHT", name: "browser_highlight", op: "highlight", description: "Highlight an element by ref in the browser page for visual grounding. The returned screenshot shows the highlight.", schema: { required: ["ref"] } },
   { id: "BROWSER_CDP", name: "browser_cdp", op: "cdp", description: "Send a Chrome DevTools Protocol command to the target browser tab. Do not use CDP Input.* methods; use dedicated browser tools for clicks, text input, key presses, scrolling, and drag-and-drop. Browser-wide, storage, cookie, cache, permission, and target-management commands are denied.", schema: { required: ["method"] }, canNavigate: true },
   { id: "BROWSER_TABS", name: "browser_tabs", op: "tabs", description: "List, create, close, or select a browser tab.", schema: { required: ["action"], enum: { action: ["list", "new", "close", "select"] } }, skipScreenshot: true },
-  { id: "BROWSER_TAKE_SCREENSHOT", name: "browser_take_screenshot", op: "screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one. fullPage: true shows up to 2000 pixels of the page from where it is scrolled; for a longer page scroll and take another, or read it with browser_snapshot." },
+  { id: "BROWSER_TAKE_SCREENSHOT", name: "browser_take_screenshot", op: "screenshot", description: "Take a screenshot of the current page. Usually redundant: every browser action already returns one, or says the screen looks as in the last picture. fullPage: true shows up to 2000 pixels of the page from where it is scrolled; for a longer page scroll and take another, or read it with browser_snapshot." },
 ];
 
 function validateArguments(

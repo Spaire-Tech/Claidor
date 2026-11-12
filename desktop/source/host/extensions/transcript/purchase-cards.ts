@@ -134,6 +134,18 @@ export class PurchaseCards {
     this.cardWallet = wallet;
   }
 
+  /**
+   * Lets the agent's Chrome go when a purchase ends (12 November 2026): while
+   * its card waits for the person, the checkout tab is kept open
+   * (RequestPurchase's `holdBrowser`, `setSandBrowserHold`). Called once per
+   * purchase, at whichever ending (Deny, Link's expiry or cancel, a failure,
+   * MarkPurchaseDone); a Shop checkout and a flight held nothing.
+   */
+  setPurchaseBrowserRelease(release: ((agentId: string, entryId: string) => Promise<void> | void) | undefined): void {
+    this.releaseBrowser = release;
+  }
+  private releaseBrowser: ((agentId: string, entryId: string) => Promise<void> | void) | undefined;
+
   /** The wallet that answers a card: a saved card's is the host's own, the others the gateway's. */
   private walletOf(card: PurchaseCardData, wallets: PurchaseWallet | PurchaseWallets | undefined): PurchaseWallet | undefined {
     return card.wallet === "card" ? this.cardWallet : purchaseWalletFor(card, wallets);
@@ -562,13 +574,20 @@ export class PurchaseCards {
    * purchase also settles the products card it came from.
    */
   private async stamp(agentId: string, entryId: string, change: (entry: PurchaseEntry) => PurchasePatch | null): Promise<TranscriptEntry | null> {
-    const seen: { ended?: PurchaseState } = {};
+    const seen: { ended?: PurchaseState; card?: PurchaseCardData } = {};
     const stamped = await this.stampAs(agentId, entryId, isPurchaseEntry, (entry) => {
       const patch = change(entry);
       const next = patch?.purchaseState;
-      if (next != null && PURCHASE_FINAL_STATES.has(next) && !PURCHASE_FINAL_STATES.has(purchaseStateOf(entry))) seen.ended = next;
+      if (next != null && PURCHASE_FINAL_STATES.has(next) && !PURCHASE_FINAL_STATES.has(purchaseStateOf(entry))) {
+        seen.ended = next;
+        seen.card = entry.message.purchase;
+      }
       return patch;
     });
+    if (seen.ended != null && stamped != null && seen.card != null && seen.card.shopCheckout == null && purchaseFlightOf(seen.card) == null && this.releaseBrowser != null) {
+      const release = this.releaseBrowser;
+      void Promise.resolve().then(() => release(agentId, entryId)).catch((error: unknown) => this.log(`[purchase] letting the browser go for ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
+    }
     if (seen.ended != null && stamped != null) {
       await this.settleProductsBuy(agentId, entryId, seen.ended).catch((error: unknown) => this.log(`[purchase] settling the products card for ${agentId}/${entryId} failed: ${error instanceof Error ? error.message : String(error)}`));
     }

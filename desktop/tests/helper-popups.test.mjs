@@ -129,6 +129,7 @@ test("a click closes a store's sign-up popup by its \"No, thanks\" and lands; Es
     await rm(driverDir, { recursive: true, force: true });
     await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     await rm(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+    await rm(`/tmp/.sand-browser/used-${display}`, { force: true });
     await dispose();
   }
 });

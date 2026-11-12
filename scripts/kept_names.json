@@ -204,6 +204,8 @@
         "server/tests/test_config_prefix.py",
         "runner/src/settings.ts",
         "runner/src/settings.test.ts",
+        "desktop/source/host/runner/tools/sand-browser-tools.ts",
+        "desktop/tests/browser-helper-stays-running.test.mjs",
         "runner/README.md",
         "README.md",
         "CLAUDE.md",

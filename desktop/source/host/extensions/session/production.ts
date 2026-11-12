@@ -14,6 +14,7 @@ import {
   type ComputerUseResult,
 } from "../../../packages/proto/generated/agent/v1/computer_use_tool_pb.js";
 import { AgentWorkerPool } from "../../agent-isolation/agent-worker-pool.js";
+import { setSandBrowserHold, type ShellAccessor } from "../../box/box-windows.js";
 import { WorkerBlobStore } from "../../agent-isolation/worker-blob-store.js";
 import { deriveOutlineFromConversationState, type ConversationState } from "../../runner/conversation-outline.js";
 import { getSandAgentsRootDir } from "../../storage/agent-paths.js";
@@ -155,6 +156,26 @@ async function grabHandoffScreenshot(
   return result.result.value.screenshot ?? null;
 }
 
+/**
+ * While the computer is handed to the person, the agent's Chrome is not
+ * closed for being unused (`setSandBrowserHold`, 12 November 2026): the
+ * person may come to the page later than the idle time.
+ */
+async function holdHandoffBrowser(
+  box: SessionProductionDeps["forever-box"]["box"],
+  context: ReturnType<typeof createContext>,
+  agentId: string,
+  held: boolean,
+): Promise<void> {
+  try {
+    const connection = await box.ensureReady(context, agentId);
+    if (connection.remoteAccessor == null) return;
+    await setSandBrowserHold(context, connection.remoteAccessor as ShellAccessor, held);
+  } catch {
+    // Best-effort: without the mark the idle close still waits for nobody watching.
+  }
+}
+
 /** Artifact construction at host-main.cjs:633435-633496; facade helpers at 632027-632660. */
 export function createSessionProductionExtras(
   context: ProductionContext,
@@ -227,13 +248,17 @@ export function createSessionProductionExtras(
         grabScreenshot: agentId => grabHandoffScreenshot(box, requestContext, agentId),
         log: line => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
         onStarted: event => {
+          void holdHandoffBrowser(box, requestContext, event.agentId, true);
           void context.host.events.emit("session.box-handoff-started", event);
         },
-        onEnded: event => context.host.events.emit(
-          "session.box-handoff-ended",
-          event,
-          { failureMode: "reject" },
-        ),
+        onEnded: event => {
+          void holdHandoffBrowser(box, requestContext, event.agentId, false);
+          return context.host.events.emit(
+            "session.box-handoff-ended",
+            event,
+            { failureMode: "reject" },
+          );
+        },
         onStatusChanged: agentId => {
           void context.host.events.emit("session.box-handoff-status-changed", { agentId });
         },
