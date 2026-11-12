@@ -1,5 +1,5 @@
 import { buildChannelOutboundMessage, type ChannelOutboundMessage } from "../../../shared/channel-messaging.js";
-import { CHANNEL_TOKEN_FIELD, SLACK_BOT_TOKEN_FIELD } from "../../../shared/channel-credential.js";
+import { CHANNEL_APP_FIELD, CHANNEL_APP_VALUE, CHANNEL_TOKEN_FIELD, isAppConnection, SLACK_BOT_TOKEN_FIELD } from "../../../shared/channel-credential.js";
 import { DISCORD_PLATFORM, findConnectorManifest, isChannelsServed, parseChannelAddress, SLACK_PLATFORM } from "../../../shared/channels.js";
 import { logHostLine } from "../../../shared/host-log.js";
 import { say } from "../../../shared/say.js";
@@ -8,7 +8,8 @@ import type { ChannelConnectionStatus } from "../session/channel-store.js";
 import { ENGLISH, type WordKey } from "../../../shared/words/en.js";
 import { createChannelLogger, errorSentence, type ChannelLogSink } from "./channel-log.js";
 import { createChannelHttp, type ChannelHttp } from "./channel-http.js";
-import { secretsFingerprint, type ChannelServer, type ServerChannelState, type SyncedChannel } from "./channel-server.js";
+import { AppSlackConnector } from "./app-slack-connector.js";
+import { secretsFingerprint, type ChannelServer, type HostedChannel, type ServerChannelState, type SyncedChannel } from "./channel-server.js";
 import { realConnectorClock, type ChannelConnector, type ChannelInbound, type ConnectorClock } from "./connector.js";
 import { DiscordConnector } from "./discord-connector.js";
 import { SlackConnector } from "./slack-connector.js";
@@ -46,7 +47,13 @@ export interface ChannelRuntimeTranscript {
   setChannelActivity(notify: (agentId: string, addressToken: string, isActive: boolean) => void): void;
   setChannelConfigChanged(onChanged: () => void): void;
   wakeForInbound(agentId: string, envelope: ChannelInbound): void;
-  readonly sessionStore?: { writeChannelStatus?(agentId: string, platform: string, status: ChannelConnectionStatus, detail?: string | null): boolean };
+  /** A connection taken off this computer's list (an agent's Slack disconnected elsewhere, 12 November 2026). */
+  disconnectChannel?(agentId: string, platform: string): unknown;
+  readonly sessionStore?: {
+    writeChannelStatus?(agentId: string, platform: string, status: ChannelConnectionStatus, detail?: string | null): boolean;
+    /** An agent's Slack through Simeon's own app listed here, with the workspace's name (no token: `CHANNEL_APP_FIELD`). */
+    storeAppChannel?(agentId: string, platform: string, label: string): boolean;
+  };
 }
 
 export interface ChannelRuntimeOptions {
@@ -66,10 +73,18 @@ export interface ChannelRuntimeOptions {
   readonly now?: () => number;
 }
 
-export interface ChannelRuntimeStatus { readonly agentId: string; readonly platform: string; readonly status: ChannelConnectionStatus; readonly detail: string | null; readonly listening: "here" | "server" }
+/** A connection this computer's list asks for: its tokens (or the app's mark), its name, and whether it is through Simeon's own app. */
+interface Wanted { readonly agentId: string; readonly platform: string; readonly secrets: Record<string, string>; readonly label: string; readonly app: boolean }
 
-/** `here`: this computer holds the bot's connection. `server`: the cloud runner does, and this computer only replies. */
-type Mode = "here" | "server";
+export interface ChannelRuntimeStatus { readonly agentId: string; readonly platform: string; readonly status: ChannelConnectionStatus; readonly detail: string | null; readonly listening: Mode }
+
+/**
+ * `here`: this computer holds the bot's connection. `server`: the cloud runner
+ * does, and this computer only replies. `app`: Slack through Simeon's own app
+ * (12 November 2026), heard and answered through Simeon Labs' server, with no
+ * token here at all.
+ */
+type Mode = "here" | "server" | "app";
 
 interface Slot { readonly fingerprint: string; readonly connector: ChannelConnector | null; readonly mode: Mode; status: ChannelConnectionStatus; detail: string | null }
 
@@ -81,8 +96,9 @@ function serverDetail(detail: ServerChannelState["detail"]): string | null {
 
 function slotKey(agentId: string, platform: string): string { return `${agentId}\u0000${platform}`; }
 
-/** Which credential fields a platform's connection needs, in the order a person is asked for them. */
-export function requiredCredentialFields(platform: string): readonly string[] {
+/** Which credential fields a platform's connection needs, in the order a person is asked for them; none for one through Simeon's own app. */
+export function requiredCredentialFields(platform: string, secrets?: Readonly<Record<string, string>>): readonly string[] {
+  if (isAppConnection(secrets)) return [];
   return platform === SLACK_PLATFORM ? [CHANNEL_TOKEN_FIELD, SLACK_BOT_TOKEN_FIELD] : [CHANNEL_TOKEN_FIELD];
 }
 
@@ -114,6 +130,12 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
   let syncFailing = false;
   let lastSyncTry = 0;
   const heard = new Set<string>();
+  /** The agents that talk in Slack through Simeon's own app, by the server's last answer that named them (none from a server that never does). */
+  let hosted: Map<string, HostedChannel> | null = null;
+  /** Those listed here once: one that then goes from this computer's list was disconnected here, and the server is told. */
+  const appSeen = new Set<string>();
+  /** Disconnected here: the server is told until it no longer lists them, and they are not listed again meanwhile. */
+  const appLeaving = new Set<string>();
 
   const record = (agentId: string, platform: string, status: ChannelConnectionStatus, detail: string | null) => {
     const slot = slots.get(slotKey(agentId, platform));
@@ -142,9 +164,13 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
     const callbacks = {
       log,
       // Listened to by the runner, the connector is never started: its state is the runner's (`applyServerState`).
-      onStatus: (status: ChannelConnectionStatus, detail?: string | null) => { if (mode === "here") record(agentId, platform, status, detail ?? null); },
+      onStatus: (status: ChannelConnectionStatus, detail?: string | null) => { if (mode !== "server") record(agentId, platform, status, detail ?? null); },
       onInbound: (envelope: ChannelInbound) => wake(agentId, envelope, log),
     };
+    if (mode === "app") {
+      const send = options.server?.sendSlack;
+      return platform === SLACK_PLATFORM && send != null ? new AppSlackConnector({ agentId, callbacks, send: (message) => send(message) }) : null;
+    }
     const shared = { agentId, callbacks, http, clock, ...(options.createSocket == null ? {} : { createSocket: options.createSocket }), ...(options.random == null ? {} : { random: options.random }) };
     if (platform === DISCORD_PLATFORM) return new DiscordConnector({ ...shared, token: secrets[CHANNEL_TOKEN_FIELD] ?? "", ...(options.discord?.gatewayUrl == null ? {} : { gatewayUrl: options.discord.gatewayUrl }), ...(options.discord?.apiBase == null ? {} : { apiBase: options.discord.apiBase }) });
     if (platform === SLACK_PLATFORM) return new SlackConnector({ ...shared, appToken: secrets[CHANNEL_TOKEN_FIELD] ?? "", botToken: secrets[SLACK_BOT_TOKEN_FIELD] ?? "", ...(options.slack?.apiBase == null ? {} : { apiBase: options.slack.apiBase }) });
@@ -176,6 +202,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
         if (answer.held && state != null && !state.missing) serverHas.set(slotKey(channel.agentId, channel.platform), channel.fingerprint);
       }
       synced = { at: now(), digest, held: answer.held, states };
+      if (answer.hosted != null) hosted = new Map(answer.hosted.map((row) => [slotKey(row.agentId, row.platform), row]));
       if (syncFailing) sink(`[simeon] channel=runtime agent=- event=server-sync detail="answered again"`);
       syncFailing = false;
     } catch (error) {
@@ -196,6 +223,55 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
     return state != null && !state.missing && state.fresh ? "server" : "here";
   };
 
+  /** How a wanted connection is held: through Simeon's own app, else by the runner or here. */
+  const modeFor = (key: string, want: { app: boolean }): Mode => want.app ? "app" : modeOf(key);
+
+  /**
+   * This computer's list made the server's for the agents that talk in Slack
+   * through Simeon's own app: one newly connected is listed here (its name
+   * the workspace's), one this computer had and no longer has was
+   * disconnected here and the server is told, and one the server no longer
+   * names is taken off. Nothing changes without the server's word.
+   */
+  async function reconcileAppChannels(wanted: Map<string, Wanted>): Promise<void> {
+    const server = options.server;
+    if (hosted == null || server == null) return;
+    for (const key of [...appLeaving]) if (!hosted.has(key)) appLeaving.delete(key);
+    for (const [key, row] of hosted) {
+      const local = wanted.get(key);
+      if (local?.app) {
+        appSeen.add(key);
+        if (row.label.length > 0 && local.label !== row.label) options.transcript.sessionStore?.storeAppChannel?.(row.agentId, row.platform, row.label);
+        continue;
+      }
+      if (appSeen.has(key) || appLeaving.has(key)) {
+        // Gone from this computer's list after it was here: Disconnect in the Channels tab, or the agent's own.
+        appSeen.delete(key);
+        appLeaving.add(key);
+        try {
+          await server.disconnectSlack?.(row.agentId);
+          sink(`[simeon] channel=${row.platform} agent=${row.agentId} event=app-disconnected`);
+        } catch (error) {
+          sink(`[simeon] channel=${row.platform} agent=${row.agentId} event=error detail=${JSON.stringify(`disconnect not told to the server: ${errorSentence(error)}`)}`);
+        }
+        continue;
+      }
+      if (options.transcript.sessionStore?.storeAppChannel?.(row.agentId, row.platform, row.label) === true) {
+        appSeen.add(key);
+        wanted.set(key, { agentId: row.agentId, platform: row.platform, secrets: { ...(local?.secrets ?? {}), [CHANNEL_APP_FIELD]: CHANNEL_APP_VALUE }, label: row.label, app: true });
+        sink(`[simeon] channel=${row.platform} agent=${row.agentId} event=app-connected`);
+      }
+    }
+    for (const [key, want] of [...wanted]) {
+      if (!want.app || hosted.has(key)) continue;
+      // The server no longer names it (disconnected in another app, or the workspace given to someone else).
+      appSeen.delete(key);
+      wanted.delete(key);
+      try { options.transcript.disconnectChannel?.(want.agentId, want.platform); } catch (error) { sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=error detail=${JSON.stringify(`not taken off: ${errorSentence(error)}`)}`); }
+      sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=app-removed`);
+    }
+  }
+
   /** The runner's word on a bot it listens to, shown as the bot's state. */
   const applyServerState = (key: string, agentId: string, platform: string): void => {
     const slot = slots.get(key);
@@ -207,7 +283,7 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
   };
 
   async function reconcileOnce(): Promise<void> {
-    const wanted = new Map<string, { agentId: string; platform: string; secrets: Record<string, string> }>();
+    const wanted = new Map<string, Wanted>();
     if (!stopped && isChannelsServed(env)) {
       let agentIds: readonly string[] = [];
       try { agentIds = await options.transcript.listAgentIds(); } catch (error) { sink(`[simeon] channel=runtime agent=- event=error detail="agents not listed: ${errorSentence(error)}"`); }
@@ -218,19 +294,21 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
           if (findConnectorManifest(config.platform, env)?.availability !== "available") continue;
           const secrets: Record<string, string> = { ...(config.secrets ?? {}) };
           if (config.token.length > 0) secrets[CHANNEL_TOKEN_FIELD] = config.token;
-          wanted.set(slotKey(agentId, config.platform), { agentId, platform: config.platform, secrets });
+          wanted.set(slotKey(agentId, config.platform), { agentId, platform: config.platform, secrets, label: config.label, app: isAppConnection(secrets) });
         }
       }
     }
-    const complete = new Map([...wanted].filter(([, want]) => requiredCredentialFields(want.platform).every((field) => (want.secrets[field] ?? "").length > 0)));
+    // A bot with its tokens goes to the server to be listened to; one through Simeon's own app holds no token to give.
+    const complete = new Map([...wanted].filter(([, want]) => !want.app && requiredCredentialFields(want.platform).every((field) => (want.secrets[field] ?? "").length > 0)));
     if (!stopped) await syncWithServer(complete);
+    if (!stopped) await reconcileAppChannels(wanted);
     for (const [key, slot] of [...slots]) {
       const want = wanted.get(key);
-      if (want != null && want.secrets != null && JSON.stringify(want.secrets) === slot.fingerprint && (slot.connector == null || modeOf(key) === slot.mode)) continue;
+      if (want != null && want.secrets != null && JSON.stringify(want.secrets) === slot.fingerprint && (slot.connector == null || modeFor(key, want) === slot.mode)) continue;
       slots.delete(key);
       if (slot.connector != null) {
         const [agentId, platform] = key.split("\u0000") as [string, string];
-        const reason = want == null ? "removed" : JSON.stringify(want.secrets) !== slot.fingerprint ? "credential-changed" : modeOf(key) === "server" ? "listened-by-server" : "listened-here";
+        const reason = want == null ? "removed" : JSON.stringify(want.secrets) !== slot.fingerprint ? "credential-changed" : modeFor(key, want) === "server" ? "listened-by-server" : "listened-here";
         sink(`[simeon] channel=${platform} agent=${agentId} event=stop reason=${reason}`);
         await slot.connector.stop().catch(() => {});
       }
@@ -238,17 +316,18 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
     for (const [key, want] of wanted) {
       if (slots.has(key)) continue;
       const fingerprint = JSON.stringify(want.secrets);
-      const missing = requiredCredentialFields(want.platform).filter((field) => !(want.secrets[field] ?? "").length);
+      const missing = requiredCredentialFields(want.platform, want.secrets).filter((field) => !(want.secrets[field] ?? "").length);
       if (missing.length > 0) {
         slots.set(key, { fingerprint, connector: null, mode: "here", status: "pending", detail: null });
         record(want.agentId, want.platform, "pending", missingCredentialSentence(want.platform, missing));
         sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=pending missing=${missing.join(",")}`);
         continue;
       }
-      const mode = modeOf(key);
+      const mode = modeFor(key, want);
       const connector = build(want.agentId, want.platform, want.secrets, mode);
       if (connector == null) continue;
       slots.set(key, { fingerprint, connector, mode, status: "connecting", detail: null });
+      if (mode === "app") sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=connect via=app`);
       if (mode === "server") {
         // The runner listens; this connector only replies, so it is never started.
         sink(`[simeon] channel=${want.platform} agent=${want.agentId} event=listened-by-server`);
@@ -296,14 +375,35 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
    * as the bot's own connector hands it, once; a Slack reply goes to its
    * thread. False for something that is not a bot's message.
    */
+  /** The agent's Slack through Simeon's own app, listed and opened at once (its name until the server's next word: "Slack"). */
+  const openAppSlot = (agentId: string): Slot | undefined => {
+    const key = slotKey(agentId, SLACK_PLATFORM);
+    const label = hosted?.get(key)?.label ?? "";
+    if (options.transcript.sessionStore?.storeAppChannel?.(agentId, SLACK_PLATFORM, label) !== true) return undefined;
+    appSeen.add(key);
+    const secrets = { [CHANNEL_APP_FIELD]: CHANNEL_APP_VALUE };
+    const connector = build(agentId, SLACK_PLATFORM, secrets, "app");
+    if (connector == null) return undefined;
+    const previous = slots.get(key);
+    if (previous?.connector != null) void previous.connector.stop().catch(() => {});
+    const slot: Slot = { fingerprint: JSON.stringify(secrets), connector, mode: "app", status: "connecting", detail: null };
+    slots.set(key, slot);
+    sink(`[simeon] channel=${SLACK_PLATFORM} agent=${agentId} event=connect via=app`);
+    connector.start();
+    return slot;
+  };
+
   const receiveFromServer = (agentId: string, envelope: unknown): boolean => {
     const value = envelope as Partial<ChannelInbound> | null;
     if (value == null || typeof value !== "object" || typeof value.address?.platform !== "string" || typeof value.address.chat !== "string" || typeof value.sender !== "string" || typeof value.text !== "string") return false;
     const inbound = value as ChannelInbound;
     const log = createChannelLogger(inbound.address.platform, agentId, sink);
-    const slot = slots.get(slotKey(agentId, inbound.address.platform));
-    if (slot?.connector instanceof SlackConnector && inbound.reaction == null) slot.connector.noteThread(inbound.address.chat, inbound.thread);
-    log("inbound", { chat: inbound.address.chat, via: "server", chars: inbound.text.length });
+    const key = slotKey(agentId, inbound.address.platform);
+    let slot = slots.get(key);
+    // Heard through Simeon's own Slack app before this computer listed the connection: listed now, so the answer has a way back.
+    if ((value as { app?: unknown }).app === true && inbound.address.platform === SLACK_PLATFORM && !(slot?.connector instanceof AppSlackConnector)) slot = openAppSlot(agentId) ?? slot;
+    if ((slot?.connector instanceof SlackConnector || slot?.connector instanceof AppSlackConnector) && inbound.reaction == null) slot.connector.noteThread(inbound.address.chat, inbound.thread);
+    log("inbound", { chat: inbound.address.chat, via: (value as { app?: unknown }).app === true ? "app" : "server", chars: inbound.text.length });
     wake(agentId, inbound, log);
     return true;
   };
@@ -318,6 +418,12 @@ export function createChannelRuntime(options: ChannelRuntimeOptions) {
       poll = clock.setInterval(() => { void reconcile(); }, options.pollMs ?? CHANNEL_RECONCILE_POLL_MS);
     },
     reconcile,
+    /** The server asked now rather than at the next half minute (an app's Channels tab waiting for Connect Slack to finish), then the list made again. */
+    async syncNow(): Promise<void> {
+      if (synced != null) synced = { ...synced, at: 0 };
+      lastSyncTry = 0;
+      await reconcile();
+    },
     async stop(): Promise<void> {
       stopped = true;
       poll?.dispose();

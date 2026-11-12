@@ -18,6 +18,7 @@
   "queuedSend",
   "thread",
   "cloudAgent",
+  "gitHubSignIn",
   "purchase",
   "products",
   "flightPassengers",

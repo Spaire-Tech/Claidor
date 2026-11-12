@@ -170,16 +170,23 @@ async def slack_events(
     repository = SandListenerConnectionRepository.from_session(session)
     connections = await repository.list_by_external("slack", team_id)
     delivered = 0
+    talked = 0
+    # Imported here: the desktop package reaches into this one at import time.
+    from simeon.desktop.slack_app import route_event
+
     for connection in connections:
         if connection.user_id is None:
             continue
         normalized = normalize_slack_event(event, connection)
-        if normalized is None:
-            continue
-        counts = await listeners.ingest_event(
-            session, redis, [connection.user_id], normalized
-        )
-        delivered += counts["relayed"] + counts["fired"]
+        if normalized is not None:
+            counts = await listeners.ingest_event(
+                session, redis, [connection.user_id], normalized
+            )
+            delivered += counts["relayed"] + counts["fired"]
+        # A direct message to the app or a mention of it, for an agent that
+        # talks in this workspace (12 November 2026, `slack_app.py`).
+        if await route_event(session, redis, connection, team_id, event):
+            talked += 1
     log.info(
         "sand.listeners.ingress",
         platform="slack",
@@ -187,6 +194,7 @@ async def slack_events(
         kind=event.get("type"),
         connections=len(connections),
         delivered=delivered,
+        talked=talked,
     )
     return JSONResponse({"ok": True})
 

@@ -16,6 +16,30 @@ import type { ChannelConnectionStatus } from "../session/channel-store.js";
  * and each bot's state as the runner last reported it.
  */
 export const CHANNELS_SYNC_PATH = "/desktop/api/channels/sync";
+/**
+ * An agent's Slack through Simeon's own Slack app (12 November 2026,
+ * `server/simeon/desktop/slack_app.py`): the server holds the workspace's
+ * token, so the answers go through it, and Disconnect tells it.
+ */
+export const SLACK_SEND_PATH = "/desktop/api/channels/slack/send";
+export const SLACK_DISCONNECT_PATH = "/desktop/api/channels/slack/disconnect";
+
+/** An agent that talks in Slack through Simeon's own app, as the sync answers it: no token here, the workspace's name. */
+export interface HostedChannel {
+  readonly agentId: string;
+  readonly platform: string;
+  readonly label: string;
+}
+
+/** What an agent's answer in Slack carries to the server: words, or a file (its bytes in base64) with a caption. */
+export interface SlackSend {
+  readonly agentId: string;
+  readonly chat: string;
+  readonly thread?: string;
+  readonly text?: string;
+  readonly file?: { readonly name: string; readonly data: string };
+  readonly caption?: string;
+}
 
 export interface SyncedChannel {
   readonly agentId: string;
@@ -37,7 +61,10 @@ export interface ServerChannelState {
 }
 
 export interface ChannelServer {
-  sync(channels: readonly SyncedChannel[]): Promise<{ held: boolean; channels: readonly ServerChannelState[] }>;
+  /** `hosted` is absent from a server older than 12 November 2026, which knows of no such agent. */
+  sync(channels: readonly SyncedChannel[]): Promise<{ held: boolean; channels: readonly ServerChannelState[]; hosted?: readonly HostedChannel[] }>;
+  sendSlack?(message: SlackSend): Promise<void>;
+  disconnectSlack?(agentId: string): Promise<void>;
 }
 
 /** A mark of a bot's tokens that says whether they changed, without being them. */
@@ -63,6 +90,13 @@ function stateOf(value: unknown): ServerChannelState | null {
   };
 }
 
+function hostedOf(value: unknown): HostedChannel | null {
+  if (typeof value !== "object" || value == null) return null;
+  const row = value as Record<string, unknown>;
+  if (typeof row.agentId !== "string" || row.agentId.length === 0 || typeof row.platform !== "string") return null;
+  return { agentId: row.agentId, platform: row.platform, label: typeof row.label === "string" ? row.label : "" };
+}
+
 export function createChannelServer(deps: {
   readonly getBackendUrl: () => string;
   readonly getAccessToken: (options: { readonly backendUrl: string }) => Promise<string>;
@@ -70,7 +104,26 @@ export function createChannelServer(deps: {
   readonly timeoutMs?: number;
 }): ChannelServer {
   const fetchImpl = deps.fetchImpl ?? fetch;
+  /** One POST with the computer's own credential; the server's own sentence when it refuses. */
+  const post = async (path: string, body: unknown, timeoutMs = deps.timeoutMs ?? 20_000): Promise<unknown> => {
+    const backendUrl = deps.getBackendUrl();
+    const token = await deps.getAccessToken({ backendUrl });
+    if (token.length === 0) throw new Error(`no credential for ${backendUrl}`);
+    const response = await fetchImpl(new URL(path, backendUrl).toString(), {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    type Answer = { code?: unknown; data?: unknown; message?: unknown };
+    let answer: Answer | null = null;
+    try { answer = (await response.json()) as Answer | null; } catch {}
+    if (!response.ok || answer?.code !== 0) throw new Error(typeof answer?.message === "string" ? answer.message : `${path} answered ${response.status}`);
+    return answer.data;
+  };
   return {
+    async sendSlack(message) { await post(SLACK_SEND_PATH, message, 60_000); },
+    async disconnectSlack(agentId) { await post(SLACK_DISCONNECT_PATH, { agentId }); },
     async sync(channels) {
       const backendUrl = deps.getBackendUrl();
       const token = await deps.getAccessToken({ backendUrl });
@@ -86,7 +139,8 @@ export function createChannelServer(deps: {
       try { body = (await response.json()) as Answer | null; } catch {}
       if (!response.ok || body?.code !== 0) throw new Error(`${CHANNELS_SYNC_PATH} answered ${response.status}${typeof body?.message === "string" ? ` ${body.message}` : ""}`);
       const states = Array.isArray(body.data?.channels) ? body.data.channels.map(stateOf).filter((state): state is ServerChannelState => state != null) : [];
-      return { held: body.data?.held === true, channels: states };
+      const hosted = (body.data as { hosted?: unknown } | undefined)?.hosted;
+      return { held: body.data?.held === true, channels: states, ...(Array.isArray(hosted) ? { hosted: hosted.map(hostedOf).filter((row): row is HostedChannel => row != null) } : {}) };
     },
   };
 }

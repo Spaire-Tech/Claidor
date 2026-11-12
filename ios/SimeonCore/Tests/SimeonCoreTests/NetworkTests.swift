@@ -156,6 +156,20 @@ final class ChannelsTests: XCTestCase {
     XCTAssertFalse(ChannelsView(manifests: [ChannelsView.Manifest(platform: "slack", displayName: "Slack", blurb: "", credentialLabel: "", availability: "coming-soon")], connections: []).hasChannels)
     XCTAssertNil(ChannelsView(json: ["manifests": []]))
   }
+
+  /** Slack through Simeon's own Slack app (12 November 2026): + opens Slack's sign-in, no token; an older computer's manifest still takes a token. */
+  func testSlackThroughSimeonsApp() throws {
+    let view = try XCTUnwrap(ChannelsView(json: [
+      "manifests": [["platform": "slack", "displayName": "Slack", "blurb": "Message in Slack channels and DMs through Simeon's Slack app.", "credentialLabel": "", "availability": "available", "connect": "app"]],
+      "connections": [],
+    ]))
+    XCTAssertEqual(view.manifests.map(\.platform), ["slack"], "Discord is not offered")
+    XCTAssertTrue(view.manifests[0].connectsInBrowser)
+    XCTAssertEqual(view.state(view.manifests[0]), .available)
+    let older = try XCTUnwrap(ChannelsView(json: answer))
+    XCTAssertFalse(older.manifests[1].connectsInBrowser)
+    XCTAssertEqual(ChannelsView.couldNotConnect, "Couldn't connect")
+  }
 }
 
 /** The channel calls, as the window makes them: each answers the whole view. */

@@ -18,6 +18,8 @@ final class ChannelsModel {
   private(set) var view: ChannelsView?
   /** Calls under way per platform: its row's buttons and menu wait while any is. */
   private(set) var busy: [String: Int] = [:]
+  /** What went wrong opening a platform's sign-in, shown in its row until the next try. */
+  private(set) var problem: [String: String] = [:]
   /** Each read and call numbered as it starts: an answer older than the one shown is dropped (the 4 s reads, the window coming forward and a call's own answer overlap). */
   @ObservationIgnored private var issued = 0
   @ObservationIgnored private var shown = 0
@@ -36,6 +38,31 @@ final class ChannelsModel {
   }
 
   func isBusy(_ platform: String) -> Bool { (busy[platform] ?? 0) > 0 }
+
+  /**
+   * Connect through the browser (Slack through Simeon's own app, 12 November
+   * 2026): Slack's sign-in opens, and the row waits (its spinner) while the
+   * computer is asked every 3 s whether it is connected, five minutes at most.
+   */
+  func connectInBrowser(_ platform: String, agentId: String, store: AppStore) async {
+    guard !isBusy(platform) else { return }
+    problem[platform] = nil
+    busy[platform, default: 0] += 1
+    defer { busy[platform, default: 1] -= 1 }
+    guard let url = await store.channelConnectLink(agentId, platform: platform) else {
+      problem[platform] = ChannelsView.couldNotConnect
+      return
+    }
+    NSWorkspace.shared.open(url)
+    let deadline = Date().addingTimeInterval(ChannelsView.connectWaitSeconds)
+    while Date() < deadline, !Task.isCancelled {
+      try? await Task.sleep(nanoseconds: UInt64(ChannelsView.connectPollSeconds * 1_000_000_000))
+      issued += 1
+      let number = issued
+      apply(await store.refreshChannel(agentId, platform: platform), number)
+      if let view, let manifest = view.manifests.first(where: { $0.platform == platform }), view.state(manifest) == .connected { return }
+    }
+  }
 
   /** A call for one platform, then a read; its row waits meanwhile. */
   func run(_ platform: String, agentId: String, store: AppStore, _ call: @escaping @MainActor () async -> ChannelsView?) async {
@@ -125,9 +152,9 @@ private struct ChannelRow: View {
           Text(manifest.displayName)
             .font(PanelType.row)
             .foregroundStyle(look.ink)
-          Text(view.subtitle(manifest))
+          Text(model.problem[manifest.platform] ?? view.subtitle(manifest))
             .font(PanelType.detail)
-            .foregroundStyle(isError(state) ? look.danger : look.inkSecondary)
+            .foregroundStyle(isError(state) || model.problem[manifest.platform] != nil ? look.danger : look.inkSecondary)
             .lineLimit(2)
             .fixedSize(horizontal: false, vertical: true)
         }
@@ -169,7 +196,7 @@ private struct ChannelRow: View {
       if busy {
         AddingSpinner(name: manifest.displayName, look: look)
       } else {
-        PlusMark(disabled: formOpen, look: look) { openForm() }
+        PlusMark(disabled: formOpen, look: look) { connect() }
           .accessibilityLabel("Connect \(manifest.displayName)")
       }
     case .connected:
@@ -177,7 +204,11 @@ private struct ChannelRow: View {
     case .connecting:
       AddingSpinner(name: manifest.displayName, look: look)
     case .error:
-      SettingsPill(title: String(localized: "Reconnect"), disabled: busy || formOpen, look: look) { openForm() }
+      if busy && manifest.connectsInBrowser {
+        AddingSpinner(name: manifest.displayName, look: look)
+      } else {
+        SettingsPill(title: String(localized: "Reconnect"), disabled: busy || formOpen, look: look) { connect() }
+      }
     case .comingSoon:
       SoonWord(look: look)
     }
@@ -223,7 +254,16 @@ private struct ChannelRow: View {
     menuOpen = false
   }
 
-  /** + and Reconnect open the field (it takes the keys as it appears: the window leaves them on Connect; decision 6). */
+  /** + and Reconnect: Slack's sign-in in the browser for a platform connected through Simeon's own app, else the token's field. */
+  private func connect() {
+    if manifest.connectsInBrowser {
+      Task { await model.connectInBrowser(manifest.platform, agentId: agentId, store: store) }
+    } else {
+      openForm()
+    }
+  }
+
+  /** The token's field opens (it takes the keys as it appears: the window leaves them on Connect; decision 6). */
   private func openForm() {
     token = ""
     formOpen = true

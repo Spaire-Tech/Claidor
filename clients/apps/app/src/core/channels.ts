@@ -1,5 +1,6 @@
-// An agent's messaging channels (Discord, Slack: a bot the person owns, run
-// from the computer), as the computer's `getAgentChannels` answers and the
+// An agent's messaging channels (Slack through Simeon's own Slack app since
+// 12 November 2026; Discord, a bot the person owns, when the computer offers
+// it), as the computer's `getAgentChannels` answers and the
 // window's Channels view draws them (SimeonCore's Channels.swift: `_0n`,
 // `B0n`, `A0n`, `P0n`, `O0n`). The calls themselves are the store's
 // (`channels`, `connectChannel`, `refreshChannel`, `disconnectChannel`).
@@ -14,6 +15,8 @@ export interface ChannelManifest {
   blurb: string
   credentialLabel: string
   availability: string
+  /** `token`: + opens a field for the bot's token. `app`: + opens Slack's own sign-in for Simeon's Slack app, no token (12 November 2026). */
+  connect: string
 }
 
 /** A platform connected, or on its way (`Connection`). */
@@ -47,6 +50,7 @@ export function channelsFrom(json: unknown): ChannelsView | undefined {
           blurb: str(field(row, 'blurb')) ?? '',
           credentialLabel: str(field(row, 'credentialLabel')) ?? '',
           availability: str(field(row, 'availability')) ?? 'coming-soon',
+          connect: str(field(row, 'connect')) ?? 'token',
         },
       ]
     }),
@@ -175,6 +179,20 @@ export function channelPlaceholder(manifest: ChannelManifest): string {
       return first.toUpperCase() + rest.join('')
     }
   }
+}
+
+/** Connected through Slack's sign-in in the browser, not a token typed here (`connectsInBrowser`). */
+export function connectsInBrowser(manifest: ChannelManifest): boolean {
+  return manifest.connect === 'app'
+}
+
+/** How long a row waits, after its sign-in opened in the browser, for the computer to say it is connected; asked every `channelConnectPollSeconds` (`connectWaitSeconds`). */
+export const channelConnectWaitSeconds = 300
+export const channelConnectPollSeconds = 3
+
+/** The row's line when the sign-in could not be opened (`couldNotConnect`). */
+export function couldNotConnect(): string {
+  return t("Couldn't connect")
 }
 
 /** How long a channel call may take, in seconds (`channelDeadline`, `I$n`). */

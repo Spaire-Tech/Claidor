@@ -109,10 +109,12 @@ test("channels: the gateway's manifests carry availability, a coming-soon platfo
   try {
     const reader = module.createListenerIntegrationReads({ dashboard: () => { throw new Error("no dashboard"); }, transcript: { listAllAutomationDefinitions: async () => [], getAgentChannels: async () => [{ platform: "slack", label: "x" }, { platform: "github", label: "y" }] }, sourceStatuses: () => new Map(), log: () => {} });
     const served = await reader.getAgentChannels("a1");
-    assert.deepEqual(served.manifests.map((manifest) => [manifest.platform, manifest.availability, manifest.displayName]), [["discord", "available", "Discord"], ["slack", "available", "Slack"]], "served by default since 25 September 2026");
+    // Served by default since 25 September 2026; Discord hidden and Slack through Simeon's own app since 12 November 2026.
+    assert.deepEqual(served.manifests.map((manifest) => [manifest.platform, manifest.availability, manifest.displayName, manifest.connect, manifest.credentialLabel]), [["slack", "available", "Slack", "app", ""]]);
     process.env.SAND_CHANNELS_SERVED = "0";
+    process.env.SAND_DISCORD_SERVED = "1";
     let channels;
-    try { channels = await reader.getAgentChannels("a1"); } finally { delete process.env.SAND_CHANNELS_SERVED; }
+    try { channels = await reader.getAgentChannels("a1"); } finally { delete process.env.SAND_CHANNELS_SERVED; delete process.env.SAND_DISCORD_SERVED; }
     assert.deepEqual(channels.manifests.map((manifest) => [manifest.platform, manifest.availability, manifest.displayName]), [["discord", "coming-soon", "Discord"], ["slack", "coming-soon", "Slack"]]);
     assert.deepEqual(channels.connections.map((connection) => connection.platform), ["slack"], "a github row is not a channel");
   } finally {

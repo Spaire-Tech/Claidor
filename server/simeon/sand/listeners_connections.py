@@ -18,10 +18,16 @@ upstream install URL was the upstream site's dashboard; ours is on this host:
 Both pages use the web session cookie, the way `/desktop/login` does: an
 anonymous browser is sent to the web login and back. The card's watcher
 polls the two status methods every five seconds and resumes the agent.
+
+Since 12 November 2026 the Slack page also takes a one-time `ticket`, minted
+for one of the person's agents from an app's Channels tab
+(`simeon.desktop.slack_app`): no web sign-in is needed, and once Slack
+answers the agent is linked to the workspace, so it talks there.
 """
 
 from __future__ import annotations
 
+import json
 import secrets
 from typing import Any
 from urllib.parse import quote
@@ -46,6 +52,7 @@ from .connect import ConnectCall, ConnectService
 from .listeners_repository import SandListenerConnectionRepository
 from .listeners_service import ANY_SCOPE, listeners
 from .listeners_slack import SlackApiError, SlackWebClient, authorize_url
+from .notify import publish
 
 log = structlog.get_logger()
 
@@ -130,15 +137,26 @@ def _page(title: str, body: str, status: int = 200) -> HTMLResponse:
     )
 
 
-async def _mint_state(redis: Redis, platform: str, user_id: UUID) -> str:
+async def _mint_state(
+    redis: Redis, platform: str, user_id: UUID, agent_id: str | None = None
+) -> str:
     state = secrets.token_urlsafe(24)
+    value = (
+        json.dumps({"user": str(user_id), "agent": agent_id})
+        if agent_id
+        else str(user_id)
+    )
     await redis.set(
-        f"sand:listeners:{platform}:state:{state}", str(user_id), ex=STATE_TTL_SECONDS
+        f"sand:listeners:{platform}:state:{state}", value, ex=STATE_TTL_SECONDS
     )
     return state
 
 
-async def _take_state(redis: Redis, platform: str, state: str | None) -> UUID | None:
+async def _take_state_with_agent(
+    redis: Redis, platform: str, state: str | None
+) -> tuple[UUID, str | None] | None:
+    """The person a sign-in started for, and the agent when it was started
+    from an agent's Channels tab; once only."""
     if not state:
         return None
     key = f"sand:listeners:{platform}:state:{state}"
@@ -146,24 +164,97 @@ async def _take_state(redis: Redis, platform: str, state: str | None) -> UUID | 
     if value is None:
         return None
     await redis.delete(key)
+    raw = value.decode() if isinstance(value, bytes) else str(value)
+    agent_id: str | None = None
+    if raw.startswith("{"):
+        try:
+            decoded = json.loads(raw)
+        except ValueError:
+            return None
+        if not isinstance(decoded, dict):
+            return None
+        raw = str(decoded.get("user") or "")
+        agent = decoded.get("agent")
+        agent_id = agent if isinstance(agent, str) and agent else None
     try:
-        return UUID(value.decode() if isinstance(value, bytes) else str(value))
+        return UUID(raw), agent_id
     except ValueError:
         return None
+
+
+async def _take_state(redis: Redis, platform: str, state: str | None) -> UUID | None:
+    taken = await _take_state_with_agent(redis, platform, state)
+    return taken[0] if taken is not None else None
+
+
+#: An app's Connect Slack link for one agent (`simeon.desktop.slack_app`).
+SLACK_TICKET_PREFIX = "sand:channels:slack:ticket:"
+
+
+async def mint_slack_ticket(redis: Redis, user_id: UUID, agent_id: str) -> str:
+    ticket = secrets.token_urlsafe(32)
+    await redis.set(
+        f"{SLACK_TICKET_PREFIX}{ticket}",
+        json.dumps({"user": str(user_id), "agent": agent_id}),
+        ex=STATE_TTL_SECONDS,
+    )
+    return ticket
+
+
+async def take_slack_ticket(
+    redis: Redis, ticket: str | None
+) -> tuple[UUID, str] | None:
+    if not ticket or len(ticket) > 200:
+        return None
+    key = f"{SLACK_TICKET_PREFIX}{ticket}"
+    value = await redis.get(key)
+    if value is None:
+        return None
+    await redis.delete(key)
+    try:
+        decoded = json.loads(value.decode() if isinstance(value, bytes) else str(value))
+        user_id = UUID(str(decoded["user"]))
+        agent_id = str(decoded["agent"])
+    except (ValueError, KeyError, TypeError):
+        return None
+    return (user_id, agent_id) if agent_id else None
+
+
+def slack_agents(row: SandListenerConnection) -> list[str]:
+    """The person's agents that talk in this workspace, the first one
+    answering when no other is named (`simeon.desktop.slack_app`)."""
+    agents = (row.extra or {}).get("agents")
+    if not isinstance(agents, list):
+        return []
+    return [agent for agent in agents if isinstance(agent, str) and agent]
 
 
 @router.get("/sand/slack/install", name="sand:slack_install", response_model=None)
 async def slack_install(
     request: Request,
     auth_subject: WebUserOrAnonymous,
+    ticket: str | None = Query(default=None),
     redis: Redis = Depends(get_redis),
 ) -> RedirectResponse | HTMLResponse:
-    if not is_user(auth_subject):
-        return _login_redirect("/sand/slack/install")
+    agent_id: str | None = None
+    if ticket is None:
+        if not is_user(auth_subject):
+            return _login_redirect("/sand/slack/install")
+        user_id = auth_subject.subject.id
     if not settings.SLACK_CLIENT_ID or not settings.SLACK_CLIENT_SECRET:
         log.warning("sand.listeners.slack_install_refused", reason=SLACK_NOT_REGISTERED)
         return _page("Slack is not available yet", SLACK_NOT_REGISTERED, status=503)
-    state = await _mint_state(redis, "slack", auth_subject.subject.id)
+    if ticket is not None:
+        # An app's Connect Slack for one agent: the ticket names the person.
+        taken = await take_slack_ticket(redis, ticket)
+        if taken is None:
+            return _page(
+                "This link expired",
+                "Go back to Simeon and choose Connect Slack again.",
+                status=400,
+            )
+        user_id, agent_id = taken
+    state = await _mint_state(redis, "slack", user_id, agent_id)
     redirect_uri = settings.generate_external_url("/sand/slack/callback")
     return RedirectResponse(
         authorize_url(settings.SLACK_CLIENT_ID, redirect_uri, state), 303
@@ -179,13 +270,14 @@ async def slack_callback(
     session: AsyncSession = Depends(get_db_session),
     redis: Redis = Depends(get_redis),
 ) -> HTMLResponse:
-    user_id = await _take_state(redis, "slack", state)
-    if user_id is None:
+    taken = await _take_state_with_agent(redis, "slack", state)
+    if taken is None:
         return _page(
             "Slack sign-in expired",
-            "Open the connect card in Simeon again and retry.",
+            "Go back to Simeon and connect Slack again.",
             status=400,
         )
+    user_id, agent_id = taken
     if error or not code:
         log.info(
             "sand.listeners.slack_install_denied", user_id=str(user_id), error=error
@@ -231,6 +323,11 @@ async def slack_callback(
         )
     repository = SandListenerConnectionRepository.from_session(session)
     row = await repository.get_by_external("slack", team_id)
+    # The agents that talk here stay through a new sign-in by the same
+    # person; another person's sign-in starts the workspace afresh.
+    agents = slack_agents(row) if row is not None and row.user_id == user_id else []
+    if agent_id is not None and agent_id not in agents:
+        agents.append(agent_id)
     values: dict[str, Any] = {
         "user_id": user_id,
         "external_name": str(team.get("name") or ""),
@@ -240,6 +337,7 @@ async def slack_callback(
             "bot_user_id": str(grant.get("bot_user_id") or ""),
             "channels": [],
             "channels_refreshed_at": None,
+            "agents": agents,
         },
     }
     if row is None:
@@ -255,7 +353,16 @@ async def slack_callback(
         user_id=str(user_id),
         team_id=team_id,
         team=row.external_name,
+        agent_id=agent_id,
     )
+    if agent_id is not None:
+        # Woken now, so the agent's Channels tab says Connected in seconds.
+        await publish(redis, user_id, "chat-inbox")
+        return _page(
+            "Slack is connected to Simeon",
+            "You can close this page and go back to Simeon. "
+            "Message the Simeon app in Slack, or mention it in a channel it's in.",
+        )
     return _page(
         "Slack is connected to Simeon",
         "You can close this page and go back to Simeon; the routine picks it up by itself.",
