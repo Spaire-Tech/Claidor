@@ -561,6 +561,24 @@ async def say_awake(redis: Redis, box: SandBox, reason: str, **fields: Any) -> N
 #: record says so itself, or until something wakes the box.
 SLEEPING_TTL_SECONDS = 120
 
+#: How many awake computers the sleeper asks at once (12 November 2026). It
+#: asked them one after another; each answer takes up to a few seconds (the
+#: server's state, then the computer's health), so at a thousand awake
+#: computers one round took longer than the minute between rounds
+#: (docs/ops/box-host/azure-plan.md, "No ceilings of our own"). Only the
+#: asking runs side by side; what is written to the database and Redis is
+#: still done one computer at a time.
+SLEEPER_LOOKS_AT_ONCE = 32
+
+
+@dataclass(frozen=True)
+class _SleeperLook:
+    """What the sleeper heard from one awake computer, before it decides."""
+
+    state: str | None = None
+    error: BoxHostError | None = None
+    health: BoxHealth | None = None
+
 
 def sleeping_key(box_id: UUID) -> str:
     return f"sand:box:sleeping:{box_id}"
@@ -1778,6 +1796,40 @@ class BoxBrokerService:
         log.info("sand.box.hibernated", box=str(box.id), user=str(box.user_id))
         return RecreateOutcome(started=True)
 
+    async def _look_at_awake(
+        self, awake: list[tuple[BoxHost, SandBox]]
+    ) -> list[_SleeperLook]:
+        """Each awake computer asked how it is, `SLEEPER_LOOKS_AT_ONCE` at a
+        time, in the order given: its server's state, the server's timeout
+        pushed out where it has one, then its health. Nothing here writes to
+        the database, so the asking can run side by side."""
+        gate = asyncio.Semaphore(SLEEPER_LOOKS_AT_ONCE)
+
+        async def look(host: BoxHost, box: SandBox) -> _SleeperLook:
+            async with gate:
+                try:
+                    state = await host.run_state(box.provider_box_id)
+                except BoxHostError as error:
+                    return _SleeperLook(error=error)
+                if state != "running":
+                    return _SleeperLook(state=state)
+                keep_alive = getattr(host, "keep_alive", None)
+                if keep_alive is not None:
+                    # E2B pauses a box whose timeout passes; while it is awake,
+                    # the timeout is pushed out here, so the broker, not E2B,
+                    # decides when it sleeps (`box_e2b.py`).
+                    try:
+                        await keep_alive(box.provider_box_id)
+                    except BoxHostError as error:
+                        log.warning(
+                            "sand.box.keep_alive_failed",
+                            box=str(box.id),
+                            error=str(error),
+                        )
+                return _SleeperLook(state=state, health=await self.health_of(box))
+
+        return list(await asyncio.gather(*(look(h, b) for h, b in awake)))
+
     async def hibernate_idle(
         self,
         db: AsyncSession,
@@ -1802,33 +1854,24 @@ class BoxBrokerService:
         repository = SandBoxRepository.from_session(db)
         now = utc_now()
         slept: list[UUID] = []
-        for host, box in [
+        awake = [
             (host, box)
             for host in hosts
             for box in await repository.list_awake(host.name)
-        ]:
-            try:
-                state = await host.run_state(box.provider_box_id)
-            except BoxHostError as error:
-                log.warning("sand.box.sleep.unknown", box=str(box.id), error=str(error))
+        ]
+        looks = await self._look_at_awake(awake)
+        for (host, box), look in zip(awake, looks, strict=True):
+            if look.error is not None:
+                log.warning(
+                    "sand.box.sleep.unknown", box=str(box.id), error=str(look.error)
+                )
                 continue
-            if state != "running":
+            if look.state != "running" or look.health is None:
                 # Stopped or removed outside the broker: record it.
-                mark_stopped(box, "hibernated" if state == "stopped" else "absent")
+                mark_stopped(box, "hibernated" if look.state == "stopped" else "absent")
                 await repository.update(box, flush=True)
                 continue
-            keep_alive = getattr(host, "keep_alive", None)
-            if keep_alive is not None:
-                # E2B pauses a box whose timeout passes; while it is awake,
-                # the timeout is pushed out here, so the broker, not E2B,
-                # decides when it sleeps (`box_e2b.py`).
-                try:
-                    await keep_alive(box.provider_box_id)
-                except BoxHostError as error:
-                    log.warning(
-                        "sand.box.keep_alive_failed", box=str(box.id), error=str(error)
-                    )
-            health = await self.health_of(box)
+            health = look.health
             if health.holds_awake:
                 box.last_active_at = now
                 await repository.update(box, flush=True)

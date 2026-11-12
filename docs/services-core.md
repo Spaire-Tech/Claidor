@@ -1511,6 +1511,10 @@ Setting it up on Render and GitHub: `docs/ops/box-host/render-env.md`, "E2B".
     `EnsureSandBox` every 30 seconds while it was open.
   - Any other box idle for `SIMEON_BOX_IDLE_HIBERNATE_AFTER` (30 minutes) is
     stopped with its files kept, and the app shows it as sleeping.
+  - It asks 32 boxes at a time (`SLEEPER_LOOKS_AT_ONCE`, 12 November 2026):
+    each one's state on its server, then its `/health`. One after another, a
+    thousand awake boxes took longer than the minute between rounds. What it
+    then writes to the database and Redis is still done one box at a time.
 - **Wake.** `EnsureSandBox` wakes a sleeping box. So does `sand.box.wake`,
   which is queued whenever the server publishes something for the box, such
   as a routine's fire or a shared room's turn. A wake refused for capacity is
