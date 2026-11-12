@@ -80,7 +80,7 @@ private struct UsageGroup: View {
       if meters.canCancelTrial {
         SettingsActionRow(title: String(localized: "Cancel Trial"), destructive: true, divided: true, look: look) {
           PendingAlert.ask(title: String(localized: "Cancel your trial?"),
-                           message: String(localized: "This ends your Simeon trial now and removes your remaining trial credits. Your card won’t be charged either way — the trial never turns into a paid plan on its own."),
+                           message: String(localized: "Your trial keeps going until its last day, then ends, and your card won’t be charged. If you keep it, your plan starts when the trial ends and your card is charged then."),
                            confirm: String(localized: "Cancel Trial"), cancel: String(localized: "Keep Trial"), destructive: true, pendingTitle: String(localized: "Canceling…")) {
             await store.cancelTrial()
           }

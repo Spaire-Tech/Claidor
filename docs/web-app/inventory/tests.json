@@ -92,6 +92,10 @@
   "tests": 6
  },
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/EdgeFirewallTests.swift",
+  "tests": 4
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/EmailSignInTests.swift",
   "tests": 8
  },
