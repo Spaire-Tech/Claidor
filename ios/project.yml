@@ -23,8 +23,9 @@ settings:
     # the tap, the icon's real number, the Help Center; build 32, 12
     # November 2026: AI Models and the model on the composer, the
     # Credentials Store's cards, External Agents, the cards' new style,
-    # Slack under Notifications in the agent's page).
-    CURRENT_PROJECT_VERSION: "32"
+    # Slack under Notifications in the agent's page; build 33, the same
+    # day: the picture viewer's title is the picture's own name).
+    CURRENT_PROJECT_VERSION: "33"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
