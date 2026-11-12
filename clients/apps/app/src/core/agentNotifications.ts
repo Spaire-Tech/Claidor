@@ -144,6 +144,31 @@ export function notificationContent(transition: NotificationTransition): {
   }
 }
 
+/**
+ * The notification as a message from its agent (`message`), as the iPhone
+ * shows pushes and the Mac and Windows since 12 November 2026: who sends
+ * it, and what it says. "Iris needs you" becomes a message from Iris that
+ * says so; the engine's "Waiting for your input." says "Needs your input."
+ */
+export function notificationMessage(transition: NotificationTransition): {
+  sender: string
+  line: string
+} {
+  const trimmed = transition.agentName.trim()
+  const sender = trimmed === '' ? t('Your agent') : trimmed
+  if (transition.kind === 'agent-needs-input') {
+    const reason = (transition.reason ?? '').trim()
+    if (
+      reason === '' ||
+      reason === 'Waiting for your input.' ||
+      reason === t('Waiting for your input.')
+    )
+      return { sender, line: t('Needs your input.') }
+    return { sender, line: t`Needs you: ${truncateNotificationBody(reason)}` }
+  }
+  return { sender, line: notificationContent(transition).body }
+}
+
 /** A lead surrogate: the first half of a character outside the Basic Multilingual Plane. */
 function isLeadSurrogate(unit: number): boolean {
   return unit >= 0xd800 && unit <= 0xdbff

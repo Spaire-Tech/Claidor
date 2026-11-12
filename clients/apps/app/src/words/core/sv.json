@@ -1094,6 +1094,8 @@
  "Needs a Moz API plan.": "Kräver ett Moz API-abonnemang.",
  "Needs attention": "Behöver uppmärksamhet",
  "Needs auth": "Kräver inloggning",
+ "Needs you: %@": "Behöver dig: %@",
+ "Needs your input.": "Behöver ditt svar.",
  "Never allow": "Tillåt aldrig",
  "New message in channel": "Nytt meddelande i kanal",
  "New messages": "Nya meddelanden",

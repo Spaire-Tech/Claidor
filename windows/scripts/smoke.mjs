@@ -126,7 +126,9 @@ try {
     check(!!profile, 'signed in from the kept pair: the profile was read')
     check(profile?.origin === 'app://simeon', `from the app's origin (${profile?.origin})`)
     check(profile?.bearer === true, 'with the bearer')
-    check(/^windows-0\.1\.0\+\d+$/.test(profile?.client ?? ''), `named as the Windows app (${profile?.client})`)
+    // Its own version, as package.json has it (0.1.1 since the first release).
+    const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
+    check(profile?.client?.startsWith(`windows-${version}+`) === true, `named as the Windows app (${profile?.client})`)
     const names = await page.$$eval('.sidebar', (all) => all.map((e) => e.textContent ?? '').join(' '))
     check(names.includes('Iris') && names.includes('Theo'), 'the agents are in the sidebar')
     if (process.env.SHOTS) await page.screenshot({ path: path.join(process.env.SHOTS, 'smoke-window.png') })

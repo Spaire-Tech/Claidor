@@ -1097,6 +1097,8 @@
  "Needs a Moz API plan.": "Requiere un plan de API de Moz.",
  "Needs attention": "Requiere tu atención",
  "Needs auth": "Requiere autenticación",
+ "Needs you: %@": "Te necesita: %@",
+ "Needs your input.": "Necesita tu respuesta.",
  "Never allow": "No permitir nunca",
  "New message in channel": "Nuevo mensaje en el canal",
  "New messages": "Mensajes nuevos",

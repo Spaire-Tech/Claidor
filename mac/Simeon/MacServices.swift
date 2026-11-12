@@ -1,4 +1,5 @@
 import AppKit
+import Intents
 import SwiftUI
 import UserNotifications
 import SimeonCore
@@ -188,7 +189,12 @@ final class MacServices {
     }
   }
 
-  /** "Iris needs you" with the Mac's sound; a finished turn without one (`silent`). */
+  /**
+   * "Iris needs you" with the Mac's sound; a finished turn without one
+   * (`silent`). Each as a message from its agent (12 November 2026, the
+   * founder: as the iPhone shows them): the agent's face where the app's
+   * icon would be, the app's icon small in its corner (`AgentMessage`).
+   */
   private func post(_ transitions: [AgentNotifications.Transition]) {
     for transition in transitions {
       let words = AgentNotifications.content(transition)
@@ -197,9 +203,12 @@ final class MacServices {
       content.body = words.body
       content.sound = transition.kind == .needsInput ? .default : nil
       content.userInfo = ["agentId": transition.agentId]
+      content.threadIdentifier = transition.agentId
+      let picture = session?.store.agent(transition.agentId).flatMap(AvatarPictures.image(for:))
+      let shown = AgentMessage.content(content, transition, picture: picture)
       let id = UUID().uuidString
       posted.append(id)
-      UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
+      UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: shown, trigger: nil))
     }
   }
 
@@ -338,6 +347,64 @@ final class MacServices {
     } else if let item = menu.items.last(where: { $0.title == String(localized: "Help") }) {
       menu.removeItem(item)
     }
+  }
+}
+
+/**
+ * A notification as a message from its agent, as the iPhone shows pushes
+ * (ios/SimeonNotifications/NotificationService.swift): Apple's communication
+ * notification, the agent's face where the app's icon would be and the
+ * app's icon small in its corner, the agent's name above its words. It needs
+ * the Communication Notifications entitlement and `INSendMessageIntent` in
+ * `NSUserActivityTypes` (project.yml); when macOS refuses it, the
+ * notification shows as plain words, as before.
+ */
+@MainActor
+enum AgentMessage {
+  static func content(_ content: UNMutableNotificationContent, _ transition: AgentNotifications.Transition, picture: NSImage?) -> UNNotificationContent {
+    let said = AgentNotifications.message(transition)
+    let image = picture.flatMap(png).map { INImage(imageData: $0) }
+    let sender = INPerson(
+      personHandle: INPersonHandle(value: transition.agentId, type: .unknown),
+      nameComponents: nil,
+      displayName: said.sender,
+      image: image,
+      contactIdentifier: nil,
+      customIdentifier: transition.agentId
+    )
+    let intent = INSendMessageIntent(
+      recipients: nil,
+      outgoingMessageType: .outgoingMessageText,
+      content: said.line,
+      speakableGroupName: nil,
+      conversationIdentifier: transition.agentId,
+      serviceName: nil,
+      sender: sender,
+      attachments: nil
+    )
+    if let image { intent.setImage(image, forParameterNamed: \.sender) }
+    let interaction = INInteraction(intent: intent, response: nil)
+    interaction.direction = .incoming
+    interaction.donate(completion: nil)
+    guard let message = content.mutableCopy() as? UNMutableNotificationContent else { return content }
+    message.body = said.line
+    return (try? message.updating(from: intent)) ?? content
+  }
+
+  /** The face as a square PNG, 256 px, its middle when it is not square (the sidebar's circle shows the same). */
+  private static func png(_ image: NSImage) -> Data? {
+    let side = 256
+    let size = image.size
+    guard size.width > 0, size.height > 0,
+          let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+    else { return nil }
+    let edge = min(size.width, size.height)
+    let middle = NSRect(x: (size.width - edge) / 2, y: (size.height - edge) / 2, width: edge, height: edge)
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+    image.draw(in: NSRect(x: 0, y: 0, width: side, height: side), from: middle, operation: .copy, fraction: 1)
+    NSGraphicsContext.restoreGraphicsState()
+    return rep.representation(using: .png, properties: [:])
   }
 }
 

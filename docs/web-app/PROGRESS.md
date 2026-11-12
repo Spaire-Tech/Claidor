@@ -842,6 +842,31 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 12 November 2026: Windows' notifications as messages from the agent, with its face
+
+- The founder, 12 November 2026, of the Mac's notifications: "its the agent avatar, and below the
+  smal simeonlabs icon. make sure even windows behave that way". The iPhone shows an agent's push
+  as a message from that agent (`SimeonNotifications`); the Mac now does too (`MacServices.swift`'s
+  `AgentMessage`), and so does Windows.
+- The words (`notificationMessage`, the core's `AgentNotifications.message`): the agent's name as
+  the title; "Needs your input." (the engine's "Waiting for your input." included), or "Needs you:"
+  and the reason, with Windows' sound; a finished turn's message without one. Two new strings,
+  "Needs your input." and "Needs you: %@", in the core's String Catalog in ten languages (from the
+  iPhone's notification extension); `pnpm words` and the committed build follow.
+- The face (`desktop/noteFace.ts`): the page draws the agent's picture round at 96 px over its
+  face's backdrop as a PNG (about 22 KB), once per picture, and sends it with `notify` as
+  `picture`. A face drawn before goes at once; a new one waits until drawn, at most 1.5 s, then the
+  notification goes without it. The Windows app checks it (`readNote`: a PNG data URL of at most
+  256 KB) and shows it as the toast's picture (`icon`); Windows puts Simeon's icon and name in the
+  toast's head itself.
+- The smoke check read the app's version as 0.1.0; it reads `package.json` now (0.1.1).
+
+Checked: the web app's suite (133 files, 1,283 tests), typecheck, eslint on the changed files, the
+build check; the Windows app's typecheck, tests (226) and smoke check under xvfb; a real face drawn
+in Chromium (96 px, round, clear corners). `pnpm lint`'s format check names four files this change
+does not touch (`RequestCards`, `ShopCards.test`, `requestCards.test`), as on `main`.
+Not checked: a toast on a Windows PC (how Windows crops the picture, its size in the toast).
+
 ### 12 November 2026: Cancel Trial's question says what the server does
 
 - The question under Settings › Usage & Billing › Cancel Trial said the trial ends now and its

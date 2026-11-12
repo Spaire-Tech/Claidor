@@ -85,6 +85,28 @@ public enum AgentNotifications {
   }
 
   /**
+   * The notification as a message from its agent, as the iPhone shows
+   * pushes (SimeonNotifications, 12 October 2026; the Mac and Windows since
+   * 12 November): who sends it, and what it says. "Iris needs you" becomes
+   * a message from Iris that says so; the engine's "Waiting for your input."
+   * says "Needs your input."
+   */
+  public static func message(_ transition: Transition) -> (sender: String, line: String) {
+    let trimmed = jsTrim(transition.agentName)
+    let sender = trimmed.isEmpty ? L10n.text("Your agent") : trimmed
+    switch transition.kind {
+    case .needsInput:
+      let reason = jsTrim(transition.reason ?? "")
+      if reason.isEmpty || reason == "Waiting for your input." || reason == L10n.text("Waiting for your input.") {
+        return (sender, L10n.text("Needs your input."))
+      }
+      return (sender, L10n.text("Needs you: \(truncate(reason))"))
+    case .done:
+      return (sender, content(transition).body)
+    }
+  }
+
+  /**
    * Runs of spaces as one, then at most 140 (counted as the window's
    * JavaScript counts, in UTF-16 units): 139, trailing spaces dropped, and
    * "…". A cut through an emoji drops its first half, where JavaScript

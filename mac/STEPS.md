@@ -2436,7 +2436,11 @@ Pictures:
 27. The corner dot's cut, for pictures and butterflies alike, as in the
     window.
 28. The exchange chip's gap round each mark, as in the window.
-29. Notifications carry no picture, as in the window.
+29. Notifications carry no picture, as in the window. Changed 12 November
+    2026 (the founder: as the iPhone shows them): each is a message from
+    its agent, its face where the app's icon was, the app's icon small in
+    its corner (`AgentMessage`), in a release build
+    (`SimeonRelease.entitlements`).
 
 #### Where the native parts look different
 

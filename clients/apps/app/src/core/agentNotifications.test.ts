@@ -13,6 +13,7 @@ import {
   type NotificationSnapshot,
   type NotificationTransition,
   notificationContent,
+  notificationMessage,
   notificationSnapshot,
   notificationTransitions,
   shouldNotify,
@@ -74,6 +75,51 @@ describe('the notifications (NotificationTests)', () => {
       // A cut through an emoji: JavaScript keeps its first half alone before "…", the Mac (and this) drops it (the fixture's `note`).
       expect(content.body, row.name).toBe(output.body)
     }
+  })
+
+  it('words a notification as a message from its agent (testAsAMessageFromItsAgent)', () => {
+    const transition = (
+      kind: NotificationKind,
+      more: { name?: string; reason?: string; preview?: string } = {},
+    ): NotificationTransition => ({
+      agentId: 'a1',
+      agentName: more.name ?? '  Iris ',
+      kind,
+      reason: more.reason,
+      notifyEnabled: true,
+      isHidden: false,
+      lastMessageId: 'm1',
+      lastMessagePreview: more.preview,
+    })
+    expect(notificationMessage(transition('agent-needs-input')).sender).toBe(
+      'Iris',
+    )
+    expect(notificationMessage(transition('agent-needs-input')).line).toBe(
+      'Needs your input.',
+    )
+    expect(
+      notificationMessage(
+        transition('agent-needs-input', {
+          reason: ' Waiting for your input. ',
+        }),
+      ).line,
+    ).toBe('Needs your input.')
+    expect(
+      notificationMessage(
+        transition('agent-needs-input', { reason: 'Approve   the payment' }),
+      ).line,
+    ).toBe('Needs you: Approve the payment')
+    expect(
+      notificationMessage(
+        transition('agent-done', { preview: 'Done:  the report is ready' }),
+      ).line,
+    ).toBe('Done: the report is ready')
+    expect(notificationMessage(transition('agent-done')).line).toBe(
+      'Open Simeon to see what it did.',
+    )
+    expect(
+      notificationMessage(transition('agent-done', { name: ' ' })).sender,
+    ).toBe('Your agent')
   })
 
   it('notifies when the Electron app did (testWhenToNotify)', () => {

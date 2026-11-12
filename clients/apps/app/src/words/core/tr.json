@@ -1094,6 +1094,8 @@
  "Needs a Moz API plan.": "Moz API planı gerekir.",
  "Needs attention": "Dikkat gerekiyor",
  "Needs auth": "Giriş gerekli",
+ "Needs you: %@": "Seni bekliyor: %@",
+ "Needs your input.": "Yanıtını bekliyor.",
  "Never allow": "Asla izin verme",
  "New message in channel": "Kanalda yeni mesaj",
  "New messages": "Yeni mesajlar",
