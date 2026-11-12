@@ -48,6 +48,8 @@ from simeon.redis import Redis
 from simeon.user.repository import UserRepository
 
 from . import box_store
+from .box_azure import KIND as AZURE_KIND
+from .box_azure import port_headers as azure_port_headers
 from .box_e2b import KIND as E2B_KIND
 from .box_e2b import TRAFFIC_HEADER as E2B_TRAFFIC_HEADER
 from .box_hosts import (
@@ -610,9 +612,24 @@ def sleeping_key(box_id: UUID) -> str:
 async def dial_headers(box: SandBox) -> dict[str, str]:
     """What the API sends to a box besides its own request: an E2B box's
     traffic token, without which E2B's proxy refuses the request (public
-    traffic to the box is off, `box_e2b.py`). Empty for Docker. Join it to
+    traffic to the box is off, `box_e2b.py`), or the server's own Microsoft
+    token for an Azure box's port. Empty for Docker. Join it to
     a request's own headers with `with_dial`."""
-    token = (box.host_meta or {}).get("traffic_token")
+    meta = box.host_meta or {}
+    if meta.get("kind") == AZURE_KIND:
+        # Each port admits only the server's own identity: Microsoft's token
+        # in `Authorization`, which Azure's proxy removes (`box_azure.py`).
+        # Without one (Microsoft's sign-in refused or unreachable) the
+        # request goes on bare, Azure answers 401, and the caller sees an
+        # unreachable box, never a server error.
+        try:
+            return await azure_port_headers()
+        except BoxHostError as error:
+            log.warning(
+                "sand.box.azure.port_sign_in_failed", box=str(box.id), error=str(error)
+            )
+            return {}
+    token = meta.get("traffic_token")
     return {E2B_TRAFFIC_HEADER: token} if token else {}
 
 
@@ -725,8 +742,15 @@ class BoxBrokerService:
         check: the box host's published port (Docker), or E2B's
         `https://<port>-<sandbox>.<domain>`, which wants the box's traffic
         token as well (`dial_headers`)."""
-        if (box.host_meta or {}).get("kind") == E2B_KIND:
+        meta = box.host_meta or {}
+        if meta.get("kind") == E2B_KIND:
             return f"https://{inner_port}-{box.provider_box_id}.{box.host_address}"
+        if meta.get("kind") == AZURE_KIND:
+            # The port's own address as Azure gave it, else its shape
+            # (`https://<id>--<port>.<region>.adcproxy.io`).
+            return meta.get(f"url_{inner_port}") or (
+                f"https://{box.provider_box_id}--{inner_port}.{box.host_address}"
+            )
         host_port = box.host_port(inner_port)
         if host_port is None:
             return None
