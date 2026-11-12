@@ -28,7 +28,10 @@ settings:
     # 0.2.12 (5 November 2026): words chosen across messages and copied in order; one "@" list; the Help Center.
     # 0.2.13 (7 November 2026): the chat in a column 960 wide, centred, as on Windows.
     # 0.2.14 (9 November 2026): Settings › AI Models, the person's own ChatGPT and Claude plans.
-    MARKETING_VERSION: "0.2.14"
+    # 0.2.15 (12 November 2026): the model and thinking effort on the composer, xAI plans and API keys, the
+    # Credentials Store's cards, External Agents, the Network, the cards' new style, the Connect GitHub
+    # card, Slack under Notifications in the agent's profile, the routine bar's buttons.
+    MARKETING_VERSION: "0.2.15"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
