@@ -394,11 +394,13 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .hit em{font-style:normal;color:var(--ink);font-weight:var(--w-title)}
 .hits .nothing{padding:20px 12px;text-align:center;font-size:14px;color:var(--ink2)}
 .pages>summary{display:none}
-.group+.group{margin-top:24px}
-.group-name{display:block;padding:5px 10px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
-.group a{display:block;padding:6px 10px;border-radius:10px;font-size:14px;line-height:1.45;letter-spacing:-.01em;text-decoration:none;color:var(--ink2);transition:color .15s,background .15s}
-.group a:hover{color:var(--ink);background:var(--soft)}
-.group a[aria-current]{color:var(--ink);background:var(--soft)}
+/* The pages as the founder's reference lists them (12 November 2026: "can we get ours like [it]. also clearer font"):
+   no pill, the group's name and the page you are on in black, the others grey, flush with the search's words, roomier */
+.group+.group{margin-top:34px}
+.group-name{display:block;padding:0 0 6px 2px;font-size:15px;font-weight:var(--w-title);letter-spacing:-.012em;color:var(--ink)}
+.group a{display:block;padding:7px 0 7px 2px;font-size:15px;line-height:1.4;letter-spacing:-.012em;text-decoration:none;color:#6e6e73;-webkit-font-smoothing:antialiased;transition:color .15s}
+.group a:hover{color:var(--ink)}
+.group a[aria-current]{color:var(--ink);font-weight:var(--w-title)}
 
 /* The page */
 .docs .page{min-width:0;width:100%;max-width:680px;margin-inline:auto;padding-top:clamp(24px,2.4*var(--vw,1vw),44px)}
@@ -488,7 +490,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
   .pages>summary svg{width:12px;height:12px;transition:transform .2s}
   .pages[open]>summary svg{transform:rotate(180deg)}
   .pages[open]>summary{margin-bottom:16px}
-  .group a{font-size:var(--t-body);padding:8px 10px}
+  .group a{font-size:var(--t-body);padding:9px 0 9px 2px}
   .docs .page{padding-top:28px}
   .cards{grid-template-columns:1fr}
 }
