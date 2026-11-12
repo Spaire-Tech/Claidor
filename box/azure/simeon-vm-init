@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# The first process of Simeon's cloud computer on Azure (12 November 2026),
+# the image's ENTRYPOINT (box/azure/Dockerfile) and the `entrypoint` the
+# server names when it makes a computer (server/simeon/sand/box_azure.py).
+#
+# A new computer boots before anything of the person's is on it. The server
+# then writes, as root, through Azure's file API:
+#
+#   /var/lib/simeon/box.env   the person's settings (`BoxSpec.environment()`)
+#   /var/lib/simeon/seed      64 random bytes
+#   /etc/machine-id           the computer's own id
+#   the engine (/home/box/sand-host, /home/box/box-exec-daemon)
+#
+# and last /var/lib/simeon/ready. This waits for that mark, puts the settings
+# and the randomness where start-simeon-vm reads them (/run/simeon, as on
+# E2B) and becomes start-simeon-vm, which starts the image's own stack and
+# restarts it when it exits.
+#
+# The settings stay on the disk (owner only), so a computer that Azure ever
+# starts again fresh, instead of waking it from its frozen memory, starts
+# its stack again on its own. A wake from memory does not run this again:
+# the processes go on where they were.
+set -uo pipefail
+
+STATE_DIR=${SIMEON_STATE_DIR:-/var/lib/simeon}
+RUN_DIR=${SIMEON_RUN_DIR:-/run/simeon}
+START=${SIMEON_VM_START:-/usr/local/bin/start-simeon-vm}
+POLL_S=${SIMEON_VM_INIT_POLL_S:-0.5}
+LOG="$STATE_DIR/init.log"
+
+# As the machine's first process, tini (when the image has it) reaps what
+# the desktop leaves behind, as it does for Docker (box/Dockerfile).
+if [ "$$" = 1 ] && [ -x /usr/bin/tini ]; then
+  exec /usr/bin/tini -- "$0" "$@"
+fi
+
+mkdir -p "$STATE_DIR" && chmod 700 "$STATE_DIR"
+log() { printf '%s [simeon-vm-init] %s\n' "$(date -u +%FT%TZ)" "$*" >>"$LOG"; }
+
+if [ ! -f "$STATE_DIR/ready" ]; then
+  log "waiting for the server to write the settings"
+  until [ -f "$STATE_DIR/ready" ]; do sleep "$POLL_S"; done
+fi
+if [ ! -f "$STATE_DIR/box.env" ]; then
+  log "ready, but there is no $STATE_DIR/box.env"
+  exit 64
+fi
+
+mkdir -p "$RUN_DIR" && chmod 700 "$RUN_DIR"
+install -m 600 "$STATE_DIR/box.env" "$RUN_DIR/box.env"
+# The randomness is used once, at the first start.
+if [ -f "$STATE_DIR/seed" ]; then
+  mv -f "$STATE_DIR/seed" "$RUN_DIR/seed" && chmod 600 "$RUN_DIR/seed"
+fi
+log "starting $START"
+exec "$START"

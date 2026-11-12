@@ -825,3 +825,70 @@ class TestLimits:
             settings.BOX_MEMORY_LIMIT_MB,
             settings.BOX_CPU_LIMIT,
         )
+
+
+@pytest.mark.asyncio
+async def test_the_sleeper_asks_awake_computers_side_by_side(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """12 November 2026: the sleeper asked each awake computer in turn, so a
+    thousand of them took longer than the minute between rounds. It asks
+    `SLEEPER_LOOKS_AT_ONCE` at a time now, and keeps the order."""
+    import asyncio
+    from types import SimpleNamespace
+
+    from simeon.sand.box_hosts import BoxHostError
+
+    in_flight = 0
+    most = 0
+    kept_alive: list[str] = []
+
+    class Host:
+        name = "h"
+
+        async def run_state(self, provider_box_id: str) -> str:
+            nonlocal in_flight, most
+            in_flight += 1
+            most = max(most, in_flight)
+            await asyncio.sleep(0.01)
+            in_flight -= 1
+            if provider_box_id == "p5":
+                raise BoxHostError("the server did not answer")
+            return "stopped" if provider_box_id == "p3" else "running"
+
+        async def keep_alive(self, provider_box_id: str) -> None:
+            kept_alive.append(provider_box_id)
+
+    async def health_of(box: Any) -> BoxHealth:
+        return BoxHealth(reachable=True)
+
+    monkeypatch.setattr(broker, "health_of", health_of)
+    monkeypatch.setattr(box_service, "SLEEPER_LOOKS_AT_ONCE", 4)
+    boxes = [SimpleNamespace(id=i, provider_box_id=f"p{i}") for i in range(10)]
+    host = Host()
+
+    looks = await broker._look_at_awake([(host, box) for box in boxes])  # type: ignore[misc]
+
+    assert most == 4, "four at a time, never more"
+    assert [look.state for look in looks] == [
+        "running",
+        "running",
+        "running",
+        "stopped",
+        "running",
+        None,
+        "running",
+        "running",
+        "running",
+        "running",
+    ], "in the order given"
+    assert looks[3].health is None, "a stopped one is not asked its health"
+    assert isinstance(looks[5].error, BoxHostError)
+    assert all(
+        look.health is not None and look.health.reachable
+        for i, look in enumerate(looks)
+        if i not in (3, 5)
+    )
+    assert sorted(kept_alive) == sorted(
+        f"p{i}" for i in range(10) if i not in (3, 5)
+    ), "only a running one has its server's timeout pushed out"

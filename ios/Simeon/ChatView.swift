@@ -2139,14 +2139,24 @@ struct FailedSendRow: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    HStack(spacing: 4) {
-      Spacer(minLength: 0)
-      Image(systemName: "exclamationmark.circle.fill").font(.system(size: 12)).foregroundStyle(Ink.danger)
-      Text("Failed to send").foregroundStyle(Ink.danger)
-      Button { Task { await store.resend(nonce, in: agentId) } } label: { action(String(localized: "Resend")) }
-      Button { store.discardFailed(nonce, in: agentId) } label: { action(String(localized: "Delete")) }
+    VStack(alignment: .trailing, spacing: 0) {
+      HStack(spacing: 4) {
+        Spacer(minLength: 0)
+        Image(systemName: "exclamationmark.circle.fill").font(.system(size: 12)).foregroundStyle(Ink.danger)
+        Text("Failed to send").foregroundStyle(Ink.danger)
+        Button { Task { await store.resend(nonce, in: agentId) } } label: { action(String(localized: "Resend")) }
+        Button { store.discardFailed(nonce, in: agentId) } label: { action(String(localized: "Delete")) }
+      }
+      .buttonStyle(.tactile)
+      // Why, when it can be said plainly ("The Internet connection appears to be offline."; `failureReason`).
+      if let reason = store.failureReason(nonce, in: agentId) {
+        Text(verbatim: reason)
+          .font(.system(size: 12))
+          .foregroundStyle(Ink.secondary)
+          .multilineTextAlignment(.trailing)
+          .padding(.horizontal, 6)
+      }
     }
-    .buttonStyle(.tactile)
     .font(.system(size: 12, weight: .medium))
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Failed message actions")

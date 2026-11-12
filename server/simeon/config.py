@@ -421,6 +421,25 @@ class Settings(BaseSettings):
     )
     E2B_TEMPLATE: str = "simeon-box"
     E2B_DOMAIN: str = ""
+    # Azure Container Apps Sandboxes (12 November 2026,
+    # docs/ops/box-host/azure-plan.md): a server in SIMEON_BOX_HOSTS with
+    # "kind": "azure" makes each computer an Azure sandbox, a small virtual
+    # machine frozen whole when idle (simeon/sand/box_azure.py). The server
+    # signs in to Microsoft as its own identity (a service principal):
+    # AZURE_TENANT_ID, AZURE_CLIENT_ID and AZURE_CLIENT_SECRET (the secret,
+    # set on Render only). The sandbox group lives in AZURE_SUBSCRIPTION_ID,
+    # AZURE_RESOURCE_GROUP and AZURE_REGION; AZURE_DISK_IMAGE is the disk
+    # image built from box/azure (box/azure/build.sh). Each computer's ports
+    # accept only AZURE_SERVER_OBJECT_ID, the identity's object id.
+    AZURE_TENANT_ID: str = ""
+    AZURE_CLIENT_ID: str = ""
+    AZURE_CLIENT_SECRET: str = ""
+    AZURE_SUBSCRIPTION_ID: str = ""
+    AZURE_RESOURCE_GROUP: str = "simeon-computers"
+    AZURE_SANDBOX_GROUP: str = "simeon-computers"
+    AZURE_REGION: str = "westus3"
+    AZURE_DISK_IMAGE: str = "simeon-box"
+    AZURE_SERVER_OBJECT_ID: str = ""
     # A .tar or .tar.gz with `host/host-main.cjs` and
     # `box-exec-daemon/main.cjs` (what `npm run package` builds into
     # desktop/dist), uploaded into the container before it starts. Empty:

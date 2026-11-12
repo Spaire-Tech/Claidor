@@ -1366,15 +1366,24 @@ private struct FailedSend: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    HStack(spacing: 8) {
-      Text("Failed to send")
-        .foregroundStyle(Color(nsColor: .systemRed))
-      Button("Resend") { Task { await store.resend(nonce, in: agentId) } }
-        .buttonStyle(.hand)
-        .foregroundStyle(look.link)
-      Button("Delete") { store.discardFailed(nonce, in: agentId) }
-        .buttonStyle(.hand)
-        .foregroundStyle(look.inkSecondary)
+    VStack(alignment: .trailing, spacing: 2) {
+      HStack(spacing: 8) {
+        Text("Failed to send")
+          .foregroundStyle(Color(nsColor: .systemRed))
+        Button("Resend") { Task { await store.resend(nonce, in: agentId) } }
+          .buttonStyle(.hand)
+          .foregroundStyle(look.link)
+        Button("Delete") { store.discardFailed(nonce, in: agentId) }
+          .buttonStyle(.hand)
+          .foregroundStyle(look.inkSecondary)
+      }
+      // Why, when it can be said plainly ("The Internet connection appears to be offline."; `failureReason`).
+      if let reason = store.failureReason(nonce, in: agentId) {
+        Text(verbatim: reason)
+          .foregroundStyle(look.inkSecondary)
+          .multilineTextAlignment(.trailing)
+          .textSelection(.enabled)
+      }
     }
     .font(.system(size: 12))
     .padding(.top, 4)

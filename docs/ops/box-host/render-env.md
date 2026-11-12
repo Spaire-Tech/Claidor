@@ -274,6 +274,103 @@ next replacement gets the disk. The engine published after 16 October 2026
 also leaves a tmpfs out of the check, and on a small disk says "low" at 30%
 free rather than 8 GiB (an E2B computer has 15 GiB, 9.6 free when new).
 
+## Azure: computers on Microsoft's sandboxes
+
+An entry with `"kind": "azure"` puts computers on Azure Container Apps
+Sandboxes (`server/simeon/sand/box_azure.py`, 12 November 2026). It is the
+E2B design on Microsoft's service, paid from the Azure credits: one small
+virtual machine per computer, frozen whole when idle (memory, open tabs and
+running programs kept) and back in a second or two. Why, the costs and the
+checks: `docs/ops/box-host/azure-plan.md`.
+
+**The image is box2's own image again** (the pinned digest), with
+`simeon-vm-init` and `start-simeon-vm` added (`box/azure/Dockerfile`). A new
+computer boots with nothing of the person's on it. The server then writes,
+as root, the person's settings to `/var/lib/simeon/box.env` (owner only),
+fresh randomness, the machine id and the engine, and last the mark
+`/var/lib/simeon/ready`. `simeon-vm-init` waits for that mark, then starts
+the stack as on E2B.
+
+**The settings**, in the shared environment group (the API and the worker
+both need them):
+
+| Setting | What |
+|---|---|
+| `SIMEON_AZURE_TENANT_ID` | The tenant (Step 0 of the plan) |
+| `SIMEON_AZURE_CLIENT_ID` | The server identity's `appId` |
+| `SIMEON_AZURE_CLIENT_SECRET` | Its password, the only secret. On Render only |
+| `SIMEON_AZURE_SUBSCRIPTION_ID` | The subscription |
+| `SIMEON_AZURE_SERVER_OBJECT_ID` | The identity's object id. Each port admits only it |
+| `SIMEON_AZURE_RESOURCE_GROUP`, `SIMEON_AZURE_SANDBOX_GROUP` | Default `simeon-computers` |
+| `SIMEON_AZURE_REGION` | Default `westus3` |
+| `SIMEON_AZURE_DISK_IMAGE` | The disk image's name, as `build.sh` prints it |
+
+Three things, once:
+
+1. **The engine**, published after 12 November 2026: its gateway reads its
+   password from `x-simeon-box-authorization` as well, because Azure's sign-in
+   on each port takes `Authorization` for itself and removes it.
+2. **The image**, from a Mac with this repository: `git pull`, `az login`,
+   then `bash box/azure/build.sh`. Your own account needs the role
+   "Container Apps SandboxGroup Data Owner" on the sandbox group (Step 0).
+   It builds the image in Azure, makes the disk image from it, prints
+   `SIMEON_AZURE_DISK_IMAGE=simeon-box-<commit>-<time>`, then makes one test
+   computer, measures it for about 20 minutes and removes it. It must end
+   with the JSON and no `error`. Look for:
+   - `"first_process": "waiting"` (the image's first process ran);
+   - `"file_mode_600_reads": "600 root"`;
+   - `screen_without_token` 401, `screen_with_token` 200,
+     `other_identitys_port` 403;
+   - `websocket` opened, with `first_words` `RFB …`;
+   - each `freeze_and_wake` round with `process_still_there: true`;
+   - `"auto_suspend_off_honoured": true`.
+
+   `bash box/azure/build.sh --check-only <name>` measures an existing disk
+   image again.
+3. **The entry**, `SIMEON_BOX_HOSTS` in the shared group:
+
+```
+[{"name": "azure-1", "kind": "azure", "users": ["*"], "idle_minutes": 10, "max_running": 0}]
+```
+
+- `max_running: 0` means no limit of ours. Azure's own limits (cores awake
+  in the region, calls a minute) show in the app as "computers all in use,
+  trying again in a minute" (`sand.box.azure.full`), never as an error.
+- `template`: only to use another disk image than `SIMEON_AZURE_DISK_IMAGE`.
+- A new disk image name gives each person a new computer at their next
+  start, copied from their backup, as a new image does on Docker.
+- `users` and `idle_minutes` work as on E2B (above).
+
+`SIMEON_BOX_HOST_PROVIDER=azure` with `SIMEON_BOX_HOSTS` empty is the same
+as one entry named `azure` for everyone. Going back: set `SIMEON_BOX_HOSTS`
+to the E2B entry; the next start makes a fresh computer on E2B.
+
+**Log lines.**
+- `sand.box.azure.created`: a computer made; `workers` and `tmp` as on E2B.
+- `sand.box.azure.resume_failed` (`waited_s`, `state`): a wake that did not
+  end within two minutes (Azure's open bug #1869). The computer is removed,
+  and the app's next try makes a new one from the backup.
+- `sand.box.azure.resume_unanswered`: a wake call Azure did not answer; it
+  is asked again while the computer still sleeps.
+- `sand.box.azure.sign_in_refused` (`code`): Microsoft refused the server's
+  sign-in. Check the tenant, client id and secret.
+- `sand.box.azure.port_sign_in_failed`: no token for the ports; the computer
+  looks unreachable until the sign-in works again.
+- `sand.box.azure.older_audience`: the data plane took the older sign-in
+  audience (harmless).
+- `sand.box.azure.clock_not_set`, `sand.box.azure.cleanup_failed`,
+  `sand.box.azure.bundle_incomplete`, `sand.box.azure.tmp_in_memory`: as
+  their E2B names.
+
+**Every call answers "Azure refused Simeon's identity".** The server's
+identity lacks the role "Container Apps SandboxGroup Data Owner" on the
+sandbox group, or it was given in the last minute or two.
+
+Not known until the first computers run: what Azure's proxy answers for a
+computer that is gone (`check_sandbox.py` prints it as `port_after_removed`;
+the proxy's "gone" check is E2B's only until then), and whether WebSockets
+last 30 minutes (the check holds one for a minute).
+
 ## The API's size
 
 Every message and every screen frame between an app and its computer

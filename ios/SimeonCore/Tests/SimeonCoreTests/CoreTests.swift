@@ -1433,11 +1433,21 @@ final class ChatDeliveryTests: XCTestCase {
     XCTAssertEqual(mine.text, "Book the flight")
     XCTAssertTrue(mine.fromPerson)
     XCTAssertEqual(nonce, mine.id)
+    // Why, under "Failed to send", and in the activity a report carries (12 November 2026).
+    XCTAssertEqual(store.failureReason(nonce, in: "theo"), "offline")
+    XCTAssertTrue(RecentActivity.all.contains { $0.hasSuffix("send failed in theo: offline") })
+
+    // Words that name the plumbing are not shown: only "Failed to send".
+    backend.failWith = "gateway sendMessage failed: <!DOCTYPE html><title>Blocked</title>"
+    await store.resend(nonce, in: "theo")
+    XCTAssertNil(store.failureReason(nonce, in: "theo"))
+    backend.failWith = "offline"
 
     // Resend: it goes, and the host's copy takes its place.
     backend.failSends = false
     await store.resend(nonce, in: "theo")
     XCTAssertFalse(store.rows(for: "theo").contains { if case .failedSend = $0 { return true }; return false })
+    XCTAssertNil(store.failureReason(nonce, in: "theo"))
     backend.push(.transcript(.upsert(agentId: "theo", entry: Entry(["kind": "message", "id": "u2", "role": "user", "content": "Book the flight", "timestampMs": 2_000])!)))
     try await Task.sleep(nanoseconds: 50_000_000)
     let ids = store.rows(for: "theo").compactMap { row -> String? in if case .bubble(let b) = row { return b.id }; return nil }
@@ -1506,6 +1516,7 @@ final class ChatDeliveryTests: XCTestCase {
 final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   var lines: [JSON] = [["kind": "message", "id": "u1", "role": "user", "content": "Hi Theo", "timestampMs": 1_000]]
   var failSends = false
+  var failWith = "offline"
   private var continuation: AsyncStream<BackendEvent>.Continuation?
   func push(_ event: BackendEvent) { continuation?.yield(event) }
   func listAgents() async throws -> [Agent] { [Agent(id: "theo", name: "Theo")] }
@@ -1522,7 +1533,7 @@ final class ScriptedBackend: AgentBackend, @unchecked Sendable {
   /** The fetch of the chat fails (`transcriptPage`). */
   var failLoads = false
   func send(_ agentId: String, text: String, attachments: [AttachmentRef], options: SendOptions, nonce: String?) async throws {
-    if failSends { throw GatewayError(message: "offline", refused: false) }
+    if failSends { throw GatewayError(message: failWith, refused: false) }
     sent.append((text, options))
   }
   func markRead(_ agentId: String) async {}
