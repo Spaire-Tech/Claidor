@@ -229,8 +229,28 @@ migrations = MigrationLog()
 HealthCheck = Callable[..., Awaitable[bool]]
 
 
+#: The header the gateway also reads its password from (`gateway-server.ts`,
+#: `GATEWAY_BOX_AUTH_HEADER`, 12 November 2026): on Azure, Microsoft's
+#: sign-in on the computer's ports takes `Authorization` for itself and
+#: removes it before the request arrives (docs/ops/box-host/azure-plan.md,
+#: section 3).
+BOX_AUTH_HEADER = "x-simeon-box-authorization"
+
+
+def with_dial(sent: Mapping[str, str], dial: Mapping[str, str]) -> dict[str, str]:
+    """The headers a request to a box goes with: what the app or the server
+    sent, then what the dial needs (`dial_headers`). When the dial carries
+    `Authorization` itself (Azure's token), the one sent moves to
+    `BOX_AUTH_HEADER`; everywhere else nothing moves."""
+    out = dict(sent)
+    if any(name.lower() == "authorization" for name in dial):
+        for name in [name for name in out if name.lower() == "authorization"]:
+            out[BOX_AUTH_HEADER] = out.pop(name)
+    return {**out, **dial}
+
+
 def _with(token: str, headers: Mapping[str, str] | None) -> dict[str, str]:
-    return {**(headers or {}), "authorization": f"Bearer {token}"}
+    return with_dial({"authorization": f"Bearer {token}"}, headers or {})
 
 
 async def gateway_health(
@@ -587,18 +607,19 @@ def sleeping_key(box_id: UUID) -> str:
 # --- reaching a box ------------------------------------------------------------
 
 
-def dial_headers(box: SandBox) -> dict[str, str]:
+async def dial_headers(box: SandBox) -> dict[str, str]:
     """What the API sends to a box besides its own request: an E2B box's
     traffic token, without which E2B's proxy refuses the request (public
-    traffic to the box is off, `box_e2b.py`). Empty for Docker."""
+    traffic to the box is off, `box_e2b.py`). Empty for Docker. Join it to
+    a request's own headers with `with_dial`."""
     token = (box.host_meta or {}).get("traffic_token")
     return {E2B_TRAFFIC_HEADER: token} if token else {}
 
 
-def _dial(box: SandBox) -> dict[str, Any]:
+async def _dial(box: SandBox) -> dict[str, Any]:
     """`dial_headers` as the gateway checks take it: only when there are
     some, so a check written for Docker boxes keeps its two arguments."""
-    headers = dial_headers(box)
+    headers = await dial_headers(box)
     return {"headers": headers} if headers else {}
 
 
@@ -1133,7 +1154,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        return await _token_check(url, box.gateway_token, **_dial(box))
+        return await _token_check(url, box.gateway_token, **await _dial(box))
 
     async def wait_ready(self, box: SandBox) -> bool:
         url = self.internal_url(box, GATEWAY_PORT)
@@ -1141,7 +1162,7 @@ class BoxBrokerService:
             return False
         deadline = utc_now() + settings.BOX_READY_TIMEOUT
         while True:
-            if await _health_check(url, box.gateway_token, **_dial(box)):
+            if await _health_check(url, box.gateway_token, **await _dial(box)):
                 return True
             if utc_now() >= deadline:
                 return False
@@ -1762,7 +1783,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return False
-        flushed = await _flush_box_store(url, box.gateway_token, **_dial(box))
+        flushed = await _flush_box_store(url, box.gateway_token, **await _dial(box))
         log.info("sand.box.store.flush", box=str(box.id), flushed=flushed)
         return flushed
 
@@ -1770,7 +1791,7 @@ class BoxBrokerService:
         url = self.internal_url(box, GATEWAY_PORT)
         if url is None:
             return BoxHealth(reachable=False)
-        return await _health_report(url, box.gateway_token, **_dial(box))
+        return await _health_report(url, box.gateway_token, **await _dial(box))
 
     async def hibernate(
         self,

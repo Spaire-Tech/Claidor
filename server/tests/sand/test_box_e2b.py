@@ -639,7 +639,7 @@ class TestOnE2B:
         assert box.host_meta == {"kind": "e2b", "traffic_token": "traffic-sbx1"}
         assert broker.internal_url(box, 1340) == "https://1340-sbx1.e2b.app"
         assert broker.internal_url(box, 6080) == "https://6080-sbx1.e2b.app"
-        assert dial_headers(box) == {"e2b-traffic-access-token": "traffic-sbx1"}
+        assert await dial_headers(box) == {"e2b-traffic-access-token": "traffic-sbx1"}
         # The readiness check went to E2B's address with the token.
         assert (
             "https://1340-sbx1.e2b.app",
