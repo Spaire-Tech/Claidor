@@ -25,7 +25,7 @@ settings:
     # Credentials Store's cards, External Agents, the cards' new style,
     # Slack under Notifications in the agent's page; build 33, the same
     # day: the picture viewer's title is the picture's own name).
-    CURRENT_PROJECT_VERSION: "33"
+    CURRENT_PROJECT_VERSION: "34"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
