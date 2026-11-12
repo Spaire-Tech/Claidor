@@ -25,6 +25,7 @@ the VNC webview's `beforeSendHeaders` in `vnc-trust.ts`) or the
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
@@ -47,9 +48,16 @@ from simeon.postgres import AsyncSession
 from simeon.routing import APIRouter
 
 from .box_e2b import KIND as E2B_KIND
-from .box_hosts import BOX_PORTS, BoxHostError
+from .box_hosts import (
+    BOX_PORTS,
+    EGRESS_TUNNEL_PORT,
+    FORK_NOVNC_PORT,
+    PRIMARY_NOVNC_PORT,
+    BoxHostError,
+)
 from .box_service import (
     ATTACHED_REFRESH_SECONDS,
+    LETS_SLEEP_HEADER,
     broker,
     dial_headers,
     lets_sleep,
@@ -146,15 +154,56 @@ def _redis_of(connection: Request | WebSocket) -> Any:
     return getattr(connection.state, "redis", None)
 
 
-async def keep_attached(redis: Any, box_id: UUID, *, sleeps: bool = False) -> None:
+def connection_kind(port: int, path: str) -> str:
+    """The kind of connection a request through the proxy is, said when it
+    marks the box in use (`sand.box.awake reason=attached`, 12 November
+    2026): the app's event stream, the Mac's or the PC's hands, a command,
+    a screen being watched, the egress tunnel."""
+    if port in (PRIMARY_NOVNC_PORT, FORK_NOVNC_PORT):
+        return "screen"
+    if port == EGRESS_TUNNEL_PORT:
+        return "tunnel"
+    where = path.strip("/")
+    if where == "events":
+        return "events"
+    if where == "health":
+        return "health"
+    for prefix, kind in (
+        ("local-exec/", "local-exec"),
+        ("webauthn/", "webauthn"),
+        ("avatars/", "avatar"),
+        ("api/", "command"),
+    ):
+        if where.startswith(prefix):
+            return kind
+    return "other"
+
+
+async def keep_attached(
+    redis: Any,
+    box_id: UUID,
+    *,
+    sleeps: bool = False,
+    by: str = "unknown",
+    path: str = "",
+    header_sent: bool = False,
+) -> None:
     """While a request or stream to the box is open, the box counts as in
     use and the sleeper leaves it (`box_service.attached_key`); not for an
-    app that lets it sleep (`box_service.lets_sleep`)."""
+    app that lets it sleep (`box_service.lets_sleep`). The mark says what
+    made it (`by`, `path`, `header_sent`)."""
     if redis is None or sleeps:
         return
     while True:
-        await mark_attached(redis, box_id)
+        await mark_attached(redis, box_id, by=by, path=path, header_sent=header_sent)
         await asyncio.sleep(ATTACHED_REFRESH_SECONDS)
+
+
+def says_lets_sleep(headers: Any) -> bool:
+    """Whether the request carries `x-simeon-lets-sleep: 1`, whatever the
+    API's switch: with it sent and the box marked anyway, the switch is off
+    on the API."""
+    return headers.get(LETS_SLEEP_HEADER) == "1"
 
 
 #: What a browser adds to a request and the box must not see (4 October
@@ -298,7 +347,8 @@ async def _replacement(
 # later, the run left waiting for good). Such an answer now wakes the box and
 # goes once more; the run, frozen with the box, takes it where it stopped.
 # Nothing else the app sends wakes the box: the app wakes it when it needs it
-# (EnsureSandBox), and reading never does.
+# (EnsureSandBox), and reading never does. Nor does a batch of only the
+# hands' ping and hello (`carries_an_answer`, 12 November 2026).
 
 #: The paths that answer the box's own requests.
 ANSWERS = ("local-exec/responses", "webauthn/responses")
@@ -310,6 +360,33 @@ _wake: BoxWake = broker.wake_locked
 
 def answers_the_box(method: str, path: str) -> bool:
     return method == "POST" and path.strip("/") in ANSWERS
+
+
+#: What the hands send that answers nothing the box waits on: their hello and
+#: their ping every 10 s (`LocalExecWire.hello`, `LocalExecWire.ping`).
+KEEPALIVE_FRAMES = frozenset({"hello", "ping"})
+
+
+def carries_an_answer(body: bytes | None) -> bool:
+    """Whether a batch on an answer path carries an answer (12 November
+    2026). A batch of only the hands' ping and hello does not, and does not
+    wake a box asleep: once an open Mac no longer kept the box awake, its
+    ping, sent every 10 s, would have woken the box the moment it slept.
+    Anything else, or a body that does not read as a batch, counts as an
+    answer, as before."""
+    if not body:
+        return True
+    try:
+        batch = json.loads(body)
+    except ValueError:
+        return True
+    frames = batch.get("frames") if isinstance(batch, dict) else None
+    if not isinstance(frames, list) or not frames:
+        return True
+    return not all(
+        isinstance(frame, dict) and frame.get("kind") in KEEPALIVE_FRAMES
+        for frame in frames
+    )
 
 
 async def _woken(
@@ -355,8 +432,10 @@ async def _proxy_http(
     box, base, dial = resolved
     redis = _redis_of(request)
     sleeps = lets_sleep(request.headers)
+    kind = connection_kind(port, path)
+    header_sent = says_lets_sleep(request.headers)
     if redis is not None and not sleeps:
-        await mark_attached(redis, box.id)
+        await mark_attached(redis, box.id, by=kind, path=path, header_sent=header_sent)
     try:
         kept = await kept_body(request)
     except ClientDisconnect:
@@ -400,7 +479,7 @@ async def _proxy_http(
     if response.status_code >= 400:
         content = await response.aread()
         await response.aclose()
-        answers = answers_the_box(request.method, path)
+        answers = answers_the_box(request.method, path) and carries_an_answer(kept)
         deadline = time.monotonic() + REPLACED_WAIT_SECONDS
         while kept is not None and sandbox_gone(box, response.status_code, content):
             replaced = await _replacement(sessions, box, port, token, request)
@@ -457,7 +536,16 @@ async def _proxy_http(
     answer = response
 
     async def body() -> AsyncIterator[bytes]:
-        attached = asyncio.create_task(keep_attached(redis, box.id, sleeps=sleeps))
+        attached = asyncio.create_task(
+            keep_attached(
+                redis,
+                box.id,
+                sleeps=sleeps,
+                by=kind,
+                path=path,
+                header_sent=header_sent,
+            )
+        )
         try:
             async for chunk in answer.aiter_raw():
                 yield chunk
@@ -609,7 +697,12 @@ async def _proxy_ws(
     await websocket.accept(subprotocol=upstream.subprotocol)
     attached = asyncio.create_task(
         keep_attached(
-            _redis_of(websocket), box.id, sleeps=lets_sleep(websocket.headers)
+            _redis_of(websocket),
+            box.id,
+            sleeps=lets_sleep(websocket.headers),
+            by=connection_kind(port, path),
+            path=path,
+            header_sent=says_lets_sleep(websocket.headers),
         )
     )
     try:

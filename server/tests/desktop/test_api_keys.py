@@ -938,6 +938,61 @@ class TestTheRelay:
         assert body["reasoning"] == {"effort": "medium"}
         assert body["prompt_cache_key"] == "agent-nora"
 
+    async def test_background_work_on_a_key_is_sent_at_low(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _keyed(
+            session,
+            user,
+            "anthropic",
+            key="sk-ant-test-0000",
+            choose="own:anthropic:claude-opus-5-5",
+        )
+        user.meta = {**(user.meta or {}), own_models.EFFORT_KEY: "max"}
+        session.add(user)
+        await session.commit()
+        claude = "".join(
+            f"event: {one['type']}\ndata: {json.dumps(one)}\n\n"
+            for one in (
+                {
+                    "type": "message_start",
+                    "message": {"id": "msg_1", "usage": {"input_tokens": 3}},
+                },
+                {
+                    "type": "message_delta",
+                    "delta": {"stop_reason": "end_turn"},
+                    "usage": {"output_tokens": 1},
+                },
+                {"type": "message_stop"},
+            )
+        ).encode()
+        reasons = ["safety", "browser", "chat"]
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(f"{ANTHROPIC}/v1/messages").mock(
+                side_effect=[
+                    httpx.Response(
+                        200,
+                        content=claude,
+                        headers={"content-type": "text/event-stream"},
+                    )
+                    for _ in reasons
+                ]
+            )
+            for reason in reasons:
+                answer = await client.post(
+                    "/desktop/api/proxy/v1/responses",
+                    headers={**headers, "x-simeon-call-reason": reason},
+                    json=_engine_request("own:anthropic:claude-opus-5-5"),
+                )
+                assert answer.status_code == 200, answer.text
+        efforts = [
+            json.loads(call.request.content)["output_config"] for call in route.calls
+        ]
+        # The safety review and the helper in the browser at low (12 November
+        # 2026); the agent's own turn at the effort chosen.
+        assert efforts == [{"effort": "low"}, {"effort": "low"}, {"effort": "max"}]
+
 
 @pytest.mark.asyncio
 class TestNothingSecretIsLogged:

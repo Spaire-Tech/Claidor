@@ -2,7 +2,9 @@
  * Everything on the person's own Claude plan (11 November 2026, the founder:
  * "small jobs is their own plan and chosen model. and make sure everything
  * else is like that"). The small jobs (the safety review, memory, a summary,
- * a title) are one `claude -p` each on the model and effort chosen, with no
+ * a title) are one `claude -p` each on the model chosen, at low effort
+ * whatever the effort chosen (12 November 2026: background work runs at low,
+ * as on Simeon's own models), with no
  * tools and nothing kept on disk; Simeon's model answers only when Claude
  * Code can't, and Claude waits a while before it is tried again. A helper's
  * brief says its last words are its report; a group chat's that only
@@ -54,8 +56,9 @@ test("a small job is the system messages as Claude Code's own system prompt, the
   }
 });
 
-test("a small job runs on the chosen model and effort, with no tools and nothing kept", async () => {
+test("a small job runs on the chosen model at low effort, with no tools and nothing kept", async () => {
   const { module: jobs, dispose } = await load();
+  const lines = [];
   try {
     const args = jobs.claudeCodeTurnArgs({ prompt: "x", model: "claude-opus-5-5", effort: "high", tools: [], noSessionPersistence: true }, { system: "/tmp/system.md" }, "0b0e8f2e-0000-4000-8000-000000000001");
     assert.equal(args[args.indexOf("--model") + 1], "claude-opus-5-5");
@@ -66,9 +69,20 @@ test("a small job runs on the chosen model and effort, with no tools and nothing
     assert.ok(!args.includes("--append-system-prompt-file"));
     assert.ok(!args.includes("--mcp-config"));
 
+    // The person chose High: the agent's own turns think at High, a small job at low (12 November 2026).
     jobs.setSimeonModelRolesForTest({ primary: "gpt-6-sol", cheap: "gpt-6-luna", claudeCode: "claude-opus-5-5", claudeCodeEffort: "high" });
     jobs.resetClaudeCodeTextPause();
-    assert.deepEqual(jobs.claudeCodeTextChoice(), { model: "claude-opus-5-5", effort: "high" });
+    assert.deepEqual(jobs.claudeCodeTextChoice(), { model: "claude-opus-5-5", effort: "low" });
+    // Every effort the person may choose, and none: low all the same.
+    for (const chosen of ["low", "medium", "xhigh", "max", undefined]) {
+      jobs.setSimeonModelRolesForTest({ primary: "gpt-6-sol", cheap: "gpt-6-luna", claudeCode: "claude-opus-5-5", ...(chosen === undefined ? {} : { claudeCodeEffort: chosen }) });
+      assert.equal(jobs.claudeCodeTextChoice().effort, "low", String(chosen));
+    }
+    jobs.setSimeonModelRolesForTest({ primary: "gpt-6-sol", cheap: "gpt-6-luna", claudeCode: "claude-opus-5-5", claudeCodeEffort: "high" });
+    // Claude Code is given `--effort low`.
+    const jobArgs = jobs.claudeCodeTurnArgs({ prompt: "x", ...jobs.claudeCodeTextChoice(), tools: [], noSessionPersistence: true }, { system: "/tmp/system.md" }, undefined);
+    assert.equal(jobArgs[jobArgs.indexOf("--effort") + 1], "low");
+    jobs.setHostLogSink((line) => lines.push(line));
     const asked = [];
     const run = async (input) => { asked.push(input); return { kind: "done", sessionId: "s", text: "ALLOW", turns: 1 }; };
     let simeon = 0;
@@ -79,12 +93,15 @@ test("a small job runs on the chosen model and effort, with no tools and nothing
     assert.equal(simeon, 0);
     assert.equal(asked.length, 1);
     assert.equal(asked[0].model, "claude-opus-5-5");
-    assert.equal(asked[0].effort, "high");
+    assert.equal(asked[0].effort, "low");
     assert.equal(asked[0].systemPrompt, "Review.");
     assert.deepEqual(asked[0].tools, []);
     assert.equal(asked[0].noSessionPersistence, true);
     assert.equal(asked[0].prompt, "ls");
+    // The host log says the effort the job ran at.
+    assert.ok(lines.some((line) => / claude-code job model=claude-opus-5-5 effort=low outcome=done ms=\d+$/.test(line)), lines.join("\n"));
   } finally {
+    jobs.setHostLogSink(null);
     await dispose();
   }
 });

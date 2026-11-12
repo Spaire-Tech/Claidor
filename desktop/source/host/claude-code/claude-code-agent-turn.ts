@@ -33,7 +33,7 @@ import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } fr
 import { currentTurnModel, noteTurnModel } from "../extensions/inference/turn-model.js";
 import { getSandRootDir } from "../host-paths.js";
 import { bridgeEngineTools, CLAUDE_CODE_TOOLS_OFF, permissionBridgeTool, PERMISSION_TOOL_NAME, type BridgeCall, type EngineTool } from "./claude-code-tools.js";
-import { ClaudeCodeMemorySessions, ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeImage, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeSessionStore } from "./claude-code-turn.js";
+import { CLAUDE_CODE_BACKGROUND_EFFORT, ClaudeCodeMemorySessions, ClaudeCodeSessions, runAgentClaudeCodeTurn, SIMEON_MCP_SERVER, usageFromEvent, type ClaudeCodeImage, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeSessionStore } from "./claude-code-turn.js";
 import { startSimeonMcpServer } from "./simeon-mcp-server.js";
 
 /**
@@ -42,6 +42,8 @@ import { startSimeonMcpServer } from "./simeon-mcp-server.js";
  * agent started (the one on the computer's screen, the one driving Chrome,
  * a general one), whose last words are its report to that agent; an agent
  * in a group chat, whose words reach the room only through SendMessage.
+ * Each runs at the effort chosen, but the helpers on the screen and in the
+ * browser (`ClaudeCodeTurnInput.background`), at low since 12 November 2026.
  */
 export type ClaudeCodeTurnKind = "agent" | "helper" | "room";
 
@@ -51,6 +53,12 @@ export interface ClaudeCodeTurnInput {
   readonly conversationId: string;
   /** None: an agent in its own chat. */
   readonly kind?: ClaudeCodeTurnKind;
+  /**
+   * A helper on the computer's screen or in its browser (`isHelperSimeonSession`): background work, run at low
+   * effort whatever the effort chosen (12 November 2026, the founder), as Simeon's own models run it. A general
+   * helper and the agent's own turns keep the effort chosen.
+   */
+  readonly background?: boolean;
   readonly brief: string;
   readonly context?: string;
   readonly text: string;
@@ -149,7 +157,7 @@ export interface ClaudeCodeAgentTurnOptions {
   readonly helperSessions?: ClaudeCodeSessionStore;
   /** The model Claude Code runs on; the roles' `claudeCode` by default. */
   readonly model?: () => string | undefined;
-  /** How hard it thinks (`--effort`); the roles' `claudeCodeEffort` by default. */
+  /** How hard it thinks (`--effort`) on the agent's own turns and a general helper's; the roles' `claudeCodeEffort` by default. Background work runs at low. */
   readonly effort?: () => string | undefined;
   /** Claude Code's permission asks, answered by the person's safety review; none allows (the computer is the agent's own). */
   readonly review?: ((toolName: string, input: Readonly<Record<string, unknown>>, signal: AbortSignal) => Promise<{ allow: boolean; reason?: string }>) | undefined;
@@ -249,7 +257,8 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
     async run(input) {
       const chosenModel = model();
       if (chosenModel === undefined) return { ran: false };
-      const chosenEffort = effort();
+      // Background work at low; the agent's own turns and a general helper at the effort chosen.
+      const turnEffort = input.background === true ? CLAUDE_CODE_BACKGROUND_EFFORT : effort();
       const kind = input.kind ?? "agent";
       const sessions = kind === "helper" ? helperSessions : options.sessions;
       // A group chat's turns keep a session of their own: the agent's one-to-one chat isn't resumed with the room's words.
@@ -281,7 +290,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
           prompt: claudeCodePrompt(input.text, input.context, sessions.get(sessionKey) === undefined, input.images?.length ?? 0),
           ...(input.images === undefined || input.images.length === 0 ? {} : { images: input.images }),
           model: chosenModel,
-          effort: chosenEffort,
+          effort: turnEffort,
           brief: [claudeCodeBriefLead(kind), input.brief, claudeCodeBriefNote(kind)].filter((part) => part.trim() !== "").join("\n\n"),
           mcpServers: { [SIMEON_MCP_SERVER]: server.config },
           permissionPromptTool: `mcp__${SIMEON_MCP_SERVER}__${PERMISSION_TOOL_NAME}`,
@@ -298,7 +307,7 @@ export function createClaudeCodeAgentTurn(options: ClaudeCodeAgentTurnOptions): 
       if (usage !== undefined) {
         try { options.onUsage?.(usage); } catch { /* never in the way of the turn */ }
       }
-      options.log?.(`claude-code turn ${kind}=${input.conversationId} model=${chosenModel}${chosenEffort === undefined ? "" : ` effort=${chosenEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
+      options.log?.(`claude-code turn ${kind}=${input.conversationId} model=${chosenModel}${turnEffort === undefined ? "" : ` effort=${turnEffort}`} outcome=${outcome.kind} tools=${tools.length} ms=${now() - started}`);
       // What it said, whatever the outcome: a turn that moves to Simeon's model after Claude spoke keeps it too.
       const said = claudeCodeHistory(answered, outcome.kind === "done" ? outcome.text : "");
       switch (outcome.kind) {

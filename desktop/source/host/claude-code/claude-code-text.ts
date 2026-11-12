@@ -5,7 +5,10 @@
  * memory written after a turn, a long chat's summary, a title. Each is one
  * call that answers in words, made on Simeon's cheap model until then; with
  * Claude chosen it is one `claude -p` on the computer instead, on the model
- * and the effort the person chose, with no tools and nothing kept on disk.
+ * the person chose, with no tools and nothing kept on disk. Its effort is low
+ * whatever the effort chosen (12 November 2026, the founder: background work
+ * runs at low, as on Simeon's own models; from 11 November it ran at the
+ * effort chosen, and the safety review took 6 to 8 s per command at High).
  *
  * When Claude Code can't answer (the plan's limit, the sign-in gone, not
  * installed), the job runs on Simeon's model as before, as the agent's own
@@ -15,7 +18,7 @@
  */
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { reportClaudeCodeSignedOut, reportClaudeCodeUsage, simeonModelRoles } from "../extensions/inference/simeon-model-roles.js";
-import { runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "./claude-code-turn.js";
+import { CLAUDE_CODE_BACKGROUND_EFFORT, runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "./claude-code-turn.js";
 
 /** A message as the engine's executors hold them. */
 export interface TextJobMessage {
@@ -30,11 +33,11 @@ const MINUTE = 60_000;
 /** How long Claude isn't tried again for small jobs after it couldn't answer one. */
 let pausedUntil = 0;
 
-/** The model and effort a small job runs on when Claude is chosen and may be tried now; none otherwise. */
+/** The model and effort a small job runs on when Claude is chosen and may be tried now (the model chosen, at low); none otherwise. */
 export function claudeCodeTextChoice(now: number = Date.now()): { readonly model: string; readonly effort?: string } | undefined {
   const roles = simeonModelRoles();
   if (roles.claudeCode === undefined || now < pausedUntil) return undefined;
-  return { model: roles.claudeCode, ...(roles.claudeCodeEffort === undefined ? {} : { effort: roles.claudeCodeEffort }) };
+  return { model: roles.claudeCode, effort: CLAUDE_CODE_BACKGROUND_EFFORT };
 }
 
 /** For tests: Claude may be tried again at once. */

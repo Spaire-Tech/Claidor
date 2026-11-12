@@ -730,26 +730,44 @@ an API key chosen, every role the engine reads is the chosen model
 (`own_models.rows`: primary, cheap and computer), so the agent, its small jobs
 (titles, summaries, memory, the safety review) and its helper on the screen
 all run on the person's account; web search too (Grok searches on Grok 4.6,
-the one model with the proxy's search). The effort the person chose replaces
-the engine's own on every call, the small jobs' too (`codex_body`,
-`grok_body`, `chat_wire.effort_of`). Until then the small jobs ran on a
+the one model with the proxy's search). Until then the small jobs ran on a
 cheaper model of the plan or key (GPT-6 Luna, a key provider's `cheap`) at
 low effort.
 
+**The effort: the agent's turns as chosen, background work at low** (12
+November 2026, the founder: every way of running the agents behaves the
+same, as Simeon's own models already did). The agent's own replies (its
+chat, its group chats) and a general helper it starts think at the effort
+chosen on the composer. Background work runs on the same model and account
+at low, or the lowest a model takes when it has no low: the helpers on the
+screen, in the browser and on a video, the safety review, memory, a
+summary, a title, a web search. The relay reads which a call is from the
+engine's `x-simeon-call-reason`: `computer`, `browser`, `video`, `safety`,
+`memory`, `summary` and `cheap` are background work
+(`own_models.BACKGROUND_REASONS`, `call_effort`, passed to `codex_body`,
+`responses_body` and the key wires); every other reason keeps the effort
+chosen. From 11 to 12 November every call ran at the effort chosen: at High
+on the founder's Claude plan, the helper on the screen thought for about
+2 s before each click and the safety review took 6 to 8 s per command.
+
 With Claude chosen, the engine runs all of it in Claude Code on the computer,
-on the chosen model and effort: the agent's turns; its helpers (the one on
+on the chosen model: the agent's turns; its helpers (the one on
 the computer's screen, whose screenshots reach Claude as pictures, the one
 driving Chrome, the general ones) and its turns in group chats
 (`turn-agent-composition.ts`, `claudeCodeKind`); and each small job as one
 `claude -p` with no tools and nothing kept (`claude-code-text.ts`, routed in
-`provider-session.ts`). Only these stay on Simeon's: a video helper (Claude
+`provider-session.ts`). The agent's turns, its group-chat turns and its
+general helpers get the effort chosen; the helpers on the screen and in the
+browser (`claudeCodeBackground` in the agent's config, from
+`isHelperSimeonSession`) and each small job (`claudeCodeTextChoice`) get
+`--effort low`. Only these stay on Simeon's: a video helper (Claude
 can't watch video), voice calls, dictation, cloud agents launched by
 an engine from before 11 November 2026 (they answer in words on Simeon's
 server; since then a cloud agent codes in Claude Code on the person's own
 computer and plan, `services-agents.md`, section 1), and any of the above when Claude Code can't answer (the
-plan's limit, the sign-in gone), as the card says. The host log says which:
-`claude-code turn helper=… outcome=…`, `claude-code job model=… effort=…
-outcome=…`.
+plan's limit, the sign-in gone), as the card says. The host log says which,
+and at what effort: `claude-code turn helper=… model=… effort=low
+outcome=…`, `claude-code job model=… effort=low outcome=…`.
 
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only
@@ -1609,7 +1627,7 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
 | `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |
-| `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` | `false`; `true` lets an open app's computer sleep (step 4, above) |
+| `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` | `false`; `true` lets an open app's computer sleep (step 4, above). On both the API and the worker; then quit and reopen each app (below) |
 | `SIMEON_BOX_IDLE_AFTER_RUN` | `PT10M`; how soon after its last run a box sleeps, with the line above on |
 | `SIMEON_BOX_MEMORY_LIMIT_MB`, `SIMEON_BOX_CPU_LIMIT` | `4096`, `2.0`; `0` means no limit |
 | `SIMEON_BOX_MAX_RUNNING` | `3`; `0` means no limit |
@@ -1789,15 +1807,64 @@ the worker, an open app no longer keeps the computer awake:
   reads as asleep, so an account that used Simeon never sees the first run
   again. Asleep with no agents kept or in the server's copy, the first run's
   question is asked of the computer, waking it, as before.
-- The first launch after the switch goes on still wakes it once: the address
-  kept from before says nothing about sleep.
+- An app open when the switch goes on keeps the computer awake until it is
+  quit and opened again (12 November 2026, the founder's Mac). It hears the
+  switch only in EnsureSandBox's answer (`Gateway.swift`, `answered`;
+  `gateway.ts`), and asks again only when the computer stops answering, which
+  a computer it keeps awake never does. The first launch after that still
+  opens its event stream (and the Mac's hands may open theirs) on the
+  address kept from before, which says nothing about sleep: such a stream
+  holds the computer until it drops (the network, or a deploy of the API),
+  as the app reads the broker's answer only for what it opens next. So after
+  switching it on: quit Simeon on the Mac (and on Windows), close the iPhone
+  app from the app switcher, reload the web page; then do it once more, or
+  wait for the next deploy. `sand.box.awake reason=attached` with
+  `header_sent=False` (below) is such an app.
+- The record says asleep from the moment the sleeper decides (12 November
+  2026, `sand:box:sleeping:<box>` in Redis, two minutes). The app's stream
+  drops while the computer is being stopped, and the app asks the record at
+  once; it used to read "running", because the sleeper's write is committed
+  only when its pass ends, and dialled, which woke the computer again. A
+  computer woken since (its `last_active_at` later than the word) reads as
+  running.
+- The hands' ping (every 10 s, `local-exec/responses`) no longer wakes a
+  computer asleep: only a batch with an answer in it does
+  (`box_proxy.carries_an_answer`).
+
+**What holds a computer awake (12 November 2026).** The engine's `/health`
+says it (`busyReasons`, `desktop/source/host/host-busy.ts`), and the sleeper
+logs it (`sand.box.awake`, below):
+
+- `turn`: an agent's turn is running.
+- `background-shell`: a background command an agent started is running, or
+  its result is awaited after a restart, and it was active in the last 30
+  minutes: it wrote output (the watch reads its output file every 10 s), was
+  started or watched again, or a turn ran since (a turn may read it). One
+  quiet for longer (a dev server, a `tail -f`) no longer holds the computer,
+  which sleeps by the usual rule; E2B freezes the whole computer, and the
+  command goes on where it was when it wakes. An update that replaces the
+  computer while it is idle ends the command. Before, it held the computer
+  until it ended. Thirty minutes is three times
+  `SIMEON_BOX_IDLE_AFTER_RUN`, so a build or a test run started at the end of
+  a turn still holds it. `/health` also says `quietBackgroundShell: true` for
+  a command running past that.
+- `pending-wake`: a cloud agent's result is awaited.
+- `revival`: a wake turn is delivering a finished task's result.
+- `coding`: a cloud agent's coding runs on this computer.
+
+An engine built before says only `isBusy`; the line then says
+`busy=unknown`. `isBusy`, `busyOnlyAwaitingApproval` and `lastBusyAtMs` are
+as before.
 
 Switch it on only once the apps built with this have been tried on an
 iPhone and a Mac. Off, nothing above changes.
 
 **Not yet verified:** the copy, the messages and the computer used only
 for runs have not run on a real computer, and the apps have not used them
-on an iPhone or a Mac.
+on an iPhone or a Mac. What holds a computer awake, the background
+command's limit, the record's early "asleep" and the ping that no longer
+wakes (12 November 2026) have run in the engine's and the server's tests
+only, not on a real computer nor with an app open.
 
 ### When it misbehaves
 
@@ -1829,9 +1896,28 @@ on an iPhone or a Mac.
   - `sand.box.sleep`, just before the sleeper puts a box to sleep, says
     what it saw: `idle_minutes`, `idle_after_minutes`, `reachable`,
     `awaiting_approval`, whether the update check ran (`update_checked`),
-    `out_of_date` with each `stale_*`, and `update_sent_before` (sent
-    within the last 10 minutes, so not sent again). Read this first when a
-    box isn't updated.
+    `out_of_date` with each `stale_*`, `update_sent_before` (sent
+    within the last 10 minutes, so not sent again), and
+    `quiet_background_shell` (a command left running, quiet for 30
+    minutes; None from an older engine). Read this first when a box isn't
+    updated.
+  - `sand.box.awake` says why the sleeper left a running box awake, once
+    every 10 minutes per box and reason, with `sleeps_with_app_open` (the
+    worker's switch). Read this first when a box never sleeps.
+    - `reason=busy`: the box says it works; `busy` is its `busyReasons`
+      (`turn`, `background-shell`, `pending-wake`, `revival`, `coding`,
+      above), `unknown` from an engine older than 12 November 2026.
+    - `reason=attached`: an app holds it through the proxy. `attached_by`
+      is the connection that marked it last (`events`, `local-exec`,
+      `webauthn`, `command`, `health`, `avatar`, `screen`, `tunnel`,
+      `other`; `unknown` for a mark made before 12 November 2026) and `path`
+      its path on the box. `header_sent=False`: the app did not say it lets
+      the box sleep (open since before the switch, or built before 26
+      October 2026: quit and reopen it), or it is a screen being watched,
+      which always holds it. `header_sent=True`: the API's own
+      `SIMEON_BOX_SLEEPS_WITH_APP_OPEN` is off.
+    - `reason=idle`: idle for `idle_seconds`, not yet `idle_after_seconds`,
+      with `quiet_background_shell`.
   - `sand.box.update_skipped` (`reason=unreachable`) means the sleeper found
     the box out of date but could not reach it, so its backup can't be
     brought up to date; it says so every 10 minutes at most.
@@ -1849,7 +1935,8 @@ on an iPhone or a Mac.
     request (a command's output from the Mac on `local-exec/responses`, or a
     passkey on `webauthn/responses`) also wakes it (28 October 2026, after
     Nora's Stripe check was left waiting on an answer refused while her box
-    slept): `sand.box.proxy.woke` gives what the wake did (`woken`, `awake`,
+    slept), unless it carries only the hands' ping and hello (12 November
+    2026): `sand.box.proxy.woke` gives what the wake did (`woken`, `awake`,
     `ensuring`, `no-box`, `deferred`), and the answer is sent again for up to
     40 s until the box takes it. `sand.box.proxy.wake_failed` gives E2B's
     refusal. On the Mac, a batch the box did not take is kept and sent again
@@ -1864,7 +1951,8 @@ on an iPhone or a Mac.
   empty the backup. In the box, `[box-store-restore]` and `[box-store-sync]`
   lines in `/tmp/sand-host.log`, and the copy itself in `/tmp/sand-copy-in.log`
   (`[box-copy-in] result outcome=hydrated`).
-- On the worker: `sand.box.hibernated`, `sand.box.sleeper`,
+- On the worker: `sand.box.awake` and `sand.box.sleep` (both above, the
+  sleeper runs there), `sand.box.hibernated`, `sand.box.sleeper`,
   `sand.box.sleep.failed`, `sand.box.woken` (with `start_ms`, the server
   starting it), `sand.box.wake.deferred`, and `sand.box.sleep.deferred`
   with `reason=inbox` (a message written in an app waits for the box) or

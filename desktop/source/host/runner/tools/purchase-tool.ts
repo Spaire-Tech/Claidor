@@ -99,6 +99,14 @@ export interface PurchaseToolDependencies {
   language?: () => string | undefined;
   /** A saved card's checkout card, allowed: the host types the card into the checkout on its site (`purchase-cards.ts` `payWithSavedCard`). */
   payWithSavedCard?(entryId: string): Promise<{ readonly ok: true; readonly page: string; readonly filled: readonly string[]; readonly missing: readonly string[] } | { readonly ok: false; readonly message: string }>;
+  /**
+   * The checkout card is posted for a checkout in the agent's own Chrome
+   * (Link, a saved card, Shop as the wallet): Chrome stays open until the
+   * purchase ends, however long the person takes (12 November 2026,
+   * `setSandBrowserHold`; taken back in `purchase-cards.ts`). A Shop
+   * checkout has no tab, and holds nothing.
+   */
+  holdBrowser?(entryId: string): void;
 }
 
 export const showProductsParameters = z.object({
@@ -374,6 +382,7 @@ export function createRequestPurchaseTool(deps: PurchaseToolDependencies) {
       const message = purchaseCardFromArgs(args, facts, preview, undefined, deps.language?.());
       if (typeof message === "string") return message;
       const entryId = resolved.emitCard(message, (resolved.now ?? Date.now)());
+      if (entryId != null) resolved.holdBrowser?.(entryId);
       const walletName = facts.wallet === "shop" ? "Shop" : facts.wallet === "card" ? "saved" : "Link";
       const card = facts.card.last4.length > 0 ? ` with ${facts.wallet === "card" ? "their saved " : ""}${facts.card.brand} ending ${facts.card.last4}` : (message.purchase.cards ?? []).length > 1 ? ` (the person picks which of their ${message.purchase.cards?.length} ${walletName} cards pays)` : "";
       const note = facts.wallet === "shop" ? PURCHASE_SHOWN_NOTE_SHOP : facts.wallet === "card" ? PURCHASE_SHOWN_NOTE_CARD : PURCHASE_SHOWN_NOTE;

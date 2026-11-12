@@ -202,6 +202,64 @@ class TestTheRequest:
         )
         assert no_choice["reasoning"] == {"effort": "high"}
 
+    async def test_background_work_at_low_the_agents_turns_at_the_effort_chosen(
+        self, user: User
+    ) -> None:
+        # 12 November 2026, the founder: every way of running the agents
+        # behaves as Simeon's own models, background work at low.
+        user.meta = {own_models.CHOICE_KEY: SOL, own_models.EFFORT_KEY: "high"}
+        sol = own_models.own_model(SOL)
+        assert sol is not None
+        for reason in own_models.BACKGROUND_REASONS:
+            assert own_models.call_effort(user, sol, reason) == "low", reason
+        assert own_models.BACKGROUND_REASONS == {
+            "computer",
+            "browser",
+            "video",
+            "safety",
+            "memory",
+            "summary",
+            "cheap",
+        }
+        # The agent's own turns, a general helper, a call that says nothing.
+        for turn in ("chat", "helper", "routine", "wake", "background", None):
+            assert own_models.call_effort(user, sol, turn) == "high", turn
+        # Another model than the one chosen: the engine's own effort.
+        other = own_models.own_model("own:chatgpt:gpt-6-luna")
+        assert other is not None
+        assert own_models.call_effort(user, other, "safety") is None
+        # Nothing chosen: Simeon's models, never this relay's effort.
+        user.meta = {}
+        assert own_models.call_effort(user, sol, "chat") is None
+
+    async def test_a_model_without_low_runs_background_work_at_its_lowest(
+        self, user: User, mocker: MockerFixture
+    ) -> None:
+        steady = own_models.OwnModel(
+            "chatgpt", "gpt-steady", "GPT Steady", 272_000, efforts=("medium", "high")
+        )
+        assert own_models.background_effort(steady) == "medium"
+        # A model whose provider lists no efforts: low, as the engine asks.
+        assert (
+            own_models.background_effort(
+                own_models.OwnModel("plain", "plain-1", "Plain", 100_000)
+            )
+            == "low"
+        )
+        mocker.patch.dict(own_models._MODELS, {steady.model_id: steady})
+        user.meta = {
+            own_models.CHOICE_KEY: steady.model_id,
+            own_models.EFFORT_KEY: "high",
+        }
+        assert own_models.call_effort(user, steady, "computer") == "medium"
+        assert own_models.call_effort(user, steady, "chat") == "high"
+        body = own_models.codex_body(
+            {**_engine_request(), "reasoning": {"effort": "low"}},
+            steady.slug,
+            own_models.call_effort(user, steady, "safety"),
+        )
+        assert body["reasoning"] == {"effort": "medium"}
+
     async def test_a_limit_says_until_when(self) -> None:
         now = utc_now()
         at = int((now + timedelta(hours=3)).timestamp())
@@ -342,6 +400,41 @@ class TestTheRelay:
         assert row.credits == 0
         assert row.input_tokens == 40
         assert row.reason == "chat"
+
+    async def test_background_work_is_relayed_at_low_the_agents_turn_as_chosen(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        user.meta = {**(user.meta or {}), own_models.EFFORT_KEY: "high"}
+        session.add(user)
+        await session.commit()
+        reasons = ["computer", "safety", "memory", "summary", "chat", "helper"]
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(RESPONSES).mock(side_effect=[_stream() for _ in reasons])
+            for reason in reasons:
+                answer = await client.post(
+                    "/desktop/api/proxy/v1/responses",
+                    headers={**headers, "x-simeon-call-reason": reason},
+                    json=_engine_request(),
+                )
+                assert answer.status_code == 200, answer.text
+        sent = {
+            reason: json.loads(call.request.content)["reasoning"]
+            for reason, call in zip(reasons, route.calls, strict=True)
+        }
+        # The helper on the screen, the safety review, memory, a summary: low
+        # (12 November 2026), on the chosen model all the same.
+        for reason in ("computer", "safety", "memory", "summary"):
+            assert sent[reason] == {"effort": "low"}, reason
+        # The agent's own turn and a general helper: the effort chosen.
+        assert sent["chat"] == {"effort": "high"}
+        assert sent["helper"] == {"effort": "high"}
+        assert {json.loads(call.request.content)["model"] for call in route.calls} == {
+            "gpt-6.1-sol"
+        }
+        rows = await _usage(session, user)
+        assert sorted(row.reason or "" for row in rows) == sorted(reasons)
 
     async def test_a_call_without_a_stream_gets_the_last_response(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -739,6 +832,9 @@ class TestSearchAndPicturesOnTheAccount:
         mocker.patch.object(settings, "DESKTOP_ANTHROPIC_BASE_URL", ANTHROPIC)
         headers = await _headers(client, session, user)
         await _account(session, user)
+        user.meta = {**(user.meta or {}), own_models.EFFORT_KEY: "high"}
+        session.add(user)
+        await session.commit()
         with respx.mock(assert_all_called=False) as mock:
             route = mock.post(RESPONSES).mock(return_value=_stream(_searched()))
             claude = mock.post(f"{ANTHROPIC}/v1/messages")
@@ -750,8 +846,10 @@ class TestSearchAndPicturesOnTheAccount:
         assert answer.status_code == 200, answer.text
         assert not claude.called
         sent = json.loads(route.calls[0].request.content)
-        # On the chosen model, as every call on the account.
+        # On the chosen model, as every call on the account; background work,
+        # so at low whatever the effort chosen (12 November 2026).
         assert sent["model"] == "gpt-6.1-sol"
+        assert sent["reasoning"] == {"effort": "low"}
         assert sent["stream"] is True
         assert sent["store"] is False
         assert sent["tools"] == [{"type": "web_search", "external_web_access": True}]

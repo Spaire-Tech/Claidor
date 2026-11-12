@@ -1203,8 +1203,9 @@ function conversationIdFromContext(ctx: unknown): unknown {
 /**
  * A small job (the safety review, memory, a summary, a title: a cheap session's call with no tools) on the
  * person's own Claude plan when they chose Claude (11 November 2026, the founder: "small jobs is their own plan
- * and chosen model"): one `claude -p` on the computer (`claude-code-text.ts`), Simeon's model only when Claude
- * Code can't answer. Undefined: the call is Simeon's.
+ * and chosen model"): one `claude -p` on the computer (`claude-code-text.ts`), at low effort since 12 November 2026
+ * (background work, as on Simeon's own models), Simeon's model only when Claude Code can't answer. Undefined: the
+ * call is Simeon's.
  */
 function onClaudeCode(smallJob: boolean, messages: readonly ProviderMessage[], definitions: readonly Loose[] | undefined, executeTool: unknown, signal: AbortSignal | undefined, onSimeon: () => unknown): TextJobStreamResult | undefined {
   if (!smallJob || (definitions !== undefined && definitions.length > 0) || executeTool !== undefined) return undefined;
