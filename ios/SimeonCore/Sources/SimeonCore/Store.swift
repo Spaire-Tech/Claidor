@@ -431,6 +431,8 @@ public final class AppStore {
     var state: State
     /** Held while the computer was out of reach: when it was written, sent with it (`composedAtMs`). */
     var composedOffline = false
+    /** Why it failed, in words the person may read (`PlainWords`), shown under "Failed to send"; nil when they would name the plumbing. */
+    var failure: String?
   }
 
   public init() {}
@@ -1459,6 +1461,11 @@ public final class AppStore {
     await deliver(id, in: agentId)
   }
 
+  /** Why a message failed, in plain words, for the line under "Failed to send"; nil when there are none to show. */
+  public func failureReason(_ id: String, in agentId: String) -> String? {
+    outbox[agentId]?.first { $0.id == id && $0.state == .failed }?.failure
+  }
+
   /** Delete on a message that failed: it was never sent, so it only leaves the screen. */
   public func discardFailed(_ id: String, in agentId: String) {
     outbox[agentId]?.removeAll { $0.id == id }
@@ -1492,6 +1499,11 @@ public final class AppStore {
       let options = SendOptions(replyTo: item.replyTo, isFork: item.thread, richText: item.richText, composedAtMs: item.composedOffline ? item.at : nil)
       try await backend.send(agentId, text: item.text, attachments: refs, options: options, nonce: item.id)
     } catch {
+      // Why, for a report (12 November 2026: a long message failed on every resend and nothing said why), and for the
+      // line under the message when the words are plain ("The Internet connection appears to be offline.").
+      RecentActivity.note("send failed in \(agentId): \(error.localizedDescription)")
+      let plain = PlainWords.error(error.localizedDescription, fallback: "")
+      if let index = outbox[agentId]?.firstIndex(where: { $0.id == id }) { outbox[agentId]?[index].failure = plain.isEmpty ? nil : plain }
       mark(id, in: agentId, .failed)
       await sendNextQueued(agentId)
       return

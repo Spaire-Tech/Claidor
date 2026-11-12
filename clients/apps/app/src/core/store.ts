@@ -218,6 +218,7 @@ import {
   type RebuildInputs,
   noRebuildInputs,
 } from './rebuildDriver'
+import { note } from './recentActivity'
 import { RoutineTestRuns } from './routineEditing'
 import {
   type Routine,
@@ -300,6 +301,8 @@ interface Outgoing {
   known: Set<string>
   /** Held while the computer was out of reach: when it was written, sent with it (`composedAtMs`). */
   composedOffline: boolean
+  /** Why it failed, in words the person may read (`plainError`), shown under "Failed to send"; undefined when they would name the plumbing. */
+  failure?: string
 }
 
 /** A message canceled before it went: what goes back into its composer. */
@@ -6185,6 +6188,13 @@ export class AppStore {
     await this.deliver(id, agentId)
   }
 
+  /** Why a message failed, in plain words, for the line under "Failed to send"; undefined when there are none to show. */
+  failureReason(id: string, agentId: string): string | undefined {
+    return (this.outbox.get(agentId) ?? []).find(
+      (item) => item.id === id && item.state === 'failed',
+    )?.failure
+  }
+
   /** Delete on a message that failed: it was never sent, so it only leaves the screen. */
   discardFailed(id: string, agentId: string): void {
     const left = (this.outbox.get(agentId) ?? []).filter(
@@ -6238,7 +6248,12 @@ export class AppStore {
         composedAtMs: item.composedOffline ? item.at : undefined,
       }
       await backend.send(agentId, item.text, refs, options, item.id)
-    } catch {
+    } catch (error) {
+      // Why, for a report (12 November 2026: a long message failed on every resend and nothing said why), and for the
+      // line under the message when the words are plain (`failureReason`).
+      const said = error instanceof Error ? error.message : String(error)
+      note(`send failed in ${agentId}: ${said}`)
+      item.failure = plainError(said, '') || undefined
       this.mark(id, agentId, 'failed')
       await this.sendNextQueued(agentId)
       return

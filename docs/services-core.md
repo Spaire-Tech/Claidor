@@ -1380,6 +1380,21 @@ refused with 400; one over 16 MB encoded, with 413. A request without the
 header passes as it is. The engine's own model calls do the same with gzip
 after an edge refusal (`provider-session.ts`, `isEdgeRefusal`).
 
+The apps send every body as it is first. When the answer is the edge's (a 403
+with an HTML page, by its type or its first words; the API and the box answer
+JSON), they send it once more in base64 (`EdgeFirewall` in
+`ios/SimeonCore/Sources/SimeonCore/HTTP.swift`, for the Mac and the iPhone;
+`sendPastEdge` in `clients/apps/app/src/core/http.ts`, for the web and Windows
+app). The edge stopped the first one, so nothing is done twice. In a browser
+the edge's page may come without the CORS headers, and then fetch only fails
+as unreachable; the web app sends a body that failed that way once more in
+base64 too, as the gateway already resends a call that never arrived. Bodies
+over 12 MB are not sent again. The app's activity log, which
+"Report an Issue" carries, gets `edge refused POST <path>: sent again in base64,
+answered <status>`. A message that still fails says why under "Failed to send"
+when the words are plain ("The Internet connection appears to be offline."), and
+the log gets `send failed in <agent>: <error>` either way.
+
 **Placement across several servers.** `SIMEON_BOX_HOSTS` lists the box servers
 as JSON:
 
