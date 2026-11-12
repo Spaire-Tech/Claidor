@@ -1,4 +1,5 @@
 import { claudeCodeTurnHook, type ClaudeCodeTurnKind } from "../claude-code/claude-code-agent-turn.js";
+import { isHelperSimeonSession } from "../extensions/inference/provider-session.js";
 import { refreshSimeonModelRolesBeforeTurn } from "../extensions/inference/simeon-model-roles.js";
 import { noteTurnModel } from "../extensions/inference/turn-model.js";
 import {
@@ -234,6 +235,9 @@ export interface TurnAgentStaticConfigInputs {
   readonly isSharedRoomRunner: boolean;
   /** A watchVideo / videoReview helper: it runs on the video model, the one Claude Code has no counterpart for. */
   readonly isVideoSubagent?: boolean;
+  /** The helper on the computer's screen, and the one in its browser: background work, at low effort in Claude Code too. */
+  readonly isComputerUseSubagent?: boolean;
+  readonly isBrowserUseSubagent?: boolean;
   readonly sandSendMessageDeliveryOwed: boolean;
   readonly transcriptsFolderAvailable?: boolean;
   readonly backgroundSummarizationPropsOverride?: Partial<
@@ -329,12 +333,15 @@ export function createSandAgentStaticConfig(
     // on the video model, which Claude has no counterpart for. Before each turn, the model and effort the person
     // chose are read again when the last read is old (a choice made on the composer applies to the next message, not
     // five minutes later); then, when an agent's own turn is on another model than its last, its chat says so
-    // ("Changed from Simeon to Claude Opus 5.5", `turn-model.ts`).
+    // ("Changed from Simeon to Claude Opus 5.5", `turn-model.ts`). The helpers on the screen and in the browser are
+    // background work and run at low effort, whatever the effort chosen (12 November 2026, the founder: every way of
+    // running the agents behaves as Simeon's own models, `isHelperSimeonSession`); a general helper keeps it.
     ...(input.isVideoSubagent === true
       ? {}
       : {
           claudeCodeTurn: claudeCodeTurnHook(),
           claudeCodeKind: claudeCodeKindOf(input),
+          ...(claudeCodeBackgroundOf(input) ? { claudeCodeBackground: true } : {}),
           beforeTurn: async () => {
             await refreshSimeonModelRolesBeforeTurn();
             if (!input.isSubagentRunner && !input.isSharedRoomRunner) await noteTurnModel(input.conversationId);
@@ -347,6 +354,11 @@ export function createSandAgentStaticConfig(
 export function claudeCodeKindOf(input: { readonly isSubagentRunner: boolean; readonly isSharedRoomRunner: boolean }): ClaudeCodeTurnKind {
   if (input.isSubagentRunner) return "helper";
   return input.isSharedRoomRunner ? "room" : "agent";
+}
+
+/** Whether a turn run by Claude Code is background work (a helper on the screen, in the browser or on a video), run at low effort. */
+export function claudeCodeBackgroundOf(input: { readonly isSubagentRunner: boolean; readonly isComputerUseSubagent?: boolean; readonly isBrowserUseSubagent?: boolean; readonly isVideoSubagent?: boolean }): boolean {
+  return input.isSubagentRunner && isHelperSimeonSession(input);
 }
 
 export interface TurnAgentToolsHandoff {

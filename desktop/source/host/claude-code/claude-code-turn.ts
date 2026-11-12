@@ -32,6 +32,15 @@ const TURN_TIMEOUT_MS = 60 * 60_000;
 /** A session id as Claude Code writes them (a UUID). */
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * The effort of background work on the person's Claude plan (12 November 2026, the founder: every way of running
+ * the agents behaves as Simeon's own models do): the helpers on the computer's screen and in its browser, and the
+ * small jobs (the safety review, memory, a summary, a title). The agent's own turns and a general helper keep the
+ * effort the person chose. At the person's High, a helper on the screen thought for about 2 s before each click,
+ * and the safety review took 6 to 8 s per command.
+ */
+export const CLAUDE_CODE_BACKGROUND_EFFORT = "low";
+
 /** A picture Claude reads with the prompt: its type (`image/png`…) and its bytes in base64. */
 export interface ClaudeCodeImage {
   readonly mediaType: string;
@@ -45,7 +54,7 @@ export interface ClaudeCodeTurnInput {
   readonly images?: readonly ClaudeCodeImage[] | undefined;
   /** `--model`: `opus`, `sonnet`. */
   readonly model: string;
-  /** `--effort`: how hard Claude thinks (`low`, `medium`, `high`, `xhigh`, `max`), as the person chose on the composer; none, Claude Code's own. */
+  /** `--effort`: how hard Claude thinks (`low`, `medium`, `high`, `xhigh`, `max`): as the person chose on the composer for the agent's own turns, `low` for background work (`CLAUDE_CODE_BACKGROUND_EFFORT`); none, Claude Code's own. */
   readonly effort?: string | undefined;
   /** The session to resume; none starts a new one (its id is in the outcome). */
   readonly resume?: string | undefined;

@@ -730,26 +730,44 @@ an API key chosen, every role the engine reads is the chosen model
 (`own_models.rows`: primary, cheap and computer), so the agent, its small jobs
 (titles, summaries, memory, the safety review) and its helper on the screen
 all run on the person's account; web search too (Grok searches on Grok 4.6,
-the one model with the proxy's search). The effort the person chose replaces
-the engine's own on every call, the small jobs' too (`codex_body`,
-`grok_body`, `chat_wire.effort_of`). Until then the small jobs ran on a
+the one model with the proxy's search). Until then the small jobs ran on a
 cheaper model of the plan or key (GPT-6 Luna, a key provider's `cheap`) at
 low effort.
 
+**The effort: the agent's turns as chosen, background work at low** (12
+November 2026, the founder: every way of running the agents behaves the
+same, as Simeon's own models already did). The agent's own replies (its
+chat, its group chats) and a general helper it starts think at the effort
+chosen on the composer. Background work runs on the same model and account
+at low, or the lowest a model takes when it has no low: the helpers on the
+screen, in the browser and on a video, the safety review, memory, a
+summary, a title, a web search. The relay reads which a call is from the
+engine's `x-simeon-call-reason`: `computer`, `browser`, `video`, `safety`,
+`memory`, `summary` and `cheap` are background work
+(`own_models.BACKGROUND_REASONS`, `call_effort`, passed to `codex_body`,
+`responses_body` and the key wires); every other reason keeps the effort
+chosen. From 11 to 12 November every call ran at the effort chosen: at High
+on the founder's Claude plan, the helper on the screen thought for about
+2 s before each click and the safety review took 6 to 8 s per command.
+
 With Claude chosen, the engine runs all of it in Claude Code on the computer,
-on the chosen model and effort: the agent's turns; its helpers (the one on
+on the chosen model: the agent's turns; its helpers (the one on
 the computer's screen, whose screenshots reach Claude as pictures, the one
 driving Chrome, the general ones) and its turns in group chats
 (`turn-agent-composition.ts`, `claudeCodeKind`); and each small job as one
 `claude -p` with no tools and nothing kept (`claude-code-text.ts`, routed in
-`provider-session.ts`). Only these stay on Simeon's: a video helper (Claude
+`provider-session.ts`). The agent's turns, its group-chat turns and its
+general helpers get the effort chosen; the helpers on the screen and in the
+browser (`claudeCodeBackground` in the agent's config, from
+`isHelperSimeonSession`) and each small job (`claudeCodeTextChoice`) get
+`--effort low`. Only these stay on Simeon's: a video helper (Claude
 can't watch video), voice calls, dictation, cloud agents launched by
 an engine from before 11 November 2026 (they answer in words on Simeon's
 server; since then a cloud agent codes in Claude Code on the person's own
 computer and plan, `services-agents.md`, section 1), and any of the above when Claude Code can't answer (the
-plan's limit, the sign-in gone), as the card says. The host log says which:
-`claude-code turn helper=… outcome=…`, `claude-code job model=… effort=…
-outcome=…`.
+plan's limit, the sign-in gone), as the card says. The host log says which,
+and at what effort: `claude-code turn helper=… model=… effort=low
+outcome=…`, `claude-code job model=… effort=low outcome=…`.
 
 The sign-in is OpenAI's device code, with Codex's client id until OpenAI
 approves Simeon for Sign in with ChatGPT (then only

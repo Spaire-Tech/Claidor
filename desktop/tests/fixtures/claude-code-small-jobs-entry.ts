@@ -4,3 +4,5 @@ export { claudeCodeTurnArgs, ClaudeCodeMemorySessions } from "../../source/host/
 export { screenshotOf } from "../../source/host/claude-code/claude-code-tools.js";
 export { claudeCodeBriefLead, claudeCodeBriefNote } from "../../source/host/claude-code/claude-code-agent-turn.js";
 export { setSimeonModelRolesForTest } from "../../source/host/extensions/inference/simeon-model-roles.js";
+// The host log, where a job says the effort it ran at (`claude-code job ... effort=low`).
+export { setHostLogSink } from "../../source/shared/host-log.js";

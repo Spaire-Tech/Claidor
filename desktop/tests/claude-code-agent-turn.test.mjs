@@ -67,7 +67,7 @@ process.stdin.on("end", async () => {
 });
 `;
 
-async function setUp(bridge) {
+async function setUp(bridge, options = {}) {
   const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-claude-hook-"));
   const bin = path.join(dir, "claude");
   await writeFile(bin, STAND_IN);
@@ -91,6 +91,7 @@ async function setUp(bridge) {
     onUsage: (windows) => usage.push(windows),
     log: (line) => lines.push(line),
     now: () => clock,
+    ...options,
   });
   const tool = bridge.createSendMessageTool({ getIngestAttachment: () => undefined, onSendMessage: (message) => { sent.push(message); return "t1s1"; } });
   const input = (text, signal = new AbortController().signal, extra = {}) => ({ ctx: bridge.createContext(), conversationId: "nora", brief: "You are Nora.", context: "<user_info>Bass, Paris, 9 November</user_info>", text, tools: [tool], listener: undefined, stateHandler: undefined, signal, ...extra });
@@ -508,6 +509,47 @@ test("a helper's turn runs in Claude Code too: its own brief, its last words its
     assert.equal(limited.ran, false);
     assert.deepEqual(box.fallbacks, []);
     assert.deepEqual(box.quiet, ["limited"]);
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("the helpers on the screen and in the browser run at low effort; the agent's own turns and a general helper at the effort chosen", async () => {
+  // 12 November 2026, the founder: every way of running the agents behaves as Simeon's own models, background work
+  // at low. At High, the helper on the screen thought for about 2 s before each click.
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge, { effort: () => "high" });
+  try {
+    await box.mode("words");
+    assert.equal((await box.hook.run(box.input("Book the dentist."))).ran, true);
+    assert.equal((await box.hook.run(box.input("Click Book.", undefined, { conversationId: "nora-computer-1", kind: "helper", background: true, brief: "Use the computer's screen." }))).ran, true);
+    assert.equal((await box.hook.run(box.input("Open the page.", undefined, { conversationId: "nora-browser-1", kind: "helper", background: true, brief: "Use the browser." }))).ran, true);
+    assert.equal((await box.hook.run(box.input("Write the plan.", undefined, { conversationId: "nora-helper-1", kind: "helper", brief: "Plan the trip." }))).ran, true);
+    assert.equal((await box.hook.run(box.input("What do you all think?", undefined, { kind: "room" }))).ran, true);
+    const seen = await box.seen();
+    const effortOf = (one) => one.argv[one.argv.indexOf("--effort") + 1];
+    assert.deepEqual(seen.map(effortOf), ["high", "low", "low", "high", "high"]);
+    // The host log says the effort each turn ran at.
+    for (const [who, effort] of [["agent=nora", "high"], ["helper=nora-computer-1", "low"], ["helper=nora-browser-1", "low"], ["helper=nora-helper-1", "high"], ["room=nora", "high"]]) {
+      assert.ok(box.lines.some((line) => line.startsWith(`claude-code turn ${who} model=opus effort=${effort} outcome=done`)), `${who}\n${box.lines.join("\n")}`);
+    }
+  } finally {
+    await box.dispose();
+    await dispose();
+  }
+});
+
+test("background work runs at low even when the person chose no effort (Claude Code's own)", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge, { effort: () => undefined });
+  try {
+    await box.mode("words");
+    await box.hook.run(box.input("Book the dentist."));
+    await box.hook.run(box.input("Click Book.", undefined, { conversationId: "nora-computer-1", kind: "helper", background: true }));
+    const [own, helper] = await box.seen();
+    assert.equal(own.argv.includes("--effort"), false);
+    assert.equal(helper.argv[helper.argv.indexOf("--effort") + 1], "low");
   } finally {
     await box.dispose();
     await dispose();

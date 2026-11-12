@@ -3483,6 +3483,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
               isSubagentRunner: identity.isSubagentRunner,
               isSharedRoomRunner: isSharedRoomTurn,
               isVideoSubagent: isVideoTurn,
+              // Background work, at low effort in Claude Code too (12 November 2026).
+              isComputerUseSubagent: isComputerUseTurn,
+              isBrowserUseSubagent: isBrowserUseTurn,
               sandSendMessageDeliveryOwed: method(experiments, "isSendMessageDeliveryOwedEnabled")?.() ?? false,
               systemPromptGenerator: () => promptAssembly?.getSystemPrompt() ?? DEFAULT_SAND_SYSTEM_PROMPT,
             },

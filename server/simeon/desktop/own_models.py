@@ -178,6 +178,22 @@ DEFAULT_EFFORT = {
         if one.default_effort is not None
     },
 }
+#: The calls that are background work, by the reason the engine gives
+#: each (`x-simeon-call-reason`, `simeonCallReason` in the engine's
+#: provider-session.ts): the helpers on the computer's screen, in its browser
+#: and on a video, the safety review of a command or a browser action, the
+#: memory written after a turn, a chat's summary or title, and any other
+#: cheap call. They run on the chosen model at low effort (12 November 2026,
+#: the founder: every way of running the agents behaves as Simeon's own
+#: models do). The agent's own turns (`chat`, `routine`, `wake`, `nudge`,
+#: `voice`, `agent_wake`, `first_message`, `background`: a turn nobody asked
+#: for, resumed or woken) and a general helper an agent starts (`helper`)
+#: keep the effort chosen.
+BACKGROUND_REASONS = frozenset(
+    {"computer", "browser", "video", "safety", "memory", "summary", "cheap"}
+)
+#: Background work's effort; a model without it gets the lowest it takes.
+BACKGROUND_EFFORT = "low"
 #: How often a Grok plan's usage is asked of xAI's billing, at most.
 GROK_USAGE_EVERY = timedelta(minutes=5)
 #: A limit ChatGPT reports without saying until when.
@@ -396,6 +412,29 @@ def chosen_effort(user: User) -> str | None:
     return default
 
 
+def background_effort(model: OwnModel) -> str:
+    """Background work's effort on `model`: low, or the lowest it takes
+    when it has no low (each provider's efforts are listed lowest first);
+    low when it lists none, as the engine asks for background work."""
+    taken = model.efforts_taken
+    if not taken or BACKGROUND_EFFORT in taken:
+        return BACKGROUND_EFFORT
+    return taken[0]
+
+
+def call_effort(user: User, own: OwnModel, reason: str | None) -> str | None:
+    """The effort one call on `own` runs at (12 November 2026, the founder):
+    background work (`BACKGROUND_REASONS`) at low, the agent's own turns and
+    a general helper's at the effort chosen. None when `own` isn't the
+    chosen model: the engine's own effort then."""
+    chosen = chosen_model(user)
+    if chosen is None or chosen != own:
+        return None
+    if reason in BACKGROUND_REASONS:
+        return background_effort(own)
+    return chosen_effort(user)
+
+
 async def _usable(
     session: AsyncSession, user_id: Any, provider: str
 ) -> list[DesktopModelAccount]:
@@ -434,7 +473,9 @@ async def rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
     # is like that, the api keys included"): the agent, its machinery
     # (titles, summaries, memory, the safety review) and its helper on the
     # screen. Until then the machinery ran on a cheaper model of the plan
-    # or the key (GPT-6 Luna, a key provider's `cheap`).
+    # or the key (GPT-6 Luna, a key provider's `cheap`). The machinery and
+    # the helper on the screen run at low effort (`call_effort`, 12 November
+    # 2026).
     return [
         chosen.desktop_model(role).available()
         for role in (ModelRole.primary, ModelRole.cheap, ModelRole.computer)
@@ -446,9 +487,11 @@ def claude_code_row(model: OwnModel, effort: str | None = None) -> dict[str, Any
     `claude-code` wire, which only an engine that runs turns in Claude Code
     follows, with the effort Claude Code is given (`--effort`). No cheap or
     computer row: since 11 November 2026 the engine runs those in Claude Code
-    too, on this model and effort (its helpers, the safety review, memory,
-    summaries; `claude-code-text.ts`), and keeps Simeon's own cheap and
-    computer models only for when Claude Code can't answer."""
+    too, on this model (its helpers, the safety review, memory, summaries;
+    `claude-code-text.ts`), and keeps Simeon's own cheap and computer models
+    only for when Claude Code can't answer. The effort is the agent's turns'
+    and a general helper's; since 12 November 2026 the engine runs the
+    helpers on the screen and in the browser, and the small jobs, at low."""
     return {
         "modelId": model.model_id,
         "modelName": model.name,
@@ -491,10 +534,9 @@ _NO_EFFORT = frozenset({"none", "minimal"})
 def codex_body(
     payload: dict[str, Any], slug: str, effort: str | None = None
 ) -> dict[str, Any]:
-    """The engine's Responses request as ChatGPT takes it; `effort`, the one
-    the person chose, in place of the engine's own on every call, the
-    machinery's too (11 November 2026, the founder: "their own plan and
-    chosen model", "and the effort set")."""
+    """The engine's Responses request as ChatGPT takes it; `effort`, the
+    call's (`call_effort`: the one the person chose on the agent's own
+    turns, low on background work), in place of the engine's own."""
     body: dict[str, Any] = {"model": slug, "stream": True}
     for key in _CODEX_FIELDS:
         if payload.get(key) is not None:
@@ -565,8 +607,8 @@ def _grok_item(item: Any) -> Any:
 def grok_body(
     payload: dict[str, Any], own: OwnModel, effort: str | None = None
 ) -> dict[str, Any]:
-    """The engine's Responses request as Grok takes it; `effort`, the one
-    the person chose, in place of the engine's own on every call."""
+    """The engine's Responses request as Grok takes it; `effort`, the
+    call's (`call_effort`), in place of the engine's own."""
     body: dict[str, Any] = {"model": own.slug, "stream": True}
     for key in _GROK_FIELDS:
         if payload.get(key) is not None:
@@ -778,8 +820,8 @@ async def relay(
         # never called from here: Claude Code on the computer calls it.
         return await _on_simeon(own, payload, user, simeon)
     wants_stream = payload.get("stream") is True
-    chosen = chosen_model(user)
-    effort = chosen_effort(user) if chosen is not None and chosen == own else None
+    # Low on background work, the effort chosen on the agent's own turns.
+    effort = call_effort(user, own, reason)
     if own.on_key:
         return await _on_keys(
             request, caller, session, own, payload, wants_stream, reason, effort, simeon
@@ -1174,8 +1216,8 @@ def responses_body(
     payload: dict[str, Any], own: OwnModel, effort: str | None, *, plain: bool = False
 ) -> dict[str, Any]:
     """The engine's Responses request for a provider that speaks it: the
-    model the key's, nothing stored there, the person's effort on every
-    call."""
+    model the key's, nothing stored there, the call's effort
+    (`call_effort`)."""
     body: dict[str, Any] = {"model": own.slug, "stream": True, "store": False}
     for key in _RESPONSES_PLAIN if plain else _RESPONSES_FIELDS:
         if payload.get(key) is not None:
@@ -1890,8 +1932,9 @@ async def web_search(
             "tools": [{"type": "web_search", "external_web_access": True}],
             "tool_choice": "auto",
             "parallel_tool_calls": False,
-            # The effort the person chose, as on every other call.
-            "reasoning": {"effort": chosen_effort(user) or "low"},
+            # Background work: low, as Simeon's own search runs
+            # (`capabilities._search_body`, 12 November 2026).
+            "reasoning": {"effort": background_effort(model)},
             "store": False,
         }
     answer, refusal = await _on_accounts(

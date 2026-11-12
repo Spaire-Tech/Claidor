@@ -325,10 +325,38 @@ approve, paste the code back) is Claude Code's own sign-in.
   own plan: Light, Medium, High, Extra High, Max (Reason's words). Claude's
   are Claude Code's `--effort` (`low` to `max`, read from `claude --help` of
   2.1.311; High until one is chosen); ChatGPT's are Light, Medium and High
-  only, the three every Codex model takes, and replace the engine's own
-  effort on the agent's turns, not on its machinery (Medium until chosen).
-  Kept with the choice (`users.meta.own_model_effort`, `PUT models/own`
-  `{effort}`); the engine reads it with the roles (`claudeCodeEffort`).
+  only, the three every Codex model takes (Medium until chosen). Kept with
+  the choice (`users.meta.own_model_effort`, `PUT models/own` `{effort}`);
+  the engine reads it with the roles (`claudeCodeEffort`).
+- **Which calls think at the effort chosen** (12 November 2026, the founder:
+  every way of running the agents behaves the same). The agent's own
+  replies, in its chat and in group chats, and a general helper an agent
+  starts for a task: the effort chosen. Background work, on the same model
+  and the same plan or key, always at low (a model without low: the lowest
+  it takes): the helpers on the computer's screen, in its browser and on a
+  video, the safety review of a command or a browser action, the memory
+  written after a turn, a chat's summary, a title, a web search. Simeon's
+  own models already ran this way (`isCheapSimeonSession`,
+  `isHelperSimeonSession`, `provider-session.ts`). From 11 to 12 November
+  everything ran at the effort chosen; at High on the founder's Claude plan,
+  a helper on the screen thought for about 2 s before each click, and the
+  safety review took 6 to 8 s per command.
+  - **ChatGPT, the other plans and API keys** go through the server's relay,
+    which reads why each call is made from the engine's
+    `x-simeon-call-reason` (`simeonCallReason`). Background work:
+    `computer`, `browser`, `video`, `safety`, `memory`, `summary`, `cheap`
+    (`own_models.BACKGROUND_REASONS`, `call_effort`). The effort chosen:
+    `chat`, `routine`, `wake`, `nudge`, `voice`, `agent_wake`,
+    `first_message`, `background` (an agent's turn nobody asked for, resumed
+    or woken) and `helper`. A web search on the account asks low, as
+    Simeon's own search does.
+  - **Claude** runs in Claude Code on the computer. A helper on the screen or
+    in the browser is marked in the agent's config (`claudeCodeBackground`,
+    read as `isHelperSimeonSession` reads it, `turn-agent-composition.ts`)
+    and its turn gets `--effort low` (`claude-code-agent-turn.ts`); each
+    small job too (`claudeCodeTextChoice`, `claude-code-text.ts`). A video
+    helper stays on Simeon's video model. The host log shows it:
+    `claude-code turn helper=… effort=low`, `claude-code job … effort=low`.
 - **A choice applies to the next message.** The engine read the roles every
   five minutes, so a model or an effort chosen on the composer reached the
   agents up to five minutes later (the founder connected Claude at 22:44 and
@@ -489,7 +517,8 @@ The reconstruction has none of them; everything here is new.
   person's key pays for it.
 - **Efforts**: Anthropic's five (Medium until chosen: Anthropic's own
   default), OpenAI's, Azure's, SpaceXAI's and Google's three, Kimi's Light,
-  High and Max. The others take none.
+  High and Max. The others take none. Background work runs at low (12
+  November 2026, section 6).
 - **Same rules as a plan's.** The person's other keys for the provider in
   turn; a rate limit waits as the provider says (`retry-after`), credits run
   out an hour; then Simeon's model on credits. A key the provider no longer
@@ -581,7 +610,9 @@ test):
 - **The models.** Grok 4.6 (chosen on connecting) and Grok 4.5, Grok
   Build's two, 500,000 tokens each. Thinking: Light, Medium, High (Grok's
   own default) and Extra High on 4.6; up to High on 4.5. The machinery
-  (titles, summaries, memory) runs on the chosen model, as Grok Build's.
+  (titles, summaries, memory) runs on the chosen model, as Grok Build's, at
+  low effort since 12 November 2026 (section 6, which calls think at the
+  effort chosen).
 - **The calls.** Where Grok Build sends its own
   (`cli-chat-proxy.grok.com/v1/responses`), with its headers and Simeon named
   as the client, on the Responses wire both its models use. The brief goes as

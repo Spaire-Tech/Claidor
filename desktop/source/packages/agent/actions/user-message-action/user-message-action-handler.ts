@@ -96,6 +96,8 @@ export interface ClaudeCodeTurnHook {
     readonly conversationId: string;
     /** An agent in its own chat (the default), a helper working for one, or an agent in a group chat. */
     readonly kind?: "agent" | "helper" | "room";
+    /** A helper on the screen or in the browser: background work, at low effort (the config's `claudeCodeBackground`). */
+    readonly background?: boolean;
     readonly brief: string;
     readonly context?: string;
     readonly text: string;
@@ -424,6 +426,8 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
       ctx,
       conversationId: String(configAny.conversationId ?? ""),
       ...(configAny.claudeCodeKind === undefined ? {} : { kind: configAny.claudeCodeKind }),
+      // A helper on the screen or in the browser: background work, at low effort (12 November 2026).
+      ...(configAny.claudeCodeBackground === true ? { background: true } : {}),
       brief,
       ...(userInfo === undefined ? {} : { context: textOf(userInfo) }),
       text: claudeCodeTurnWords(userMessage?.text, picturesNote === "" ? prependedTexts : [...prependedTexts, picturesNote]),
