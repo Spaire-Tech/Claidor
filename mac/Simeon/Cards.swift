@@ -22,9 +22,8 @@ struct CardShell<Content: View>: View {
     .padding(.vertical, 14)
     .padding(.horizontal, 16)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .background { RoundedRectangle(cornerRadius: 20, style: .continuous).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
 
@@ -551,9 +550,8 @@ private extension View {
       .padding(.top, 14)
       .padding(.bottom, 12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(look.theirs, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+      .background { RoundedRectangle(cornerRadius: 20, style: .continuous).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
       .overlay { RoundedRectangle(cornerRadius: 20, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-      .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
   }
 }
 
@@ -1007,9 +1005,8 @@ struct ApprovalCardView: View {
     }
     .padding(12)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 16))
+    .background { RoundedRectangle(cornerRadius: 16).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .overlay { RoundedRectangle(cornerRadius: 16).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Auto-review approval")
   }
@@ -1133,8 +1130,7 @@ struct ListenerConnectCardView: View {
     }
     .padding(12)
     .frame(maxWidth: 520, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 14))
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+    .background { RoundedRectangle(cornerRadius: 14).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .task(id: platform) {
       connected = await store.listenerConnected(platform) ?? false
     }
@@ -1206,8 +1202,7 @@ struct GitHubSignInCardView: View {
     }
     .padding(12)
     .frame(maxWidth: 520, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 14))
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
+    .background { RoundedRectangle(cornerRadius: 14).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .task(id: card.code) {
       while !Task.isCancelled {
         let read = card.state(await store.gitHubSignIn(), nowMs: Date().timeIntervalSince1970 * 1000)
@@ -1793,9 +1788,8 @@ struct FlightsCardView: View {
     }
     .monospacedDigit()
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(look.theirs, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    .background { RoundedRectangle(cornerRadius: 18, style: .continuous).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .overlay { RoundedRectangle(cornerRadius: 18, style: .continuous).inset(by: -0.25).stroke(look.theirsHairline, lineWidth: 0.5) }
-    .shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1)
     .accessibilityElement(children: .contain)
     .accessibilityLabel(card.heading.isEmpty ? String(localized: "Flights") : card.heading)
   }

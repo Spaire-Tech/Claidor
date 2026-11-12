@@ -174,7 +174,8 @@ struct ShimmerText: View {
     words
       .foregroundStyle(look.inkTertiary)
       .overlay {
-        TimelineView(.animation) { timeline in
+        // 30 frames a second: the sweep is soft, and in a chat it runs for as long as the agent works.
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
           // 2.2 s a sweep, eased in and out (`sand-shimmer-text`, measured).
           let t = timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2.2) / 2.2
           let phase = t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2

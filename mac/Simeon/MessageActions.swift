@@ -45,6 +45,13 @@ final class ChatControl {
   var pictureHovered = false
   /** Low disk's banner under the head, with its 8 (step 13): the messages start under it. */
   var bannerHeight: CGFloat = 0
+  /**
+   * Lets the chat go of its newest, so what grows now (a message's Show
+   * more) grows down from where it is, as on a page, and the chat neither
+   * follows nor glides to its new end. Set by the transcript as it shows;
+   * called in the same moment as the change, so the next layout already has it.
+   */
+  @ObservationIgnored var letGoOfNewest: () -> Void = {}
 
   /** A sideways swipe (step 2f): how far the person's messages have moved, 0 to 82, and whether one is under way or springing back (`data-peeking`). */
   var peek: CGFloat = 0
