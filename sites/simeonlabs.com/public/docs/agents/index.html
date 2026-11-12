@@ -132,9 +132,9 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 .words .shot{margin:12px 0 32px}
 .words .shot .pane{position:relative;overflow:hidden;border-radius:24px;max-width:100%;background:radial-gradient(120% 90% at 0% 0%,color-mix(in srgb,var(--c) 62%,#fff) 0%,color-mix(in srgb,var(--c) 26%,#fff) 55%,color-mix(in srgb,var(--c) 10%,#fff) 100%)}
 .words .shot img{position:absolute;display:block;width:var(--w);height:auto;filter:drop-shadow(0 18px 34px rgba(20,30,60,.2)) drop-shadow(0 2px 6px rgba(20,30,60,.08))}
-.words .shot .e-tl{left:7%;top:9%}.words .shot .e-tr{right:7%;top:9%}.words .shot .e-t{left:50%;top:9%;transform:translateX(-50%)}
-.words .shot .e-bl{left:7%;bottom:9%}.words .shot .e-br{right:7%;bottom:9%}.words .shot .e-b{left:50%;bottom:9%;transform:translateX(-50%)}
-.words .shot .e-c{left:50%;top:50%;transform:translate(-50%,-50%)}
+/* the window in from the left or from the right, running off the other side and the bottom, as Grok Bot's docs do
+   (the founder, 12 November 2026: "either left or right. but not ... middle") */
+.words .shot .e-left{left:7%;top:12%}.words .shot .e-right{right:7%;top:12%}
 .words .shot figcaption{margin-top:12px;font-size:var(--t-small);line-height:1.5;color:var(--ink2);text-align:center}
 .words .callout{margin:0 0 24px;padding:16px 20px;border-radius:14px;background:var(--soft)}
 .words .callout b{display:block;margin-bottom:4px;font-size:var(--t-small);font-weight:var(--w-title);color:var(--ink)}
@@ -224,7 +224,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <ol><li>Open your chat with <strong>Simeon</strong>.</li><li>Tell him what you want off your plate, in your own words:</li></ol>
 <blockquote><p>I spend every Monday chasing invoices and updating our books. Can you hire someone for that?</p></blockquote>
 <ol start="3"><li>If the job isn't clear, Simeon asks one or two questions. He then says what he assumed and hires.</li><li>A card says the new agent <strong>just joined your team</strong>. Choose <strong>Go to Chat</strong> to talk to it, or <strong>View Profile</strong> to check its details.</li></ol>
-<figure class="shot"><div class="pane" style="--c:#89acbc;--w:118%;aspect-ratio:16/11"><img class="e-tl" src="/docs/img/agents-hire.webp" alt="Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team" width="880" height="700" loading="lazy" decoding="async"></div><figcaption>Simeon says what he'll hire, then the new agent's card appears in his chat.</figcaption></figure>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:112%;aspect-ratio:16/11"><img class="e-left" src="/docs/img/agents-hire.webp" alt="Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team" width="780" height="640" loading="lazy" decoding="async"></div><figcaption>Simeon says what he'll hire, then the new agent's card appears in his chat.</figcaption></figure>
 <p>Simeon gives the new agent a first name, a title that names the job, a description and a brief: what to do first and how you like it done. The agent starts on the work right away.</p>
 <div class="callout tip"><b>Tip</b><p>Describe the problem, not the job title. "I never get back to customers in time" lets Simeon hire the right person and brief them properly. "Hire a support agent" gives him less to work with.</p></div>
 <h3 id="ask-for-a-whole-team">Ask for a whole team</h3>
@@ -233,14 +233,14 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <p>If you're not sure what to hand off, ask him what he'd recommend. He suggests a first hire, says why, and uses the apps you've already connected.</p>
 <h2 id="create-an-agent-yourself">Create an agent yourself</h2>
 <ol><li>Choose the <strong>New Agent</strong> button at the top of your list of chats.</li><li>Give it a <strong>Name</strong> and a <strong>Title</strong>. The title is the job, such as Inbox Manager or Recruiter.</li><li>Choose <strong>Edit</strong> under the face to pick a different face, generate one or upload your own (see <a href="#faces-and-voices">Faces and voices</a>).</li><li>Choose <strong>Create</strong>. The agent appears in your list and its chat opens.</li></ol>
-<figure class="shot"><div class="pane" style="--c:#a5835f;--w:48%;aspect-ratio:16/11"><img class="e-c" src="/docs/img/agents-new.webp" alt="The New Agent window with a face, Name, Title and Create" width="439" height="447" loading="lazy" decoding="async"></div><figcaption>New Agent asks for a name and a title.</figcaption></figure>
+<figure class="shot"><div class="pane" style="--c:#a5835f;--w:118%;aspect-ratio:16/10"><img class="e-right" src="/docs/img/agents-new.webp" alt="The New Agent window with a face, Name, Title and Create" width="780" height="540" loading="lazy" decoding="async"></div><figcaption>New Agent asks for a name and a title.</figcaption></figure>
 <ol start="5"><li>Tell the agent what you need in its chat, or write its description in its profile (below), so it knows its job from the first task.</li></ol>
 <div class="callout note"><b>Note</b><p>An agent you create yourself starts with a name and a title only. Give it a sentence or two about the job, in its description or its first message, before you hand it real work.</p></div>
 <p>You can also add a ready-made team from the <a href="/marketplace">Marketplace</a>: five agents for your kind of work, already described and briefed.</p>
 <h2 id="edit-an-agent-s-profile">Edit an agent's profile</h2>
 <p>An agent's profile holds its name, title and description, its routines and its computer. To open it, do one of these:</p>
 <ul><li>Choose the agent's face or name at the top of its chat.</li><li>Choose <strong>View Profile</strong> on the card that says it joined your team.</li><li>Right-click the agent in your list of chats and choose <strong>Edit Profile</strong>.</li></ul>
-<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:62%;aspect-ratio:16/12"><img class="e-t" src="/docs/img/agents-profile.webp" alt="Rosa&#x27;s profile: her face, name, title, description and notifications" width="479" height="640" loading="lazy" decoding="async"></div><figcaption>The profile's three tabs: Profile, Routines and Computer.</figcaption></figure>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:112%;aspect-ratio:16/11"><img class="e-right" src="/docs/img/agents-profile.webp" alt="Rosa&#x27;s profile: her face, name, title, description and notifications" width="710" height="600" loading="lazy" decoding="async"></div><figcaption>The profile's three tabs: Profile, Routines and Computer.</figcaption></figure>
 <div class="table"><table><thead><tr><th>Tab</th><th>What you can do there</th></tr></thead><tbody><tr><td><strong>Profile</strong></td><td>Change the name, title and description, the face (the pencil on it) and notifications.</td></tr><tr><td><strong>Routines</strong></td><td>See and change what the agent runs on a schedule or when something happens.</td></tr><tr><td><strong>Computer</strong></td><td>See the agent's desktop on the cloud computer, and take control of it.</td></tr></tbody></table></div>
 <p>A field is saved when you leave it; Escape undoes what you typed. The agent uses the new name, title and description from its next task. Simeon's own title and description can't be changed.</p>
 <h3 id="write-a-good-description">Write a good description</h3>
@@ -258,9 +258,9 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <p>Agents can message each other, so you don't have to pass work between them. Ask one agent for something that's another's job, and it hands the work on.</p>
 <blockquote><p>Can you make sure the Acme invoice gets paid this week?</p></blockquote>
 <p>Simeon answers, and under his reply you see how many messages he's exchanged with the other agent:</p>
-<figure class="shot"><div class="pane" style="--c:#89acbc;--w:118%;aspect-ratio:16/9"><img class="e-br" src="/docs/img/agents-handoff.webp" alt="Simeon replying that he&#x27;s asking Rosa, with &quot;2 messages with Rosa&quot; under it" width="880" height="600" loading="lazy" decoding="async"></div><figcaption>Under Simeon's reply: the exchange with Rosa.</figcaption></figure>
+<figure class="shot"><div class="pane" style="--c:#89acbc;--w:112%;aspect-ratio:16/10"><img class="e-left" src="/docs/img/agents-handoff.webp" alt="Simeon replying that he&#x27;s asking Rosa, with &quot;2 messages with Rosa&quot; under it" width="780" height="540" loading="lazy" decoding="async"></div><figcaption>Under Simeon's reply: the exchange with Rosa.</figcaption></figure>
 <p>Choose it to read their whole exchange. It's view-only: you can follow it, but you give work in your own chats.</p>
-<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:88%;aspect-ratio:16/9"><img class="e-t" src="/docs/img/agents-exchange.webp" alt="The exchange between Simeon and Rosa, with Close Chat at the bottom" width="559" height="600" loading="lazy" decoding="async"></div><figcaption>What Simeon asked Rosa, and what she answered.</figcaption></figure>
+<figure class="shot"><div class="pane" style="--c:#8f7f8d;--w:112%;aspect-ratio:16/10"><img class="e-right" src="/docs/img/agents-exchange.webp" alt="The exchange between Simeon and Rosa, with Close Chat at the bottom" width="780" height="540" loading="lazy" decoding="async"></div><figcaption>What Simeon asked Rosa, and what she answered.</figcaption></figure>
 <div class="callout tip"><b>Tip</b><p>Mention an agent in your message to bring it in directly. Type @ and choose it from the list, and its name appears as a pill in your message.</p></div>
 <h2 id="manage-your-team">Manage your team</h2>
 <p>Right-click an agent in your list of chats for these:</p>
@@ -308,7 +308,7 @@ Simeon is your chief of staff and the first agent on your team. The quickest way
 3. If the job isn&#x27;t clear, Simeon asks one or two questions. He then says what he assumed and hires.
 4. A card says the new agent **just joined your team**. Choose **Go to Chat** to talk to it, or **View Profile** to check its details.
 
-![Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team](img/agents-hire.webp &quot;Simeon says what he&#x27;ll hire, then the new agent&#x27;s card appears in his chat.&quot;){c=#89acbc edge=tl w=118 ar=16/11}
+![Simeon hiring Rosa, a bookkeeper, with the card that says she joined the team](img/agents-hire.webp &quot;Simeon says what he&#x27;ll hire, then the new agent&#x27;s card appears in his chat.&quot;){c=#89acbc ar=16/11}
 
 Simeon gives the new agent a first name, a title that names the job, a description and a brief: what to do first and how you like it done. The agent starts on the work right away.
 
@@ -331,7 +331,7 @@ If you&#x27;re not sure what to hand off, ask him what he&#x27;d recommend. He s
 3. Choose **Edit** under the face to pick a different face, generate one or upload your own (see [Faces and voices](#faces-and-voices)).
 4. Choose **Create**. The agent appears in your list and its chat opens.
 
-![The New Agent window with a face, Name, Title and Create](img/agents-new.webp &quot;New Agent asks for a name and a title.&quot;){c=#a5835f edge=c w=48 ar=16/11}
+![The New Agent window with a face, Name, Title and Create](img/agents-new.webp &quot;New Agent asks for a name and a title.&quot;){c=#a5835f edge=right w=118}
 
 5. Tell the agent what you need in its chat, or write its description in its profile (below), so it knows its job from the first task.
 
@@ -349,7 +349,7 @@ An agent&#x27;s profile holds its name, title and description, its routines and 
 - Choose **View Profile** on the card that says it joined your team.
 - Right-click the agent in your list of chats and choose **Edit Profile**.
 
-![Rosa&#x27;s profile: her face, name, title, description and notifications](img/agents-profile.webp &quot;The profile&#x27;s three tabs: Profile, Routines and Computer.&quot;){c=#8f7f8d edge=t w=62 ar=16/12}
+![Rosa&#x27;s profile: her face, name, title, description and notifications](img/agents-profile.webp &quot;The profile&#x27;s three tabs: Profile, Routines and Computer.&quot;){c=#8f7f8d edge=right w=112 ar=16/11}
 
 | Tab | What you can do there |
 |---|---|
@@ -397,11 +397,11 @@ Agents can message each other, so you don&#x27;t have to pass work between them.
 
 Simeon answers, and under his reply you see how many messages he&#x27;s exchanged with the other agent:
 
-![Simeon replying that he&#x27;s asking Rosa, with &quot;2 messages with Rosa&quot; under it](img/agents-handoff.webp &quot;Under Simeon&#x27;s reply: the exchange with Rosa.&quot;){c=#89acbc edge=br w=118 ar=16/9}
+![Simeon replying that he&#x27;s asking Rosa, with &quot;2 messages with Rosa&quot; under it](img/agents-handoff.webp &quot;Under Simeon&#x27;s reply: the exchange with Rosa.&quot;){c=#89acbc}
 
 Choose it to read their whole exchange. It&#x27;s view-only: you can follow it, but you give work in your own chats.
 
-![The exchange between Simeon and Rosa, with Close Chat at the bottom](img/agents-exchange.webp &quot;What Simeon asked Rosa, and what she answered.&quot;){c=#8f7f8d edge=t w=88 ar=16/9}
+![The exchange between Simeon and Rosa, with Close Chat at the bottom](img/agents-exchange.webp &quot;What Simeon asked Rosa, and what she answered.&quot;){c=#8f7f8d edge=right}
 
 :::tip
 Mention an agent in your message to bring it in directly. Type @ and choose it from the list, and its name appears as a pill in your message.
