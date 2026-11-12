@@ -45,6 +45,10 @@ from simeon.sand.box_azure import (
     VM_INIT,
     AzureBoxHost,
     AzureCredential,
+    is_label_value,
+    joined_sha,
+    label_value,
+    split_sha,
 )
 from simeon.sand.box_e2b import (
     ENGINE_NEXT_SUFFIX,
@@ -217,6 +221,20 @@ class FakeAzure:
         return httpx.Response(200, json={"value": self.disk_images})
 
     def _create(self, body: dict[str, Any]) -> httpx.Response:
+        # As Azure does (12 November 2026): a label that breaks Kubernetes' rule is refused.
+        if not all(
+            is_label_value(key) and is_label_value(value)
+            for key, value in body.get("labels", {}).items()
+        ):
+            return httpx.Response(
+                400,
+                json={
+                    "error": {
+                        "code": "InvalidRequest",
+                        "message": "The request is invalid or malformed.",
+                    }
+                },
+            )
         self._next += 1
         sandbox_id = f"sb{self._next}"
         self.created.append(body)
@@ -437,10 +455,16 @@ class TestAzureHost:
         }
         assert body["labels"] == {
             "simeon_box": spec.name,
-            "image": "azure:simeon-box",
-            "host_sha256": BUNDLE.folder_sha256,
+            "disk_image": "simeon-box",
+            "host_sha256_a": BUNDLE.folder_sha256[:32],
+            "host_sha256_b": BUNDLE.folder_sha256[32:],
             "box_store": "1",
         }
+        # Azure refuses a box whose labels break Kubernetes' rule (12 November
+        # 2026: "400 InvalidRequest" for "azure:…" and a 64-character value).
+        for key, value in body["labels"].items():
+            assert is_label_value(key), key
+            assert is_label_value(value), (key, value)
         # Every port asks for Microsoft's sign-in and admits only the server.
         assert [port["port"] for port in body["ports"]] == list(BOX_PORTS)
         for port in body["ports"]:
@@ -770,6 +794,37 @@ class TestAzureHost:
 
 
 # --- the settings -----------------------------------------------------------------
+
+
+def test_labels_follow_azures_rule() -> None:
+    """Azure refused every box whose labels broke Kubernetes' rule (12 November 2026)."""
+    assert not is_label_value("azure:simeon-box-9e492b56773b-202611122132")
+    assert not is_label_value("a" * 64)
+    assert is_label_value("simeon-box-9e492b56773b-202611122132")
+    assert label_value("azure:simeon-box") == "azure-simeon-box"
+    assert label_value("/x/" + "y" * 80) == "x-" + "y" * 60
+    assert all(is_label_value(label_value(v)) for v in ["-a-", "a b", "é", "x" * 99])
+    sha = BUNDLE.folder_sha256
+    assert len(sha) == 64
+    halves = split_sha(sha)
+    assert all(is_label_value(v) and len(v) == 32 for v in halves.values())
+    assert joined_sha(halves) == sha
+    assert joined_sha({"host_sha256_a": sha[:32]}) is None
+
+
+def test_a_box_made_from_another_disk_image_reads_as_that_image() -> None:
+    """So a new disk image replaces the boxes made from the last one, and the current one's are kept."""
+    host = _host(FakeAzure(), Clock())
+    current = host._provisioned(
+        {"id": "sb1", "labels": {"disk_image": label_value(host.disk_image)}}
+    )
+    older = host._provisioned(
+        {"id": "sb2", "labels": {"disk_image": "simeon-box-older"}}
+    )
+    unlabelled = host._provisioned({"id": "sb3", "labels": {}})
+    assert current.image == host.image_reference
+    assert older.image == "azure:simeon-box-older"
+    assert unlabelled.image == host.image_reference
 
 
 class TestEntries:

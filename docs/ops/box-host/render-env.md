@@ -362,6 +362,13 @@ to the E2B entry; the next start makes a fresh computer on E2B.
   `sand.box.azure.bundle_incomplete`, `sand.box.azure.tmp_in_memory`: as
   their E2B names.
 
+**"could not start a new computer: 400 InvalidRequest".** Azure refuses a
+computer whose labels break Kubernetes' rule (at most 63 characters; letters,
+digits, `-`, `_`, `.`). The first switch (12 November 2026) hit it: the image
+was labelled `azure:<name>` and the engine's 64-character fingerprint whole.
+The labels are now `disk_image` (the name) and `host_sha256_a`/`_b` (the
+fingerprint in halves); `test_box_azure.py`'s stand-in refuses as Azure does.
+
 **Every call answers "Azure refused Simeon's identity".** The server's
 identity lacks the role "Container Apps SandboxGroup Data Owner" on the
 sandbox group, or it was given in the last minute or two.

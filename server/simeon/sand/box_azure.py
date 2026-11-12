@@ -43,6 +43,7 @@ it before the request reaches the box, so the gateway's own password goes in
 from __future__ import annotations
 
 import asyncio
+import re
 import secrets
 import time
 from collections.abc import Mapping
@@ -99,6 +100,17 @@ LOGIN_URL = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
 
 #: The box's name (`simeon-box-<hex>`), as a label, so a box can be found.
 NAME_LABEL = "simeon_box"
+#: The disk image a box was made from (its name: `image_reference` without
+#: the kind), and the engine's fingerprint in two halves.
+DISK_IMAGE_LABEL = "disk_image"
+HOST_SHA_LABELS = ("host_sha256_a", "host_sha256_b")
+#: Azure's labels follow Kubernetes' rule: at most 63 characters, letters,
+#: digits, "-", "_" and ".", a letter or digit at each end. The first boxes
+#: made on Azure (12 November 2026) were all refused, 400 InvalidRequest:
+#: their labels carried the image as "azure:<name>" (a colon) and the
+#: engine's 64-character fingerprint whole.
+LABEL_MAX = 63
+_LABEL_VALUE = re.compile(r"^(?:[A-Za-z0-9](?:[A-Za-z0-9._-]{0,61}[A-Za-z0-9])?)?$")
 #: Azure's size "L": what a computer has on E2B today.
 RESOURCES = {"cpu": "2000m", "memory": "4096Mi", "disk": "40Gi"}
 
@@ -343,6 +355,30 @@ def _host_error(action: str, response: httpx.Response) -> BoxHostError:
 class _NoAnswer(BoxHostError):
     """Azure did not answer a call at all (a timeout or a lost connection),
     which a wake waits out (`AzureBoxHost.start`)."""
+
+
+def label_value(value: str) -> str:
+    """A value as Azure takes it in a label (`LABEL_MAX`): what it may not
+    hold made "-", cut to 63 characters, a letter or digit at each end."""
+    cleaned = re.sub(r"[^A-Za-z0-9._-]", "-", value)[:LABEL_MAX]
+    return cleaned.strip("._-")
+
+
+def is_label_value(value: str) -> bool:
+    """Whether Azure takes `value` as a label's value."""
+    return bool(_LABEL_VALUE.match(value))
+
+
+def split_sha(sha: str) -> dict[str, str]:
+    """The engine's fingerprint (64 characters) as two labels of 32."""
+    half = len(sha) // 2
+    return {HOST_SHA_LABELS[0]: sha[:half], HOST_SHA_LABELS[1]: sha[half:]}
+
+
+def joined_sha(labels: Mapping[str, Any]) -> str | None:
+    """The fingerprint from its two labels, when both are there."""
+    first, second = (labels.get(key) for key in HOST_SHA_LABELS)
+    return f"{first}{second}" if first and second else None
 
 
 def _state_of(sandbox: Mapping[str, Any]) -> str:
@@ -607,13 +643,21 @@ class AzureBoxHost:
         for entry in sandbox.get("ports") or []:
             if isinstance(entry, dict) and entry.get("port") and entry.get("url"):
                 meta[f"url_{entry['port']}"] = str(entry["url"]).rstrip("/")
+        # The image it was made from, as `image_reference` names it: the
+        # current one when its label is the current disk image's.
+        made_from = labels.get(DISK_IMAGE_LABEL)
+        image = (
+            self.image_reference
+            if not made_from or made_from == label_value(self.disk_image)
+            else f"{KIND}:{made_from}"
+        )
         return ProvisionedBox(
             str(sandbox.get("id")),
             self.proxy_domain,
             {port: port for port in BOX_PORTS},
-            labels.get("image") or self.image_reference,
+            image,
             None,
-            labels.get("host_sha256") or None,
+            joined_sha(labels),
             box_store=labels.get("box_store") or None,
             host_meta=meta,
         )
@@ -645,13 +689,13 @@ class AzureBoxHost:
                 "SIMEON_BOX_HOST_BUNDLE_URL."
             )
         labels = {
-            NAME_LABEL: spec.name,
-            "image": self.image_reference,
-            "host_sha256": self.bundle.folder_sha256,
+            NAME_LABEL: label_value(spec.name),
+            DISK_IMAGE_LABEL: label_value(self.disk_image),
+            **split_sha(self.bundle.folder_sha256),
         }
         store = spec.labels.get(box_store.LABEL)
         if store:
-            labels["box_store"] = store
+            labels["box_store"] = label_value(store)
         body = {
             "sourcesRef": {
                 "diskImage": {"id": await self._resolve_disk_image(), "isPublic": False}
@@ -919,7 +963,7 @@ class AzureBoxHost:
 
     async def _ids_named(self, name: str) -> list[str]:
         ids: list[str] = []
-        params = {"labels": f"{NAME_LABEL}={name}"}
+        params = {"labels": f"{NAME_LABEL}={label_value(name)}"}
         while True:
             response = await self._call(
                 "GET", "/sandboxes", params=params, action="find the computer"
@@ -934,7 +978,7 @@ class AzureBoxHost:
             token = httpx.URL(next_link).params.get("skipToken") if next_link else None
             if not token:
                 return ids
-            params = {"labels": f"{NAME_LABEL}={name}", "skipToken": token}
+            params = {"labels": f"{NAME_LABEL}={label_value(name)}", "skipToken": token}
 
     async def _delete(self, sandbox_id: str) -> None:
         response = await self._call(
