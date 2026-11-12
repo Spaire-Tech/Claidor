@@ -533,9 +533,10 @@ export class SandAgentRunner<T = unknown> {
           );
         },
         cloudAgentWatcher: () => options.cloudAgentWatcher ?? null,
-        pollShellTerminalFile: (id, cancelled, settle) => {
-          void pollShellTerminalFile(shellHost, id, cancelled, settle);
+        pollShellTerminalFile: (id, cancelled, settle, wrote) => {
+          void pollShellTerminalFile(shellHost, id, cancelled, settle, wrote);
         },
+        ...(options.now == null ? {} : { now: options.now }),
       };
       this.#backgroundWatches = createBackgroundWatches(watchesHost);
     }
@@ -868,6 +869,11 @@ export class SandAgentRunner<T = unknown> {
     return this.#backgroundWatches?.hasRunningBackgroundShellWork()
       ?? this.options.hasRunningBackgroundShellWork?.()
       ?? false;
+  }
+
+  /** When this agent's running background commands were last active (`host-busy.ts`); undefined when none runs or none says. */
+  backgroundShellActiveAtMs(): number | undefined {
+    return this.#backgroundWatches?.backgroundShellActiveAtMs();
   }
 
   cancelBackgroundShellRewatches(): void {

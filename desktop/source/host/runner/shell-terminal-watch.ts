@@ -171,6 +171,8 @@ export async function pollShellTerminalFile<Context>(
   id: string,
   isCancelled: () => boolean,
   settle: (status: ShellWatchStatus, detail?: string, outputPath?: string) => void,
+  /** The command wrote output since the last read (its file grew): it is still at work (`host-busy.ts`). */
+  wrote?: () => void,
 ): Promise<void> {
   const pollMs = shellRewatchPollMs();
   const now = host.now ?? Date.now;
@@ -178,6 +180,9 @@ export async function pollShellTerminalFile<Context>(
   const deadlineMs = now() + SHELL_REWATCH_MAX_WAIT_MS;
   let missingReads = 0;
   let outputPath: string | undefined;
+  // The file's header is rewritten in place every few seconds at a fixed
+  // width (`running_for_ms`), so only output makes it longer.
+  let lastLength: number | undefined;
   while (!isCancelled()) {
     try {
       const contextWithScope = host.ctx as unknown as {
@@ -206,6 +211,8 @@ export async function pollShellTerminalFile<Context>(
       );
       if (snapshot.exists) {
         missingReads = 0;
+        if (lastLength !== undefined && snapshot.content.length > lastLength) wrote?.();
+        lastLength = snapshot.content.length;
         const footer = parseShellTerminalFooter(snapshot.content);
         if (footer.isComplete) {
           const status = footer.exitCode === 0 ? "success" : "error";

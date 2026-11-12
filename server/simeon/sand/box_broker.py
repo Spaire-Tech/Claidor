@@ -349,7 +349,12 @@ async def get_sand_box_run_state(call: ConnectCall) -> dict[str, Any]:
         # the broker's record answers, the box's server is not asked.
         # With the switch the app needs before its first EnsureSandBox (a new
         # account's computer is made at its first task, not by a launch).
-        state = await broker.recorded_run_state(call.db, call.caller.user_id)
+        try:
+            redis = call.redis
+        except ConnectError:
+            redis = None
+        # A box the sleeper is stopping reads asleep already (`sleeping_key`).
+        state = await broker.recorded_run_state(call.db, call.caller.user_id, redis)
         return {
             "state": state,
             "imageUpdateAvailable": False,
