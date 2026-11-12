@@ -1365,6 +1365,21 @@ per-message deflate on either side (`--ws-per-message-deflate false` in
 are already compressed, and deflating them cost about 10 ms per update for
 nothing (`docs/services-agents.md` §15).
 
+**Render's edge firewall (12 November 2026).** Render's edge reads the start of
+each request body and refuses text that looks like an attack (shell commands,
+code) with its own 403 HTML page titled "Blocked", before the request reaches
+the API. Measured from the founder's Mac: a long message with shell commands
+was refused, "hello" passed, and the same message in base64 passed. So the apps
+can send a body in base64, with `x-simeon-body: base64`, the body's own type in
+`x-simeon-content-type` (JSON when absent) and `content-type: text/plain`.
+`EncodedBodyMiddleware` (`server/simeon/middlewares.py`) decodes it before
+every route and before this proxy, so routes and the box see the body as it
+was written, with its type and length restored and the two `x-simeon-` headers
+removed. A body that is not base64, or another value of `x-simeon-body`, is
+refused with 400; one over 16 MB encoded, with 413. A request without the
+header passes as it is. The engine's own model calls do the same with gzip
+after an edge refusal (`provider-session.ts`, `isEdgeRefusal`).
+
 **Placement across several servers.** `SIMEON_BOX_HOSTS` lists the box servers
 as JSON:
 
