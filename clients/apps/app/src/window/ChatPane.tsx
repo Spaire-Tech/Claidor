@@ -1856,6 +1856,7 @@ function PictureStrip({
         url: image.url,
         agentId: control.agentId,
         caption: image.alt === '' ? undefined : image.alt,
+        name: image.name,
       })),
       index,
     )

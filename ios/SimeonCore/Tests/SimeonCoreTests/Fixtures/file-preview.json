@@ -525,6 +525,38 @@
    "index": 0,
    "total": 1,
    "out": "c.jpg"
+  },
+  {
+   "source": "/home/user/.simeon/attachments/tessa/8a67a7332fe3ef9c015a65ef5a37b421c3091b7833fe067cf1ac77f2b46f1ded.png",
+   "index": 5,
+   "total": 6,
+   "out": "6 / 6"
+  },
+  {
+   "source": "/home/user/.simeon/attachments/tessa/8a67a7332fe3ef9c015a65ef5a37b421c3091b7833fe067cf1ac77f2b46f1ded.png",
+   "index": 0,
+   "total": 1,
+   "out": ""
+  },
+  {
+   "entryName": "IMG_0412.png",
+   "source": "/home/user/.simeon/attachments/tessa/8a67a7332fe3ef9c015a65ef5a37b421c3091b7833fe067cf1ac77f2b46f1ded.png",
+   "index": 0,
+   "total": 2,
+   "out": "IMG_0412.png · 1 / 2"
+  },
+  {
+   "entryName": "8a67a7332fe3ef9c015a65ef5a37b421.png",
+   "source": "/home/box/pics/x.png",
+   "index": 0,
+   "total": 1,
+   "out": "x.png"
+  },
+  {
+   "source": "/home/box/pics/cafe.png",
+   "index": 0,
+   "total": 1,
+   "out": "cafe.png"
   }
  ],
  "splits": [

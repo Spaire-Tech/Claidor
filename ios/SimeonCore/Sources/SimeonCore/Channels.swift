@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /**
  * An agent's messaging channels (Discord, Slack: a bot the person owns,

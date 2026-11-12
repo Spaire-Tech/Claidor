@@ -41,7 +41,10 @@ process.stdin.on("data", (d) => (stdin += d));
 process.stdin.on("end", async () => {
   const seenFile = path.join(dir, "seen.json");
   const all = (() => { try { return JSON.parse(fs.readFileSync(seenFile, "utf8")); } catch { return []; } })();
-  all.push({ argv, prompt: JSON.parse(stdin).message.content[0].text, brief: fs.readFileSync(flag("--append-system-prompt-file"), "utf8") });
+  const content = JSON.parse(stdin).message.content;
+  const words = content.find((part) => part.type === "text").text;
+  const pictures = content.filter((part) => part.type === "image").map((part) => part.source.type + ":" + part.source.media_type + ":" + part.source.data.length);
+  all.push({ argv, prompt: words, pictures, order: content.map((part) => part.type), brief: fs.readFileSync(flag("--append-system-prompt-file"), "utf8") });
   fs.writeFileSync(seenFile, JSON.stringify(all));
   const out = (event) => process.stdout.write(JSON.stringify({ ...event, session_id: session }) + "\\n");
   if (mode === "hang") { setInterval(() => {}, 1000); return; }
@@ -59,7 +62,7 @@ process.stdin.on("end", async () => {
   const rpc = async (id, method, params) => (await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id, method, params }) })).json();
   await rpc(1, "initialize", { protocolVersion: "2025-06-18" });
   const listed = await rpc(2, "tools/list", {});
-  const called = await rpc(3, "tools/call", { name: "SendMessage", arguments: { type: "text", content: "Done: " + JSON.parse(stdin).message.content[0].text.split("\\n").pop() } });
+  const called = await rpc(3, "tools/call", { name: "SendMessage", arguments: { type: "text", content: "Done: " + words.split("\\n").pop() } });
   out({ type: "result", subtype: "success", is_error: false, result: "Sent. tools=" + listed.result.tools.map((t) => t.name).join(","), num_turns: 2 });
 });
 `;
@@ -361,6 +364,74 @@ test("Claude reads the person's own words: the turn keeps them wrapped, never as
     // What Claude Code is then given: the words, never the line for an empty turn.
     assert.equal(bridge.claudeCodePrompt(bridge.claudeCodeTurnWords(kept.text), undefined, false), "can you archive anything not important");
   } finally {
+    await dispose();
+  }
+});
+
+/** A 1×1 PNG. */
+const DOT_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+
+test("the person's pictures reach Claude: read from the turn's message, made small, in the order sent, with their files named", async () => {
+  const { module: bridge, dispose } = await load();
+  try {
+    const Jimp = await bridge.getMinimalJimp();
+    const wide = await new Jimp({ width: 1600, height: 400, color: 0x3366ccff }).getBuffer("image/png");
+    const blobId = new Uint8Array([7, 7, 7]);
+    const blobs = { getBlob: async (_ctx, id) => (Buffer.from(id).equals(Buffer.from(blobId)) ? new Uint8Array(wide) : undefined) };
+    // The turn's message as the engine keeps it: wrapped, one picture with its bytes, one kept as a blob, one that isn't a picture.
+    const kept = bridge.toRedactedUserMessage(new bridge.UserMessage({
+      text: "only 6 are allowed at once",
+      selectedContext: new bridge.SelectedContext({ selectedImages: [
+        new bridge.SelectedImage({ dataOrBlobId: { case: "data", value: new Uint8Array(DOT_PNG) }, path: "/home/user/.simeon/attachments/tessa/8a67a733.png", mimeType: "image/png" }),
+        new bridge.SelectedImage({ dataOrBlobId: { case: "blobId", value: blobId }, path: "/home/user/.simeon/attachments/tessa/c0ffee.png" }),
+        new bridge.SelectedImage({ dataOrBlobId: { case: "data", value: new Uint8Array([1, 2, 3, 4]) }, path: "/home/user/.simeon/attachments/tessa/broken.png" }),
+      ] }),
+    }), bridge.PrivacyMode.NO_TRAINING);
+    const found = await bridge.claudeCodeTurnImages(bridge.createContext(), blobs, [kept]);
+    assert.equal(found.images.length, 2);
+    assert.deepEqual(found.images.map((image) => image.mediaType), ["image/png", "image/png"]);
+    assert.deepEqual(Buffer.from(found.images[0].data, "base64"), DOT_PNG);
+    assert.deepEqual(found.paths, ["/home/user/.simeon/attachments/tessa/8a67a733.png", "/home/user/.simeon/attachments/tessa/c0ffee.png"]);
+    assert.equal(found.skipped, 1);
+    const small = await Jimp.read(Buffer.from(found.images[1].data, "base64"));
+    assert.deepEqual([small.width, small.height], [1024, 256]);
+    const note = bridge.claudeCodeImagesNote(found);
+    assert.match(note, /^The person sent 2 pictures with this message; they are shown to you above, in the order sent\./);
+    assert.match(note, /- \/home\/user\/\.simeon\/attachments\/tessa\/c0ffee\.png/);
+    assert.match(note, /1 more picture came that couldn't be read here/);
+    // A message with no pictures has none, and no note.
+    const none = await bridge.claudeCodeTurnImages(bridge.createContext(), blobs, [bridge.toRedactedUserMessage(new bridge.UserMessage({ text: "hi" }), bridge.PrivacyMode.NO_TRAINING)]);
+    assert.deepEqual(none, { images: [], paths: [], skipped: 0 });
+    assert.equal(bridge.claudeCodeImagesNote(none), "");
+    // At most 20 a turn; the rest are counted.
+    const many = await bridge.claudeCodeTurnImages(bridge.createContext(), blobs, [{ selectedContext: { selectedImages: Array.from({ length: 22 }, () => ({ dataOrBlobId: { case: "data", value: new Uint8Array(DOT_PNG) } })) } }]);
+    assert.equal(many.images.length, 20);
+    assert.equal(many.skipped, 2);
+  } finally {
+    await dispose();
+  }
+});
+
+test("Claude Code gets the pictures before the words, as images in its stream-json message", async () => {
+  const { module: bridge, dispose } = await load();
+  const box = await setUp(bridge);
+  try {
+    const picture = { mediaType: "image/png", data: DOT_PNG.toString("base64") };
+    const done = await box.hook.run(box.input("The person sent 2 pictures with this message; they are shown to you above, in the order sent.\n\nupload these", undefined, { images: [picture, { mediaType: "image/jpeg", data: "AAAA" }] }));
+    assert.equal(done.ran, true);
+    const [one] = await box.seen();
+    assert.deepEqual(one.order, ["image", "image", "text"]);
+    assert.deepEqual(one.pictures, [`base64:image/png:${picture.data.length}`, "base64:image/jpeg:4"]);
+    assert.match(one.prompt, /The person sent 2 pictures/);
+    // Pictures and no words: Claude is told so, not that nothing came.
+    assert.equal(bridge.claudeCodePrompt("  ", undefined, false, 3), "(The person sent 3 pictures and no words: answer as the brief says.)");
+    assert.equal(bridge.claudeCodePrompt("", undefined, false, 1), "(The person sent a picture and no words: answer as the brief says.)");
+    // A turn with none sends the words alone, as before.
+    await box.hook.run(box.input("thanks"));
+    const [, two] = await box.seen();
+    assert.deepEqual(two.order, ["text"]);
+  } finally {
+    await box.dispose();
     await dispose();
   }
 });

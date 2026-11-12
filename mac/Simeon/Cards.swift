@@ -1444,7 +1444,7 @@ struct PictureStrip: View {
   private func tile(_ index: Int, width: CGFloat, height: CGFloat) -> some View {
     let image = images[index]
     return Button {
-      let items = images.map { MediaItem(url: $0.url, agentId: agentId, caption: $0.alt.isEmpty ? nil : $0.alt, name: nil) }
+      let items = images.map { MediaItem(url: $0.url, agentId: agentId, caption: $0.alt.isEmpty ? nil : $0.alt, name: $0.name) }
       viewers.shown = .media(items, start: index)
     } label: {
       ChatPicture(image: image, agentId: agentId, look: look)

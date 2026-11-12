@@ -254,10 +254,25 @@ export function mediaCaption(
   index: number,
   total: number,
 ): string {
-  const words = caption ?? name ?? lastPart(source)
+  // A stored copy's fingerprint says nothing to the person: the count alone (12 November 2026).
+  const words =
+    caption ??
+    [name, lastPart(source)].find(
+      (each): each is string => each != null && !isFingerprintName(each),
+    ) ??
+    ''
   const count = total > 1 ? `${index + 1} / ${total}` : ''
   if (words === '') return count
   return count === '' ? words : `${words} · ${count}`
+}
+
+/**
+ * A name made from a file's contents, as the computer keeps the person's
+ * pictures ("8a67a733…1ded.png"): 32 or more hexadecimal characters before
+ * the extension (`FilePreview.isFingerprintName`).
+ */
+export function isFingerprintName(name: string): boolean {
+  return /^[0-9a-f]{32,}$/i.test(splitName(name).base)
 }
 
 /** Previous and next wrap round (`ove`). */

@@ -32,9 +32,17 @@ const TURN_TIMEOUT_MS = 60 * 60_000;
 /** A session id as Claude Code writes them (a UUID). */
 const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** A picture Claude reads with the prompt: its type (`image/png`…) and its bytes in base64. */
+export interface ClaudeCodeImage {
+  readonly mediaType: string;
+  readonly data: string;
+}
+
 export interface ClaudeCodeTurnInput {
   /** What the agent is asked this turn (the person's message, a routine's instruction…). */
   readonly prompt: string;
+  /** The person's pictures with it, shown to Claude before the words. */
+  readonly images?: readonly ClaudeCodeImage[] | undefined;
   /** `--model`: `opus`, `sonnet`. */
   readonly model: string;
   /** `--effort`: how hard Claude thinks (`low`, `medium`, `high`, `xhigh`, `max`), as the person chose on the composer; none, Claude Code's own. */
@@ -107,9 +115,10 @@ export function claudeCodeTurnArgs(input: ClaudeCodeTurnInput, files: { brief?: 
   return args;
 }
 
-/** The prompt as one stream-json user message. */
-export function claudeCodeUserMessage(prompt: string): string {
-  return `${JSON.stringify({ type: "user", message: { role: "user", content: [{ type: "text", text: prompt }] } })}\n`;
+/** The prompt as one stream-json user message: the pictures first, then the words. */
+export function claudeCodeUserMessage(prompt: string, images: readonly ClaudeCodeImage[] = []): string {
+  const pictures = images.map((image) => ({ type: "image", source: { type: "base64", media_type: image.mediaType, data: image.data } }));
+  return `${JSON.stringify({ type: "user", message: { role: "user", content: [...pictures, { type: "text", text: prompt }] } })}\n`;
 }
 
 const said = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
@@ -313,7 +322,7 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
         else finish({ kind: "failed", sessionId, said: words || `claude exited ${code ?? "on a signal"}`, exitCode: code });
       });
       child.stdin?.on("error", () => { /* closed early: the close event says why */ });
-      child.stdin?.end(claudeCodeUserMessage(input.prompt));
+      child.stdin?.end(claudeCodeUserMessage(input.prompt, input.images));
     });
   } finally {
     rmSync(folder, { recursive: true, force: true });

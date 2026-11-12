@@ -247,6 +247,8 @@ final class ChatThreadTests: XCTestCase {
     XCTAssertEqual(shape, ["stamp", "a0", "stamp", "pictures:Photo 1.png,clip.mov:mine", "file:brief.pdf", "u1", "stamp", "pictures:old.jpg:mine", "u2"])
     guard case .bubble(let first)? = rows.first(where: { $0.id == "p1" }) else { return XCTFail("the pictures are one row") }
     XCTAssertEqual(first.images[0].aspect, 1170.0 / 2532.0, accuracy: 0.001)
+    // Each keeps its own name for the viewer's title (the computer keeps it under one made from its contents).
+    XCTAssertEqual(first.images.map(\.name), ["Photo 1.png", nil])
   }
 
   /** "Sent while offline" only on what this app held and sent (the Electron window's outbox), never from the host's own mark. */

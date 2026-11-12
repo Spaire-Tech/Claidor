@@ -3,6 +3,7 @@ import { fromRedactedRequestContext } from "../../../redacted-protos/generated/a
 import { fromRedactedUserMessage as fromRedactedUserMessage2 } from "../../../redacted-protos/generated/agent/v1/agent_redacted.js";
 import { PrivacyCapability } from "../../../redaction/classification.js";
 import { claudeCodeTurnWords } from "./claude-code-turn-words.js";
+import { claudeCodeImagesNote, claudeCodeTurnImages, type ClaudeCodeTurnImage } from "./claude-code-turn-images.js";
 import { fromRedactedCoreMessage, fromRedactedCoreMessages, toRedactedCoreMessages } from "../../../redaction/core-message.js";
 import { createLogger } from "../../../context/logger.js";
 import { createSpan } from "../../../context/otel.js";
@@ -98,6 +99,8 @@ export interface ClaudeCodeTurnHook {
     readonly brief: string;
     readonly context?: string;
     readonly text: string;
+    /** The person's pictures with the message, in the order sent (`claudeCodeTurnImages`). */
+    readonly images?: readonly ClaudeCodeTurnImage[];
     readonly tools: readonly unknown[];
     readonly listener: unknown;
     readonly stateHandler: unknown;
@@ -413,13 +416,18 @@ export class UserMessageActionHandler extends AbstractUserMessageActionHandler {
     const brief = messages.filter((message) => message.role === "system").map(textOf).filter((text) => text !== "").join("\n\n");
     const userInfo = messages.find((message) => message.role === "user" && message.providerOptions?.simeon?.requestContextCompleteness !== undefined);
     const userMessage = await turn.userMessage.get(ctx);
+    // The person's pictures go to Claude with the words (12 November 2026: an agent on Claude saw none of them).
+    const pictures = await claudeCodeTurnImages(ctx, stateHandler.getBlobStore?.(), [userMessage]);
+    if (pictures.skipped > 0) logger70.warn(ctx, "claude-code turn pictures not read", { skipped: pictures.skipped, read: pictures.images.length });
+    const picturesNote = claudeCodeImagesNote(pictures);
     const outcome = await hook.run({
       ctx,
       conversationId: String(configAny.conversationId ?? ""),
       ...(configAny.claudeCodeKind === undefined ? {} : { kind: configAny.claudeCodeKind }),
       brief,
       ...(userInfo === undefined ? {} : { context: textOf(userInfo) }),
-      text: claudeCodeTurnWords(userMessage?.text, prependedTexts),
+      text: claudeCodeTurnWords(userMessage?.text, picturesNote === "" ? prependedTexts : [...prependedTexts, picturesNote]),
+      ...(pictures.images.length === 0 ? {} : { images: pictures.images }),
       tools,
       listener: toUnredactedInteractionListener(this.interactionListener, stateHandler.getPrivacyMode()),
       stateHandler,

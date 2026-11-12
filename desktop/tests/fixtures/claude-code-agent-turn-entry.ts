@@ -8,6 +8,10 @@ export { TurnRuntime } from "../../source/host/extensions/transcript/turn-runtim
 export { claudeCodeTurnWords } from "../../source/packages/agent/actions/user-message-action/claude-code-turn-words.js";
 export { toRedactedUserMessage } from "../../source/packages/redacted-protos/generated/agent/v1/agent_redacted.js";
 export { UserMessage } from "../../source/packages/proto/generated/agent/v1/agent_pb.js";
+export { SelectedContext, SelectedImage } from "../../source/packages/proto/generated/agent/v1/selected_context_pb.js";
+// The person's pictures as the turn hands them over (12 November 2026).
+export { claudeCodeImagesNote, claudeCodeTurnImages } from "../../source/packages/agent/actions/user-message-action/claude-code-turn-images.js";
+export { getMinimalJimp } from "../../source/packages/utils/jimp-minimal.js";
 export { PrivacyMode } from "../../source/packages/redaction/privacy-mode.js";
 // Claude signed out: the roles the server gives, and the chat's model line.
 export { setSimeonModelRolesForTest, setSimeonModelRolesSourceForTest } from "../../source/host/extensions/inference/simeon-model-roles.js";
