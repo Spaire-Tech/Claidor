@@ -221,6 +221,11 @@ async function runDriver({ nodePath, npmPrints, playwrightRoot }) {
     await fakePackage(npmGlobal, "npm global");
     await writeFile(path.join(bin, "npm"), `#!/bin/sh\necho called >> "${marker}"\n${npmPrints ? `echo "${npmGlobal}"` : ""}\n`);
     await chmod(path.join(bin, "npm"), 0o755);
+    // The driver gives npm five seconds. A Mac checks a program the first time it runs, which on a busy Mac
+    // (the whole suite at once) took longer than that, and the step went on to the host's copy (13 November
+    // 2026, the engine's check before a release). So it runs once here first, uncounted.
+    await new Promise((resolve) => spawn(path.join(bin, "npm"), ["root", "-g"], { stdio: "ignore" }).on("exit", resolve).on("error", resolve));
+    await rm(marker, { force: true });
     let modules = "";
     if (nodePath) {
       modules = path.join(dir, "node-path");
