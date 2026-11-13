@@ -799,7 +799,8 @@ final class ModelConnectCardTests: XCTestCase {
     XCTAssertEqual(ModelConnectCard.title("claude", connected: true), "Claude Code")
     XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: true), "")
     XCTAssertEqual(ModelConnectCard.connectLabel, "Connect")
-    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude Code, Codex")
+    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude Code, Codex, Cursor")
+    XCTAssertEqual(card.previewText, "Connect Claude Code, Codex", "the chat's preview names what this card offers")
     XCTAssertEqual(ModelConnectCard.program("claude"), "Claude Code")
     XCTAssertEqual(ModelConnectCard.program("chatgpt"), "Codex")
     // Each program's own logo, the cut-outs the apps ship (`Mascots/`).
@@ -812,8 +813,51 @@ final class ModelConnectCardTests: XCTestCase {
 
   func testOnlyTheTwoItKnowsAndBothWhenItNamesNone() {
     XCTAssertEqual(ModelConnectCard(["providers": ["chatgpt", "gemini", "chatgpt", 7]])?.providers, ["chatgpt"], "a provider no cloud agent codes on is left out, one named twice shown once")
-    XCTAssertEqual(ModelConnectCard(["providers": ["something-new"]])?.providers, ["claude", "chatgpt"])
-    XCTAssertEqual(ModelConnectCard([:])?.providers, ["claude", "chatgpt"])
+    XCTAssertEqual(ModelConnectCard(["providers": ["something-new"]])?.providers, ["claude", "chatgpt", "cursor"])
+    XCTAssertEqual(ModelConnectCard([:])?.providers, ["claude", "chatgpt", "cursor"])
+  }
+
+  /** Cursor, the third program (13 November 2026, the founder: "Cursor now"): its row, and its sign-in read from the cloud computer. */
+  func testCursorIsTheThirdProgramSignedInOnTheComputer() {
+    let entry = Entry(["kind": "send-message", "id": "m2", "message": ["type": "model-connect", "providers": ["cursor"]]])!
+    guard case .modelConnect("m2", let card)? = Chat.rows([entry]).last else { return XCTFail() }
+    XCTAssertEqual(card.providers, ["cursor"], "a launch that named Cursor offers Cursor alone")
+    XCTAssertEqual(card.previewText, "Connect Cursor")
+    XCTAssertEqual(ModelConnectCard.title("cursor", connected: false), "Connect Cursor")
+    XCTAssertEqual(ModelConnectCard.title("cursor", connected: true), "Cursor")
+    XCTAssertEqual(ModelConnectCard.line("cursor", connected: false), "Runs on your Cursor plan.")
+    XCTAssertEqual(ModelConnectCard.logo("cursor"), "cursor")
+    XCTAssertTrue(ModelConnectCard.onComputer("cursor"))
+    XCTAssertFalse(ModelConnectCard.onComputer("claude"))
+    XCTAssertFalse(ModelConnectCard.onComputer("chatgpt"))
+    // A cloud agent that codes in Cursor is drawn with Cursor's logo.
+    XCTAssertEqual(ExternalAgents.cloudAgentMascot("cursor"), "cursor")
+
+    // The computer's word on the sign-in.
+    XCTAssertEqual(CursorSignIn(["state": "none"]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "installing"]).state, .installing)
+    XCTAssertEqual(CursorSignIn(["state": "connected"]).state, .connected)
+    XCTAssertTrue(CursorSignIn(["state": "connected"]).connected)
+    XCTAssertEqual(CursorSignIn(["state": "failed", "why": "ended"]).state, .failed(why: "ended"))
+    let waiting = CursorSignIn(["state": "waiting", "url": "https://cursor.com/loginDeepControl?challenge=a&uuid=b", "expiresAtMs": 1_794_000_000_000])
+    XCTAssertEqual(waiting.state, .waiting(url: URL(string: "https://cursor.com/loginDeepControl?challenge=a&uuid=b")!, expiresAt: Date(timeIntervalSince1970: 1_794_000_000)))
+    // Only a page on Cursor's own site is ever opened.
+    XCTAssertEqual(CursorSignIn(["state": "waiting", "url": "https://cursor.com.example.org/login", "expiresAtMs": 1]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "waiting", "url": "http://cursor.com/login", "expiresAtMs": 1]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "something-new"]).state, .none)
+    XCTAssertEqual(CursorSignIn.open("Cursor"), "Open Cursor")
+    XCTAssertEqual(CursorSignIn.connectedTo("Cursor"), "You're now connected to Cursor.")
+
+    // Its consent: Cursor's plan for cloud agents alone; the agents' own model isn't touched, and nothing sends the person to AI Models.
+    let consent = ConnectConsent(codingProvider: "cursor")
+    XCTAssertEqual([consent.id, consent.title, consent.programLogo], ["coding:cursor", "Cursor", "cursor"])
+    XCTAssertEqual(consent.summary, "Run your cloud agents in Cursor, on your Cursor plan.")
+    XCTAssertEqual(consent.points.map(\.body), [
+      "Cloud agents code in Cursor on your Cursor plan, not on your Simeon credits. Your agents keep the model they have.",
+      "You approve on Cursor's own page, and the sign-in stays on your cloud computer. To disconnect, ask one of your agents.",
+      "Cloud agents in Cursor pause until it resets.",
+    ])
+    XCTAssertEqual(consent.smallPrint, ["You'll sign in on Cursor's own page. Simeon never sees your password."])
   }
 }
 

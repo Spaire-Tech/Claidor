@@ -107,11 +107,22 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
    */
   public init(codingProvider provider: String) {
     let program = ModelConnectCard.program(provider)
-    let plan = AIModels.providerName(provider)
+    let plan = ModelConnectCard.plan(provider)
     id = "coding:\(provider)"
     title = program
     summary = L10n.text("Run your cloud agents in \(program), on your \(plan) plan.")
     route = .unknown
+    note = nil
+    // Cursor is no plan for the agents' own model: it is signed in on the cloud computer, for cloud agents alone.
+    if ModelConnectCard.onComputer(provider) {
+      points = [
+        Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: L10n.text("Cloud agents code in \(program) on your \(plan) plan, not on your Simeon credits.") + " " + L10n.text("Your agents keep the model they have.")),
+        Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("You approve on \(program)'s own page, and the sign-in stays on your cloud computer. To disconnect, ask one of your agents.")),
+        Point(symbol: "checkmark.circle", title: L10n.text("When your plan runs out"), body: L10n.text("Cloud agents in \(program) pause until it resets.")),
+      ]
+      smallPrint = [Self.signInLine(.unknown, title: program)]
+      return
+    }
     points = [
       Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: L10n.text("Cloud agents code in \(program) on your \(plan) plan, not on your Simeon credits.") + " " + L10n.text("Your agents use that plan too, unless you've picked another model.")),
       Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
@@ -122,7 +133,6 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
       Self.signInLine(.unknown, title: plan),
       L10n.text("Voice calls, dictation and video still use your Simeon credits."),
     ]
-    note = nil
   }
 
   /**

@@ -90,7 +90,7 @@ public enum ExternalAgents {
   }
 
   /** The icons drawn as mascots, cut out on Connect apps' tile (`Mascots/<icon>`): white, or #2c2c2e on dark. */
-  public static let mascots: Set<String> = ["grokbot", "muse", "dots", "claudecode", "codex"]
+  public static let mascots: Set<String> = ["grokbot", "muse", "dots", "claudecode", "codex", "cursor"]
 
   /**
    * The card's picture, the same on every app (11 November 2026, the
@@ -145,7 +145,7 @@ public enum ExternalAgents {
   /** The icon for a kind the server names (`network.KINDS`): a known bot's mascot (Claude Code's and Codex's the founder's), its maker's mark for another coding agent, nil for one there is none of. */
   public static func icon(for kind: String) -> String? {
     switch kind {
-    case "dots", "muse", "codex": return kind
+    case "dots", "muse", "codex", "cursor": return kind
     case "grok-bot": return "grokbot"
     case "claude-code": return "claudecode"
     case "claude": return "claude"
