@@ -26,6 +26,7 @@ Nothing here touches the database; the broker keeps the row.
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import hashlib
 import io
@@ -730,9 +731,19 @@ def set_box_host_for_tests(host: BoxHost | list[BoxHost] | None) -> None:
 LATEST_VERSION_FILE = "sand-host-bundle-latest.version"
 HOST_BUNDLE_PREFIX = "sand-host-bundle"
 _VERSION_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
+#: The engine tried on a few accounts before everyone (13 November 2026): a
+#: second pointer in the same folder, written by `npm run publish:host-bundle
+#: -- --trial` (desktop/scripts/publish-host-bundle.mjs).
+TRIAL_VERSION_FILE = "sand-host-bundle-trial.version"
 #: How long a read pointer is trusted: the upstream app's `VERSION_CACHE_TTL_MS`.
 BUNDLE_POINTER_TTL = timedelta(minutes=10)
 _pointer_cache: dict[str, tuple[str, datetime]] = {}
+#: Channels whose trial pointer could not be read, and when: not asked again
+#: for `BUNDLE_POINTER_TTL`.
+_trial_unread: dict[str, datetime] = {}
+#: A server as a computer on the trial engine sees it (`with_bundle`), kept
+#: with the server it was made from.
+_bundle_views: dict[tuple[str, str], tuple[BoxHost, BoxHost]] = {}
 
 
 def _bundle_http() -> httpx.AsyncClient:
@@ -747,6 +758,8 @@ def set_bundle_http_for_tests(factory: Callable[[], httpx.AsyncClient] | None) -
     _bundle_http_factory = factory or _bundle_http
     _pointer_cache.clear()
     _bundle_cache.clear()
+    _trial_unread.clear()
+    _bundle_views.clear()
 
 
 def is_bundle_channel(url: str) -> bool:
@@ -771,17 +784,18 @@ async def _fetch_bundle(url: str) -> HostBundle:
     return bundle
 
 
-async def _current_version(base: str) -> str:
+async def _current_version(base: str, pointer: str = LATEST_VERSION_FILE) -> str:
     """The commit id the channel's pointer names, read at most every
     `BUNDLE_POINTER_TTL`. A pointer that cannot be read keeps the last one
     read, so a moment of S3 trouble never takes the cloud computers down."""
     now = datetime.now(UTC)
-    cached = _pointer_cache.get(base)
+    kept_as = base if pointer == LATEST_VERSION_FILE else f"{base}/{pointer}"
+    cached = _pointer_cache.get(kept_as)
     if cached is not None and now - cached[1] < BUNDLE_POINTER_TTL:
         return cached[0]
     try:
         async with _bundle_http_factory() as client:
-            response = await client.get(f"{base}/{LATEST_VERSION_FILE}")
+            response = await client.get(f"{base}/{pointer}")
         if response.status_code != 200:
             raise BoxHostError(
                 f"The host bundle pointer at {base} answered {response.status_code}."
@@ -795,12 +809,17 @@ async def _current_version(base: str) -> str:
     except (BoxHostError, httpx.HTTPError) as error:
         if cached is None:
             raise BoxHostError(str(error) or type(error).__name__) from error
-        log.warning("sand.box.bundle.pointer_unread", base=base, error=str(error))
-        _pointer_cache[base] = (cached[0], now)
+        log.warning(
+            "sand.box.bundle.pointer_unread",
+            base=base,
+            pointer=pointer,
+            error=str(error),
+        )
+        _pointer_cache[kept_as] = (cached[0], now)
         return cached[0]
     if cached is None or cached[0] != version:
-        log.info("sand.box.bundle.version", base=base, version=version)
-    _pointer_cache[base] = (version, now)
+        log.info("sand.box.bundle.version", base=base, pointer=pointer, version=version)
+    _pointer_cache[kept_as] = (version, now)
     return version
 
 
@@ -817,6 +836,60 @@ async def load_host_bundle(url: str) -> HostBundle | None:
     base = url.rstrip("/")
     version = await _current_version(base)
     return await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
+
+
+async def load_trial_bundle(url: str) -> HostBundle | None:
+    """The engine being tried before everyone gets it (`TRIAL_VERSION_FILE`,
+    in the same folder as everyone's pointer), for the accounts in
+    `SIMEON_BOX_ENGINE_TRIAL_USERS`. None when there is none to try: `url`
+    is one fixed file, no trial was ever published, or its pointer or its
+    file cannot be read; those accounts then run everyone's engine, and the
+    channel is not asked again for `BUNDLE_POINTER_TTL`."""
+    if not url or not is_bundle_channel(url):
+        return None
+    base = url.rstrip("/")
+    now = datetime.now(UTC)
+    unread = _trial_unread.get(base)
+    if unread is not None and now - unread < BUNDLE_POINTER_TTL:
+        return None
+    try:
+        version = await _current_version(base, TRIAL_VERSION_FILE)
+        bundle = await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
+    except Exception as error:
+        # Whatever went wrong (not there, not a bundle, a file cut short), the
+        # trial accounts run everyone's engine: a trial never takes a
+        # computer down.
+        log.info(
+            "sand.box.bundle.trial_unread",
+            base=base,
+            error=str(error) or type(error).__name__,
+        )
+        _trial_unread[base] = now
+        return None
+    _trial_unread.pop(base, None)
+    return bundle
+
+
+def with_bundle(host: BoxHost, bundle: HostBundle) -> BoxHost:
+    """`host` as a computer on another engine sees it: the same server (its
+    name, its connections, its limits) with `bundle` in place of everyone's.
+    A server that mounts no bundle of ours (a stand-in, an image trusted to
+    carry its own) is answered as it is. One view is kept per server and
+    engine, so what a server learns as it works (Azure's token scope, its
+    disk image) is not found again at every call."""
+    own = getattr(host, "bundle", None)
+    if own is None or own.key == bundle.key:
+        return host
+    kept = _bundle_views.get((host.name, bundle.key))
+    if kept is not None and kept[0] is host:
+        return kept[1]
+    view = copy.copy(host)
+    view.bundle = bundle  # type: ignore[attr-defined]
+    # A handful at most: the servers configured, times the one engine tried.
+    while len(_bundle_views) >= 16:
+        _bundle_views.pop(next(iter(_bundle_views)))
+    _bundle_views[(host.name, bundle.key)] = (host, view)
+    return view
 
 
 #: In an entry's `users`: every person (17 October 2026, E2B for everyone).

@@ -16,6 +16,14 @@ import { gzipSync } from "node:zlib";
 
 export const HOST_BUNDLE_PREFIX = "sand-host-bundle";
 export const LATEST_VERSION_FILE = "sand-host-bundle-latest.version";
+/**
+ * A new engine tried on a few accounts before everyone (13 November 2026):
+ * a second pointer in the same folder. The server gives the engine it names
+ * to the accounts in `SIMEON_BOX_ENGINE_TRIAL_USERS`
+ * (`server/simeon/sand/box_hosts.py`, `load_trial_bundle`); everyone else
+ * keeps the one LATEST_VERSION_FILE names.
+ */
+export const TRIAL_VERSION_FILE = "sand-host-bundle-trial.version";
 /** the upstream app's rule for a version (`SHORT_GIT_SHA_REGEX`). */
 export const VERSION_PATTERN = /^[0-9a-f]{7,40}$/;
 export const BUNDLE_MEMBERS = Object.freeze({
@@ -61,6 +69,46 @@ export function staleAppReason(stamp, current) {
   if (built === "") return "The packaged app has no record of what it was built from: run `npm run package` first (it stops, building nothing, when a test fails).";
   if (built !== current) return `The packaged app was built from ${built.slice(0, 12)}, not the current engine sources ${current.slice(0, 12)}: run \`npm run package\` again (it stops, building nothing, when a test fails).`;
   return null;
+}
+
+/**
+ * What one run of `npm run publish:host-bundle` does, read from its
+ * arguments, and the pointers it writes, in the order they are written:
+ *
+ * - nothing: `publish`. The packaged app's engine goes out to everyone. The
+ *   trial pointer is moved with it, so the trial never names an engine older
+ *   than everyone's.
+ * - `--trial`: `trial`. The packaged app's engine goes out to the trial
+ *   accounts only.
+ * - `--promote`: `promote`. Nothing is built or uploaded: everyone's pointer
+ *   takes the commit the trial pointer names.
+ * - `--back-to <commit>`: `back`. Nothing is built or uploaded: both
+ *   pointers name an engine published earlier.
+ *
+ * Throws, with the sentence to show, on arguments that do not make one of
+ * these.
+ */
+export function publishPlan(args) {
+  const known = new Set(["--trial", "--promote", "--back-to", "--allow-dirty"]);
+  const unknown = args.filter((arg) => arg.startsWith("--") && !known.has(arg));
+  if (unknown.length > 0) throw new Error(`Unknown option ${unknown.join(", ")}. Use --trial, --promote or --back-to <commit>.`);
+  const asked = ["--trial", "--promote", "--back-to"].filter((flag) => args.includes(flag));
+  if (asked.length > 1) throw new Error(`Use one of ${asked.join(", ")} at a time.`);
+  const allowDirty = args.includes("--allow-dirty");
+  if (asked[0] === "--promote") return { action: "promote", pointers: [LATEST_VERSION_FILE], allowDirty };
+  if (asked[0] === "--back-to") {
+    const version = args[args.indexOf("--back-to") + 1] ?? "";
+    if (!VERSION_PATTERN.test(version)) throw new Error(`--back-to needs the commit id of an engine published earlier (7-40 lowercase hex), got ${JSON.stringify(version)}.`);
+    return { action: "back", version, pointers: [TRIAL_VERSION_FILE, LATEST_VERSION_FILE], allowDirty };
+  }
+  if (asked[0] === "--trial") return { action: "trial", pointers: [TRIAL_VERSION_FILE], allowDirty };
+  return { action: "publish", pointers: [TRIAL_VERSION_FILE, LATEST_VERSION_FILE], allowDirty };
+}
+
+/** A pointer file's body as it was read, or null when it names no commit. */
+export function versionIn(body) {
+  const version = typeof body === "string" ? body.trim() : "";
+  return VERSION_PATTERN.test(version) ? version : null;
 }
 
 function octal(value, width) {

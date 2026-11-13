@@ -266,6 +266,24 @@ order. The version is the current commit (12 characters), so uncommitted
 changes under `source/`, `scripts/` or `package.json` are refused
 (`--allow-dirty` is for test builds only).
 
+### A new engine on a few accounts first
+
+From 13 November 2026 a new engine goes to the accounts in the server's
+`SIMEON_BOX_ENGINE_TRIAL_USERS` before everyone
+(`docs/services-core.md`, "A new engine on a few accounts first"):
+
+```sh
+npm run publish:host-bundle -- --trial             # this engine, to those accounts only
+npm run publish:host-bundle -- --promote           # the engine on trial, to everyone
+npm run publish:host-bundle -- --back-to <commit>  # everyone back on an engine published earlier
+```
+
+Each needs `SIMEON_HOST_BUNDLE_S3`, as above. `--trial` needs the packaged
+app; `--promote` and `--back-to` only move the pointers, so they take a few
+seconds. Each time everyone's pointer moves, the script prints the
+`--back-to` command that undoes it. With no option the engine goes to
+everyone at once, as before.
+
 The folder must be readable over plain HTTPS without credentials. The server's
 `SIMEON_BOX_HOST_BUNDLE_URL` names it; the server reads the pointer at most
 every ten minutes and moves each box to the new version when it is idle. On
