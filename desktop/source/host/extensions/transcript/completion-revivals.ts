@@ -25,8 +25,8 @@ export interface SubagentCompletion {
   status: string;
   result: string;
   quietOrigin?: QuietWakeOrigin;
-  /** A cloud agent's own name and words (`buildWatchResult`), for the line in the chat. */
-  cloudAgent?: { readonly name?: string; readonly said?: string };
+  /** A cloud agent's own name and words, and the program that coded (`buildWatchResult`), for the line in the chat. */
+  cloudAgent?: { readonly name?: string; readonly said?: string; readonly coder?: string };
 }
 export function buildSubagentRevivalPrompt(
   completions: readonly SubagentCompletion[],
@@ -192,6 +192,9 @@ export class CompletionRevivals {
           {
             id: completion.subagentAgentId,
             name: completion.cloudAgent?.name?.trim() ?? "",
+            ...(completion.cloudAgent?.coder === undefined
+              ? {}
+              : { coder: completion.cloudAgent.coder }),
           },
           text,
           Date.now(),

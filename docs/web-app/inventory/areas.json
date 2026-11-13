@@ -218,8 +218,8 @@
    "mac/Simeon/Tapback.swift",
    "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 8286,
-  "core_lines": 5110,
+  "mac_lines": 8304,
+  "core_lines": 5138,
   "views": 63,
   "files_needing_a_mac": 15,
   "strings": 323,
@@ -500,7 +500,7 @@
    "mac/Simeon/SettingsWindow.swift"
   ],
   "mac_lines": 5830,
-  "core_lines": 4022,
+  "core_lines": 4028,
   "views": 78,
   "files_needing_a_mac": 11,
   "strings": 488,

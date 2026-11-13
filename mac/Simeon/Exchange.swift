@@ -120,18 +120,35 @@ struct ExchangeView: View {
   }
 }
 
-/** A cloud agent where an agent's picture would be: a cloud on the grey wash, round. */
+/**
+ * A cloud agent where an agent's picture would be (13 November 2026, the
+ * founder: "it should be whatever agent is used. either claude code or
+ * codex"): the mascot of the program that coded (`Party.mascot`, Claude
+ * Code's or Codex's), on Connect apps' tile (white, #2c2c2e on dark, a
+ * hairline), round as a picture.
+ */
 struct CloudAgentMark: View {
+  let party: Party
   let size: CGFloat
   let look: Look
 
   var body: some View {
-    Image(systemName: "cloud.fill")
-      .font(.system(size: size * 0.5, weight: .medium))
-      .foregroundStyle(look.inkSecondary)
-      .frame(width: size, height: size)
-      .background(look.rowHover, in: Circle())
-      .accessibilityHidden(true)
+    Group {
+      if let mascot = NSImage(named: "Mascots/\(party.mascot ?? "claudecode")") {
+        Image(nsImage: mascot)
+          .resizable()
+          .interpolation(.high)
+          .scaledToFit()
+          .padding(size * 0.1)
+      } else {
+        Color.clear
+      }
+    }
+    .frame(width: size, height: size)
+    .background(look.tile)
+    .clipShape(Circle())
+    .overlay { Circle().inset(by: -0.5).stroke(look.tileHairline, lineWidth: 1) }
+    .accessibilityHidden(true)
   }
 }
 
@@ -168,7 +185,7 @@ private struct ExchangeHeader: View {
     return HStack(spacing: 4) {
       Group {
         if party.cloudAgent {
-          CloudAgentMark(size: 20, look: look)
+          CloudAgentMark(party: party, size: 20, look: look)
         } else {
           AgentIdMark(id: party.id, agents: store.agents, size: 20)
         }
@@ -217,7 +234,7 @@ private struct ExchangeMessage: View {
     HStack(alignment: .bottom, spacing: 8) {
       Group {
         if last, sender.cloudAgent {
-          CloudAgentMark(size: 22, look: look)
+          CloudAgentMark(party: sender, size: 22, look: look)
         } else if last {
           AgentIdMark(id: sender.id, agents: store.agents, size: 22)
         } else {

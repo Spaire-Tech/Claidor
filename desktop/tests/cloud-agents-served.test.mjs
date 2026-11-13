@@ -125,7 +125,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     assert.ok(fake.seen.some((entry) => entry.path.endsWith("/GetUserPrivacyMode")), "the privacy pre-flight went to our DashboardService");
 
     let info = await manager.getInfo(launched.bcId);
-    assert.deepEqual(info, { bcId: launched.bcId, status: "creating", name: "Readme summary", prompt: "Summarise the README.", branchName: "", prUrl: "", prState: "none", prNumber: null, filesChanged: 0, linesAdded: 0, linesRemoved: 0, files: [] });
+    assert.deepEqual(info, { bcId: launched.bcId, status: "creating", coder: "claude-code", name: "Readme summary", prompt: "Summarise the README.", branchName: "", prUrl: "", prState: "none", prNumber: null, filesChanged: 0, linesAdded: 0, linesRemoved: 0, files: [] });
 
     fake.finish(launched.bcId, "The README says hello.");
     info = await manager.getInfo(launched.bcId, false);

@@ -574,11 +574,13 @@ public struct CloudAgentInfo: Hashable, Sendable {
   public let filesChanged: Int
   public let linesAdded: Int
   public let linesRemoved: Int
+  /** The program that codes for it, as the computer names it (`coder`: "claude-code", "codex"); empty from a computer that doesn't say. */
+  public let coder: String
 
   public init?(_ json: JSON) {
     guard json.object != nil else { return nil }
     let text = { (key: String) in json[key]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-    name = text("name"); prompt = text("prompt"); branch = text("branchName")
+    name = text("name"); prompt = text("prompt"); branch = text("branchName"); coder = text("coder")
     status = Status(rawValue: text("status")) ?? .unknown
     pullRequestURL = text("prUrl"); pullRequestState = text("prState")
     pullRequestNumber = json["prNumber"]?.int.flatMap { $0 > 0 ? $0 : nil }
@@ -634,6 +636,11 @@ public struct CloudAgentInfo: Hashable, Sendable {
       guard let known else { return 60 }
       return known.isLive ? 5 : nil
     }
+  }
+
+  /** The cloud agent as a party of its conversation's page, with the program that codes for it. */
+  public func party(_ bcId: String) -> Party {
+    Party(id: bcId, name: name, cloudAgent: true, coder: coder.isEmpty ? nil : coder)
   }
 
   /** "3 files changed". */

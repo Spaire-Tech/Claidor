@@ -41,6 +41,7 @@ import {
   exchangeRows,
   menuOrder,
 } from '../core/exchanges'
+import { cloudAgentMascot } from '../core/externalAgents'
 import { pictureURL } from '../core/faces'
 import { type Agent, type Party, shownName } from '../core/models'
 import type { AppStore } from '../core/store'
@@ -53,6 +54,7 @@ import { classes } from './classes'
 import { copyText } from './clipboard'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
+import { mascotURL } from './mascots'
 import { Glyph as BarGlyph, useDismiss } from './MessageActions'
 import {
   MentionContext,
@@ -94,20 +96,21 @@ export type BannerSource = Pick<
   | 'getVersion'
 >
 
-/** A cloud agent where an agent's picture would be (`CloudAgentMark`): a cloud on the grey wash, round. */
-function CloudMark({ size }: { size: number }) {
+/**
+ * A cloud agent where an agent's picture would be (`CloudAgentMark`; 13
+ * November 2026, the founder: "it should be whatever agent is used. either
+ * claude code or codex"): the mascot of the program that coded, Claude
+ * Code's or Codex's, on Connect apps' tile (white, #2c2c2e on dark, a
+ * hairline), round as a picture.
+ */
+function CloudMark({ party, size }: { party: Party; size: number }) {
   return (
     <span
       className="cloud-mark"
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 16 16">
-        <path
-          d="M4.4 12.5a2.9 2.9 0 0 1-.5-5.76 4.1 4.1 0 0 1 7.9-.93A3.4 3.4 0 0 1 11.6 12.5Z"
-          fill="currentColor"
-        />
-      </svg>
+      <img src={mascotURL(cloudAgentMascot(party.coder))} alt="" />
     </span>
   )
 }
@@ -123,7 +126,7 @@ function PartyMark({
   size: number
 }) {
   return party.cloudAgent ? (
-    <CloudMark size={size} />
+    <CloudMark party={party} size={size} />
   ) : (
     <MarkOf store={store} id={party.id} size={size} />
   )
@@ -138,7 +141,14 @@ function exchangeCover(
     kind: 'exchange',
     agentId,
     peerId: peer.id,
-    ...(peer.cloudAgent ? { cloudAgent: { name: peer.name } } : {}),
+    ...(peer.cloudAgent
+      ? {
+          cloudAgent: {
+            name: peer.name,
+            ...(peer.coder == null ? {} : { coder: peer.coder }),
+          },
+        }
+      : {}),
   }
 }
 
@@ -712,8 +722,8 @@ export function CallRecordView({
  * agents" over their pictures. One agent's chip opens their messages over
  * the chat; with several, a menu of them ("Agents in this exchange") does,
  * at the pointer. A cloud agent's report is a "Message from" line too (13
- * November 2026), under its own name with a cloud for its picture, and its
- * chip opens its conversation.
+ * November 2026), under its own name with Claude Code's or Codex's mascot
+ * for its picture, and its chip opens its conversation.
  */
 export function ExchangeChip({
   store,
@@ -1002,7 +1012,7 @@ function ExchangeView({
   store: AppStore
   agentId: string
   peerId: string
-  cloudAgent?: { name: string }
+  cloudAgent?: { name: string; coder?: string }
   close: () => void
 }) {
   useWatched(store)
@@ -1011,6 +1021,17 @@ function ExchangeView({
   const entries = store.transcripts[agentId]
   const isCloud = cloudAgent != null
   const cloudName = cloudAgent?.name ?? ''
+  const coder = cloudAgent?.coder
+  // The cloud agent as a party of the page: its name, and the program that coded for its picture.
+  const cloud = useMemo<Party>(
+    () => ({
+      id: peerId,
+      name: cloudName,
+      cloudAgent: true,
+      ...(coder == null ? {} : { coder }),
+    }),
+    [peerId, cloudName, coder],
+  )
   const [cloudLines, setCloudLines] = useState<readonly CloudAgentLine[]>([])
   useEffect(() => {
     if (!isCloud) return
@@ -1037,15 +1058,11 @@ function ExchangeView({
   const rows = useMemo(() => {
     const me = { id: agentId, name: agent?.name ?? '' }
     return isCloud
-      ? cloudAgentRows(cloudLines, me, {
-          id: peerId,
-          name: cloudName,
-          cloudAgent: true,
-        })
+      ? cloudAgentRows(cloudLines, me, cloud)
       : exchangeRows(entries ?? [], me, peerId)
-  }, [entries, agentId, agent?.name, peerId, isCloud, cloudName, cloudLines])
+  }, [entries, agentId, agent?.name, peerId, isCloud, cloud, cloudLines])
   const peer: Party = isCloud
-    ? { id: peerId, name: cloudName, cloudAgent: true }
+    ? cloud
     : {
         id: peerId,
         // The peer as the chat named it, else as the roster does.

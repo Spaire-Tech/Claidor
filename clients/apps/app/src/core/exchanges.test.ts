@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest'
 import { chatRows, exchangeOf } from './chat'
+import { cloudAgentInfo } from './connectCards'
 import { Entry } from './entry'
 import {
   cloudAgentLines,
@@ -10,6 +11,7 @@ import {
   exchangeRows,
   menuOrder,
 } from './exchanges'
+import { cloudAgentMascot } from './externalAgents'
 import type { JSONObject } from './json'
 import { type Party, shownName } from './models'
 
@@ -83,11 +85,30 @@ describe("a cloud agent's conversation (CloudAgentTests)", () => {
       id: 'm1',
       role: 'user',
       content: 'Opened pull request #7.',
-      fromAgent: { id: 'bc-42', name: 'Fix the login', kind: 'cloud-agent' },
+      fromAgent: {
+        id: 'bc-42',
+        name: 'Fix the login',
+        kind: 'cloud-agent',
+        coder: 'claude-code',
+      },
     })!
-    const cloud = { id: 'bc-42', name: 'Fix the login', cloudAgent: true }
+    const cloud = {
+      id: 'bc-42',
+      name: 'Fix the login',
+      cloudAgent: true,
+      coder: 'claude-code',
+    }
     expect(report.fromAgent).toEqual(cloud)
     expect(shownName(report.fromAgent!)).toBe('Fix the login')
+    // Its picture is the mascot of the program that coded: Claude Code's, Codex's, and Claude Code's when the computer doesn't say or names another.
+    expect(cloudAgentMascot(report.fromAgent!.coder)).toBe('claudecode')
+    expect(cloudAgentMascot('codex')).toBe('codex')
+    expect(cloudAgentMascot(undefined)).toBe('claudecode')
+    expect(cloudAgentMascot('gemini')).toBe('claudecode')
+    expect(
+      cloudAgentInfo({ name: 'Fix the login', coder: 'codex' })?.coder,
+    ).toBe('codex')
+    expect(cloudAgentInfo({ name: 'Fix the login' })?.coder).toBe('')
     expect(exchangeOf([report])).toEqual({
       kind: 'single',
       inbound: true,

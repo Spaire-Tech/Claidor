@@ -39,8 +39,10 @@ way it talks to another agent"). Open on the card shows the cloud agent's conver
 chat, on the page two agents' messages have: what the agent asked it, what it said along the way
 and its answers, read-only. While it works the page reads again every five seconds. When it
 finishes, its own words arrive in the agent's chat as a "Message from" line under the cloud
-agent's name (a cloud for its picture), which opens the same page; the agent is woken with the
-report and tells the person, as before.
+agent's name, which opens the same page; the agent is woken with the report and tells the
+person, as before. The cloud agent's picture is the mascot of the program that coded (the
+founder: "it should be whatever agent is used. either claude code or codex"): Claude Code's
+today, since that is the only program a cloud agent runs in; Codex's once one can run in Codex.
 
 - **GitHub, the first time.** The agent shows a Connect GitHub card (the upstream app's card 8):
   a one-time code, Copy code and Open GitHub. Once the person types the code on GitHub, the
@@ -121,9 +123,14 @@ report and tells the person, as before.
     agent's name and its own words (its summary, with the pull request's link when the summary
     leaves it out). `CompletionRevivals.noteCloudAgentAnswers` writes them into that agent's
     chat at the start of the wake's turn: `{kind: "message", role: "user", fromAgent: {id: <bcId>,
-    name, kind: "cloud-agent"}}`. The apps read `kind` to draw the cloud and to open the
-    conversation instead of the chat's own lines (`Party.cloudAgent`, `Chat.cloudAgentRows` in
-    SimeonCore; `cloudAgentRows` in the web app).
+    name, kind: "cloud-agent", coder}}`. The apps read `kind` to open the conversation instead
+    of the chat's own lines (`Party.cloudAgent`, `Chat.cloudAgentRows` in SimeonCore;
+    `cloudAgentRows` in the web app).
+  - **Who coded** (`coder`, `CLOUD_AGENT_CODER` in `coding-choice.ts`): "claude-code", by the
+    name the Simeon Network gives it; "codex" when a cloud agent can run in Codex. It travels in
+    `getCloudAgentInfo`, `getCloudAgentConversation` and the line's `fromAgent`. The apps draw
+    its mascot (`Mascots/claudecode`, `Mascots/codex`; `Party.mascot`, `cloudAgentMascot`) on
+    Connect apps' tile, round, and draw Claude Code's when a computer doesn't say.
 
 * **Settings.** None new on Render. The server's migration `coding_on_computer_1111` adds
   `maty_jobs.executor` and `sand_cloud_agents.work`. The `maty-runner` jobs still need

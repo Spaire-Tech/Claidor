@@ -417,14 +417,22 @@ button.call-line:focus-visible,
   display: grid;
 }
 
-/* A cloud agent where an agent's picture would be (`CloudAgentMark`): a cloud on the grey wash, round. */
+/* A cloud agent where an agent's picture would be (`CloudAgentMark`): the mascot of the program that coded, on Connect apps' tile (white, #2c2c2e on dark, a hairline), round as a picture. */
 .cloud-mark {
   flex: none;
   display: grid;
   place-items: center;
+  overflow: hidden;
   border-radius: 50%;
-  background: var(--row-hover);
-  color: var(--ink-secondary);
+  background: var(--logo-card);
+  box-shadow: 0 0 0 1px var(--logo-card-hairline);
+}
+
+.cloud-mark img {
+  display: block;
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
 }
 
 /* ---------------------------------------------------------------------- */

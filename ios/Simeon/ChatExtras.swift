@@ -459,7 +459,7 @@ struct CloudAgentCard: View {
         // The cards' pills (10 November 2026): View PR the main one, at the right; Open before it.
         CardPills {
           if let actions, !bcId.isEmpty {
-            Button("Open") { actions.openExchange(ExchangeRoute(agentId: agentId, peer: Party(id: bcId, name: info.name, cloudAgent: true))) }
+            Button("Open") { actions.openExchange(ExchangeRoute(agentId: agentId, peer: info.party(bcId))) }
               .buttonStyle(Tactile(look: CardPillStyle()))
           }
           if let pull {
