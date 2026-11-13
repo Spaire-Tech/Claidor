@@ -11,7 +11,9 @@ import {
   connectorIconId,
 } from './connectCards'
 import {
+  codingConsent,
   connectConsent,
+  consentProgramLogo,
   consentProvider,
   consentTables,
   keyConsent,
@@ -472,5 +474,57 @@ describe("a plan's or a key's consent (ConnectConsent(keyProvider:))", () => {
     expect(consentProvider(modelConsent('claude'))).toBe('claude')
     const stripe = app({ id: 'stripe', title: 'Stripe' })
     expect(consentProvider(connectConsent(stripe, 'Stripe'))).toBeUndefined()
+  })
+})
+
+// The founder, 13 November 2026: "it should say codex and claude code but only when it opens from the card".
+describe("the consent on the chat's card for a cloud agent's coding (ConnectConsent(codingProvider:))", () => {
+  it('names the program, with its own logo, and says what it does for a cloud agent', () => {
+    const codex = codingConsent('chatgpt')
+    expect(codex.id).toBe('coding:chatgpt')
+    expect(codex.title).toBe('Codex')
+    expect(codex.summary).toBe(
+      'Run your cloud agents in Codex, on your ChatGPT plan.',
+    )
+    expect(consentProgramLogo(codex)).toBe('codex')
+    // Not the plan's logo.
+    expect(consentProvider(codex)).toBeUndefined()
+    expect(codex.points.map((point) => point.title)).toEqual([
+      'What it does',
+      'Control',
+      'When your plan runs out',
+    ])
+    // The same account is connected, so the page says what it does for the person's own agents too.
+    expect(codex.points[0].body).toBe(
+      "Cloud agents code in Codex on your ChatGPT plan, not on your Simeon credits. Your agents use that plan too, unless you've picked another model.",
+    )
+    expect(codex.points[2].body).toBe(
+      "Cloud agents pause until it resets; your agents use Simeon's models meanwhile.",
+    )
+    // The sign-in is the plan's own page.
+    expect(codex.smallPrint[0]).toBe(
+      "You'll sign in on ChatGPT's own page. Simeon never sees your password.",
+    )
+
+    const claudeCode = codingConsent('claude')
+    expect(claudeCode.title).toBe('Claude Code')
+    expect(claudeCode.summary).toBe(
+      'Run your cloud agents in Claude Code, on your Claude plan.',
+    )
+    expect(consentProgramLogo(claudeCode)).toBe('claudecode')
+    expect(claudeCode.smallPrint[0]).toBe(
+      "You'll sign in on Claude's own page. Simeon never sees your password.",
+    )
+  })
+
+  it('leaves Settings as it was: the plan, by its name and logo', () => {
+    const plan = modelConsent('chatgpt')
+    expect(plan.title).toBe('ChatGPT')
+    expect(plan.summary).toBe('Run your agents on your ChatGPT plan.')
+    expect(consentProvider(plan)).toBe('chatgpt')
+    expect(consentProgramLogo(plan)).toBeUndefined()
+    expect(
+      consentProgramLogo(keyConsent('deepseek', 'DeepSeek')),
+    ).toBeUndefined()
   })
 })

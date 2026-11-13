@@ -842,6 +842,50 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: the dialog opened from the connect card says Codex and Claude Code
+
+The founder, asked whether the dialog after Connect should keep saying
+ChatGPT and Claude: "It should say codex and claude code but only when it
+opens from the card".
+
+- Connect on the card opens a consent of its own (`codingConsent`, the
+  core's `ConnectConsent(codingProvider:)`): the title is the program
+  ("Codex", "Claude Code"), under its own logo drawn bare at 64, with "Run
+  your cloud agents in Codex, on your ChatGPT plan." and its three points
+  in words for a cloud agent.
+- The sign-in sheet that follows (`ChatGPTConnectSheet`,
+  `ClaudeConnectSheet`, with `coding`) reads "Connect Codex" or "Connect
+  Claude Code" with the same logo (36), and ends "You're now connected to
+  Codex.".
+- Opened from Settings › AI Models, both are as they were: "ChatGPT",
+  "Claude", the plans' icons.
+- The bare logo is one part now (`ProgramLogo` in `ConnectCards.tsx`), used
+  by the card, the consent and the sheets.
+- Four new sentences in SimeonCore's catalogue, in its nine languages.
+
+Decisions (mine, to the founder's words):
+- The plan is still named where it is the plan or the page to sign in on
+  ("on your ChatGPT plan", "You'll sign in on ChatGPT's own page."): Codex
+  has no plan or sign-in page of its own.
+- The dialog says what connecting does to the person's own agents ("Your
+  agents use that plan too, unless you've picked another model."). It is
+  the same account as in Settings, and the app moves the agents to a newly
+  connected plan when no other model is chosen. Whether a connection made
+  from the card should leave the agents' model alone is the founder's to
+  decide; nothing in what connecting does was changed here.
+
+Checked: the web app's tests (1,297 pass), types, ESLint and Prettier on
+the changed files; the words made again and the build committed. In
+Chromium against the stand-in, light and dark: Connect on Claude Code's row
+opens "Claude Code" with its logo (64, its ground transparent, no shadow)
+and is cancelled; Connect on Codex's row opens "Codex", then "Connect
+Codex" with the code, then "You're now connected to Codex.", and the row
+reads "Codex / Connected"; no console errors. From Settings, the plan's
+dialog and sheets are covered by the tests, not opened in the browser.
+
+Not checked: the Mac's and the iPhone's dialogs and sheets (written, their
+Swift parses, not built with Xcode).
+
 ### 13 November 2026: the connect card names the programs, Claude Code and Codex, with their logos bare
 
 The founder, on the card below as first built ("Connect Claude", "Connect

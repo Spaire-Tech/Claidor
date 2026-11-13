@@ -83,8 +83,17 @@ Codex's, by the program it runs in.
   ChatGPT (the founder, the same day: "its connect codex or connect claude code. and its full
   logo no white or dark background. for the card specifically its that. but settings is claude
   and chat gpt. they are two dif things"). Connect asks as AI Models does (the consent, then
-  that plan's own sign-in). The row then reads "Claude Code" or "Codex" with "Connected" in
-  green, and the agent carries on by itself with the task, as after the GitHub card.
+  that plan's own sign-in), and both dialogs say the program's name with its logo when they
+  open from the card: "Codex", "Run your cloud agents in Codex, on your ChatGPT plan.", then
+  "Connect Codex" and "You're now connected to Codex." (the founder: "it should say codex and
+  claude code but only when it opens from the card"). Opened from Settings they still say
+  ChatGPT and Claude. The row then reads "Claude Code" or "Codex" with "Connected" in green,
+  and the agent carries on by itself with the task, as after the GitHub card.
+  - **It is the same account either way.** Connecting from the card connects the Claude or
+    ChatGPT plan in AI Models. As there, the person's own agents move to that plan when no
+    other model is chosen (`AIModelsModel`, `aiModels.ts`: `chosen == nil`). The card's dialog
+    says so ("Your agents use that plan too, unless you've picked another model."), and that a
+    cloud agent pauses when the plan runs out while the agents use Simeon's models.
 - **The plan's limit** (Claude's or ChatGPT's). The card says Paused; the agent says when the
   limit resets and offers to carry on then.
 - **ChatGPT disconnected during a run.** The run stops and the agent says to connect ChatGPT
@@ -174,7 +183,11 @@ Codex's, by the program it runs in.
   (`ModelConnectCard` in SimeonCore; `ModelConnectCardView` on Mac, iPhone and web). The card
   still carries the plans' ids (`claude`, `chatgpt`); the apps turn each into its program's
   name and logo (`ModelConnectCard.program`, `.logo`; `ProgramLogo`, `.program-logo`). The
-  agent is told to name the two as the card does (`MODEL_CONNECT_CARD_TEXT`, the brief).
+  agent is told to name the two as the card does (`MODEL_CONNECT_CARD_TEXT`, the brief). The
+  dialog from the card is a consent of its own (`ConnectConsent(codingProvider:)`,
+  `codingConsent`; id `coding:<provider>`, whose `programLogo` the page draws bare), and the
+  sign-in sheets take `coding` for the program's name and logo; Settings keeps
+  `ConnectConsent(modelProvider:)` and the sheets as they were.
 - **Runner:** `runner/` (Render service `claidor-maty-runner`) still takes `maty-runner` jobs
   only: one model call over the conversation through the API's metered proxy, words only
   (`runner/src/engine.ts`, `runner/src/executor.ts`). Coding never goes there.

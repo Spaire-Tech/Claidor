@@ -1,13 +1,16 @@
-// The chat's card that offers Claude and ChatGPT to connect
+// The chat's card that offers Claude Code and Codex to connect
 // (`model-connect`): both rows with Connect when neither is connected, a
-// connected one as a connected app's card, and the wait while the accounts
-// are first read (mac/Simeon/Cards.swift's `ModelConnectCardView`).
+// connected one as a connected app's card, the wait while the accounts are
+// first read, and the sign-in sheets named for the program when they open
+// from it (mac/Simeon/Cards.swift's `ModelConnectCardView`).
 
+import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { modelAccount } from '../core/aiModels'
 import { AppStore } from '../core/store'
 import { ModelConnectCardView } from './ModelConnectCard'
+import { ChatGPTConnectSheet, ClaudeConnectSheet } from './SettingsModels'
 import { WindowContext, WindowModel } from './windowModel'
 
 function draw(
@@ -53,7 +56,7 @@ describe('the card that offers Claude Code and Codex to connect', () => {
     const html = draw(['claude', 'chatgpt'], loaded)
     // "its full logo no white or dark background": the cut-outs, in a place of their own.
     const logos = html.match(
-      /<span class="program-logo" aria-hidden="true"><img src="[^"]*(claudecode|codex)[^"]*" alt=""\/?><\/span>/g,
+      /<span class="program-logo" style="width:40px;height:40px" aria-hidden="true"><img src="[^"]*(claudecode|codex)[^"]*" alt="" style="width:48px;height:48px"\/?><\/span>/g,
     )
     expect(logos).toHaveLength(2)
     expect(logos?.[0]).toContain('claudecode')
@@ -89,6 +92,58 @@ describe('the card that offers Claude Code and Codex to connect', () => {
     })
     expect(html).toContain('>Connect Codex<')
     expect(html).not.toContain('connector-connected')
+  })
+
+  // The founder, 13 November 2026: "it should say codex and claude code but only when it opens from the card".
+  it('names the sign-in sheet for the program when it opens from the card, and for the plan from Settings', () => {
+    const store = new AppStore()
+    const sheet = (node: ReactElement) => renderToStaticMarkup(node)
+    const close = () => {}
+
+    const codex = sheet(
+      <ChatGPTConnectSheet
+        model={store.aiModels}
+        provider="chatgpt"
+        coding
+        close={close}
+      />,
+    )
+    expect(codex).toContain('aria-label="Connect Codex"')
+    expect(codex).toContain('<h2 class="models-sheet-title">Connect Codex</h2>')
+    expect(codex).toMatch(
+      /<span class="program-logo" style="width:36px;height:36px" aria-hidden="true"><img src="[^"]*codex/,
+    )
+    expect(codex).not.toContain('Connect ChatGPT')
+
+    const claudeCode = sheet(
+      <ClaudeConnectSheet model={store.aiModels} coding close={close} />,
+    )
+    expect(claudeCode).toContain(
+      '<h2 class="models-sheet-title">Connect Claude Code</h2>',
+    )
+    expect(claudeCode).toMatch(
+      /class="program-logo"[^>]*><img src="[^"]*claudecode/,
+    )
+
+    // From Settings › AI Models: the plan, as before.
+    const chatGPT = sheet(
+      <ChatGPTConnectSheet
+        model={store.aiModels}
+        provider="chatgpt"
+        close={close}
+      />,
+    )
+    expect(chatGPT).toContain(
+      '<h2 class="models-sheet-title">Connect ChatGPT</h2>',
+    )
+    expect(chatGPT).not.toContain('program-logo')
+    const claude = sheet(
+      <ClaudeConnectSheet model={store.aiModels} close={close} />,
+    )
+    expect(claude).toContain(
+      '<h2 class="models-sheet-title">Connect Claude</h2>',
+    )
+    expect(claude).not.toContain('program-logo')
   })
 
   it('waits while the accounts are first read', () => {

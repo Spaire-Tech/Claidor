@@ -9,10 +9,12 @@ import { providerIconURL } from '../core/connectCards'
 import {
   type ConnectConsent,
   type ConsentSymbol,
+  consentProgramLogo,
   consentProvider,
 } from '../core/connectConsent'
 import { t } from '../l10n'
-import { AppLogoTile } from './ConnectCards'
+import { classes } from './classes'
+import { AppLogoTile, ProgramLogo } from './ConnectCards'
 import './ConnectConsent.css'
 import { type Connector, useConnectorWatched } from './connector'
 import { Alert, Sheet } from './Dialogs'
@@ -129,7 +131,8 @@ function ConsentDialog({
     consent.note != null
       ? [...consent.smallPrint, consent.note]
       : consent.smallPrint
-  // A plan's or a key's provider by its own logo (Amazon Bedrock, Z.AI: never a letter); an app by its name.
+  // A program by its own logo, bare (Codex's or Claude Code's, from the chat's card); a plan's or a key's provider by its own logo (Amazon Bedrock, Z.AI: never a letter); an app by its name.
+  const program = consentProgramLogo(consent)
   const provider = consentProvider(consent)
   const icon = provider !== undefined ? providerIconURL(provider) : undefined
   return (
@@ -139,8 +142,15 @@ function ConsentDialog({
       className="consent-sheet"
     >
       <div className="consent-content">
-        <span className="consent-logo" aria-hidden="true">
-          <AppLogoTile name={consent.title} side={64} icon={icon} />
+        <span
+          className={classes('consent-logo', program !== undefined && 'bare')}
+          aria-hidden="true"
+        >
+          {program !== undefined ? (
+            <ProgramLogo name={program} side={64} />
+          ) : (
+            <AppLogoTile name={consent.title} side={64} icon={icon} />
+          )}
         </span>
         <div className="consent-title" role="heading" aria-level={2}>
           {consent.title}

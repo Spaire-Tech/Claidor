@@ -14,7 +14,12 @@
 // with ConnectConsent.swift), every sentence in the core's catalogue.
 
 import { providerName } from './aiModels'
-import { type CatalogApp, slug } from './connectCards'
+import {
+  type CatalogApp,
+  modelConnectLogo,
+  modelConnectProgram,
+  slug,
+} from './connectCards'
 import { t } from './l10n'
 
 /** Who handles the sign-in and holds the access (`ConnectConsent.Route`). */
@@ -151,6 +156,54 @@ export function modelConsent(provider: string): ConnectConsent {
 }
 
 /**
+ * The consent Connect shows on the chat's card for a cloud agent's coding
+ * (`ConnectConsent(codingProvider:)`; 13 November 2026, the founder: "it
+ * should say codex and claude code but only when it opens from the card"):
+ * the plan's page under the program's name and logo, Codex or Claude Code,
+ * with its words for a cloud agent. Settings › AI Models keeps
+ * `modelConsent`, which names the plan. The same account is connected either
+ * way, so the page also says what it does for the person's own agents: they
+ * move to the plan when no other model is chosen (`aiModels.ts`), and fall
+ * back to Simeon's when it runs out, where a cloud agent pauses.
+ */
+export function codingConsent(provider: string): ConnectConsent {
+  const program = modelConnectProgram(provider)
+  const plan = providerName(provider)
+  return {
+    id: `coding:${provider}`,
+    title: program,
+    summary: t`Run your cloud agents in ${program}, on your ${plan} plan.`,
+    route: { kind: 'unknown' },
+    points: [
+      {
+        symbol: 'square.stack.3d.up',
+        title: t('What it does'),
+        body: `${t`Cloud agents code in ${program} on your ${plan} plan, not on your Simeon credits.`} ${t("Your agents use that plan too, unless you've picked another model.")}`,
+      },
+      {
+        symbol: 'hand.raised',
+        title: t('Control'),
+        body: t(
+          "Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.",
+        ),
+      },
+      {
+        symbol: 'checkmark.circle',
+        title: t('When your plan runs out'),
+        body: t(
+          "Cloud agents pause until it resets; your agents use Simeon's models meanwhile.",
+        ),
+      },
+    ],
+    smallPrint: [
+      // The sign-in is the plan's own page: ChatGPT's, Claude's.
+      signInLine({ kind: 'unknown' }, plan),
+      t('Voice calls, dictation and video still use your Simeon credits.'),
+    ],
+  }
+}
+
+/**
  * Connect on an API key's line (`ConnectConsent(keyProvider:)`; 10 November
  * 2026): the same page as a plan's, its words for a key the person pastes,
  * which the provider bills.
@@ -185,6 +238,14 @@ export function keyConsent(provider: string, title: string): ConnectConsent {
       t('Voice calls, dictation and video still use your Simeon credits.'),
     ],
   }
+}
+
+/** The program of a coding consent (`coding:`), whose own logo the page shows bare (`assets/mascots/<name>.png`, `modelConnectLogo`); none for any other (`ConnectConsent.programLogo`). */
+export function consentProgramLogo(
+  consent: ConnectConsent,
+): string | undefined {
+  const provider = /^coding:([a-z0-9]+)$/.exec(consent.id)?.[1]
+  return provider === undefined ? undefined : modelConnectLogo(provider)
 }
 
 /** The AI provider of a plan's or a key's consent (`model:` or `key:`), whose own logo the page shows; none for an app, found by its name (`ConnectConsent.provider`). */
