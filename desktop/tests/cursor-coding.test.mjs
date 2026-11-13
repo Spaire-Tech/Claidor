@@ -93,7 +93,8 @@ async function standIn(dir, mode = {}) {
   const calls = async () => (existsSync(path.join(bin, "calls.jsonl")) ? (await readFile(path.join(bin, "calls.jsonl"), "utf8")).trim().split("\n").filter(Boolean).map((line) => JSON.parse(line)) : []);
   const env = { PATH: process.env.PATH, HOME: home, SIMEON_CURSOR_BIN: script, SIMEON_SECRET: "never given" };
   const signIn = async () => { await mkdir(path.join(home, ".config", "cursor"), { recursive: true }); await writeFile(path.join(home, ".config", "cursor", "auth.json"), JSON.stringify({ accessToken: "stand-in", refreshToken: "stand-in" })); };
-  return { home, bin, env, set, calls, signIn, approve: () => writeFile(path.join(bin, "approved"), "") };
+  // The person's approval on Cursor's site: there until taken back, so a later sign-in waits again.
+  return { home, bin, env, set, calls, signIn, approve: () => writeFile(path.join(bin, "approved"), ""), unapprove: () => rm(path.join(bin, "approved"), { force: true }) };
 }
 
 const until = async (check, ms = 5_000) => {
@@ -239,6 +240,7 @@ test("the sign-in on the computer: Cursor's own link, connected once approved th
     assert.ok(await until(() => lines.some((line) => /cursor connected/.test(line))));
     assert.deepEqual(computer.signInState(), { state: "connected" });
     assert.deepEqual(await computer.startSignIn(), { state: "connected" });
+    await cursor.unapprove();
     assert.deepEqual(module.codingChoices(computer.connected()).at(-1), { coder: "cursor", model: "auto", modelId: "own:cursor:auto" });
     // Neither the link nor a sign-in is in the log.
     assert.ok(lines.every((line) => !/loginDeepControl|stand-in|https:/.test(line)), lines.join("\n"));
