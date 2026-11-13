@@ -3,7 +3,7 @@
 
 The founder: "why it needs the web account? When all this came from the
 app". A vendor's sign-in comes back to `/desktop/mcp-oauth/callback`,
-which until now always sent it on to the web app's `/app/connected.html`;
+which until now always sent it on to the web app's connected page (`app_sign_in.WEB_CONNECTED_PAGE`);
 that page finished it on the computer of whichever account the browser was
 signed in to, not the app's, and failed when they differed. Now the iPhone
 or Mac app names the sign-in before it opens the sheet

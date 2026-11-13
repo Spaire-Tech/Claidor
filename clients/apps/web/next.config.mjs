@@ -53,7 +53,7 @@ const embeddedCSP = `
 // samples from ElevenLabs' own links (the avatar editor's play button),
 // whose host varies, so sound may come from any https address, as pictures
 // may (media-src).
-// The app's window (`/app`, `/app-next`): the computer's screen is a
+// The app's window (`/app-next`): the computer's screen is a
 // WebSocket to the API's own proxy (its wss address, named as well for the
 // browsers that don't take https as covering it); a call's voice is
 // ElevenLabs' kit, which talks to api.elevenlabs.io and LiveKit's
@@ -166,12 +166,6 @@ const nextConfig = {
 
   async rewrites() {
     return [
-      // Simeon on the web: the window is a built page under public/app
-      // (desktop/web/build-web.mjs); /app opens it.
-      {
-        source: '/app',
-        destination: '/app/index.html',
-      },
       // The new web app, the Mac app translated (clients/apps/app, built
       // into public/app-next): here until it has everything, then at /app
       // (docs/web-app/PROGRESS.md).
@@ -196,6 +190,25 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // The old window that /app served is gone (13 November 2026): /app and
+      // every address under it go to the new web app, its query kept (a
+      // connected app's sign-in carries its code and state on to the new
+      // app's own connected.html).
+      {
+        source: '/app/connected.html',
+        destination: '/app-next/connected.html',
+        permanent: false,
+      },
+      {
+        source: '/app',
+        destination: '/app-next',
+        permanent: false,
+      },
+      {
+        source: '/app/:path*',
+        destination: '/app-next',
+        permanent: false,
+      },
       {
         source: '/careers',
         destination: 'https://simeonlabs.com/company',
@@ -372,45 +385,6 @@ const nextConfig = {
       {
         source: '/((?!checkout|oauth2|docs|app).*)',
         headers: baseHeaders,
-      },
-      {
-        source: '/app/:path*',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: appWindowCSP.replace(/\n/g, ''),
-          },
-          {
-            key: 'Permissions-Policy',
-            value:
-              'payment=(), publickey-credentials-get=(), camera=(), microphone=(self), geolocation=()',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Robots-Tag',
-            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
-          },
-        ],
-      },
-      {
-        source: '/app',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: appWindowCSP.replace(/\n/g, ''),
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Robots-Tag',
-            value: 'noindex, nofollow, noarchive, nosnippet, noimageindex',
-          },
-        ],
       },
       // The new web app (clients/apps/app): the old window's policy.
       ...['/app-next', '/app-next/:path*'].map((source) => ({
