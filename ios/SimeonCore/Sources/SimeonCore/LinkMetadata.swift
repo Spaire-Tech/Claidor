@@ -79,11 +79,33 @@ public enum LinkPreviewPolicy {
 
   static func isIPAddress(_ text: String) -> Bool { ipv4(text) != nil || ipv6(text) != nil }
 
-  /** A private, reserved or multicast address (the Electron app's block list); anything not an address is blocked too. */
+  /**
+   * A private, reserved or multicast address (the Electron app's block
+   * list); anything not an address is blocked too. An IPv4 address carried
+   * in an IPv6 one is judged as the IPv4 one (`embeddedIPv4`).
+   */
   public static func isBlockedIP(_ text: String) -> Bool {
     if let v4 = ipv4(text) { return blocked4.contains { matches(v4, $0.0, $0.1) } }
-    if let v6 = ipv6(text) { return blocked6.contains { matches(v6, $0.0, $0.1) } }
+    if let v6 = ipv6(text) {
+      if let inner = embeddedIPv4(v6) { return blocked4.contains { matches(inner, $0.0, $0.1) } }
+      return blocked6.contains { matches(v6, $0.0, $0.1) }
+    }
     return true
+  }
+
+  /**
+   * The IPv4 address an IPv6 one carries: "::ffff:1.2.3.4", and
+   * 64:ff9b::/96, which a network without IPv4 gives for every site that has
+   * only IPv4 (NAT64: many phone networks). Refusing that range whole left
+   * those sites without an icon or a card on such a network (13 November
+   * 2026).
+   */
+  static func embeddedIPv4(_ v6: [UInt8]) -> [UInt8]? {
+    guard v6.count == 16 else { return nil }
+    let head = Array(v6.prefix(12))
+    let mapped: [UInt8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF]
+    let nat64: [UInt8] = [0, 0x64, 0xFF, 0x9B, 0, 0, 0, 0, 0, 0, 0, 0]
+    return head == mapped || head == nat64 ? Array(v6.suffix(4)) : nil
   }
 
   private static let blocked4: [([UInt8], Int)] = [
@@ -93,7 +115,7 @@ public enum LinkPreviewPolicy {
   ].map { (ipv4($0.0)!, $0.1) }
 
   private static let blocked6: [([UInt8], Int)] = [
-    ("::", 127), ("64:ff9b::", 96), ("64:ff9b:1::", 48), ("100::", 64), ("2001::", 32), ("2001:db8::", 32),
+    ("::", 127), ("64:ff9b:1::", 48), ("100::", 64), ("2001::", 32), ("2001:db8::", 32),
     ("2002::", 16), ("fc00::", 7), ("fe80::", 10), ("fec0::", 10), ("ff00::", 8),
   ].map { (ipv6($0.0)!, $0.1) }
 
@@ -233,6 +255,47 @@ public enum LinkPreviewPolicy {
       guard rels.contains(where: tokens.contains), let href = attribute(tag, "href") else { continue }
       return decodeEntities(href).trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    return nil
+  }
+
+  /**
+   * Every icon a page names, the touch icons first (sharp at a row's size)
+   * and then its icons, each in the page's order, at most three of each: the
+   * first may be one this device can't draw (an SVG), and the next a PNG.
+   */
+  static func iconHrefs(_ html: String, perKind: Int = 3) -> [String] {
+    var touch: [String] = []
+    var plain: [String] = []
+    for tag in tags(linkTag, in: html) {
+      guard let rel = attribute(tag, "rel"), let href = attribute(tag, "href") else { continue }
+      let tokens = rel.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+      let value = decodeEntities(href).trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !value.isEmpty else { continue }
+      if tokens.contains("apple-touch-icon") || tokens.contains("apple-touch-icon-precomposed") {
+        if touch.count < perKind { touch.append(value) }
+      } else if tokens.contains("icon") || tokens.contains("shortcut") {
+        if plain.count < perKind { plain.append(value) }
+      }
+    }
+    return touch + plain
+  }
+
+  /**
+   * What a picture's first bytes say it is, among those this device draws
+   * ("png", "jpeg", "gif", "webp", "ico", "avif"); nil for anything else,
+   * an SVG and a page of words included. The site's own label for it (its
+   * Content-Type) is not asked: some sites serve their icon as
+   * "application/octet-stream".
+   */
+  public static func pictureKind(_ data: Data) -> String? {
+    let bytes = [UInt8](data.prefix(12))
+    func starts(_ values: [UInt8]) -> Bool { bytes.count >= values.count && Array(bytes.prefix(values.count)) == values }
+    if starts([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) { return "png" }
+    if starts([0xFF, 0xD8, 0xFF]) { return "jpeg" }
+    if starts([0x47, 0x49, 0x46, 0x38]) { return "gif" }
+    if starts([0x52, 0x49, 0x46, 0x46]), bytes.count >= 12, Array(bytes[8..<12]) == [0x57, 0x45, 0x42, 0x50] { return "webp" }
+    if starts([0x00, 0x00, 0x01, 0x00]) || starts([0x00, 0x00, 0x02, 0x00]) { return "ico" }
+    if bytes.count >= 12, Array(bytes[4..<12]) == Array("ftypavif".utf8) { return "avif" }
     return nil
   }
 
@@ -461,20 +524,72 @@ public actor LinkMetadataReader {
     return page.body
   }
 
-  /** At most `maxDimension` on its long side, as JPEG (quality 0.82) or PNG; past 24 million pixels, none. */
+  /** What an address gave when a site's icon was asked of it. */
+  enum IconAnswer: Equatable, Sendable {
+    case picture(Data)
+    /** The site answered, and it is no picture this device draws; why, for the log. */
+    case none(String)
+    /** No answer to judge by: no connection, the name not found, too slow, or the site busy (429, 5xx). */
+    case unreachable
+  }
+
+  /**
+   * A site's icon at an address: 2xx, at most 2 MB, and a picture by its
+   * first bytes (`pictureKind`), whatever the site labels it. Asked for as
+   * the Windows app asks (any picture, no format named), so a site hands
+   * over the file itself and not another format made for the asker.
+   */
+  static func icon(_ address: String) async -> IconAnswer {
+    guard let url = LinkPreviewPolicy.safeURL(address) else { return .none("address") }
+    let page: Page
+    do {
+      page = try await fetch(url, limit: LinkPreviewPolicy.imageByteLimit, accept: "image/*", truncate: false)
+    } catch let error as URLError where error.code == .dataLengthExceedsMaximum {
+      return .none("too big")
+    } catch let error as URLError where error.code == .httpTooManyRedirects || error.code == .badURL {
+      return .none("redirect")
+    } catch {
+      return .unreachable
+    }
+    if page.status == 429 || page.status >= 500 { return .unreachable }
+    guard (200..<300).contains(page.status) else { return .none("status \(page.status)") }
+    guard !page.body.isEmpty else { return .none("empty") }
+    guard LinkPreviewPolicy.pictureKind(page.body) != nil else {
+      let head = String(decoding: page.body.prefix(1_024), as: UTF8.self).lowercased()
+      return .none(head.contains("<svg") ? "svg" : head.contains("<html") || head.contains("<!doctype") ? "page" : "not a picture")
+    }
+    return .picture(page.body)
+  }
+
+  /**
+   * At most `maxDimension` on its long side, as JPEG (quality 0.82) or PNG;
+   * past 24 million pixels, none. A file that holds several pictures (a
+   * site's .ico: 16, 32 and 48 points) gives its largest, not its first,
+   * which is often the smallest (13 November 2026).
+   */
   static func bounded(_ data: Data?, maxDimension: Int, jpeg: Bool) -> Data? {
     guard let data else { return nil }
     #if canImport(ImageIO)
-    guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-          let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-          let width = properties[kCGImagePropertyPixelWidth] as? Int, let height = properties[kCGImagePropertyPixelHeight] as? Int,
-          width > 0, height > 0, width * height <= LinkPreviewPolicy.maxPixels else { return nil }
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    var index = 0
+    var width = 0
+    var height = 0
+    // (At most 64 looked at: a moving picture has one per frame, all the same size.)
+    for candidate in 0..<min(64, max(1, CGImageSourceGetCount(source))) {
+      guard let properties = CGImageSourceCopyPropertiesAtIndex(source, candidate, nil) as? [CFString: Any],
+            let wide = properties[kCGImagePropertyPixelWidth] as? Int, let high = properties[kCGImagePropertyPixelHeight] as? Int,
+            wide > 0, high > 0, wide * high <= LinkPreviewPolicy.maxPixels, wide * high > width * height else { continue }
+      index = candidate
+      width = wide
+      height = high
+    }
+    guard width > 0, height > 0 else { return nil }
     let options: [CFString: Any] = [
       kCGImageSourceCreateThumbnailFromImageAlways: true,
       kCGImageSourceThumbnailMaxPixelSize: min(maxDimension, max(width, height)),
       kCGImageSourceCreateThumbnailWithTransform: true,
     ]
-    guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+    guard let image = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else { return nil }
     let out = NSMutableData()
     let type = (jpeg ? UTType.jpeg : UTType.png).identifier as CFString
     guard let destination = CGImageDestinationCreateWithData(out, type, 1, nil) else { return nil }

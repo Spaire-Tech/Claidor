@@ -4,13 +4,17 @@
 // /favicon.ico). The main process reads them, so a site that doesn't let a
 // page read its pictures (no CORS) is drawn all the same, and the page gets
 // each as a `data:` address it can cut and lighten. Kept in
-// %APPDATA%\Simeon\pictures, one file per address or site, none kept too (so
-// a site without an icon isn't asked again for a week).
+// %APPDATA%\Simeon\pictures, one file per address or site. None is kept a
+// day, and only when the site answered every request: a read that had no
+// answer (no connection, a name not found, a site too slow or busy) writes
+// nothing and is asked again (13 November 2026, with the core's `SiteIcons`).
 //
 // Every address is checked (addresses.ts) before each request and each
 // redirect, and its host's addresses looked up first; a picture is at most
-// 2 MB and must be one by its first bytes, a page's head at most 512 KB;
-// eight seconds a request.
+// 2 MB and must be one by its first bytes, a page's first 512 KB are read
+// (its head is there; before 13 November 2026 a longer page was dropped
+// whole, and its site had no icon unless it had a /favicon.ico); eight
+// seconds a request.
 
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
@@ -18,16 +22,20 @@ import path from 'node:path'
 import {
   absolute,
   htmlByteLimit,
+  iconHrefs,
   imageByteLimit,
   isBlockedAddress,
   maxRedirects,
   safeURL,
   siteKey,
-  linkHref,
 } from './addresses'
 
 /** A week, as the Mac's caches keep them. */
 export const keptForMs = 7 * 24 * 60 * 60 * 1000
+/** "None" is kept a day (`SiteIcons.noneTTL`): a site gains an icon, and a refusal passes. */
+export const noneKeptForMs = 24 * 60 * 60 * 1000
+/** A read that had no answer is tried again after five minutes (`SiteIcons.retryAfter`). */
+export const retryAfterMs = 5 * 60 * 1000
 const requestMs = 8_000
 const userAgent = 'Simeon-LinkPreview/1.0'
 
@@ -59,10 +67,10 @@ export interface Network {
   fetch(url: string, init: { redirect: 'manual'; signal: AbortSignal; headers: Record<string, string> }): Promise<Response>
 }
 
-/** One answer, read to at most `limit` bytes; undefined when it is bigger. */
-async function bodyOf(response: Response, limit: number): Promise<Uint8Array | undefined> {
+/** One answer, read to at most `limit` bytes: its first `limit` when `cut`, else undefined when it is bigger. */
+async function bodyOf(response: Response, limit: number, cut: boolean): Promise<Uint8Array | undefined> {
   const declared = Number(response.headers.get('content-length'))
-  if (Number.isFinite(declared) && declared > limit) {
+  if (!cut && Number.isFinite(declared) && declared > limit) {
     await response.body?.cancel().catch(() => {})
     return undefined
   }
@@ -74,11 +82,12 @@ async function bodyOf(response: Response, limit: number): Promise<Uint8Array | u
     const { done, value } = await reader.read()
     if (done) break
     size += value.byteLength
+    parts.push(value)
     if (size > limit) {
       await reader.cancel().catch(() => {})
-      return undefined
+      if (!cut) return undefined
+      break
     }
-    parts.push(value)
   }
   const whole = new Uint8Array(size)
   let at = 0
@@ -86,21 +95,24 @@ async function bodyOf(response: Response, limit: number): Promise<Uint8Array | u
     whole.set(part, at)
     at += part.byteLength
   }
-  return whole
+  return whole.subarray(0, Math.min(size, limit))
 }
 
-/** An address read, following at most five redirects, each checked: the answer's bytes and where it ended. */
-export async function readAddress(
-  network: Network,
-  raw: string,
-  limit: number,
-  accept: string,
-): Promise<{ bytes: Uint8Array; url: URL } | undefined> {
+/**
+ * What an address gave: its bytes and where it ended; "none" when the site
+ * answered with nothing to read there; "unreachable" when there was no
+ * answer to judge by (no connection, a name not found or pointing inside the
+ * network, too slow, or the site busy: 429, 5xx).
+ */
+export type Asked = { bytes: Uint8Array; url: URL } | 'none' | 'unreachable'
+
+/** An address asked, following at most five redirects, each checked. `cut`: a longer answer's first `limit` bytes. */
+export async function askAddress(network: Network, raw: string, limit: number, accept: string, cut = false): Promise<Asked> {
   let url = safeURL(raw)
   for (let hop = 0; url && hop <= maxRedirects; hop += 1) {
     const host = url.hostname.replace(/^\[|\]$/g, '')
     const addresses = await network.lookup(host).catch(() => [] as string[])
-    if (addresses.length === 0 || addresses.some(isBlockedAddress)) return undefined
+    if (addresses.length === 0 || addresses.some(isBlockedAddress)) return 'unreachable'
     let response: Response
     try {
       response = await network.fetch(url.href, {
@@ -109,7 +121,7 @@ export async function readAddress(
         headers: { accept, 'user-agent': userAgent },
       })
     } catch {
-      return undefined
+      return 'unreachable'
     }
     if ([301, 302, 303, 307, 308].includes(response.status)) {
       const next = response.headers.get('location')
@@ -119,43 +131,80 @@ export async function readAddress(
     }
     if (response.status < 200 || response.status >= 300) {
       await response.body?.cancel().catch(() => {})
-      return undefined
+      return response.status === 429 || response.status >= 500 ? 'unreachable' : 'none'
     }
-    const bytes = await bodyOf(response, limit).catch(() => undefined)
-    return bytes ? { bytes, url } : undefined
+    let bytes: Uint8Array | undefined
+    try {
+      bytes = await bodyOf(response, limit, cut)
+    } catch {
+      return 'unreachable'
+    }
+    return bytes ? { bytes, url } : 'none'
   }
-  return undefined
+  return 'none'
+}
+
+/** An address read, following at most five redirects, each checked: the answer's bytes and where it ended. */
+export async function readAddress(
+  network: Network,
+  raw: string,
+  limit: number,
+  accept: string,
+): Promise<{ bytes: Uint8Array; url: URL } | undefined> {
+  const asked = await askAddress(network, raw, limit, accept)
+  return typeof asked === 'string' ? undefined : asked
+}
+
+/** What was found, and whether every request was answered: only then is "none" the site's own answer. */
+export interface Found {
+  picture: string | undefined
+  sure: boolean
+}
+
+/** A picture at an address, and whether the address answered. */
+export async function askPicture(network: Network, raw: string): Promise<Found> {
+  const asked = await askAddress(network, raw, imageByteLimit, 'image/*')
+  if (typeof asked === 'string') return { picture: undefined, sure: asked === 'none' }
+  const type = pictureType(asked.bytes)
+  return { picture: type ? dataAddress(type, asked.bytes) : undefined, sure: true }
 }
 
 /** A picture at an address: a `data:` address, or undefined when there is none there. */
 export async function readPicture(network: Network, raw: string): Promise<string | undefined> {
-  const read = await readAddress(network, raw, imageByteLimit, 'image/*')
-  const type = read ? pictureType(read.bytes) : undefined
-  return read && type ? dataAddress(type, read.bytes) : undefined
+  return (await askPicture(network, raw)).picture
 }
 
-/** A site's icon (`SiteIcons.read`): its page's touch icon, else its icon, else /favicon.ico where the page ended, else the site's own. */
-export async function readSiteIcon(network: Network, site: string): Promise<string | undefined> {
+/**
+ * A site's icon (`SiteIcons.read`): every icon its page names, its touch
+ * icons first, then /favicon.ico where the page ended, then the site's own;
+ * the first that is a picture by its own bytes.
+ */
+export async function askSiteIcon(network: Network, site: string): Promise<Found> {
   const candidates: string[] = []
+  let sure = true
   // A sign-in page a redirect lands on still has the site's icons: only the head is read.
-  const page = await readAddress(network, `https://${site}/`, htmlByteLimit, 'text/html,application/xhtml+xml').catch(
-    () => undefined,
-  )
-  if (page) {
+  const page = await askAddress(network, `https://${site}/`, htmlByteLimit, 'text/html,application/xhtml+xml', true)
+  if (page === 'unreachable') sure = false
+  else if (page !== 'none') {
     const html = new TextDecoder().decode(page.bytes)
-    for (const rels of [['apple-touch-icon', 'apple-touch-icon-precomposed'], ['icon', 'shortcut']]) {
-      const href = linkHref(html, rels)
-      const found = href !== undefined ? absolute(href, page.url) : undefined
+    for (const href of iconHrefs(html)) {
+      const found = absolute(href, page.url)
       if (found) candidates.push(found)
     }
     candidates.push(`https://${page.url.hostname}/favicon.ico`)
   }
   candidates.push(`https://${site}/favicon.ico`)
   for (const address of [...new Set(candidates)]) {
-    const picture = await readPicture(network, address)
-    if (picture) return picture
+    const found = await askPicture(network, address)
+    if (found.picture) return { picture: found.picture, sure: true }
+    if (!found.sure) sure = false
   }
-  return undefined
+  return { picture: undefined, sure }
+}
+
+/** A site's icon as a `data:` address, or undefined when it has none. */
+export async function readSiteIcon(network: Network, site: string): Promise<string | undefined> {
+  return (await askSiteIcon(network, site)).picture
 }
 
 /** One picture or none, as kept on disk. */
@@ -165,10 +214,12 @@ interface Kept {
 
 /**
  * The shelf: what was read this run, what is being read (asked twice, read
- * once), and the copies kept on disk a week.
+ * once), and the copies kept on disk: a picture a week, "none" a day, and
+ * nothing for a read that had no answer (that one is asked again after five
+ * minutes).
  */
 export class PictureShelf {
-  private readonly answered = new Map<string, string | null>()
+  private readonly answered = new Map<string, { picture: string | null; until: number }>()
   private readonly reading = new Map<string, Promise<string | null>>()
 
   constructor(
@@ -180,25 +231,36 @@ export class PictureShelf {
   /** An airline's logo at an https address. */
   logo(url: string): Promise<string | null> {
     if (!safeURL(url)) return Promise.resolve(null)
-    return this.find(`logo:${url}`, () => readPicture(this.network, url))
+    return this.find(`logo:${url}`, () => askPicture(this.network, url))
   }
 
   /** A saved login's site icon. */
   siteIcon(site: string): Promise<string | null> {
     const key = siteKey(site)
     if (key === '' || !safeURL(`https://${key}/`)) return Promise.resolve(null)
-    return this.find(`site:${key}`, () => readSiteIcon(this.network, key))
+    return this.find(`site:${key}`, () => askSiteIcon(this.network, key))
   }
 
-  private find(key: string, read: () => Promise<string | undefined>): Promise<string | null> {
-    if (this.answered.has(key)) return Promise.resolve(this.answered.get(key) ?? null)
+  private find(key: string, read: () => Promise<Found>): Promise<string | null> {
+    const done = this.answered.get(key)
+    if (done && this.now() < done.until) return Promise.resolve(done.picture)
     const running = this.reading.get(key)
     if (running) return running
     const task = (async () => {
       const file = path.join(this.folder, `${createHash('sha256').update(key).digest('hex')}.json`)
       const kept = await this.readKept(file)
-      if (kept) return kept.picture
-      const picture = (await read().catch(() => undefined)) ?? null
+      if (kept) {
+        this.answered.set(key, kept)
+        return kept.picture
+      }
+      const found = await read().catch((): Found => ({ picture: undefined, sure: false }))
+      const picture = found.picture ?? null
+      if (picture === null && !found.sure) {
+        // Nothing is written: asked again in five minutes, or the next time the app starts.
+        this.answered.set(key, { picture: null, until: this.now() + retryAfterMs })
+        return null
+      }
+      this.answered.set(key, { picture, until: this.now() + (picture === null ? noneKeptForMs : keptForMs) })
       await mkdir(this.folder, { recursive: true })
         .then(() => writeFile(file, JSON.stringify({ picture } satisfies Kept)))
         .catch(() => {})
@@ -208,7 +270,6 @@ export class PictureShelf {
     return task.then(
       (picture) => {
         this.reading.delete(key)
-        this.answered.set(key, picture)
         return picture
       },
       () => {
@@ -218,14 +279,20 @@ export class PictureShelf {
     )
   }
 
-  private async readKept(file: string): Promise<Kept | undefined> {
+  /** What is kept on disk and still holds: a picture a week from its writing, "none" a day. */
+  private async readKept(file: string): Promise<{ picture: string | null; until: number } | undefined> {
     try {
       const info = await stat(file)
-      if (this.now() - info.mtimeMs >= keptForMs) return undefined
       const value = JSON.parse(await readFile(file, 'utf8')) as Partial<Kept>
-      if (value.picture === null) return { picture: null }
-      if (typeof value.picture === 'string' && value.picture.startsWith('data:image/')) return { picture: value.picture }
-      return undefined
+      const picture =
+        value.picture === null
+          ? null
+          : typeof value.picture === 'string' && value.picture.startsWith('data:image/')
+            ? value.picture
+            : undefined
+      if (picture === undefined) return undefined
+      const until = info.mtimeMs + (picture === null ? noneKeptForMs : keptForMs)
+      return this.now() < until ? { picture, until } : undefined
     } catch {
       return undefined
     }

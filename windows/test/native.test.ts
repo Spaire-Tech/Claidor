@@ -6,16 +6,24 @@ import { mkdtempSync, readdirSync, rmSync, utimesSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { absolute, isBlockedAddress, linkHref, safeURL, siteKey } from '../src/main/native/addresses'
+import { absolute, iconHrefs, isBlockedAddress, linkHref, safeURL, siteKey } from '../src/main/native/addresses'
 import { chosenType, readFileAsk } from '../src/main/native/files'
-import { type Network, PictureShelf, keptForMs, pictureType, readSiteIcon } from '../src/main/native/pictures'
+import {
+  type Network,
+  PictureShelf,
+  keptForMs,
+  noneKeptForMs,
+  pictureType,
+  readSiteIcon,
+  retryAfterMs,
+} from '../src/main/native/pictures'
 
 const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13])
 const svg = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>')
 
-/** A stand-in network: each address's answer, and every address asked. */
+/** A stand-in network: each address's answer (`lost`: no answer at all), and every address asked. */
 function network(
-  answers: Record<string, { status?: number; body?: Uint8Array | string; location?: string }>,
+  answers: Record<string, { status?: number; body?: Uint8Array | string; location?: string; lost?: boolean }>,
   addresses: Record<string, string[]> = {},
 ) {
   const asked: string[] = []
@@ -25,6 +33,7 @@ function network(
       asked.push(url)
       const answer = answers[url]
       if (!answer) return new Response('', { status: 404 })
+      if (answer.lost) throw new TypeError('fetch failed')
       const headers = new Headers()
       if (answer.location) headers.set('location', answer.location)
       const body = typeof answer.body === 'string' || answer.body === undefined ? (answer.body ?? '') : Buffer.from(answer.body)
@@ -81,12 +90,43 @@ describe('the addresses a picture may come from', () => {
     expect(isBlockedAddress('2606:4700::1111')).toBe(false)
   })
 
+  it('judges an IPv4 address carried in an IPv6 one as the IPv4 one', () => {
+    // What a network without IPv4 gives for a site that has only IPv4 (NAT64): 140.82.121.3 here.
+    expect(isBlockedAddress('64:ff9b::8c52:7903')).toBe(false)
+    expect(isBlockedAddress('64:ff9b::140.82.121.3')).toBe(false)
+    expect(isBlockedAddress('::ffff:8.8.8.8')).toBe(false)
+    // The private addresses stay refused, however they are written.
+    expect(isBlockedAddress('64:ff9b::a00:1')).toBe(true)
+    expect(isBlockedAddress('64:ff9b::192.168.1.1')).toBe(true)
+    expect(isBlockedAddress('::ffff:c0a8:1')).toBe(true)
+    expect(isBlockedAddress('::ffff:10.0.0.1')).toBe(true)
+    // The range kept for a network's own use stays refused whole.
+    expect(isBlockedAddress('64:ff9b:1::8c52:7903')).toBe(true)
+    expect(safeURL('https://[64:ff9b::a00:1]/a.png')).toBeUndefined()
+  })
+
   it('reads a page head’s icons, made absolute', () => {
     const html =
       '<head><link rel="stylesheet" href="/a.css"><link rel="icon" href="/fav.png"><link rel=apple-touch-icon href="/touch&amp;big.png"></head>'
     expect(linkHref(html, ['apple-touch-icon'])).toBe('/touch&big.png')
     expect(linkHref(html, ['icon', 'shortcut'])).toBe('/fav.png')
     expect(linkHref(html, ['mask-icon'])).toBeUndefined()
+  })
+
+  it('reads every icon a page names, its touch icons first', () => {
+    const page = [
+      '<link rel="mask-icon" href="/mask.svg">',
+      '<link rel="icon" type="image/svg+xml" href="/favicon.svg">',
+      '<link rel="alternate icon" href="/favicon.png?v=1&amp;s=32">',
+      "<LINK REL='Shortcut Icon' HREF='/old.ico'>",
+      '<link rel="icon" href="/fourth.png">',
+      '<link rel="apple-touch-icon" href=/touch.png>',
+      '<link rel="apple-touch-icon-precomposed" href="/touch-pre.png">',
+      '<link rel="icon" href="">',
+    ].join('\n')
+    expect(iconHrefs(page)).toEqual(['/touch.png', '/touch-pre.png', '/favicon.svg', '/favicon.png?v=1&s=32', '/old.ico'])
+    expect(iconHrefs(page, 1)).toEqual(['/touch.png', '/favicon.svg'])
+    expect(iconHrefs('<p>no head</p>')).toEqual([])
     const base = new URL('https://www.example.com/login')
     expect(absolute('/fav.png', base)).toBe('https://www.example.com/fav.png')
     expect(absolute('http://www.example.com/fav.png', base)).toBeUndefined()
@@ -129,6 +169,71 @@ describe('pictures from other sites', () => {
     expect(asked).not.toContain('https://192.168.0.1/')
   })
 
+  it('tries the next icon when the first is no picture', async () => {
+    const { net, asked } = network({
+      'https://acme.com/': { body: '<link rel="icon" href="/missing.png"><link rel="alternate icon" href="/icon.png">' },
+      'https://acme.com/missing.png': { body: '<html>Not found</html>' },
+      'https://acme.com/icon.png': { body: png },
+    })
+    expect(await readSiteIcon(net, 'acme.com')).toMatch(/^data:image\/png;base64,/)
+    expect(asked).toEqual(['https://acme.com/', 'https://acme.com/missing.png', 'https://acme.com/icon.png'])
+  })
+
+  it('reads the head of a page longer than 512 KB', async () => {
+    const { net } = network({
+      'https://long.example/': { body: `<link rel="apple-touch-icon" href="/touch.png">${'x'.repeat(600 * 1024)}` },
+      'https://long.example/touch.png': { body: png },
+    })
+    expect(await readSiteIcon(net, 'long.example')).toMatch(/^data:image\/png;base64,/)
+  })
+
+  it('keeps "none" a day, and only when the site answered', async () => {
+    const place = folder()
+    let now = Date.now()
+    // The site answered every request, with no icon: kept, and not asked again within the day.
+    const none = network({ 'https://acme.com/': { body: '<title>Acme</title>' } })
+    const shelf = new PictureShelf(place, none.net, () => now)
+    expect(await shelf.siteIcon('acme.com')).toBeNull()
+    expect(readdirSync(place)).toHaveLength(1)
+    const again = network({})
+    expect(await new PictureShelf(place, again.net, () => now).siteIcon('acme.com')).toBeNull()
+    expect(again.asked).toEqual([])
+    // A day later it has one: asked again, by this run and by a new one.
+    now += noneKeptForMs + 1_000
+    const asked = none.asked.length
+    await shelf.siteIcon('acme.com')
+    expect(none.asked.length).toBeGreaterThan(asked)
+    const later = network({ 'https://acme.com/favicon.ico': { body: png } })
+    expect(await new PictureShelf(place, later.net, () => now).siteIcon('acme.com')).toMatch(/^data:image\/png;base64,/)
+  })
+
+  it('writes nothing for a read that had no answer, and asks again five minutes later', async () => {
+    const place = folder()
+    let now = Date.now()
+    // No connection: the page had no answer; /favicon.ico is refused (404), which is not the site's last word.
+    const lost = network({ 'https://acme.com/': { lost: true } })
+    const shelf = new PictureShelf(place, lost.net, () => now)
+    expect(await shelf.siteIcon('acme.com')).toBeNull()
+    expect(readdirSync(place)).toHaveLength(0)
+    const asked = lost.asked.length
+    now += 60_000
+    await shelf.siteIcon('acme.com')
+    expect(lost.asked).toHaveLength(asked)
+    now += retryAfterMs
+    await shelf.siteIcon('acme.com')
+    expect(lost.asked.length).toBeGreaterThan(asked)
+    // A busy site (503) and a name that isn't found are no answer either.
+    const busy = network({ 'https://busy.example/': { status: 503 }, 'https://busy.example/favicon.ico': { status: 503 } })
+    expect(await new PictureShelf(place, busy.net).siteIcon('busy.example')).toBeNull()
+    const unknown = network({}, { 'gone.example': [] })
+    expect(await new PictureShelf(place, unknown.net).siteIcon('gone.example')).toBeNull()
+    expect(readdirSync(place)).toHaveLength(0)
+    // The connection is back: the next run finds the icon and keeps it.
+    const back = network({ 'https://acme.com/': { body: '<link rel="apple-touch-icon" href="/touch.png">' }, 'https://acme.com/touch.png': { body: png } })
+    expect(await new PictureShelf(place, back.net).siteIcon('acme.com')).toMatch(/^data:image\/png;base64,/)
+    expect(readdirSync(place)).toHaveLength(1)
+  })
+
   it('reads nothing from a name that points inside the network', async () => {
     const { net, asked } = network(
       { 'https://sneaky.example/logo.png': { body: png } },
@@ -154,7 +259,7 @@ describe('pictures from other sites', () => {
     const again = network({})
     expect(await new PictureShelf(place, again.net).logo('https://assets.duffel.com/BA.svg')).toBe(one)
     expect(again.asked).toEqual([])
-    // None is kept too: a missing logo isn't asked again for a week.
+    // None is kept too (the site answered: there is no such logo): it isn't asked again for a day.
     expect(await shelf.logo('https://assets.duffel.com/XX.svg')).toBeNull()
     expect(readdirSync(place)).toHaveLength(2)
     // A week later, it is read again.

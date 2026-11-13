@@ -2034,8 +2034,18 @@ before.
   it, then the in-chat form or the computer handed over.
 - **The apps** (`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift`, shared;
   `ios/Simeon/CredentialsStore.swift`; `mac/Simeon/SettingsCredentials.swift`). A login's icon
-  is read on the device from the site itself (its touch icon, its icon, then `/favicon.ico`),
-  never a favicon service, kept a week (`SiteIcons`). A change sends only what changed; a
+  is read on the device from the site itself, never a favicon service (`SiteIcons`; the
+  Windows app's `windows/src/main/native/pictures.ts` follows the same rules): every icon
+  the site's page names, its touch icons first, then `/favicon.ico`; the first that is a
+  picture by its own bytes, whatever the site labels it, kept a week. "None" is kept a day,
+  and only when the site answered every request; a read that had no answer (no connection,
+  a name not found, a site too slow or busy) writes nothing and is asked again five minutes
+  later. An address that carries an IPv4 one (a phone network without IPv4, NAT64) is judged
+  by that IPv4 address. A site whose only icon is an SVG shows its first letter on the Mac
+  and the iPhone, which draw none. **When a login has no icon:** the app's recent activity
+  (Report an Issue with diagnostics) has a line `site icon: none (…)` with the reason for
+  each candidate (`svg`, `page`, `status 404`, `not drawn`, `no page`), or `site icon: none
+  for now, a request had no answer (…)`; never the site's name. A change sends only what changed; a
   password not read with Face ID is sent only when one was typed. The demo has a login and
   contact info (`Demo.swift`). The store's card in the chat: `StoreEntryCard` (core,
   `CredentialsStore.swift`), `StoreEntryCardView` (`mac/Simeon/OnePasswordCards.swift`,

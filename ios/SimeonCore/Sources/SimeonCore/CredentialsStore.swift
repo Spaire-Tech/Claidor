@@ -492,69 +492,174 @@ public struct StoreEntryCard: Hashable, Sendable {
 /**
  * A saved login's icon: the site's own, read on this device from the site
  * itself, never a favicon service (a person's sites stay between them and
- * those sites). The site's touch icon first (sharp at a row's size), then its
- * icon, then /favicon.ico; kept on disk a week, once per site while the app
- * runs. None, and the row shows the site's first letter.
+ * those sites). Every icon the site's page names is tried, its touch icons
+ * first (sharp at a row's size), then /favicon.ico, and the first that is a
+ * picture by its own bytes is kept, on disk a week. None, and the row shows
+ * the site's first letter.
+ *
+ * "None" is kept a day, and only when the site answered every request: a
+ * read that had no answer (no connection, a name not found, a site too slow
+ * or busy) is asked again five minutes later, and nothing of it is written.
+ * Before 13 November 2026 any failed read was kept as "none" for a week, the
+ * first of several reasons some logins had no icon on the Mac and the iPhone
+ * (the founder: "they dont all appear. some do others dont. in windows they
+ * all appear"); the others are in `LinkMetadataReader.icon`,
+ * `LinkPreviewPolicy.iconHrefs` and `embeddedIPv4`. The folder was renamed
+ * then, so what the earlier rules kept as "none" is asked again.
+ *
+ * A site left without one writes a line in the app's recent activity
+ * (`RecentActivity`) with the reason and never the site's name.
  */
 public actor SiteIcons {
   public static let shared = SiteIcons()
 
-  private var answered: [String: Data?] = [:]
+  /** The site's page, when its icons were asked of it. */
+  enum PageAnswer: Sendable {
+    case page(html: String, finalURL: URL)
+    /** The site answered without a page to read (a refusal, a missing page). */
+    case none
+    /** No answer to judge by. */
+    case unreachable
+  }
+
+  /** How a site is read: the network's (`live`), or a test's. */
+  struct Source: Sendable {
+    var page: @Sendable (_ site: String) async -> PageAnswer
+    var icon: @Sendable (_ address: String) async -> LinkMetadataReader.IconAnswer
+    /** The picture as the row draws it (PNG, at most 128 on its long side); nil when this device can't draw it. */
+    var draw: @Sendable (_ data: Data) -> Data?
+
+    static let live = Source(
+      page: { site in
+        guard let home = LinkPreviewPolicy.safeURL("https://\(site)/") else { return .none }
+        // A sign-in page a redirect lands on still has the site's icons: only the head is read.
+        guard let page = try? await LinkMetadataReader.fetch(home, limit: LinkPreviewPolicy.htmlByteLimit, accept: "text/html,application/xhtml+xml", truncate: true) else { return .unreachable }
+        if page.status == 429 || page.status >= 500 { return .unreachable }
+        guard (200..<300).contains(page.status) else { return .none }
+        return .page(html: String(decoding: page.body, as: UTF8.self), finalURL: page.finalURL)
+      },
+      icon: { await LinkMetadataReader.icon($0) },
+      draw: { LinkMetadataReader.bounded($0, maxDimension: LinkPreviewPolicy.iconMaxDimension, jpeg: false) })
+  }
+
+  /** What was read for a site, when, and how long it holds. */
+  private struct Answer {
+    let data: Data?
+    let at: Date
+    let life: Double
+  }
+
+  private var answered: [String: Answer] = [:]
   private var reading: [String: Task<Data?, Never>] = [:]
   private let cacheDir: URL?
+  /** The folder the earlier rules kept their answers in, taken away once. */
+  private var retired: URL?
+  private let source: Source
+  private let now: @Sendable () -> Date
+  /** An icon is kept a week. */
   static let cacheTTL: Double = 7 * 24 * 60 * 60
+  /** "None" is kept a day: a site gains an icon, and a refusal passes. */
+  static let noneTTL: Double = 24 * 60 * 60
+  /** A read that had no answer is tried again after five minutes. */
+  static let retryAfter: Double = 5 * 60
+  static let folderName = "site-icons-2"
 
-  public init(cacheDir: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("site-icons", isDirectory: true)) {
+  public init() {
+    let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+    cacheDir = caches?.appendingPathComponent(Self.folderName, isDirectory: true)
+    retired = caches?.appendingPathComponent("site-icons", isDirectory: true)
+    source = .live
+    now = { Date() }
+  }
+
+  init(cacheDir: URL?, source: Source, now: @escaping @Sendable () -> Date = { Date() }) {
     self.cacheDir = cacheDir
+    self.source = source
+    self.now = now
   }
 
   /** What was read for the site before, when it was. */
-  public func known(_ site: String) -> Data?? { answered[site] }
+  public func known(_ site: String) -> Data?? { answered[site].map(\.data) }
 
   public func icon(for site: String) async -> Data? {
     let key = CredentialSite.site(site)
     guard !key.isEmpty else { return nil }
-    if let done = answered[key] { return done }
+    if let done = answered[key], now().timeIntervalSince(done.at) < done.life { return done.data }
     if let running = reading[key] { return await running.value }
     let task = Task { await self.read(key) }
     reading[key] = task
     let result = await task.value
     reading[key] = nil
-    answered[key] = result
     return result
   }
 
   private func cacheFile(_ site: String) -> URL? { cacheDir?.appendingPathComponent(LinkMetadataReader.digest(site) + ".png") }
 
+  /** What is kept on disk for the site and still holds: its icon, or "none" (nil data). */
+  private func kept(_ site: String) -> Answer? {
+    guard let file = cacheFile(site), let attributes = try? FileManager.default.attributesOfItem(atPath: file.path),
+          let modified = attributes[.modificationDate] as? Date, let data = try? Data(contentsOf: file) else { return nil }
+    let life = data.isEmpty ? Self.noneTTL : Self.cacheTTL
+    guard now().timeIntervalSince(modified) < life else { return nil }
+    return Answer(data: data.isEmpty ? nil : data, at: modified, life: life)
+  }
+
+  private func keep(_ data: Data, for site: String) {
+    guard let dir = cacheDir, let file = cacheFile(site) else { return }
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    try? data.write(to: file, options: .atomic)
+  }
+
   private func read(_ site: String) async -> Data? {
-    if let file = cacheFile(site), let attributes = try? FileManager.default.attributesOfItem(atPath: file.path),
-       let modified = attributes[.modificationDate] as? Date, Date().timeIntervalSince(modified) < Self.cacheTTL,
-       let data = try? Data(contentsOf: file) {
-      return data.isEmpty ? nil : data
+    if let old = retired {
+      retired = nil
+      try? FileManager.default.removeItem(at: old)
     }
-    guard let home = LinkPreviewPolicy.safeURL("https://\(site)/") else { return nil }
+    if let kept = kept(site) {
+      answered[site] = kept
+      return kept.data
+    }
+    // Whether every request was answered: only then is "none" the site's own answer.
+    var unanswered = false
+    var whys: [String] = []
     var candidates: [String] = []
-    // A sign-in page a redirect lands on still has the site's icons: only the head is read.
-    if let page = try? await LinkMetadataReader.fetch(home, limit: LinkPreviewPolicy.htmlByteLimit, accept: "text/html,application/xhtml+xml", truncate: true),
-       (200..<300).contains(page.status) {
-      let html = String(decoding: page.body, as: UTF8.self)
-      for rels in [["apple-touch-icon", "apple-touch-icon-precomposed"], ["icon", "shortcut"]] {
-        if let href = LinkPreviewPolicy.linkHref(html, rels), let absolute = LinkPreviewPolicy.absolute(href, page.finalURL) { candidates.append(absolute) }
+    switch await source.page(site) {
+    case .page(let html, let finalURL):
+      for href in LinkPreviewPolicy.iconHrefs(html) {
+        if let absolute = LinkPreviewPolicy.absolute(href, finalURL) { candidates.append(absolute) }
       }
-      if let host = page.finalURL.host { candidates.append("https://\(host)/favicon.ico") }
+      if let host = finalURL.host { candidates.append("https://\(host)/favicon.ico") }
+    case .none:
+      whys.append("no page")
+    case .unreachable:
+      unanswered = true
     }
     candidates.append("https://\(site)/favicon.ico")
     var found: Data?
-    for address in candidates {
-      if let data = await LinkMetadataReader.image(address), let icon = LinkMetadataReader.bounded(data, maxDimension: LinkPreviewPolicy.iconMaxDimension, jpeg: false) {
-        found = icon
-        break
+    var asked = Set<String>()
+    for address in candidates where asked.insert(address).inserted {
+      switch await source.icon(address) {
+      case .picture(let data):
+        if let icon = source.draw(data) { found = icon } else { whys.append("not drawn") }
+      case .none(let why):
+        whys.append(why)
+      case .unreachable:
+        unanswered = true
       }
+      if found != nil { break }
     }
-    if let dir = cacheDir, let file = cacheFile(site) {
-      try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-      // None is kept too (empty), so a site without an icon isn't asked again for a week.
-      try? (found ?? Data()).write(to: file, options: .atomic)
+    let at = now()
+    if let found {
+      keep(found, for: site)
+      answered[site] = Answer(data: found, at: at, life: Self.cacheTTL)
+    } else if unanswered {
+      // Nothing is written: asked again in five minutes, by whichever row shows it then.
+      answered[site] = Answer(data: nil, at: at, life: Self.retryAfter)
+      RecentActivity.note("site icon: none for now, a request had no answer (\(whys.joined(separator: ", ")))")
+    } else {
+      keep(Data(), for: site)
+      answered[site] = Answer(data: nil, at: at, life: Self.noneTTL)
+      RecentActivity.note("site icon: none (\(whys.joined(separator: ", ")))")
     }
     return found
   }

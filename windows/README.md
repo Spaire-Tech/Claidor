@@ -31,10 +31,11 @@ Windows' own parts around it. The plan and the record are
   down with a release waiting. The switches, the last checks and the release
   waiting are kept in `%APPDATA%\Simeon\updates.json`; what the updater did
   is in `updates.log` beside it.
-- **Pictures from other sites** (an airline's logo, a saved login's touch
+- **Pictures from other sites** (an airline's logo, a saved login's site
   icon) are read by the main process, public `https:` addresses only, and
   kept a week in `%APPDATA%\Simeon\pictures` (`src/main/native/`, the Mac's
-  `RemoteLogos` and `SiteIcons`).
+  `RemoteLogos` and `SiteIcons`). "None" is kept a day, and only when the
+  site answered; a read that had no answer writes nothing.
 - **The icon** is drawn for Windows (`resources/icon.ico`, `icon.png`, made by
   `scripts/make-icon.mjs`): a white tile that fills the picture with Simeon's
   mark across 78% of it, the mark the tray draws (`scripts/lib/tile.mjs`,

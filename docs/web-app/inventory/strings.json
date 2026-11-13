@@ -496,7 +496,7 @@
 {"text": "No results", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SearchPanel.swift"], "old_web_app": false, "web_app": true},
 {"text": "No runs yet", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/RoutinesPage.swift"], "old_web_app": false, "web_app": true},
 {"text": "No saved agents yet.", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/SidebarList.swift"], "old_web_app": false, "web_app": true},
-{"text": "None", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Feedback.swift", "mac/Simeon/SettingsCredentials.swift", "mac/Simeon/Sidebar.swift"], "old_web_app": false, "web_app": true},
+{"text": "None", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Feedback.swift", "mac/Simeon/SettingsCredentials.swift", "mac/Simeon/Sidebar.swift", "ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift"], "old_web_app": false, "web_app": true},
 {"text": "Not Now", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/MacServices.swift"], "old_web_app": false, "web_app": false},
 {"text": "Not done", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/MessageText.swift"], "old_web_app": false, "web_app": true},
 {"text": "Not now", "catalogue": "mac/Simeon/Localizable.xcstrings", "files": ["mac/Simeon/Cards.swift", "mac/Simeon/OnePasswordCards.swift", "mac/Simeon/UserFormCard.swift", "ios/SimeonCore/Sources/SimeonCore/ComputerRebuild.swift", "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"], "old_web_app": false, "web_app": true},
