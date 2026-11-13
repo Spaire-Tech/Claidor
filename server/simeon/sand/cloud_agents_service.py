@@ -382,11 +382,38 @@ class CloudAgentsService:
             )
         return rows
 
-    def conversation(self, job: MatyJob) -> list[dict[str, Any]]:
+    def conversation(
+        self, job: MatyJob, updates: list[dict[str, Any]] | None = None
+    ) -> list[dict[str, Any]]:
         """`simeon.v1.ConversationMessage`s, as
-        `convertConversationMessagesToTrace` reads them."""
+        `convertConversationMessagesToTrace` reads them.
+
+        `updates` are what the cloud agent said along the way
+        (`SandCloudAgent.work["updates"]`, written by the computer's
+        heartbeat): AI messages whose `bubbleId` starts `update-`, each
+        turn's before that turn's answer, and a turn with no answer yet
+        (still running, or stopped) at the end."""
+        by_turn: dict[str, list[dict[str, Any]]] = {}
+        for update in updates or []:
+            if isinstance(update, dict) and str(update.get("text") or "").strip():
+                by_turn.setdefault(str(update.get("jobId") or ""), []).append(update)
         rows: list[dict[str, Any]] = []
+
+        def said_along_the_way(turn: str) -> None:
+            for number, update in enumerate(by_turn.pop(turn, [])):
+                rows.append(
+                    {
+                        "text": str(update.get("text") or ""),
+                        "type": MESSAGE_AI,
+                        "bubbleId": f"update-{turn}-{number}",
+                        "isAgentic": True,
+                        "createdAt": str(update.get("createdAtMs") or 0),
+                    }
+                )
+
         for index, message in enumerate(job.conversation or []):
+            if message.get("role") != "user":
+                said_along_the_way(str(message.get("jobId") or job.id))
             created = message.get("createdAtMs") or 0
             rows.append(
                 {
@@ -399,6 +426,8 @@ class CloudAgentsService:
                     "createdAt": str(created),
                 }
             )
+        for turn in list(by_turn):
+            said_along_the_way(turn)
         return rows
 
     def environment(self) -> dict[str, Any]:
@@ -633,8 +662,8 @@ class CloudAgentsService:
     async def transcript(
         self, session: AsyncSession, user: User, bc_id: str
     ) -> list[dict[str, Any]]:
-        _, job = await self._agent(session, user, bc_id)
-        return self.conversation(job)
+        agent, job = await self._agent(session, user, bc_id)
+        return self.conversation(job, (agent.work or {}).get("updates"))
 
     # --- the runner's side -----------------------------------------------
 
