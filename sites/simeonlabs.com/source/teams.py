@@ -35,7 +35,7 @@ public/; it also runs alone, needing nothing but Python:
 """
 import hashlib, html, json, os, re, shutil, sys, unicodedata
 
-from nav import MAC_DOWNLOAD, bar, footer
+from nav import bar, downloads, footer
 from versioning import version_style
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -435,20 +435,23 @@ footer{margin-top:0}
 
 ADD_JS = """<script>
 // Add to Simeon: the app on this device opens on the pack and adds the team (simeon-ios:// on an iPhone or
-// iPad, simeon:// on a Mac). With no app to open (still here 1.5 s later), and from the start on any other
-// computer or phone, every Add to Simeon on the page gives way to Download for macOS, the home page's
-// button (the founder, 22 October 2026: "the add to simeon must disappear when there's no app").
+// iPad, simeon:// on a Mac and on a Windows PC, whose app reads the same links). With no app to open (still
+// here 1.5 s later), and from the start on any other computer or phone, every Add to Simeon on the page gives
+// way to the home page's Download button: Download for macOS, or on a Windows PC Download for Windows, the
+// Microsoft Store's listing (site.css; the founder, 22 October 2026: "the add to simeon must disappear when
+// there's no app").
 (() => {
   const ua = navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const mac = !ios && /Macintosh|Mac OS X/.test(ua);
+  const win = /Windows NT/.test(ua);
   const noApp = () => {
     for (const box of document.querySelectorAll('.add')) {
       box.classList.add('noapp');
       box.querySelector('.add-note').hidden = false;
     }
   };
-  if (!ios && !mac) { noApp(); return; }
+  if (!ios && !mac && !win) { noApp(); return; }
   for (const box of document.querySelectorAll('.add')) {
     const btn = box.querySelector('.add-btn');
     const query = 'app/v1/pack/add?id=' + encodeURIComponent(btn.dataset.pack);
@@ -607,7 +610,7 @@ def and_list(words):
 def add_button(pack):
     pid = pack["id"]
     return (f'<div class="add"><a class="btn add-btn" href="simeon://app/v1/pack/add?id={pid}" data-pack="{pid}">{PLUS}Add to Simeon</a>'
-            f'<p class="add-note" hidden aria-live="polite"><a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{DOWNLOAD}</a>{ios_button()}</p></div>')
+            f'<p class="add-note" hidden aria-live="polite">{downloads(DOWNLOAD)}{ios_button()}</p></div>')
 
 
 def fan(packs, assets):
@@ -714,7 +717,7 @@ def team_page(pack, assets):
 
 # The Marketplace's own questions: about adding and owning a team, none of the home page's again.
 TEAM_QA = [
-    ("How do I add a team?", "Open it here and choose Add to Simeon on the Mac or iPhone where Simeon is installed. The app opens and adds all five agents to a folder in your sidebar."),
+    ("How do I add a team?", "Open it here and choose Add to Simeon on the Mac, Windows PC or iPhone where Simeon is installed. The app opens and adds all five agents to a folder in your sidebar."),
     ("Does a team cost extra?", "No. Adding one is free, and its agents use your plan like any agent you create. A team that works every day may suit Pro."),
     ("What if I already use some of their apps?", "Each agent names the apps you have already connected and asks only for the ones it is missing."),
     ("Can I change them once they are added?", "Yes, they are yours. Rename them, rewrite what they do, give them other apps, or remove the ones you don't need. The rest keep working."),

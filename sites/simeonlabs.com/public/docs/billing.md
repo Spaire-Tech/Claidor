@@ -18,9 +18,9 @@ Every account gets one 7-day free trial, with one week of Standard credits, whic
 
 **On iPhone.** The trial starts when you first sign in, with no card. When the 7 days or the credits run out, the app shows the plans so you can choose one.
 
-**On the web or the Mac:**
+**On the web, a Mac or a Windows PC:**
 
-1. Go to [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), or choose **Start Free Trial** in the Mac app, and sign in.
+1. Go to [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), or choose **Start Free Trial** in the Mac or Windows app, and sign in.
 2. Under **Choose your plan**, choose **Start your Standard Trial** (or Pro, or Max).
 3. Add a card on Stripe's checkout page. Nothing is charged today.
 4. The page says **You're all set!** Open Simeon and sign in with the same account.

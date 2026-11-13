@@ -110,7 +110,7 @@ In our demos, we've shown an agent catching a $4,200 invoice that's 34 days over
 
 ![Theo on a phone: Acme Health is 34 days late on the $4,200 invoice. Want me to send them a reminder?](invoice.webp)
 
-Simeon is available today on Mac for Apple silicon, running macOS 15 or later. The iPhone app is coming soon. It speaks English, French, Spanish, German, Dutch, Italian, Portuguese, Swedish, Polish, and Turkish.
+Simeon is available today on Mac for Apple silicon, running macOS 15 or later. It is now on Windows too, from the [Microsoft Store](https://apps.microsoft.com/detail/9P588HGXP209). The iPhone app is coming soon. It speaks English, French, Spanish, German, Dutch, Italian, Portuguese, Swedish, Polish, and Turkish.
 
 Every plan comes with a seven-day free trial. After that, Standard is $30 a month. Pro is $100 a month, with 3.5 times the usage of Standard. Max is $200 a month, with nine times the usage, for teams with agents working every day.
 

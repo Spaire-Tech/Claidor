@@ -12,7 +12,7 @@ No. There are no workflows to build. Tell an agent what you need. When it needs 
 
 ### What do I need to use it?
 
-A Mac with Apple silicon on macOS 15 or later, or an iPhone on iOS 26 or later. The same account works on both. See [Get started](/docs/get-started) and [Simeon on iPhone](/docs/iphone).
+A Mac with Apple silicon on macOS 15 or later, a PC with Windows 10 or 11, or an iPhone on iOS 26 or later. The same account works on all of them. See [Get started](/docs/get-started) and [Simeon on iPhone](/docs/iphone).
 
 ## Agents and their work
 
@@ -80,7 +80,7 @@ For a plan bought on the web or the Mac, choose **Manage Billing** in **Settings
 
 ### How do I delete my account?
 
-In the Simeon app on your Mac or iPhone, open **Settings** and choose **Delete Account**. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can't be undone. A plan billed through Apple isn't cancelled by this: cancel it in the iPhone's **Settings › your name › Subscriptions**.
+In the Simeon app on your Mac, Windows PC or iPhone, open **Settings** and choose **Delete Account**. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can't be undone. A plan billed through Apple isn't cancelled by this: cancel it in the iPhone's **Settings › your name › Subscriptions**.
 
 ### Something isn't working
 

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=e0ac8473">
+<link rel="stylesheet" href="/site.css?v=76455af9">
 <style>
 /* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
@@ -198,14 +198,15 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 </head>
 <body>
 
+<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav>
-    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div></div>
     </details>
   </div>
 </header>
@@ -218,12 +219,12 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <h1>Simeon for iPhone</h1>
     <div class="page-acts"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><i></i><a href="/docs/iphone.md"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5.2L12.5 5v8.4a.8.8 0 0 1-.8.8H4a.8.8 0 0 1-.8-.8V2.6a.8.8 0 0 1 .8-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M5.5 8.5h5M5.5 11h3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>View as Markdown</a></div>
     <div class="words">
-<p>Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac. Sign in with the same account and everything is there: a message you send on your iPhone shows on your Mac, and the other way round. Your agents keep working whether the app is open or not.</p>
+<p>Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac or Windows PC. Sign in with the same account and everything is there: a message you send on your iPhone shows on your computer, and the other way round. Your agents keep working whether the app is open or not.</p>
 <p>This page covers setting up the app and what's different on a phone.</p>
 <div class="callout note"><b>Note</b><p>Simeon for iPhone isn't in the App Store yet. When it is, you'll find the download on <a href="/">simeonlabs.com</a>.</p></div>
 <div class="table"><table><thead><tr><th>On your iPhone you can</th><th></th></tr></thead><tbody><tr><td><strong>Message your agents</strong></td><td>Type or dictate, and send photos, files and videos.</td></tr><tr><td><strong>Call an agent</strong></td><td>Talk to it out loud while it works.</td></tr><tr><td><strong>Answer its cards</strong></td><td>Questions, drafts, approvals and sign-in forms, as on the Mac.</td></tr><tr><td><strong>Get notified</strong></td><td>When an agent finishes or needs you, with your Mac open or closed.</td></tr><tr><td><strong>Use its computer</strong></td><td>Watch the agent's screen, or take control with your fingers.</td></tr><tr><td><strong>Manage your team</strong></td><td>Hire and create agents, edit profiles, connect apps.</td></tr></tbody></table></div>
 <h2 id="set-up-the-app">Set up the app</h2>
-<ol><li>Open Simeon and sign in with the same account you use on your Mac: <strong>Continue with Apple</strong>, <strong>Continue with Google</strong>, or your email.</li><li>If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in <strong>Settings</strong>.</li><li>Allow notifications, so you hear when an agent finishes or needs you.</li></ol>
+<ol><li>Open Simeon and sign in with the same account you use on your computer: <strong>Continue with Apple</strong>, <strong>Continue with Google</strong>, or your email.</li><li>If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in <strong>Settings</strong>.</li><li>Allow notifications, so you hear when an agent finishes or needs you.</li></ol>
 <p>Your list of chats opens. Choose an agent to open its chat.</p>
 <h2 id="message-an-agent">Message an agent</h2>
 <p>Messaging works as on the Mac: write in the field at the bottom and send. See <a href="/docs/messaging">Message and call your agents</a>.</p>
@@ -276,7 +277,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Simeon for iPhone
 
-Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac. Sign in with the same account and everything is there: a message you send on your iPhone shows on your Mac, and the other way round. Your agents keep working whether the app is open or not.
+Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac or Windows PC. Sign in with the same account and everything is there: a message you send on your iPhone shows on your computer, and the other way round. Your agents keep working whether the app is open or not.
 
 This page covers setting up the app and what&#x27;s different on a phone.
 
@@ -295,7 +296,7 @@ Simeon for iPhone isn&#x27;t in the App Store yet. When it is, you&#x27;ll find 
 
 ## Set up the app
 
-1. Open Simeon and sign in with the same account you use on your Mac: **Continue with Apple**, **Continue with Google**, or your email.
+1. Open Simeon and sign in with the same account you use on your computer: **Continue with Apple**, **Continue with Google**, or your email.
 2. If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in **Settings**.
 3. Allow notifications, so you hear when an agent finishes or needs you.
 
@@ -429,7 +430,7 @@ While you&#x27;re in control, the sheet stays open so you don&#x27;t close it by
   <div class="wrap">
     <div class="foot-top">
       <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
-      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a><a href="https://apps.microsoft.com/detail/9P588HGXP209">Download for Windows</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
     </div>
     <div class="foot-base">
       <a class="foot-word" href="/" aria-label="SimeonLabs"></a>

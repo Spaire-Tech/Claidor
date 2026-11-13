@@ -57,7 +57,7 @@ and it runs alone too, needing nothing but Python:
 import datetime, html, os, re, shutil, sys
 
 import teams
-from nav import MAC_DOWNLOAD
+from nav import downloads
 from teams import frame
 from versioning import version_style
 
@@ -402,8 +402,7 @@ def post_page(post):
     kinds = "".join(f"<span>{esc(kind)}</span>" for kind in post.get("kinds", []))
     day = datetime.date.fromisoformat(post["date"])
     _, close, home_css = teams.from_home()
-    ctas = (f'<a class="btn" href="{MAC_DOWNLOAD}">Download for macOS{teams.DOWNLOAD}</a>'
-            '<a class="btn ghost" href="/contact">Contact Sales</a>')
+    ctas = downloads(teams.DOWNLOAD) + '<a class="btn ghost" href="/contact">Contact Sales</a>'
     face = ""
     if post.get("face"):
         src = os.path.join(teams.HERE, "img", "news", post["slug"], post["face"])

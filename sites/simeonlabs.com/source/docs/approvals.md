@@ -17,7 +17,7 @@ This page covers each card and what happens when you answer, how purchases are a
 | **Secrets** | A task needs an API key or another secret. | **Save securely** or **Not now** |
 | **Sign-in** | A page on the agent's computer needs a login or a code. | **Open** the secure form and **Fill in**, or **Not now** |
 | **Your turn on the computer** | A step only you can do, like a passkey or a captcha. | **Take over**, then **I'm done**, or **Skip** |
-| **Run commands on your computer** | An agent wants to run a command or open files on your Mac. | **Always allow**, **Allow once** or **Never** |
+| **Run commands on your computer** | An agent wants to run a command or open files on your Mac or PC. | **Always allow**, **Allow once** or **Never** |
 
 Cards look and work the same on the Mac, on iPhone and on the web. When an agent stops on a card, you get a notification that it needs you, with what it's asking.
 
@@ -145,7 +145,7 @@ The agent waits. A card ends the agent's turn, so it doesn't carry on around it 
 
 ### Can a routine or another agent approve a purchase?
 
-No. Only you can allow a checkout, in the Simeon app on your Mac, iPhone or the web. Other agents and the assistants you've connected can't answer it.
+No. Only you can allow a checkout, in the Simeon app on your Mac, Windows PC, iPhone or the web. Other agents and the assistants you've connected can't answer it.
 
 ### I chose Allow by mistake. Can I stop the purchase?
 
