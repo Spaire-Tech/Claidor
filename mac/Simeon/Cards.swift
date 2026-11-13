@@ -1255,17 +1255,26 @@ struct ModelConnectCardView: View {
   let card: ModelConnectCard
   let look: Look
   @Environment(AppStore.self) private var store
+  /** What the computer last said of Cursor's sign-in (its row reads the cloud computer, not AI Models); `cursorAsked` once it has answered or couldn't be asked. */
+  @State private var cursorSignIn: CursorSignIn?
+  @State private var cursorAsked = false
+
+  private func isConnected(_ provider: String) -> Bool {
+    ModelConnectCard.onComputer(provider) ? cursorSignIn?.connected == true : store.aiModels.connected(provider)
+  }
 
   var body: some View {
     let model = store.aiModels
     CardShell(look: look, spacing: 14) {
       ForEach(card.providers, id: \.self) { provider in
-        let connected = model.connected(provider)
+        let connected = isConnected(provider)
+        // Still being read: the accounts for a plan's row, the computer for Cursor's.
+        let reading = ModelConnectCard.onComputer(provider) ? !cursorAsked : !model.loaded && model.problem == nil
         ConnectAppRow(app: ModelConnectCard.program(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), look: look, logo: ModelConnectCard.logo(provider)) {
           Group {
             if connected {
               ConnectedCapsule(look: look)
-            } else if !model.loaded && model.problem == nil {
+            } else if reading {
               ProgressView().controlSize(.small)
                 .accessibilityLabel("Checking connection status")
             } else {
@@ -1279,12 +1288,24 @@ struct ModelConnectCardView: View {
       }
     }
     .frame(maxWidth: 520, alignment: .leading)
+    // Cursor's sheet closed: its row follows what the sheet left on the computer.
+    .onChange(of: MacConnector.shared.modelSignIn) { _, open in
+      guard open == nil, card.providers.contains(ModelConnectCard.cursor) else { return }
+      Task {
+        cursorSignIn = await store.cursorSignIn()
+        cursorAsked = true
+      }
+    }
     .task(id: card.providers) {
       // For ten minutes at most: a card left on screen with nothing connected stops asking.
       for _ in 0..<150 {
         if Task.isCancelled { return }
         await model.load()
-        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: model.connected)) else { return }
+        if card.providers.contains(ModelConnectCard.cursor) {
+          cursorSignIn = await store.cursorSignIn()
+          cursorAsked = true
+        }
+        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: isConnected)) else { return }
         try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
       }
     }

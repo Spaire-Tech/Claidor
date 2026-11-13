@@ -1121,16 +1121,27 @@ struct ModelConnectCardView: View {
   /** The provider whose code sheet is open (ChatGPT's). */
   @State private var connectingByCode: String?
   @State private var connectingClaude = false
+  /** Cursor's own sheet (it is signed in on the cloud computer, on Cursor's page; 13 November 2026). */
+  @State private var connectingCursor = false
+  /** What the computer last said of Cursor's sign-in (its row reads the cloud computer, not AI Models); `cursorAsked` once it has answered or couldn't be asked. */
+  @State private var cursorSignIn: CursorSignIn?
+  @State private var cursorAsked = false
+
+  private func isConnected(_ provider: String) -> Bool {
+    ModelConnectCard.onComputer(provider) ? cursorSignIn?.connected == true : store.aiModels.connected(provider)
+  }
 
   var body: some View {
     let model = store.aiModels
     VStack(alignment: .leading, spacing: 14) {
       ForEach(card.providers, id: \.self) { provider in
-        let connected = model.connected(provider)
+        let connected = isConnected(provider)
+        // Still being read: the accounts for a plan's row, the computer for Cursor's.
+        let reading = ModelConnectCard.onComputer(provider) ? !cursorAsked : !model.loaded && model.problem == nil
         ConnectAppRow(app: ModelConnectCard.program(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), logo: ModelConnectCard.logo(provider)) {
           if connected {
             ConnectedMark()
-          } else if !model.loaded && model.problem == nil {
+          } else if reading {
             ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
           } else {
             Button(ModelConnectCard.connectLabel) {
@@ -1150,7 +1161,7 @@ struct ModelConnectCardView: View {
       guard confirmed, let provider = pending else { pending = nil; return }
       confirmed = false
       pending = nil
-      if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
+      if provider == ModelConnectCard.cursor { connectingCursor = true } else if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
     }) { consent in
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
@@ -1160,12 +1171,22 @@ struct ModelConnectCardView: View {
     .sheet(isPresented: $connectingClaude) {
       NavigationStack { ClaudeConnectSheet(model: model, coding: true) }
     }
+    .sheet(isPresented: $connectingCursor, onDismiss: {
+      // The row follows what the sheet left on the computer.
+      Task { cursorSignIn = await store.cursorSignIn() }
+    }) {
+      NavigationStack { CursorConnectSheet() }
+    }
     .task(id: card.providers) {
       // For ten minutes at most: a card left on screen with nothing connected stops asking.
       for _ in 0..<150 {
         if Task.isCancelled { return }
         await model.load()
-        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: model.connected)) else { return }
+        if card.providers.contains(ModelConnectCard.cursor) {
+          cursorSignIn = await store.cursorSignIn()
+          cursorAsked = true
+        }
+        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: isConnected)) else { return }
         try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
       }
     }
