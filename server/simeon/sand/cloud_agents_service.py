@@ -223,8 +223,12 @@ def coding_model_id(agent: SandCloudAgent) -> str:
 
 def coding_plan_name(agent: SandCloudAgent) -> str:
     """Whose plan the coding runs on, as the person knows it: ChatGPT when
-    Codex codes (`own:chatgpt:…`), Claude otherwise."""
-    return "ChatGPT" if coding_model_id(agent).startswith("own:chatgpt:") else "Claude"
+    Codex codes (`own:chatgpt:…`), Cursor when Cursor's own agent does
+    (`own:cursor:…`, 13 November 2026), Claude otherwise."""
+    model = coding_model_id(agent)
+    if model.startswith("own:chatgpt:"):
+        return "ChatGPT"
+    return "Cursor" if model.startswith("own:cursor:") else "Claude"
 
 
 def limited_until_ms(agent: SandCloudAgent, job: MatyJob) -> int | None:

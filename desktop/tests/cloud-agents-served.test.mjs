@@ -188,7 +188,8 @@ test("the brief and the app say Simeon where the upstream app said the upstream 
     assert.match(enabled, /it clones the repository, makes a new branch, writes the code, builds and tests it, then pushes the branch and opens a pull request/);
     assert.match(enabled, /Simeon's computer" \(the user's own computer\)/);
     // 13 November 2026: neither connected, the chat offers both; GitHub's card as before.
-    assert.match(enabled, /puts a card in the chat: one that offers both programs to connect, by their own names \(Connect Claude Code, Connect Codex\), or a Connect GitHub card/);
+    assert.match(enabled, /puts a card in the chat: one that offers the programs to connect, by their own names \(Connect Claude Code, Connect Codex, Connect Cursor\), or a Connect GitHub card/);
+    assert.match(enabled, /When the user names the program \("in Cursor", "with Codex"\), pass it as launch's program/);
     assert.doesNotMatch(enabled, /does not check the repository out|app\.simeonlabs\.com\/agents/);
     assert.doesNotMatch(enabled, /mobile-ios-mac/, "no self-hosted pool is offered");
     assert.match(enabled, /"type":"environment","name":"Simeon's computer"/);

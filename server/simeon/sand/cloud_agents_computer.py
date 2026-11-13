@@ -107,7 +107,8 @@ class ComputerWork(BaseModel):
     #: When the person's plan lets the work go on; 0 clears it.
     limitedUntilMs: int | None = Field(default=None, ge=0)
     #: The model that codes (`own:claude:…` in Claude Code, `own:chatgpt:…`
-    #: in Codex): which program the cloud agent runs in.
+    #: in Codex, `own:cursor:…` in Cursor): which program the cloud agent
+    #: runs in.
     modelId: str | None = Field(default=None, max_length=WORD_MAX_LENGTH)
 
 
