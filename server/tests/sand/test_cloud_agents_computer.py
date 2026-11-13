@@ -343,6 +343,7 @@ class TestStops:
         detailed = await _info(client, headers, bc_id)
         assert detailed["composer"]["status"] == 3
         details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the Claude plan's limit is reached"
         assert details["additionalInfo"]["rateLimitReason"] == "sand_included_limit"
         assert details["detail"] == reason
         assert "summary" not in detailed
@@ -361,6 +362,60 @@ class TestStops:
         again = await _computer_claim(client, headers)
         assert again is not None
         assert "limitedUntilMs" not in again["work"]
+
+    async def test_a_run_in_codex_names_its_model_and_chatgpt_s_limit(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The computer says which model codes (13 November 2026): the app
+        reads it back as the cloud agent's model, the next turn is handed
+        it, and a limit names the plan it ran on."""
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        job = await _computer_claim(client, headers)
+        assert job is not None
+        beat = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "work": {"modelId": "own:chatgpt:gpt-6.1-sol", "sessionId": "t-1"},
+            },
+        )
+        assert beat.status_code == 200, beat.text
+        detailed = await _info(client, headers, bc_id)
+        assert detailed["composer"]["requestedModel"] == {
+            "modelId": "own:chatgpt:gpt-6.1-sol"
+        }
+        failed = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/fail",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "reason": "ChatGPT's plan limit was reached.",
+                "retryable": False,
+                "work": {"limitedUntilMs": 1_794_150_000_000},
+            },
+        )
+        assert failed.status_code == 200, failed.text
+        detailed = await _info(client, headers, bc_id)
+        details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the ChatGPT plan's limit is reached"
+        assert details["additionalInfo"]["rateLimitReason"] == "sand_included_limit"
+
+        await client.post(
+            f"{BC}/AddAsyncFollowupBackgroundComposer",
+            json={
+                "bcId": bc_id,
+                "followupConversationAction": _user_message("Continue."),
+                "synchronous": False,
+                "followupSource": "grok-bot",
+            },
+            headers=headers,
+        )
+        again = await _computer_claim(client, headers)
+        assert again is not None
+        assert again["work"]["modelId"] == "own:chatgpt:gpt-6.1-sol"
+        assert again["work"]["sessionId"] == "t-1"
 
     async def test_another_stop_tells_the_agent_why(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User

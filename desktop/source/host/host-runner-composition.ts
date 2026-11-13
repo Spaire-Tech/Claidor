@@ -1,6 +1,6 @@
 import { agentSkillsFromWorkflowStore } from "./runner/workflow-agent-skills.js";
 import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
-import { CLOUD_AGENT_CODER } from "./cloud-agents/coding-choice.js";
+import { CLOUD_AGENT_CODER, codingChoice } from "./cloud-agents/coding-choice.js";
 import { dirname } from "node:path";
 import { SIMEON_WORKING_CONTEXT_TOKENS } from "../shared/inference/simeon-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
@@ -2152,9 +2152,12 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           ),
           ...(watchCloudAgent === undefined ? {} : { watch: watchCloudAgent }),
           ...(reviewAction === undefined ? {} : { reviewAction }),
-          // The coding on this computer (11 November 2026): Claude chosen and
-          // GitHub connected, else what the agent says; the Connect GitHub
-          // card goes into this agent's chat when GitHub's sign-in starts.
+          // The coding on this computer (11 November 2026): Claude or
+          // ChatGPT connected, and GitHub, else what the agent says; the
+          // card to connect what is missing goes into this agent's chat
+          // (Claude and ChatGPT both offered, 13 November 2026; GitHub's
+          // when its sign-in starts).
+          coder: () => codingChoice()?.coder,
           ...(typeof (cloudAgents as { codingReady?: unknown }).codingReady !== "function"
             ? {}
             : {
@@ -2174,12 +2177,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           // server keeps. The cloud agent's own first words come back the
           // same way (`cloud-agents/extension.ts`, `noteCloudAgentSaid`).
           onLaunched: (event: { bcId: string; prompt: string; title?: string }) => {
-            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name: event.title ?? "", coder: CLOUD_AGENT_CODER }, event.prompt);
+            // The program it was just launched in: the one the coding takes now (`codingChoice`).
+            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name: event.title ?? "", coder: codingChoice()?.coder ?? CLOUD_AGENT_CODER }, event.prompt);
           },
           onFollowupSent: async (event: { bcId: string; prompt: string }) => {
             let name = "";
-            try { name = String((await resolveCloudAgentTitle(undefined, event.bcId)) ?? ""); } catch { /* unnamed then */ }
-            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name, coder: CLOUD_AGENT_CODER }, event.prompt);
+            let coder: string = CLOUD_AGENT_CODER;
+            try {
+              const kept = await method(cloudAgents, "get")?.(event.bcId) as { name?: unknown; coder?: unknown } | null | undefined;
+              name = String(kept?.name ?? "");
+              if (typeof kept?.coder === "string" && kept.coder !== "") coder = kept.coder;
+            } catch { /* unnamed then */ }
+            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name, coder }, event.prompt);
           },
         };
       })();
@@ -2970,6 +2979,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   ...(cloudAgent.codingReady === undefined
                     ? {}
                     : { codingReady: cloudAgent.codingReady }),
+                  ...(cloudAgent.coder === undefined
+                    ? {}
+                    : { coder: cloudAgent.coder }),
                   ...(cloudAgent.onLaunched === undefined
                     ? {}
                     : { onLaunched: cloudAgent.onLaunched }),

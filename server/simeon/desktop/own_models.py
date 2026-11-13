@@ -91,6 +91,22 @@ provider on the wire it speaks (below, "the person's own API keys"), cost
 no credits, and follow the plans' rules. Web search and pictures stay on
 Simeon's.
 
+**Codex, for a cloud agent's coding** (13 November 2026, the founder:
+"running one in Codex is not built"). A cloud agent's coding runs on the
+person's computer in Claude Code or in Codex, the real program, on their own
+plan. Claude Code signs in on the computer. Codex doesn't: its model
+provider there is this relay (the engine's `codex-relay.ts` hands its calls
+on with the computer's credential, named `own:chatgpt:<model>`, with the
+reason `coding`), so the one ChatGPT sign-in the person made is used and no
+ChatGPT token is ever on the computer. Such a call is Codex's own request
+and goes to ChatGPT as Codex wrote it (`coding_body`, `codex_own_headers`):
+only the model is named as ChatGPT names it. It runs on the account
+whatever model the person chose for their agents, and is never answered by
+Simeon's model: when no account can answer, ChatGPT's refusal goes back
+(the limit with the time it ends, 401 when ChatGPT isn't connected), and
+the engine pauses the run, as on Claude's limit. `coding_rows` tells the
+engine which of the two programs codes, in the order it takes them.
+
 **Not verified against chatgpt.com or grok.com.** For models it marks
 `use_responses_lite`, Codex sends the tools inside `input`
 (`additional_tools`), not in `tools`. This relay sends the standard
@@ -337,6 +353,17 @@ _FORMER_IDS = {
 }
 #: The wire the engine runs a Claude Code turn on (`transportApi`).
 CLAUDE_CODE_TRANSPORT = "claude-code"
+#: The wire of a cloud agent's coding in Codex on the computer.
+CODEX_TRANSPORT = "codex"
+#: The role of the rows that say what a cloud agent's coding runs in. An
+#: engine that doesn't know the role reads none of them.
+CODING_ROLE = "coding"
+#: The reason Codex's calls for a cloud agent's coding carry
+#: (`x-simeon-call-reason`).
+CODING_REASON = "coding"
+#: The error a coding call is refused with (401) when no ChatGPT account of
+#: the person's is signed in: the engine tells it from its own credential's.
+CHATGPT_NOT_CONNECTED = "chatgpt_not_connected"
 
 #: Every model a person may choose, in the order the apps list them.
 ALL_MODELS: tuple[OwnModel, ...] = (*CHATGPT_MODELS, *CLAUDE_MODELS, *GROK_MODELS)
@@ -512,6 +539,62 @@ def claude_code_row(model: OwnModel, effort: str | None = None) -> dict[str, Any
     }
 
 
+def codex_row(model: OwnModel, effort: str | None = None) -> dict[str, Any]:
+    """What a cloud agent's coding in Codex runs on: the model as Codex
+    names it (`-m`) and the effort it is given (`model_reasoning_effort`)."""
+    return {
+        "modelId": model.model_id,
+        "modelName": model.name,
+        "provider": "openai",
+        "apiFormat": CODEX_TRANSPORT,
+        "description": f"{model.name} in Codex, on your ChatGPT plan",
+        "costMultiplier": 0.0,
+        "accessible": True,
+        "supportsImage": True,
+        "supportsVideo": False,
+        "supportsThinking": True,
+        "supportsToolCalling": True,
+        "agenticReady": True,
+        "role": CODING_ROLE,
+        "transportApi": CODEX_TRANSPORT,
+        "codexModel": model.slug,
+        **({} if effort is None else {"codexEffort": effort}),
+    }
+
+
+async def coding_rows(session: AsyncSession, user: User) -> list[dict[str, Any]]:
+    """What a cloud agent's coding may run in on the person's computer, in
+    the order the engine takes them: Claude Code when Claude is signed in
+    there, Codex when ChatGPT is connected. The program of the model the
+    person chose for their agents comes first, on that model and effort;
+    the other, and both when another model is chosen, on its provider's
+    first model and own effort. None when neither is connected: the chat
+    then offers both to connect (`model-connect`)."""
+    chosen = chosen_model(user)
+    claude = model_accounts.PROVIDER_CLAUDE
+    chatgpt = model_accounts.PROVIDER_CHATGPT
+
+    def picked(
+        provider: str, models: Sequence[OwnModel]
+    ) -> tuple[OwnModel, str | None]:
+        if chosen is not None and chosen.provider == provider and chosen in models:
+            return chosen, chosen_effort(user)
+        return models[0], DEFAULT_EFFORT.get(provider)
+
+    found: list[tuple[str, dict[str, Any]]] = []
+    if await _usable(session, user.id, claude):
+        model, effort = picked(claude, CLAUDE_MODELS)
+        found.append((claude, {**claude_code_row(model, effort), "role": CODING_ROLE}))
+    plans = [one.plan for one in await _usable(session, user.id, chatgpt)]
+    on_plan = [m for m in CHATGPT_MODELS if any(m.on_plan(plan) for plan in plans)]
+    if on_plan:
+        model, effort = picked(chatgpt, on_plan)
+        found.append((chatgpt, codex_row(model, effort)))
+    first = chosen.provider if chosen is not None else claude
+    found.sort(key=lambda one: one[0] != first)
+    return [row for _, row in found]
+
+
 # --- the request ChatGPT is sent ------------------------------------------------
 
 #: What the Responses request keeps on the way to ChatGPT (Codex's own
@@ -573,6 +656,36 @@ def codex_body(
         body["reasoning"] = {**reasoning, "effort": effort}
     body["store"] = False
     return body
+
+
+def coding_body(payload: dict[str, Any], slug: str) -> dict[str, Any]:
+    """Codex's own request, for a cloud agent's coding, as Codex wrote it:
+    only the model named as ChatGPT names it. Nothing is left out or moved,
+    as it is on the engine's request: Codex writes what ChatGPT takes."""
+    return {**payload, "model": slug, "stream": True, "store": False}
+
+
+#: Codex's own headers a coding call keeps on its way to ChatGPT: its
+#: session and its thread, the request's id, and what it says of itself.
+_CODEX_OWN_HEADERS = frozenset({"session-id", "thread-id", "x-client-request-id"})
+_CODEX_OWN_PREFIXES = ("x-codex-", "x-openai-internal-codex-")
+_CODEX_HEADER_MAX = 8_192
+
+
+def codex_own_headers(headers: Any) -> dict[str, str]:
+    """Codex's own headers of a coding call (`_CODEX_OWN_HEADERS`), and its
+    `originator` when it is Codex's (`codex_exec`); nothing else of the
+    request, and never its credential."""
+    kept: dict[str, str] = {}
+    for name, value in headers.items():
+        lower = str(name).lower()
+        if len(value) > _CODEX_HEADER_MAX:
+            continue
+        if lower in _CODEX_OWN_HEADERS or lower.startswith(_CODEX_OWN_PREFIXES):
+            kept[lower] = value
+        elif lower == "originator" and value.startswith("codex_") and len(value) <= 64:
+            kept[lower] = value
+    return kept
 
 
 #: What the Responses request keeps on the way to Grok (Grok Build's own
@@ -814,33 +927,41 @@ async def relay(
         # No plan, no agents: the computer they run on is Simeon's, whoever
         # pays for the model (`box_broker.require_a_plan`).
         return quota_exhausted_response(allowance)
-    if chosen_model(user) is None or own.provider == model_accounts.PROVIDER_CLAUDE:
+    # Codex's own call, for a cloud agent's coding on the computer: on the
+    # ChatGPT account whatever the agents' model is, and never on Simeon's.
+    coding = reason == CODING_REASON and own.provider == model_accounts.PROVIDER_CHATGPT
+    if not coding and (
+        chosen_model(user) is None or own.provider == model_accounts.PROVIDER_CLAUDE
+    ):
         # Back on Simeon's models: an engine that hasn't caught up yet is
         # answered by Simeon's, never on the person's account. Claude is
         # never called from here: Claude Code on the computer calls it.
         return await _on_simeon(own, payload, user, simeon)
-    wants_stream = payload.get("stream") is True
+    wants_stream = coding or payload.get("stream") is True
     # Low on background work, the effort chosen on the agent's own turns.
     effort = call_effort(user, own, reason)
     if own.on_key:
         return await _on_keys(
             request, caller, session, own, payload, wants_stream, reason, effort, simeon
         )
-    shaped = (
-        grok_body(payload, own, effort)
-        if own.provider == model_accounts.PROVIDER_GROK
-        else codex_body(payload, own.slug, effort)
-    )
+    if coding:
+        shaped = coding_body(payload, own.slug)
+    elif own.provider == model_accounts.PROVIDER_GROK:
+        shaped = grok_body(payload, own, effort)
+    else:
+        shaped = codex_body(payload, own.slug, effort)
     body = json.dumps(shaped).encode()
     conversation = payload.get("prompt_cache_key")
     now = utc_now()
+    usable = await _usable(session, user.id, own.provider)
     accounts = [
         one
-        for one in await _usable(session, user.id, own.provider)
+        for one in usable
         if (one.limited_until is None or one.limited_until <= now)
         and own.on_plan(one.plan)
     ]
     refused_request: _Refused | None = None
+    refused_for_now: _Refused | None = None
     for account in accounts:
         account_id = account.id
         try:
@@ -854,6 +975,7 @@ async def relay(
                 wants_stream,
                 reason,
                 conversation=conversation if isinstance(conversation, str) else None,
+                own_headers=codex_own_headers(request.headers) if coding else None,
             )
         except _Refused as refused:
             log.warning(
@@ -866,12 +988,61 @@ async def relay(
             )
             if refused.refuses_the_request:
                 refused_request = refused
+            elif refused_for_now is None or refused.limited:
+                refused_for_now = refused
     if refused_request is not None:
         # The provider refused the request itself, not for the moment: said
         # as it said it. Simeon's model doesn't take it on in silence, on the
         # person's credits.
         return refused_request.answer()
+    if coding:
+        return _coding_refusal(usable, accounts, refused_for_now, now)
     return await _on_simeon(own, payload, user, simeon)
+
+
+def _coding_refusal(
+    usable: Sequence[DesktopModelAccount],
+    tried: Sequence[DesktopModelAccount],
+    refused: _Refused | None,
+    now: datetime,
+) -> JSONResponse:
+    """What Codex is told when no ChatGPT account answered its call: the
+    plan's limit with the time it ends (ChatGPT's own words when it just
+    said so), 401 `chatgpt_not_connected` when ChatGPT isn't connected or
+    its sign-in is gone, and ChatGPT's refusal of the moment otherwise. The
+    engine reads the first two and pauses the run, or says ChatGPT needs
+    connecting again (`codex-relay.ts`)."""
+    if refused is not None and refused.limited and refused.status is not None:
+        return refused.answer()
+    ends = [
+        one.limited_until
+        for one in usable
+        if one.limited_until is not None and one.limited_until > now
+    ]
+    if ends and (refused is None or refused.status is None):
+        until = min(ends)
+        return JSONResponse(
+            {
+                "error": {
+                    "type": "usage_limit_reached",
+                    "message": "The usage limit has been reached",
+                    "resets_at": int(until.timestamp()),
+                    "resets_in_seconds": max(1, int((until - now).total_seconds())),
+                }
+            },
+            status_code=429,
+        )
+    if refused is None and usable and not tried:
+        return _error(
+            "invalid_request_error",
+            "This ChatGPT plan doesn't include the model.",
+            400,
+        )
+    if refused is None or refused.body == b"signed out" or refused.status == 401:
+        return _error(CHATGPT_NOT_CONNECTED, "ChatGPT isn't connected.", 401)
+    if refused.status is None:
+        return _error("api_error", "ChatGPT couldn't be reached.", 502)
+    return refused.answer()
 
 
 async def _on_simeon(
@@ -950,9 +1121,11 @@ async def _on_account(
     reason: str | None,
     *,
     conversation: str | None = None,
+    own_headers: dict[str, str] | None = None,
 ) -> _Answer:
     """The call on one account. Raises `_Refused` when it did not answer,
-    so the next one can."""
+    so the next one can. `own_headers`: Codex's own, on its coding calls
+    (`codex_own_headers`), sent with the account's."""
     user_id = caller.user.id
     is_grok = own.provider == model_accounts.PROVIDER_GROK
     grant = await _grant(request, session, user_id, account_id)
@@ -964,12 +1137,15 @@ async def _on_account(
                 client.build_request(
                     "POST",
                     _responses_url(own.provider),
-                    headers=_headers(
-                        own.provider,
-                        grant,
-                        model=own.slug,
-                        conversation=conversation,
-                    ),
+                    headers={
+                        **_headers(
+                            own.provider,
+                            grant,
+                            model=own.slug,
+                            conversation=conversation,
+                        ),
+                        **(own_headers or {}),
+                    },
                     content=body,
                 ),
                 stream=True,
