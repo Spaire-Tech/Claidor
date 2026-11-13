@@ -874,6 +874,7 @@
         "clients/apps/app/src/window/ModelConnectCard.tsx",
         "clients/apps/app/src/window/ModelConnectCard.test.tsx",
         "clients/apps/app/src/window/CursorConnectSheet.tsx",
+        "docs/web-app/inventory/*.json",
         "docs/your-own-models.md",
         "docs/services-core.md"
       ],
