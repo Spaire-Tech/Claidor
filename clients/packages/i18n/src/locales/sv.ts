@@ -305,7 +305,6 @@ export default {
       standardTools: 'Loggar in i dina verktyg',
       standardRoutines: 'Rutiner enligt schema',
       standardChannels: 'Slack, Discord och röstsamtal',
-      standardAnywhere: 'Jobba var som helst: Mac och iPhone',
       standardUsage: 'Användning per vecka, mer vid behov',
       proIncludes: 'Allt i Standard, plus:',
       proUsage: '3,5 gånger användningen i Standard',

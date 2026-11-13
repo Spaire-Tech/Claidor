@@ -307,7 +307,6 @@ export default {
       standardTools: 'Logt in op je tools',
       standardRoutines: 'Routines volgens schema',
       standardChannels: 'Slack, Discord en spraakoproepen',
-      standardAnywhere: 'Werk overal: Mac en iPhone',
       standardUsage: 'Wekelijks gebruik, meer op aanvraag',
       proIncludes: 'Alles van Standard, plus:',
       proUsage: '3,5x het gebruik van Standard',
