@@ -25,7 +25,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
-import { gitHubBinary, gitHubEnv, runCommand, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
+import { gitHubBinary, gitHubEnv, runCommand, withGitTrust, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
 
 /** Where each agent's checkout is kept (`<root>/<bcId>/repo`). */
 export const CODE_ROOT = "/home/box/code";
@@ -187,7 +187,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     const repo = gitHubRepoOf(job.repoUrl);
     if (repo === undefined) return failed(`Only GitHub repositories can be worked on for now, and ${job.repoUrl || "no repository"} isn't one.`);
     const account = await deps.account();
-    if (!account.connected) return failed("GitHub isn't connected on the computer, so the repository can't be opened. Launch the work again to show the Connect GitHub card.");
+    if (!account.connected) return failed("GitHub isn't connected on the box (the agents' own computer), so the repository can't be opened. Launch the work again to show the Connect GitHub card.");
 
     const folder = path.join(deps.root ?? env.SIMEON_CODE_ROOT?.trim() ?? CODE_ROOT, job.bcId.replace(/[^A-Za-z0-9._-]/g, "_"));
     const checkout = path.join(folder, "repo");
@@ -242,7 +242,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
       cwd: checkout,
       allowedTools: CODING_TOOLS,
       timeoutMs: CODING_TURN_TIMEOUT_MS,
-      env,
+      env: withGitTrust(env),
       ...(deps.signal === undefined ? {} : { signal: deps.signal }),
       onEvent: (event) => {
         const windows = usageFromEvent(event);

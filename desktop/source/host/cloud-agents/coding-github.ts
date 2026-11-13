@@ -15,8 +15,17 @@
  *
  * `gh` prints its lines as `! First copy your one-time code: ABCD-1234`,
  * `Open this URL to continue in your web browser: https://github.com/login/device`
- * and `✓ Authentication complete.` (read from gh 2.89's own program; the
- * computer's image carries Debian's, `box/Dockerfile`).
+ * and `✓ Authentication complete.` (read from gh 2.89's own program, and the
+ * same three in gh 2.46.0's, the one the computer's image carries: Debian
+ * trixie's, `box/Dockerfile`).
+ *
+ * The sign-in's options are only those gh 2.46.0 knows (`GITHUB_LOGIN_ARGS`).
+ * Until 13 November 2026 it also passed `--skip-ssh-key`, which that version
+ * does not have: gh answered "unknown flag" with its help, no code came, and
+ * no cloud agent could be launched on a real computer (the founder's first
+ * try; the tests' `gh` was a stand-in that took any option). Each option was
+ * then run against Debian's 2.46.0-3 itself, and so was every other `gh`
+ * command of the coding run (`coding-run.ts`).
  */
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
@@ -31,7 +40,15 @@ const CODE_WAIT_MS = 30_000;
 const STATUS_TTL_MS = 60_000;
 
 /** The variables of the engine's own environment `gh` and `git` are given: the machine's, never Simeon's. */
-const PASSED_THROUGH = ["PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "TMPDIR", "http_proxy", "https_proxy", "no_proxy", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "GH_CONFIG_DIR"] as const;
+const PASSED_THROUGH = ["PATH", "HOME", "USER", "LOGNAME", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "TMPDIR", "http_proxy", "https_proxy", "no_proxy", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE", "GIT_SSL_CAINFO", "GH_CONFIG_DIR"] as const;
+
+/**
+ * `gh auth login`'s options, every one known to gh 2.46.0 (the computer's):
+ * the device flow (`--web`), `git` over https, the sign-in kept in gh's own
+ * file (the computer has no keyring), and the `workflow` scope, so a branch
+ * that touches `.github/workflows` can be pushed.
+ */
+export const GITHUB_LOGIN_ARGS = ["auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web", "--insecure-storage", "--scopes", "workflow"] as const;
 
 /** `gh`'s and `git`'s environment: the machine's own variables, no prompts, no colours, and nothing of the engine's. */
 export function gitHubEnv(base: NodeJS.ProcessEnv = process.env): Record<string, string> {
@@ -42,6 +59,12 @@ export function gitHubEnv(base: NodeJS.ProcessEnv = process.env): Record<string,
   }
   env.PATH ??= "/usr/local/bin:/usr/bin:/bin";
   env.HOME ??= "/home/box";
+  // Where the machine's trust is a bundle of its own (`SSL_CERT_FILE`: Azure's
+  // egress re-signs every site, `server/simeon/sand/box_azure.py`), `gh` reads
+  // it but `git` does not: Debian's git (libcurl with GnuTLS) refused a site
+  // signed by that bundle with SSL_CERT_FILE or CURL_CA_BUNDLE set and cloned
+  // it with GIT_SSL_CAINFO (measured against a stand-in, 13 November 2026).
+  if (env.GIT_SSL_CAINFO === undefined && env.SSL_CERT_FILE !== undefined) env.GIT_SSL_CAINFO = env.SSL_CERT_FILE;
   env.NO_COLOR = "1";
   env.GH_NO_UPDATE_NOTIFIER = "1";
   env.GH_SPINNER_DISABLED = "1";
@@ -50,6 +73,12 @@ export function gitHubEnv(base: NodeJS.ProcessEnv = process.env): Record<string,
   env.GH_BROWSER = "true";
   env.BROWSER = "true";
   return env;
+}
+
+/** The engine's own environment with `git`'s trust beside the machine's (`gitHubEnv`), for Claude Code's `git` in the checkout. */
+export function withGitTrust(base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const bundle = base.SSL_CERT_FILE;
+  return base.GIT_SSL_CAINFO === undefined && typeof bundle === "string" && bundle !== "" ? { ...base, GIT_SSL_CAINFO: bundle } : base;
 }
 
 /** The program's path: a stand-in in tests (`SIMEON_GH_BIN`), else `gh`. */
@@ -108,6 +137,17 @@ export function runCommand(
     child.stdin?.on("error", () => { /* closed early: the close event says why */ });
     child.stdin?.end(options.input ?? "");
   });
+}
+
+/**
+ * Why `gh` gave no code, from what it printed: its last line, or its first
+ * when it printed its help after it (an option it does not know: "unknown
+ * flag: --x", then the usage, whose last line says nothing).
+ */
+export function noCodeReason(words: string): string {
+  const lines = words.split("\n").map((line) => line.trim()).filter(Boolean);
+  const said = /^usage:/im.test(words) ? lines[0] : lines.at(-1);
+  return withoutTokens(said ?? "gh printed no code").slice(0, 300);
 }
 
 /** The one-time code and the page `gh` printed, from its words so far. */
@@ -215,7 +255,7 @@ export class GitHubOnComputer {
     if (account.connected) return { state: "connected", ...(account.login === undefined ? {} : { login: account.login }) };
     if (account.missing === true) return { state: "failed", why: "GitHub's command line (gh) isn't on this computer." };
 
-    const args = ["auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web", "--skip-ssh-key", "--insecure-storage", "--scopes", "workflow"];
+    const args = [...GITHUB_LOGIN_ARGS];
     let child: ChildProcessWithoutNullStreams;
     try {
       child = this.options.spawnLogin?.(args, this.env) ?? spawn(this.bin, args, { env: this.env, stdio: ["pipe", "pipe", "pipe"] });
@@ -242,7 +282,7 @@ export class GitHubOnComputer {
     });
     if (code === undefined) {
       child.kill("SIGTERM");
-      const why = withoutTokens(words.trim().split("\n").filter(Boolean).at(-1) ?? "gh printed no code");
+      const why = noCodeReason(words);
       this.log(`sign-in failed before a code: ${why.slice(0, 200)}`);
       return { state: "failed", why };
     }

@@ -27,7 +27,7 @@ export interface GitHubSignInCard { readonly type: "github-sign-in"; readonly co
 /** Whether a launch or a follow-up may go ahead: yes, or what the agent is told instead, with the card to show. */
 export type CodingReadiness = { readonly ok: true } | { readonly ok: false; readonly text: string; readonly card?: GitHubSignInCard };
 export const CLAUDE_NOT_CONNECTED_TEXT = "Coding runs in Claude Code on the user's own Claude plan, and Claude isn't connected, so nothing was launched. Ask them to connect Claude in Settings \u203a AI Models, then launch again once they have.";
-export const GITHUB_CARD_TEXT = "GitHub isn't connected on the user's computer yet, so nothing was launched: the cloud agent opens the repository and its pull request with their GitHub account. A Connect GitHub card is now in the chat with a one-time code. Say so in your own words, but don't paste the code or a link, and don't ask them to report back: you're resumed automatically once GitHub is connected, and then you launch again.";
+export const GITHUB_CARD_TEXT = "GitHub isn't connected on your own computer (the box, not the user's Mac or PC) yet, so nothing was launched: the cloud agent opens the repository and its pull request with the user's GitHub account. A Connect GitHub card is now in the chat with a one-time code. Say so in your own words, but don't paste the code or a link, and don't ask them to report back: you're resumed automatically once GitHub is connected, and then you launch again.";
 type AnyRecord = Record<string, unknown>;
 export interface CloudAgentClient extends SavedEnvironmentClient {
   startBackgroundComposerFromSnapshot(request: AnyRecord): Promise<{ composer?: { bcId?: string } }>;
@@ -84,7 +84,7 @@ export class SandCloudAgentManager {
     const state = await this.github.startSignIn(agentId);
     if (state.state === "connected") return { ok: true };
     if (state.state === "waiting") return { ok: false, text: GITHUB_CARD_TEXT, card: { type: "github-sign-in", code: state.code, url: state.url || GITHUB_DEVICE_URL, expiresAtMs: state.expiresAtMs } };
-    return { ok: false, text: `GitHub couldn't be connected on the user's computer (${state.state === "failed" ? state.why : "the sign-in ended"}), so nothing was launched. Tell them plainly, and try the launch again later.` };
+    return { ok: false, text: `GitHub's sign-in couldn't start on your own computer (the box, not the user's Mac or PC): ${state.state === "failed" ? state.why : "the sign-in ended"}. Nothing was launched. Tell the user plainly that this is on Simeon's side and nothing on their own computer needs doing; try the launch once more later, and if it says the same, stop and tell them it needs fixing by Simeon Labs.` };
   }
   /** A turn of coding is being done on this computer (the sleeper keeps it awake). */
   isCodingBusy(): boolean { return this.coding?.isBusy() ?? false; }

@@ -226,7 +226,7 @@ test("the stops: Claude not chosen, GitHub not connected, not GitHub, the plan's
     assert.match(outcome.reason, /Claude isn't connected[\s\S]*Settings › AI Models/);
 
     outcome = await module.runCodingJob(job(), { choice, account: async () => ({ connected: false }), env: s.env, runClaude: never, log: quiet });
-    assert.match(outcome.reason, /GitHub isn't connected on the computer/);
+    assert.match(outcome.reason, /GitHub isn't connected on the box/);
 
     outcome = await module.runCodingJob(job({ repoUrl: "https://gitlab.com/simeonlabs/demo" }), { choice, account, env: s.env, runClaude: never, log: quiet });
     assert.match(outcome.reason, /Only GitHub repositories/);
@@ -377,6 +377,91 @@ test("GitHub on the computer: the device code for the card, the same code to a s
   }
 });
 
+/**
+ * `gh auth login` as gh 2.46.0 takes its options (the computer's image carries Debian trixie's 2.46.0-3): any other
+ * option is refused with "unknown flag" and the help, whose last line says nothing, as the real one does. The
+ * stand-in of the test above takes any option, which is how `--skip-ssh-key` (not in 2.46) reached a real computer
+ * and stopped every launch (13 November 2026).
+ */
+async function strictGh(dir) {
+  const gh = path.join(dir, "gh-2.46");
+  await writeFile(gh, `#!/bin/sh
+if [ "$1 $2" = "auth status" ]; then echo "You are not logged into any GitHub hosts. To log in, run: gh auth login" >&2; exit 1; fi
+if [ "$1 $2" = "auth login" ]; then
+  shift 2
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --hostname|--git-protocol|--scopes|-h|-p|-s) shift 2 ;;
+      --web|--insecure-storage|-w) shift ;;
+      *) printf 'unknown flag: %s\\n\\nUsage:  gh auth login [flags]\\n\\nFlags:\\n  -p, --git-protocol string   The protocol to use for git operations on this host: {ssh|https}\\n  -w, --web                   Open a browser to authenticate\\n      --with-token            Read token from standard input\\n  \\n' "$1" >&2; exit 1 ;;
+    esac
+  done
+  echo "! First copy your one-time code: ABCD-5678" >&2
+  echo "Open this URL to continue in your web browser: https://github.com/login/device" >&2
+  exec sleep 30
+fi
+exit 0
+`);
+  await chmod(gh, 0o755);
+  return gh;
+}
+
+test("GitHub's sign-in as the computer's own gh takes it: only the options gh 2.46 knows, the code read from the real program's lines, and an unknown option named", async () => {
+  const { module, dispose } = await load();
+  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-gh-strict-"));
+  try {
+    // The options, each run against Debian's gh 2.46.0-3 itself on 13 November 2026; a new one is run against the image's gh first.
+    const known = new Set(["--hostname", "--git-protocol", "--web", "--insecure-storage", "--scopes"]);
+    const flags = module.GITHUB_LOGIN_ARGS.filter((word) => word.startsWith("-"));
+    assert.deepEqual(flags.filter((flag) => !known.has(flag)), [], "an option gh 2.46 was not seen to take");
+    assert.ok(!module.GITHUB_LOGIN_ARGS.includes("--skip-ssh-key"), "gh 2.46 has no --skip-ssh-key");
+    assert.deepEqual(module.GITHUB_LOGIN_ARGS.slice(0, 2), ["auth", "login"]);
+
+    // The whole sign-in through a real process that refuses what 2.46 refuses: the code comes, the card can show.
+    const gh = await strictGh(dir);
+    const env = { PATH: process.env.PATH, HOME: dir, SIMEON_GH_BIN: gh };
+    const github = new module.GitHubOnComputer({ env, log: quiet });
+    const state = await github.startSignIn("agent-leo");
+    assert.equal(state.state, "waiting", JSON.stringify(state));
+    assert.equal(state.code, "ABCD-5678");
+    assert.equal(state.url, "https://github.com/login/device");
+    github.dispose();
+
+    // The option it does not know: the reason is gh's first line, not the last line of its help.
+    const refused = await module.runCommand(gh, ["auth", "login", "--web", "--skip-ssh-key"], { env: module.gitHubEnv(env), timeoutMs: 10_000 });
+    assert.equal(refused.code, 1);
+    assert.equal(module.noCodeReason(`${refused.stdout}${refused.stderr}`), "unknown flag: --skip-ssh-key");
+    assert.equal(module.noCodeReason('\nfailed to authenticate via web browser: Post "https://github.com/login/device/code": dial tcp: i/o timeout\n'), 'failed to authenticate via web browser: Post "https://github.com/login/device/code": dial tcp: i/o timeout');
+    assert.equal(module.noCodeReason("  \n"), "gh printed no code");
+
+    // git's trust: where the machine's is a bundle of its own (Azure's egress), git is told of it, since it reads no SSL_CERT_FILE.
+    assert.equal(module.gitHubEnv({ SSL_CERT_FILE: "/etc/egress/bundle.pem" }).GIT_SSL_CAINFO, "/etc/egress/bundle.pem");
+    assert.equal(module.gitHubEnv({ SSL_CERT_FILE: "/etc/egress/bundle.pem", GIT_SSL_CAINFO: "/own.pem" }).GIT_SSL_CAINFO, "/own.pem");
+    assert.equal(module.gitHubEnv({ PATH: "/usr/bin" }).GIT_SSL_CAINFO, undefined);
+    assert.equal(module.withGitTrust({ SSL_CERT_FILE: "/etc/egress/bundle.pem", KEPT: "1" }).GIT_SSL_CAINFO, "/etc/egress/bundle.pem");
+    assert.equal(module.withGitTrust({ SSL_CERT_FILE: "/etc/egress/bundle.pem", KEPT: "1" }).KEPT, "1");
+    const plain = { PATH: "/usr/bin" };
+    assert.equal(module.withGitTrust(plain), plain, "nothing to add: the same environment");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await dispose();
+  }
+});
+
+// The machine's own `gh`, when it has one: every option the sign-in passes is in its help. Nothing reaches GitHub (`--help` only).
+const machineGh = (() => { try { return execFileSync("gh", ["--version"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n")[0]; } catch { return undefined; } })();
+test("the sign-in's options against this machine's own gh", { skip: machineGh === undefined ? "no gh on this machine" : false }, async () => {
+  const { module, dispose } = await load();
+  try {
+    const help = execFileSync("gh", ["auth", "login", "--help"], { encoding: "utf8", env: { PATH: process.env.PATH, HOME: os.tmpdir(), NO_COLOR: "1", GH_NO_UPDATE_NOTIFIER: "1" } });
+    for (const flag of module.GITHUB_LOGIN_ARGS.filter((word) => word.startsWith("-"))) {
+      assert.ok(help.includes(flag), `${machineGh} has no ${flag}`);
+    }
+  } finally {
+    await dispose();
+  }
+});
+
 test("the manager: the launch asks for the computer, Claude and GitHub are checked first, Paused reads from the limit, links go to the pull request", async () => {
   const { module, dispose } = await load();
   try {
@@ -442,7 +527,7 @@ test("the CloudAgent tool: nothing is launched while Claude or GitHub is missing
     ready = { ok: true };
     const text = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "Fix it.", repo_url: "simeonlabs/demo" }, deps);
     assert.equal(launched.length, 1);
-    assert.match(text, /^Launched cloud agent bc-9\.\nIt runs on the user's computer, in Claude Code on their own Claude plan\. It clones the repository, works on a new branch, builds and tests, then pushes the branch and opens a pull request/);
+    assert.match(text, /^Launched cloud agent bc-9\.\nIt runs on your own computer \(the box\), in Claude Code on the user's own Claude plan\. It clones the repository, works on a new branch, builds and tests, then pushes the branch and opens a pull request/);
     assert.doesNotMatch(text, /does not open a pull request/);
     assert.equal(module.summaryLine({ bcId: "bc-9", name: "Fix", status: "finished", isArchived: false, branchName: "simeon/fix-0000", prUrl: "https://github.com/o/r/pull/1", url: "https://github.com/o/r/pull/1" }), "- bc-9 — Fix [finished, simeon/fix-0000, https://github.com/o/r/pull/1]");
   } finally {
