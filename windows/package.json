@@ -1,7 +1,7 @@
 {
   "name": "simeon-windows",
   "productName": "Simeon",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "description": "Simeon for Windows: the web app in Electron, with Windows' own parts",
   "author": "Simeon Labs",
