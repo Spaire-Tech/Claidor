@@ -148,11 +148,12 @@ targets:
         SUFeedURL: https://api.simeonlabs.com/desktop/download/mac/appcast.xml
         SUPublicEDKey: $(SPARKLE_PUBLIC_KEY)
         SUEnableAutomaticChecks: true
-    entitlements:
-      path: Simeon/Simeon.entitlements
-      properties:
-        # The hardened runtime asks for the microphone by name (dictation and calls, later steps).
-        com.apple.security.device.audio-input: true
+    # The entitlements are named per configuration below, not with XcodeGen's
+    # `entitlements:`, which sets CODE_SIGN_ENTITLEMENTS for every
+    # configuration over the target's own settings: the 0.2.18 release was
+    # signed with Simeon.entitlements and stopped at release.sh's check (13
+    # November 2026). Both files carry the microphone (the hardened runtime
+    # asks for it by name: dictation and calls).
     settings:
       base:
         # The Electron app's id, taken at the switch (11 October 2026, mac/README.md).
@@ -169,6 +170,8 @@ targets:
         # allows and the release asks Apple for (scripts/release.sh's
         # -allowProvisioningUpdates, then checked there). A Debug build
         # (scripts/build.sh) has none, so it shows the plain notification.
+        Debug:
+          CODE_SIGN_ENTITLEMENTS: Simeon/Simeon.entitlements
         Release:
           CODE_SIGN_ENTITLEMENTS: Simeon/SimeonRelease.entitlements
 schemes:
