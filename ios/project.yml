@@ -26,8 +26,9 @@ settings:
     # Slack under Notifications in the agent's page; build 33, the same
     # day: the picture viewer's title is the picture's own name; build 36, 13
     # November 2026: a cloud agent's conversation, under Claude Code's or
-    # Codex's mascot).
-    CURRENT_PROJECT_VERSION: "36"
+    # Codex's mascot; build 37, 13 November 2026: the connect cards drawn as
+    # an app to connect is, and "Failed" on a cloud agent's card).
+    CURRENT_PROJECT_VERSION: "37"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
     # Xcode under Signing & Capabilities, once (ios/README.md).
