@@ -2247,8 +2247,7 @@ struct PeerStack: View {
   var body: some View {
     HStack(spacing: -size * 0.375) {
       ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
-        AgentIdAvatar(id: peer.id)
-          .frame(width: size, height: size)
+        PartyAvatar(party: peer, size: size)
       }
     }
   }
@@ -2259,7 +2258,9 @@ struct PeerStack: View {
  * each agent it names has a page of its own with this one (the founder, 9
  * October 2026: "when an agent message many at the same time, its not all
  * in one chat. its each by each"). One agent: the line opens its page. More:
- * a menu of them, by name, and the one picked opens.
+ * a menu of them, by name, and the one picked opens. A cloud agent's report
+ * is a "Message from" line too (13 November 2026), under its own name with a
+ * cloud for its picture, and it opens the cloud agent's conversation.
  */
 struct TeammatesLine: View {
   let exchange: Exchange
@@ -2275,7 +2276,7 @@ struct TeammatesLine: View {
       Text(exchange.label)
       if peers.count > 1 {
         Menu {
-          ForEach(peers, id: \.id) { peer in Button(peer.name) { open(peer) } }
+          ForEach(peers, id: \.id) { peer in Button(peer.shownName) { open(peer) } }
         } label: {
           chip
         }
@@ -2298,7 +2299,7 @@ struct TeammatesLine: View {
   private var chip: some View {
     HStack(spacing: 4) {
       PeerStack(peers: exchange.peers)
-      Text(exchange.peers.count == 1 ? exchange.peers[0].name : String(localized: "\(exchange.peers.count) agents"))
+      Text(exchange.peers.count == 1 ? exchange.peers[0].shownName : String(localized: "\(exchange.peers.count) agents"))
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
     .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -2326,6 +2327,13 @@ struct ExchangeRoute: Hashable, Identifiable {
  * "Read-only" at the foot. Its lines are everything the two said to each
  * other in this agent's chat (`Chat.exchangeRows`, tested), newest at the
  * bottom.
+ *
+ * A cloud agent's conversation is the same page (13 November 2026; the
+ * founder: the agent "talks to the cloud agent the same way it talks to
+ * another agent"): opened from its card (Open) or its "Message from" line,
+ * its lines are what the agent asked it, what it said along the way and its
+ * answers (`Chat.cloudAgentRows`, tested), read from the computer and again
+ * every five seconds while it works, as its card asks.
  */
 struct ExchangePage: View {
   let route: ExchangeRoute
@@ -2334,12 +2342,16 @@ struct ExchangePage: View {
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
   @State private var width: CGFloat = 361
+  /** A cloud agent's conversation, as last read from the computer. */
+  @State private var cloudLines: [CloudAgentLine] = []
 
   var body: some View {
     // Read so the page follows the chat as it grows; the lines themselves are the chat's kept entries.
     let _ = store.rows(for: route.agentId)
     let me = Party(id: route.agentId, name: store.agent(route.agentId)?.name ?? "")
-    let rows = Chat.exchangeRows(store.transcripts[route.agentId] ?? fallback, agent: me, peerId: route.peer.id)
+    let rows = route.peer.cloudAgent
+      ? Chat.cloudAgentRows(cloudLines, agent: me, cloudAgent: route.peer)
+      : Chat.exchangeRows(store.transcripts[route.agentId] ?? fallback, agent: me, peerId: route.peer.id)
     let mentioning = Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark)
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
@@ -2357,7 +2369,7 @@ struct ExchangePage: View {
               .frame(width: 28)
               VStack(alignment: .leading, spacing: 3) {
                 if first {
-                  Text(sender.name).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
+                  Text(sender.shownName).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
                 }
                 // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
                 MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(text, limit: 20_000).text), mentioning: mentioning.spoken(by: sender.id))
@@ -2389,6 +2401,19 @@ struct ExchangePage: View {
     }
     .background(Ink.ground)
     .inlineBarTitle()
+    .task(id: route.id) {
+      guard route.peer.cloudAgent else { return }
+      cloudLines = []
+      var known: CloudAgentInfo?
+      while !Task.isCancelled {
+        // Its state first: once that says it is done, the lines read after it are all of them.
+        let read = await store.cloudAgent(route.peer.id)
+        if case .info(let info) = read { known = info }
+        if let lines = await store.cloudAgentConversation(route.peer.id) { cloudLines = lines }
+        guard let wait = CloudAgentInfo.nextPoll(after: read, known: known) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
   }
 }
 
@@ -2404,13 +2429,13 @@ struct ExchangeHeadline: View {
         PartyAvatar(party: peer, size: 44)
       }
       .frame(height: 52)
-      Text("\(me.name) and \(peer.name)").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+      Text("\(me.name) and \(peer.shownName)").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         .padding(.horizontal, 12).padding(.vertical, 4)
         .glassEffect(.regular, in: .capsule)
     }
     .padding(.horizontal, 70)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(me.name) and \(peer.name)")
+    .accessibilityLabel("\(me.name) and \(peer.shownName)")
     .allowsHitTesting(false)
     // Up into the bar's row, beside its back button, as the chat's.
     #if os(iOS)
@@ -2428,7 +2453,17 @@ struct PartyAvatar: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    AgentIdAvatar(id: party.id).frame(width: size, height: size)
+    if party.cloudAgent {
+      // A cloud agent has no picture: a cloud on the bubbles' grey, round (13 November 2026).
+      Image(systemName: "cloud.fill")
+        .font(.system(size: size * 0.5, weight: .medium))
+        .foregroundStyle(Ink.secondary)
+        .frame(width: size, height: size)
+        .background(Ink.bubbleTheirs, in: Circle())
+        .accessibilityHidden(true)
+    } else {
+      AgentIdAvatar(id: party.id).frame(width: size, height: size)
+    }
   }
 }
 

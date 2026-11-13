@@ -2513,15 +2513,16 @@ private struct MacCardChooser: View {
  * green, Error in red, the rest grey); what it was asked; its branch and
  * "PR #412"; how many files changed with the lines added in green and taken
  * out in red; View PR in the blue. Asked again every five seconds while it
- * works (SimeonCore's `CloudAgentInfo.nextPoll`). Open is left out until
- * its page exists, as the web's card leaves it out (3 November 2026): it
- * went to app.simeonlabs.com/agents/<id> (`CloudAgentInfo.webURL`), which
- * doesn't yet, so it landed on a page not found.
+ * works (SimeonCore's `CloudAgentInfo.nextPoll`). Open shows its
+ * conversation over the chat (13 November 2026, `ExchangeView`): what the
+ * agent asked it, what it said along the way and its answers.
  */
 struct CloudAgentCardView: View {
   let bcId: String
   let look: Look
   @Environment(AppStore.self) private var store
+  /** The chat this card is in, where there is one: Open shows the conversation over it. */
+  @Environment(ChatControl.self) private var control: ChatControl?
   @State private var info: CloudAgentInfo?
 
   var body: some View {
@@ -2597,10 +2598,17 @@ struct CloudAgentCardView: View {
           .tracking(-0.15)
         }
       }
-      if let pull {
+      if pull != nil || control != nil {
         HStack(spacing: 8) {
-          CardButton(title: String(localized: "View PR"), prominent: true, look: look) { NSWorkspace.shared.open(pull) }
-            .help("Open the pull request")
+          if let control {
+            CardButton(title: String(localized: "Open"), look: look) {
+              control.openExchange(Party(id: bcId, name: shown.name, cloudAgent: true))
+            }
+          }
+          if let pull {
+            CardButton(title: String(localized: "View PR"), prominent: true, look: look) { NSWorkspace.shared.open(pull) }
+              .help("Open the pull request")
+          }
         }
       }
     }

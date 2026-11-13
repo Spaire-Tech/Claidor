@@ -645,6 +645,58 @@ final class CloudAgentTests: XCTestCase {
     XCTAssertEqual(CloudAgentInfo.nextPoll(after: .failed, known: running), 5)
   }
 
+  /**
+   * The cloud agent's conversation (13 November 2026): its report is a
+   * "Message from" line that names it, and its page is what it was asked,
+   * what it said along the way and its answers, on the page two agents'
+   * messages have.
+   */
+  func testItsReportIsAMessageFromItAndItsConversationIsAPage() {
+    // The line in the chat: a message from a cloud agent, which is not one of the person's agents.
+    let report = Entry(["kind": "message", "id": "m1", "role": "user", "content": "Opened pull request #7.", "fromAgent": ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent"]])!
+    XCTAssertEqual(report.fromAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true))
+    XCTAssertEqual(report.fromAgent?.shownName, "Fix the login")
+    guard case .teammates("m1", let exchange, _)? = Chat.rows([report]).last else { return XCTFail() }
+    XCTAssertEqual(exchange, .single(inbound: true, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true)))
+    XCTAssertEqual(exchange.label, "Message from")
+    // One the computer gave no name is "Cloud agent"; a teammate's kind changes nothing.
+    let unnamed = Entry(["kind": "message", "id": "m2", "role": "user", "content": "Done.", "fromAgent": ["id": "bc-43", "name": "", "kind": "cloud-agent"]])!
+    XCTAssertEqual(unnamed.fromAgent?.shownName, "Cloud agent")
+    let teammate = Entry(["kind": "message", "id": "m3", "role": "assistant", "content": "hi", "toAgent": ["id": "iris", "name": "Iris", "kind": "agent"]])!
+    XCTAssertEqual(teammate.toAgent, Party(id: "iris", name: "Iris"))
+    XCTAssertEqual(Party(id: "iris", name: "").shownName, "")
+
+    // The computer's answer: empty lines and unknown roles are left out; nothing answered is nil.
+    let answer: JSON = ["bcId": "bc-42", "messages": [
+      ["id": "job-1-user", "role": "prompt", "text": "Fix the login.", "atMs": 1_700_000_000_000],
+      ["id": "update-job-1-0", "role": "update", "text": "Reading the sign-in code.", "atMs": 1_700_000_060_000],
+      ["id": "update-job-1-1", "role": "update", "text": "   "],
+      ["id": "x", "role": "odd", "text": "no"],
+      ["id": "job-1-0", "role": "answer", "text": "Opened pull request #7.", "atMs": 1_700_000_120_000],
+      ["id": "job-2-user", "role": "prompt", "text": "Add a test too."],
+    ]]
+    let lines = CloudAgentLine.lines(answer)!
+    XCTAssertEqual(lines.map(\.id), ["job-1-user", "update-job-1-0", "job-1-0", "job-2-user"])
+    XCTAssertEqual(lines.map(\.role), [.prompt, .update, .answer, .prompt])
+    XCTAssertEqual(lines[0].date, Date(timeIntervalSince1970: 1_700_000_000))
+    XCTAssertNil(lines[3].date)
+    XCTAssertNil(CloudAgentLine.lines(nil))
+    XCTAssertNil(CloudAgentLine.lines(["bcId": "bc-42"]))
+    XCTAssertEqual(CloudAgentLine.lines(["messages": []]), [])
+
+    // The page: the agent's side for what it asked, the cloud agent's for the rest; one stamp, runs joined.
+    let leo = Party(id: "leo", name: "Leo"), cloud = Party(id: "bc-42", name: "Fix the login", cloudAgent: true)
+    let rows = Chat.cloudAgentRows(lines, agent: leo, cloudAgent: cloud)
+    XCTAssertEqual(rows, [
+      .stamp(id: "stamp-job-1-user", date: Date(timeIntervalSince1970: 1_700_000_000)),
+      .message(id: "job-1-user", sender: leo, text: "Fix the login.", first: true, last: true),
+      .message(id: "update-job-1-0", sender: cloud, text: "Reading the sign-in code.", first: true, last: false),
+      .message(id: "job-1-0", sender: cloud, text: "Opened pull request #7.", first: false, last: true),
+      .message(id: "job-2-user", sender: leo, text: "Add a test too.", first: true, last: true),
+    ])
+    XCTAssertEqual(Chat.cloudAgentRows([], agent: leo, cloudAgent: cloud), [])
+  }
+
   /** The plan's limit stopped the work (11 November 2026): "Paused", not asked again. */
   func testPausedByThePlansLimit() {
     let paused = CloudAgentInfo(["status": "paused"])!

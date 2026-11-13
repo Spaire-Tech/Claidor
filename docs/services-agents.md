@@ -34,6 +34,14 @@ request. The chat's card shows its state (Creating, Running, Done, Error, Paused
 "PR #12", the files and lines changed, and View PR opens the pull request. A reply carries on in
 the same Claude Code session on the same branch and pull request. Pausing it stops the run.
 
+**Its conversation** (13 November 2026; the founder: the agent "talks to the cloud agent the same
+way it talks to another agent"). Open on the card shows the cloud agent's conversation over the
+chat, on the page two agents' messages have: what the agent asked it, what it said along the way
+and its answers, read-only. While it works the page reads again every five seconds. When it
+finishes, its own words arrive in the agent's chat as a "Message from" line under the cloud
+agent's name (a cloud for its picture), which opens the same page; the agent is woken with the
+report and tells the person, as before.
+
 - **GitHub, the first time.** The agent shows a Connect GitHub card (the upstream app's card 8):
   a one-time code, Copy code and Open GitHub. Once the person types the code on GitHub, the
   card says "Connected as <login>" and the agent carries on by itself. The computer keeps the
@@ -98,6 +106,24 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
   manager and a poll loop check every 10 s for up to 5 hours
   (`host/extensions/cloud-agents/`). The card type is `cloud-agent`; its link is the pull
   request. The apps read the GitHub card's state with the box command `getGitHubSignIn`.
+- **The conversation.**
+  - What Claude Code says between its tools in a turn is kept as the turn's updates
+    (`coding-run.ts`, `withUpdate`: the last 40 of a turn, 4,000 characters each, the answer
+    itself left out) and sent beside the work on each heartbeat and at the end
+    (`createComputerServer` sends `updates` apart from `work`).
+  - The server keeps them in `sand_cloud_agents.work["updates"]` (the last 200, each with its
+    job) and never hands them back to the computer with a claim. `GetBackgroundComposerConversation`
+    lists them before their turn's answer, with a `bubbleId` that starts `update-`.
+  - The apps read it with the box command `getCloudAgentConversation` (`{bcId}` gives
+    `{bcId, messages: [{id, role: prompt | update | answer, text, atMs}]}`,
+    `cloudAgentLines` in `cloud-agents-service.ts`).
+  - The report that wakes the launching agent (`buildWatchResult`) also carries the cloud
+    agent's name and its own words (its summary, with the pull request's link when the summary
+    leaves it out). `CompletionRevivals.noteCloudAgentAnswers` writes them into that agent's
+    chat at the start of the wake's turn: `{kind: "message", role: "user", fromAgent: {id: <bcId>,
+    name, kind: "cloud-agent"}}`. The apps read `kind` to draw the cloud and to open the
+    conversation instead of the chat's own lines (`Party.cloudAgent`, `Chat.cloudAgentRows` in
+    SimeonCore; `cloudAgentRows` in the web app).
 
 * **Settings.** None new on Render. The server's migration `coding_on_computer_1111` adds
   `maty_jobs.executor` and `sand_cloud_agents.work`. The `maty-runner` jobs still need
@@ -117,9 +143,15 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
   - A card stuck at "Creating" means the computer hasn't claimed the job: look for `coding …
     claim didn't reach the server`.
 * **Tested.** The server's routes and routing (`server/tests/sand/test_cloud_agents_computer.py`,
-  14 tests). The engine's turn against stand-ins: a bare git origin, a `gh` script, a fake
-  Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 11 tests). The cards'
-  models in SimeonCore and the web app; the web card drawn in Chromium, light and dark.
+  18 tests with the updates). The engine's turn against stand-ins: a bare git origin, a `gh`
+  script, a fake Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 12
+  tests); the line in the chat (`desktop/tests/background-command-wake.test.mjs`). The cards'
+  models in SimeonCore and the web app; the web card drawn in Chromium, light and dark. The
+  conversation: its lines and rows in SimeonCore (`CloudAgentTests`, run on Linux) and the web
+  app (`exchanges.test.ts`); the web page opened in Chromium against a stand-in computer, from
+  the card and from the "Message from" line, growing while the cloud agent works and no longer
+  asking once it is done, light and dark. The Mac's and the iPhone's pages are written and not
+  yet built or run.
 * **The first real try** (the founder, 13 November 2026) stopped at the sign-in: the command
   passed `--skip-ssh-key`, which gh 2.46 does not have, so gh printed its help and no code came.
   The option is gone; the sign-in's options and every other `gh` command of the turn were run

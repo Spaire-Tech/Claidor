@@ -25,6 +25,8 @@ export interface SubagentCompletion {
   status: string;
   result: string;
   quietOrigin?: QuietWakeOrigin;
+  /** A cloud agent's own name and words (`buildWatchResult`), for the line in the chat. */
+  cloudAgent?: { readonly name?: string; readonly said?: string };
 }
 export function buildSubagentRevivalPrompt(
   completions: readonly SubagentCompletion[],
@@ -167,6 +169,39 @@ export class CompletionRevivals {
     }
   }
 
+  /**
+   * Each cloud agent's report among `completions`, written into the agent's
+   * chat as a message from that cloud agent, at the start of the turn that
+   * wakes the agent with it (`AgentToAgentMessaging.appendCloudAgentAnswer`),
+   * as a teammate's message is: its own words when it left any (its summary),
+   * else the report. A cloud agent the server gave no name is left unnamed
+   * for the apps to call "the cloud agent". Never in the way of the wake.
+   */
+  noteCloudAgentAnswers(
+    session: any,
+    completions: readonly SubagentCompletion[],
+  ): void {
+    try {
+      for (const completion of completions) {
+        if (completion.subagentType !== "cloud-agent") continue;
+        const text =
+          completion.cloudAgent?.said?.trim() || completion.result.trim();
+        if (text === "") continue;
+        this.tm.backgroundWakes.agentToAgent.appendCloudAgentAnswer(
+          session,
+          {
+            id: completion.subagentAgentId,
+            name: completion.cloudAgent?.name?.trim() ?? "",
+          },
+          text,
+          Date.now(),
+        );
+      }
+    } catch {
+      /* the chat's line is extra: the agent is still woken with the report */
+    }
+  }
+
   async runSubagentRevival(
     agentId: string,
     completions: readonly SubagentCompletion[],
@@ -194,6 +229,7 @@ export class CompletionRevivals {
         try {
           const unanswered =
             this.tm.widgetResponses.collectUnansweredQuestionPrompts(session);
+          this.noteCloudAgentAnswers(session, completions);
           const runResult = await runner.run(
             buildSubagentRevivalPrompt(completions),
             {

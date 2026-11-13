@@ -417,6 +417,16 @@ button.call-line:focus-visible,
   display: grid;
 }
 
+/* A cloud agent where an agent's picture would be (`CloudAgentMark`): a cloud on the grey wash, round. */
+.cloud-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--row-hover);
+  color: var(--ink-secondary);
+}
+
 /* ---------------------------------------------------------------------- */
 /* What covers the chat and its field: the ground over everything.        */
 

@@ -36,17 +36,43 @@ extension Chat {
     let said = entries.filter { entry in
       entry.kind == "message" && entry.teammate?.id == peerId && entry.teammate?.earlierCall == nil
     }
+    return exchangeRows(said: said.map { entry in
+      Said(id: entry.id, sender: entry.toAgent != nil ? agent : (entry.fromAgent ?? Party(id: peerId, name: "")), text: entry.content ?? "", date: entry.date)
+    })
+  }
+
+  /**
+   * A cloud agent's conversation on the same page (13 November 2026): what
+   * `agent` asked it on the agent's side, what it said along the way and
+   * its answers on the cloud agent's, oldest first, stamped as the chat
+   * would be. A line the server gave no time takes none.
+   */
+  public static func cloudAgentRows(_ lines: [CloudAgentLine], agent: Party, cloudAgent: Party) -> [ExchangeRow] {
+    exchangeRows(said: lines.map { line in
+      Said(id: line.id, sender: line.role == .prompt ? agent : cloudAgent, text: line.text, date: line.date)
+    })
+  }
+
+  /** One thing said on an exchange page: who said it, and when if known. */
+  struct Said {
+    let id: String
+    let sender: Party
+    let text: String
+    let date: Date?
+  }
+
+  static func exchangeRows(said: [Said]) -> [ExchangeRow] {
     var rows: [ExchangeRow] = []
     var lastShown: Date?
     var previousSender: String?
-    for entry in said {
-      let sender = entry.toAgent != nil ? agent : (entry.fromAgent ?? Party(id: peerId, name: ""))
+    for line in said {
+      let sender = line.sender
       var stamped = false
-      if let date = entry.date, lastShown == nil || abs(date.timeIntervalSince(lastShown!)) >= stampGap || !Calendar.current.isDate(date, inSameDayAs: lastShown!) {
-        rows.append(.stamp(id: "stamp-\(entry.id)", date: date))
+      if let date = line.date, lastShown == nil || abs(date.timeIntervalSince(lastShown!)) >= stampGap || !Calendar.current.isDate(date, inSameDayAs: lastShown!) {
+        rows.append(.stamp(id: "stamp-\(line.id)", date: date))
         lastShown = date
         stamped = true
-      } else if let date = entry.date {
+      } else if let date = line.date {
         lastShown = date
       }
       let first = stamped || previousSender != sender.id
@@ -55,7 +81,7 @@ extension Chat {
          case .message(let id, let before, let text, let wasFirst, _) = rows[index] {
         rows[index] = .message(id: id, sender: before, text: text, first: wasFirst, last: true)
       }
-      rows.append(.message(id: entry.id, sender: sender, text: entry.content ?? "", first: first, last: false))
+      rows.append(.message(id: line.id, sender: sender, text: line.text, first: first, last: false))
       previousSender = sender.id
     }
     if let index = rows.lastIndex(where: { if case .message = $0 { return true }; return false }),

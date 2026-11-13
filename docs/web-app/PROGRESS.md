@@ -842,6 +842,55 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: a cloud agent's conversation, and its report as a message from it
+
+The founder, with screenshots of another app: the agent should "talk to the
+cloud agent the same way it talks to another agent and give him the prompt,
+and then the agent let him know once things are done and then he tells us".
+Built in the Mac app, the iPhone app and here at once (the engine and the
+server too: `docs/services-agents.md`, "Cloud agents").
+
+- **The page.** A cloud agent's conversation is the page two agents'
+  messages have (`ExchangeView` in `Call.tsx`): what the agent asked it on
+  the agent's side, what it said along the way and its answers on the
+  cloud agent's, read-only, a cloud where an agent's picture would be. Its
+  lines come from the computer (`getCloudAgentConversation`,
+  `store.cloudAgentConversation`), again every five seconds while it works
+  (its state is read first, so the lines read after "done" are all of
+  them), and the page stays at the newest line while the person is there.
+- **Open.** The cloud agent's card has Open again, before View PR: it opens
+  the page over the chat. It was left out on 3 November because it went to
+  a page that doesn't exist.
+- **"Message from".** The cloud agent's report is a line of the chat, as a
+  teammate's message is, under the cloud agent's own name; its chip opens
+  the same page. A party is a cloud agent when the entry says so
+  (`fromAgent.kind` "cloud-agent", `Party.cloudAgent`); one with no name is
+  "Cloud agent".
+- **The core.** `cloudAgentLines` and `cloudAgentRows` in `exchanges.ts`,
+  beside `exchangeRows`, whose row builder they share (Exchanges.swift does
+  the same). `ChatCover`'s exchange carries `cloudAgent: {name}` for these.
+- No new words: "Open", "Cloud agent", "Message from" and the page's own
+  were in the Mac's catalogues already.
+
+Checked: the web app's tests (1,285 passed, three of them new in
+`exchanges.test.ts`), types, ESLint and Prettier; the build committed. In
+Chromium against a stand-in server and computer, light and dark: the card
+shows Open and View PR; Open shows the five lines with one stamp, the
+agent's name and picture on its prompt, the cloud agent's name over its run
+and its cloud beside the last; Escape and Close Chat close it; the "Message
+from" chip shows the cloud and opens the same page; a teammate's chip still
+opens the two agents' own messages; with a cloud agent that is still
+working the page grew from two lines to five and stopped asking once it was
+done; no console errors. SimeonCore's tests for the same rows ran on Linux.
+
+Not checked: against a real cloud agent (none has run to its end yet: the
+GitHub sign-in fix of #726 needs an engine publish first); in the Windows
+app's own window; the Mac's and the iPhone's pages, which are written and
+not built or run.
+
+Next: follow the pull request (checks failed, merged, a review) and wake the
+cloud agent with it; the founder decides which events and the limits.
+
 ### 13 November 2026: the old window is gone from app.simeonlabs.com
 
 The founder: the `/app` page "should not be available to anyone". It served

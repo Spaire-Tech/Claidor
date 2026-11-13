@@ -324,6 +324,114 @@ test("the computer's server: the person's own credential, the four routes, `{job
   }
 });
 
+// The cloud agent's conversation in the apps (13 November 2026): what Claude Code says between its tools is kept as
+// the turn's updates, sent to the server apart from the work, and read back as lines.
+test("what the cloud agent says along the way: kept per turn without the answer, sent as the report's updates, read back as the conversation's lines", async () => {
+  const { module, dispose } = await load();
+  const s = await stage();
+  try {
+    // The small parts: empty and repeated words are left out, the oldest dropped, the answer itself is not an update.
+    assert.equal(module.assistantWords({ type: "assistant", message: { content: [{ type: "text", text: "Reading " }, { type: "tool_use", name: "Bash" }, { type: "text", text: "the code." }] } }), "Reading the code.");
+    assert.equal(module.assistantWords({ type: "assistant", message: { content: [{ type: "tool_use", name: "Bash" }] } }), "");
+    assert.equal(module.assistantWords({ type: "user", message: { content: [{ type: "text", text: "no" }] } }), "");
+    let kept = module.withUpdate([], "  One.  ", 1);
+    kept = module.withUpdate(kept, "One.", 2);
+    kept = module.withUpdate(kept, "   ", 3);
+    assert.deepEqual(kept, [{ text: "One.", atMs: 1 }]);
+    let many = [];
+    for (let index = 0; index < module.UPDATES_KEPT + 5; index += 1) many = module.withUpdate(many, `line ${index}`, index);
+    assert.equal(many.length, module.UPDATES_KEPT);
+    assert.equal(many[0].text, "line 5");
+    assert.equal(module.withUpdate([], "x".repeat(module.UPDATE_MAX_LENGTH + 50), 1)[0].text.length, module.UPDATE_MAX_LENGTH);
+    assert.deepEqual(module.withoutAnswer([{ text: "One.", atMs: 1 }, { text: "Done.", atMs: 2 }], " Done. "), [{ text: "One.", atMs: 1 }]);
+    assert.deepEqual(module.withoutAnswer([{ text: "One.", atMs: 1 }], "Done."), [{ text: "One.", atMs: 1 }]);
+
+    // A turn: Claude Code speaks twice between its tools, then answers. The updates reach the card's report as it works; the answer isn't one of them.
+    const claude = claudeThatCommits(s.env);
+    const speaking = async (input) => {
+      input.onEvent({ type: "assistant", message: { content: [{ type: "text", text: "Reading the repository first." }] } });
+      input.onEvent({ type: "assistant", message: { content: [{ type: "tool_use", name: "Bash" }] } });
+      input.onEvent({ type: "assistant", message: { content: [{ type: "text", text: "Writing the greeting file." }] } });
+      const outcome = await claude.run(input);
+      input.onEvent({ type: "assistant", message: { content: [{ type: "text", text: outcome.text }] } });
+      return outcome;
+    };
+    const reported = [];
+    let clock = 1_000;
+    const outcome = await module.runCodingJob(job(), { choice, account, env: s.env, runClaude: speaking, onWork: (work) => reported.push(structuredClone(work)), log: quiet, now: () => (clock += 1) });
+    assert.equal(outcome.kind, "done", JSON.stringify(outcome));
+    assert.deepEqual(outcome.work.updates.map((update) => update.text), ["Reading the repository first.", "Writing the greeting file."]);
+    assert.ok(outcome.work.updates.every((update) => update.atMs > 1_000));
+    assert.ok(reported.some((work) => work.updates?.length === 1 && work.updates[0].text === "Reading the repository first."), "the first words reach the server's next heartbeat before the turn ends");
+
+    // The follow-up's turn starts with none of the last turn's updates.
+    const quietClaude = claudeThatCommits(s.env, "test.txt");
+    const next = await module.runCodingJob(job({
+      id: "job-2",
+      conversation: [{ role: "user", text: "Add a greeting file." }, { role: "assistant", text: "Added the greeting; the tests pass." }, { role: "user", text: "Add a test too." }],
+      work: { branchName: outcome.work.branchName, baseBranch: "main", sessionId: SESSION, prUrl: outcome.work.prUrl, updates: outcome.work.updates },
+    }), { choice, account, env: s.env, runClaude: quietClaude.run, log: quiet });
+    assert.equal(next.kind, "done", JSON.stringify(next));
+    assert.equal(next.work.updates, undefined);
+
+    // The computer's server: the updates travel beside the work, never inside it.
+    const seen = [];
+    const server = module.createComputerServer({
+      getBackendUrl: () => "https://api.simeonlabs.test",
+      getAccessToken: async () => "box-token",
+      fetchImpl: async (url, init) => { seen.push([url.split("/").at(-1), JSON.parse(init.body)]); return new Response(JSON.stringify({ id: "j", status: "running" }), { status: 200 }); },
+    });
+    const updates = [{ text: "Reading the repository first.", atMs: 1_001 }];
+    await server.heartbeat("j", "computer-1", { branchName: "b", updates });
+    await server.complete("j", "computer-1", { result: "ok", messages: [], work: { branchName: "b", updates } });
+    await server.fail("j", "computer-1", { reason: "no", retryable: false, work: { branchName: "b", updates } });
+    await server.heartbeat("j", "computer-1", { branchName: "b" });
+    assert.deepEqual(seen, [
+      ["heartbeat", { runner: "computer-1", work: { branchName: "b" }, updates }],
+      ["complete", { runner: "computer-1", result: "ok", messages: [], work: { branchName: "b" }, updates }],
+      ["fail", { runner: "computer-1", reason: "no", retryable: false, work: { branchName: "b" }, updates }],
+      ["heartbeat", { runner: "computer-1", work: { branchName: "b" } }],
+    ]);
+
+    // The apps' lines: the asker's prompt, the updates (the server's `update-` rows), each turn's answer; empty rows left out.
+    const conversation = [
+      { text: "Add a greeting file.", type: 1, bubbleId: "job-1-user", createdAt: "1000" },
+      { text: "Reading the repository first.", type: 2, bubbleId: "update-job-1-0", createdAt: 1001 },
+      { text: "   ", type: 2, bubbleId: "update-job-1-1" },
+      { text: "Added the greeting; the tests pass.", type: "MESSAGE_TYPE_AI", bubbleId: "job-1-0" },
+      { text: "Add a test too.", type: "MESSAGE_TYPE_HUMAN" },
+      null,
+    ];
+    assert.deepEqual(module.cloudAgentLines(conversation), [
+      { id: "job-1-user", role: "prompt", text: "Add a greeting file.", atMs: 1000 },
+      { id: "update-job-1-0", role: "update", text: "Reading the repository first.", atMs: 1001 },
+      { id: "job-1-0", role: "answer", text: "Added the greeting; the tests pass.", atMs: 0 },
+      { id: "line-4", role: "prompt", text: "Add a test too.", atMs: 0 },
+    ]);
+    assert.deepEqual(module.cloudAgentLines(undefined), []);
+    const asked = [];
+    const manager = new module.SandCloudAgentManager({ getAccountAccessToken: async () => "t", getMachineId: async () => "m", completionPolling: { start: () => ({ dispose() {} }) }, clock: { monotonicNow: () => 0 }, convertConversationMessagesToTrace: () => [], clientForTesting: { getBackgroundComposerConversation: async (request) => { asked.push(request); if (request.bcId === "bc-gone") throw Object.assign(new Error("not found"), { name: "ConnectError", code: 5 }); if (request.bcId === "bc-down") throw new Error("the server is away"); return { conversation }; } }, dashboardClientForTesting: { getTeams: async () => ({ teams: [] }) }, modelCatalogForTesting: [] });
+    assert.deepEqual(await manager.getConversation(" bc-1 "), { bcId: "bc-1", messages: module.cloudAgentLines(conversation) });
+    assert.deepEqual(asked, [{ bcId: "bc-1" }]);
+    assert.equal(await manager.getConversation("bc-gone"), null, "one the server doesn't know");
+    await assert.rejects(manager.getConversation("bc-down"), /the server is away/);
+    assert.equal(await manager.getConversation("  "), null);
+
+    // The report that wakes the launching agent carries the cloud agent's own name, for the chat's "Message from" line.
+    const watched = module.buildWatchResult("bc-1", "finished", { composer: { name: " Add a greeting ", status: "finished", prUrl: "https://github.com/simeonlabs/demo/pull/7" }, summary: "Added the greeting; the tests pass." });
+    assert.equal(watched.name, "Add a greeting");
+    assert.equal(watched.said, "Added the greeting; the tests pass.\n\nPull request: https://github.com/simeonlabs/demo/pull/7", "its own words, with the pull request's link when they leave it out");
+    assert.match(watched.text, /^The cloud agent finished\.\nPull request: https:\/\/github\.com\/simeonlabs\/demo\/pull\/7/);
+    assert.equal(module.buildWatchResult("bc-1", "finished", { composer: { status: "finished", prUrl: "https://github.com/simeonlabs/demo/pull/7" }, summary: "See https://github.com/simeonlabs/demo/pull/7." }).said, "See https://github.com/simeonlabs/demo/pull/7.");
+    const silent = module.buildWatchResult("bc-1", "error", { composer: { status: "error" } });
+    assert.deepEqual([silent.name, silent.said], [undefined, undefined]);
+    assert.equal(module.buildWatchResult("bc-1", "error", { composer: { name: "Add a greeting", status: "error" }, summary: "The tests fail." }).said, "The tests fail.");
+  } finally {
+    await s.dispose();
+    await dispose();
+  }
+});
+
 /** `gh auth login` as gh 2.89 speaks it: the code, then the wait, then "Authentication complete" once `done` says so. */
 function fakeLogin(done) {
   return () => {

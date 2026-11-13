@@ -649,6 +649,40 @@ public struct CloudAgentInfo: Hashable, Sendable {
 }
 
 /**
+ * One line of a cloud agent's conversation, as `getCloudAgentConversation`
+ * answers (13 November 2026; the founder: the agent "talks to the cloud
+ * agent the same way it talks to another agent"): what the agent asked it
+ * (`prompt`), what it said along the way (`update`) and each turn's answer.
+ * The apps draw them on the page two agents' messages have
+ * (`Chat.cloudAgentRows`).
+ */
+public struct CloudAgentLine: Hashable, Sendable, Identifiable {
+  public enum Role: String, Sendable { case prompt, update, answer }
+  public let id: String
+  public let role: Role
+  public let text: String
+  public let date: Date?
+
+  public init(id: String, role: Role, text: String, date: Date? = nil) {
+    self.id = id; self.role = role; self.text = text; self.date = date
+  }
+
+  init?(_ json: JSON) {
+    guard let id = json["id"]?.text, let role = Role(rawValue: json["role"]?.string ?? "") else { return nil }
+    let text = (json["text"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !text.isEmpty else { return nil }
+    let at = json["atMs"]?.double ?? 0
+    self.init(id: id, role: role, text: text, date: at > 0 ? Date(timeIntervalSince1970: at / 1000) : nil)
+  }
+
+  /** The lines in `getCloudAgentConversation`'s answer (`{bcId, messages}`); nil when the computer answered with nothing. */
+  public static func lines(_ answer: JSON?) -> [CloudAgentLine]? {
+    guard let messages = answer?["messages"]?.array else { return nil }
+    return messages.compactMap { CloudAgentLine($0) }
+  }
+}
+
+/**
  * "Connect GitHub" (`github-sign-in`, 11 November 2026): the card a cloud
  * agent's launch puts in the chat when GitHub isn't connected on the
  * person's computer yet. GitHub's own device sign-in runs there (`gh auth

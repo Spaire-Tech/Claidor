@@ -24,7 +24,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
-import { runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
+import { assistantWords, runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
 import { gitHubBinary, gitHubEnv, runCommand, withGitTrust, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
 
 /** Where each agent's checkout is kept (`<root>/<bcId>/repo`). */
@@ -71,6 +71,31 @@ export interface CodingWork {
   files?: { path: string; added: number; removed: number }[];
   sessionId?: string;
   limitedUntilMs?: number;
+  /**
+   * What Claude Code said along the way in this turn, for the cloud agent's
+   * conversation in the apps (13 November 2026): its own words between its
+   * tools, the last `UPDATES_KEPT`. The server keeps them apart from the work
+   * (`createComputerServer` sends them as the report's `updates`).
+   */
+  updates?: CodingUpdate[];
+}
+
+export interface CodingUpdate { text: string; atMs: number }
+/** The most of a turn's updates kept, and the longest one may be (the server's `UPDATES_PER_TURN`, `UPDATE_MAX_LENGTH`). */
+export const UPDATES_KEPT = 40;
+export const UPDATE_MAX_LENGTH = 4_000;
+
+/** `updates` with one more thing said, the oldest dropped past `UPDATES_KEPT`; words said twice in a row are kept once. */
+export function withUpdate(updates: readonly CodingUpdate[], words: string, atMs: number): CodingUpdate[] {
+  const text = words.trim().slice(0, UPDATE_MAX_LENGTH);
+  if (text === "" || updates.at(-1)?.text === text) return [...updates];
+  return [...updates, { text, atMs }].slice(-UPDATES_KEPT);
+}
+
+/** `updates` without a last one that is the turn's answer itself, which the conversation shows as the answer. */
+export function withoutAnswer(updates: readonly CodingUpdate[], answer: string): CodingUpdate[] {
+  const last = updates.at(-1);
+  return last !== undefined && last.text === answer.trim().slice(0, UPDATE_MAX_LENGTH) ? updates.slice(0, -1) : [...updates];
 }
 
 export type CodingOutcome =
@@ -247,6 +272,11 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
       onEvent: (event) => {
         const windows = usageFromEvent(event);
         if (windows !== undefined) try { deps.onUsage?.(windows); } catch { /* never in the way of the work */ }
+        const said = assistantWords(event);
+        if (said.trim() !== "") {
+          work.updates = withUpdate(work.updates ?? [], said, now());
+          try { deps.onWork?.(work); } catch { /* never in the way of the work */ }
+        }
       },
     });
     const started = now();
@@ -271,6 +301,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
       case "done": break;
     }
     const text = outcome.text.trim();
+    if (work.updates !== undefined) work.updates = withoutAnswer(work.updates, text);
 
     const ahead = await git(["rev-list", "--count", `origin/${base}..HEAD`]);
     const commits = Number(ahead.stdout.trim()) || 0;

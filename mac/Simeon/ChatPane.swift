@@ -1456,7 +1456,9 @@ private struct EventChip<Leading: View>: View {
  * Agents talking to each other, folded (`JIn`): "Messaged", "Message from"
  * or "4 messages with", then the agent, or "2 agents" over their
  * pictures. One agent's chip opens their messages over the chat; with
- * several, a menu of them (`Agents in this exchange`) does.
+ * several, a menu of them (`Agents in this exchange`) does. A cloud
+ * agent's report is a "Message from" line too, under its own name with a
+ * cloud for its picture, and its chip opens its conversation.
  */
 private struct ExchangeEvent: View {
   let exchange: Exchange
@@ -1466,7 +1468,7 @@ private struct ExchangeEvent: View {
 
   var body: some View {
     let peers = exchange.peers
-    let title = peers.count == 1 ? peers[0].name : String(localized: "\(peers.count) agents")
+    let title = peers.count == 1 ? peers[0].shownName : String(localized: "\(peers.count) agents")
     SystemEvent(label: exchange.label, look: look) {
       EventChip(title: title, help: peers.count == 1 ? String(localized: "Open \(title)'s messages") : String(localized: "\(title), show list"), look: look, action: {
         if peers.count == 1 {
@@ -1475,9 +1477,14 @@ private struct ExchangeEvent: View {
           ExchangeMenu.show(peers: peers, store: store, control: control, dark: look.dark)
         }
       }) {
-        // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
-        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? MarkMember.of(id: peer.id) },
-                unit: 16, counted: false)
+        if peers.count == 1, peers[0].cloudAgent {
+          // A cloud agent has no picture: its cloud (13 November 2026).
+          CloudAgentMark(size: 16, look: look)
+        } else {
+          // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
+          MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? MarkMember.of(id: peer.id) },
+                  unit: 16, counted: false)
+        }
       }
     }
   }

@@ -324,6 +324,55 @@ test("the end of a watched command wakes the agent in a hidden turn, unless it a
   }
 });
 
+// The cloud agent's report (13 November 2026): the chat of the agent that launched it shows it as a message from the
+// cloud agent, written at the start of the turn that wakes the agent with it, as a teammate's message is.
+test("a cloud agent's report is a message from it in the launching agent's chat, written in the turn that wakes the agent", async () => {
+  const { module: m, dispose } = await load();
+  try {
+    const order = [], runs = [], written = [], revived = [];
+    const runner = { run: async (prompt, options) => { order.push("run"); runs.push({ prompt, options }); return { aborted: false, sentMessageCount: 1 }; } };
+    const { tm } = revivalHost(runner);
+    const session = { id: "leo", db: { getTranscriptEntries: () => written, appendTranscriptEntry: (entry) => { order.push("line"); written.push(entry); } } };
+    tm.sessions.resolveBackgroundSession = async () => session;
+    tm.telemetry.reportSubagentRevival = (event) => revived.push(event);
+    tm.backgroundWakes = { agentToAgent: new m.AgentToAgentMessaging(tm) };
+    const revivals = new m.CompletionRevivals(tm);
+    const settle = async (count) => { for (let tries = 0; tries < 50 && revived.length < count; tries += 1) await new Promise((resolve) => setTimeout(resolve, 5)); };
+
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-1", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-1", status: "completed", result: "The cloud agent finished.\nPull request: https://github.com/simeonlabs/demo/pull/12", cloudAgent: { name: "Windows app version bump", said: "Opened pull request #12 with the bump." } });
+    await settle(1);
+    assert.deepEqual(order, ["line", "run"], "the line is in the chat before the agent's turn starts");
+    const { id, timestampMs, ...line } = written[0];
+    assert.ok(typeof id === "string" && id !== "");
+    assert.ok(timestampMs > 0);
+    assert.deepEqual(line, { kind: "message", role: "user", content: "Opened pull request #12 with the bump.", isStreaming: false, fromAgent: { id: "bc-1", name: "Windows app version bump", kind: "cloud-agent" } });
+    assert.match(runs[0].prompt, /Background task "Cloud agent bc-1" \(cloud-agent\) finished:\nThe cloud agent finished\.\nPull request: https:\/\/github\.com\/simeonlabs\/demo\/pull\/12/, "the agent is still woken with the report itself, and the cloud agent's id");
+    assert.equal(runs[0].options.hidden, true);
+    assert.equal(revived[0].outcome, "delivered");
+
+    // A helper's result is no message from a cloud agent, and a chat that can't take the line still wakes the agent.
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "task-1", subagentType: "explore", toolCallId: "t", title: "Look around", status: "completed", result: "Found it." });
+    await settle(2);
+    assert.equal(written.length, 1);
+    assert.equal(runs.length, 2);
+    session.db.appendTranscriptEntry = () => { throw new Error("the chat's file is locked"); };
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-2", subagentType: "cloud-agent", toolCallId: "", title: "Fix the build", status: "error", result: "The tests fail." });
+    await settle(3);
+    assert.equal(runs.length, 3);
+    assert.match(runs[2].prompt, /The tests fail\./);
+    assert.equal(revived[2].outcome, "delivered");
+
+    // One with no words of its own shows the report, and one with no name is left for the apps to name.
+    session.db.appendTranscriptEntry = (entry) => written.push(entry);
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-3", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-3", status: "completed", result: "The cloud agent finished." });
+    await settle(4);
+    assert.equal(written[1].content, "The cloud agent finished.");
+    assert.deepEqual(written[1].fromAgent, { id: "bc-3", name: "", kind: "cloud-agent" });
+  } finally {
+    await dispose();
+  }
+});
+
 test("the instructions say what happens: woken when a background command ends, and only then", async () => {
   const { module: m, dispose } = await load();
   try {

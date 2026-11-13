@@ -16,6 +16,13 @@ import SimeonCore
  * (12 on 16, at 40%, 6 apart), then Close Chat (12 on 16, padded 4 8, a
  * pill on the grey wash), 10 apart. A message's actions are More alone
  * with Copy; its author's name does not open their chat. Escape closes.
+ *
+ * A cloud agent's conversation is the same page (13 November 2026; the
+ * founder: the agent "talks to the cloud agent the same way it talks to
+ * another agent"): opened from its card (Open) or its "Message from" line,
+ * its lines are what the agent asked it, what it said along the way and its
+ * answers, read from the computer (`getCloudAgentConversation`) and again
+ * every five seconds while it works, as its card asks.
  */
 struct ExchangeView: View {
   let agentId: String
@@ -26,12 +33,17 @@ struct ExchangeView: View {
   @Environment(Viewers.self) private var viewers
   @State private var showsTopFade = false
   @State private var showsBottomFade = false
+  /** A cloud agent's conversation, as last read from the computer. */
+  @State private var cloudLines: [CloudAgentLine] = []
 
   var body: some View {
     let agent = store.agent(agentId)
     // The chat's rows change with every new line; the lines themselves are not watched.
     let _ = store.rows(for: agentId)
-    let rows = Chat.exchangeRows(store.transcripts[agentId] ?? [], agent: Party(id: agentId, name: agent?.name ?? ""), peerId: peer.id)
+    let me = Party(id: agentId, name: agent?.name ?? "")
+    let rows = peer.cloudAgent
+      ? Chat.cloudAgentRows(cloudLines, agent: me, cloudAgent: peer)
+      : Chat.exchangeRows(store.transcripts[agentId] ?? [], agent: me, peerId: peer.id)
     ZStack(alignment: .top) {
       look.ground
         .contentShape(Rectangle())
@@ -92,6 +104,34 @@ struct ExchangeView: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Agent exchange")
     .accessibilityAddTraits(.isModal)
+    .task(id: peer.id) {
+      guard peer.cloudAgent else { return }
+      cloudLines = []
+      var known: CloudAgentInfo?
+      while !Task.isCancelled {
+        // Its state first: once that says it is done, the lines read after it are all of them.
+        let read = await store.cloudAgent(peer.id)
+        if case .info(let info) = read { known = info }
+        if let lines = await store.cloudAgentConversation(peer.id) { cloudLines = lines }
+        guard let wait = CloudAgentInfo.nextPoll(after: read, known: known) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+}
+
+/** A cloud agent where an agent's picture would be: a cloud on the grey wash, round. */
+struct CloudAgentMark: View {
+  let size: CGFloat
+  let look: Look
+
+  var body: some View {
+    Image(systemName: "cloud.fill")
+      .font(.system(size: size * 0.5, weight: .medium))
+      .foregroundStyle(look.inkSecondary)
+      .frame(width: size, height: size)
+      .background(look.rowHover, in: Circle())
+      .accessibilityHidden(true)
   }
 }
 
@@ -108,25 +148,30 @@ private struct ExchangeHeader: View {
       look.ground
       WindowDragArea()
       HStack(spacing: 8) {
-        participant(id: agentId, name: agentName)
+        participant(Party(id: agentId, name: agentName))
         Image(systemName: "arrow.left.arrow.right")
           .font(.system(size: 10, weight: .medium))
           .foregroundStyle(look.ink.opacity(0.3))
           .frame(width: 12, height: 12)
           .accessibilityHidden(true)
-        participant(id: peer.id, name: peer.name)
+        participant(peer)
       }
       .padding(.leading, 6)
     }
     .frame(height: 44)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("Agent exchange between \(agentName) and \(peer.name)")
+    .accessibilityLabel("Agent exchange between \(agentName) and \(peer.shownName)")
   }
 
-  private func participant(id: String, name: String) -> some View {
-    HStack(spacing: 4) {
+  private func participant(_ party: Party) -> some View {
+    let name = party.shownName
+    return HStack(spacing: 4) {
       Group {
-        AgentIdMark(id: id, agents: store.agents, size: 20)
+        if party.cloudAgent {
+          CloudAgentMark(size: 20, look: look)
+        } else {
+          AgentIdMark(id: party.id, agents: store.agents, size: 20)
+        }
       }
       // At least 20 wide: a group would be its members in a row (step 14).
       .frame(minWidth: 20)
@@ -171,7 +216,9 @@ private struct ExchangeMessage: View {
     let limit = max(0, min(column * 0.88, 640, column - 82))
     HStack(alignment: .bottom, spacing: 8) {
       Group {
-        if last {
+        if last, sender.cloudAgent {
+          CloudAgentMark(size: 22, look: look)
+        } else if last {
           AgentIdMark(id: sender.id, agents: store.agents, size: 22)
         } else {
           Color.clear
@@ -180,7 +227,7 @@ private struct ExchangeMessage: View {
       .frame(width: 22, height: 22)
       VStack(alignment: .leading, spacing: 0) {
         if first {
-          Text(sender.name)
+          Text(sender.shownName)
             .font(.system(size: 12))
             .foregroundStyle(look.inkSecondary)
             .lineLimit(1)
@@ -226,7 +273,7 @@ private struct ExchangeMessage: View {
       .padding(.leading, 6)
       .contentShape(Rectangle())
       .onHover { barHovered = $0 }
-      .accessibilityLabel("Message actions for \(sender.name) message")
+      .accessibilityLabel("Message actions for \(sender.shownName) message")
     }
   }
 
@@ -291,7 +338,7 @@ enum ExchangeMenu {
     var handlers: [PeerHandler] = []
     for peer in Chat.menuOrder(peers) {
       let handler = PeerHandler(peer: peer, control: control)
-      let item = NSMenuItem(title: peer.name, action: #selector(PeerHandler.open), keyEquivalent: "")
+      let item = NSMenuItem(title: peer.shownName, action: #selector(PeerHandler.open), keyEquivalent: "")
       item.target = handler
       item.image = mark(for: peer, store: store, dark: dark)
       menu.addItem(item)
