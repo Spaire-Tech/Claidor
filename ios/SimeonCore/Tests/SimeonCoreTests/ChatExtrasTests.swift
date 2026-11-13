@@ -653,11 +653,20 @@ final class CloudAgentTests: XCTestCase {
    */
   func testItsReportIsAMessageFromItAndItsConversationIsAPage() {
     // The line in the chat: a message from a cloud agent, which is not one of the person's agents.
-    let report = Entry(["kind": "message", "id": "m1", "role": "user", "content": "Opened pull request #7.", "fromAgent": ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent"]])!
-    XCTAssertEqual(report.fromAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true))
+    let report = Entry(["kind": "message", "id": "m1", "role": "user", "content": "Opened pull request #7.", "fromAgent": ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent", "coder": "claude-code"]])!
+    XCTAssertEqual(report.fromAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code"))
     XCTAssertEqual(report.fromAgent?.shownName, "Fix the login")
     guard case .teammates("m1", let exchange, _)? = Chat.rows([report]).last else { return XCTFail() }
-    XCTAssertEqual(exchange, .single(inbound: true, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true)))
+    XCTAssertEqual(exchange, .single(inbound: true, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")))
+    // Its picture is the mascot of the program that coded: Claude Code's, Codex's, and Claude Code's when the computer doesn't say or names another.
+    XCTAssertEqual(report.fromAgent?.mascot, "claudecode")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true, coder: "codex").mascot, "codex")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true).mascot, "claudecode")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true, coder: "gemini").mascot, "claudecode")
+    XCTAssertNil(Party(id: "iris", name: "Iris").mascot)
+    XCTAssertNil(Party(id: "iris", name: "Iris", coder: "codex").coder)
+    XCTAssertEqual(CloudAgentInfo(["name": "Fix the login", "coder": "codex"])?.party("bc-42"), Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "codex"))
+    XCTAssertEqual(CloudAgentInfo(["name": "Fix the login"])?.party("bc-42").mascot, "claudecode")
     XCTAssertEqual(exchange.label, "Message from")
     // One the computer gave no name is "Cloud agent"; a teammate's kind changes nothing.
     let unnamed = Entry(["kind": "message", "id": "m2", "role": "user", "content": "Done.", "fromAgent": ["id": "bc-43", "name": "", "kind": "cloud-agent"]])!

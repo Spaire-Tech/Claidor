@@ -2259,8 +2259,9 @@ struct PeerStack: View {
  * October 2026: "when an agent message many at the same time, its not all
  * in one chat. its each by each"). One agent: the line opens its page. More:
  * a menu of them, by name, and the one picked opens. A cloud agent's report
- * is a "Message from" line too (13 November 2026), under its own name with a
- * cloud for its picture, and it opens the cloud agent's conversation.
+ * is a "Message from" line too (13 November 2026), under its own name with
+ * Claude Code's or Codex's mascot for its picture, and it opens the cloud
+ * agent's conversation.
  */
 struct TeammatesLine: View {
   let exchange: Exchange
@@ -2454,12 +2455,17 @@ struct PartyAvatar: View {
 
   var body: some View {
     if party.cloudAgent {
-      // A cloud agent has no picture: a cloud on the bubbles' grey, round (13 November 2026).
-      Image(systemName: "cloud.fill")
-        .font(.system(size: size * 0.5, weight: .medium))
-        .foregroundStyle(Ink.secondary)
+      // A cloud agent's picture is the mascot of the program that coded, Claude Code's or Codex's (13 November 2026,
+      // the founder: "it should be whatever agent is used"), on Connect apps' tile, round as a picture.
+      Image("Mascots/\(party.mascot ?? "claudecode")")
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .padding(size * 0.1)
         .frame(width: size, height: size)
-        .background(Ink.bubbleTheirs, in: Circle())
+        .background(Ink.appsTile)
+        .clipShape(Circle())
+        .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
         .accessibilityHidden(true)
     } else {
       AgentIdAvatar(id: party.id).frame(width: size, height: size)

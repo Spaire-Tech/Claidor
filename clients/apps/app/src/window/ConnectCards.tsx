@@ -625,7 +625,10 @@ function CloudAgentCardView({
                     kind: 'exchange',
                     agentId,
                     peerId: bcId,
-                    cloudAgent: { name: shown.name },
+                    cloudAgent: {
+                      name: shown.name,
+                      ...(shown.coder === '' ? {} : { coder: shown.coder }),
+                    },
                   })
                 }
               />

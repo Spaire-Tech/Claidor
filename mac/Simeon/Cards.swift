@@ -2602,7 +2602,7 @@ struct CloudAgentCardView: View {
         HStack(spacing: 8) {
           if let control {
             CardButton(title: String(localized: "Open"), look: look) {
-              control.openExchange(Party(id: bcId, name: shown.name, cloudAgent: true))
+              control.openExchange(shown.party(bcId))
             }
           }
           if let pull {

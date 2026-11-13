@@ -404,10 +404,16 @@ export class AgentToAgentMessaging {
    * draw "Message from" with its name, and open its conversation from there.
    * A line of the chat only: the agent itself is woken with the report apart
    * (`runSubagentRevival`), and a cloud agent is no conversation partner.
+   * `coder` is the program that coded ("claude-code", "codex"): the apps
+   * draw its mascot as the cloud agent's picture.
    */
   appendCloudAgentAnswer(
     session: any,
-    cloudAgent: { readonly id: string; readonly name: string },
+    cloudAgent: {
+      readonly id: string;
+      readonly name: string;
+      readonly coder?: string;
+    },
     text: string,
     timestampMs: number,
   ): void {
@@ -422,7 +428,12 @@ export class AgentToAgentMessaging {
       content: text,
       isStreaming: false,
       timestampMs,
-      fromAgent: { id: cloudAgent.id, name: cloudAgent.name, kind: "cloud-agent" },
+      fromAgent: {
+        id: cloudAgent.id,
+        name: cloudAgent.name,
+        kind: "cloud-agent",
+        ...(cloudAgent.coder === undefined ? {} : { coder: cloudAgent.coder }),
+      },
     };
     if (isActive) this.tm.appendEntry(entry);
     else {

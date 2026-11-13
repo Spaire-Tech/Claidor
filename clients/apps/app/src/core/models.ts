@@ -26,13 +26,24 @@ export interface Party {
    * not lines of this chat. Left out for everyone else.
    */
   cloudAgent?: true
+  /**
+   * The program that coded for a cloud agent, as the computer names it
+   * (`coder`: "claude-code", "codex"): the app draws its mascot as the cloud
+   * agent's picture (`cloudAgentMascot` in externalAgents.ts). Left out for
+   * an agent, and for a cloud agent whose line doesn't say.
+   */
+  coder?: string
 }
 
 export function partyFrom(json: unknown): Party | undefined {
   const id = text(field(json, 'id'))
   if (!id) return undefined
   const party: Party = { id, name: text(field(json, 'name')) ?? '' }
-  if (str(field(json, 'kind')) === 'cloud-agent') party.cloudAgent = true
+  if (str(field(json, 'kind')) === 'cloud-agent') {
+    party.cloudAgent = true
+    const coder = text(field(json, 'coder'))
+    if (coder) party.coder = coder
+  }
   return party
 }
 

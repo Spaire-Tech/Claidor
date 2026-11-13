@@ -339,13 +339,13 @@ test("a cloud agent's report is a message from it in the launching agent's chat,
     const revivals = new m.CompletionRevivals(tm);
     const settle = async (count) => { for (let tries = 0; tries < 50 && revived.length < count; tries += 1) await new Promise((resolve) => setTimeout(resolve, 5)); };
 
-    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-1", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-1", status: "completed", result: "The cloud agent finished.\nPull request: https://github.com/simeonlabs/demo/pull/12", cloudAgent: { name: "Windows app version bump", said: "Opened pull request #12 with the bump." } });
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-1", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-1", status: "completed", result: "The cloud agent finished.\nPull request: https://github.com/simeonlabs/demo/pull/12", cloudAgent: { name: "Windows app version bump", said: "Opened pull request #12 with the bump.", coder: "claude-code" } });
     await settle(1);
     assert.deepEqual(order, ["line", "run"], "the line is in the chat before the agent's turn starts");
     const { id, timestampMs, ...line } = written[0];
     assert.ok(typeof id === "string" && id !== "");
     assert.ok(timestampMs > 0);
-    assert.deepEqual(line, { kind: "message", role: "user", content: "Opened pull request #12 with the bump.", isStreaming: false, fromAgent: { id: "bc-1", name: "Windows app version bump", kind: "cloud-agent" } });
+    assert.deepEqual(line, { kind: "message", role: "user", content: "Opened pull request #12 with the bump.", isStreaming: false, fromAgent: { id: "bc-1", name: "Windows app version bump", kind: "cloud-agent", coder: "claude-code" } });
     assert.match(runs[0].prompt, /Background task "Cloud agent bc-1" \(cloud-agent\) finished:\nThe cloud agent finished\.\nPull request: https:\/\/github\.com\/simeonlabs\/demo\/pull\/12/, "the agent is still woken with the report itself, and the cloud agent's id");
     assert.equal(runs[0].options.hidden, true);
     assert.equal(revived[0].outcome, "delivered");

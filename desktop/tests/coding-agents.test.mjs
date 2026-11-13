@@ -411,7 +411,7 @@ test("what the cloud agent says along the way: kept per turn without the answer,
     assert.deepEqual(module.cloudAgentLines(undefined), []);
     const asked = [];
     const manager = new module.SandCloudAgentManager({ getAccountAccessToken: async () => "t", getMachineId: async () => "m", completionPolling: { start: () => ({ dispose() {} }) }, clock: { monotonicNow: () => 0 }, convertConversationMessagesToTrace: () => [], clientForTesting: { getBackgroundComposerConversation: async (request) => { asked.push(request); if (request.bcId === "bc-gone") throw Object.assign(new Error("not found"), { name: "ConnectError", code: 5 }); if (request.bcId === "bc-down") throw new Error("the server is away"); return { conversation }; } }, dashboardClientForTesting: { getTeams: async () => ({ teams: [] }) }, modelCatalogForTesting: [] });
-    assert.deepEqual(await manager.getConversation(" bc-1 "), { bcId: "bc-1", messages: module.cloudAgentLines(conversation) });
+    assert.deepEqual(await manager.getConversation(" bc-1 "), { bcId: "bc-1", coder: "claude-code", messages: module.cloudAgentLines(conversation) }, "with the program that coded, whose mascot the apps draw");
     assert.deepEqual(asked, [{ bcId: "bc-1" }]);
     assert.equal(await manager.getConversation("bc-gone"), null, "one the server doesn't know");
     await assert.rejects(manager.getConversation("bc-down"), /the server is away/);
@@ -420,11 +420,12 @@ test("what the cloud agent says along the way: kept per turn without the answer,
     // The report that wakes the launching agent carries the cloud agent's own name, for the chat's "Message from" line.
     const watched = module.buildWatchResult("bc-1", "finished", { composer: { name: " Add a greeting ", status: "finished", prUrl: "https://github.com/simeonlabs/demo/pull/7" }, summary: "Added the greeting; the tests pass." });
     assert.equal(watched.name, "Add a greeting");
+    assert.equal(watched.coder, "claude-code");
     assert.equal(watched.said, "Added the greeting; the tests pass.\n\nPull request: https://github.com/simeonlabs/demo/pull/7", "its own words, with the pull request's link when they leave it out");
     assert.match(watched.text, /^The cloud agent finished\.\nPull request: https:\/\/github\.com\/simeonlabs\/demo\/pull\/7/);
     assert.equal(module.buildWatchResult("bc-1", "finished", { composer: { status: "finished", prUrl: "https://github.com/simeonlabs/demo/pull/7" }, summary: "See https://github.com/simeonlabs/demo/pull/7." }).said, "See https://github.com/simeonlabs/demo/pull/7.");
     const silent = module.buildWatchResult("bc-1", "error", { composer: { status: "error" } });
-    assert.deepEqual([silent.name, silent.said], [undefined, undefined]);
+    assert.deepEqual([silent.name, silent.said, silent.coder], [undefined, undefined, "claude-code"]);
     assert.equal(module.buildWatchResult("bc-1", "error", { composer: { name: "Add a greeting", status: "error" }, summary: "The tests fail." }).said, "The tests fail.");
   } finally {
     await s.dispose();

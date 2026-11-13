@@ -418,6 +418,8 @@ export interface CloudAgentInfo {
   filesChanged: number
   linesAdded: number
   linesRemoved: number
+  /** The program that codes for it, as the computer names it (`coder`: "claude-code", "codex"); empty from a computer that doesn't say. */
+  coder: string
 }
 
 export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
@@ -436,6 +438,7 @@ export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
     filesChanged: int(field(json, 'filesChanged')) ?? 0,
     linesAdded: int(field(json, 'linesAdded')) ?? 0,
     linesRemoved: int(field(json, 'linesRemoved')) ?? 0,
+    coder: words('coder'),
   }
 }
 

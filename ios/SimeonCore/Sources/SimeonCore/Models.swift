@@ -11,12 +11,33 @@ public struct Party: Hashable, Sendable {
    * (`Chat.cloudAgentRows`), not lines of this chat.
    */
   public let cloudAgent: Bool
+  /**
+   * The program that coded for a cloud agent, as the computer names it
+   * (`coder`: "claude-code", "codex"); nil for an agent, and for a cloud
+   * agent whose line doesn't say.
+   */
+  public let coder: String?
 
-  public init(id: String, name: String, cloudAgent: Bool = false) { self.id = id; self.name = name; self.cloudAgent = cloudAgent }
+  public init(id: String, name: String, cloudAgent: Bool = false, coder: String? = nil) {
+    self.id = id; self.name = name; self.cloudAgent = cloudAgent; self.coder = cloudAgent ? coder : nil
+  }
 
   init?(_ json: JSON?) {
     guard let id = json?["id"]?.text else { return nil }
-    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: json?["kind"]?.string == "cloud-agent")
+    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: json?["kind"]?.string == "cloud-agent", coder: json?["coder"]?.text)
+  }
+
+  /**
+   * A cloud agent's picture (13 November 2026, the founder: "it should be
+   * whatever agent is used. either claude code or codex"): the mascot of
+   * the program that coded (`Mascots/<icon>`), Claude Code's when the
+   * computer doesn't say or names one with no mascot, since every cloud
+   * agent before `coder` ran in Claude Code. Nil for an agent, which has
+   * its own picture.
+   */
+  public var mascot: String? {
+    guard cloudAgent else { return nil }
+    return ExternalAgents.cloudAgentMascot(coder)
   }
 
   /** The name as the apps write it: a cloud agent the computer gave no name is "Cloud agent". */

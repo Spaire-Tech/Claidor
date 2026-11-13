@@ -842,6 +842,31 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: a cloud agent's picture is Claude Code's or Codex's mascot
+
+The founder, on the page above: "you put a cloude avatar. it should be
+whatever agent is used. either claude code or codex."
+
+- The cloud is gone. A cloud agent's picture, in the conversation's head,
+  beside its messages and on its "Message from" chip, is the mascot of the
+  program that coded (`assets/mascots/claudecode.png`, `codex.png`, the ones
+  External Agents uses), on Connect apps' tile (white, #2c2c2e on dark, a
+  hairline), round as a picture (`CloudMark` in `Call.tsx`, `.cloud-mark`).
+- The computer says which program (`coder`: "claude-code", "codex") in
+  `getCloudAgentInfo`, `getCloudAgentConversation` and the line's
+  `fromAgent`; `cloudAgentMascot` (externalAgents.ts) picks the mascot, and
+  Claude Code's when a computer doesn't say. Every cloud agent runs in
+  Claude Code today, so Codex's shows only once one can run in Codex.
+
+Checked: the web app's tests, types, ESLint and Prettier on the changed
+files; the build committed. In Chromium against the stand-in, light and
+dark: a cloud agent the stand-in says ran in Claude Code shows Claude Code's
+mascot in the chip, the head and beside its last message; one it says ran in
+Codex shows Codex's; both pictures load; no console errors.
+
+Not checked: the Mac's and the iPhone's (written, not built); a real cloud
+agent.
+
 ### 13 November 2026: a cloud agent's conversation, and its report as a message from it
 
 The founder, with screenshots of another app: the agent should "talk to the
