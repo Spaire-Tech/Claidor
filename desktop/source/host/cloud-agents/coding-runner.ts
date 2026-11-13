@@ -36,6 +36,12 @@ export function createComputerServer(deps: {
   readonly fetchImpl?: typeof fetch;
 }): ComputerServer {
   const fetchImpl = deps.fetchImpl ?? fetch;
+  // What Claude Code said along the way travels as the report's own `updates` (the server keeps it apart from the work).
+  const apart = (work: CodingWork | undefined): { work?: CodingWork; updates?: CodingWork["updates"] } => {
+    if (work === undefined) return {};
+    const { updates, ...found } = work;
+    return { work: found, ...(updates === undefined ? {} : { updates }) };
+  };
   const post = async (path: string, body: Record<string, unknown>): Promise<unknown> => {
     const backendUrl = deps.getBackendUrl();
     const token = await deps.getAccessToken({ backendUrl });
@@ -54,11 +60,11 @@ export function createComputerServer(deps: {
       return answer.job ?? null;
     },
     heartbeat: async (id, runner, work) => {
-      const answer = await post(`/jobs/${encodeURIComponent(id)}/heartbeat`, { runner, ...(work === undefined ? {} : { work }) }) as { cancelRequested?: unknown };
+      const answer = await post(`/jobs/${encodeURIComponent(id)}/heartbeat`, { runner, ...apart(work) }) as { cancelRequested?: unknown };
       return { cancelRequested: answer.cancelRequested === true };
     },
-    complete: async (id, runner, body) => { await post(`/jobs/${encodeURIComponent(id)}/complete`, { runner, ...body }); },
-    fail: async (id, runner, body) => { await post(`/jobs/${encodeURIComponent(id)}/fail`, { runner, ...body }); },
+    complete: async (id, runner, body) => { await post(`/jobs/${encodeURIComponent(id)}/complete`, { runner, ...body, ...apart(body.work) }); },
+    fail: async (id, runner, body) => { await post(`/jobs/${encodeURIComponent(id)}/fail`, { runner, ...body, ...apart(body.work) }); },
   };
 }
 

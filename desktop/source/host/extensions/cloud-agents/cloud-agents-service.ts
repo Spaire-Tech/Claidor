@@ -27,6 +27,24 @@ export interface GitHubSignInCard { readonly type: "github-sign-in"; readonly co
 /** Whether a launch or a follow-up may go ahead: yes, or what the agent is told instead, with the card to show. */
 export type CodingReadiness = { readonly ok: true } | { readonly ok: false; readonly text: string; readonly card?: GitHubSignInCard };
 export const CLAUDE_NOT_CONNECTED_TEXT = "Coding runs in Claude Code on the user's own Claude plan, and Claude isn't connected, so nothing was launched. Ask them to connect Claude in Settings \u203a AI Models, then launch again once they have.";
+/** One line of a cloud agent's conversation, as the apps draw it. */
+export interface CloudAgentLine { readonly id: string; readonly role: "prompt" | "update" | "answer"; readonly text: string; readonly atMs: number }
+/** The server's conversation rows (`ConversationMessage`: `type` 1 the asker's, 2 the cloud agent's) as the apps' lines; rows with no words are left out. */
+export function cloudAgentLines(conversation: unknown): CloudAgentLine[] {
+  if (!Array.isArray(conversation)) return [];
+  const lines: CloudAgentLine[] = [];
+  for (const [index, row] of conversation.entries()) {
+    if (row === null || typeof row !== "object") continue;
+    const message = row as { text?: unknown; type?: unknown; bubbleId?: unknown; createdAt?: unknown };
+    const text = typeof message.text === "string" ? message.text.trim() : "";
+    if (text === "") continue;
+    const bubble = typeof message.bubbleId === "string" && message.bubbleId !== "" ? message.bubbleId : `line-${index}`;
+    const asked = message.type === 1 || (typeof message.type === "string" && /HUMAN/i.test(message.type));
+    const at = Number(message.createdAt);
+    lines.push({ id: bubble, role: asked ? "prompt" : bubble.startsWith("update-") ? "update" : "answer", text, atMs: Number.isFinite(at) && at > 0 ? at : 0 });
+  }
+  return lines;
+}
 export const GITHUB_CARD_TEXT = "GitHub isn't connected on your own computer (the box, not the user's Mac or PC) yet, so nothing was launched: the cloud agent opens the repository and its pull request with the user's GitHub account. A Connect GitHub card is now in the chat with a one-time code. Say so in your own words, but don't paste the code or a link, and don't ask them to report back: you're resumed automatically once GitHub is connected, and then you launch again.";
 type AnyRecord = Record<string, unknown>;
 export interface CloudAgentClient extends SavedEnvironmentClient {
@@ -100,6 +118,12 @@ export class SandCloudAgentManager {
   async cancel(bcId: string): Promise<void> { await this.getClient().pauseBackgroundComposer({ bcId, source: BackgroundComposerSource.SIMEON }); } async rename(bcId: string, newName: string): Promise<void> { await this.getClient().renameBackgroundComposer({ bcId, newName }); } async setArchived(bcId: string, archived: boolean): Promise<void> { await this.getClient().archiveBackgroundComposer({ bcId, unarchive: !archived, source: BackgroundComposerSource.SIMEON }); } async delete(bcId: string): Promise<void> { await this.getClient().deleteBackgroundComposer({ bcId }); }
   async listArtifacts(bcId: string) { return (await this.getClient().listBackgroundComposerArtifacts({ bcId })).artifacts.map((artifact) => ({ path: artifact.absolutePath, sizeBytes: Number(artifact.sizeBytes) })); }
   async getTranscriptDump(args: { bcId: string }) { const bcId = args.bcId.trim(); if (!bcId) return null; const response = await this.getClient().getBackgroundComposerConversation({ bcId }), dump = buildTranscriptJsonl(response.conversation, this.options.convertConversationMessagesToTrace); let status = "unknown"; try { status = mapRunStatus((await this.getClient().getBackgroundComposerInfo({ bcId, includeDiff: false, doNotThrowIfSetupNotFinished: true })).composer?.composer?.status); } catch {} return { ...dump, status }; }
+  /**
+   * A cloud agent's conversation for the apps (`getCloudAgentConversation`, 13 November 2026): what it was asked
+   * (`prompt`), what it said along the way (`update`: the server's rows whose bubbleId starts `update-`) and each
+   * turn's answer, in the server's order. Null when the server doesn't know it.
+   */
+  async getConversation(bcId: string): Promise<{ bcId: string; messages: CloudAgentLine[] } | null> { const id = bcId.trim(); if (!id) return null; let response: { conversation: unknown }; try { response = await this.getClient().getBackgroundComposerConversation({ bcId: id }); } catch (error) { const candidate = error as { name?: unknown; code?: unknown }; if (candidate?.name === "ConnectError" && (candidate.code === 5 || candidate.code === 7)) return null; throw error; } return { bcId: id, messages: cloudAgentLines(response.conversation) }; }
   async getInfo(bcId: string, includeFiles = true) { const id = bcId.trim(); if (!id) return null; let response: Awaited<ReturnType<CloudAgentClient["getBackgroundComposerInfo"]>>; try { response = await this.getClient().getBackgroundComposerInfo({ bcId: id, includeDiff: false, doNotThrowIfSetupNotFinished: true }); } catch (error) { const candidate = error as { name?: unknown; code?: unknown }; if (candidate?.name === "ConnectError" && (candidate.code === 5 || candidate.code === 7)) return null; throw error; } const detailed = response.composer, composer = detailed?.composer, filesChanged = composer?.filesChanged ?? 0, pr = resolvePr(detailed), prUrl = resolvePrUrl(detailed); const [files, livePrState] = await Promise.all([includeFiles && filesChanged > 0 ? this.fetchFileChanges(id) : Promise.resolve([]), this.fetchLivePrState(prUrl, pr.state)]); return { bcId: id, status: statusOf(detailed), name: composer?.name ?? "", prompt: detailed?.prompt?.text ?? "", branchName: resolveBranchName(detailed), prUrl, prState: livePrState ?? pr.state, prNumber: pr.number, filesChanged, linesAdded: composer?.linesAdded ?? 0, linesRemoved: composer?.linesRemoved ?? 0, files }; }
   async fetchLivePrState(prUrl: string, storedState: string): Promise<string | null> { if (!prUrl || storedState === "merged") return null; try { const value = await this.getClient().getPullRequestMergeStatus({ prUrl }); return value.isMerged ? "merged" : value.isClosed ? "closed" : value.isDraft ? "draft" : value.state === "open" ? "open" : null; } catch { return null; } }
   async fetchFileChanges(bcId: string) { try { const response = await this.getClient().getOptimizedDiffDetails({ bcId, excludeBeforeAfterDiffs: true }), changes: { path: string; added: number; removed: number }[] = []; for (const diff of response.diff?.diffs ?? []) { const change = toFileChange(diff); if (change != null) changes.push(change); if (changes.length >= MAX_CLOUD_AGENT_FILES) break; } return changes; } catch { return []; } }

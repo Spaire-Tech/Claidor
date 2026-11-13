@@ -397,6 +397,39 @@ export class AgentToAgentMessaging {
       void this.tm.roster.emitAgentUpdate(session.id);
     }
   }
+  /**
+   * A cloud agent's report, written into the chat of the agent that started
+   * it as a message from it (13 November 2026; the founder: the agent "talks
+   * to the cloud agent the same way it talks to another agent"). The apps
+   * draw "Message from" with its name, and open its conversation from there.
+   * A line of the chat only: the agent itself is woken with the report apart
+   * (`runSubagentRevival`), and a cloud agent is no conversation partner.
+   */
+  appendCloudAgentAnswer(
+    session: any,
+    cloudAgent: { readonly id: string; readonly name: string },
+    text: string,
+    timestampMs: number,
+  ): void {
+    const isActive = session.id === this.tm.sessions.activeSession?.id;
+    const entry = {
+      kind: "message",
+      id: nextEntryId(
+        isActive ? getTranscript() : session.db.getTranscriptEntries(),
+        "user-message",
+      ),
+      role: "user",
+      content: text,
+      isStreaming: false,
+      timestampMs,
+      fromAgent: { id: cloudAgent.id, name: cloudAgent.name, kind: "cloud-agent" },
+    };
+    if (isActive) this.tm.appendEntry(entry);
+    else {
+      session.db.appendTranscriptEntry(entry);
+      void this.tm.roster.emitAgentUpdate(session.id);
+    }
+  }
   appendAgentOutboundEntry(
     fromAgentId: string,
     toAgent: { readonly kind?: string; readonly [key: string]: unknown },
