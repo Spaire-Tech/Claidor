@@ -631,7 +631,11 @@ export function gitHubConnectedLabel(login: string | undefined): string {
 // MARK: Claude Code or Codex, for a cloud agent's coding
 
 /** The providers a cloud agent's coding can run on (`ModelConnectCard.offered`). */
-export const modelConnectOffered: readonly string[] = [claude, chatGPT, 'cursor']
+export const modelConnectOffered: readonly string[] = [
+  claude,
+  chatGPT,
+  'cursor',
+]
 
 /**
  * Cursor, the third program a cloud agent can code in (13 November 2026, the
@@ -704,6 +708,19 @@ export function cursorSignInState(record: JSONValue | undefined): CursorSignIn {
 /** Seconds until the computer is asked again while the sheet waits (`CursorSignIn.pollSeconds`). */
 export const cursorPollSeconds = 3
 
+/** The sheet's words, with the program's name given (`CursorSignIn`'s). */
+export const cursorSheetWords = {
+  settingUp: (program: string): string =>
+    t`Setting up ${program} on your computer…`,
+  steps: (program: string): string =>
+    t`Open ${program}'s page and approve the sign-in there. This updates by itself.`,
+  open: (program: string): string => t`Open ${program}`,
+  waiting: (): string => t('Waiting for you to approve…'),
+  didNotFinish: (program: string): string =>
+    t`${program}'s sign-in didn't finish. Try again.`,
+  tryAgain: (): string => t('Try Again'),
+}
+
 /**
  * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
  * November 2026, the founder: "when neither of them is connected, the user
@@ -730,7 +747,9 @@ export function modelConnectCard(entry: Entry): ModelConnectCard | undefined {
 }
 
 /** The providers a `model-connect` message offers: the ones this app knows, each once; all of them when it names none it knows. */
-export function modelConnectProviders(message: JSONValue | undefined): string[] {
+export function modelConnectProviders(
+  message: JSONValue | undefined,
+): string[] {
   const kept: string[] = []
   for (const one of arr(field(message, 'providers')) ?? []) {
     const provider = text(one)

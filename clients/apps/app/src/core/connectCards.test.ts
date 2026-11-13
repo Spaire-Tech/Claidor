@@ -29,6 +29,7 @@ import {
   connectedWord,
   connectorIconId,
   connectorsCard,
+  cursorSignInState,
   gitHubConnectedLabel,
   gitHubSignInCard,
   gitHubSignInLine,
@@ -52,7 +53,6 @@ import {
   listenerConnectedIn,
   luminance,
   middleCut,
-  cursorSignInState,
   modelConnectCard,
   modelConnectLine,
   modelConnectLogo,
@@ -788,9 +788,9 @@ describe('the card that offers Claude Code and Codex to connect (13 November 202
     expect(modelConnectTitle('cursor', true)).toBe('Cursor')
     expect(modelConnectLine('cursor', false)).toBe('Runs on your Cursor plan.')
     expect(modelConnectLogo('cursor')).toBe('cursor')
-    expect(
-      ['claude', 'chatgpt', 'cursor'].map(modelConnectOnComputer),
-    ).toEqual([false, false, true])
+    expect(['claude', 'chatgpt', 'cursor'].map(modelConnectOnComputer)).toEqual(
+      [false, false, true],
+    )
     // Its sign-in is the cloud computer's word; only a page on its own site is ever opened.
     expect(cursorSignInState({ state: 'installing' })).toEqual({
       state: 'installing',

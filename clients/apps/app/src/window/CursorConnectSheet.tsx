@@ -16,10 +16,11 @@
 import { useEffect, useState } from 'react'
 import {
   cursor,
-  type CursorSignIn,
   cursorPollSeconds,
+  cursorSheetWords,
   modelConnectLogo,
   modelConnectProgram,
+  type CursorSignIn,
 } from '../core/connectCards'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
@@ -69,7 +70,7 @@ export function CursorConnectSheet({
       return (
         <div className="models-waiting" role="status">
           <span className="settings-spinner" aria-hidden="true" />
-          {t`Setting up ${name} on your computer…`}
+          {cursorSheetWords.settingUp(name)}
         </div>
       )
     if (signIn.state === 'connected')
@@ -77,28 +78,26 @@ export function CursorConnectSheet({
     if (signIn.state === 'waiting')
       return (
         <>
-          <p className="models-sheet-words">
-            {t`Open ${name}'s page and approve the sign-in there. This updates by itself.`}
-          </p>
+          <p className="models-sheet-words">{cursorSheetWords.steps(name)}</p>
           <div className="models-sheet-end">
             <button
               type="button"
               className="models-wide"
               onClick={() => openPage(signIn.url)}
             >
-              {t`Open ${name}`}
+              {cursorSheetWords.open(name)}
             </button>
           </div>
           <div className="models-waiting" role="status">
             <span className="settings-spinner" aria-hidden="true" />
-            {t('Waiting for you to approve…')}
+            {cursorSheetWords.waiting()}
           </div>
         </>
       )
     return (
       <>
         <p className="models-sheet-problem" role="alert">
-          {t`${name}'s sign-in didn't finish. Try again.`}
+          {cursorSheetWords.didNotFinish(name)}
         </p>
         <div className="models-sheet-end">
           <button
@@ -106,7 +105,7 @@ export function CursorConnectSheet({
             className="models-wide"
             onClick={() => setRound((one) => one + 1)}
           >
-            {t('Try Again')}
+            {cursorSheetWords.tryAgain()}
           </button>
         </div>
       </>

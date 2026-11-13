@@ -327,6 +327,7 @@ export interface ProductionTurnHostDependencies {
     readonly reviewAction?: CloudAgentToolDeps["reviewAction"];
     readonly codingReady?: CloudAgentToolDeps["codingReady"];
     readonly coder?: CloudAgentToolDeps["coder"];
+    readonly disconnectProgram?: CloudAgentToolDeps["disconnectProgram"];
     readonly onLaunched?: CloudAgentToolDeps["onLaunched"];
     readonly onFollowupSent?: CloudAgentToolDeps["onFollowupSent"];
   };

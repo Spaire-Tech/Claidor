@@ -35,7 +35,6 @@ import { claude } from '../core/aiModels'
 import {
   connectedWord,
   cursor,
-  type CursorSignIn,
   modelConnectLine,
   modelConnectLogo,
   modelConnectNextPoll,
@@ -43,6 +42,7 @@ import {
   modelConnectPolls,
   modelConnectProgram,
   modelConnectTitle,
+  type CursorSignIn,
   type ModelConnectCard,
 } from '../core/connectCards'
 import { codingConsent } from '../core/connectConsent'

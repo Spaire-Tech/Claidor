@@ -827,6 +827,69 @@
       ],
       "match": "Cursor|[Gg]rok[ _-]?[Bb]ot|\"grok\"|grok\\.com|cursor\\.(com|sh)|x\\.ai",
       "reason": "The Simeon Network names the agents that join it as the products they are: Cursor, the coding agent, beside Claude Code and Codex, and Grok Bot, xAI's assistant, beside Dots and Muse; the server reads them from an MCP client's own name (the founder, 10 November 2026: \"do the reason network\"). Grok Bot signs in with Cursor's own registration (cursor.com/oauth/mcp-client.json), so the server and the consent page tell them apart by where the sign-in returned: grok.com, x.ai or Cursor's website (10 November 2026; any page of cursor.com since 11 November 2026: Grok Bot added at /mcp returned to cursor.com/agents/ and showed as Cursor); Cursor itself returns to cursor:// or the loopback."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "Cursor",
+        "cursor.com"
+      ],
+      "paths": [
+        "desktop/source/host/cursor/**",
+        "desktop/source/host/cloud-agents/coding-choice.ts",
+        "desktop/source/host/cloud-agents/coding-run.ts",
+        "desktop/source/host/cloud-agents/model-connect-wait.ts",
+        "desktop/source/host/cloud-agents/cloud-agent-tool.ts",
+        "desktop/source/host/cloud-agents/cloud-agent-tool-parameters.ts",
+        "desktop/source/host/extensions/cloud-agents/cloud-agents-service.ts",
+        "desktop/source/host/extensions/cloud-agents/extension.ts",
+        "desktop/source/host/extensions/session/session-projection.ts",
+        "desktop/source/host/extensions/transcript/box-handoff-resume.ts",
+        "desktop/source/host/extensions/box-store-sync/box-store-sync-service.ts",
+        "desktop/source/host/host-runner-composition.ts",
+        "desktop/source/host/runner/system-prompt.ts",
+        "desktop/tests/cursor-coding.test.mjs",
+        "desktop/tests/coding-agents.test.mjs",
+        "desktop/tests/cloud-agents-served.test.mjs",
+        "desktop/tests/fixtures/cursor-coding-entry.ts",
+        "server/simeon/sand/cloud_agents_service.py",
+        "server/simeon/sand/cloud_agents_computer.py",
+        "server/tests/sand/test_cloud_agents_computer.py",
+        "ios/SimeonCore/Sources/SimeonCore/CursorSignIn.swift",
+        "ios/SimeonCore/Sources/SimeonCore/Chat.swift",
+        "ios/SimeonCore/Sources/SimeonCore/ConnectConsent.swift",
+        "ios/SimeonCore/Sources/SimeonCore/ExternalAgents.swift",
+        "ios/SimeonCore/Sources/SimeonCore/Store.swift",
+        "ios/SimeonCore/Tests/SimeonCoreTests/ChatExtrasTests.swift",
+        "ios/Simeon/Cards.swift",
+        "ios/Simeon/AIModels.swift",
+        "mac/Simeon/Cards.swift",
+        "mac/Simeon/MacConnector.swift",
+        "mac/Simeon/SettingsModels.swift",
+        "clients/apps/app/src/core/connectCards.ts",
+        "clients/apps/app/src/core/connectCards.test.ts",
+        "clients/apps/app/src/core/connectConsent.ts",
+        "clients/apps/app/src/core/externalAgents.ts",
+        "clients/apps/app/src/core/store.ts",
+        "clients/apps/app/src/window/ModelConnectCard.tsx",
+        "clients/apps/app/src/window/ModelConnectCard.test.tsx",
+        "clients/apps/app/src/window/CursorConnectSheet.tsx",
+        "docs/your-own-models.md",
+        "docs/services-core.md"
+      ],
+      "reason": "Cursor's own command-line agent is a third-party program a cloud agent's coding may run in (13 November 2026, the founder: \"Cursor now\"), beside Claude Code and Codex: the files that install it, sign in to it on the person's cloud computer, run a turn in it and offer it on the chat's connect card name it as the product it is, with its download address and the site its sign-in page is on."
+    },
+    {
+      "kind": "contract",
+      "names": [
+        "Cursor",
+        "cursor.com"
+      ],
+      "paths": [
+        "clients/apps/web/public/app-next/assets/index-*.js"
+      ],
+      "match": "hostname===.cursor\\.com.",
+      "reason": "The new web app's built index file carries the connect card's Cursor row and the check that only a page on Cursor's own site is opened for its sign-in (clients/apps/app/src/core/connectCards.ts), minified onto one line."
     }
   ]
 }

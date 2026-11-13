@@ -11,7 +11,7 @@
 import { z } from "zod";
 
 export const CLOUD_AGENT_ACTIONS = [
-  "launch", "list", "models", "get", "dump", "watch", "reply", "rename", "cancel", "archive", "unarchive", "delete", "list_artifacts",
+  "launch", "list", "models", "get", "dump", "watch", "reply", "rename", "cancel", "archive", "unarchive", "delete", "list_artifacts", "disconnect_program",
 ] as const;
 
 const environmentSchema = z.union([
@@ -22,14 +22,14 @@ const environmentSchema = z.union([
 ]);
 
 export const cloudAgentToolParameters = z.object({
-  action: z.enum(CLOUD_AGENT_ACTIONS).describe("What to do: launch a cloud agent, list them, list the models, get or dump or watch one, reply to it, rename, cancel, archive, unarchive, delete it, or list its artifacts."),
+  action: z.enum(CLOUD_AGENT_ACTIONS).describe("What to do: launch a cloud agent, list them, list the models, get or dump or watch one, reply to it, rename, cancel, archive, unarchive, delete it, or list its artifacts; or disconnect_program, when the user asks to disconnect Cursor."),
   prompt: z.string().optional().describe("The task, for launch; the follow-up message, for reply."),
   images: z.array(z.object({ url: z.string() })).optional().describe("Images to send with the prompt (file:// or https:// URLs)."),
   repo_url: z.string().optional().describe("The repository to work in, for launch."),
   starting_ref: z.string().optional().describe("The branch, tag or commit to start from, for launch."),
   model: z.string().optional().describe("A model id or alias from the models action."),
   model_params: z.record(z.string()).optional().describe("Model parameters by id, as the models action lists them."),
-  program: z.enum(["claude-code", "codex", "cursor"]).optional().describe("For launch, only when the user names the program that should code: Claude Code, Codex or Cursor. Leave it out otherwise; the one they connected is used."),
+  program: z.enum(["claude-code", "codex", "cursor"]).optional().describe("For launch, only when the user names the program that should code: Claude Code, Codex or Cursor. Leave it out otherwise; the one they connected is used. For disconnect_program: cursor."),
   title: z.string().optional().describe("At launch, always give one: a short name for the cloud agent, 2 to 5 words like a task's title (\"Polish the README\"). The chat shows it as the cloud agent's name, and it titles the pull request. For rename, the new name."),
   environment: environmentSchema.optional().describe("Where it runs; omit for the cloud runner."),
   interrupt: z.boolean().optional().describe("For reply: interrupt the agent's current work with this message."),
@@ -37,7 +37,7 @@ export const cloudAgentToolParameters = z.object({
   scope: z.enum(["launched", "all"]).optional().describe("For list: only the agents you launched (default), or all of the user's."),
   include_archived: z.boolean().optional().describe("For list: include archived agents."),
   limit: z.number().int().min(1).optional().describe("For list: how many to return."),
-  confirm: z.boolean().optional().describe("Required true for cancel, archive, unarchive and delete."),
+  confirm: z.boolean().optional().describe("Required true for cancel, archive, unarchive, delete and disconnect_program."),
 });
 
 export type CloudAgentToolParameters = z.infer<typeof cloudAgentToolParameters>;

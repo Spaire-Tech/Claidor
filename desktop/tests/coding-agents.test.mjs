@@ -831,6 +831,26 @@ test("the CloudAgent tool: nothing is launched while Claude or GitHub is missing
     // 2026), with the name it gave; the answer says the chat shows the exchange and the card comes by itself.
     const asked = [];
     const telling = { ...deps, onLaunched: async (event) => { await new Promise((resolve) => setTimeout(resolve, 5)); asked.push(["launch", event]); }, onFollowupSent: (event) => { asked.push(["reply", event]); } };
+    // A launch that names Cursor (13 November 2026, the founder: "Cursor now"): the readiness check and the launch are given the program, and the agent is told where it runs.
+    const named = [];
+    const launches = [];
+    const inCursor = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "Fix it.", repo_url: "simeonlabs/demo", program: "cursor" }, { ...deps, api: { ...api, launch: async (args) => { launches.push(args.program); return { bcId: "bc-3", url: "" }; } }, codingReady: async (program) => { named.push(program); return { ok: true }; }, coder: (program) => program });
+    assert.match(inCursor, /It runs on your own computer \(the box\), in Cursor on the user's own Cursor plan\./);
+    assert.deepEqual([named, launches], [["cursor"], ["cursor"]]);
+    // A follow-up keeps the cloud agent's own program: none is named.
+    await module.runCloudAgentAction(ctx, { action: "reply", agent_id: "bc-3", prompt: "More.", program: "cursor" }, { ...deps, codingReady: async (program) => { named.push(program); return { ok: true }; } });
+    assert.deepEqual(named, ["cursor", undefined]);
+    // Disconnecting Cursor is asked of an agent (it has no row in Settings): confirmed first, and only Cursor.
+    let signedOut = 0;
+    const disconnecting = { ...deps, disconnectProgram: async () => { signedOut += 1; return "Cursor is disconnected."; } };
+    assert.match(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor" }, disconnecting), /^'disconnect_program' is destructive\. Confirm with the user first/);
+    assert.equal(signedOut, 0);
+    assert.equal(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor", confirm: true }, disconnecting), "Cursor is disconnected.");
+    assert.equal(signedOut, 1);
+    assert.match(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "codex", confirm: true }, disconnecting), /^Only Cursor is disconnected here[\s\S]*Settings › AI Models\.$/);
+    assert.equal(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor", confirm: true }, deps), "Cursor isn't connected on this computer.");
+    assert.equal(signedOut, 1);
+
     const told = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "  Polish the README.  ", title: " Polish the README ", repo_url: "simeonlabs/demo" }, telling);
     assert.deepEqual(asked, [["launch", { bcId: "bc-9", prompt: "Polish the README.", title: "Polish the README" }]], "the line is written before the tool's answer comes back");
     assert.ok(told.includes(module.CLOUD_AGENT_CHAT_NOTE));

@@ -106,6 +106,7 @@ import {
 import {
   type CatalogApp,
   type CloudAgentRead,
+  type CursorSignIn,
   type ListenerPlatform,
   appsComingSoonBuiltIn,
   catalogApp,
@@ -113,7 +114,6 @@ import {
   cloudAgentInfo,
   comingSoonFrom,
   connectedToolCount,
-  type CursorSignIn,
   cursorSignInState,
   isComingSoon,
   isConnected,

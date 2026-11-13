@@ -157,10 +157,12 @@ export function botAddress(kind: string | undefined): string {
 /**
  * The mascot of the program that coded for a cloud agent (`Party.mascot`; 13
  * November 2026, the founder: "it should be whatever agent is used. either
- * claude code or codex"): the kind's own when it has one, else Claude
- * Code's, since every cloud agent before `coder` ran in Claude Code.
+ * claude code or codex"): the kind's own when it has one (Cursor's logo for
+ * a cloud agent in Cursor), else Claude Code's, since every cloud agent
+ * before `coder` ran in Claude Code.
  */
 export function cloudAgentMascot(coder: string | undefined): string {
+  if (coder === 'cursor') return 'cursor'
   const icon = coder == null ? undefined : botIcon(coder)
   return icon != null && mascotIcons.has(icon) ? icon : 'claudecode'
 }
