@@ -102,6 +102,31 @@ export function createUserMessage(
     ...(composedAtMs == null ? {} : { sentWhileOfflineAtMs: composedAtMs }),
   };
 }
+/**
+ * Whether a cloud agent's card belongs in the chat now (13 November 2026):
+ * only once it has ended (`running`: a wake is still kept for it), and once
+ * per run, so not when a card for it already follows the last message to it.
+ * The engine writes the card itself at the end
+ * (`CompletionRevivals.noteCloudAgentAnswers`); this keeps an agent's own
+ * SendMessage of the card from showing it at launch, or twice.
+ */
+export function cloudAgentCardDue(
+  entries: readonly unknown[],
+  bcId: string,
+  running: boolean,
+): boolean {
+  if (running) return false;
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index] as
+      | { kind?: unknown; message?: { type?: unknown; bcId?: unknown }; toAgent?: { id?: unknown } }
+      | null
+      | undefined;
+    if (entry?.kind === "send-message" && entry.message?.type === "cloud-agent" && entry.message.bcId === bcId)
+      return false;
+    if (entry?.kind === "message" && entry.toAgent?.id === bcId) return true;
+  }
+  return true;
+}
 export function createSendMessageEntry(
   id: string,
   message: SendMessage,

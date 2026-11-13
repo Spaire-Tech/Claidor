@@ -626,6 +626,8 @@ final class CloudAgentTests: XCTestCase {
     XCTAssertEqual(CloudAgentInfo(["status": "finished", "filesChanged": 1])?.statusLabel, "Done")
     XCTAssertEqual(CloudAgentInfo(["status": "finished", "filesChanged": 1])?.changedLabel, "1 file changed")
     XCTAssertEqual(CloudAgentInfo(["status": "odd"])?.statusLabel, "Status unavailable")
+    // One that failed says so in plain words ("Error" until 13 November 2026).
+    XCTAssertEqual(CloudAgentInfo(["status": "error"])?.statusLabel, "Failed")
     XCTAssertNil(CloudAgentInfo(nil))
     XCTAssertEqual(CloudAgentInfo.webURL("bc 42")?.absoluteString, "https://app.simeonlabs.com/agents/bc%2042")
     XCTAssertEqual(info?.pullState, "open")
@@ -674,6 +676,24 @@ final class CloudAgentTests: XCTestCase {
     let teammate = Entry(["kind": "message", "id": "m3", "role": "assistant", "content": "hi", "toAgent": ["id": "iris", "name": "Iris", "kind": "agent"]])!
     XCTAssertEqual(teammate.toAgent, Party(id: "iris", name: "Iris"))
     XCTAssertEqual(Party(id: "iris", name: "").shownName, "")
+
+    // The whole exchange reads as one with a teammate (13 November 2026): the launch is the agent's message to the
+    // cloud agent ("Messaged"), its first words fold in with it ("2 messages with"), and its card comes after its report.
+    let asker: JSON = ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent", "coder": "claude-code"]
+    let asked = Entry(["kind": "message", "id": "a1", "role": "assistant", "content": "Fix the login page.", "toAgent": asker])!
+    XCTAssertEqual(asked.toAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code"))
+    guard case .teammates("a1", let launch, _)? = Chat.rows([asked]).last else { return XCTFail() }
+    XCTAssertEqual(launch, .single(inbound: false, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")))
+    XCTAssertEqual(launch.label, "Messaged")
+    let onIt = Entry(["kind": "message", "id": "f1", "role": "user", "content": "On it. I'll read the sign-in code first.", "fromAgent": asker])!
+    guard case .teammates(_, let both, let said)? = Chat.rows([asked, onIt]).last else { return XCTFail() }
+    XCTAssertEqual(both, .thread(count: 2, peers: [Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")]))
+    XCTAssertEqual(both.label, "2 messages with")
+    XCTAssertEqual(said.map(\.id), ["a1", "f1"])
+    let itsCard = Entry(["kind": "send-message", "id": "c1", "message": ["type": "cloud-agent", "bcId": "bc-42"]])!
+    let whole = Chat.rows([asked, onIt, Entry(["kind": "send-message", "id": "t1", "message": ["type": "text", "content": "It's on it."]])!, report, itsCard])
+    guard case .cloudAgent("c1", "bc-42")? = whole.last else { return XCTFail() }
+    XCTAssertEqual(whole.filter { if case .teammates = $0 { return true } else { return false } }.count, 2, "the launch's exchange, then its report, each a line of the chat")
 
     // The computer's answer: empty lines and unknown roles are left out; nothing answered is nil.
     let answer: JSON = ["bcId": "bc-42", "messages": [
@@ -726,6 +746,17 @@ final class GitHubSignInCardTests: XCTestCase {
     XCTAssertEqual(GitHubSignInCard.title, "Connect GitHub")
     XCTAssertEqual(GitHubSignInCard.connectedLabel("octo"), "Connected as octo")
     XCTAssertEqual(GitHubSignInCard.connectedLabel(nil), "Connected")
+    // Once connected the card reads as a connected app's: "GitHub", the account under it (13 November 2026).
+    XCTAssertEqual(GitHubSignInCard.title(nil), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.waiting), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.expired), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.connected(login: "octo")), "GitHub")
+    XCTAssertEqual(GitHubSignInCard.line(nil), "Enter this code on GitHub to connect it to your computer.")
+    XCTAssertEqual(GitHubSignInCard.line(.waiting), "Enter this code on GitHub to connect it to your computer.")
+    XCTAssertEqual(GitHubSignInCard.line(.connected(login: "octo")), "octo")
+    XCTAssertEqual(GitHubSignInCard.line(.connected(login: nil)), "")
+    XCTAssertEqual(GitHubSignInCard.line(.expired), "This code expired. Ask your agent for a new one.")
+    XCTAssertEqual(GitHubSignInCard.line(.failed), "GitHub couldn't be connected.")
 
     XCTAssertEqual(card.state(["state": "waiting", "code": "WXYZ-1234"], nowMs: 1_000), .waiting)
     XCTAssertEqual(card.state(["state": "waiting", "code": "ABCD-0000"], nowMs: 1_000), .expired, "a newer sign-in waits on another code")

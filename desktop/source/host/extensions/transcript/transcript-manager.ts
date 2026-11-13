@@ -598,6 +598,8 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["runRemoteRequestedMemberTurn", "sharedRooms"],
   ["wakeForInbound", "backgroundWakes"],
   ["sendToAgent", "backgroundWakes"],
+  ["noteCloudAgentAsked", "backgroundWakes"],
+  ["noteCloudAgentSaid", "backgroundWakes"],
   ["broadcastToAgents", "backgroundWakes"],
   ["emitTimelineEvent", "backgroundWakes"],
   ["hasRunningBackgroundShellWork", "backgroundWakes"],

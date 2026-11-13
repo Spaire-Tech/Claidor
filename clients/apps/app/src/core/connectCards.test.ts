@@ -34,6 +34,7 @@ import {
   gitHubSignInLine,
   gitHubSignInNextPoll,
   gitHubSignInState,
+  gitHubSignInTitle,
   gitHubSignInWords,
   goToChatWord,
   hexOf,
@@ -436,6 +437,17 @@ describe('GitHub on the computer (GitHubSignInCardTests)', () => {
     expect(gitHubSignInLine({ kind: 'failed' })).toBe(
       "GitHub couldn't be connected.",
     )
+    // Once connected the card reads as a connected app's: "GitHub", the account under it (13 November 2026).
+    expect(gitHubSignInLine({ kind: 'connected', login: 'octocat' })).toBe(
+      'octocat',
+    )
+    expect(gitHubSignInLine({ kind: 'connected' })).toBe('')
+    expect(gitHubSignInTitle(undefined)).toBe('Connect GitHub')
+    expect(gitHubSignInTitle({ kind: 'waiting' })).toBe('Connect GitHub')
+    expect(gitHubSignInTitle({ kind: 'expired' })).toBe('Connect GitHub')
+    expect(gitHubSignInTitle({ kind: 'connected', login: 'octocat' })).toBe(
+      'GitHub',
+    )
     expect(gitHubConnectedLabel('octocat')).toBe('Connected as octocat')
     expect(gitHubConnectedLabel(undefined)).toBe('Connected')
     expect(gitHubSignInWords()).toEqual({
@@ -535,7 +547,7 @@ describe('cloud agents (CloudAgentTests)', () => {
     const labels = ['creating', 'running', 'finished', 'error', 'expired'].map(
       (status) => cloudAgentStatusLabel(cloudAgentInfo({ status })!),
     )
-    expect(labels).toEqual(['Creating', 'Running', 'Done', 'Error', 'Expired'])
+    expect(labels).toEqual(['Creating', 'Running', 'Done', 'Failed', 'Expired'])
     expect(
       ['creating', 'running', 'finished', 'error', 'expired', 'odd'].map(
         (status) => cloudAgentIsLive(cloudAgentInfo({ status })!),

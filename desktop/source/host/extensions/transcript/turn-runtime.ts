@@ -29,6 +29,7 @@ import {
 } from "./agent-run-error.js";
 import { say } from "../../../shared/say.js";
 import {
+  cloudAgentCardDue,
   createSendMessageEntry,
   describeRepliedMessageQuote,
   isUserMessageEntry,
@@ -792,6 +793,15 @@ export class TurnRuntime {
           isForActiveAgent || runSession == null
             ? getTranscript()
             : (runSession.db.getTranscriptEntries() as TranscriptEntry[]);
+        // A cloud agent's card comes once it has ended, written by the engine
+        // (`noteCloudAgentAnswers`): an agent's own send of it while the cloud
+        // agent runs, or after its card is already there, isn't shown.
+        if (incoming.type === "cloud-agent") {
+          const cardAgentId = runSession?.id ?? this.tm.sessions.activeSession?.id;
+          const cardBcId = String(incoming.bcId ?? "");
+          const running = cardAgentId != null && this.tm.pendingWakeStore?.hasPending(cardAgentId, "cloud-agent", cardBcId) === true;
+          if (!cloudAgentCardDue(entries, cardBcId, running)) return undefined;
+        }
         const sendId = nextEntryId(entries, "send-message");
         const validated = this.tm.sendPipeline.validateAiReplyTarget(
           incoming,

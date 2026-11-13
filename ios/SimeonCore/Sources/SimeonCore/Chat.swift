@@ -589,13 +589,13 @@ public struct CloudAgentInfo: Hashable, Sendable {
     linesRemoved = json["linesRemoved"]?.int ?? 0
   }
 
-  /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
+  /** The badge: "Creating", "Running", "Done", "Failed" ("Error" until 13 November 2026; the founder: "the done mark. or the failed if it did"), "Expired", "Paused", "Status unavailable". */
   public var statusLabel: String {
     switch status {
     case .creating: return L10n.text("Creating")
     case .running: return L10n.text("Running")
     case .finished: return L10n.text("Done")
-    case .error: return L10n.text("Error")
+    case .error: return L10n.text("Failed")
     case .expired: return L10n.text("Expired")
     case .paused: return L10n.text("Paused")
     case .unknown: return L10n.text("Status unavailable")
@@ -757,6 +757,22 @@ public struct GitHubSignInCard: Hashable, Sendable {
   }
   public static var expiredLabel: String { L10n.text("This code expired. Ask your agent for a new one.") }
   public static var failedLabel: String { L10n.text("GitHub couldn't be connected.") }
+
+  /** The card's title: "Connect GitHub" while there is something to do, "GitHub" once it is connected, as a connected app's card names the app (13 November 2026). */
+  public static func title(_ state: State?) -> String {
+    if case .connected = state { return "GitHub" }
+    return title
+  }
+
+  /** The line under the title: what to do with the code, why there's nothing more to do, or the account once it is connected (none when its name isn't known). */
+  public static func line(_ state: State?) -> String {
+    switch state {
+    case .connected(let login): return login ?? ""
+    case .expired: return expiredLabel
+    case .failed: return failedLabel
+    case .none, .waiting: return prompt
+    }
+  }
 }
 
 /** A picture an agent sent with a message (`message.images`): a `file://` path on its computer or an `https` address, and its shape when known. */

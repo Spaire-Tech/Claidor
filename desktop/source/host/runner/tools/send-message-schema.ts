@@ -10,7 +10,7 @@ export function describeSendMessageTypes(env: NodeJS.ProcessEnv = process.env): 
   const cloud = isCloudAgentsServed(env);
   return [
     "text for chat messages, attachment for actual files or standalone media, widget for an interactive question with selectable options",
-    cloud ? ", cloud-agent to reference a cloud agent by its bcId (renders as a card that opens the agent on click)" : "",
+    cloud ? ", cloud-agent to point back at a finished cloud agent by its bcId (its card appears by itself when it finishes, so never at launch)" : "",
     ", secret-request to ask the user for a credential through a secure masked input (never a chat paste)",
     ".",
     cloud ? "" : " cloud-agent is not available: cloud agents are coming soon in Simeon.",

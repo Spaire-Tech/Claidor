@@ -356,13 +356,17 @@ test("what the cloud agent says along the way: kept per turn without the answer,
       input.onEvent({ type: "assistant", message: { content: [{ type: "text", text: outcome.text }] } });
       return outcome;
     };
-    const reported = [];
+    const reported = [], first = [];
     let clock = 1_000;
-    const outcome = await module.runCodingJob(job(), { choice, account, env: s.env, runClaude: speaking, onWork: (work) => reported.push(structuredClone(work)), log: quiet, now: () => (clock += 1) });
+    const outcome = await module.runCodingJob(job(), { choice, account, env: s.env, runClaude: speaking, onWork: (work) => reported.push(structuredClone(work)), onFirstWords: (words) => first.push(words), log: quiet, now: () => (clock += 1) });
     assert.equal(outcome.kind, "done", JSON.stringify(outcome));
     assert.deepEqual(outcome.work.updates.map((update) => update.text), ["Reading the repository first.", "Writing the greeting file."]);
     assert.ok(outcome.work.updates.every((update) => update.atMs > 1_000));
     assert.ok(reported.some((work) => work.updates?.length === 1 && work.updates[0].text === "Reading the repository first."), "the first words reach the server's next heartbeat before the turn ends");
+
+    // Its first words of the turn are told apart, once (its "on it", the chat's "Message from"), and the brief asks for them.
+    assert.deepEqual(first, ["Reading the repository first."]);
+    assert.match(module.codingBrief({ owner: "o", name: "r" }, "simeon/x-0000", "main"), /Before anything else, answer in one short sentence, as a teammate who was just handed the task would: that you're on it and what you'll look at first/);
 
     // The follow-up's turn starts with none of the last turn's updates.
     const quietClaude = claudeThatCommits(s.env, "test.txt");
@@ -638,6 +642,22 @@ test("the CloudAgent tool: nothing is launched while Claude or GitHub is missing
     assert.equal(launched.length, 1);
     assert.match(text, /^Launched cloud agent bc-9\.\nIt runs on your own computer \(the box\), in Claude Code on the user's own Claude plan\. It clones the repository, works on a new branch, builds and tests, then pushes the branch and opens a pull request/);
     assert.doesNotMatch(text, /does not open a pull request/);
+
+    // What the agent asked is handed to the engine before the tool answers (the chat's "Messaged" line, 13 November
+    // 2026), with the name it gave; the answer says the chat shows the exchange and the card comes by itself.
+    const asked = [];
+    const telling = { ...deps, onLaunched: async (event) => { await new Promise((resolve) => setTimeout(resolve, 5)); asked.push(["launch", event]); }, onFollowupSent: (event) => { asked.push(["reply", event]); } };
+    const told = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "  Polish the README.  ", title: " Polish the README ", repo_url: "simeonlabs/demo" }, telling);
+    assert.deepEqual(asked, [["launch", { bcId: "bc-9", prompt: "Polish the README.", title: "Polish the README" }]], "the line is written before the tool's answer comes back");
+    assert.ok(told.includes(module.CLOUD_AGENT_CHAT_NOTE));
+    assert.match(module.CLOUD_AGENT_CHAT_NOTE, /don't send a cloud-agent card yourself/);
+    assert.doesNotMatch(told, /its card shows/);
+    const followed = await module.runCloudAgentAction(ctx, { action: "reply", agent_id: "bc-9", prompt: "Also the docs." }, telling);
+    assert.deepEqual(asked[1], ["reply", { bcId: "bc-9", interrupt: false, prompt: "Also the docs." }]);
+    assert.match(followed, /The chat already shows your message to it/);
+    // A chat that can't take the line never stops a launch.
+    const broken = { ...deps, onLaunched: () => { throw new Error("the chat's file is locked"); } };
+    assert.match(await module.runCloudAgentAction(ctx, { action: "launch", prompt: "Fix it.", repo_url: "simeonlabs/demo" }, broken), /^Launched cloud agent bc-9\./);
     assert.equal(module.summaryLine({ bcId: "bc-9", name: "Fix", status: "finished", isArchived: false, branchName: "simeon/fix-0000", prUrl: "https://github.com/o/r/pull/1", url: "https://github.com/o/r/pull/1" }), "- bc-9 — Fix [finished, simeon/fix-0000, https://github.com/o/r/pull/1]");
   } finally {
     await dispose();
