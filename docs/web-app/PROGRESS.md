@@ -842,6 +842,60 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: the card that offers Claude and ChatGPT to connect; cloud agents in Codex
+
+The founder: "need to build this: Codex's is wired up and shows whenever a
+cloud agent is marked as run by Codex, but running one in Codex is not
+built. also when neither of them is connected, the user is given a choice
+of both cards to connect. after that we probably should do cursor".
+
+- Running a cloud agent in Codex is the server's and the engine's
+  (`docs/services-agents.md`, section 1; `docs/your-own-models.md`,
+  section 11). The web app already drew Codex's mascot for a cloud agent
+  marked as Codex's; nothing in those rows changed.
+- New in the chat: the `model-connect` card (`modelConnectCard` in
+  `core/connectCards.ts`, `ModelConnectCardView` in
+  `window/ModelConnectCard.tsx`, 520 wide). One shell with a row per
+  provider the engine names (Claude, ChatGPT; both when it names none it
+  knows): the provider's logo, "Connect Claude" with "Cloud agents code in
+  Claude Code." under it, and Connect. A connected row reads the
+  provider's name alone with "Connected" in the green capsule.
+- Connect asks as AI Models does: the consent
+  (`useConnector().ask(…, {consent: modelConsent(provider)})`), then that
+  provider's own sheet (`ChatGPTConnectSheet`, `ClaudeConnectSheet`, now
+  exported from `SettingsModels.tsx`), drawn in the page's body so it sits
+  over the chat.
+- Which row is connected is read from the app's own AI Models accounts
+  (`store.aiModels.connected`). While neither is, the card reads them
+  again every 4 s, 150 times at most (`modelConnectNextPoll`), so a
+  sign-in finished on another device shows too. The engine wakes the
+  agent by itself once one is connected.
+- One new sentence in SimeonCore's catalogue, "Cloud agents code in %@.",
+  in its nine languages; the words made again and the build committed.
+- The name check has one more kept line: the built index file's line that
+  holds the API-key providers' table (`docs/kept-names.md`).
+
+Decisions (mine, to the founder's words): one card with two rows, not two
+cards one under the other, so the choice reads as one question; the line
+under each name says which program codes ("Claude Code", "Codex") and
+nothing about plans, to stay on one line; the card lives in a file of its
+own because `SettingsModels.tsx` already imports the connect cards.
+
+Checked: the web app's tests (1,291 pass), types, ESLint and Prettier on
+the changed files (`pnpm lint` still names four older files, none of
+these). In Chromium against the stand-in, light and dark: both rows
+offered; Connect opens the consent, then ChatGPT's sheet, and the row
+turns to "ChatGPT / Connected"; the card with Claude already connected,
+and with both; a Codex cloud agent's "Messaged" line, its done card and
+its conversation's head with Codex's mascot; the shell 520 wide (418 in a
+narrow window), 20 round, nothing sideways, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift
+parses, not built with Xcode); the card on a real computer with a real
+account; anything against chatgpt.com.
+
+Next: cloud agents in Cursor, on the founder's word.
+
 ### 13 November 2026: a cloud agent's exchange as messages, its card at the end, and the connect cards redrawn
 
 The founder, on the first real run (the card appeared at the launch, and

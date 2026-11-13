@@ -732,6 +732,45 @@ An old app that does not know the event leaves it out.
 
 It needs the engine published (a host bundle) and the apps rebuilt.
 
+## 11. Codex codes for a cloud agent on the ChatGPT account (13 November 2026)
+
+The founder: "running one in Codex is not built." A cloud agent's coding
+(`docs/services-agents.md`, section 1) now runs in Codex when the person's
+plan is ChatGPT's, as it runs in Claude Code when it is Claude's.
+
+**No second sign-in.** The person connected ChatGPT once, on the server
+(section 3). Codex on the computer is not signed in and holds no ChatGPT
+token. It is given a model provider of its own whose address is a relay
+inside the engine, on the loopback, for the length of one turn
+(`host/codex/codex-relay.ts`). The relay hands each of Codex's calls to the
+server's model relay with the computer's own credential, the model named
+`own:chatgpt:<model>` and the reason `coding`.
+
+**On the server** (`own_models.relay`), a call with that reason on a
+ChatGPT model:
+
+- goes to ChatGPT on the person's account whatever model they chose for
+  their agents (a person on Simeon's model with ChatGPT connected can still
+  have a cloud agent code in Codex);
+- keeps Codex's own body (`coding_body`: only the model, `stream` and
+  `store` are set) and its own headers (`codex_own_headers`: its session,
+  thread and request ids and what it says of itself);
+- never falls back to Simeon's model: coding on the person's plan stops
+  when the plan does;
+- is refused with 429 `usage_limit_reached` and when the limit ends
+  (ChatGPT's own time, or the one kept on the account), with 401
+  `chatgpt_not_connected` when no account is signed in, else with ChatGPT's
+  own refusal.
+
+**Which program** is said by the server too: `/desktop/api/models/available`
+ends with rows of the role `coding` (`coding_rows`), one per program whose
+plan is usable, the chosen model's provider first.
+
+Tested with stand-ins only (`TestCodexCodesOnTheAccount`, and the real
+Codex 0.168.0 program against a stand-in server). Nothing reached
+chatgpt.com, so whether ChatGPT accepts Codex's calls relayed this way is
+not known until a real run.
+
 ## Sources
 
 - Reason: reasonmachines.com/guides/use-all-your-ai-subscriptions;

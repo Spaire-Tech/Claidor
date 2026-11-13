@@ -184,10 +184,11 @@ test("the brief and the app say Simeon where the upstream app said the upstream 
     assert.doesNotMatch(enabled, /## Origin/);
     assert.match(enabled, /## Repositories/);
     // 11 November 2026: Claude Code on the person's computer clones, branches, pushes and opens the pull request, as the upstream's machines did.
-    assert.match(enabled, /The cloud agent is Claude Code on the user's own Claude plan/);
+    assert.match(enabled, /The cloud agent is Claude Code on the user's own Claude plan, or Codex on their ChatGPT plan/);
     assert.match(enabled, /it clones the repository, makes a new branch, writes the code, builds and tests it, then pushes the branch and opens a pull request/);
     assert.match(enabled, /Simeon's computer" \(the user's own computer\)/);
-    assert.match(enabled, /a Connect GitHub card in the chat/);
+    // 13 November 2026: neither connected, the chat offers both; GitHub's card as before.
+    assert.match(enabled, /puts a card in the chat: one that offers both Claude and ChatGPT to connect, or a Connect GitHub card/);
     assert.doesNotMatch(enabled, /does not check the repository out|app\.simeonlabs\.com\/agents/);
     assert.doesNotMatch(enabled, /mobile-ios-mac/, "no self-hosted pool is offered");
     assert.match(enabled, /"type":"environment","name":"Simeon's computer"/);

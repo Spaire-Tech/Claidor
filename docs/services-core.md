@@ -486,7 +486,9 @@ cut-off in a turn ends the turn (`SIMEON_MAX_CUT_OFFS_PER_TURN`).
 `x-simeon-call-reason`, stored in `desktop_usage.reason`: `chat`, `helper`,
 `computer`, `browser`, `video`, `summary`, `memory`, `safety`, `routine`,
 `agent_wake`, `voice`, `nudge`, `wake`, `first_message`, `background` or
-`cheap` from the app, `cloud_agent` from the cloud runner. Web search, images,
+`cheap` from the app, `cloud_agent` from the cloud runner. Codex's calls for
+a cloud agent's coding carry `coding`: they go to ChatGPT on the person's own
+account and nowhere else (`docs/services-agents.md`, section 1). Web search, images,
 transcription and speech have their own routes and show by model name. Rows from older apps have none. To read what a person spent, per
 model and per reason:
 
