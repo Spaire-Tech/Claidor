@@ -2157,14 +2157,14 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           // card to connect what is missing goes into this agent's chat
           // (Claude and ChatGPT both offered, 13 November 2026; GitHub's
           // when its sign-in starts).
-          coder: () => codingChoice()?.coder,
+          coder: (program?: "claude-code" | "codex" | "cursor") => codingChoice(program)?.coder,
           ...(typeof (cloudAgents as { codingReady?: unknown }).codingReady !== "function"
             ? {}
             : {
-                codingReady: async () => {
+                codingReady: async (program?: "claude-code" | "codex" | "cursor") => {
                   const ready = await (cloudAgents as unknown as {
-                    codingReady(agentId: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
-                  }).codingReady(session.id);
+                    codingReady(agentId: string, choice?: undefined, refresh?: undefined, program?: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
+                  }).codingReady(session.id, undefined, undefined, program);
                   if (!ready.ok && ready.card !== undefined) {
                     hooks.transport.onUpdate({ type: "send-message", message: ready.card, timestampMs: Date.now() });
                   }

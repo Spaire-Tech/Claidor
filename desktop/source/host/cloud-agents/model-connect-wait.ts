@@ -12,15 +12,19 @@
  * moment one is there, as after the Connect GitHub card. An agent nobody
  * connected for is forgotten after twenty minutes: the card still works, and
  * the person's next message launches.
+ *
+ * Cursor is signed in on this computer itself (`cursor/cursor-account.ts`),
+ * and is seen the same way. An agent whose launch named one program
+ * (`program`) waits for that one alone.
  */
-import type { CodingChoice } from "./coding-choice.js";
+import type { CloudAgentCoder, CodingChoice } from "./coding-choice.js";
 
 export const MODEL_CONNECT_POLL_MS = 6_000;
 export const MODEL_CONNECT_LIFETIME_MS = 20 * 60_000;
 
 export interface ModelConnectWaitDeps {
-  /** What the coding would run on now; none while neither is connected. */
-  readonly connected: () => CodingChoice | undefined;
+  /** What the coding would run on now, in `program` when one was asked for; none while it isn't connected. */
+  readonly connected: (program?: CloudAgentCoder) => CodingChoice | undefined;
   /** Reads the server's model list again. */
   readonly read: () => Promise<unknown>;
   /** One is connected: the agent that waited goes on. */
@@ -32,16 +36,16 @@ export interface ModelConnectWaitDeps {
 
 export class ModelConnectWait {
   /** Each waiting agent, and until when it is waited for. */
-  private readonly waiting = new Map<string, number>();
+  private readonly waiting = new Map<string, { readonly until: number; readonly program?: CloudAgentCoder }>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private checking = false;
 
   constructor(private readonly deps: ModelConnectWaitDeps) {}
 
-  /** `agentId` waits from now (its card was just shown). */
-  wait(agentId: string): void {
+  /** `agentId` waits from now (its card was just shown), for `program` alone when its launch named one. */
+  wait(agentId: string, program?: CloudAgentCoder): void {
     const now = (this.deps.now ?? Date.now)();
-    this.waiting.set(agentId, now + (this.deps.lifetimeMs ?? MODEL_CONNECT_LIFETIME_MS));
+    this.waiting.set(agentId, { until: now + (this.deps.lifetimeMs ?? MODEL_CONNECT_LIFETIME_MS), ...(program === undefined ? {} : { program }) });
     if (this.timer !== undefined) return;
     this.timer = setInterval(() => void this.check(), this.deps.intervalMs ?? MODEL_CONNECT_POLL_MS);
     this.timer.unref?.();
@@ -56,16 +60,14 @@ export class ModelConnectWait {
     this.checking = true;
     try {
       const now = (this.deps.now ?? Date.now)();
-      for (const [agentId, until] of this.waiting) if (until <= now) this.waiting.delete(agentId);
+      for (const [agentId, one] of this.waiting) if (one.until <= now) this.waiting.delete(agentId);
       if (this.waiting.size > 0) {
         await this.deps.read().catch(() => undefined);
-        const choice = this.deps.connected();
-        if (choice !== undefined) {
-          const agents = [...this.waiting.keys()];
-          this.waiting.clear();
-          for (const agentId of agents) {
-            try { this.deps.onConnected(agentId, choice); } catch { /* the caller's own trouble */ }
-          }
+        for (const [agentId, one] of [...this.waiting]) {
+          const choice = this.deps.connected(one.program);
+          if (choice === undefined) continue;
+          this.waiting.delete(agentId);
+          try { this.deps.onConnected(agentId, choice); } catch { /* the caller's own trouble */ }
         }
       }
     } finally {

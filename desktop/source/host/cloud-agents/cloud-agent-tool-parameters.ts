@@ -29,6 +29,7 @@ export const cloudAgentToolParameters = z.object({
   starting_ref: z.string().optional().describe("The branch, tag or commit to start from, for launch."),
   model: z.string().optional().describe("A model id or alias from the models action."),
   model_params: z.record(z.string()).optional().describe("Model parameters by id, as the models action lists them."),
+  program: z.enum(["claude-code", "codex", "cursor"]).optional().describe("For launch, only when the user names the program that should code: Claude Code, Codex or Cursor. Leave it out otherwise; the one they connected is used."),
   title: z.string().optional().describe("At launch, always give one: a short name for the cloud agent, 2 to 5 words like a task's title (\"Polish the README\"). The chat shows it as the cloud agent's name, and it titles the pull request. For rename, the new name."),
   environment: environmentSchema.optional().describe("Where it runs; omit for the cloud runner."),
   interrupt: z.boolean().optional().describe("For reply: interrupt the agent's current work with this message."),
