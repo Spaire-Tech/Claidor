@@ -32,7 +32,7 @@ settings:
     # Credentials Store's cards, External Agents, the Network, the cards' new style, the Connect GitHub
     # card, Slack under Notifications in the agent's profile, the routine bar's buttons.
     # 0.2.16 (12 November 2026): the picture viewer's title is the picture's own name.
-    MARKETING_VERSION: "0.2.17"
+    MARKETING_VERSION: "0.2.18"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
