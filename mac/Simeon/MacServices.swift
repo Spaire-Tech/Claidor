@@ -382,7 +382,8 @@ enum AgentMessage {
       sender: sender,
       attachments: nil
     )
-    if let image { intent.setImage(image, forParameterNamed: \.sender) }
+    // The face is the sender's own (`INPerson`'s image): `setImage(_:forParameterNamed:)` is the iPhone's only and does
+    // not build for the Mac (the 0.2.18 release build, 13 November 2026).
     let interaction = INInteraction(intent: intent, response: nil)
     interaction.direction = .incoming
     interaction.donate(completion: nil)
