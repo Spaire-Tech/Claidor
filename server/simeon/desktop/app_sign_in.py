@@ -597,6 +597,13 @@ async def web_session(
 _MCP_OAUTH_PARAMS = ("state", "code", "error", "error_description")
 
 
+#: The web app's page that ends a connected app's sign-in begun in the browser
+#: (clients/apps/app/connected.html). Until 13 November 2026 it was the old
+#: window's, at `/app/connected.html`, which is gone; that address now
+#: redirects here too (clients/apps/web/next.config.mjs).
+WEB_CONNECTED_PAGE = "/app-next/connected.html"
+
+
 @router.get("/desktop/mcp-oauth/callback", name="desktop:mcp_oauth_callback")
 async def mcp_oauth_callback(
     request: Request, redis: Redis = Depends(get_redis)
@@ -608,7 +615,8 @@ async def mcp_oauth_callback(
     the box registers this address instead
     (`host/extensions/mcp/mcp-service.ts`, `hostedMcpOAuthCallbackUrl`).
     The vendor lands here with the code and the state; the page at
-    `/app/connected.html` on the web app hands them to the box that started
+    `/app-next/connected.html` on the web app (`WEB_CONNECTED_PAGE`) hands
+    them to the box that started
     the sign-in, which holds the PKCE verifier and nothing else can. The
     code is single-use and bound to that verifier, so carrying it through
     the redirect gives a bystander nothing."""
@@ -626,7 +634,7 @@ async def mcp_oauth_callback(
             status_code=302,
             headers=NO_STORE,
         )
-    target = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/app/connected.html"
+    target = f"{settings.FRONTEND_BASE_URL.rstrip('/')}{WEB_CONNECTED_PAGE}"
     if kept:
         target = f"{target}?{urlencode(kept)}"
     return RedirectResponse(target, status_code=302, headers=NO_STORE)

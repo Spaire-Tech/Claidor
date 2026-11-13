@@ -31,7 +31,7 @@ export default async function Page(props: {
   const api = await getServerSideAPI()
   const userOrganizations = await getUserOrganizations(api)
   if (userOrganizations.length > 0) {
-    redirect(return_to ?? '/app')
+    redirect(return_to ?? '/app-next')
   }
 
   return (

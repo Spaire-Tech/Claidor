@@ -96,13 +96,13 @@ class TestWebSession:
         assert response.headers["cache-control"] == "no-store"
         assert (
             response.headers["location"]
-            == f"{settings.FRONTEND_BASE_URL}/app/connected.html?state=s1&code=c1"
+            == f"{settings.FRONTEND_BASE_URL}/app-next/connected.html?state=s1&code=c1"
         )
         refused = await client.get(
             "/desktop/mcp-oauth/callback?error=access_denied&error_description=No"
         )
         assert refused.headers["location"].endswith(
-            "/app/connected.html?error=access_denied&error_description=No"
+            "/app-next/connected.html?error=access_denied&error_description=No"
         )
 
     async def test_simeon_s_client_document_names_itself_and_the_callback(

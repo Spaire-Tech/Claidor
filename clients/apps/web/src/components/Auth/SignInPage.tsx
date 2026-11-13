@@ -95,7 +95,7 @@ const SignInPage = ({
   )
 
   const resolvedReturnTo = useMemo(() => {
-    const path = returnTo ?? '/app'
+    const path = returnTo ?? '/app-next'
     if (returnParams) {
       const params = new URLSearchParams(returnParams)
       if (params.size) return `${path}?${params}`

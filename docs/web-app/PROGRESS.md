@@ -842,6 +842,31 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: the old window is gone from app.simeonlabs.com
+
+The founder: the `/app` page "should not be available to anyone". It served
+the old window (`public/app`, built by `desktop/web/build-web.mjs` from the
+patched upstream renderer, `desktop/NOTICE.md`), so it is taken down:
+
+- `clients/apps/web/public/app` is deleted (133 files).
+- `/app` and every address under it redirect to the new web app at
+  `/app-next`, query kept (`next.config.mjs`); `/app/connected.html` goes
+  to the new app's own `connected.html`, which ends a connected app's
+  sign-in begun in the browser (step 6b).
+- The server's return for those sign-ins (`app_sign_in.WEB_CONNECTED_PAGE`)
+  names `/app-next/connected.html` directly; sign-in, sign-up and the
+  dashboard land on `/app-next`.
+
+Checked: the server's tests for the return and sign-in (27 passed); the
+web app's config loads, with the three redirects first and no rewrite to the
+old page; Prettier and Ruff. Not checked: a deploy on Vercel, a sign-in on
+the live site, a connected app's sign-in from the browser.
+
+Not done: the website (`sites/simeonlabs.com/public/app/<digest>`) still runs
+the same window as its home page's demo and in the marketplace pages; that
+waits for the founder's choice of what replaces it. `desktop/web/` stays
+until the retired Electron app is taken out.
+
 ### 12 November 2026: Windows' notifications as messages from the agent, with its face
 
 - The founder, 12 November 2026, of the Mac's notifications: "its the agent avatar, and below the

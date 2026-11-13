@@ -53,5 +53,5 @@ export default async function Page(props: {
     redirect('/billing?plan=standard')
   }
 
-  redirect(query.size > 0 ? `/app?${query.toString()}` : '/app')
+  redirect(query.size > 0 ? `/app-next?${query.toString()}` : '/app-next')
 }

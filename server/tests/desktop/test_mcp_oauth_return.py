@@ -40,7 +40,7 @@ class TestSignInBackToTheApp:
         # Once: the same answer again goes where an unnamed one goes.
         again = await client.get(f"/desktop/mcp-oauth/callback?state={STATE}&code=c1")
         assert again.headers["location"] == (
-            f"{settings.FRONTEND_BASE_URL}/app/connected.html?state={STATE}&code=c1"
+            f"{settings.FRONTEND_BASE_URL}/app-next/connected.html?state={STATE}&code=c1"
         )
 
     async def test_a_refusal_goes_back_to_the_app_too(
@@ -75,4 +75,4 @@ class TestSignInBackToTheApp:
         assert elsewhere.status_code == 422
         # Nothing named: the web app's page, as before.
         web = await client.get(f"/desktop/mcp-oauth/callback?state={STATE}&code=c1")
-        assert "/app/connected.html" in web.headers["location"]
+        assert "/app-next/connected.html" in web.headers["location"]

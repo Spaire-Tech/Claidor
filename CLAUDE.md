@@ -52,10 +52,11 @@ skills, connectors, avatars, approvals). Running the box servers:
   read as `SIMEON_<NAME>` with `CLAIDOR_<NAME>` still read; tokens, cookies,
   the data folder (`~/.simeon`, moved once from the earlier folder) and the Docker
   labels all read their earlier name. Keep that pattern for any new rename.
-- **The web app's window** (and the retired Electron app's) is the pinned
-  upstream renderer (`desktop/NOTICE.md`). Change it only through
+- **The retired Electron app's window** is the pinned upstream renderer
+  (`desktop/NOTICE.md`). Change it only through
   `desktop/scripts/lib/router-renderer-patch.mjs`, whose record carries every
-  touched file's hash.
+  touched file's hash. The web app no longer serves it: `/app` redirects to
+  the new web app (13 November 2026).
 - **A new connector is named in the chat in its colour, with its logo.** With
   its catalogue entry (`desktop/source/shared/node/vendor-mcp/catalog.ts`),
   add a line to `ios/scripts/connector-mentions.json` (name, key, logo,
