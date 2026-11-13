@@ -1,6 +1,6 @@
 # Development
 
-Simeon's server and web app consist of the following elements (the Mac app is in `desktop/`; see `docs/building-the-app.md`):
+Simeon's server and web app consist of the following elements (the Mac app is in `mac/`, see `mac/README.md`; the retired Electron app that builds the agents' engine is in `desktop/`, see `docs/building-the-app.md`):
 
 - A backend written in Python, exposing a REST API and workers
 - A frontend written in JavaScript
