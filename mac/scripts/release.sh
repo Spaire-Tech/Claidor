@@ -230,7 +230,16 @@ spctl --assess --type execute --verbose=2 "$APP"
 say "Packing the update and the disk image"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$ZIP"
 "$MAC/scripts/dmg.sh" "$APP" "$DMG"
-codesign --sign "$IDENTITY" --timestamp "$DMG"
+# Apple's timestamp service is sometimes out for a moment ("The timestamp
+# service is not available.": the 0.2.18 release stopped here, 13 November
+# 2026): asked again, 20 seconds apart, before giving up.
+tries=0
+until codesign --force --sign "$IDENTITY" --timestamp "$DMG"; do
+  tries=$((tries + 1))
+  [ "$tries" -lt 5 ] || fail "Apple's timestamp service did not answer 5 times. Run this again in a few minutes."
+  echo "Apple's timestamp service did not answer; asking again in 20 seconds ($tries of 5)."
+  sleep 20
+done
 notarize "$DMG"
 xcrun stapler staple "$DMG"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$DMG"
