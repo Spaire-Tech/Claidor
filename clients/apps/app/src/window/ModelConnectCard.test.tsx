@@ -31,6 +31,19 @@ const loaded = (store: AppStore) => {
 }
 
 describe('the card that offers Claude Code and Codex to connect', () => {
+  it('offers Cursor as the third program, with its own logo and whose plan it runs on, read from the computer', () => {
+    // The founder, 13 November 2026: "Cursor now". Before the computer has answered, its row still waits.
+    const html = draw(['claude', 'chatgpt', 'cursor'], loaded)
+    expect(html).toContain('Connect Cursor')
+    expect(html).toContain('Runs on your Cursor plan.')
+    expect(html).toMatch(/mascots\/cursor[^"]*\.png|cursor[^"]*\.png/)
+    expect(html.match(/class="connector-row"/g)?.length).toBe(3)
+    // A launch that named Cursor: its row alone.
+    const one = draw(['cursor'], loaded)
+    expect(one.match(/class="connector-row"/g)?.length).toBe(1)
+    expect(one).not.toContain('Connect Codex')
+  })
+
   it('offers both programs by their own names, each with whose plan it runs on and Connect', () => {
     const html = draw(['claude', 'chatgpt'], loaded)
     // The founder, 13 November 2026: "its connect codex or connect claude code".

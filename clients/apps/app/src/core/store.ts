@@ -113,6 +113,8 @@ import {
   cloudAgentInfo,
   comingSoonFrom,
   connectedToolCount,
+  type CursorSignIn,
+  cursorSignInState,
   isComingSoon,
   isConnected,
   listenerConnectedIn,
@@ -1940,6 +1942,33 @@ export class AppStore {
       const why = error instanceof Error ? error.message : String(error)
       this.problem = t`Couldn't open the link: ${why}`
       this.changed()
+      return undefined
+    }
+  }
+
+  /** How Cursor's sign-in on the computer stands (`getCursorSignIn`), for the connect card's Cursor row; none when it couldn't be asked (an engine from before Cursor, or no computer). */
+  async cursorSignIn(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('getCursorSignIn')
+  }
+
+  /** Starts Cursor's sign-in on the computer (`startCursorSignIn`): its state then, with Cursor's link once its program has printed it. */
+  async startCursorSignIn(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('startCursorSignIn')
+  }
+
+  /** Signs Cursor out on the computer (`signOutCursor`). */
+  async signOutCursor(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('signOutCursor')
+  }
+
+  private async cursorCommand(
+    command: string,
+  ): Promise<CursorSignIn | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return cursorSignInState(await backend.command(command, {}))
+    } catch {
       return undefined
     }
   }

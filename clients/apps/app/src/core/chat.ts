@@ -17,7 +17,7 @@ import {
   pictureExtensions,
   sameDay,
 } from './chatRuns'
-import { modelConnectPreview } from './connectCards'
+import { modelConnectPreview, modelConnectProviders } from './connectCards'
 import { Entry, earlierCall } from './entry'
 import {
   type JSONValue,
@@ -676,7 +676,7 @@ export function cardText(message: unknown): string {
     case 'github-sign-in':
       return t('Connect GitHub')
     case 'model-connect':
-      return modelConnectPreview()
+      return modelConnectPreview(modelConnectProviders(message as JSONValue))
     case 'purchase':
       return str(field(message, 'content')) ?? t('Checkout')
     case 'products':

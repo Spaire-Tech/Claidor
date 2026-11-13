@@ -52,10 +52,12 @@ import {
   listenerConnectedIn,
   luminance,
   middleCut,
+  cursorSignInState,
   modelConnectCard,
   modelConnectLine,
   modelConnectLogo,
   modelConnectNextPoll,
+  modelConnectOnComputer,
   modelConnectPreview,
   modelConnectProgram,
   modelConnectTitle,
@@ -67,6 +69,7 @@ import {
   viewProfileWord,
   webPage,
 } from './connectCards'
+import { codingConsent, consentProgramLogo } from './connectConsent'
 import { makeApp } from './connectedApps'
 import { Entry } from './entry'
 import { type AgentFace, faceById, faces } from './faces'
@@ -757,7 +760,7 @@ describe('the card that offers Claude Code and Codex to connect (13 November 202
     const row = chatRows([read]).at(-1)
     expect(row?.kind === 'card' && row.card).toBe('modelConnect')
     expect(cardText(read.message)).toBe('Connect Claude Code, Codex')
-    expect(modelConnectPreview()).toBe('Connect Claude Code, Codex')
+    expect(modelConnectPreview()).toBe('Connect Claude Code, Codex, Cursor')
     expect(modelConnectCard(read)).toEqual({ providers: ['claude', 'chatgpt'] })
     // One named twice is shown once; a provider no cloud agent codes on is left out.
     expect(
@@ -768,15 +771,72 @@ describe('the card that offers Claude Code and Codex to connect (13 November 202
         }),
       ),
     ).toEqual({ providers: ['chatgpt'] })
-    // None it knows, or none named: the two all the same.
+    // None it knows, or none named: all of them all the same.
     expect(
       modelConnectCard(
         card('m3', { type: 'model-connect', providers: ['new-one'] }),
       ),
-    ).toEqual({ providers: ['claude', 'chatgpt'] })
+    ).toEqual({ providers: ['claude', 'chatgpt', 'cursor'] })
     expect(modelConnectCard(card('m4', { type: 'model-connect' }))).toEqual({
-      providers: ['claude', 'chatgpt'],
+      providers: ['claude', 'chatgpt', 'cursor'],
     })
+    // Cursor, the third program (the founder, the same day: "Cursor now"): a launch that named it offers it alone.
+    const one = card('m6', { type: 'model-connect', providers: ['cursor'] })
+    expect(modelConnectCard(one)).toEqual({ providers: ['cursor'] })
+    expect(cardText(one.message)).toBe('Connect Cursor')
+    expect(modelConnectTitle('cursor', false)).toBe('Connect Cursor')
+    expect(modelConnectTitle('cursor', true)).toBe('Cursor')
+    expect(modelConnectLine('cursor', false)).toBe('Runs on your Cursor plan.')
+    expect(modelConnectLogo('cursor')).toBe('cursor')
+    expect(
+      ['claude', 'chatgpt', 'cursor'].map(modelConnectOnComputer),
+    ).toEqual([false, false, true])
+    // Its sign-in is the cloud computer's word; only a page on its own site is ever opened.
+    expect(cursorSignInState({ state: 'installing' })).toEqual({
+      state: 'installing',
+    })
+    expect(cursorSignInState({ state: 'connected' })).toEqual({
+      state: 'connected',
+    })
+    expect(cursorSignInState({ state: 'failed', why: 'ended' })).toEqual({
+      state: 'failed',
+      why: 'ended',
+    })
+    expect(
+      cursorSignInState({
+        state: 'waiting',
+        url: 'https://cursor.com/loginDeepControl?challenge=a&uuid=b',
+        expiresAtMs: 99,
+      }),
+    ).toEqual({
+      state: 'waiting',
+      url: 'https://cursor.com/loginDeepControl?challenge=a&uuid=b',
+      expiresAtMs: 99,
+    })
+    for (const url of [
+      'https://cursor.com.example.org/login',
+      'http://cursor.com/login',
+      'javascript:alert(1)',
+    ])
+      expect(cursorSignInState({ state: 'waiting', url })).toEqual({
+        state: 'none',
+      })
+    expect(cursorSignInState(undefined)).toEqual({ state: 'none' })
+    // Its consent: Cursor's plan for cloud agents alone; nothing sends the person to AI Models.
+    const consent = codingConsent('cursor')
+    expect([consent.id, consent.title, consentProgramLogo(consent)]).toEqual([
+      'coding:cursor',
+      'Cursor',
+      'cursor',
+    ])
+    expect(consent.points.map((point) => point.body)).toEqual([
+      'Cloud agents code in Cursor on your Cursor plan, not on your Simeon credits. Your agents keep the model they have.',
+      "You approve on Cursor's own page, and the sign-in stays on your cloud computer. To disconnect, ask one of your agents.",
+      'Cloud agents in Cursor pause until it resets.',
+    ])
+    expect(consent.smallPrint).toEqual([
+      "You'll sign in on Cursor's own page. Simeon never sees your password.",
+    ])
     expect(
       modelConnectCard(card('m5', { type: 'github-sign-in' })),
     ).toBeUndefined()
