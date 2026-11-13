@@ -79,7 +79,11 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
     fetch), the branch, git's name and e-mail from the GitHub account, then Claude Code
     (`--resume` with the kept session), then the push, `gh pr create` (or the open pull
     request), and `git diff --numstat` against the base;
-  - `coding-github.ts` runs `gh auth login` with the device code, then `gh auth setup-git`;
+  - `coding-github.ts` runs `gh auth login` with the device code, then `gh auth setup-git`.
+    Its options are only those the computer's own `gh` knows (`GITHUB_LOGIN_ARGS`): Debian
+    trixie's 2.46.0, older than a developer's. It also gives `git` the machine's trust
+    (`GIT_SSL_CAINFO` from `SSL_CERT_FILE`): on Azure the egress re-signs every site, and git
+    reads no `SSL_CERT_FILE`;
   - `coding-choice.ts` reads the person's Claude model and effort.
 
   While a turn runs, the computer counts as busy and is not put to sleep (`sand-host.ts`).
@@ -107,15 +111,24 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
     pr=…` or `cloud-agent computer failed … status=… limited=… retryable=…`.
   - Computer (`/tmp/sand-host.log`): `[simeon] coding job=… claude model=… effort=… resume=…`,
     `coding job=… claude outcome=…`, `coding job=… done commits=… files=… pr=…`; GitHub's
-    sign-in: `[simeon] github sign-in waiting for the person's code`, `github connected as …`.
+    sign-in: `[simeon] github sign-in waiting for the person's code`, `github connected as …`,
+    and `github sign-in failed before a code: <gh's own words>` when `gh` gave no code (the
+    agent is told the same words).
   - A card stuck at "Creating" means the computer hasn't claimed the job: look for `coding …
     claim didn't reach the server`.
 * **Tested.** The server's routes and routing (`server/tests/sand/test_cloud_agents_computer.py`,
   14 tests). The engine's turn against stand-ins: a bare git origin, a `gh` script, a fake
-  Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 9 tests). The cards'
+  Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 11 tests). The cards'
   models in SimeonCore and the web app; the web card drawn in Chromium, light and dark.
+* **The first real try** (the founder, 13 November 2026) stopped at the sign-in: the command
+  passed `--skip-ssh-key`, which gh 2.46 does not have, so gh printed its help and no code came.
+  The option is gone; the sign-in's options and every other `gh` command of the turn were run
+  against Debian's gh 2.46.0-3 itself (its help, and the sign-in up to the call to GitHub,
+  which was not let through), and a stand-in that refuses what 2.46 refuses is in the tests.
+  Git's trust was measured against a stand-in https server (cloned with `GIT_SSL_CAINFO` only).
 * **Not yet verified.** No run against real GitHub or Claude Code, on a cloud computer, a Mac or
-  an iPhone. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
+  an iPhone: after the sign-in's code, the clone, the push and the pull request have never run
+  on a real computer. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
   attached to a launch are ignored.
 
 ## 2. Routines and event listeners
