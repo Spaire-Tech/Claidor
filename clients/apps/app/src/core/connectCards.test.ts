@@ -52,6 +52,12 @@ import {
   listenerConnectedIn,
   luminance,
   middleCut,
+  modelConnectCard,
+  modelConnectLine,
+  modelConnectNextPoll,
+  modelConnectPreview,
+  modelConnectProgram,
+  modelConnectTitle,
   rgb,
   slug,
   standingFace,
@@ -738,5 +744,58 @@ describe('a new teammate joined (JoinedCardTests)', () => {
     // A picture of its own, or gone from the roster: the chat's grey.
     expect(joinedColours(iris, [own])).toBeUndefined()
     expect(joinedColours(iris, [])).toBeUndefined()
+  })
+})
+
+describe('the card that offers Claude and ChatGPT to connect (13 November 2026)', () => {
+  it('reads its providers, in the order shown, and only the two a cloud agent codes on', () => {
+    const read = card('m1', {
+      type: 'model-connect',
+      providers: ['claude', 'chatgpt'],
+    })
+    const row = chatRows([read]).at(-1)
+    expect(row?.kind === 'card' && row.card).toBe('modelConnect')
+    expect(cardText(read.message)).toBe('Connect Claude, ChatGPT')
+    expect(modelConnectPreview()).toBe('Connect Claude, ChatGPT')
+    expect(modelConnectCard(read)).toEqual({ providers: ['claude', 'chatgpt'] })
+    // One named twice is shown once; a provider no cloud agent codes on is left out.
+    expect(
+      modelConnectCard(
+        card('m2', {
+          type: 'model-connect',
+          providers: ['chatgpt', 'gemini', 'chatgpt', 7],
+        }),
+      ),
+    ).toEqual({ providers: ['chatgpt'] })
+    // None it knows, or none named: the two all the same.
+    expect(
+      modelConnectCard(
+        card('m3', { type: 'model-connect', providers: ['new-one'] }),
+      ),
+    ).toEqual({ providers: ['claude', 'chatgpt'] })
+    expect(modelConnectCard(card('m4', { type: 'model-connect' }))).toEqual({
+      providers: ['claude', 'chatgpt'],
+    })
+    expect(
+      modelConnectCard(card('m5', { type: 'github-sign-in' })),
+    ).toBeUndefined()
+  })
+
+  it('says what each is for, and reads as a connected app once it is', () => {
+    expect(modelConnectTitle('claude', false)).toBe('Connect Claude')
+    expect(modelConnectTitle('chatgpt', false)).toBe('Connect ChatGPT')
+    expect(modelConnectLine('claude', false)).toBe(
+      'Cloud agents code in Claude Code.',
+    )
+    expect(modelConnectLine('chatgpt', false)).toBe(
+      'Cloud agents code in Codex.',
+    )
+    expect(modelConnectTitle('chatgpt', true)).toBe('ChatGPT')
+    expect(modelConnectLine('chatgpt', true)).toBe('')
+    expect(modelConnectProgram('claude')).toBe('Claude Code')
+    expect(modelConnectProgram('chatgpt')).toBe('Codex')
+    // The accounts are read again while both rows wait, never once one is connected.
+    expect(modelConnectNextPoll(false)).toBe(4)
+    expect(modelConnectNextPoll(true)).toBeUndefined()
   })
 })

@@ -404,6 +404,7 @@ public struct Entry: Identifiable, Hashable, Sendable {
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
     case "github-sign-in": return L10n.text("Connect GitHub")
+    case "model-connect": return ModelConnectCard.preview
     case "agent-joined": return message["name"]?.text.map { JoinedCard.title(name: $0) }
     case "attachment": return (message["file_name"]?.text ?? message["url"]?.text.map(fileName(ofURL:))).map(fileTitle) ?? L10n.text("Sent a file")
     default: return message["content"]?.text.map { by + plain($0) }

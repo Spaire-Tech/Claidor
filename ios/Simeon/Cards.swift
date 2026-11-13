@@ -1070,6 +1070,79 @@ struct GitHubSignInCardView: View {
   }
 }
 
+/**
+ * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"): what a cloud agent's coding
+ * runs on. Each row is a provider drawn as an app to connect is; Connect
+ * shows the consent AI Models shows, then that provider's own sign-in sheet
+ * (`ChatGPTConnectSheet`, `ClaudeConnectSheet`). A connected provider reads
+ * as a connected app does. What is connected is the app's own accounts
+ * (`store.aiModels`), read again while both rows wait. The agent goes on by
+ * itself once one is connected.
+ */
+struct ModelConnectCardView: View {
+  let card: ModelConnectCard
+  @Environment(AppStore.self) private var store
+  @Environment(\.chatWidth) private var width
+  /** The consent an app's Connect shows, before the provider's sign-in; Connect on it marks `confirmed`. */
+  @State private var asking: ConnectConsent?
+  @State private var pending: String?
+  @State private var confirmed = false
+  /** The provider whose code sheet is open (ChatGPT's). */
+  @State private var connectingByCode: String?
+  @State private var connectingClaude = false
+
+  var body: some View {
+    let model = store.aiModels
+    VStack(alignment: .leading, spacing: 14) {
+      ForEach(card.providers, id: \.self) { provider in
+        let connected = model.connected(provider)
+        ConnectAppRow(app: AIModels.providerName(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected)) {
+          if connected {
+            ConnectedMark()
+          } else if !model.loaded && model.problem == nil {
+            ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
+          } else {
+            Button(ModelConnectCard.connectLabel) {
+              confirmed = false
+              pending = provider
+              asking = ConnectConsent(modelProvider: provider)
+            }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main, height: 32)))
+          }
+        }
+      }
+    }
+    .card()
+    .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
+    // The sign-in opens once the consent has gone, as an app's Connect does.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed, let provider = pending else { pending = nil; return }
+      confirmed = false
+      pending = nil
+      if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
+    .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
+      NavigationStack { ChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT) }
+    }
+    .sheet(isPresented: $connectingClaude) {
+      NavigationStack { ClaudeConnectSheet(model: model) }
+    }
+    .task(id: card.providers) {
+      // For ten minutes at most: a card left on screen with nothing connected stops asking.
+      for _ in 0..<150 {
+        if Task.isCancelled { return }
+        await model.load()
+        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: model.connected)) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+}
+
 // MARK: - Flights
 
 /**

@@ -1233,6 +1233,59 @@ struct GitHubSignInCardView: View {
   private var waiting: Bool { state == nil || state == .waiting }
 }
 
+/**
+ * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"): what a cloud agent's coding
+ * runs on. Each row is a provider drawn as an app's card is, with Connect in
+ * the cards' blue pill: the consent AI Models shows, then that provider's
+ * own sign-in sheet over the window (`MacConnector.connectModel`). A
+ * connected provider reads as a connected app does: its name and
+ * "Connected" in the green capsule. What is connected is the app's own
+ * accounts (`store.aiModels`), read again while both rows wait, so a sign-in
+ * finished on another device shows too. The agent goes on by itself once
+ * one is connected.
+ */
+struct ModelConnectCardView: View {
+  let card: ModelConnectCard
+  let look: Look
+  @Environment(AppStore.self) private var store
+
+  var body: some View {
+    let model = store.aiModels
+    CardShell(look: look, spacing: 14) {
+      ForEach(card.providers, id: \.self) { provider in
+        let connected = model.connected(provider)
+        ConnectAppRow(app: AIModels.providerName(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), look: look) {
+          Group {
+            if connected {
+              ConnectedCapsule(look: look)
+            } else if !model.loaded && model.problem == nil {
+              ProgressView().controlSize(.small)
+                .accessibilityLabel("Checking connection status")
+            } else {
+              CardButton(title: ModelConnectCard.connectLabel, prominent: true, look: look) {
+                MacConnector.shared.connectModel(provider)
+              }
+            }
+          }
+          .fixedSize()
+        }
+      }
+    }
+    .frame(maxWidth: 520, alignment: .leading)
+    .task(id: card.providers) {
+      // For ten minutes at most: a card left on screen with nothing connected stops asking.
+      for _ in 0..<150 {
+        if Task.isCancelled { return }
+        await model.load()
+        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: model.connected)) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
+  }
+}
+
 // MARK: The parts the asking cards share
 
 /**
