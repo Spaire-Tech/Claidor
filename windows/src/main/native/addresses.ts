@@ -47,9 +47,8 @@ for (const [network, prefix] of [
 ] as const)
   blocked.addSubnet(network, prefix, 'ipv4')
 for (const [network, prefix] of [
-  // (No ::ffff:0:0/96 here: Node's list would then block every IPv4 address; a mapped one is judged as IPv4 below.)
+  // (No ::ffff:0:0/96 and no 64:ff9b::/96 here: an IPv4 address carried in an IPv6 one is judged as the IPv4 one below.)
   ['::', 127],
-  ['64:ff9b::', 96],
   ['64:ff9b:1::', 48],
   ['100::', 64],
   ['2001::', 32],
@@ -62,14 +61,47 @@ for (const [network, prefix] of [
 ] as const)
   blocked.addSubnet(network, prefix, 'ipv6')
 
+/** An IPv6 address as its eight 16-bit words, "::" and an IPv4 tail ("::ffff:1.2.3.4") written out. */
+function ipv6Words(address: string): number[] | undefined {
+  let text = address
+  const tail = /^(.*:)(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(text)
+  if (tail) {
+    const [a, b, c, d] = tail.slice(2).map(Number) as [number, number, number, number]
+    text = `${tail[1]}${((a << 8) | b).toString(16)}:${((c << 8) | d).toString(16)}`
+  }
+  const halves = text.split('::')
+  if (halves.length > 2) return undefined
+  const words = (part: string) => (part === '' ? [] : part.split(':').map((group) => Number.parseInt(group, 16)))
+  const left = words(halves[0]!)
+  const right = halves.length === 2 ? words(halves[1]!) : []
+  const gap = halves.length === 2 ? 8 - left.length - right.length : 0
+  const all = [...left, ...Array.from({ length: Math.max(0, gap) }, () => 0), ...right]
+  return all.length === 8 && all.every((word) => Number.isInteger(word) && word >= 0 && word <= 0xffff) ? all : undefined
+}
+
+/**
+ * The IPv4 address an IPv6 one carries (the core's `embeddedIPv4`):
+ * "::ffff:1.2.3.4", and 64:ff9b::/96, which a network without IPv4 gives for
+ * every site that has only IPv4 (NAT64).
+ */
+export function embeddedIPv4(address: string): string | undefined {
+  const words = ipv6Words(address)
+  if (!words) return undefined
+  const head = words.slice(0, 6)
+  const mapped = head.slice(0, 5).every((word) => word === 0) && head[5] === 0xffff
+  const nat64 = head[0] === 0x64 && head[1] === 0xff9b && head.slice(2).every((word) => word === 0)
+  if (!mapped && !nat64) return undefined
+  return `${words[6]! >> 8}.${words[6]! & 0xff}.${words[7]! >> 8}.${words[7]! & 0xff}`
+}
+
 /** A private, reserved or multicast address; anything that is not an address is refused too. */
 export function isBlockedAddress(address: string): boolean {
   const kind = isIP(address)
   if (kind === 4) return blocked.check(address, 'ipv4')
   if (kind === 6) {
-    // An IPv4 address written as IPv6 ("::ffff:10.0.0.1") is judged as the IPv4 one.
-    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)
-    if (mapped) return blocked.check(mapped[1]!, 'ipv4')
+    // An IPv4 address carried in an IPv6 one is judged as the IPv4 one.
+    const inner = embeddedIPv4(address)
+    if (inner !== undefined) return blocked.check(inner, 'ipv4')
     return blocked.check(address, 'ipv6')
   }
   return true
@@ -156,6 +188,29 @@ export function linkHref(html: string, rels: readonly string[]): string | undefi
     return decodeEntities(href).trim()
   }
   return undefined
+}
+
+/**
+ * Every icon a page names (`LinkPreviewPolicy.iconHrefs`): its touch icons
+ * first, then its icons, each in the page's order, at most three of each.
+ */
+export function iconHrefs(html: string, perKind = 3): string[] {
+  const touch: string[] = []
+  const plain: string[] = []
+  for (const [tag] of html.matchAll(/<link\b[^>]*>/gi)) {
+    const rel = attribute(tag, 'rel')
+    const href = attribute(tag, 'href')
+    if (!rel || href === undefined) continue
+    const tokens = rel.toLowerCase().split(/\s+/)
+    const value = decodeEntities(href).trim()
+    if (value === '') continue
+    if (tokens.includes('apple-touch-icon') || tokens.includes('apple-touch-icon-precomposed')) {
+      if (touch.length < perKind) touch.push(value)
+    } else if (tokens.includes('icon') || tokens.includes('shortcut')) {
+      if (plain.length < perKind) plain.push(value)
+    }
+  }
+  return [...touch, ...plain]
 }
 
 /** A saved login's site as the core keys it (`CredentialSite.site`): its host, lower case, without "www."; "" when it names none. */

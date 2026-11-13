@@ -219,7 +219,7 @@
    "mac/Simeon/TranscriptSelection.swift"
   ],
   "mac_lines": 8308,
-  "core_lines": 5246,
+  "core_lines": 5360,
   "views": 63,
   "files_needing_a_mac": 15,
   "strings": 330,
@@ -500,8 +500,8 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 5940,
-  "core_lines": 4094,
+  "mac_lines": 5941,
+  "core_lines": 4199,
   "views": 79,
   "files_needing_a_mac": 11,
   "strings": 496,

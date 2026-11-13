@@ -240,6 +240,10 @@
   "tests": 3
  },
  {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SiteIconsTests.swift",
+  "tests": 10
+ },
+ {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/SleepingComputerTests.swift",
   "tests": 19
  },

@@ -842,6 +842,68 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: a saved login's site icon, the Windows reader kept in step with the Mac's
+
+The founder: "theres an issue with the favicon of the saved logins in the
+mac and iphone. they dont all appear. some do others dont. in windows they
+all appear". The fix is in the shared core (`SiteIcons`,
+`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift` and
+`LinkMetadata.swift`); the Windows reader (`windows/src/main/native/`)
+follows the same rules, so it was changed with it. The web app's own code
+(`clients/apps/app`) did not change, and its build was not made again.
+
+- **Measured first.** Both real readers were run from this session on the
+  same 226 public sites (the core's Swift on Linux, the Windows reader in
+  Node). Before: the Mac's found an icon for 193, the Windows one for 188;
+  the Windows one alone for 7, the Mac's alone for 12. So the two sets of
+  rules were close, and what differs on a real Mac or iPhone is partly what
+  can't run here (Apple's own network and picture code, and the network the
+  device is on).
+- **What was found, and changed in both readers.**
+  - A read that failed for any reason (no connection, a slow site, the app
+    put aside mid-read) was kept as "none" for a week. Now "none" is kept a
+    day and only when the site answered every request; a read that had no
+    answer writes nothing (the Mac and iPhone ask again five minutes later;
+    the Windows app's window keeps its answer for the run, so there it is
+    the next start).
+  - Only the first touch icon and the first icon of a page were tried. Now
+    every one is (three of each at most), then `/favicon.ico`.
+  - An address in 64:ff9b::/96 was refused whole. A network without IPv4
+    (NAT64: many phone networks) gives such an address for every site that
+    has only IPv4, so on it those sites had no icon and no link card. It is
+    now judged by the IPv4 address it carries (`embeddedIPv4`), as
+    "::ffff:1.2.3.4" is; the private ones stay refused.
+- **Changed on the Mac and iPhone only.** A picture is judged by its first
+  bytes, not by the site's label for it (2 of the 226 serve their icon as
+  "application/octet-stream"); icons are asked for as the Windows app asks
+  (any picture), so a site hands over its own file and not another format
+  (20 of 193 came back as AVIF or WebP before); a file with several pictures
+  (an .ico) gives its largest; the kept answers moved to a new folder
+  (`Caches/site-icons-2`), so the earlier "none"s are asked again; a row
+  drawn again for another login no longer keeps the last one's icon; a site
+  left without an icon writes its reason in the app's recent activity, never
+  its name.
+- **Changed on Windows only.** A page longer than 512 KB was dropped whole,
+  and its site had no icon unless it had a `/favicon.ico`; now its first
+  512 KB are read (the head is there).
+- **Checked.** After: the Mac's reader 196 of 226 with none lost, the
+  Windows one 200 with 13 gained (the long pages) and one lost to a site
+  that answered 502 on that run; both find the same 195. The core's tests
+  (`SiteIconsTests`, ten, with stand-in sites) and the Windows app's
+  (`test/native.test.ts`, 18) pass; `npm run typecheck` in `windows/`.
+- **Not checked.** On a Mac, an iPhone or a PC: the Swift only parses here,
+  and Apple's picture code (`bounded`) does not run on Linux. Whether this
+  is the whole of what the founder saw is not known until it has run there.
+  The four sites the Windows reader alone still finds here (three of
+  Microsoft's, one of Cloudflare's) differ by the network code of this
+  session's Linux, not by a rule.
+- **Left as it is.** A site whose only icon is an SVG (1 of the 226) shows
+  its first letter on the Mac and the iPhone, which draw none; the Windows
+  app draws it.
+- **Next.** The founder's check on the Mac and the iPhone after the next
+  build; if a login still has no icon, its `site icon: none (…)` line in a
+  report says why.
+
 ### 13 November 2026: Connect Cursor, the card's third row
 
 The founder: "Cursor now". A cloud agent's coding can run in Cursor's own
