@@ -1604,6 +1604,34 @@ must be one published with its workers (`HOST_COMPANIONS`).
 - On a Mac, `npm run publish:host-bundle` in `desktop/` publishes the packaged
   app's host in this layout.
 
+**A new engine on a few accounts first** (13 November 2026).
+
+- The folder can hold a second pointer, `sand-host-bundle-trial.version`. The
+  accounts in `SIMEON_BOX_ENGINE_TRIAL_USERS` (comma-separated e-mail
+  addresses or user ids) run the engine it names. Everyone else keeps the one
+  `sand-host-bundle-latest.version` names.
+- `npm run publish:host-bundle -- --trial` publishes the packaged engine and
+  moves the trial pointer only. Each listed account's computer takes it at
+  its next idle moment, in place, its disk kept.
+- `npm run publish:host-bundle -- --promote` gives the engine on trial to
+  everyone: everyone's pointer takes the commit the trial pointer names.
+  Nothing is built or uploaded.
+- `npm run publish:host-bundle -- --back-to <commit>` puts everyone, the
+  trial accounts too, back on an engine published earlier. The script prints
+  this command, with the commit, each time it moves everyone's pointer.
+- With no option the engine goes to everyone as before, and the trial pointer
+  moves with it, so the trial never names an older engine than everyone's.
+- With no trial published, a trial pointer that cannot be read, or the list
+  empty, the listed accounts run everyone's engine. Taking an account off the
+  list puts its computer back on everyone's at its next idle moment.
+- The engine is chosen in one place, `engine_host_for` (`box_service.py`):
+  what a new computer is made with, what a running one is compared with, and
+  what it is updated to.
+- Log lines: `sand.box.engine_trial` (an account's computer is on the trial
+  engine: `user`, `server`, `host_sha256`), `sand.box.bundle.version` with
+  `pointer` (a pointer named a new commit), `sand.box.bundle.trial_unread`
+  (no trial to read, and why).
+
 **The box's renewal credential.** When it creates a box, the broker mints a
 `simeon_db_` credential (`issue_box_credential`). This is a child row of the
 person's desktop session, revoked when they sign out and moved to the new
@@ -1691,6 +1719,7 @@ because the worker runs the sleeper and the wake. Full steps are in
 | `SIMEON_BOX_HOSTS` | the JSON list above, or leave it empty and set `SIMEON_BOX_DOCKER_HOST` |
 | `SIMEON_BOX_DOCKER_TLS_CA`, `_CERT`, `_KEY` | paths to the secret files, e.g. `/etc/secrets/ca.pem` |
 | `SIMEON_BOX_HOST_BUNDLE_URL` | the public HTTPS folder of host bundles |
+| `SIMEON_BOX_ENGINE_TRIAL_USERS` | empty; the accounts that get a new engine first (above) |
 | `SIMEON_BOX_IMAGE`, `SIMEON_BOX_IMAGE_DIGEST` | defaults; change only with a checked image |
 | `SIMEON_BOX_IMAGE_TRIAL`, `SIMEON_BOX_IMAGE_TRIAL_USERS` | empty; another image for the accounts listed only (above) |
 | `SIMEON_BOX_IDLE_HIBERNATE_AFTER` | `PT30M`; `PT0S` never sleeps |

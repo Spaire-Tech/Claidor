@@ -65,7 +65,9 @@ from .box_hosts import (
     ProvisionedBox,
     box_image_reference,
     find_box_host,
+    load_trial_bundle,
     resolve_box_hosts,
+    with_bundle,
 )
 from .box_repository import SandBoxRepository
 
@@ -648,19 +650,57 @@ async def image_for(db: AsyncSession, user_id: UUID) -> str:
     accounts in `SIMEON_BOX_IMAGE_TRIAL_USERS` (an e-mail address or a user
     id each), the pinned image (`box_image_reference`) for everyone else."""
     trial = settings.BOX_IMAGE_TRIAL.strip()
-    listed = {
-        entry.strip().lower()
-        for entry in settings.BOX_IMAGE_TRIAL_USERS.split(",")
-        if entry.strip()
-    }
-    if trial and listed:
-        if str(user_id).lower() in listed:
-            return trial
-        if any("@" in entry for entry in listed):
-            user = await UserRepository.from_session(db).get_by_id(user_id)
-            if user is not None and user.email.lower() in listed:
-                return trial
+    if trial and await _is_listed(db, user_id, settings.BOX_IMAGE_TRIAL_USERS):
+        return trial
     return box_image_reference()
+
+
+async def _is_listed(
+    db: AsyncSession | AsyncReadSession, user_id: UUID, names: str
+) -> bool:
+    """Whether a comma-separated list of e-mail addresses and user ids names
+    this person. Their e-mail is read only when the list holds one."""
+    listed = {entry.strip().lower() for entry in names.split(",") if entry.strip()}
+    if not listed:
+        return False
+    if str(user_id).lower() in listed:
+        return True
+    if any("@" in entry for entry in listed):
+        user = await UserRepository.from_session(db).get_by_id(user_id)
+        return user is not None and user.email.lower() in listed
+    return False
+
+
+#: Who was last told to be on which trial engine, so the log says it once per
+#: engine and not at every look. Per API process.
+_trial_said: dict[UUID, str] = {}
+
+
+async def engine_host_for(
+    db: AsyncSession | AsyncReadSession, host: BoxHost, user_id: UUID
+) -> BoxHost:
+    """The server as this person's computer sees it: with the engine being
+    tried (`load_trial_bundle`) for the accounts in
+    `SIMEON_BOX_ENGINE_TRIAL_USERS`, as it is for everyone else, and for
+    them too while no trial is published. Everything that depends on the
+    engine goes through it: what a new computer is made with (`_create`),
+    what a running one is compared with (`_out_of_date`) and what it is
+    updated to (`_update_in_place`)."""
+    if not await _is_listed(db, user_id, settings.BOX_ENGINE_TRIAL_USERS):
+        return host
+    trial = await load_trial_bundle(settings.BOX_HOST_BUNDLE_URL)
+    if trial is None:
+        return host
+    view = with_bundle(host, trial)
+    if view is not host and _trial_said.get(user_id) != trial.key:
+        _trial_said[user_id] = trial.key
+        log.info(
+            "sand.box.engine_trial",
+            user=str(user_id),
+            server=host.name,
+            host_sha256=trial.host_sha256,
+        )
+    return view
 
 
 # --- moving between servers ---------------------------------------------------
@@ -939,7 +979,10 @@ class BoxBrokerService:
             extra_env=extra_env,
             labels=labels,
         )
-        provisioned = await host.create(spec)
+        # With the engine being tried, for a person on that list.
+        provisioned = await (await engine_host_for(db, host, parent.user_id)).create(
+            spec
+        )
         if box_store.enabled():
             log.info(
                 "sand.box.store",
@@ -1106,7 +1149,9 @@ class BoxBrokerService:
             stale_store = (
                 box_store.enabled() and current.box_store != box_store.LABEL_VALUE
             )
-        expected_host = getattr(host, "expected_host_sha256", None)
+        expected_host = getattr(
+            await engine_host_for(db, host, box.user_id), "expected_host_sha256", None
+        )
         # An engine updated in place (`_update_in_place`) is noted on the
         # row; the computer's own record keeps the one it was made with.
         running_host = (box.host_meta or {}).get("host_sha256") or (
@@ -1117,7 +1162,9 @@ class BoxBrokerService:
         )
         return current, OutOfDate(host=stale_host, image=stale_image, store=stale_store)
 
-    async def _update_in_place(self, host: BoxHost, box: SandBox) -> bool:
+    async def _update_in_place(
+        self, db: AsyncSession, host: BoxHost, box: SandBox
+    ) -> bool:
         """A running computer whose engine alone is out of date gets the new
         one in place, its disk kept (9 November 2026, the founder: "we cant
         have people always having to sign back in"): replaced, it kept only
@@ -1125,7 +1172,9 @@ class BoxBrokerService:
         backup never holds (docs/your-own-models.md, section 6). True once
         the new engine answers; False leaves the computer to be replaced as
         before. Only hosts that can (`update_in_place`: E2B) are asked; a
-        Docker computer is replaced on the same volumes."""
+        Docker computer is replaced on the same volumes. The engine is the
+        one this person's computer runs (`engine_host_for`)."""
+        host = await engine_host_for(db, host, box.user_id)
         update = getattr(host, "update_in_place", None)
         expected = getattr(host, "expected_host_sha256", None)
         if update is None or expected is None:
@@ -1152,7 +1201,7 @@ class BoxBrokerService:
         )
         return True
 
-    async def _revive(self, host: BoxHost, box: SandBox) -> bool:
+    async def _revive(self, db: AsyncSession, host: BoxHost, box: SandBox) -> bool:
         """A computer that runs, or was just woken, whose engine does not
         answer: its engine restarted in place (the published one, its disk
         kept), at most once every `REVIVE_EVERY_S` (11 November 2026: a
@@ -1168,7 +1217,7 @@ class BoxBrokerService:
             return False
         box.host_meta = {**meta, "revived_at": int(now)}
         log.warning("sand.box.revive", box=str(box.id))
-        revived = await self._update_in_place(host, box)
+        revived = await self._update_in_place(db, host, box)
         log.info(
             "sand.box.revived" if revived else "sand.box.revive_failed", box=str(box.id)
         )
@@ -1310,7 +1359,7 @@ class BoxBrokerService:
                 # computer could not finish put the update off on every
                 # wake, each wake holding the person's computer for two
                 # minutes while it waited, and the computer never came back).
-                updated = engine_only and await self._update_in_place(host, box)
+                updated = engine_only and await self._update_in_place(db, host, box)
                 flushed = (
                     not updated
                     and state == "running"
@@ -1430,7 +1479,7 @@ class BoxBrokerService:
         # statement timeout killed it, and the window could not connect.
         ready = await self.wait_ready(box)
         if not ready and not created:
-            ready = await self._revive(host, box)
+            ready = await self._revive(db, host, box)
         # How long a woken box took to answer, from the start asked (26
         # October 2026): what waking costs the person, measured.
         wake = (

@@ -445,6 +445,14 @@ class Settings(BaseSettings):
     # desktop/dist), uploaded into the container before it starts. Empty:
     # the image is assumed to carry them.
     BOX_HOST_BUNDLE_URL: str = ""
+    # A new engine tried on a few accounts before everyone (13 November
+    # 2026): the people in BOX_ENGINE_TRIAL_USERS (comma-separated e-mail
+    # addresses or user ids) get the engine the folder's trial pointer names
+    # (`npm run publish:host-bundle -- --trial`), each computer at its next
+    # idle moment; everyone else keeps the one its latest pointer names.
+    # Taking a person off the list, or publishing no trial, puts them on
+    # everyone's. Empty: nobody. Needs BOX_HOST_BUNDLE_URL to be a folder.
+    BOX_ENGINE_TRIAL_USERS: str = ""
     # Per-port public hostnames, e.g. "https://{box}-{port}.boxes.simeonlabs.com",
     # served by a TLS proxy on the box VM (docs/services-core.md).
     # Empty: the API proxies the ports itself at /sand-box/{id}/p/{port}/.

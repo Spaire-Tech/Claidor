@@ -95,6 +95,7 @@ Environment variables:
 | `SIMEON_BOX_DOCKER_TLS_CERT` | `/etc/secrets/cert.pem` |
 | `SIMEON_BOX_DOCKER_TLS_KEY` | `/etc/secrets/key.pem` |
 | `SIMEON_BOX_HOST_BUNDLE_URL` | the public HTTPS address of the host bundle folder (below) |
+| `SIMEON_BOX_ENGINE_TRIAL_USERS` | empty, or the e-mail addresses (comma-separated) of the accounts that get a new engine first (below) |
 
 Leave `SIMEON_BOX_HOST_ADDRESS` and `SIMEON_BOX_PUBLIC_URL_TEMPLATE`
 empty: the API proxies the box's ports itself at `/sand-box/{id}/p/…`
@@ -428,6 +429,13 @@ program ships inside every copy of the app, so it is not a secret);
 `SIMEON_BOX_HOST_BUNDLE_URL` is that folder's address, for example
 `https://<bucket>.s3.<region>.amazonaws.com/host-bundles`. A URL ending in
 `.tgz` still names one fixed file, read once per process, as before.
+
+A new engine can run on a few accounts before everyone (13 November 2026).
+Set `SIMEON_BOX_ENGINE_TRIAL_USERS` to their e-mail addresses, then publish
+with `npm run publish:host-bundle -- --trial`: only those accounts' computers
+take it. `-- --promote` gives it to everyone; `-- --back-to <commit>` puts
+everyone back on an earlier one. Leaving the variable empty changes nothing
+for anyone.
 
 ## Then
 
