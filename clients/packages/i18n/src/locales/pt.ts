@@ -304,7 +304,6 @@ export default {
       standardTools: 'Entra nas suas ferramentas',
       standardRoutines: 'Rotinas agendadas',
       standardChannels: 'Slack, Discord e chamadas de voz',
-      standardAnywhere: 'Trabalhe de qualquer lugar: Mac e iPhone',
       standardUsage: 'Uso semanal, mais sob demanda',
       proIncludes: 'Tudo do Standard, mais:',
       proUsage: '3,5x o uso do Standard',

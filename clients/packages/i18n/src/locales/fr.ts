@@ -309,7 +309,6 @@ export default {
       standardTools: 'Se connecte à tes outils',
       standardRoutines: 'Des routines planifiées',
       standardChannels: 'Slack, Discord et appels vocaux',
-      standardAnywhere: 'Travaille partout : Mac et iPhone',
       standardUsage: 'Utilisation hebdomadaire, plus à la demande',
       proIncludes: 'Tout Standard, plus :',
       proUsage: '3,5 fois l’utilisation de Standard',

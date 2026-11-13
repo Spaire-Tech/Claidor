@@ -78,7 +78,6 @@ export default {
       standardTools: 'Araçlarına giriş yapar',
       standardRoutines: 'Zamanlanmış rutinler',
       standardChannels: 'Slack, Discord ve sesli aramalar',
-      standardAnywhere: 'Her yerden çalış: Mac ve iPhone',
       standardUsage: 'Haftalık kullanım, gerektiğinde fazlası',
       proIncludes: 'Standard planındaki her şey, artı:',
       proUsage: 'Standard planının 3,5 katı kullanım',

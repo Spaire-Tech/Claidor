@@ -430,7 +430,6 @@ const CARD_COPY: Record<PaidTierKey, { includes: CardKey; lines: CardKey[] }> =
         'simeon.billing.standardTools',
         'simeon.billing.standardRoutines',
         'simeon.billing.standardChannels',
-        'simeon.billing.standardAnywhere',
         'simeon.billing.standardUsage',
       ],
     },
@@ -450,7 +449,6 @@ type CardKey =
   | 'simeon.billing.standardTools'
   | 'simeon.billing.standardRoutines'
   | 'simeon.billing.standardChannels'
-  | 'simeon.billing.standardAnywhere'
   | 'simeon.billing.standardUsage'
   | 'simeon.billing.proIncludes'
   | 'simeon.billing.proUsage'
