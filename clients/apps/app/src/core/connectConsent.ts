@@ -17,6 +17,8 @@ import { providerName } from './aiModels'
 import {
   type CatalogApp,
   modelConnectLogo,
+  modelConnectOnComputer,
+  modelConnectPlan,
   modelConnectProgram,
   slug,
 } from './connectCards'
@@ -168,7 +170,33 @@ export function modelConsent(provider: string): ConnectConsent {
  */
 export function codingConsent(provider: string): ConnectConsent {
   const program = modelConnectProgram(provider)
-  const plan = providerName(provider)
+  const plan = modelConnectPlan(provider)
+  // Cursor is no plan for the agents' own model: it is signed in on the cloud computer, for cloud agents alone.
+  if (modelConnectOnComputer(provider))
+    return {
+      id: `coding:${provider}`,
+      title: program,
+      summary: t`Run your cloud agents in ${program}, on your ${plan} plan.`,
+      route: { kind: 'unknown' },
+      points: [
+        {
+          symbol: 'square.stack.3d.up',
+          title: t('What it does'),
+          body: `${t`Cloud agents code in ${program} on your ${plan} plan, not on your Simeon credits.`} ${t('Your agents keep the model they have.')}`,
+        },
+        {
+          symbol: 'hand.raised',
+          title: t('Control'),
+          body: t`You approve on ${program}'s own page, and the sign-in stays on your cloud computer. To disconnect, ask one of your agents.`,
+        },
+        {
+          symbol: 'checkmark.circle',
+          title: t('When your plan runs out'),
+          body: t`Cloud agents in ${program} pause until it resets.`,
+        },
+      ],
+      smallPrint: [signInLine({ kind: 'unknown' }, program)],
+    }
   return {
     id: `coding:${provider}`,
     title: program,

@@ -35,7 +35,10 @@ export const BOX_HOME_CLAUDE_CODE_CREDENTIALS = `${BOX_HOME_REL_PREFIX}/.claude/
 // computer's disk as Claude's does, and the checkouts, which are on GitHub anyway, are never copied either.
 export const BOX_HOME_GITHUB_CREDENTIALS = `${BOX_HOME_REL_PREFIX}/.config/gh/hosts.yml`;
 export const BOX_HOME_CODE_CHECKOUTS = `${BOX_HOME_REL_PREFIX}/code/**`;
-export function buildBoxHomeCategory(absRoot: string): BoxStoreCategory { return { name: BOX_HOME_CATEGORY_NAME, absRoot, relPrefix: BOX_HOME_REL_PREFIX, excludes: [...BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_CLAUDE_CODE_CREDENTIALS, BOX_HOME_GITHUB_CREDENTIALS, BOX_HOME_CODE_CHECKOUTS], ignore: () => compileWorkspaceIgnore(BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS) }; }
+// Cursor's sign-in for a cloud agent's coding in Cursor (13 November 2026, `host/cursor/cursor-account.ts`): on the
+// computer's disk only, as Claude's and GitHub's.
+export const BOX_HOME_CURSOR_CREDENTIALS = `${BOX_HOME_REL_PREFIX}/.config/cursor/auth.json`;
+export function buildBoxHomeCategory(absRoot: string): BoxStoreCategory { return { name: BOX_HOME_CATEGORY_NAME, absRoot, relPrefix: BOX_HOME_REL_PREFIX, excludes: [...BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_CLAUDE_CODE_CREDENTIALS, BOX_HOME_GITHUB_CREDENTIALS, BOX_HOME_CURSOR_CREDENTIALS, BOX_HOME_CODE_CHECKOUTS], ignore: () => compileWorkspaceIgnore(BOX_HOME_REGENERABLE_JUNK_IGNORE_PATTERNS) }; }
 export const BOX_STORE_SYNC_INTERVAL_MS = 2 * 60_000;
 export const BOX_STORE_CHROME_INTERVAL_MS = 15 * 60_000;
 export const BOX_STORE_DB_DEBOUNCE_MS = 5_000;

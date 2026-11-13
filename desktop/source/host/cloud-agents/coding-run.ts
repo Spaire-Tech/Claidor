@@ -3,7 +3,8 @@
  * Claude Code on their own Claude plan (11 November 2026; the founder asked
  * for it to work exactly as the upstream app's), or in Codex on their
  * ChatGPT plan (13 November 2026, the founder: "running one in Codex is not
- * built"; `coding-choice.ts` says which).
+ * built"), or in Cursor's own command-line agent on their Cursor plan (the
+ * same day: "Cursor now"; `coding-choice.ts` says which).
  *
  * The upstream app's cloud agents ran in its maker's virtual machines, which
  * cloned the repository, made a branch (`autoBranch`), coded, and pushed it
@@ -14,8 +15,9 @@
  *    `/home/box/code/<bcId>/repo`, kept for the agent's next turns;
  * 2. a branch `simeon/<what it is>-<4 hex>` from the base branch, or the
  *    agent's own branch on a follow-up;
- * 3. Claude Code (`claude -p`) or Codex (`codex exec`), unmodified, on the
- *    model and the effort the person chose, in that checkout, told to code,
+ * 3. Claude Code (`claude -p`), Codex (`codex exec`) or Cursor (`agent -p`),
+ *    unmodified, on the model and the effort the person chose (Cursor on
+ *    its own), in that checkout, told to code,
  *    build, test and commit, and its session resumed on the agent's next
  *    turn (a cloud agent keeps the program it began in while that one is
  *    still connected);
@@ -31,6 +33,7 @@ import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
 import { assistantWords, runClaudeCodeTurn, usageFromEvent, type ClaudeCodeEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
 import type { CodexRelayDeps } from "../codex/codex-relay.js";
 import { codexWords, runCodexTurn, type CodexEvent, type CodexOutcome, type CodexTurnInput } from "../codex/codex-turn.js";
+import { cursorWords, runCursorTurn, type CursorEvent, type CursorOutcome, type CursorTurnInput } from "../cursor/cursor-turn.js";
 import { CLOUD_AGENT_CODER, coderName, coderOfModel, coderPlan, type CloudAgentCoder } from "./coding-choice.js";
 import { gitHubBinary, gitHubEnv, runCommand, withGitTrust, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
 
@@ -120,7 +123,7 @@ export interface CodingRunDeps {
   /**
    * What the coding runs on (`codingChoice`): the program (Claude Code when
    * none is named), its model and effort; `kept` is the program this cloud
-   * agent began in. None when neither Claude nor ChatGPT is connected.
+   * agent began in. None when no program is connected.
    */
   readonly choice: (kept?: CloudAgentCoder) => { readonly coder?: CloudAgentCoder; readonly model: string; readonly effort?: string; readonly modelId?: string } | undefined;
   /** Who is signed in to GitHub on this computer. */
@@ -129,6 +132,7 @@ export interface CodingRunDeps {
   readonly env?: NodeJS.ProcessEnv;
   readonly runClaude?: (input: ClaudeCodeTurnInput) => Promise<ClaudeCodeOutcome>;
   readonly runCodex?: (input: CodexTurnInput) => Promise<CodexOutcome>;
+  readonly runCursor?: (input: CursorTurnInput) => Promise<CursorOutcome>;
   /** How Codex's calls reach Simeon Labs' server (`codex-relay.ts`); without it Codex can't run. */
   readonly codexRelay?: Omit<CodexRelayDeps, "modelId">;
   readonly run?: typeof runCommand;
@@ -241,7 +245,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     const keptModelId = typeof kept.modelId === "string" && kept.modelId.startsWith("own:") ? kept.modelId : job.modelId.startsWith("own:") ? job.modelId : undefined;
     const keptCoder = keptModelId === undefined ? undefined : coderOfModel(keptModelId);
     const choice = deps.choice(keptCoder);
-    if (choice === undefined) return failed("Neither Claude nor ChatGPT is connected, so the coding can't run: the person connects one of them in Settings › AI Models, then asks again.");
+    if (choice === undefined) return failed("Neither Claude, ChatGPT nor Cursor is connected, so the coding can't run: the person connects one of them (launching again shows the card), then asks again.");
     const coder = choice.coder ?? CLOUD_AGENT_CODER;
     const program = coderName(coder);
     if (coder === "codex" && deps.codexRelay === undefined && deps.runCodex === undefined) return failed("Codex can't run on this computer yet.");
@@ -305,7 +309,19 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     };
     const promptFor = (resume: string | undefined): string => (resume === undefined ? wholeExchange(job.conversation) : unansweredWords(job.conversation)) || "Carry on with the task.";
     const brief = codingBrief(repo, branch, base);
-    const turn = (resume: string | undefined): Promise<ClaudeCodeOutcome | CodexOutcome> => coder === "codex"
+    const turn = (resume: string | undefined): Promise<ClaudeCodeOutcome | CodexOutcome | CursorOutcome> => coder === "cursor"
+      // Cursor names its own model, and reaches Cursor itself on the sign-in kept on this computer.
+      ? (deps.runCursor ?? runCursorTurn)({
+        prompt: promptFor(resume),
+        resume,
+        brief,
+        cwd: checkout,
+        timeoutMs: CODING_TURN_TIMEOUT_MS,
+        env: withGitTrust(env),
+        ...(deps.signal === undefined ? {} : { signal: deps.signal }),
+        onEvent: (event: CursorEvent) => heard(cursorWords(event)),
+      })
+      : coder === "codex"
       ? (deps.runCodex ?? runCodexTurn)({
         prompt: promptFor(resume),
         model: choice.model,
@@ -339,7 +355,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
         },
       });
     const started = now();
-    const tag = coder === "codex" ? "codex" : "claude";
+    const tag = coder === "codex" ? "codex" : coder === "cursor" ? "cursor" : "claude";
     log(`${tag} model=${choice.model}${choice.effort === undefined ? "" : ` effort=${choice.effort}`} resume=${keptSession !== undefined}`);
     let outcome = await turn(keptSession);
     if (outcome.kind === "no_session" && keptSession !== undefined) outcome = await turn(undefined);
@@ -353,6 +369,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
         return failed(`${coderPlan(coder)}'s plan limit was reached, so the work is paused. It resets at ${limitWords(until)}; a reply after that carries on where it stopped.`, false, { ...work, limitedUntilMs: until });
       }
       case "signed_out":
+        if (coder === "cursor") return failed("Cursor isn't signed in on the computer any more. The person connects Cursor again (launching in Cursor again shows its card); a reply then carries on.", false, work);
         if (coder === "codex") return failed("ChatGPT isn't connected any more. The person connects ChatGPT again in Settings › AI Models; a reply then carries on.", false, work);
         try { deps.onSignedOut?.(); } catch { /* the caller's own trouble */ }
         return failed("Claude isn't signed in on the computer any more. The person connects Claude again in Settings › AI Models; a reply then carries on.", false, work);

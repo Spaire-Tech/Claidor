@@ -4,7 +4,8 @@ import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 import { readSimeonModelRolesNow, reportClaudeCodeSignedOut, reportClaudeCodeUsage } from "../inference/simeon-model-roles.js";
-import { codingChoice } from "../../cloud-agents/coding-choice.js";
+import { codingChoice, codingChoiceOf } from "../../cloud-agents/coding-choice.js";
+import { CursorOnComputer } from "../../cursor/cursor-account.js";
 import { ModelConnectWait } from "../../cloud-agents/model-connect-wait.js";
 import { GitHubOnComputer } from "../../cloud-agents/coding-github.js";
 import { runCodingJob } from "../../cloud-agents/coding-run.js";
@@ -34,8 +35,10 @@ export const cloudAgentsExtension = defineHostExtension({
     if (isCloudAgentsServed()) {
       // A cloud agent's coding, done on this computer in Claude Code on the
       // person's own plan (11 November 2026, `host/cloud-agents/`), or in
-      // Codex on their ChatGPT plan (13 November 2026, `host/codex/`).
+      // Codex on their ChatGPT plan (13 November 2026, `host/codex/`), or
+      // in Cursor on their Cursor plan (the same day, `host/cursor/`).
       const github = new GitHubOnComputer();
+      const cursor = new CursorOnComputer();
       const transcript = context.deps[HostExtensions.Transcript] as (GitHubWake & CloudAgentLines) | undefined;
       const runner = new CodingRunner({
         server: createComputerServer({ getBackendUrl: getConfiguredBackendUrl, getAccessToken: (options) => auth.getAccessToken(options) }),
@@ -54,17 +57,19 @@ export const cloudAgentsExtension = defineHostExtension({
       });
       service.attachCoding(runner);
       service.attachGitHub(github);
+      service.attachCursor(cursor);
       // The agent that showed the card goes on once GitHub is connected, as after a routine's Slack or GitHub card.
       github.onConnected((agentId, login) => void transcript?.resumeAfterGitHubConnect?.(agentId, login));
       // The same once Claude or ChatGPT is connected from the card that offers both (13 November 2026).
       const modelWait = new ModelConnectWait({
-        connected: () => codingChoice(),
+        // Cursor's sign-in is on this computer: `codingChoice` sees it once it is there.
+        connected: (program) => (program === undefined ? codingChoice() : codingChoiceOf(program)),
         read: readSimeonModelRolesNow,
         onConnected: (agentId, choice) => void transcript?.resumeAfterModelConnect?.(agentId, choice.coder)?.catch(() => undefined),
       });
       service.attachModelWait(modelWait);
       void (host.whenBackgroundWorkReady ?? Promise.resolve()).then(() => runner.start(), () => runner.start());
-      context.onStop(() => { runner.stop(); github.dispose(); modelWait.dispose(); });
+      context.onStop(() => { runner.stop(); github.dispose(); cursor.dispose(); modelWait.dispose(); });
     }
     return service;
   }

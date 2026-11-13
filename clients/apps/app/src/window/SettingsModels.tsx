@@ -684,7 +684,7 @@ function RenameAccountAlert({
 }
 
 /** A page of the web opened in a new tab, without `opener` or the referrer (in the Windows app, the default browser). */
-function openPage(url: string): void {
+export function openPage(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
@@ -1140,7 +1140,7 @@ function KeyConnectSheet({
 }
 
 /** Connected (both sheets): the green tick and "Connected", "You're now connected to Claude." (the founder: "just say you're now connected to claude"), and Done. */
-function ConnectedEnd({
+export function ConnectedEnd({
   provider,
   name,
   close,

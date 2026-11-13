@@ -707,17 +707,28 @@ public struct CloudAgentLine: Hashable, Sendable, Identifiable {
  * one is connected.
  */
 public struct ModelConnectCard: Hashable, Sendable {
-  /** The providers offered, in the order shown (`claude`, `chatgpt`). */
+  /** The providers offered, in the order shown (`claude`, `chatgpt`, `cursor`). */
   public let providers: [String]
 
+  /**
+   * Cursor, the third program a cloud agent can code in (13 November 2026,
+   * the founder: "Cursor now"). It is no plan in AI Models: it is signed in
+   * on the person's cloud computer with Cursor's own program, and its row
+   * reads that computer (`CursorSignIn`).
+   */
+  public static let cursor = "cursor"
+
   /** The providers a cloud agent's coding can run on. */
-  public static let offered = [AIModels.claude, AIModels.chatGPT]
+  public static let offered = [AIModels.claude, AIModels.chatGPT, cursor]
+
+  /** A provider whose sign-in is on the cloud computer and read from it, not from AI Models. */
+  public static func onComputer(_ provider: String) -> Bool { provider == cursor }
 
   public init?(_ message: JSON) {
     let named = (message["providers"]?.array ?? []).compactMap { $0.text }.filter { ModelConnectCard.offered.contains($0) }
     var seen = Set<String>()
     let kept = named.filter { seen.insert($0).inserted }
-    // A card that names none it knows (an engine newer than this app) still offers the two.
+    // A card that names none it knows (an engine newer than this app) still offers them all.
     providers = kept.isEmpty ? ModelConnectCard.offered : kept
   }
 
@@ -729,12 +740,17 @@ public struct ModelConnectCard: Hashable, Sendable {
    * settings is claude and chat gpt. they are two dif things").
    */
   public static func program(_ provider: String) -> String {
-    provider == AIModels.chatGPT ? "Codex" : "Claude Code"
+    provider == AIModels.chatGPT ? "Codex" : provider == cursor ? "Cursor" : "Claude Code"
+  }
+
+  /** Whose plan the program runs on, as the person knows it: Claude, ChatGPT, Cursor. */
+  public static func plan(_ provider: String) -> String {
+    provider == cursor ? "Cursor" : AIModels.providerName(provider)
   }
 
   /** The program's own logo (`Mascots/<name>`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
   public static func logo(_ provider: String) -> String {
-    provider == AIModels.chatGPT ? "codex" : "claudecode"
+    provider == AIModels.chatGPT ? "codex" : provider == cursor ? "cursor" : "claudecode"
   }
 
   /** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
@@ -746,13 +762,15 @@ public struct ModelConnectCard: Hashable, Sendable {
   /** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
   public static func line(_ provider: String, connected: Bool) -> String {
     if connected { return "" }
-    return L10n.text("Runs on your \(AIModels.providerName(provider)) plan.")
+    return L10n.text("Runs on your \(plan(provider)) plan.")
   }
 
   public static var connectLabel: String { L10n.text("Connect") }
 
-  /** The card in the list of chats: "Connect Claude Code, Codex". */
-  public static var preview: String { L10n.text("Connect \(offered.map(program).joined(separator: ", "))") }
+  /** The card in the list of chats: "Connect Claude Code, Codex, Cursor"; a card for one program, that one's name. */
+  public static var preview: String { preview(offered) }
+  public static func preview(_ providers: [String]) -> String { L10n.text("Connect \(providers.map(program).joined(separator: ", "))") }
+  public var previewText: String { Self.preview(providers) }
 
   /** Seconds until the accounts are read again while a row still waits; never once one is connected. */
   public static func nextPoll(anyConnected: Bool) -> Double? { anyConnected ? nil : 4 }
@@ -1074,7 +1092,7 @@ public enum Chat {
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
     case "github-sign-in": return L10n.text("Connect GitHub")
-    case "model-connect": return ModelConnectCard.preview
+    case "model-connect": return ModelConnectCard(message)?.previewText ?? ModelConnectCard.preview
     case "purchase": return message["content"]?.string ?? L10n.text("Checkout")
     case "products": return message["content"]?.string ?? L10n.text("Products")
     case "flight-passengers": return message["content"]?.string ?? L10n.text("Traveller details")

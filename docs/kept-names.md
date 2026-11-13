@@ -88,6 +88,14 @@ same way: the Bots rule covers its files on the server, in SimeonCore, the three
 words, and the network's rule its server files' `Cursor` (Grok Bot signs in with Cursor's
 registration).
 
+Cloud agents in Cursor (13 November 2026, `docs/services-agents.md`, section 1): Cursor's own
+command-line agent is a program a cloud agent's coding can run in, beside Claude Code and Codex.
+One more **contract** rule covers the files that install it, sign in to it on the computer, run
+a turn in it and offer it on the chat's connect card (the engine's `host/cursor/` and cloud
+agent files, the server's plan name, SimeonCore and the three apps' card and sheet, their
+tests): they name it as the product it is, with its download address and the site its sign-in
+page is on. A second rule keeps the same in the web app's built index file.
+
 ## The wire, for one release
 
 Since 5 October 2026 the Connect services carry Simeon's names

@@ -842,6 +842,44 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: Connect Cursor, the card's third row
+
+The founder: "Cursor now". A cloud agent's coding can run in Cursor's own
+command-line agent on the person's Cursor plan (the engine and server side:
+`docs/services-agents.md`, section 1).
+
+- **Done in the web app.** The connect card offers a third program
+  (`modelConnectOffered`, `cursor`): "Connect Cursor", "Runs on your Cursor
+  plan.", with Cursor's own app icon (`assets/mascots/cursor.png`, cut from
+  the logo file on Cursor's brand page). Cursor is signed in on the cloud
+  computer, so its row reads the computer (`store.cursorSignIn`,
+  `getCursorSignIn`) on the card's own clock, not AI Models. Connect shows a
+  consent of its own (`codingConsent('cursor')`: the agents keep their model;
+  the sign-in stays on the cloud computer; to disconnect, ask an agent) and
+  then `CursorConnectSheet.tsx`: "Setting up Cursor on your computer…", then
+  "Open Cursor" (only a page on Cursor's own site is ever opened,
+  `isCursorPage`) with "Waiting for you to approve…", then "You're now
+  connected to Cursor."; a sign-in that didn't finish says so, with Try
+  Again. A card for one program alone ("in Cursor") draws that row only, and
+  the chat list's preview names what the card offers. A cloud agent that
+  codes in Cursor carries Cursor's logo on its lines (`cloudAgentMascot`).
+- **Checked.** `pnpm typecheck`, `pnpm test` (1,298 pass), `pnpm build`; in
+  Chromium against a stand-in server and computer, light and dark: the three
+  rows with their logos loaded, the consent's words, the sheet's three
+  states, the link opened (Cursor's site, never reached: `window.open` was
+  stood in), the row turned to Connected, the card for Cursor alone, Try
+  Again, 620 px wide with nothing sideways, no console errors.
+- **Not checked.** Against a real computer or a real Cursor account. The Mac
+  and iPhone screens (`MacCursorConnectSheet`, `CursorConnectSheet`) only
+  parse here; they were not built or run.
+- **Decisions, mine, for the founder to confirm.** Cursor's app icon as its
+  logo. No row for Cursor in Settings › AI Models (that page is the plans
+  the agents' own model runs on): disconnecting is asked of an agent. With
+  Claude or ChatGPT also connected, Cursor codes only when the person names
+  it.
+- **Next.** A real run once the engine is published; a Settings row for
+  Cursor if the founder wants one.
+
 ### 13 November 2026: the dialog opened from the connect card says Codex and Claude Code
 
 The founder, asked whether the dialog after Connect should keep saying

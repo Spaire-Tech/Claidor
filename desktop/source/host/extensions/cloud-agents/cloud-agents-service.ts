@@ -8,7 +8,8 @@ import { CloudAgentCompletionPoller, CloudAgentModelCatalogCache, CloudAgentTeam
 import { SandCloudAgentLaunchError } from "./cloud-agent-launch-error.js";
 import { buildCloudAgentConversationAction, buildCloudAgentRequestedModel, buildCloudAgentUserMessage, buildRepoFromRemote, resolveCloudAgentEnvironmentFields, resolveLaunchRepoReference, toStartRepoConfig, type CloudAgentEnvironment, type SavedEnvironment } from "./cloud-agent-request-composition.js";
 import type { SandModelCatalogEntry } from "../../../shared/agents/model-catalog.js";
-import { coderOfModel, codingChoice, type CodingChoice } from "../../cloud-agents/coding-choice.js";
+import { CLOUD_AGENT_CODER, coderName, coderOfModel, coderPlan, coderProvider, codingChoice, type CloudAgentCoder, type CodingChoice } from "../../cloud-agents/coding-choice.js";
+import type { CursorSignInState } from "../../cursor/cursor-account.js";
 import { refreshSimeonModelRolesBeforeTurn } from "../inference/simeon-model-roles.js";
 import { GITHUB_DEVICE_URL, type GitHubSignInState } from "../../cloud-agents/coding-github.js";
 export const MAX_CLOUD_AGENT_FILES = 300;
@@ -23,6 +24,8 @@ export const ON_COMPUTER_FIELDS = { usePrivateWorker: true, labels: [{ key: "exe
 export interface CloudAgentCoding { kick(): void; isBusy(): boolean }
 /** GitHub on this computer (`coding-github.ts`). */
 export interface CloudAgentGitHub { startSignIn(agentId: string): Promise<GitHubSignInState>; signInState(): Promise<GitHubSignInState> }
+/** Cursor on this computer (`cursor/cursor-account.ts`): signed in with Cursor's own program, for a cloud agent's coding in Cursor. */
+export interface CloudAgentCursor { startSignIn(): Promise<CursorSignInState>; signInState(): CursorSignInState; signOut(): Promise<CursorSignInState> }
 /** The chat's Connect GitHub card (the apps' `github-sign-in`): the code, where to type it, and until when. */
 export interface GitHubSignInCard { readonly type: "github-sign-in"; readonly code: string; readonly url: string; readonly expiresAtMs: number }
 /**
@@ -31,11 +34,14 @@ export interface GitHubSignInCard { readonly type: "github-sign-in"; readonly co
  * the order shown. Each row opens that provider's own connect flow in AI Models; the card reads what is connected
  * from the app's own accounts, so it carries no state.
  */
-export interface ModelConnectCard { readonly type: "model-connect"; readonly providers: readonly ("claude" | "chatgpt")[] }
-export const MODEL_CONNECT_PROVIDERS = ["claude", "chatgpt"] as const;
+export interface ModelConnectCard { readonly type: "model-connect"; readonly providers: readonly ("claude" | "chatgpt" | "cursor")[] }
+/** Cursor is the third (13 November 2026, the founder: "Cursor now"); an app from before it draws the two it knows. */
+export const MODEL_CONNECT_PROVIDERS = ["claude", "chatgpt", "cursor"] as const;
 /** Whether a launch or a follow-up may go ahead: yes, or what the agent is told instead, with the card to show (`waitFor`: what the agent is resumed on). */
 export type CodingReadiness = { readonly ok: true } | { readonly ok: false; readonly text: string; readonly card?: GitHubSignInCard | ModelConnectCard; readonly waitFor?: "model" };
-export const MODEL_CONNECT_CARD_TEXT = "A cloud agent codes in Claude Code on the user's own Claude plan, or in Codex on their ChatGPT plan, and neither is connected, so nothing was launched. A card is now in the chat with both to connect, named as the card names them: Claude Code and Codex. Say so in one short sentence in your own words, with those two names (they pick whichever plan they have), don't explain the steps or send a link, and don't ask them to report back: you're resumed automatically once one is connected, and then you launch again.";
+export const MODEL_CONNECT_CARD_TEXT = "A cloud agent codes in Claude Code on the user's own Claude plan, in Codex on their ChatGPT plan, or in Cursor on their Cursor plan, and none of them is connected, so nothing was launched. A card is now in the chat with all three to connect, named as the card names them: Claude Code, Codex and Cursor. Say so in one short sentence in your own words, with those three names (they pick whichever plan they have), don't explain the steps or send a link, and don't ask them to report back: you're resumed automatically once one is connected, and then you launch again.";
+/** What the agent is told when the launch named a program that isn't connected: its card alone is in the chat. */
+export function programConnectCardText(program: CloudAgentCoder): string { const name = coderName(program); return `The user asked for ${name}, which runs on their own ${coderPlan(program)} plan, and it isn't connected, so nothing was launched. A card is now in the chat to connect ${name}. Say so in one short sentence in your own words, don't explain the steps or send a link, and don't ask them to report back: you're resumed automatically once it is connected, and then you launch again with the same program.`; }
 /** One line of a cloud agent's conversation, as the apps draw it. */
 export interface CloudAgentLine { readonly id: string; readonly role: "prompt" | "update" | "answer"; readonly text: string; readonly atMs: number }
 /** The server's conversation rows (`ConversationMessage`: `type` 1 the asker's, 2 the cloud agent's) as the apps' lines; rows with no words are left out. */
@@ -96,9 +102,16 @@ export class SandCloudAgentManager {
   attachCoding(coding: CloudAgentCoding): void { this.coding = coding; }
   /** GitHub on this computer, which the coding opens repositories with. */
   attachGitHub(github: CloudAgentGitHub): void { this.github = github; }
-  private modelWait?: { wait(agentId: string): void };
-  /** What resumes an agent once Claude or ChatGPT is connected from the chat's card (`model-connect-wait.ts`). */
-  attachModelWait(modelWait: { wait(agentId: string): void }): void { this.modelWait = modelWait; }
+  private modelWait?: { wait(agentId: string, program?: CloudAgentCoder): void };
+  /** What resumes an agent once a program is connected from the chat's card (`model-connect-wait.ts`). */
+  attachModelWait(modelWait: { wait(agentId: string, program?: CloudAgentCoder): void }): void { this.modelWait = modelWait; }
+  private cursor?: CloudAgentCursor;
+  /** Cursor on this computer, which a cloud agent's coding may run in. */
+  attachCursor(cursor: CloudAgentCursor): void { this.cursor = cursor; }
+  /** The card's Cursor row (`getCursorSignIn`, `startCursorSignIn`, `signOutCursor`); "none" where this engine does no coding. */
+  async getCursorSignIn(): Promise<CursorSignInState> { return this.cursor === undefined ? { state: "none" } : this.cursor.signInState(); }
+  async startCursorSignIn(): Promise<CursorSignInState> { return this.cursor === undefined ? { state: "failed", why: "Cursor can't be connected on this computer" } : await this.cursor.startSignIn(); }
+  async signOutCursor(): Promise<CursorSignInState> { return this.cursor === undefined ? { state: "none" } : await this.cursor.signOut(); }
   /** The Connect GitHub card's state (`getGitHubSignIn`); "none" where this engine does no coding. */
   async getGitHubSignIn(): Promise<GitHubSignInState> { return this.github === undefined ? { state: "none" } : await this.github.signInState(); }
   /**
@@ -108,30 +121,35 @@ export class SandCloudAgentManager {
    * neither model is, the card that offers both comes back (13 November
    * 2026); when GitHub isn't, its sign-in starts and the card that carries
    * its code comes back. Always yes where this engine does no coding (the
-   * cloud runner answers then, as before).
+   * cloud runner answers then, as before). A launch that named a program
+   * (`program`: "in Cursor") needs that one: when it isn't connected, its
+   * card alone comes back.
    */
-  async codingReady(agentId: string, choice: () => { readonly model: string } | undefined = codingChoice, refresh: () => Promise<void> = refreshSimeonModelRolesBeforeTurn): Promise<CodingReadiness> {
+  async codingReady(agentId: string, choice: (kept?: CloudAgentCoder) => { readonly model: string; readonly coder?: CloudAgentCoder } | undefined = codingChoice, refresh: () => Promise<void> = refreshSimeonModelRolesBeforeTurn, program?: CloudAgentCoder): Promise<CodingReadiness> {
     if (this.coding === undefined || this.github === undefined) return { ok: true };
+    const found = (): boolean => { const one = choice(program); return one !== undefined && (program === undefined || (one.coder ?? CLOUD_AGENT_CODER) === program); };
     // What was connected a moment ago in AI Models counts: the roles are read again when the last read is old.
-    if (choice() === undefined) await refresh().catch(() => undefined);
-    if (choice() === undefined) {
-      this.modelWait?.wait(agentId);
-      return { ok: false, text: MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: MODEL_CONNECT_PROVIDERS }, waitFor: "model" };
+    if (!found()) await refresh().catch(() => undefined);
+    if (!found()) {
+      this.modelWait?.wait(agentId, program);
+      return program === undefined
+        ? { ok: false, text: MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: MODEL_CONNECT_PROVIDERS }, waitFor: "model" }
+        : { ok: false, text: programConnectCardText(program), card: { type: "model-connect", providers: [coderProvider(program)] }, waitFor: "model" };
     }
     const state = await this.github.startSignIn(agentId);
     if (state.state === "connected") return { ok: true };
     if (state.state === "waiting") return { ok: false, text: GITHUB_CARD_TEXT, card: { type: "github-sign-in", code: state.code, url: state.url || GITHUB_DEVICE_URL, expiresAtMs: state.expiresAtMs } };
     return { ok: false, text: `GitHub's sign-in couldn't start on your own computer (the box, not the user's Mac or PC): ${state.state === "failed" ? state.why : "the sign-in ended"}. Nothing was launched. Tell the user plainly that this is on Simeon's side and nothing on their own computer needs doing; try the launch once more later, and if it says the same, stop and tell them it needs fixing by Simeon Labs.` };
   }
-  /** The model that codes now (`own:claude:…`, `own:chatgpt:…`), which a launch on this computer carries so the server knows the program from the start. */
-  private codingModelId(): string | undefined { return (codingChoice() as CodingChoice | undefined)?.modelId; }
+  /** The model that codes now (`own:claude:…`, `own:chatgpt:…`, `own:cursor:…`), in `program` when the launch named one, which a launch on this computer carries so the server knows the program from the start. */
+  private codingModelId(program?: CloudAgentCoder): string | undefined { return (codingChoice(program) as CodingChoice | undefined)?.modelId; }
   /** A turn of coding is being done on this computer (the sleeper keeps it awake). */
   isCodingBusy(): boolean { return this.coding?.isBusy() ?? false; }
   isDisabledByTeamAdmin(): boolean { return this.teamAdminPolicy.isDisabledByTeamAdmin(); } prefetchTeamAdminPolicy(): void { this.teamAdminPolicy.prefetchTeamAdminPolicy(); } dispose(): void { this.completionPoller.dispose(); } listModels(): Promise<readonly SandModelCatalogEntry[]> { return this.modelCatalog.listModels(); }
   private getClient(): CloudAgentClient { return this.options.clientForTesting ?? (this.client ??= createSimeonBackendClient(CloudAgentService, { getAccessToken: this.options.getAccountAccessToken, getMachineId: this.options.getMachineId, ...(this.options.onRequestId === undefined ? {} : { onRequestId: this.options.onRequestId }) }) as unknown as CloudAgentClient); }
   private getDashboardClient(): DashboardClient { return this.options.dashboardClientForTesting ?? (this.dashboardClient ??= createSimeonBackendClient(DashboardService, { getAccessToken: this.options.getAccountAccessToken, getMachineId: this.options.getMachineId, ...(this.options.onRequestId === undefined ? {} : { onRequestId: this.options.onRequestId }) }) as unknown as DashboardClient); }
   async resolvePrivateWorkerTeamId(environment?: CloudAgentEnvironment): Promise<number | undefined> { if (environment == null || environment.type === "cloud" || environment.type === "environment") return undefined; if (environment.teamId != null) return environment.teamId; const teams = (await this.getDashboardClient().getTeams({ activeOnly: true })).teams.filter((team) => team.id > 0 && team.isDirectMember); if (teams.length === 1) return teams[0]?.id; if (teams.length === 0) { if (environment.type === "pool") throw new SandCloudAgentLaunchError("A self-hosted pool requires an active team, but this account has none."); return undefined; } throw new SandCloudAgentLaunchError(`This account has multiple active teams. Set environment.team_id to one of: ${teams.map((team) => `${team.name} (${team.id})`).join(", ")}.`); }
-  async launch(args: { prompt: string; repoUrl?: string; startingRef?: string; environment?: CloudAgentEnvironment; modelId?: string; modelParams?: Readonly<Record<string, string>>; images?: readonly { data: Uint8Array; path?: string; mimeType?: string }[]; title?: string }) { if (args.environment?.type === "machine" && args.startingRef?.trim()) throw new SandCloudAgentLaunchError(`A named private worker runs on its own checkout, so it can't start from '${args.startingRef}'. Omit starting_ref (the worker uses its current branch), or use a cloud or pool environment to start from a specific ref.`); const saved = args.environment?.type === "environment" ? await resolveSavedEnvironment(this.getClient(), { ...(args.environment.publicId === undefined ? {} : { publicId: args.environment.publicId }), ...(args.environment.name === undefined ? {} : { name: args.environment.name }) }) as SavedEnvironment : undefined, repo = buildRepoFromRemote(resolveLaunchRepoReference(args.repoUrl, saved), args.startingRef), requestedModel = buildCloudAgentRequestedModel(args.modelId ?? (this.coding === undefined ? undefined : this.codingModelId()), args.modelParams), bcId = `bc-${randomUUID()}`, teamId = await this.resolvePrivateWorkerTeamId(args.environment); const request: AnyRecord = { bcId, snapshotNameOrId: repo.sanitizedRepoUrl, devcontainerStartingPoint: { url: repo.httpRepoUrl, ref: repo.baseBranch ?? "", ...(saved == null ? {} : { environmentPublicId: saved.publicId, ...(saved.name.trim() ? { environmentName: saved.name.trim() } : {}), repoConfig: toStartRepoConfig(saved.repoConfig) }) }, snapshotWorkspaceRootPath: "/workspace", returnImmediately: true, repoUrl: repo.httpRepoUrl, source: BackgroundComposerSource.SIMEON, autoBranch: true, ...(repo.baseBranch === undefined ? {} : { baseBranch: repo.baseBranch }), autoCreatePr: true, conversationAction: buildCloudAgentConversationAction(buildCloudAgentUserMessage({ prompt: args.prompt, mode: AgentMode.AGENT, ...(args.images === undefined ? {} : { images: args.images }) })), startingMessageType: StartingMessageType.USER_MESSAGE, addInitialMessageToResponses: true, repositoryInfo: { pathEncryptionKey: "", shouldSyncIndex: false }, ...resolveCloudAgentEnvironmentFields(repo.httpRepoUrl, args.environment), ...(this.coding !== undefined && (args.environment == null || args.environment.type === "cloud" || args.environment.type === "environment") ? ON_COMPUTER_FIELDS : {}), requestedModels: requestedModel == null ? [] : [requestedModel], skills: [], ...(teamId === undefined ? {} : { teamId }), ...(args.title?.trim() ? { name: args.title.trim() } : {}) }; const response = await this.getClient().startBackgroundComposerFromSnapshot(request), id = response.composer?.bcId || bcId; this.coding?.kick(); return { bcId: id, url: cloudAgentUrl(id) }; }
+  async launch(args: { prompt: string; repoUrl?: string; startingRef?: string; environment?: CloudAgentEnvironment; program?: CloudAgentCoder; modelId?: string; modelParams?: Readonly<Record<string, string>>; images?: readonly { data: Uint8Array; path?: string; mimeType?: string }[]; title?: string }) { if (args.environment?.type === "machine" && args.startingRef?.trim()) throw new SandCloudAgentLaunchError(`A named private worker runs on its own checkout, so it can't start from '${args.startingRef}'. Omit starting_ref (the worker uses its current branch), or use a cloud or pool environment to start from a specific ref.`); const saved = args.environment?.type === "environment" ? await resolveSavedEnvironment(this.getClient(), { ...(args.environment.publicId === undefined ? {} : { publicId: args.environment.publicId }), ...(args.environment.name === undefined ? {} : { name: args.environment.name }) }) as SavedEnvironment : undefined, repo = buildRepoFromRemote(resolveLaunchRepoReference(args.repoUrl, saved), args.startingRef), requestedModel = buildCloudAgentRequestedModel(args.modelId ?? (this.coding === undefined ? undefined : this.codingModelId(args.program)), args.modelParams), bcId = `bc-${randomUUID()}`, teamId = await this.resolvePrivateWorkerTeamId(args.environment); const request: AnyRecord = { bcId, snapshotNameOrId: repo.sanitizedRepoUrl, devcontainerStartingPoint: { url: repo.httpRepoUrl, ref: repo.baseBranch ?? "", ...(saved == null ? {} : { environmentPublicId: saved.publicId, ...(saved.name.trim() ? { environmentName: saved.name.trim() } : {}), repoConfig: toStartRepoConfig(saved.repoConfig) }) }, snapshotWorkspaceRootPath: "/workspace", returnImmediately: true, repoUrl: repo.httpRepoUrl, source: BackgroundComposerSource.SIMEON, autoBranch: true, ...(repo.baseBranch === undefined ? {} : { baseBranch: repo.baseBranch }), autoCreatePr: true, conversationAction: buildCloudAgentConversationAction(buildCloudAgentUserMessage({ prompt: args.prompt, mode: AgentMode.AGENT, ...(args.images === undefined ? {} : { images: args.images }) })), startingMessageType: StartingMessageType.USER_MESSAGE, addInitialMessageToResponses: true, repositoryInfo: { pathEncryptionKey: "", shouldSyncIndex: false }, ...resolveCloudAgentEnvironmentFields(repo.httpRepoUrl, args.environment), ...(this.coding !== undefined && (args.environment == null || args.environment.type === "cloud" || args.environment.type === "environment") ? ON_COMPUTER_FIELDS : {}), requestedModels: requestedModel == null ? [] : [requestedModel], skills: [], ...(teamId === undefined ? {} : { teamId }), ...(args.title?.trim() ? { name: args.title.trim() } : {}) }; const response = await this.getClient().startBackgroundComposerFromSnapshot(request), id = response.composer?.bcId || bcId; this.coding?.kick(); return { bcId: id, url: cloudAgentUrl(id) }; }
   awaitCompletion(bcId: string, options?: { waitForRestart?: boolean }) { return this.completionPoller.awaitCompletion(bcId, options); }
   async list(args?: { limit?: number; includeArchived?: boolean }) { const response = await this.getClient().listBackgroundComposers({ n: args?.limit ?? 20 }); return response.composers.filter((composer) => (args?.includeArchived ?? false) || composer.isArchived !== true).map((composer) => ({ bcId: String(composer.bcId ?? ""), name: String(composer.name ?? ""), status: mapRunStatus(composer.status), branchName: String(composer.branchName ?? ""), prUrl: String(composer.prUrl ?? ""), isArchived: composer.isArchived === true, createdAtMs: Number(composer.createdAtMs ?? 0), url: cloudAgentUrl(String(composer.bcId ?? ""), String(composer.prUrl ?? "")) })); }
   async get(bcId: string) { const id = bcId.trim(); if (!id) return null; const detailed = (await this.getClient().getBackgroundComposerInfo({ bcId: id, includeDiff: false, doNotThrowIfSetupNotFinished: true })).composer, composer = detailed?.composer; if (composer == null) return null; return { bcId: id, name: composer.name ?? "", status: statusOf(detailed), branchName: resolveBranchName(detailed), prUrl: resolvePrUrl(detailed), isArchived: composer.isArchived ?? false, createdAtMs: composer.createdAtMs ?? 0, url: cloudAgentUrl(id, resolvePrUrl(detailed)), filesChanged: composer.filesChanged ?? 0, linesAdded: composer.linesAdded ?? 0, linesRemoved: composer.linesRemoved ?? 0, error: resolveSandLimitError(detailed), coder: coderOfModel(composer.requestedModel?.modelId) as string }; }

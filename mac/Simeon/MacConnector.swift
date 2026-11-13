@@ -343,8 +343,12 @@ struct ConnectConsentLayer: View {
     .animation(.easeOut(duration: 0.18), value: connector.asking?.id)
     .ignoresSafeArea()
     // A chat card's Connect for Claude Code or Codex: the plan's own sign-in sheet, as AI Models opens it, under the program's name.
-    .sheet(isPresented: Binding(get: { connector.modelSignIn != nil && connector.modelSignIn != AIModels.claude }, set: { if !$0 { connector.modelSignIn = nil } })) {
+    .sheet(isPresented: Binding(get: { connector.modelSignIn != nil && connector.modelSignIn != AIModels.claude && connector.modelSignIn != ModelConnectCard.cursor }, set: { if !$0 { connector.modelSignIn = nil } })) {
       MacChatGPTConnectSheet(model: model, provider: connector.modelSignIn ?? AIModels.chatGPT, coding: true)
+    }
+    // Cursor is signed in on the cloud computer, on Cursor's own page: a sheet of its own (13 November 2026).
+    .sheet(isPresented: Binding(get: { connector.modelSignIn == ModelConnectCard.cursor }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacCursorConnectSheet()
     }
     .sheet(isPresented: Binding(get: { connector.modelSignIn == AIModels.claude }, set: { if !$0 { connector.modelSignIn = nil } })) {
       MacClaudeConnectSheet(model: model, coding: true)

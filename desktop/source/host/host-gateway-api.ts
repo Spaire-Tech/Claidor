@@ -673,6 +673,12 @@ export function createHostGatewayApi(
     // The Connect GitHub card's state: waiting with its code, connected, expired, failed or none.
     getGitHubSignIn: () =>
       method(deps.extensions.api("cloud-agents"), "getGitHubSignIn")(),
+    getCursorSignIn: () =>
+      method(deps.extensions.api("cloud-agents"), "getCursorSignIn")(),
+    startCursorSignIn: () =>
+      method(deps.extensions.api("cloud-agents"), "startCursorSignIn")(),
+    signOutCursor: () =>
+      method(deps.extensions.api("cloud-agents"), "signOutCursor")(),
     ensureForeverBox: async (args: any) =>
       deps.decorateForeverBoxStatus(
         await method(deps.extensions.api("forever-box"), "ensure")(args)

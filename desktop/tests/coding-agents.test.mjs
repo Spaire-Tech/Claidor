@@ -125,6 +125,7 @@ test("the small parts: the repository, the branch, the diff, the words still una
     const home = module.buildBoxHomeCategory("/home/box");
     assert.ok(home.excludes.includes("home/box/.config/gh/hosts.yml"), "GitHub's sign-in stays on the computer, as Claude's");
     assert.ok(home.excludes.includes("home/box/code/**"), "the checkouts are never copied into Simeon's backup");
+    assert.ok(home.excludes.includes("home/box/.config/cursor/auth.json"), "Cursor's sign-in stays on the computer too");
   } finally {
     await dispose();
   }
@@ -223,7 +224,7 @@ test("the stops: neither Claude nor ChatGPT connected, GitHub not connected, not
     const never = async () => { throw new Error("Claude Code must not run"); };
     let outcome = await module.runCodingJob(job(), { choice: () => undefined, account, env: s.env, runClaude: never, log: quiet });
     assert.deepEqual([outcome.kind, outcome.retryable], ["failed", false]);
-    assert.match(outcome.reason, /Neither Claude nor ChatGPT is connected[\s\S]*Settings › AI Models/);
+    assert.match(outcome.reason, /Neither Claude, ChatGPT nor Cursor is connected[\s\S]*launching again shows the card/);
 
     outcome = await module.runCodingJob(job(), { choice, account: async () => ({ connected: false }), env: s.env, runClaude: never, log: quiet });
     assert.match(outcome.reason, /GitHub isn't connected on the box/);
@@ -667,6 +668,65 @@ test("a cloud agent in Codex (13 November 2026): on the ChatGPT model and effort
   }
 });
 
+test("a cloud agent in Cursor (13 November 2026): on Cursor's own model, the brief and the checkout given to its turn, its first words for the chat, the pull request says Cursor, its model kept; a follow-up carries its session on; the stops name Cursor", async () => {
+  const { module, dispose } = await load();
+  const s = await stage();
+  try {
+    const never = async () => { throw new Error("another program must not run"); };
+    const asked = [];
+    const pick = (kept) => { asked.push(kept); return { coder: "cursor", model: "auto", modelId: "own:cursor:auto" }; };
+    const seen = [];
+    const stageEnv = { ...s.env, GIT_AUTHOR_NAME: "Cursor", GIT_AUTHOR_EMAIL: "c@example.com", GIT_COMMITTER_NAME: "Cursor", GIT_COMMITTER_EMAIL: "c@example.com" };
+    const cursor = async (input) => {
+      seen.push({ prompt: input.prompt, resume: input.resume, brief: input.brief, cwd: input.cwd, model: input.model, keys: Object.keys(input).sort() });
+      input.onEvent?.({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "On it. I'll add the file first." }] } });
+      const file = `cursor-${seen.length}.md`;
+      await writeFile(path.join(input.cwd, file), "From Cursor\n");
+      execFileSync("git", ["add", file], { cwd: input.cwd, env: stageEnv });
+      execFileSync("git", ["commit", "-q", "-m", `Add ${file}`], { cwd: input.cwd, env: stageEnv });
+      input.onEvent?.({ type: "assistant", message: { role: "assistant", content: [{ type: "text", text: "Added the note; the checks pass." }] } });
+      return { kind: "done", sessionId: SESSION, text: "Added the note; the checks pass." };
+    };
+    const first = [];
+    const logged = [];
+    const outcome = await module.runCodingJob(job(), { choice: pick, account, env: s.env, runCursor: cursor, runCodex: never, runClaude: never, onFirstWords: (words, coder) => first.push([words, coder]), log: (line) => logged.push(line) });
+    assert.equal(outcome.kind, "done");
+    assert.equal(outcome.text, "Added the note; the checks pass.");
+    assert.equal(outcome.work.modelId, "own:cursor:auto", "the server keeps the model, and so the program");
+    assert.equal(outcome.work.sessionId, SESSION);
+    assert.equal(outcome.work.prNumber, 7);
+    assert.deepEqual(first, [["On it. I'll add the file first.", "cursor"]]);
+    assert.deepEqual(outcome.work.updates.map((one) => one.text), ["On it. I'll add the file first."], "its answer is the answer, not an update");
+    // Its turn is given the task, Simeon's brief and the checkout, and no model: Cursor names its own.
+    assert.equal(seen[0].resume, undefined);
+    assert.equal(seen[0].model, undefined);
+    assert.match(seen[0].brief, /You're working for the person through Simeon/);
+    assert.ok(seen[0].cwd.endsWith(path.join("bc-1", "repo")));
+    assert.ok(logged.some((line) => /cursor model=auto resume=false/.test(line)) && logged.some((line) => /cursor outcome=done/.test(line)));
+    // The pull request says which program made it.
+    assert.match(await readFile(path.join(s.dir, "pr-body.txt"), "utf8"), /Added the note; the checks pass\.\n\n---\nMade by Simeon, with Cursor\.$/);
+
+    // Its follow-up stays in Cursor (the program kept with the cloud agent) and carries its session on.
+    const again = await module.runCodingJob(job({ id: "job-2", conversation: [{ role: "user", text: "Add a greeting file." }, { role: "assistant", text: "Added." }, { role: "user", text: "Also a note." }], work: outcome.work }), { choice: pick, account, env: s.env, runCursor: cursor, runCodex: never, runClaude: never, log: quiet });
+    assert.equal(again.kind, "done");
+    assert.deepEqual(asked, [undefined, "cursor"]);
+    assert.deepEqual([seen[1].resume, seen[1].prompt], [SESSION, "Also a note."]);
+
+    // The stops, in Cursor's name.
+    let stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, runCursor: async () => ({ kind: "limited", said: "Error: [resource_exhausted] limit" }) });
+    assert.match(stopped.reason, /^Cursor's plan limit was reached, so the work is paused\. It resets at /);
+    let signedOut = 0;
+    stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, onSignedOut: () => { signedOut += 1; }, runCursor: async () => ({ kind: "signed_out", said: "Authentication required" }) });
+    assert.match(stopped.reason, /^Cursor isn't signed in on the computer any more\. The person connects Cursor again/);
+    assert.equal(signedOut, 0, "that word is Claude's alone");
+    stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, runCursor: async () => ({ kind: "not_installed" }) });
+    assert.deepEqual([stopped.reason, stopped.retryable], ["Cursor isn't installed on the computer yet; it installs by itself.", true]);
+  } finally {
+    await s.dispose();
+    await dispose();
+  }
+});
+
 test("the manager: the launch asks for the computer, Claude and GitHub are checked first, Paused reads from the limit, links go to the pull request", async () => {
   const { module, dispose } = await load();
   try {
@@ -693,10 +753,18 @@ test("the manager: the launch asks for the computer, Claude and GitHub are check
     const waited = [];
     let reads = 0;
     manager.attachModelWait({ wait: (agentId) => waited.push(agentId) });
-    assert.deepEqual(await manager.codingReady("agent-1", () => undefined, async () => { reads += 1; }), { ok: false, text: module.MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: ["claude", "chatgpt"] }, waitFor: "model" });
+    assert.deepEqual(await manager.codingReady("agent-1", () => undefined, async () => { reads += 1; }), { ok: false, text: module.MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: ["claude", "chatgpt", "cursor"] }, waitFor: "model" });
     // The agent names the programs as the card does (13 November 2026, the founder: "its connect codex or connect claude code").
-    assert.match(module.MODEL_CONNECT_CARD_TEXT, /Claude Code and Codex[\s\S]*resumed automatically once one is connected/);
+    assert.match(module.MODEL_CONNECT_CARD_TEXT, /Claude Code, Codex and Cursor[\s\S]*resumed automatically once one is connected/);
     assert.deepEqual([waited, reads], [["agent-1"], 1]);
+    // A launch that named a program (13 November 2026, the founder: "Cursor now"): another one connected doesn't do; its own card alone, and the agent waits for that program.
+    const asked = [];
+    manager.attachModelWait({ wait: (agentId, program) => asked.push([agentId, program]) });
+    const named = await manager.codingReady("agent-1", () => ({ model: "opus", coder: "claude-code" }), async () => {}, "cursor");
+    assert.deepEqual([named.ok, named.card, named.waitFor], [false, { type: "model-connect", providers: ["cursor"] }, "model"]);
+    assert.match(named.text, /asked for Cursor[\s\S]*A card is now in the chat to connect Cursor[\s\S]*resumed automatically/);
+    assert.deepEqual(asked, [["agent-1", "cursor"]]);
+    manager.attachModelWait({ wait: (agentId) => waited.push(agentId) });
     // Connected a moment ago in AI Models: the list read again finds it, and no card is shown.
     let known;
     assert.equal((await manager.codingReady("agent-1", () => known, async () => { known = { model: "gpt-6.1-sol" }; })).text, module.GITHUB_CARD_TEXT);
@@ -763,6 +831,26 @@ test("the CloudAgent tool: nothing is launched while Claude or GitHub is missing
     // 2026), with the name it gave; the answer says the chat shows the exchange and the card comes by itself.
     const asked = [];
     const telling = { ...deps, onLaunched: async (event) => { await new Promise((resolve) => setTimeout(resolve, 5)); asked.push(["launch", event]); }, onFollowupSent: (event) => { asked.push(["reply", event]); } };
+    // A launch that names Cursor (13 November 2026, the founder: "Cursor now"): the readiness check and the launch are given the program, and the agent is told where it runs.
+    const named = [];
+    const launches = [];
+    const inCursor = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "Fix it.", repo_url: "simeonlabs/demo", program: "cursor" }, { ...deps, api: { ...api, launch: async (args) => { launches.push(args.program); return { bcId: "bc-3", url: "" }; } }, codingReady: async (program) => { named.push(program); return { ok: true }; }, coder: (program) => program });
+    assert.match(inCursor, /It runs on your own computer \(the box\), in Cursor on the user's own Cursor plan\./);
+    assert.deepEqual([named, launches], [["cursor"], ["cursor"]]);
+    // A follow-up keeps the cloud agent's own program: none is named.
+    await module.runCloudAgentAction(ctx, { action: "reply", agent_id: "bc-3", prompt: "More.", program: "cursor" }, { ...deps, codingReady: async (program) => { named.push(program); return { ok: true }; } });
+    assert.deepEqual(named, ["cursor", undefined]);
+    // Disconnecting Cursor is asked of an agent (it has no row in Settings): confirmed first, and only Cursor.
+    let signedOut = 0;
+    const disconnecting = { ...deps, disconnectProgram: async () => { signedOut += 1; return "Cursor is disconnected."; } };
+    assert.match(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor" }, disconnecting), /^'disconnect_program' is destructive\. Confirm with the user first/);
+    assert.equal(signedOut, 0);
+    assert.equal(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor", confirm: true }, disconnecting), "Cursor is disconnected.");
+    assert.equal(signedOut, 1);
+    assert.match(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "codex", confirm: true }, disconnecting), /^Only Cursor is disconnected here[\s\S]*Settings › AI Models\.$/);
+    assert.equal(await module.runCloudAgentAction(ctx, { action: "disconnect_program", program: "cursor", confirm: true }, deps), "Cursor isn't connected on this computer.");
+    assert.equal(signedOut, 1);
+
     const told = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "  Polish the README.  ", title: " Polish the README ", repo_url: "simeonlabs/demo" }, telling);
     assert.deepEqual(asked, [["launch", { bcId: "bc-9", prompt: "Polish the README.", title: "Polish the README" }]], "the line is written before the tool's answer comes back");
     assert.ok(told.includes(module.CLOUD_AGENT_CHAT_NOTE));

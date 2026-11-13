@@ -103,6 +103,7 @@ describe("a cloud agent's conversation (CloudAgentTests)", () => {
     // Its picture is the mascot of the program that coded: Claude Code's, Codex's, and Claude Code's when the computer doesn't say or names another.
     expect(cloudAgentMascot(report.fromAgent!.coder)).toBe('claudecode')
     expect(cloudAgentMascot('codex')).toBe('codex')
+    expect(cloudAgentMascot('cursor')).toBe('cursor')
     expect(cloudAgentMascot(undefined)).toBe('claudecode')
     expect(cloudAgentMascot('gemini')).toBe('claudecode')
     expect(

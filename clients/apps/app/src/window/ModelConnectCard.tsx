@@ -20,6 +20,12 @@
 // screen and both rows wait, for ten minutes at most. The agent goes on by
 // itself once one is connected.
 //
+// Cursor is the third row (13 November 2026, the founder: "Cursor now"). It
+// is no plan in AI Models: it is signed in on the cloud computer, so its row
+// reads the computer (`store.cursorSignIn`) on the same clock, and its
+// Connect opens the consent and then Cursor's own sheet
+// (CursorConnectSheet.tsx).
+//
 // In a file of its own: the sign-in sheets are SettingsModels.tsx's, which
 // itself draws ConnectCards.tsx's icons.
 
@@ -28,12 +34,15 @@ import { createPortal } from 'react-dom'
 import { claude } from '../core/aiModels'
 import {
   connectedWord,
+  cursor,
   modelConnectLine,
   modelConnectLogo,
   modelConnectNextPoll,
+  modelConnectOnComputer,
   modelConnectPolls,
   modelConnectProgram,
   modelConnectTitle,
+  type CursorSignIn,
   type ModelConnectCard,
 } from '../core/connectCards'
 import { codingConsent } from '../core/connectConsent'
@@ -44,6 +53,7 @@ import { CardShell } from './Cards'
 import { ProgramLogo } from './ConnectCards'
 import './ConnectCards.css'
 import { useConnector } from './connector'
+import { CursorConnectSheet } from './CursorConnectSheet'
 import { ChatGPTConnectSheet, ClaudeConnectSheet } from './SettingsModels'
 import { useWatched } from './useStore'
 
@@ -59,6 +69,13 @@ export function ModelConnectCardView({
   const connector = useConnector()
   /** The provider whose sign-in sheet is open. */
   const [signingIn, setSigningIn] = useState<string>()
+  /** What the computer last said of Cursor's sign-in; `asked` once it has answered (or couldn't be asked). */
+  const [cursorSignIn, setCursorSignIn] = useState<CursorSignIn>()
+  const [cursorAsked, setCursorAsked] = useState(false)
+  const connected = (provider: string): boolean =>
+    modelConnectOnComputer(provider)
+      ? cursorSignIn?.state === 'connected'
+      : model.connected(provider)
   const box = useRef<HTMLDivElement>(null)
   const [onScreen, setOnScreen] = useState(false)
   useEffect(() => {
@@ -78,12 +95,23 @@ export function ModelConnectCardView({
     let stopped = false
     let timer: ReturnType<typeof setTimeout> | undefined
     let left = modelConnectPolls
+    const offered = providers.split(',')
     const ask = async () => {
-      await model.load()
+      // Cursor's row reads the computer; the plans' rows, the window's own accounts.
+      const [, said] = await Promise.all([
+        model.load(),
+        offered.includes(cursor) ? store.cursorSignIn() : undefined,
+      ])
       if (stopped) return
+      setCursorSignIn(said)
+      setCursorAsked(true)
       left -= 1
       const wait = modelConnectNextPoll(
-        providers.split(',').some((one) => model.connected(one)),
+        offered.some((one) =>
+          modelConnectOnComputer(one)
+            ? said?.state === 'connected'
+            : model.connected(one),
+        ),
       )
       if (wait != null && left > 0)
         timer = setTimeout(() => void ask(), wait * 1000)
@@ -93,7 +121,7 @@ export function ModelConnectCardView({
       stopped = true
       clearTimeout(timer)
     }
-  }, [model, providers, onScreen])
+  }, [model, store, providers, onScreen])
 
   const connect = (provider: string) => {
     const open = async () => setSigningIn(provider)
@@ -112,24 +140,28 @@ export function ModelConnectCardView({
     <div ref={box} className="github-watch">
       <CardShell className="model-connect-card">
         {card.providers.map((provider) => {
-          const connected = model.connected(provider)
-          const line = modelConnectLine(provider, connected)
+          const isConnected = connected(provider)
+          const line = modelConnectLine(provider, isConnected)
+          // Still being read: the accounts for a plan's row, the computer for Cursor's.
+          const reading = modelConnectOnComputer(provider)
+            ? !cursorAsked
+            : !model.loaded && model.problem === undefined
           return (
             <div key={provider} className="connector-row">
               <ProgramLogo name={modelConnectLogo(provider)} />
               <div className="connector-words">
                 <span className="connector-title">
-                  {modelConnectTitle(provider, connected)}
+                  {modelConnectTitle(provider, isConnected)}
                 </span>
                 {line !== '' && (
                   <span className="connector-line listener-reason">{line}</span>
                 )}
               </div>
-              {connected ? (
+              {isConnected ? (
                 <span className="connector-connected" role="status">
                   {connectedWord()}
                 </span>
-              ) : !model.loaded && model.problem === undefined ? (
+              ) : reading ? (
                 <span
                   className="connect-spinner"
                   role="progressbar"
@@ -151,7 +183,16 @@ export function ModelConnectCardView({
       {/* Over the window, as in AI Models: never inside the chat's own scrolling box. */}
       {signingIn !== undefined &&
         createPortal(
-          signingIn === claude ? (
+          signingIn === cursor ? (
+            <CursorConnectSheet
+              store={store}
+              close={() => {
+                setSigningIn(undefined)
+                // The row follows what the sheet left on the computer.
+                void store.cursorSignIn().then(setCursorSignIn)
+              }}
+            />
+          ) : signingIn === claude ? (
             <ClaudeConnectSheet
               model={model}
               coding

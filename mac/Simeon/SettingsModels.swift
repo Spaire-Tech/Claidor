@@ -696,6 +696,108 @@ struct MacChatGPTConnectSheet: View {
 }
 
 /**
+ * Connect Cursor, from the chat's connect card (13 November 2026, the
+ * founder: "Cursor now"; the shared core's `CursorSignIn`). Cursor is signed
+ * in on the person's cloud computer with Cursor's own program: the first
+ * time the program is put on the computer ("Setting up Cursor on your
+ * computer…"); then it gives a page on Cursor's own site, which the person
+ * opens and approves on. There is no code to type. The sheet asks the
+ * computer again every three seconds until it says connected. Closing the
+ * sheet leaves the sign-in running on the computer: the card's row turns to
+ * Connected by itself. In the ChatGPT sheet's design.
+ */
+struct MacCursorConnectSheet: View {
+  @Environment(AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.colorScheme) private var scheme
+  /** What the computer last said; nil while it is first asked. */
+  @State private var signIn: CursorSignIn?
+  @State private var attempt = 0
+  private let name = ModelConnectCard.program(ModelConnectCard.cursor)
+
+  var body: some View {
+    let look = Look(scheme)
+    VStack(alignment: .leading, spacing: 20) {
+      HStack(spacing: 12) {
+        ProgramLogo(name: ModelConnectCard.logo(ModelConnectCard.cursor), size: 36)
+        Text("Connect \(name)")
+          .font(PanelType.title)
+          .foregroundStyle(look.ink)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 0)
+        GlassDiscButton(symbol: "xmark", help: String(localized: "Close"), size: 32) { dismiss() }
+          .keyboardShortcut(.cancelAction)
+      }
+      content(look)
+    }
+    .padding(28)
+    .frame(width: 460)
+    .background(look.groupedRow)
+    .task(id: attempt) { await run() }
+  }
+
+  @ViewBuilder
+  private func content(_ look: Look) -> some View {
+    // Not asked yet reads as being set up.
+    let state = signIn?.state ?? CursorSignIn.State.installing
+    switch state {
+    case .installing:
+      HStack(spacing: 10) {
+        ProgressView().controlSize(.small)
+        Text(verbatim: CursorSignIn.settingUp(name)).font(PanelType.row).foregroundStyle(look.inkSecondary)
+      }
+    case .connected:
+      VStack(alignment: .leading, spacing: 10) {
+        Label("Connected", systemImage: "checkmark.circle.fill")
+          .font(PanelType.row)
+          .foregroundStyle(look.settingsGreen)
+        Text(verbatim: CursorSignIn.connectedTo(name))
+          .font(PanelType.row)
+          .foregroundStyle(look.ink)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      SheetWideButton(title: String(localized: "Done")) { dismiss() }
+        .padding(.top, 4)
+    case .waiting(let url, _):
+      Text(verbatim: CursorSignIn.steps(name))
+        .font(PanelType.row)
+        .foregroundStyle(look.ink)
+        .fixedSize(horizontal: false, vertical: true)
+      SheetWideButton(title: CursorSignIn.open(name)) { NSWorkspace.shared.open(url) }
+      HStack(spacing: 10) {
+        ProgressView().controlSize(.small)
+        Text(verbatim: CursorSignIn.waiting).font(PanelType.row).foregroundStyle(look.inkSecondary)
+      }
+    case .failed, .none:
+      Text(verbatim: CursorSignIn.didNotFinish(name))
+        .font(PanelType.row)
+        .foregroundStyle(look.danger)
+        .fixedSize(horizontal: false, vertical: true)
+      SheetWideButton(title: CursorSignIn.tryAgain) { attempt += 1 }
+        .padding(.top, 4)
+    }
+  }
+
+  /** The sign-in started on the computer, then asked after until it is connected or has ended. A new attempt starts afresh. */
+  private func run() async {
+    signIn = nil
+    // A computer that couldn't be asked reads as a sign-in that didn't finish.
+    var said = await store.startCursorSignIn() ?? CursorSignIn(state: .failed(why: ""))
+    signIn = said
+    while !Task.isCancelled {
+      switch said.state {
+      case .installing, .waiting: break
+      default: return
+      }
+      try? await Task.sleep(nanoseconds: UInt64(CursorSignIn.pollSeconds * 1_000_000_000))
+      if Task.isCancelled { return }
+      said = await store.cursorSignIn() ?? CursorSignIn(state: .failed(why: ""))
+      signIn = said
+    }
+  }
+}
+
+/**
  * Connect Claude (9 November 2026; the founder's screenshot of Reason's:
  * Claude Code's own sign-in): a spinner while the computer starts it; 1,
  * Claude's page, with Open (the default browser); 2, the code Claude shows,

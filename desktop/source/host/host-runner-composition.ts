@@ -2157,14 +2157,25 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           // card to connect what is missing goes into this agent's chat
           // (Claude and ChatGPT both offered, 13 November 2026; GitHub's
           // when its sign-in starts).
-          coder: () => codingChoice()?.coder,
+          coder: (program?: "claude-code" | "codex" | "cursor") => codingChoice(program)?.coder,
+          // Cursor has no row in Settings: the person asks an agent to disconnect it (13 November 2026).
+          ...(typeof (cloudAgents as { signOutCursor?: unknown }).signOutCursor !== "function"
+            ? {}
+            : {
+                disconnectProgram: async () => {
+                  const after = await (cloudAgents as unknown as { signOutCursor(): Promise<{ state: string }> }).signOutCursor();
+                  return after.state === "connected"
+                    ? "Cursor couldn't be disconnected on your own computer (the box). Tell the user plainly, and that this is on Simeon's side."
+                    : "Cursor is disconnected on your own computer (the box): its sign-in is gone from it. Cloud agents no longer run in Cursor until the user connects it again (launching in Cursor shows its card).";
+                },
+              }),
           ...(typeof (cloudAgents as { codingReady?: unknown }).codingReady !== "function"
             ? {}
             : {
-                codingReady: async () => {
+                codingReady: async (program?: "claude-code" | "codex" | "cursor") => {
                   const ready = await (cloudAgents as unknown as {
-                    codingReady(agentId: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
-                  }).codingReady(session.id);
+                    codingReady(agentId: string, choice?: undefined, refresh?: undefined, program?: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
+                  }).codingReady(session.id, undefined, undefined, program);
                   if (!ready.ok && ready.card !== undefined) {
                     hooks.transport.onUpdate({ type: "send-message", message: ready.card, timestampMs: Date.now() });
                   }
@@ -2982,6 +2993,9 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   ...(cloudAgent.coder === undefined
                     ? {}
                     : { coder: cloudAgent.coder }),
+                  ...(cloudAgent.disconnectProgram === undefined
+                    ? {}
+                    : { disconnectProgram: cloudAgent.disconnectProgram }),
                   ...(cloudAgent.onLaunched === undefined
                     ? {}
                     : { onLaunched: cloudAgent.onLaunched }),

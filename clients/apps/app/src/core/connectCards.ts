@@ -20,7 +20,17 @@ import type { ConnectedApp } from './connectedApps'
 import type { Entry } from './entry'
 import { type AgentFace, faceById, faceByVersion } from './faces'
 import { brandLogos, brandMentions } from './generatedBrands'
-import { arr, bool, field, int, isObject, num, str, text } from './json'
+import {
+  arr,
+  bool,
+  field,
+  int,
+  isObject,
+  type JSONValue,
+  num,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { type Agent, hasPicture } from './models'
 
@@ -621,7 +631,95 @@ export function gitHubConnectedLabel(login: string | undefined): string {
 // MARK: Claude Code or Codex, for a cloud agent's coding
 
 /** The providers a cloud agent's coding can run on (`ModelConnectCard.offered`). */
-export const modelConnectOffered: readonly string[] = [claude, chatGPT]
+export const modelConnectOffered: readonly string[] = [
+  claude,
+  chatGPT,
+  'cursor',
+]
+
+/**
+ * Cursor, the third program a cloud agent can code in (13 November 2026, the
+ * founder: "Cursor now"; `ModelConnectCard.cursor`). It is no plan in AI
+ * Models: it is signed in on the person's cloud computer with Cursor's own
+ * program, and its row reads that computer (`cursorSignInState`).
+ */
+export const cursor = 'cursor'
+
+/** A provider whose sign-in is on the cloud computer and read from it, not from AI Models. */
+export function modelConnectOnComputer(provider: string): boolean {
+  return provider === cursor
+}
+
+/** Whose plan the program runs on, as the person knows it: Claude, ChatGPT, Cursor. */
+export function modelConnectPlan(provider: string): string {
+  return provider === cursor ? 'Cursor' : providerName(provider)
+}
+
+/**
+ * Cursor's sign-in on the cloud computer, as the engine says it
+ * (`getCursorSignIn`, `startCursorSignIn`; the core's `CursorSignIn`): its
+ * program being put on the computer, the page on Cursor's own site to
+ * approve on, connected, or why it ended.
+ */
+export type CursorSignIn =
+  | { state: 'none' }
+  | { state: 'installing' }
+  | { state: 'waiting'; url: string; expiresAtMs: number }
+  | { state: 'connected' }
+  | { state: 'failed'; why: string }
+
+/** A page on Cursor's own site, over https: the only kind the sheet opens. */
+export function isCursorPage(link: string): boolean {
+  try {
+    const url = new URL(link)
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'cursor.com' || url.hostname.endsWith('.cursor.com'))
+    )
+  } catch {
+    return false
+  }
+}
+
+export function cursorSignInState(record: JSONValue | undefined): CursorSignIn {
+  switch (str(field(record, 'state'))) {
+    case 'connected':
+      return { state: 'connected' }
+    case 'installing':
+      return { state: 'installing' }
+    case 'failed':
+      return { state: 'failed', why: str(field(record, 'why')) ?? '' }
+    case 'waiting': {
+      const url = str(field(record, 'url')) ?? ''
+      const expires = field(record, 'expiresAtMs')
+      return isCursorPage(url)
+        ? {
+            state: 'waiting',
+            url,
+            expiresAtMs: typeof expires === 'number' ? expires : 0,
+          }
+        : { state: 'none' }
+    }
+    default:
+      return { state: 'none' }
+  }
+}
+
+/** Seconds until the computer is asked again while the sheet waits (`CursorSignIn.pollSeconds`). */
+export const cursorPollSeconds = 3
+
+/** The sheet's words, with the program's name given (`CursorSignIn`'s). */
+export const cursorSheetWords = {
+  settingUp: (program: string): string =>
+    t`Setting up ${program} on your computer…`,
+  steps: (program: string): string =>
+    t`Open ${program}'s page and approve the sign-in there. This updates by itself.`,
+  open: (program: string): string => t`Open ${program}`,
+  waiting: (): string => t('Waiting for you to approve…'),
+  didNotFinish: (program: string): string =>
+    t`${program}'s sign-in didn't finish. Try again.`,
+  tryAgain: (): string => t('Try Again'),
+}
 
 /**
  * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
@@ -645,6 +743,13 @@ export interface ModelConnectCard {
 export function modelConnectCard(entry: Entry): ModelConnectCard | undefined {
   const message = entry.message
   if (str(field(message, 'type')) !== 'model-connect') return undefined
+  return { providers: modelConnectProviders(message) }
+}
+
+/** The providers a `model-connect` message offers: the ones this app knows, each once; all of them when it names none it knows. */
+export function modelConnectProviders(
+  message: JSONValue | undefined,
+): string[] {
   const kept: string[] = []
   for (const one of arr(field(message, 'providers')) ?? []) {
     const provider = text(one)
@@ -655,18 +760,26 @@ export function modelConnectCard(entry: Entry): ModelConnectCard | undefined {
     )
       kept.push(provider)
   }
-  // A card that names none it knows (an engine newer than this app) still offers the two.
-  return { providers: kept.length > 0 ? kept : [...modelConnectOffered] }
+  // A card that names none it knows (an engine newer than this app) still offers them all.
+  return kept.length > 0 ? kept : [...modelConnectOffered]
 }
 
 /** The program that codes on a provider's plan, by its own name. */
 export function modelConnectProgram(provider: string): string {
-  return provider === chatGPT ? 'Codex' : 'Claude Code'
+  return provider === chatGPT
+    ? 'Codex'
+    : provider === cursor
+      ? 'Cursor'
+      : 'Claude Code'
 }
 
 /** The program's own logo (`assets/mascots/<name>.png`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
 export function modelConnectLogo(provider: string): string {
-  return provider === chatGPT ? 'codex' : 'claudecode'
+  return provider === chatGPT
+    ? 'codex'
+    : provider === cursor
+      ? 'cursor'
+      : 'claudecode'
 }
 
 /** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
@@ -681,12 +794,14 @@ export function modelConnectTitle(
 /** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
 export function modelConnectLine(provider: string, connected: boolean): string {
   if (connected) return ''
-  return t`Runs on your ${providerName(provider)} plan.`
+  return t`Runs on your ${modelConnectPlan(provider)} plan.`
 }
 
-/** The card in the list of chats: "Connect Claude Code, Codex". */
-export function modelConnectPreview(): string {
-  return t`Connect ${modelConnectOffered.map(modelConnectProgram).join(', ')}`
+/** The card in the list of chats: "Connect Claude Code, Codex, Cursor"; a card for one program, that one's name. */
+export function modelConnectPreview(
+  providers: readonly string[] = modelConnectOffered,
+): string {
+  return t`Connect ${providers.map(modelConnectProgram).join(', ')}`
 }
 
 /** Seconds until the accounts are read again while a row still waits; never once one is connected. */

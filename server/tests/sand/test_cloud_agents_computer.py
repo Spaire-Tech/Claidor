@@ -417,6 +417,42 @@ class TestStops:
         assert again["work"]["modelId"] == "own:chatgpt:gpt-6.1-sol"
         assert again["work"]["sessionId"] == "t-1"
 
+    async def test_a_run_in_cursor_names_its_model_and_cursor_s_limit(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Cursor's own agent is the third program (13 November 2026): its
+        model is kept with the cloud agent as the others' are, and a limit
+        names Cursor's plan."""
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        job = await _computer_claim(client, headers)
+        assert job is not None
+        beat = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "work": {"modelId": "own:cursor:auto", "sessionId": "c-1"},
+            },
+        )
+        assert beat.status_code == 200, beat.text
+        detailed = await _info(client, headers, bc_id)
+        assert detailed["composer"]["requestedModel"] == {"modelId": "own:cursor:auto"}
+        failed = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/fail",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "reason": "Cursor's plan limit was reached.",
+                "retryable": False,
+                "work": {"limitedUntilMs": 1_794_150_000_000},
+            },
+        )
+        assert failed.status_code == 200, failed.text
+        detailed = await _info(client, headers, bc_id)
+        details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the Cursor plan's limit is reached"
+
     async def test_another_stop_tells_the_agent_why(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
     ) -> None:
