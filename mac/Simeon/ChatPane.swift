@@ -352,6 +352,8 @@ private struct Transcript: View {
   @State private var shown = false
   /** Where the opening chat stands, read without redrawing it. */
   @State private var opening = Opening()
+  /** Where the chat is scrolled to, and the scroll while a drag chooses words past its edge (`scrollWhileChoosing`). */
+  @State private var edge = EdgeScroll()
   /**
    * How many of the newest rows are drawn (the iPhone's `ChatMessages.window`). A plain stack, not a lazy one: every
    * drawn row is measured as it is, once. A lazy stack guesses the height of rows it has not drawn, and held to the
@@ -444,16 +446,37 @@ private struct Transcript: View {
         .animation(nil, value: side)
         // A drag over the chat chooses words across its messages, and a click lets them go, as on a page (the founder,
         // 5 November 2026: "you should be able to select all"; `TranscriptSelection`). The whole width takes it, the
-        // room beside a bubble and beside the column too; a click still reaches what is under it.
+        // room beside a bubble and beside the column too; a click still reaches what is under it. Held past the chat's
+        // top or bottom, the chat scrolls that way (`scrollWhileChoosing`); a double click chooses a word, a triple
+        // click its paragraph, a shift-click carries the choice on (the founder, 12 November 2026: "double click dont
+        // slect. select and going up dont move the screen").
         .contentShape(Rectangle())
         .simultaneousGesture(
           DragGesture(minimumDistance: 3, coordinateSpace: .named(TranscriptSelection.space))
-            .onChanged { drag in selection.drag(from: drag.startLocation, to: drag.location) }
+            .onChanged { drag in
+              selection.drag(from: drag.startLocation, to: drag.location)
+              scrollWhileChoosing()
+            }
+            .onEnded { _ in
+              selection.dragEnded()
+              edge.stop()
+            }
         )
-        .simultaneousGesture(SpatialTapGesture().onEnded { _ in selection.clear() })
+        .simultaneousGesture(SpatialTapGesture(coordinateSpace: .named(TranscriptSelection.space)).onEnded { tap in
+          // How many clicks in a row, and shift: the mouse event being handled (`clickCount` is only a mouse event's).
+          let mouse: [NSEvent.EventType] = [.leftMouseDown, .leftMouseUp]
+          let event = NSApp.currentEvent.flatMap { mouse.contains($0.type) ? $0 : nil }
+          selection.click(at: tap.location, count: event?.clickCount ?? 1, shift: event?.modifierFlags.contains(.shift) == true)
+        })
         .coordinateSpace(.named(TranscriptSelection.space))
+        // Where the words' space stands in the scroll view: a drag's end stays under the pointer as the chat scrolls.
+        .onGeometryChange(for: CGPoint.self) { proxy in
+          proxy.frame(in: .scrollView).origin
+        } action: { origin in
+          selection.contentMoved(origin)
+        }
         .environment(selection)
-        .padding(.top, (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight))
+        .padding(.top, topRoom)
         // Over the message field: its frame and 28 (the working line's 40 is in the slot).
         .padding(.bottom, control.composerHeight + 28)
       }
@@ -519,6 +542,18 @@ private struct Transcript: View {
       } action: { old, new in
         follow(old, new)
       }
+      // Where the chat is scrolled to, and how far it can go, for the scroll while words are chosen (`EdgeScroll`).
+      .onScrollGeometryChange(for: EdgeScroll.Place.self) { geometry in
+        let lowest = -geometry.contentInsets.top
+        return EdgeScroll.Place(
+          offset: geometry.contentOffset.y,
+          lowest: lowest,
+          highest: max(lowest, geometry.contentSize.height + geometry.contentInsets.bottom - geometry.containerSize.height),
+          height: geometry.containerSize.height
+        )
+      } action: { _, place in
+        edge.place = place
+      }
       // Read near its top: the rows above the drawn ones come in. Asked again as the content grows, so a chat whose
       // drawn rows do not fill the window draws more until they do.
       .onScrollGeometryChange(for: Top.self) { geometry in
@@ -571,6 +606,71 @@ private struct Transcript: View {
   struct Top: Equatable {
     let near: Bool
     let height: CGFloat
+  }
+
+  /** The room over the rows for the chat's head (and the disk banner): where the chat's top edge is for a drag. */
+  private var topRoom: CGFloat {
+    (threadRoot == nil ? 116 : 44) + (store.diskPressure == nil ? 0 : control.bannerHeight)
+  }
+
+  /**
+   * While a drag choosing words holds near or past the chat's top (under its
+   * head) or its bottom (over the message field), the chat scrolls that way,
+   * the faster the further out, sixty times a second, and the choice goes
+   * with it (`TranscriptSelection.contentMoved`); near its top the rows above
+   * come in as a scroll there brings them (`grow`). It stops once the pointer
+   * is back between them, or the button is up.
+   */
+  private func scrollWhileChoosing() {
+    let top = topRoom
+    let below = control.composerHeight + 28
+    guard edge.task == nil, selection.edgeStep(top: top, bottom: edge.place.height - below) != nil else { return }
+    edge.runs += 1
+    let run = edge.runs
+    edge.task = Task { @MainActor in
+      while !Task.isCancelled, let step = selection.edgeStep(top: top, bottom: edge.place.height - below) {
+        // The button let go without the drag's end: the drag ends here.
+        guard NSEvent.pressedMouseButtons & 1 == 1 else {
+          selection.dragEnded()
+          break
+        }
+        let place = edge.place
+        let target = min(max(place.lowest, place.offset + step), place.highest)
+        if abs(target - place.offset) >= 0.5 {
+          position.scrollTo(y: target)
+          edge.place.offset = target
+        }
+        try? await Task.sleep(nanoseconds: 16_000_000)
+      }
+      // Only this run's own end: a run stopped by hand may already have been followed by another.
+      if edge.runs == run { edge.task = nil }
+    }
+  }
+
+  /**
+   * Where the chat is scrolled to and how far it can go, and the scroll
+   * while words are chosen (`scrollWhileChoosing`), kept outside SwiftUI's
+   * state so that reading and writing them redraws nothing.
+   */
+  @MainActor
+  final class EdgeScroll {
+    struct Place: Equatable {
+      var offset: CGFloat = 0
+      var lowest: CGFloat = 0
+      var highest: CGFloat = 0
+      /** The scroll view's height. */
+      var height: CGFloat = 0
+    }
+
+    var place = Place()
+    var task: Task<Void, Never>?
+    /** Counts the runs, so a run ending lets go only of itself. */
+    var runs = 0
+
+    func stop() {
+      task?.cancel()
+      task = nil
+    }
   }
 
   /** The rows above the drawn ones come in, 40 at a time, the bottom kept where it is for a moment so what shows stays put. */

@@ -3119,3 +3119,17 @@ The same day the founder had the main pills made our blue ("make them our blue")
 
 The iPhone has the same: `CardKindHead`, `CardShieldLine` and `cardField()` (44 high, 14 round) in `Cards.swift`, `PhoneSecureFormSheet` in `UserFormCard.swift`. Not yet built or run on a Mac or an iPhone: the files parse and the core's tests ran on Linux.
 Not yet built or run on a Mac or an iPhone: no Xcode here. The files parse. The web app's cards ran in Chromium against a stand-in computer, light and dark.
+
+### Choosing words in the chat as on a page (12 November 2026)
+
+The founder: "double click dont slect. select and going up dont move the
+screen, you have to use the cursor", and copying from the chat did not work.
+What was left undone on 5 November is done (`TranscriptSelection.swift`,
+`Transcript` in `ChatPane.swift`):
+- **Double and triple click.** A double click chooses the word under it (a link or a piece of code whole). A triple click chooses its paragraph. A shift-click carries a drag's choice on to where it lands. The click count is the mouse event's own (`NSEvent.clickCount`).
+- **Scrolling while choosing.** A drag held near or past the chat's top (under its head) or its bottom (over the message field) scrolls the chat that way, sixty times a second, faster the further out. The choice's end stays under the pointer. Near the top, the rows above come in as a scroll there brings them. It stops when the pointer is back inside, or the button is up.
+- **The choice stays on its words.** Its two ends are kept on their messages, so rows drawn above or a new message do not move it. A run of words that moves drops what it wrote of the choice where it was (`ChosenWords.drop`), so nothing is copied twice. The messages between the first and the last are copied from the chat whole.
+- **Letting go of the mouse is not a click.** The mouse-up that ends a drag no longer lets the words go, so they stay chosen for ⌘C.
+- **The right click's Copy copies the chosen words.** It used to copy the whole message with its Markdown marks, whatever was chosen. With no words chosen in that message, it still copies the whole message.
+
+Not yet built or run on a Mac: no Xcode here. The three files parse with Swift 6.2.

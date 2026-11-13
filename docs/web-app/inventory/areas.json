@@ -17,7 +17,7 @@
    "mac/Simeon/MacSession.swift",
    "mac/Simeon/SignInScreen.swift"
   ],
-  "mac_lines": 751,
+  "mac_lines": 752,
   "core_lines": 1223,
   "views": 10,
   "files_needing_a_mac": 2,
@@ -191,7 +191,7 @@
    "mac/Simeon/Tapback.swift",
    "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 7716,
+  "mac_lines": 8232,
   "core_lines": 5040,
   "views": 62,
   "files_needing_a_mac": 15,
@@ -220,7 +220,7 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 4574,
+  "mac_lines": 4568,
   "core_lines": 1786,
   "views": 67,
   "files_needing_a_mac": 3,
@@ -637,11 +637,11 @@
    "mac/Simeon/MenuBar.swift",
    "mac/Simeon/Updates.swift"
   ],
-  "mac_lines": 2233,
-  "core_lines": 1845,
+  "mac_lines": 2300,
+  "core_lines": 1867,
   "views": 4,
   "files_needing_a_mac": 6,
-  "strings": 43,
+  "strings": 45,
   "strings_in_old_web_app": 27,
   "box_commands": [
    "resolveLocalToolPermission",
