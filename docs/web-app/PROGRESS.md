@@ -842,6 +842,54 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: a cloud agent's exchange as messages, its card at the end, and the connect cards redrawn
+
+The founder, on the first real run (the card appeared at the launch, and
+the Connect GitHub card said "Connected as" with a green tick beside its
+stale "Enter this code"): "i never asked for a card i said plainly i wanted
+the message thing ... with message to and message from. like messaging
+agents work. so that means the agent should answer him and say on it. like
+a regular agent would. that card should only come once the job is done.
+with the view pr, open etc. and the done mark. or the failed if it did.
+also the connected. what is that design ... this is nowhere near our
+design".
+
+- The exchange is the engine's to write, not the web app's: the launch as
+  the agent's message to the cloud agent, its first words as its message
+  back, and the card only once it has ended (`docs/services-agents.md`,
+  "In the chat it reads as messages"). The web app already drew such lines
+  ("Messaged", "Message from", "2 messages with", each opening the cloud
+  agent's conversation); nothing in the chat's rows changed.
+- The cloud agent's card says "Failed" where it said "Error"
+  (`cloudAgentStatusLabel`; the word is new in SimeonCore's catalogue, in
+  its nine languages).
+- Connect GitHub (`GitHubSignInCardView`) and the routine's Connect Slack
+  and Connect GitHub (`ListenerConnectCardView`) are drawn as an app to
+  connect is: the card's own shell (20 round, 14 by 16), the app's icon
+  (40), the title and a line under it, "Connected" in the green capsule.
+  Once connected the card names the app ("GitHub", the account under it;
+  "Slack") and drops the line that said what to do
+  (`gitHubSignInTitle`, `gitHubSignInLine`). The green tick and its styles
+  are gone; the routine card's Connect is the cards' main pill.
+
+Decisions (mine, to the founder's words): "Failed" for a cloud agent that
+ended in an error; the routine's two cards redrawn with the GitHub one,
+since they showed the same tick; a connected card shows the account alone
+as its line, so "Connected" is said once.
+
+Checked: the web app's tests, types, ESLint and Prettier on the changed
+files; the words made again from the catalogues and the build committed. In
+Chromium against the stand-in, light and dark: the chat at the launch (the
+connected GitHub card, the agent's line, "Messaged"), while it works ("2
+messages with" and no card), and done ("Message from", then the card with
+Done, Open and View PR, then the agent's line); one that failed (the card
+says Failed, with Open alone); the line opens the conversation; the
+connect cards waiting, connected and expired, every icon loaded, no tick
+left, nothing sideways at 620 wide, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift parses,
+not built); the engine's new lines on a real computer.
+
 ### 13 November 2026: a cloud agent's picture is Claude Code's or Codex's mascot
 
 The founder, on the page above: "you put a cloude avatar. it should be

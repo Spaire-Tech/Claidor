@@ -445,7 +445,7 @@ export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
 /** The card when nothing could be read and nothing is coming: "Cloud agent", "Status unavailable". */
 export const unavailableCloudAgent: CloudAgentInfo = cloudAgentInfo({})!
 
-/** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
+/** The badge: "Creating", "Running", "Done", "Failed" ("Error" until 13 November 2026), "Expired", "Paused", "Status unavailable". */
 export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
   switch (info.status) {
     case 'creating':
@@ -455,7 +455,7 @@ export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
     case 'finished':
       return t('Done')
     case 'error':
-      return t('Error')
+      return t('Failed')
     case 'expired':
       return t('Expired')
     case 'paused':
@@ -576,9 +576,18 @@ export function gitHubSignInNextPoll(
   return state == null || state.kind === 'waiting' ? 3 : undefined
 }
 
-/** The line under the title: what to do with the code, or why there's nothing more to do. */
+/** The card's title: "Connect GitHub" while there is something to do, "GitHub" once it is connected (as a connected app's card names the app). */
+export function gitHubSignInTitle(
+  state: GitHubSignInState | undefined,
+): string {
+  return state?.kind === 'connected' ? 'GitHub' : t('Connect GitHub')
+}
+
+/** The line under the title: what to do with the code, why there's nothing more to do, or the account once it is connected (none when its name isn't known). */
 export function gitHubSignInLine(state: GitHubSignInState | undefined): string {
   switch (state?.kind) {
+    case 'connected':
+      return state.login ?? ''
     case 'expired':
       return t('This code expired. Ask your agent for a new one.')
     case 'failed':

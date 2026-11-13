@@ -42,7 +42,7 @@ test("SendMessage: cloud-agent served by default, a dropped channel, a refused s
     const types = module.describeSendMessageTypes(off);
     assert.match(types, /cloud-agent is not available: cloud agents are coming soon in Simeon/);
     assert.match(types, /secret-request to ask the user for a credential/, "a key for any service but a messaging connector works without channels");
-    assert.doesNotMatch(types, /cloud-agent to reference a cloud agent/);
+    assert.doesNotMatch(types, /cloud-agent to point back at a finished cloud agent/);
     assert.deepEqual(module.refineSendMessage({ type: "cloud-agent", bcId: "bc-1" }, off).map((issue) => issue.message), [
       "Cloud agents are coming soon in Simeon, so the CloudAgent tool and cloud-agent cards are not available here yet. Never claim you can launch or manage one.",
     ]);
@@ -50,7 +50,8 @@ test("SendMessage: cloud-agent served by default, a dropped channel, a refused s
     assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Slack token", connector: "slack", field: "token" } }, {}), [], "served by default: the secret-request card is back (channels-runtime.test.mjs)");
     assert.deepEqual(module.refineSendMessage({ type: "secret-request", secret: { label: "Render API key", connector: "render", field: "api_key" } }, off), [], "a Render key is a secret on the computer, channels or not");
     assert.deepEqual(module.refineSendMessage({ type: "cloud-agent", bcId: "bc-1" }, {}), [], "served by default: the upstream app's card is back");
-    assert.match(module.describeSendMessageTypes({}), /cloud-agent to reference a cloud agent/);
+    // The card comes by itself when a cloud agent finishes (13 November 2026): the type only points back at a finished one.
+    assert.match(module.describeSendMessageTypes({}), /cloud-agent to point back at a finished cloud agent by its bcId \(its card appears by itself when it finishes, so never at launch\)/);
     assert.match(module.describeSendMessageTypes({}), /secret-request to ask the user for a credential/);
     const parsed = module.sendMessageParameters.safeParse({ type: "text", content: "Hi", channel: "slack:C1" });
     assert.equal(parsed.success, true);

@@ -23,6 +23,7 @@ import {
   gitHubSignInLine,
   gitHubSignInNextPoll,
   gitHubSignInState,
+  gitHubSignInTitle,
   gitHubSignInWords,
   goToChatWord,
   joinedAgent,
@@ -307,12 +308,14 @@ const listenerLogos = {
 } as Record<ListenerCard['platform'], { light: string; dark?: string }>
 
 /**
- * "Connect Slack" (`sand-listener-connect-card`, at most 520 wide, 14
- * round): the platform's logo on a faint tile (30, 8 round), its title (12
- * on 16, 600) and the reason under it (60%); at the right "Connected" with
- * a green tick, Connect, or a spinner while the computer is asked. Connect
- * opens the page that links it in a new tab; the card asks again when the
- * tab comes back to the front.
+ * "Connect Slack" (`sand-listener-connect-card`), drawn as an app to connect
+ * is (13 November 2026, the founder of its green tick: "this is nowhere
+ * near our design"): the card's own shell, the app's icon (40), "Connect
+ * Slack" and the reason under it; at the right Connect, or a spinner while
+ * the computer is asked. Once connected it reads as a connected app's card:
+ * "Slack" and "Connected" in the green capsule. Connect opens the page that
+ * links it in a new tab; the card asks again when the tab comes back to the
+ * front.
  */
 function ListenerConnectCardView({
   card,
@@ -372,31 +375,31 @@ function ListenerConnectCardView({
     setOpening(false)
   }
 
-  const logo = listenerLogos[platform]
-  const dark = useDarkScheme()
   return (
-    <div className="listener-card">
-      <span className="listener-logo" aria-hidden="true">
-        <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
-      </span>
-      <div className="listener-words">
-        <div className="listener-title">{t`Connect ${name}`}</div>
-        <div className="listener-reason">
-          {card.reason != null
-            ? t`Connect ${name} ${card.reason}.`
-            : t`Connect ${name} so this routine can fire.`}
+    <CardShell className="listener-card">
+      <div className="connector-row">
+        <ListenerLogo platform={platform} />
+        <div className="connector-words">
+          {/* Once connected: the app's name alone, as a connected app's card (its reason was what to do). */}
+          <span className="connector-title">
+            {connected === true ? name : t`Connect ${name}`}
+          </span>
+          {connected !== true && (
+            <span className="connector-line listener-reason">
+              {card.reason != null
+                ? t`Connect ${name} ${card.reason}.`
+                : t`Connect ${name} so this routine can fire.`}
+            </span>
+          )}
         </div>
-      </div>
-      <div className="listener-end">
         {connected === true ? (
-          <span className="listener-connected">
-            <ConnectedTick />
-            <span>{t('Connected')}</span>
+          <span className="connector-connected" role="status">
+            {connectedWord()}
           </span>
         ) : connected === false ? (
           <button
             type="button"
-            className="listener-connect"
+            className="card-button prominent"
             disabled={opening}
             onClick={() => void connect()}
           >
@@ -410,7 +413,20 @@ function ListenerConnectCardView({
           />
         )}
       </div>
-    </div>
+    </CardShell>
+  )
+}
+
+/** Slack's or GitHub's own app icon (40), as an app to connect shows it; its logo on the grey tile where the catalogue has no icon. */
+function ListenerLogo({ platform }: { platform: ListenerCard['platform'] }) {
+  const logo = listenerLogos[platform]
+  const dark = useDarkScheme()
+  const name = platform === 'slack' ? 'Slack' : 'GitHub'
+  if (appLogo(name).kind === 'icon') return <AppLogoTile name={name} />
+  return (
+    <span className="logo-tile listener-logo" aria-hidden="true">
+      <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
+    </span>
   )
 }
 
@@ -652,33 +668,18 @@ function CloudAgentCardView({
 
 // MARK: GitHub on the computer
 
-/** The green tick cut out of the card's grey (`checkmark.circle.fill`). */
-function ConnectedTick() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-      <circle cx="8" cy="8" r="7.5" fill="currentColor" />
-      <path
-        d="M4.9 8.3 7.1 10.4l4.1-4.6"
-        fill="none"
-        style={{ stroke: 'var(--theirs)' }}
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 /**
- * "Connect GitHub" (`github-sign-in`, the upstream's card 8; at most 520
- * wide, 14 round, as the routine's Connect GitHub): GitHub's logo on its
- * faint tile, the title and what to do; while it waits, the one-time code
- * (20, 600, monospaced, selectable) with Copy code and Open GitHub (GitHub's
- * own page, in a new tab). The computer is asked every three seconds while
- * the card is on screen; once GitHub is connected the code goes and
- * "Connected as octocat" shows with the green tick, and the agent carries
- * on by itself. A code past its quarter of an hour, or replaced by a newer
- * one, says it expired.
+ * "Connect GitHub" (`github-sign-in`, the upstream's card 8), drawn as an
+ * app to connect is (13 November 2026, the founder of "Connected as" with
+ * its green tick beside the stale "Enter this code": "this is nowhere near
+ * our design"): the card's own shell, GitHub's icon (40), the title and what
+ * to do; while it waits, the one-time code (20, 600, monospaced, selectable)
+ * with Copy code and Open GitHub (GitHub's own page, in a new tab). The
+ * computer is asked every three seconds while the card is on screen; once
+ * GitHub is connected the code and its line go, and the card reads as a
+ * connected app's: "GitHub", the account under it, "Connected" in the green
+ * capsule. The agent carries on by itself. A code past its quarter of an
+ * hour, or replaced by a newer one, says it expired.
  */
 function GitHubSignInCardView({
   card,
@@ -730,51 +731,64 @@ function GitHubSignInCardView({
   }, [store, code, url, expiresAtMs, onScreen])
 
   const words = gitHubSignInWords()
-  const logo = listenerLogos.github
-  const dark = useDarkScheme()
   const waiting = state == null || state.kind === 'waiting'
+  const line = gitHubSignInLine(state)
   return (
-    <div ref={box} className="listener-card github-card">
-      <div className="github-head">
-        <span className="listener-logo" aria-hidden="true">
-          <img src={dark && logo.dark ? logo.dark : logo.light} alt="" />
-        </span>
-        <div className="listener-words">
-          <div className="listener-title">{words.title}</div>
-          <div className="listener-reason">{gitHubSignInLine(state)}</div>
-        </div>
-        {state?.kind === 'connected' && (
-          <div className="listener-end">
-            <span className="listener-connected" role="status">
-              <ConnectedTick />
-              <span>{gitHubConnectedLabel(state.login)}</span>
+    <div ref={box} className="github-watch">
+      <CardShell className="github-card">
+        <div className="connector-row">
+          <ListenerLogo platform="github" />
+          <div className="connector-words">
+            <span className="connector-title">{gitHubSignInTitle(state)}</span>
+            {line !== '' && (
+              <span
+                className={classes(
+                  'connector-line',
+                  state?.kind !== 'connected' && 'listener-reason',
+                )}
+              >
+                {line}
+              </span>
+            )}
+          </div>
+          {state?.kind === 'connected' && (
+            <span
+              className="connector-connected"
+              role="status"
+              aria-label={gitHubConnectedLabel(state.login)}
+            >
+              {connectedWord()}
             </span>
+          )}
+        </div>
+        {waiting && (
+          <div className="github-code-row">
+            <span className="github-code">{card.code}</span>
+            {/* The two buttons together, at the right; under the code when the card is narrow. */}
+            <div className="card-buttons">
+              <button
+                type="button"
+                className="card-button"
+                onClick={() =>
+                  void copyText(card.code).then(
+                    () => setCopied(true),
+                    () => setCopied(false),
+                  )
+                }
+              >
+                {copied ? words.copied : words.copy}
+              </button>
+              <a
+                className="card-button prominent"
+                href={card.url}
+                {...pageLink}
+              >
+                {words.open}
+              </a>
+            </div>
           </div>
         )}
-      </div>
-      {waiting && (
-        <div className="github-code-row">
-          <span className="github-code">{card.code}</span>
-          {/* The two buttons together, at the right; under the code when the card is narrow. */}
-          <div className="card-buttons">
-            <button
-              type="button"
-              className="card-button"
-              onClick={() =>
-                void copyText(card.code).then(
-                  () => setCopied(true),
-                  () => setCopied(false),
-                )
-              }
-            >
-              {copied ? words.copied : words.copy}
-            </button>
-            <a className="card-button prominent" href={card.url} {...pageLink}>
-              {words.open}
-            </a>
-          </div>
-        </div>
-      )}
+      </CardShell>
     </div>
   )
 }

@@ -114,6 +114,13 @@ export interface CodingRunDeps {
   readonly signal?: AbortSignal;
   /** What was found so far, for the heartbeat. */
   readonly onWork?: (work: CodingWork) => void;
+  /**
+   * Claude Code's first words of this turn (13 November 2026): its "on it",
+   * which the chat of the agent that asked shows as the cloud agent's
+   * message back (`AgentToAgentMessaging.noteCloudAgentSaid`). Called once
+   * a turn, and not at all when the turn ends without a word before its answer.
+   */
+  readonly onFirstWords?: (words: string) => void;
   /** The plan's use, as Claude Code says it. */
   readonly onUsage?: (windows: readonly ClaudeCodePlanWindow[]) => void;
   /** Claude Code isn't signed in any more. */
@@ -160,6 +167,7 @@ export function codingBrief(repo: { readonly owner: string; readonly name: strin
   return [
     `You're working for the person through Simeon, their team of agents, on their own computer. This folder is a checkout of ${repo.owner}/${repo.name} on the branch ${branch}, made from ${base}.`,
     "",
+    "- Before anything else, answer in one short sentence, as a teammate who was just handed the task would: that you're on it and what you'll look at first (\"On it. I'll read the README and the docs folder first.\"). No greeting, no list, no question. The person reads it in their chat while you work.",
     "- Do the task you're given: read the code you need, make the change, then build it and run its tests or checks, as a developer on this project would.",
     "- Commit your work on this branch as you go, with clear messages (git commit). Don't push, don't change branches and don't open a pull request: Simeon pushes this branch and opens the pull request when you finish.",
     "- If the build or the tests fail and you can't fix them, don't commit the broken part. Stop and say plainly what fails and what you'd need.",
@@ -258,6 +266,7 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
 
     const keptSession = typeof kept.sessionId === "string" && SESSION_ID.test(kept.sessionId) ? kept.sessionId : undefined;
     const runClaude = deps.runClaude ?? runClaudeCodeTurn;
+    let spoke = false;
     const turn = (resume: string | undefined): Promise<ClaudeCodeOutcome> => runClaude({
       prompt: (resume === undefined ? wholeExchange(job.conversation) : unansweredWords(job.conversation)) || "Carry on with the task.",
       model: choice.model,
@@ -274,6 +283,10 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
         if (windows !== undefined) try { deps.onUsage?.(windows); } catch { /* never in the way of the work */ }
         const said = assistantWords(event);
         if (said.trim() !== "") {
+          if (!spoke) {
+            spoke = true;
+            try { deps.onFirstWords?.(said.trim().slice(0, UPDATE_MAX_LENGTH)); } catch { /* never in the way of the work */ }
+          }
           work.updates = withUpdate(work.updates ?? [], said, now());
           try { deps.onWork?.(work); } catch { /* never in the way of the work */ }
         }

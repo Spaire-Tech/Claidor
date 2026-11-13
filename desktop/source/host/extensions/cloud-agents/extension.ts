@@ -4,7 +4,7 @@ import { defineHostExtension } from "../../../internal/host-extensions.js";
 import { getConfiguredBackendUrl } from "../../../shared/node/simeon-token.js";
 import { HostExtensions } from "../extension-ids.generated.js";
 import { reportClaudeCodeSignedOut, reportClaudeCodeUsage } from "../inference/simeon-model-roles.js";
-import { claudeCodingChoice } from "../../cloud-agents/coding-choice.js";
+import { CLOUD_AGENT_CODER, claudeCodingChoice } from "../../cloud-agents/coding-choice.js";
 import { GitHubOnComputer } from "../../cloud-agents/coding-github.js";
 import { runCodingJob } from "../../cloud-agents/coding-run.js";
 import { CodingRunner, createComputerServer } from "../../cloud-agents/coding-runner.js";
@@ -18,6 +18,8 @@ interface CloudAgentExtensionHost {
 
 /** The transcript's wake for an agent that waited on the chat's Connect GitHub card (`box-handoff-resume.ts`). */
 interface GitHubWake { resumeAfterGitHubConnect?(agentId: string, login?: string): Promise<void> }
+/** The transcript's line for a cloud agent's first words, in the chat of the agent that asked it (`agent-to-agent-messaging.ts`). */
+interface CloudAgentLines { noteCloudAgentSaid?(cloudAgent: { id: string; name: string; coder?: string }, text: string): Promise<boolean> }
 
 export const cloudAgentsExtension = defineHostExtension({
   id: HostExtensions.CloudAgents,
@@ -32,6 +34,7 @@ export const cloudAgentsExtension = defineHostExtension({
       // A cloud agent's coding, done on this computer in Claude Code on the
       // person's own plan (11 November 2026, `host/cloud-agents/`).
       const github = new GitHubOnComputer();
+      const transcript = context.deps[HostExtensions.Transcript] as (GitHubWake & CloudAgentLines) | undefined;
       const runner = new CodingRunner({
         server: createComputerServer({ getBackendUrl: getConfiguredBackendUrl, getAccessToken: (options) => auth.getAccessToken(options) }),
         run: (job, signal, onWork) => runCodingJob(job, {
@@ -39,6 +42,8 @@ export const cloudAgentsExtension = defineHostExtension({
           account: () => github.account({ fresh: true }),
           signal,
           onWork,
+          // Its "on it", as its message back in the chat of the agent that asked (13 November 2026).
+          onFirstWords: (words) => void transcript?.noteCloudAgentSaid?.({ id: job.bcId, name: job.name, coder: CLOUD_AGENT_CODER }, words)?.catch(() => undefined),
           onUsage: (windows) => void reportClaudeCodeUsage(windows),
           onSignedOut: () => void reportClaudeCodeSignedOut(),
         }),
@@ -46,7 +51,6 @@ export const cloudAgentsExtension = defineHostExtension({
       service.attachCoding(runner);
       service.attachGitHub(github);
       // The agent that showed the card goes on once GitHub is connected, as after a routine's Slack or GitHub card.
-      const transcript = context.deps[HostExtensions.Transcript] as GitHubWake | undefined;
       github.onConnected((agentId, login) => void transcript?.resumeAfterGitHubConnect?.(agentId, login));
       void (host.whenBackgroundWorkReady ?? Promise.resolve()).then(() => runner.start(), () => runner.start());
       context.onStop(() => { runner.stop(); github.dispose(); });

@@ -28,12 +28,14 @@ export interface SubagentCompletion {
   /** A cloud agent's own name and words, and the program that coded (`buildWatchResult`), for the line in the chat. */
   cloudAgent?: { readonly name?: string; readonly said?: string; readonly coder?: string };
 }
+/** What the agent is told with a cloud agent's end (13 November 2026): the chat shows its report and card already, so the agent says the result in its own words and sends no card. */
+export const CLOUD_AGENT_SHOWN_NOTE = "(The chat already shows this cloud agent's own report as a message from it, with its card right under it: its state, branch, pull request and changes. Don't send a cloud-agent card and don't repeat its report; tell the user in a few plain words of your own what came of it, with the pull request's link when there is one.)";
 export function buildSubagentRevivalPrompt(
   completions: readonly SubagentCompletion[],
 ): string {
   const blocks = completions.map(
       (completion) =>
-        `${completion.status === "error" ? `Background task "${completion.title}" (${completion.subagentType}) failed:` : `Background task "${completion.title}" (${completion.subagentType}) finished:`}\n${completion.result}${completion.quietOrigin != null ? `\n${describeQuietOriginNote(completion.quietOrigin)}` : ""}`,
+        `${completion.status === "error" ? `Background task "${completion.title}" (${completion.subagentType}) failed:` : `Background task "${completion.title}" (${completion.subagentType}) finished:`}\n${completion.result}${completion.subagentType === "cloud-agent" && completion.cloudAgent !== undefined ? `\n${CLOUD_AGENT_SHOWN_NOTE}` : ""}${completion.quietOrigin != null ? `\n${describeQuietOriginNote(completion.quietOrigin)}` : ""}`,
     ),
     intro =
       completions.length === 1
@@ -176,6 +178,13 @@ export class CompletionRevivals {
    * as a teammate's message is: its own words when it left any (its summary),
    * else the report. A cloud agent the server gave no name is left unnamed
    * for the apps to call "the cloud agent". Never in the way of the wake.
+   *
+   * Its card comes right after, and only now (13 November 2026, the
+   * founder: "that card should only come once the job is done. with the
+   * view pr, open etc. and the done mark. or the failed if it did"): the
+   * engine writes it when the cloud agent has ended (`cloudAgent` is set
+   * only then; a watch that gave up waiting has none), never the agent at
+   * launch (`TurnRuntime`, `cloudAgentCardDue`).
    */
   noteCloudAgentAnswers(
     session: any,
@@ -186,19 +195,24 @@ export class CompletionRevivals {
         if (completion.subagentType !== "cloud-agent") continue;
         const text =
           completion.cloudAgent?.said?.trim() || completion.result.trim();
-        if (text === "") continue;
-        this.tm.backgroundWakes.agentToAgent.appendCloudAgentAnswer(
-          session,
-          {
-            id: completion.subagentAgentId,
-            name: completion.cloudAgent?.name?.trim() ?? "",
-            ...(completion.cloudAgent?.coder === undefined
-              ? {}
-              : { coder: completion.cloudAgent.coder }),
-          },
-          text,
-          Date.now(),
-        );
+        if (text !== "")
+          this.tm.backgroundWakes.agentToAgent.appendCloudAgentAnswer(
+            session,
+            {
+              id: completion.subagentAgentId,
+              name: completion.cloudAgent?.name?.trim() ?? "",
+              ...(completion.cloudAgent?.coder === undefined
+                ? {}
+                : { coder: completion.cloudAgent.coder }),
+            },
+            text,
+            Date.now(),
+          );
+        if (completion.cloudAgent !== undefined)
+          this.tm.agentLifecycle.post(session, {
+            type: "cloud-agent",
+            bcId: completion.subagentAgentId,
+          });
       }
     } catch {
       /* the chat's line is extra: the agent is still woken with the report */

@@ -336,25 +336,35 @@ test("a cloud agent's report is a message from it in the launching agent's chat,
     tm.sessions.resolveBackgroundSession = async () => session;
     tm.telemetry.reportSubagentRevival = (event) => revived.push(event);
     tm.backgroundWakes = { agentToAgent: new m.AgentToAgentMessaging(tm) };
+    // The card is posted as the agent's own message is (`AgentLifecycle.post`), into a chat that isn't the open one.
+    tm.sessionStore = { markSessionActivity() {} };
+    tm.agentLifecycle = { post: (target, message) => m.AgentLifecycle.prototype.post.call({ tm }, target, message) };
     const revivals = new m.CompletionRevivals(tm);
     const settle = async (count) => { for (let tries = 0; tries < 50 && revived.length < count; tries += 1) await new Promise((resolve) => setTimeout(resolve, 5)); };
 
     revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-1", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-1", status: "completed", result: "The cloud agent finished.\nPull request: https://github.com/simeonlabs/demo/pull/12", cloudAgent: { name: "Windows app version bump", said: "Opened pull request #12 with the bump.", coder: "claude-code" } });
     await settle(1);
-    assert.deepEqual(order, ["line", "run"], "the line is in the chat before the agent's turn starts");
+    assert.deepEqual(order, ["line", "line", "run"], "the line and the card are in the chat before the agent's turn starts");
     const { id, timestampMs, ...line } = written[0];
     assert.ok(typeof id === "string" && id !== "");
     assert.ok(timestampMs > 0);
     assert.deepEqual(line, { kind: "message", role: "user", content: "Opened pull request #12 with the bump.", isStreaming: false, fromAgent: { id: "bc-1", name: "Windows app version bump", kind: "cloud-agent", coder: "claude-code" } });
+    // Its card comes right after its report, and only now that it has ended (13 November 2026).
+    assert.equal(written.length, 2);
+    assert.equal(written[1].kind, "send-message");
+    assert.deepEqual(written[1].message, { type: "cloud-agent", bcId: "bc-1" });
+    assert.notEqual(written[1].id, written[0].id);
     assert.match(runs[0].prompt, /Background task "Cloud agent bc-1" \(cloud-agent\) finished:\nThe cloud agent finished\.\nPull request: https:\/\/github\.com\/simeonlabs\/demo\/pull\/12/, "the agent is still woken with the report itself, and the cloud agent's id");
     assert.equal(runs[0].options.hidden, true);
     assert.equal(revived[0].outcome, "delivered");
+    assert.match(runs[0].prompt, /The chat already shows this cloud agent's own report as a message from it, with its card right under it[^\n]*Don't send a cloud-agent card/, "the agent is told its report and card are there, so it sends neither again");
 
     // A helper's result is no message from a cloud agent, and a chat that can't take the line still wakes the agent.
     revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "task-1", subagentType: "explore", toolCallId: "t", title: "Look around", status: "completed", result: "Found it." });
     await settle(2);
-    assert.equal(written.length, 1);
+    assert.equal(written.length, 2);
     assert.equal(runs.length, 2);
+    assert.doesNotMatch(runs[1].prompt, /cloud agent's own report/, "a helper's end says nothing of a card");
     session.db.appendTranscriptEntry = () => { throw new Error("the chat's file is locked"); };
     revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-2", subagentType: "cloud-agent", toolCallId: "", title: "Fix the build", status: "error", result: "The tests fail." });
     await settle(3);
@@ -362,12 +372,79 @@ test("a cloud agent's report is a message from it in the launching agent's chat,
     assert.match(runs[2].prompt, /The tests fail\./);
     assert.equal(revived[2].outcome, "delivered");
 
-    // One with no words of its own shows the report, and one with no name is left for the apps to name.
+    // One with no words of its own shows the report, and one with no name is left for the apps to name. A watch that
+    // gave up waiting (no `cloudAgent`: the cloud agent hasn't ended) shows no card.
     session.db.appendTranscriptEntry = (entry) => written.push(entry);
     revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-3", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-3", status: "completed", result: "The cloud agent finished." });
     await settle(4);
-    assert.equal(written[1].content, "The cloud agent finished.");
-    assert.deepEqual(written[1].fromAgent, { id: "bc-3", name: "", kind: "cloud-agent" });
+    assert.equal(written.length, 3);
+    assert.equal(written[2].content, "The cloud agent finished.");
+    assert.deepEqual(written[2].fromAgent, { id: "bc-3", name: "", kind: "cloud-agent" });
+
+    // One that failed has its card too (the apps draw Failed), after what it said went wrong.
+    revivals.handleBackgroundSubagentCompletion({ parentAgentId: "leo", subagentAgentId: "bc-4", subagentType: "cloud-agent", toolCallId: "", title: "Cloud agent bc-4", status: "error", result: "The cloud agent (bc-4) errored before finishing.\n\nClaude Code stopped: the build fails.", cloudAgent: { name: "Fix the build", said: "Claude Code stopped: the build fails.", coder: "claude-code" } });
+    await settle(5);
+    assert.equal(written[3].content, "Claude Code stopped: the build fails.");
+    assert.deepEqual(written[4].message, { type: "cloud-agent", bcId: "bc-4" });
+  } finally {
+    await dispose();
+  }
+});
+
+// The exchange with a cloud agent reads as one with a teammate (13 November 2026, the founder: "message to and message
+// from, like messaging agents work ... the agent should answer him and say on it ... that card should only come once the
+// job is done"): the launch is the agent's message to it, its first words are its message back, and the card waits.
+test("a launch is the agent's message to the cloud agent, its first words are its message back, and its card waits for the end", async () => {
+  const { module: m, dispose } = await load();
+  try {
+    const written = [], kept = [];
+    const { tm } = revivalHost({});
+    const session = { id: "leo", db: { getTranscriptEntries: () => written, appendTranscriptEntry: (entry) => written.push(entry) } };
+    tm.sessions.liveSessions = new Map([["leo", session]]);
+    tm.sessions.resolveBackgroundSession = async (agentId) => (agentId === "leo" ? session : null);
+    tm.sessionStore = { markSessionActivity() {} };
+    tm.pendingWakeStore = { listPending: () => kept, hasPending: (agentId, kind, workId) => kept.some((marker) => marker.agentId === agentId && marker.kind === kind && marker.workId === workId) };
+    const messaging = new m.AgentToAgentMessaging(tm);
+    const cloud = { id: "bc-1", name: "Polish the README", coder: "claude-code" };
+
+    messaging.noteCloudAgentAsked("leo", cloud, "  Polish the README: fix the typos and add an install section.  ");
+    assert.equal(written.length, 1);
+    const { id, timestampMs, ...asked } = written[0];
+    assert.ok(typeof id === "string" && id !== "" && timestampMs > 0);
+    assert.deepEqual(asked, { kind: "message", role: "assistant", content: "Polish the README: fix the typos and add an install section.", isStreaming: false, toAgent: { id: "bc-1", name: "Polish the README", kind: "cloud-agent", coder: "claude-code" } });
+
+    // Its "on it": a line from it in the same chat; said twice, written once; nothing said, nothing written.
+    assert.equal(await messaging.noteCloudAgentSaid(cloud, "On it. I'll read the README first."), true);
+    assert.equal(await messaging.noteCloudAgentSaid(cloud, "   "), false);
+    assert.equal(written.length, 2);
+    assert.deepEqual({ role: written[1].role, content: written[1].content, fromAgent: written[1].fromAgent }, { role: "user", content: "On it. I'll read the README first.", fromAgent: { id: "bc-1", name: "Polish the README", kind: "cloud-agent", coder: "claude-code" } });
+    await messaging.noteCloudAgentSaid(cloud, "On it. I'll read the README first.");
+    assert.equal(written.length, 2, "the same words aren't written twice in a row");
+
+    // After a restart nobody remembers who asked: the kept wake says it. With neither, there is no chat to write in.
+    const afterRestart = new m.AgentToAgentMessaging(tm);
+    assert.equal(await afterRestart.noteCloudAgentSaid({ id: "bc-2", name: "Fix the build" }, "On it."), false);
+    kept.push({ agentId: "leo", kind: "cloud-agent", workId: "bc-2" });
+    assert.equal(await afterRestart.noteCloudAgentSaid({ id: "bc-2", name: "Fix the build" }, "On it."), true);
+    assert.deepEqual(written[2].fromAgent, { id: "bc-2", name: "Fix the build", kind: "cloud-agent" });
+    tm.sessions.deletedAgentIds.add("leo");
+    assert.equal(await afterRestart.noteCloudAgentSaid({ id: "bc-2", name: "Fix the build" }, "Reading."), false);
+    tm.sessions.deletedAgentIds.clear();
+
+    // The card: never while the cloud agent runs; once it has ended, once per run.
+    const card = (bcId) => ({ kind: "send-message", message: { type: "cloud-agent", bcId } });
+    assert.equal(m.cloudAgentCardDue(written, "bc-1", true), false, "still running: the agent's own card isn't shown");
+    assert.equal(m.cloudAgentCardDue(written, "bc-1", false), true, "ended, and no card yet");
+    assert.equal(m.cloudAgentCardDue([...written, card("bc-1")], "bc-1", false), false, "its card is already there");
+    assert.equal(m.cloudAgentCardDue([...written, card("bc-1")], "bc-2", false), true, "another cloud agent's card doesn't count");
+    assert.equal(m.cloudAgentCardDue([...written, card("bc-1"), { kind: "message", role: "assistant", toAgent: { id: "bc-1" } }], "bc-1", false), true, "a follow-up starts a new run, which gets its own card at its end");
+    assert.equal(m.cloudAgentCardDue([card("bc-9")], "bc-9", false), false);
+    assert.equal(m.cloudAgentCardDue([], "bc-9", false), true, "an earlier chat with no lines: the card may be shown");
+
+    // A chat that can't take a line never throws into the launch or the coding.
+    session.db.appendTranscriptEntry = () => { throw new Error("the chat's file is locked"); };
+    messaging.noteCloudAgentAsked("leo", cloud, "Again.");
+    assert.equal(await messaging.noteCloudAgentSaid(cloud, "Something new."), false);
   } finally {
     await dispose();
   }

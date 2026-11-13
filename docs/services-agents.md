@@ -30,9 +30,26 @@ Conventions used below:
 work runs on the person's own cloud computer, in Claude Code, on their own Claude plan, with the
 model and effort they chose in AI Models. It clones the repository, makes a branch
 (`simeon/<task>-<4 hex>`), writes the code, builds and tests it, pushes and opens a pull
-request. The chat's card shows its state (Creating, Running, Done, Error, Paused), the branch,
-"PR #12", the files and lines changed, and View PR opens the pull request. A reply carries on in
-the same Claude Code session on the same branch and pull request. Pausing it stops the run.
+request. Its card, which comes when it has finished, shows its state (Done, Failed, Paused), the
+branch, "PR #12", the files and lines changed, and View PR opens the pull request. A reply
+carries on in the same Claude Code session on the same branch and pull request. Pausing it
+stops the run.
+
+**In the chat it reads as messages, and the card comes at the end** (13 November 2026; the
+founder: "i never asked for a card i said plainly i wanted the message thing ... with message to
+and message from. like messaging agents work. so that means the agent should answer him and say
+on it. like a regular agent would. that card should only come once the job is done. with the
+view pr, open etc. and the done mark. or the failed if it did"):
+
+1. The agent says in a line of its own that it handed the work off.
+2. "Messaged <the cloud agent's name>": what the agent asked it, as a message to a teammate.
+3. "Message from <name>": the cloud agent's own first words ("On it. I'll read the README
+   first."). With the line before, the chat folds them as "2 messages with <name>".
+4. When it has ended: "Message from <name>" with its report, then its card (Done with View PR
+   and Open, or Failed, or Paused), then the agent's own few words about the result.
+
+No card is shown at the launch or while it runs. Each of the lines opens the cloud agent's
+conversation, as the card's Open does.
 
 **Its conversation** (13 November 2026; the founder: the agent "talks to the cloud agent the same
 way it talks to another agent"). Open on the card shows the cloud agent's conversation over the
@@ -46,8 +63,11 @@ today, since that is the only program a cloud agent runs in; Codex's once one ca
 
 - **GitHub, the first time.** The agent shows a Connect GitHub card (the upstream app's card 8):
   a one-time code, Copy code and Open GitHub. Once the person types the code on GitHub, the
-  card says "Connected as <login>" and the agent carries on by itself. The computer keeps the
-  sign-in, as it keeps Claude's.
+  card reads as a connected app's card ("GitHub", the account under it, "Connected" in green;
+  13 November 2026, the founder of the green tick and bold "Connected as" beside the stale
+  "Enter this code": "this is nowhere near our design") and the agent carries on by itself. The
+  routine's Connect Slack and Connect GitHub cards are drawn the same way. The computer keeps
+  the sign-in, as it keeps Claude's.
 - **Claude not connected.** The agent asks the person to connect Claude in Settings › AI Models
   before starting.
 - **The plan's limit.** The card says Paused; the agent says when the limit resets and offers to
@@ -126,6 +146,23 @@ today, since that is the only program a cloud agent runs in; Codex's once one ca
     name, kind: "cloud-agent", coder}}`. The apps read `kind` to open the conversation instead
     of the chat's own lines (`Party.cloudAgent`, `Chat.cloudAgentRows` in SimeonCore;
     `cloudAgentRows` in the web app).
+  - **The launch and the first words** (13 November 2026). A launch or a follow-up that went
+    through is written into the agent's chat by the engine before the tool answers
+    (`onLaunched`, `onFollowupSent` in `host-runner-composition.ts`;
+    `AgentToAgentMessaging.noteCloudAgentAsked`): `{kind: "message", role: "assistant", toAgent:
+    {id: <bcId>, name, kind: "cloud-agent", coder}}`, with the title the agent gave as the name
+    (the tool's schema asks for one at every launch). Claude Code's brief (`codingBrief`) asks
+    it to begin with one short sentence saying it is on it; the first words of each turn
+    (`onFirstWords` in `coding-run.ts`) go to `noteCloudAgentSaid`, which writes them as a
+    message from the cloud agent in the chat of the agent that asked: the one the launch named,
+    else the one whose wake is kept for it (after a restart). Nobody is woken by them. Words
+    said twice in a row are written once.
+  - **The card, only at the end.** `noteCloudAgentAnswers` writes the `cloud-agent` card right
+    after the report, when the cloud agent has ended (done, failed or paused; a watch that gave
+    up waiting writes none). The agent no longer sends the card: its brief and the tool's
+    answer say the chat shows the exchange by itself, and a `cloud-agent` SendMessage while the
+    cloud agent runs, or after its card is there, is not shown (`cloudAgentCardDue` in
+    `send-message-shaping.ts`, asked in `turn-runtime.ts`: one card per run).
   - **Who coded** (`coder`, `CLOUD_AGENT_CODER` in `coding-choice.ts`): "claude-code", by the
     name the Simeon Network gives it; "codex" when a cloud agent can run in Codex. It travels in
     `getCloudAgentInfo`, `getCloudAgentConversation` and the line's `fromAgent`. The apps draw
@@ -152,7 +189,12 @@ today, since that is the only program a cloud agent runs in; Codex's once one ca
 * **Tested.** The server's routes and routing (`server/tests/sand/test_cloud_agents_computer.py`,
   18 tests with the updates). The engine's turn against stand-ins: a bare git origin, a `gh`
   script, a fake Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 12
-  tests); the line in the chat (`desktop/tests/background-command-wake.test.mjs`). The cards'
+  tests, with the launch's line handed over before the tool answers and the turn's first
+  words); the lines and the card in the chat (`desktop/tests/background-command-wake.test.mjs`:
+  the message to it, its first words, who asked after a restart, the card only at the end and
+  once per run). The whole exchange drawn in Chromium against a stand-in computer at the three
+  moments (launched, working, done) and for one that failed, light and dark, with the connect
+  cards waiting, connected and expired. The cards'
   models in SimeonCore and the web app; the web card drawn in Chromium, light and dark. The
   conversation: its lines and rows in SimeonCore (`CloudAgentTests`, run on Linux) and the web
   app (`exchanges.test.ts`); the web page opened in Chromium against a stand-in computer, from
@@ -165,9 +207,13 @@ today, since that is the only program a cloud agent runs in; Codex's once one ca
   against Debian's gh 2.46.0-3 itself (its help, and the sign-in up to the call to GitHub,
   which was not let through), and a stand-in that refuses what 2.46 refuses is in the tests.
   Git's trust was measured against a stand-in https server (cloned with `GIT_SSL_CAINFO` only).
-* **Not yet verified.** No run against real GitHub or Claude Code, on a cloud computer, a Mac or
-  an iPhone: after the sign-in's code, the clone, the push and the pull request have never run
-  on a real computer. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
+* **A real run** (the founder, 13 November 2026, engine `ab26b72668ad`): GitHub connected as
+  their account and a cloud agent started on their computer with its branch. That run still
+  showed the card at the launch, which is what the lines above replace.
+* **Not yet verified.** The new lines and the card at the end have not run on a real computer:
+  whether Claude Code opens with its "on it" sentence, and the agent stops sending the card, is
+  only known from the instructions and the stand-ins. No cloud agent has been seen through to
+  its pull request by us. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
   attached to a launch are ignored.
 
 ## 2. Routines and event listeners

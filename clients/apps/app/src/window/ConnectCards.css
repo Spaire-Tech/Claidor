@@ -182,121 +182,43 @@
 
 /* MARK: Routines that wake on Slack or GitHub */
 
-/* The card: padded 12, 14 round, the agent's grey with its soft shadow (no hairline); its parts 10 apart, at the top. */
-.listener-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 520px;
-  padding: 12px;
-  border-radius: 14px;
-  background: var(--theirs);
-  color: var(--ink);
-  box-shadow: 0 1px 2px var(--theirs-shadow);
+/* Drawn as an app to connect (13 November 2026): the card's own shell and the app's row; the reason may take two lines. */
+.connector-line.listener-reason {
+  height: auto;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-/* The platform's logo (18) on a faint tile: 30, 8 round, the ink at 6%. */
-.listener-logo {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+/* Where the catalogue has no app icon: the brand's logo (22) on the grey tile, 40 and 11 round. */
+.logo-tile.listener-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
 }
 
-.listener-logo img {
+.logo-tile.listener-logo img {
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 
-/* Its title 12 on 16, 600; the reason under it, 3 below, at 60%. */
-.listener-words {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.listener-title {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
-}
-
-.listener-reason {
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--ink-secondary);
-}
-
-.listener-end {
-  flex: none;
-  display: flex;
-  align-items: center;
-}
-
-/* "Connected" (12, 500) after the green tick, 4 apart. */
-.listener-connected {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
-  white-space: nowrap;
-}
-
-.listener-connected svg {
-  flex: none;
-  color: var(--working);
-}
-
-/* Connect: 13, 500, 24 high, 10 at the sides, 6 round, in the ink with the ground's words. */
-.listener-connect {
-  height: 24px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 6px;
-  background: var(--ink);
-  color: #ffffff;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 16px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.listener-connect:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.listener-connect:focus-visible,
+.listener-card .card-button:focus-visible,
 .joined-button:focus-visible,
 .cloud-card a:focus-visible {
   outline: 2px solid var(--unread);
   outline-offset: 1px;
 }
 
-/* GitHub on the computer: the routine card's ground, its head over the code's row, 12 apart. */
-.github-card {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
+/* GitHub on the computer: the watched box is as wide as the card; its row over the code's row, 12 apart. */
+.github-watch {
+  width: 100%;
 }
 
-.github-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+.card-shell.github-card {
+  gap: 12px;
 }
 
 /* The one-time code (20, 600, monospaced, a little apart), then Copy code and Open GitHub, 8 apart. */
@@ -639,10 +561,6 @@ a.card-button {
 
   .logo-mask {
     background-color: rgb(255 255 255 / 0.85);
-  }
-
-  .listener-connect {
-    color: #000000;
   }
 
   .status-pill.cloud-done {

@@ -805,13 +805,7 @@ private struct ConnectorCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         if connected {
-          Text(Connecting.connected)
-            .font(.system(size: 14, weight: .medium))
-            .tracking(-0.15)
-            .foregroundStyle(look.added)
-            .padding(.vertical, 6)
-            .padding(.horizontal, 12)
-            .background(look.addedWash, in: Capsule())
+          ConnectedCapsule(look: look)
         } else if store.isComingSoon(name) {
           // Not one an agent can be given yet (`AppsComingSoon`): no Connect.
           Text(AppsComingSoon.label)
@@ -842,6 +836,62 @@ private struct ConnectorCard: View {
           .accessibilityLabel(refused ? Connecting.retry : String(localized: "Connect \(name)"))
         }
       }
+    }
+  }
+}
+
+/** "Connected" in green on its faint green capsule (14, 500): how an app's card, a routine's Connect card and the Connect GitHub card say it is connected. */
+struct ConnectedCapsule: View {
+  let look: Look
+
+  var body: some View {
+    Text(Connecting.connected)
+      .font(.system(size: 14, weight: .medium))
+      .tracking(-0.15)
+      .foregroundStyle(look.added)
+      .lineLimit(1)
+      .padding(.vertical, 6)
+      .padding(.horizontal, 12)
+      .background(look.addedWash, in: Capsule())
+      .fixedSize()
+  }
+}
+
+/**
+ * The row an app's card is made of, for the two cards that connect one app
+ * (a routine's Slack or GitHub, GitHub on the computer): the app's icon
+ * (40), its title (13 on 18, 500) and a line under it (60%, two lines at
+ * most), then what the card says or offers at the right.
+ */
+struct ConnectAppRow<End: View>: View {
+  let app: String
+  let title: String
+  let line: String
+  let look: Look
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 12) {
+      AppLogoTile(name: app, look: look)
+      VStack(alignment: .leading, spacing: 0) {
+        Text(title)
+          .font(.system(size: 13, weight: .medium))
+          .tracking(-0.08)
+          .foregroundStyle(look.ink)
+          .lineLimit(1)
+          .frame(height: 18)
+        if !line.isEmpty {
+          Text(line)
+            .font(.system(size: 13))
+            .tracking(-0.08)
+            .foregroundStyle(look.inkSecondary)
+            .lineLimit(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .help(line)
+        }
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      end()
     }
   }
 }
@@ -1072,9 +1122,12 @@ struct ApprovalNeededBadge: View {
 
 /**
  * "Connect Slack" (`sand-listener-connect-card`, at most 520 wide on a
- * Mac, 14 round): the platform's logo on a faint tile (30, 8 round), its title (12
- * on 16, 600) and the reason under it (60%); at the right "Connected" with
- * a green tick, Connect, or a spinner while the computer is asked.
+ * Mac), drawn as an app to connect is (13 November 2026, the founder of its
+ * green tick: "this is nowhere near our design"): the card's own shell, the
+ * app's icon (40), "Connect Slack" and the reason under it; at the right
+ * Connect, or a spinner while the computer is asked. Once connected it
+ * reads as a connected app's card: "Slack" and "Connected" in the green
+ * capsule.
  */
 struct ListenerConnectCardView: View {
   let platform: String
@@ -1087,50 +1140,31 @@ struct ListenerConnectCardView: View {
   var body: some View {
     let name = platform == "slack" ? "Slack" : "GitHub"
     let words = reason.map { String(localized: "Connect \(name) \($0).") } ?? String(localized: "Connect \(name) so this routine can fire.")
-    HStack(alignment: .top, spacing: 10) {
-      Group {
-        if let logo = NSImage(named: "Connectors/\(platform)") ?? NSImage(named: "Brands/\(platform)") {
-          Image(nsImage: logo).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: 18, height: 18)
-        }
-      }
-      .frame(width: 30, height: 30)
-      .background(look.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-      VStack(alignment: .leading, spacing: 3) {
-        Text("Connect \(name)")
-          .font(.system(size: 12, weight: .semibold))
-          .foregroundStyle(look.ink)
-        Text(words)
-          .font(.system(size: 12))
-          .foregroundStyle(look.inkSecondary)
-          .fixedSize(horizontal: false, vertical: true)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      Group {
-        if connected == true {
-          HStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(look.working)
-            Text("Connected").font(.system(size: 12, weight: .medium)).foregroundStyle(look.ink)
-          }
-        } else if connected == false {
-          // The cards' main pill, in our blue (10 November 2026).
-          CardButton(title: String(localized: "Connect"), prominent: true, look: look) {
-            opening = true
-            Task {
-              if let url = await store.listenerConnectURL(platform) { NSWorkspace.shared.open(url) }
-              opening = false
+    CardShell(look: look) {
+      // Once connected: the app's name alone, as a connected app's card (its reason was what to do).
+      ConnectAppRow(app: name, title: connected == true ? name : String(localized: "Connect \(name)"), line: connected == true ? "" : words, look: look) {
+        Group {
+          if connected == true {
+            ConnectedCapsule(look: look)
+          } else if connected == false {
+            // The cards' main pill, in our blue (10 November 2026).
+            CardButton(title: String(localized: "Connect"), prominent: true, look: look) {
+              opening = true
+              Task {
+                if let url = await store.listenerConnectURL(platform) { NSWorkspace.shared.open(url) }
+                opening = false
+              }
             }
+            .disabled(opening)
+          } else {
+            ProgressView().controlSize(.small)
+              .accessibilityLabel("Checking connection status")
           }
-          .disabled(opening)
-        } else {
-          ProgressView().controlSize(.small)
-            .accessibilityLabel("Checking connection status")
         }
+        .fixedSize()
       }
-      .fixedSize()
     }
-    .padding(12)
     .frame(maxWidth: 520, alignment: .leading)
-    .background { RoundedRectangle(cornerRadius: 14).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .task(id: platform) {
       connected = await store.listenerConnected(platform) ?? false
     }
@@ -1139,13 +1173,17 @@ struct ListenerConnectCardView: View {
 
 /**
  * "Connect GitHub" with a one-time code (`github-sign-in`, 11 November 2026;
- * SimeonCore's `GitHubSignInCard`): laid out as the Connect Slack card above
- * (GitHub's logo on a faint tile, the title, a line under it), then the code
- * large in monospaced figures with Copy code and Open GitHub (our blue) at
- * its right. The person opens GitHub's page on this Mac, already signed in to
- * GitHub there, and types the code; the card asks the computer every three
- * seconds and turns to "Connected as octo" with a green tick, or says the code
- * expired. The agent goes on by itself once GitHub is connected.
+ * SimeonCore's `GitHubSignInCard`), drawn as an app to connect is (13
+ * November 2026, the founder of "Connected as" with its green tick beside
+ * the stale "Enter this code": "this is nowhere near our design"): the
+ * card's own shell, GitHub's icon (40), the title and what to do, then the
+ * code large in monospaced figures with Copy code and Open GitHub (our blue)
+ * at its right. The person opens GitHub's page on this Mac, already signed
+ * in to GitHub there, and types the code; the card asks the computer every
+ * three seconds. Once GitHub is connected the code and its line go, and the
+ * card reads as a connected app's: "GitHub", the account under it,
+ * "Connected" in the green capsule. A code that ran out says it expired. The
+ * agent goes on by itself once GitHub is connected.
  */
 struct GitHubSignInCardView: View {
   let card: GitHubSignInCard
@@ -1155,31 +1193,11 @@ struct GitHubSignInCardView: View {
   @State private var copied = false
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      HStack(alignment: .top, spacing: 10) {
-        Group {
-          if let logo = NSImage(named: "Connectors/github") ?? NSImage(named: "Brands/github") {
-            Image(nsImage: logo).resizable().interpolation(.high).aspectRatio(contentMode: .fit).frame(width: 18, height: 18)
-          }
-        }
-        .frame(width: 30, height: 30)
-        .background(look.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
-        VStack(alignment: .leading, spacing: 3) {
-          Text(GitHubSignInCard.title)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(look.ink)
-          Text(line)
-            .font(.system(size: 12))
-            .foregroundStyle(look.inkSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    CardShell(look: look, spacing: 12) {
+      ConnectAppRow(app: "GitHub", title: GitHubSignInCard.title(state), line: GitHubSignInCard.line(state), look: look) {
         if case .connected(let login) = state {
-          HStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(look.working)
-            Text(GitHubSignInCard.connectedLabel(login)).font(.system(size: 12, weight: .medium)).foregroundStyle(look.ink)
-          }
-          .fixedSize()
+          ConnectedCapsule(look: look)
+            .accessibilityLabel(GitHubSignInCard.connectedLabel(login))
         }
       }
       if waiting {
@@ -1200,9 +1218,7 @@ struct GitHubSignInCardView: View {
         }
       }
     }
-    .padding(12)
     .frame(maxWidth: 520, alignment: .leading)
-    .background { RoundedRectangle(cornerRadius: 14).fill(look.theirs).shadow(color: look.theirsShadow, radius: 1, x: 0, y: 1) }
     .task(id: card.code) {
       while !Task.isCancelled {
         let read = card.state(await store.gitHubSignIn(), nowMs: Date().timeIntervalSince1970 * 1000)
@@ -1215,14 +1231,6 @@ struct GitHubSignInCardView: View {
 
   /** Waiting, or not yet heard from the computer: the code is shown. */
   private var waiting: Bool { state == nil || state == .waiting }
-
-  private var line: String {
-    switch state {
-    case .expired: return GitHubSignInCard.expiredLabel
-    case .failed: return GitHubSignInCard.failedLabel
-    default: return GitHubSignInCard.prompt
-    }
-  }
 }
 
 // MARK: The parts the asking cards share
@@ -2531,17 +2539,22 @@ struct CloudAgentCardView: View {
     CardShell(look: look, spacing: 12) {
       VStack(alignment: .leading, spacing: 4) {
         HStack(spacing: 8) {
-          Button { if let pull { NSWorkspace.shared.open(pull) } } label: {
-            Text(shown.name.isEmpty ? String(localized: "Cloud agent") : shown.name)
-              .font(.system(size: 14, weight: .medium))
-              .tracking(-0.15)
-              .foregroundStyle(look.ink)
-              .lineLimit(1)
-              .truncationMode(.tail)
+          // Its name opens the pull request once there is one; with none it is plain words, never a greyed button (13 November 2026).
+          let name = Text(shown.name.isEmpty ? String(localized: "Cloud agent") : shown.name)
+            .font(.system(size: 14, weight: .medium))
+            .tracking(-0.15)
+            .foregroundStyle(look.ink)
+            .lineLimit(1)
+            .truncationMode(.tail)
+          Group {
+            if let pull {
+              Button { NSWorkspace.shared.open(pull) } label: { name }
+                .buttonStyle(.hand)
+                .help("Open the pull request")
+            } else {
+              name
+            }
           }
-          .buttonStyle(.hand)
-          .disabled(pull == nil)
-          .help("Open the pull request")
           .frame(maxWidth: .infinity, alignment: .leading)
           statusPill(shown)
         }
