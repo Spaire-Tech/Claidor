@@ -11,7 +11,7 @@
  * server (docs/services-agents.md).
  */
 import assert from "node:assert/strict";
-import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -266,7 +266,8 @@ test("the relay: Codex's call handed to the server with the computer's credentia
 
 test("a turn in Codex: done with its session and its words, a session carried on, a session gone, the plan's limit with when, ChatGPT not connected, the person's Stop, not installed", async () => {
   const { module, dispose } = await load();
-  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-codex-turn-"));
+  // A Mac's temporary folder is behind a link (/var is /private/var), and a program reports the folder it runs in without the link.
+  const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-codex-turn-")));
   try {
     const bin = await codexScript(dir);
     const home = path.join(dir, "codex-home");

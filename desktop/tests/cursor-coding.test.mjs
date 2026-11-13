@@ -14,7 +14,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -26,7 +26,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const run = promisify(execFile);
 
 async function load() {
-  const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-cursor-coding-"));
+  // A Mac's temporary folder is behind a link (/var is /private/var), and a program reports the folder it runs in without the link.
+  const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-cursor-coding-")));
   const outfile = path.join(dir, "cursor.mjs");
   await build({ entryPoints: [path.join(repoRoot, "tests/fixtures/cursor-coding-entry.ts")], outfile, bundle: true, format: "esm", platform: "node", target: "node22", logLevel: "silent", banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" } });
   const module = await import(`${pathToFileURL(outfile).href}?${Date.now()}`);
@@ -49,7 +50,7 @@ const STAND_IN = `#!/usr/bin/env node
 const fs = require("node:fs"), path = require("node:path");
 const dir = __dirname, mode = JSON.parse(fs.readFileSync(path.join(dir, "mode.json"), "utf8")), args = process.argv.slice(2);
 fs.appendFileSync(path.join(dir, "calls.jsonl"), JSON.stringify({ args, cwd: process.cwd(), env: { noBrowser: process.env.NO_OPEN_BROWSER ?? null, secret: process.env.SIMEON_SECRET ?? null, endpoint: process.env.CURSOR_API_ENDPOINT ?? null } }) + "\\n");
-const auth = path.join(process.env.HOME, ".config", "cursor", "auth.json");
+const auth = process.platform === "darwin" ? path.join(process.env.HOME, ".cursor", "auth.json") : path.join(process.env.HOME, ".config", "cursor", "auth.json");
 if (args[0] === "login") {
   console.log("Starting login process...\\nAuthenticating with Cursor...\\nWaiting for browser authentication...");
   console.log("Open a browser and navigate to this link: https://cursor.com/loginDeepControl?challenge=abc&uuid=1234&mode=login&redirectTarget=cli");
@@ -92,12 +93,15 @@ async function standIn(dir, mode = {}) {
   await set(mode);
   const calls = async () => (existsSync(path.join(bin, "calls.jsonl")) ? (await readFile(path.join(bin, "calls.jsonl"), "utf8")).trim().split("\n").filter(Boolean).map((line) => JSON.parse(line)) : []);
   const env = { PATH: process.env.PATH, HOME: home, SIMEON_CURSOR_BIN: script, SIMEON_SECRET: "never given" };
-  const signIn = async () => { await mkdir(path.join(home, ".config", "cursor"), { recursive: true }); await writeFile(path.join(home, ".config", "cursor", "auth.json"), JSON.stringify({ accessToken: "stand-in", refreshToken: "stand-in" })); };
+  // Where Cursor's program keeps its sign-in (`cursorAuthFile`): ~/.cursor on a Mac, ~/.config/cursor elsewhere.
+  const auth = process.platform === "darwin" ? path.join(home, ".cursor", "auth.json") : path.join(home, ".config", "cursor", "auth.json");
+  const signIn = async () => { await mkdir(path.dirname(auth), { recursive: true }); await writeFile(auth, JSON.stringify({ accessToken: "stand-in", refreshToken: "stand-in" })); };
   // The person's approval on Cursor's site: there until taken back, so a later sign-in waits again.
   return { home, bin, env, set, calls, signIn, approve: () => writeFile(path.join(bin, "approved"), ""), unapprove: () => rm(path.join(bin, "approved"), { force: true }) };
 }
 
-const until = async (check, ms = 5_000) => {
+// (Long enough for a busy Mac, where a program made a moment ago is slow to start; it returns as soon as the check holds.)
+const until = async (check, ms = 20_000) => {
   const end = Date.now() + ms;
   while (Date.now() < end) { if (await check()) return true; await new Promise((resolve) => setTimeout(resolve, 20)); }
   return false;
@@ -218,7 +222,7 @@ test("the sign-in on the computer: Cursor's own link, connected once approved th
   try {
     const cursor = await standIn(dir);
     const lines = [];
-    const computer = new module.CursorOnComputer({ env: cursor.env, answerMs: 4_000, log: (line) => lines.push(line) });
+    const computer = new module.CursorOnComputer({ env: cursor.env, answerMs: 20_000, log: (line) => lines.push(line) });
     assert.deepEqual(computer.signInState(), { state: "none" });
     assert.equal(computer.connected(), false);
 
