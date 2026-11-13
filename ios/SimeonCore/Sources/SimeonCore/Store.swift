@@ -1385,6 +1385,13 @@ public final class AppStore {
     return CloudAgentInfo(answer).map(CloudAgentInfo.Read.info) ?? .empty
   }
 
+  /** A cloud agent's conversation (`getCloudAgentConversation`): its lines, or nil when it couldn't be asked or the computer knows none. */
+  public func cloudAgentConversation(_ bcId: String) async -> [CloudAgentLine]? {
+    guard let backend, !bcId.isEmpty else { return nil }
+    guard let answer = try? await backend.command("getCloudAgentConversation", ["bcId": .string(bcId)]) else { return nil }
+    return CloudAgentLine.lines(answer)
+  }
+
   /** How GitHub's sign-in on the computer stands (`getGitHubSignIn`), for the Connect GitHub card; nil when it couldn't be asked. */
   public func gitHubSignIn() async -> JSON? {
     guard let backend else { return nil }

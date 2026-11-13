@@ -49,7 +49,7 @@ import { pictureURL } from '../core/faces'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { AgentPicture } from './AgentMark'
-import { CardShell, type CardProps } from './Cards'
+import { CardButton, CardShell, type CardProps } from './Cards'
 import './ConnectCards.css'
 import { classes } from './classes'
 import { copyText } from './clipboard'
@@ -79,7 +79,15 @@ export function connectCardView(
     }
     case 'cloudAgent': {
       const read = cloudAgentCard(card.entry)
-      return read && <CloudAgentCardView bcId={read.bcId} store={card.store} />
+      return (
+        read && (
+          <CloudAgentCardView
+            bcId={read.bcId}
+            agentId={card.agentId}
+            store={card.store}
+          />
+        )
+      )
     }
     case 'gitHubSignIn': {
       const read = gitHubSignInCard(card.entry)
@@ -476,17 +484,21 @@ function MiddleLine({
  * green, Error in red, the rest grey); what it was asked; its branch and
  * "PR #412"; how many files changed with the lines added in green and taken
  * out in red; View PR in the blue. Asked again every five seconds while it
- * works. The Mac's Open is left out until its page exists: it goes to
- * app.simeonlabs.com/agents/<id>, which doesn't yet (docs/services-agents.md,
- * "Cloud agents"), so it would land on a page not found.
+ * works. Open shows its conversation over the chat (13 November 2026,
+ * Call.tsx's `ExchangeView`): what the agent asked it, what it said along
+ * the way and its answers.
  */
 function CloudAgentCardView({
   bcId,
+  agentId,
   store,
 }: {
   bcId: string
+  /** The agent whose chat the card is in: its side of the conversation. */
+  agentId: string
   store: AppStore
 }) {
+  const model = useWindowModel()
   const [info, setInfo] = useState<CloudAgentInfo>()
   // Asked only while it is on screen, as the Mac's lazy chat asks (its `.task` ends when the card scrolls away).
   const box = useRef<HTMLDivElement>(null)
@@ -603,16 +615,31 @@ function CloudAgentCardView({
             </div>
           )}
         </div>
-        {pull && (
+        {(pull || bcId !== '') && (
           <div className="card-buttons">
-            <a
-              className="card-button prominent"
-              href={pull}
-              title={openPull}
-              {...pageLink}
-            >
-              {t('View PR')}
-            </a>
+            {bcId !== '' && (
+              <CardButton
+                title={t('Open')}
+                onClick={() =>
+                  model.coverChat({
+                    kind: 'exchange',
+                    agentId,
+                    peerId: bcId,
+                    cloudAgent: { name: shown.name },
+                  })
+                }
+              />
+            )}
+            {pull && (
+              <a
+                className="card-button prominent"
+                href={pull}
+                title={openPull}
+                {...pageLink}
+              >
+                {t('View PR')}
+              </a>
+            )}
           </div>
         )}
       </CardShell>

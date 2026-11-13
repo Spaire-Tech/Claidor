@@ -5,7 +5,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/auth/apple",
@@ -69,7 +69,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/desktop/api/",
@@ -77,7 +77,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/SimeonAPI.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/desktop/api/apps/mcp/",
@@ -110,7 +110,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/SimeonAPI.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/loginDeepControl",
@@ -126,7 +126,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Tokens.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/sand/link",
@@ -142,7 +142,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/v1/open",
@@ -150,7 +150,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "/v1/pack/add",
@@ -167,7 +167,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonMacCore/DeepLink.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "CancelSandTrial",
@@ -175,7 +175,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "EnsureSandBox",
@@ -183,7 +183,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Gateway.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "ForceRecreateSandBox",
@@ -191,7 +191,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "GetSandAccessStatus",
@@ -223,7 +223,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "apps",
@@ -231,7 +231,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "apps/\\(toolkit)/accounts",
@@ -352,7 +352,7 @@
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/Feedback.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "mcp-oauth/return",
@@ -411,7 +411,7 @@
    "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "user/profile",
@@ -420,7 +420,7 @@
    "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
    "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
   ],
-  "old_web_app": true
+  "old_web_app": false
  },
  {
   "call": "user/quota",

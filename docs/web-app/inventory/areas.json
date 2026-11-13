@@ -22,7 +22,7 @@
   "views": 10,
   "files_needing_a_mac": 2,
   "strings": 65,
-  "strings_in_old_web_app": 33,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "completeMcpOAuth",
    "countAgents",
@@ -33,7 +33,13 @@
    "setHostSettings"
   ],
   "box_commands_not_in_old_web_app": [
-   "refreshUserName"
+   "completeMcpOAuth",
+   "countAgents",
+   "createAgent",
+   "getHostSettings",
+   "kickstartAgent",
+   "refreshUserName",
+   "setHostSettings"
   ],
   "server_calls": [
    "/auth/apple",
@@ -59,9 +65,13 @@
    "/auth/google",
    "/auth/google/config",
    "/auth/poll",
+   "/callback",
    "/desktop/mcp-oauth/callback",
    "/loginDeepControl",
-   "mcp-oauth/return"
+   "/oauth/token",
+   "mcp-oauth/return",
+   "user/name",
+   "user/profile"
   ]
  },
  {
@@ -87,7 +97,7 @@
   "views": 5,
   "files_needing_a_mac": 5,
   "strings": 20,
-  "strings_in_old_web_app": 12,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [],
@@ -124,7 +134,7 @@
   "views": 59,
   "files_needing_a_mac": 9,
   "strings": 155,
-  "strings_in_old_web_app": 131,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "createAgent",
    "createAgentAutomation",
@@ -142,7 +152,23 @@
    "updateAgent",
    "updateAgentAutomation"
   ],
-  "box_commands_not_in_old_web_app": [],
+  "box_commands_not_in_old_web_app": [
+   "createAgent",
+   "createAgentAutomation",
+   "createGroup",
+   "deleteAgentAutomation",
+   "deleteAgents",
+   "getAgentAutomations",
+   "getHostSettings",
+   "kickstartAgent",
+   "runAgentAutomationNow",
+   "setAgentAutomationEnabled",
+   "setAgentAvatarBytes",
+   "setGroupMembers",
+   "setHostSettings",
+   "updateAgent",
+   "updateAgentAutomation"
+  ],
   "server_calls": [
    "/v1/pack/add",
    "packs/\\(id)",
@@ -152,7 +178,8 @@
   "server_calls_not_in_old_web_app": [
    "/v1/pack/add",
    "packs/\\(id)",
-   "proxy/v1/images/generations"
+   "proxy/v1/images/generations",
+   "user/name"
   ]
  },
  {
@@ -191,12 +218,12 @@
    "mac/Simeon/Tapback.swift",
    "mac/Simeon/TranscriptSelection.swift"
   ],
-  "mac_lines": 8232,
-  "core_lines": 5040,
-  "views": 62,
+  "mac_lines": 8286,
+  "core_lines": 5110,
+  "views": 63,
   "files_needing_a_mac": 15,
   "strings": 323,
-  "strings_in_old_web_app": 241,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [],
@@ -220,12 +247,12 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 4568,
+  "mac_lines": 4576,
   "core_lines": 1786,
   "views": 67,
   "files_needing_a_mac": 3,
   "strings": 307,
-  "strings_in_old_web_app": 145,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [],
@@ -247,7 +274,7 @@
   "views": 16,
   "files_needing_a_mac": 4,
   "strings": 50,
-  "strings_in_old_web_app": 47,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [],
@@ -275,7 +302,7 @@
   "views": 67,
   "files_needing_a_mac": 6,
   "strings": 402,
-  "strings_in_old_web_app": 316,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [
@@ -308,7 +335,7 @@
   "views": 32,
   "files_needing_a_mac": 3,
   "strings": 151,
-  "strings_in_old_web_app": 121,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "createAgent",
    "ensureForeverBox",
@@ -321,6 +348,12 @@
    "typingFocus"
   ],
   "box_commands_not_in_old_web_app": [
+   "createAgent",
+   "ensureForeverBox",
+   "getForeverBoxStatus",
+   "getSubagents",
+   "handBackForeverBox",
+   "requestDiskSaverAudit",
    "stopAgentTask",
    "takeComputerControl",
    "typingFocus"
@@ -343,13 +376,17 @@
   "views": 9,
   "files_needing_a_mac": 2,
   "strings": 46,
-  "strings_in_old_web_app": 21,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "appendSendMessage",
    "getAgentTranscriptTail",
    "voiceCall"
   ],
-  "box_commands_not_in_old_web_app": [],
+  "box_commands_not_in_old_web_app": [
+   "appendSendMessage",
+   "getAgentTranscriptTail",
+   "voiceCall"
+  ],
   "server_calls": [
    "proxy/v1/voice/calls",
    "proxy/v1/voice/calls/\\(conversation)/end"
@@ -372,7 +409,7 @@
   "views": 11,
   "files_needing_a_mac": 1,
   "strings": 76,
-  "strings_in_old_web_app": 66,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "getAgentChannels",
    "isAgentNetworkEnabled",
@@ -381,7 +418,14 @@
    "searchAgents",
    "searchMedia"
   ],
-  "box_commands_not_in_old_web_app": [],
+  "box_commands_not_in_old_web_app": [
+   "getAgentChannels",
+   "isAgentNetworkEnabled",
+   "isGlobalSearchEnabled",
+   "listAllAutomations",
+   "searchAgents",
+   "searchMedia"
+  ],
   "server_calls": [],
   "server_calls_not_in_old_web_app": []
  },
@@ -408,7 +452,7 @@
   "views": 50,
   "files_needing_a_mac": 3,
   "strings": 1427,
-  "strings_in_old_web_app": 131,
+  "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
   "server_calls": [
@@ -460,7 +504,7 @@
   "views": 78,
   "files_needing_a_mac": 11,
   "strings": 488,
-  "strings_in_old_web_app": 182,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "claudeCodeSignInCancel",
    "claudeCodeSignInFinish",
@@ -473,7 +517,9 @@
    "claudeCodeSignInCancel",
    "claudeCodeSignInFinish",
    "claudeCodeSignInStart",
-   "claudeCodeSignOut"
+   "claudeCodeSignOut",
+   "getHostSettings",
+   "setHostSettings"
   ],
   "server_calls": [
    "CancelSandTrial",
@@ -490,6 +536,7 @@
    "user/quota"
   ],
   "server_calls_not_in_old_web_app": [
+   "CancelSandTrial",
    "GetSandAccessStatus",
    "GetTeamAdminSettingsOrEmptyIfNotInTeam",
    "billing/apple/products",
@@ -497,6 +544,9 @@
    "billing/free-month",
    "billing/portal",
    "billing/settle",
+   "feedback",
+   "user/name",
+   "user/profile",
    "user/quota"
   ]
  },
@@ -517,11 +567,11 @@
    "ios/SimeonCore/Sources/SimeonCore/StoreSaved.swift"
   ],
   "mac_lines": 0,
-  "core_lines": 5791,
+  "core_lines": 5798,
   "views": 0,
   "files_needing_a_mac": 0,
   "strings": 91,
-  "strings_in_old_web_app": 35,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "answerCredentialRequest",
    "answerPurchase",
@@ -545,6 +595,7 @@
    "getAgentAutomations",
    "getAgentTranscriptTail",
    "getAgentWorkflows",
+   "getCloudAgentConversation",
    "getCloudAgentInfo",
    "getGitHubSignIn",
    "getHostSettings",
@@ -581,13 +632,55 @@
    "answerPurchase",
    "answerStoreEntry",
    "buyProduct",
+   "clearTrays",
    "connectOnePassword",
+   "createAgent",
+   "createAgentAutomation",
+   "createGroup",
+   "deleteAgentAutomation",
+   "deleteAgents",
+   "desktopMcp",
+   "discardDraft",
    "dismissOnePasswordConnect",
+   "dismissTray",
    "dismissUserForm",
+   "dismissWidget",
+   "duplicateAgent",
+   "ensureForeverBox",
+   "getAgentAutomations",
+   "getAgentTranscriptTail",
+   "getAgentWorkflows",
+   "getCloudAgentConversation",
+   "getCloudAgentInfo",
    "getGitHubSignIn",
+   "getHostSettings",
+   "getListenerConnectUrl",
+   "getListenerIntegrations",
+   "listAgents",
+   "openAgentTail",
+   "reactToMessage",
+   "readAttachmentChunk",
+   "readAttachmentImage",
+   "readAttachmentText",
+   "resolveAutoReviewApproval",
+   "respondToWidget",
+   "runAgentAutomationNow",
+   "sendDraft",
+   "sendPrompt",
+   "setAgentAutomationEnabled",
+   "setAgentAvatarBytes",
+   "setAgentHiddenFromSidebar",
+   "setAgentNotifyOnUpdates",
+   "setAgentUnread",
+   "setGroupMembers",
+   "setHostSettings",
    "startFlightBooking",
    "submitFlightPassengers",
-   "submitUserForm"
+   "submitSecret",
+   "submitUserForm",
+   "updateAgent",
+   "updateAgentAutomation",
+   "uploadAttachment"
   ],
   "server_calls": [
    "/api",
@@ -607,7 +700,14 @@
    "user/quota"
   ],
   "server_calls_not_in_old_web_app": [
+   "/api",
+   "/desktop/api/",
+   "/desktop/push-devices",
+   "EnsureSandBox",
+   "ForceRecreateSandBox",
    "GetSandBoxRunState",
+   "RecreateSandBox",
+   "apps",
    "billing/portal",
    "chats/agents",
    "chats/lines?agentId=\\(Self.queryValue(agentId))&limit=\\(SavedChats.linesKept)",
@@ -637,17 +737,20 @@
    "mac/Simeon/MenuBar.swift",
    "mac/Simeon/Updates.swift"
   ],
-  "mac_lines": 2300,
+  "mac_lines": 2301,
   "core_lines": 1867,
   "views": 4,
   "files_needing_a_mac": 6,
   "strings": 45,
-  "strings_in_old_web_app": 27,
+  "strings_in_old_web_app": 0,
   "box_commands": [
    "resolveLocalToolPermission",
    "setHostSettings"
   ],
-  "box_commands_not_in_old_web_app": [],
+  "box_commands_not_in_old_web_app": [
+   "resolveLocalToolPermission",
+   "setHostSettings"
+  ],
   "server_calls": [
    "/sand/link",
    "/v1/info",
@@ -657,7 +760,10 @@
   ],
   "server_calls_not_in_old_web_app": [
    "/sand/link",
-   "/v1/pack/add"
+   "/v1/info",
+   "/v1/open",
+   "/v1/pack/add",
+   "/v1/plugin/add"
   ]
  }
 ]

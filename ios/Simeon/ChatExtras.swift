@@ -354,16 +354,17 @@ struct ThreadBreadcrumb: View {
  * asked, its branch with the pull request's mark and "PR #N", what it
  * changed; View PR. Three bars while it is first read; "Cloud agent",
  * "Status unavailable" when nothing could be. Asked again as the window
- * asks (`CloudAgentInfo.nextPoll`). Open is left out until its page exists,
- * as the web's card leaves it out (3 November 2026): it went to
- * app.simeonlabs.com/agents/<id> (`CloudAgentInfo.webURL`), which doesn't
- * yet, so it landed on a page not found.
+ * asks (`CloudAgentInfo.nextPoll`). Open shows its conversation (13
+ * November 2026, `ExchangePage`): what the agent asked it, what it said
+ * along the way and its answers.
  */
 struct CloudAgentCard: View {
   let entryId: String
   let bcId: String
   let agentId: String
   @Environment(AppStore.self) private var store
+  /** The chat this card is in, where there is one: Open pushes the conversation's page from it. */
+  @Environment(ChatActions.self) private var actions: ChatActions?
   @Environment(\.openURL) private var openURL
   @Environment(\.chatWidth) private var width
   @State private var info: CloudAgentInfo?
@@ -454,12 +455,18 @@ struct CloudAgentCard: View {
         }
         .font(.system(size: 12)).monospacedDigit()
       }
-      if let pull {
-        // The cards' pills (10 November 2026): View PR the main one, at the right.
+      if pull != nil || (actions != nil && !bcId.isEmpty) {
+        // The cards' pills (10 November 2026): View PR the main one, at the right; Open before it.
         CardPills {
-          Button { openURL(pull) } label: { Label("View PR", systemImage: "arrow.up.right").labelStyle(TrailingIconLabel()) }
-            .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
-            .help("Open the pull request")
+          if let actions, !bcId.isEmpty {
+            Button("Open") { actions.openExchange(ExchangeRoute(agentId: agentId, peer: Party(id: bcId, name: info.name, cloudAgent: true))) }
+              .buttonStyle(Tactile(look: CardPillStyle()))
+          }
+          if let pull {
+            Button { openURL(pull) } label: { Label("View PR", systemImage: "arrow.up.right").labelStyle(TrailingIconLabel()) }
+              .buttonStyle(Tactile(look: CardPillStyle(tone: .main)))
+              .help("Open the pull request")
+          }
         }
       }
     }

@@ -4,13 +4,23 @@ import Foundation
 public struct Party: Hashable, Sendable {
   public let id: String
   public let name: String
+  /**
+   * A cloud agent an agent started, not one of the person's agents (`kind`
+   * "cloud-agent", 13 November 2026): its `id` is the cloud agent's own, and
+   * its page is its conversation read from the computer
+   * (`Chat.cloudAgentRows`), not lines of this chat.
+   */
+  public let cloudAgent: Bool
 
-  public init(id: String, name: String) { self.id = id; self.name = name }
+  public init(id: String, name: String, cloudAgent: Bool = false) { self.id = id; self.name = name; self.cloudAgent = cloudAgent }
 
   init?(_ json: JSON?) {
     guard let id = json?["id"]?.text else { return nil }
-    self.init(id: id, name: json?["name"]?.text ?? "")
+    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: json?["kind"]?.string == "cloud-agent")
   }
+
+  /** The name as the apps write it: a cloud agent the computer gave no name is "Cloud agent". */
+  public var shownName: String { name.isEmpty && cloudAgent ? L10n.text("Cloud agent") : name }
 
   /** A call written before calls were one line: its lines were messages with a peer `voice-call:<call>:<seconds>`. */
   public var earlierCall: (callId: String, seconds: Int)? {

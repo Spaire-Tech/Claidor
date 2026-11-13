@@ -129,6 +129,7 @@ import {
 } from './connecting'
 import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
+import { type CloudAgentLine, cloudAgentLines } from './exchanges'
 import {
   type AgentFace,
   faceForReset,
@@ -1969,6 +1970,21 @@ export class AppStore {
     }
     const info = cloudAgentInfo(answer)
     return info ? { kind: 'info', info } : { kind: 'empty' }
+  }
+
+  /** A cloud agent's conversation (`getCloudAgentConversation`): its lines, or none when it couldn't be asked or the computer knows none. */
+  async cloudAgentConversation(
+    bcId: string,
+  ): Promise<CloudAgentLine[] | undefined> {
+    const backend = this.backend
+    if (!backend || bcId === '') return undefined
+    try {
+      return cloudAgentLines(
+        await backend.command('getCloudAgentConversation', { bcId }),
+      )
+    } catch {
+      return undefined
+    }
   }
 
   // MARK: Step 3d's flight cards: the flights found and the travellers'
