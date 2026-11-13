@@ -88,7 +88,7 @@ Agents don't ask for passwords or codes in a message. If one ever does, don't ty
 
 ## Let agents use your Mac
 
-An agent can also run commands and work with files on your Mac, not only on its cloud computer, if you allow it. This works while Simeon is open and signed in on your Mac.
+An agent can also run commands and work with files on your Mac, not only on its cloud computer, if you allow it. This works while Simeon is open and signed in on your Mac. The Windows app does the same on your PC.
 
 When an agent needs your Mac and you haven't allowed it for good, a card above the message field asks: **Allow Simeon and all agents to run commands on your local computer?**
 

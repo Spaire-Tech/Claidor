@@ -3,7 +3,7 @@
 The founder, 23 October 2026: "add an actual pricing page taken from main, with
 a logical q and a and cta". It opens as the other pages do (the home page's
 opening: a plain headline on the left, Download for macOS and Request a demo
-under it, Download for iOS on a phone), then the home page's plans, read from
+under it, Download for Windows on a Windows PC, Download for iOS on a phone), then the home page's plans, read from
 source/page.html so the prices are written once (teams.from_home); then
 questions on paying, each one what the server really does
 (docs/services-billing.md); then the home page's closing call.
@@ -33,7 +33,7 @@ PRICING_QA = [
     ("What are extra credits?", "Credits for when your week runs out: 3,000,000 for $10, bought on the web on any paid plan. They're used only after your plan's weekly credits, and last 12 months."),
     ("Do the computers, apps or teams cost extra?", "No. Each agent's computer in the cloud, every app you connect and every team you add from the Marketplace come with every plan, the free trial too. Their work counts toward your plan's usage."),
     ("How do I pay?", "By card, through Stripe, in US dollars, billed monthly."),
-    ("What do I need?", "A Mac with Apple silicon on macOS 15 or later."),
+    ("What do I need?", "A Mac with Apple silicon on macOS 15 or later, or a PC with Windows 10 or 11."),
 ]
 
 PRICING_CSS = """

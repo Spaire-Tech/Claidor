@@ -141,7 +141,7 @@ To disconnect, choose **⋯** on the Slack row, then **Disconnect**.
 
 ### Does the agent keep working if I close the app?
 
-Yes. Your agents run on your cloud computer, not on your Mac or iPhone, so they carry on with the work while the app is closed. You'll get a notification when an agent finishes or needs you. To turn that off for one agent, use the **Notifications** switch in its profile.
+Yes. Your agents run on your cloud computer, not on your own computer or phone, so they carry on with the work while the app is closed. You'll get a notification when an agent finishes or needs you. To turn that off for one agent, use the **Notifications** switch in its profile.
 
 ### Can I send a message while the agent is busy?
 

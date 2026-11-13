@@ -154,9 +154,9 @@ A routine says when to do something; a skill says how. A routine can name a skil
 
 ## Common questions
 
-### Do routines run when my Mac is closed?
+### Do routines run when my computer is closed?
 
-Yes. Routines are kept on Simeon's side and run on your team's cloud computer, not on your Mac.
+Yes. Routines are kept on Simeon's side and run on your team's cloud computer, not on your own.
 
 ### Where do I see what a routine did?
 

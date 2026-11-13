@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=e0ac8473">
+<link rel="stylesheet" href="/site.css?v=76455af9">
 <style>
 /* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
@@ -198,14 +198,15 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 </head>
 <body>
 
+<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav>
-    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div></div>
     </details>
   </div>
 </header>
@@ -272,8 +273,8 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <p>A routine says when to do something; a skill says how. A routine can name a skill:</p>
 <blockquote><p>Every first Monday of the month at 9am, write the investor update using your Investor update skill, and save it as a draft in <span class="brand" style="color:#ea4335"><img class="logo" src="/docs/brands/gmail.png?v=62678230" alt="" aria-hidden="true">Gmail</span>.</p></blockquote>
 <h2 id="common-questions">Common questions</h2>
-<h3 id="do-routines-run-when-my-mac-is-closed">Do routines run when my Mac is closed?</h3>
-<p>Yes. Routines are kept on Simeon's side and run on your team's cloud computer, not on your Mac.</p>
+<h3 id="do-routines-run-when-my-computer-is-closed">Do routines run when my computer is closed?</h3>
+<p>Yes. Routines are kept on Simeon's side and run on your team's cloud computer, not on your own.</p>
 <h3 id="where-do-i-see-what-a-routine-did">Where do I see what a routine did?</h3>
 <p>In the agent's chat: it works there and posts what it found or did. The routine's <strong>Run history</strong> shows when each run happened and whether it finished.</p>
 <h3 id="i-don-t-want-a-routine-any-more-should-i-delete-it">I don't want a routine any more. Should I delete it?</h3>
@@ -285,7 +286,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     </div>
     <p class="updated">Last updated: November 12, 2026</p>
   </article>
-  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#set-up-a-routine-in-the-chat">Set up a routine in the chat</a><a class="t l2" href="#set-up-a-routine-yourself">Set up a routine yourself</a><a class="t l2" href="#choose-when-it-runs">Choose when it runs</a><a class="t l2" href="#run-a-routine-from-slack">Run a routine from Slack</a><a class="t l2" href="#change-test-and-pause-a-routine">Change, test and pause a routine</a><a class="t l2" href="#write-a-good-routine">Write a good routine</a><a class="t l2" href="#skills">Skills</a><a class="t l3" href="#save-a-skill">Save a skill</a><a class="t l3" href="#see-and-change-an-agent-s-skills">See and change an agent&#x27;s skills</a><a class="t l3" href="#skills-and-routines-together">Skills and routines together</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#do-routines-run-when-my-mac-is-closed">Do routines run when my Mac is closed?</a><a class="t l3" href="#where-do-i-see-what-a-routine-did">Where do I see what a routine did?</a><a class="t l3" href="#i-don-t-want-a-routine-any-more-should-i-delete-it">I don&#x27;t want a routine any more. Should I delete it?</a><a class="t l3" href="#can-a-routine-use-my-apps">Can a routine use my apps?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
+  <aside class="toc"><div class="toc-head">On this page<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><a class="t l2" href="#set-up-a-routine-in-the-chat">Set up a routine in the chat</a><a class="t l2" href="#set-up-a-routine-yourself">Set up a routine yourself</a><a class="t l2" href="#choose-when-it-runs">Choose when it runs</a><a class="t l2" href="#run-a-routine-from-slack">Run a routine from Slack</a><a class="t l2" href="#change-test-and-pause-a-routine">Change, test and pause a routine</a><a class="t l2" href="#write-a-good-routine">Write a good routine</a><a class="t l2" href="#skills">Skills</a><a class="t l3" href="#save-a-skill">Save a skill</a><a class="t l3" href="#see-and-change-an-agent-s-skills">See and change an agent&#x27;s skills</a><a class="t l3" href="#skills-and-routines-together">Skills and routines together</a><a class="t l2" href="#common-questions">Common questions</a><a class="t l3" href="#do-routines-run-when-my-computer-is-closed">Do routines run when my computer is closed?</a><a class="t l3" href="#where-do-i-see-what-a-routine-did">Where do I see what a routine did?</a><a class="t l3" href="#i-don-t-want-a-routine-any-more-should-i-delete-it">I don&#x27;t want a routine any more. Should I delete it?</a><a class="t l3" href="#can-a-routine-use-my-apps">Can a routine use my apps?</a><a class="t l2" href="#related-pages">Related pages</a><div class="toc-more"><button type="button" data-copy><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8a1.3 1.3 0 0 0-1.3 1.3v5.4a1.3 1.3 0 0 0 1.3 1.3H5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>Copy for LLM</button><a href="/contact"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.2c3.3 0 5.8 2.2 5.8 5s-2.5 5-5.8 5c-.6 0-1.2-.1-1.8-.2L3 13.4l.7-2.6C2.7 9.9 2.2 8.6 2.2 7.2c0-2.8 2.5-5 5.8-5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>Share feedback</a></div></aside>
 </div>
 <div class="toast" role="status"></div>
 <script type="text/markdown" id="md"># Routines and skills
@@ -439,9 +440,9 @@ A routine says when to do something; a skill says how. A routine can name a skil
 
 ## Common questions
 
-### Do routines run when my Mac is closed?
+### Do routines run when my computer is closed?
 
-Yes. Routines are kept on Simeon&#x27;s side and run on your team&#x27;s cloud computer, not on your Mac.
+Yes. Routines are kept on Simeon&#x27;s side and run on your team&#x27;s cloud computer, not on your own.
 
 ### Where do I see what a routine did?
 
@@ -470,7 +471,7 @@ Yes, any app you&#x27;ve connected, as in any other task. See [Connect apps](/do
   <div class="wrap">
     <div class="foot-top">
       <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
-      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a><a href="https://apps.microsoft.com/detail/9P588HGXP209">Download for Windows</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
     </div>
     <div class="foot-base">
       <a class="foot-word" href="/" aria-label="SimeonLabs"></a>

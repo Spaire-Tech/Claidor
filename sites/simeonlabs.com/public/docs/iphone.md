@@ -1,6 +1,6 @@
 # Simeon for iPhone
 
-Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac. Sign in with the same account and everything is there: a message you send on your iPhone shows on your Mac, and the other way round. Your agents keep working whether the app is open or not.
+Simeon for iPhone works with the same agents, chats and cloud computer as Simeon on your Mac or Windows PC. Sign in with the same account and everything is there: a message you send on your iPhone shows on your computer, and the other way round. Your agents keep working whether the app is open or not.
 
 This page covers setting up the app and what's different on a phone.
 
@@ -19,7 +19,7 @@ Simeon for iPhone isn't in the App Store yet. When it is, you'll find the downlo
 
 ## Set up the app
 
-1. Open Simeon and sign in with the same account you use on your Mac: **Continue with Apple**, **Continue with Google**, or your email.
+1. Open Simeon and sign in with the same account you use on your computer: **Continue with Apple**, **Continue with Google**, or your email.
 2. If your iPhone has Face ID, Simeon offers to lock the app with it. You can change this later in **Settings**.
 3. Allow notifications, so you hear when an agent finishes or needs you.
 

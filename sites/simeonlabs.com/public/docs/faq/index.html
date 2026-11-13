@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=e0ac8473">
+<link rel="stylesheet" href="/site.css?v=76455af9">
 <style>
 /* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
@@ -198,14 +198,15 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 </head>
 <body>
 
+<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav>
-    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div></div>
     </details>
   </div>
 </header>
@@ -224,7 +225,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <h3 id="do-i-need-to-set-anything-up">Do I need to set anything up?</h3>
 <p>No. There are no workflows to build. Tell an agent what you need. When it needs one of your apps, it asks you to sign in once, on that app's own page.</p>
 <h3 id="what-do-i-need-to-use-it">What do I need to use it?</h3>
-<p>A Mac with Apple silicon on macOS 15 or later, or an iPhone on iOS 26 or later. The same account works on both. See <a href="/docs/get-started">Get started</a> and <a href="/docs/iphone">Simeon on iPhone</a>.</p>
+<p>A Mac with Apple silicon on macOS 15 or later, a PC with Windows 10 or 11, or an iPhone on iOS 26 or later. The same account works on all of them. See <a href="/docs/get-started">Get started</a> and <a href="/docs/iphone">Simeon on iPhone</a>.</p>
 <h2 id="agents-and-their-work">Agents and their work</h2>
 <h3 id="how-many-agents-can-i-have">How many agents can I have?</h3>
 <p>Up to 50, on every plan. Your plan sets how much they can do each week, not how many there are.</p>
@@ -258,7 +259,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <p>For a plan bought on the web or the Mac, choose <strong>Manage Billing</strong> in <strong>Settings › Usage &amp; Billing</strong> and cancel on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s page. For a plan bought on iPhone, open the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p>
 <h2 id="your-account">Your account</h2>
 <h3 id="how-do-i-delete-my-account">How do I delete my account?</h3>
-<p>In the Simeon app on your Mac or iPhone, open <strong>Settings</strong> and choose <strong>Delete Account</strong>. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can't be undone. A plan billed through Apple isn't cancelled by this: cancel it in the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p>
+<p>In the Simeon app on your Mac, Windows PC or iPhone, open <strong>Settings</strong> and choose <strong>Delete Account</strong>. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can't be undone. A plan billed through Apple isn't cancelled by this: cancel it in the iPhone's <strong>Settings › your name › Subscriptions</strong>.</p>
 <h3 id="something-isn-t-working">Something isn't working</h3>
 <p>Quit and reopen the app first. If that doesn't fix it, choose <strong>Report an issue</strong> in the account menu, or <a href="/contact">contact us</a> and tell us what you were doing.</p>
     </div>
@@ -281,7 +282,7 @@ No. There are no workflows to build. Tell an agent what you need. When it needs 
 
 ### What do I need to use it?
 
-A Mac with Apple silicon on macOS 15 or later, or an iPhone on iOS 26 or later. The same account works on both. See [Get started](/docs/get-started) and [Simeon on iPhone](/docs/iphone).
+A Mac with Apple silicon on macOS 15 or later, a PC with Windows 10 or 11, or an iPhone on iOS 26 or later. The same account works on all of them. See [Get started](/docs/get-started) and [Simeon on iPhone](/docs/iphone).
 
 ## Agents and their work
 
@@ -349,7 +350,7 @@ For a plan bought on the web or the Mac, choose **Manage Billing** in **Settings
 
 ### How do I delete my account?
 
-In the Simeon app on your Mac or iPhone, open **Settings** and choose **Delete Account**. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can&#x27;t be undone. A plan billed through Apple isn&#x27;t cancelled by this: cancel it in the iPhone&#x27;s **Settings › your name › Subscriptions**.
+In the Simeon app on your Mac, Windows PC or iPhone, open **Settings** and choose **Delete Account**. Your agents, their computers and files, your chats, memory and routines are deleted, your apps disconnected and your subscription ended. It can&#x27;t be undone. A plan billed through Apple isn&#x27;t cancelled by this: cancel it in the iPhone&#x27;s **Settings › your name › Subscriptions**.
 
 ### Something isn&#x27;t working
 
@@ -361,7 +362,7 @@ Quit and reopen the app first. If that doesn&#x27;t fix it, choose **Report an i
   <div class="wrap">
     <div class="foot-top">
       <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
-      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a><a href="https://apps.microsoft.com/detail/9P588HGXP209">Download for Windows</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
     </div>
     <div class="foot-base">
       <a class="foot-word" href="/" aria-label="SimeonLabs"></a>

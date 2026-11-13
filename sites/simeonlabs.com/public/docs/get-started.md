@@ -1,20 +1,31 @@
 # Get started
 
-This guide takes you from the download to your first finished task. You'll install the Mac app, sign in, meet Simeon, let him hire your first agent, connect the app it needs and check its work.
+This guide takes you from the download to your first finished task. You'll install the app, sign in, meet Simeon, let him hire your first agent, connect the app it needs and check its work.
 
 | You need | Details |
 |---|---|
-| **A Mac** | With Apple silicon, on macOS 15 or later. |
+| **A Mac or a Windows PC** | A Mac with Apple silicon on macOS 15 or later, or a PC with Windows 10 or 11. |
 | **An email address** | Or a Google or Apple account to sign in with. |
 | **A card, for the trial** | Every plan starts with a 7-day free trial. You add a card on the web and can cancel at any time. See [Plans and billing](/docs/billing). |
 
-## 1. Install the Mac app
+## 1. Install the app
+
+**On a Mac:**
 
 1. [Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac).
 2. Open the downloaded file and drag **Simeon** into your **Applications** folder.
 3. Open Simeon from Applications or Spotlight.
 
 Simeon updates itself. You can check for an update in **Settings** › **Updates**.
+
+**On a Windows PC:**
+
+1. Open [Simeon in the Microsoft Store](https://apps.microsoft.com/detail/9P588HGXP209) and install it from there.
+2. Open Simeon from the Start menu.
+
+The Microsoft Store keeps Simeon up to date.
+
+The rest of this guide shows the Mac app. The Windows app follows the same steps.
 
 ## 2. Sign in
 

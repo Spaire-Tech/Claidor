@@ -100,6 +100,7 @@ The page is written by hand in `source/page.html`, light only, on one left
 edge shared by the wordmark, the headline and the demo.
 
 - **Bar**: `nav.py`'s, as on every page (above). On a phone the hero shows Download for iOS, unlinked until there is an app.
+  On a Windows PC every Download is Download for Windows, the Microsoft Store's listing (below).
 - **Hero**: "Put intelligent agents to work for whatever needs doing." in the
   serif, then Download for Mac and Request a demo.
 - **The app**: the real app window, playing a founder's morning.
@@ -127,8 +128,17 @@ edge shared by the wordmark, the headline and the demo.
 - **Pricing** (a free month, Standard $30, Pro $100, Max $200; each card says the week's credits),
   **Questions and answers**, and the closing line.
 
-Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`),
-and each plan's button opens billing with that plan (`app.simeonlabs.com/billing?plan=…`).
+Download and Download for Mac fetch the Mac app (`api.simeonlabs.com/desktop/download/mac`).
+On a Windows PC (13 November 2026) each of them is Download for Windows instead, which opens Simeon's listing
+in the Microsoft Store (`nav.WINDOWS_STORE`): the Store installs and updates the Windows app, so the site
+never links to an installer of ours. `nav.py`'s `OS_MARK`, a line of script before the bar on every page, puts
+`on-windows` on `<html>` when the reader's browser says Windows, and `site.css` then shows each `.btn.for-win` where its
+`.btn.for-mac` neighbour was, at any width (and never Download for iOS). A page that offers the download writes
+both buttons (`nav.downloads`, or the two in `page.html`'s calls, which the other pages read). The other
+computer's download stays in the footer for everyone: Download for Mac and Download for Windows. On the
+Marketplace, Add to Simeon opens the app on a Windows PC as on a Mac (`simeon://`), and gives way to
+Download for Windows when there is none.
+Each plan's button opens billing with that plan (`app.simeonlabs.com/billing?plan=…`).
 The footer is `nav.py`'s, as on every page (above).
 
 ## The legal pages
