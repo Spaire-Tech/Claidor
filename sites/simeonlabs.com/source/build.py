@@ -390,9 +390,6 @@ async def main():
     # The Simeon Network's addresses (network.py): /network, its skill and install line, the invite page.
     import network
     network.build(OUT)
-    # The picture each page shows when its link is shared (og.py), into the pages written above.
-    import og
-    og.build(OUT)
     # The sitemap and robots.txt (sitemap.py), from every page written above, for Google Search Console.
     import sitemap
     sitemap.build(OUT)

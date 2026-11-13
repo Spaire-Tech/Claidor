@@ -29,12 +29,6 @@ python3 build.py ../../../desktop/dist/demo
 The script needs Playwright's Chromium (it captures the stills the hero shows
 while the app loads). It rewrites `public/` from scratch; commit what it writes.
 
-Share pictures: `source/og.py` gives every page the picture its link shows when shared (1200 x 630, in
-`public/og/`, with `og:image` and X's large card in the page's head): the pond painting with the SimeonLabs
-wordmark for the home page, and the page's own name under a small wordmark for the others. A connector's or
-AI model's own page (`/connectors/<id>`, `/models/<id>`) and a Newsroom post with its own picture are left as
-they are. The build runs it before the sitemap; run `python3 source/og.py` again after any page generator.
-
 Marketplace pages: `python3 source/teams.py` rewrites `public/marketplace/`
 from `server/simeon/desktop/packs.json` (build.py runs it too); run it whenever
 a pack changes and commit what it writes. `source/sitemap.py` writes `public/sitemap.xml` and `public/robots.txt` from the pages in `public/`
