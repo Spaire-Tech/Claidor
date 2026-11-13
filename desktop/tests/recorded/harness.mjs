@@ -17,16 +17,25 @@
  *   that the answers kept here are the earlier code's.
  * - Every export of every module a part lists must be used by a scenario, or
  *   named in the part's `skipped` with the reason.
+ * - `SIMEON_RECORD_COVERAGE=<part>` (or `all`) also says how much of the
+ *   part's code the scenarios ran: for each of its files, the pieces run out
+ *   of the pieces of code it holds (a piece is one mapped place in a line,
+ *   so a long line counts for all it holds), and which never ran, as
+ *   `line` or `line:column`. A piece that never ran is behaviour nothing
+ *   here proves; the part's files are the ones under `source/<part>/`, or
+ *   the ones it names in `covers`.
  *
  * Scenarios use stand-ins only: no network, no real account, nothing outside
  * a temporary folder.
  */
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import inspector from "node:inspector/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
+import { SourceMapConsumer } from "source-map-js";
 
 export const desktopRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const recordedDir = path.dirname(fileURLToPath(import.meta.url));
@@ -54,11 +63,18 @@ export async function scenarioFiles() {
   return (await readdir(recordedDir)).filter((name) => name.endsWith(".scenarios.mjs")).sort();
 }
 
+/** Whether this run also measures how much of the part's code the scenarios run. */
+export function measuring(part) {
+  const asked = process.env.SIMEON_RECORD_COVERAGE?.trim();
+  return asked === "all" || asked === part;
+}
+
 /**
  * The part's modules, built together so that what one defines is the very
- * thing another uses (a key, a class), and loaded once.
+ * thing another uses (a key, a class), and loaded once. With `measure`, what
+ * runs from now on is counted, and `coverage()` answers it per source file.
  */
-export async function loadModules(modules) {
+export async function loadModules(modules, { measure = false } = {}) {
   const root = sourceRoot();
   const out = await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-"));
   const entryPoints = Object.fromEntries(Object.entries(modules).map(([key, file]) => [key, path.join(root, file)]));
@@ -72,14 +88,97 @@ export async function loadModules(modules) {
     target: "node22",
     logLevel: "silent",
     external: ["electron"],
+    sourcemap: measure ? "external" : false,
     outExtension: { ".js": ".mjs" },
     // Another checkout has no packages of its own: they are this checkout's.
     nodePaths: [path.join(desktopRoot, "node_modules")],
     banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   });
+  let session;
+  if (measure) {
+    session = new inspector.Session();
+    session.connect();
+    await session.post("Profiler.enable");
+    await session.post("Profiler.startPreciseCoverage", { callCount: true, detailed: true });
+  }
   const loaded = {};
   for (const key of Object.keys(modules)) loaded[key] = await import(`${pathToFileURL(path.join(out, `${key}.mjs`)).href}?${Date.now()}`);
-  return { loaded, dispose: () => rm(out, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }) };
+  return {
+    loaded,
+    /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that never ran are. */
+    coverage: async () => (session ? linesRun(await session.post("Profiler.takePreciseCoverage"), out, root) : {}),
+    dispose: async () => {
+      if (session) {
+        await session.post("Profiler.stopPreciseCoverage").catch(() => {});
+        session.disconnect();
+      }
+      await rm(out, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    },
+  };
+}
+
+/**
+ * V8's counts for the built files, carried back to the source files through
+ * the build's maps, one count per mapped place (line and column).
+ */
+async function linesRun({ result }, out, root) {
+  const files = {};
+  for (const script of result) {
+    if (!script.url.startsWith("file:")) continue;
+    const built = fileURLToPath(script.url.split("?")[0]);
+    if (!built.startsWith(out + path.sep) || !existsSync(`${built}.map`)) continue;
+    const text = await readFile(built, "utf8");
+    // How often each character of the built file ran: an inner range says more than the one around it.
+    const ran = new Int32Array(text.length).fill(-1);
+    const ranges = script.functions.flatMap((fn) => fn.ranges).sort((a, b) => a.startOffset - b.startOffset || b.endOffset - a.endOffset);
+    for (const range of ranges) ran.fill(range.count, range.startOffset, Math.min(range.endOffset, text.length));
+    const lineStarts = [0];
+    for (let at = text.indexOf("\n"); at !== -1; at = text.indexOf("\n", at + 1)) lineStarts.push(at + 1);
+    new SourceMapConsumer(JSON.parse(await readFile(`${built}.map`, "utf8"))).eachMapping((piece) => {
+      if (!piece.source || piece.originalLine == null) return;
+      const source = path.relative(root, path.resolve(path.dirname(built), piece.source)).split(path.sep).join("/");
+      if (source.startsWith("..") || source.startsWith("node_modules/")) return;
+      const count = ran[lineStarts[piece.generatedLine - 1] + piece.generatedColumn];
+      if (count === undefined || count < 0) return;
+      const places = (files[source] ??= new Map());
+      const place = `${piece.originalLine}:${piece.originalColumn + 1}`;
+      places.set(place, Math.max(places.get(place) ?? 0, count));
+    });
+  }
+  return Object.fromEntries(
+    Object.entries(files)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([source, places]) => [source, { pieces: places.size, never: neverRan(places) }]),
+  );
+}
+
+/**
+ * Where the pieces that never ran are, as a person reads them: a line's
+ * number when none of it ran ("3-7, 12"), `line:column` for each piece of a
+ * line that ran in part.
+ */
+function neverRan(places) {
+  const byLine = new Map();
+  for (const [place, count] of places) {
+    const [line, column] = place.split(":").map(Number);
+    const seen = byLine.get(line) ?? byLine.set(line, { ran: false, never: [] }).get(line);
+    if (count === 0) seen.never.push(column);
+    else seen.ran = true;
+  }
+  const lines = [...byLine].filter(([, seen]) => seen.never.length > 0).sort(([a], [b]) => a - b);
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const [line, seen] = lines[i];
+    if (seen.ran) {
+      out.push(...seen.never.sort((a, b) => a - b).map((column) => `${line}:${column}`));
+      continue;
+    }
+    let j = i;
+    while (j + 1 < lines.length && !lines[j + 1][1].ran && lines[j + 1][0] === lines[j][0] + 1) j += 1;
+    out.push(i === j ? `${line}` : `${line}-${lines[j][0]}`);
+    i = j;
+  }
+  return { count: [...places.values()].filter((count) => count === 0).length, where: out };
 }
 
 /** What kind of thing an export is, for the part's surface. */

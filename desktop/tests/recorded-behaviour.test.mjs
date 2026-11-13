@@ -7,15 +7,15 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { answerOf, loadModules, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
+import { answerOf, loadModules, measuring, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
 
 /** The answers as they are written to the file: what is compared, order of keys included. */
 const written = (value) => JSON.stringify(value, null, 1);
 
 for (const file of await scenarioFiles()) {
   const part = await import(pathToFileURL(path.join(recordedDir, file)).href);
-  test(`recorded: ${part.part} behaves as recorded`, async () => {
-    const { loaded, dispose } = await loadModules(part.modules);
+  test(`recorded: ${part.part} behaves as recorded`, async (t) => {
+    const { loaded, coverage, dispose } = await loadModules(part.modules, { measure: measuring(part.part) });
     try {
       const { modules, used } = tracked(loaded);
       const surface = surfaceOf(loaded);
@@ -30,6 +30,20 @@ for (const file of await scenarioFiles()) {
       const exported = Object.entries(surface).flatMap(([key, names]) => Object.keys(names).map((name) => `${key}.${name}`));
       assert.deepEqual(exported.filter((name) => !used.has(name) && !(name in skipped)), [], "every export is used by a scenario, or named in `skipped` with the reason");
       assert.deepEqual(Object.keys(skipped).filter((name) => !exported.includes(name)), [], "`skipped` names only what the part exports");
+
+      if (measuring(part.part)) {
+        // How much of the part's own code the scenarios ran, file by file.
+        const own = part.covers ?? [`source/${part.part}/`];
+        const files = Object.entries(await coverage()).filter(([file]) => own.some((prefix) => file === prefix || file.startsWith(prefix)));
+        let pieces = 0;
+        let never = 0;
+        for (const [file, seen] of files) {
+          pieces += seen.pieces;
+          never += seen.never.count;
+          t.diagnostic(`${file}: ${seen.pieces - seen.never.count} of ${seen.pieces} pieces ran${seen.never.count === 0 ? "" : `; never ran: ${seen.never.where.join(", ")}`}`);
+        }
+        t.diagnostic(`${part.part}: ${pieces - never} of ${pieces} pieces ran (${pieces === 0 ? 0 : Math.floor(((pieces - never) * 100) / pieces)}%) in ${files.length} files`);
+      }
 
       const answers = { part: part.part, surface, scenarios };
       if (recording(part.part)) {
