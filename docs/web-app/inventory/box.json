@@ -237,6 +237,13 @@
    "old_web_app": false
   },
   {
+   "command": "getCursorSignIn",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
    "command": "getForeverBoxStatus",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
@@ -490,6 +497,20 @@
    "old_web_app": false
   },
   {
+   "command": "signOutCursor",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "startCursorSignIn",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
    "command": "startFlightBooking",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
@@ -632,6 +653,7 @@
   "getCloudAgentConversation",
   "getCloudAgentInfo",
   "getConversationOutline",
+  "getCursorSignIn",
   "getForeverBoxStatus",
   "getGitHubSignIn",
   "getHostSettings",
@@ -704,8 +726,10 @@
   "setHostSettings",
   "setSharedRoomTyping",
   "setWindowFocused",
+  "signOutCursor",
   "skillsCatalog",
   "snapshotBoxStoreNow",
+  "startCursorSignIn",
   "startFlightBooking",
   "startTeachRecording",
   "stopAgentTask",

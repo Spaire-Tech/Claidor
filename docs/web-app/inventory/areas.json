@@ -475,6 +475,7 @@
   "title": "Settings, the account menu, usage and billing, AI Models, External Agents, Network, Wallet, Credentials Store, feedback",
   "files": [
    "ios/SimeonCore/Sources/SimeonCore/AIModels.swift",
+   "ios/SimeonCore/Sources/SimeonCore/CursorSignIn.swift",
    "ios/SimeonCore/Sources/SimeonCore/AccountMenu.swift",
    "ios/SimeonCore/Sources/SimeonCore/AccountSettings.swift",
    "ios/SimeonCore/Sources/SimeonCore/ApplePlans.swift",

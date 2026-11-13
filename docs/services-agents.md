@@ -166,6 +166,43 @@ Codex's, by the program it runs in.
     `usage_limit_reached` with when the limit ends, 401 `chatgpt_not_connected`, else ChatGPT's
     own. The relay keeps both for the turn's outcome (Paused with the reset time; "ChatGPT isn't
     connected any more").
+- **Cursor** (13 November 2026, `host/cursor/`; the founder: "Cursor now"). The third program:
+  Cursor's own command-line agent, unmodified, on the person's Cursor plan. Unlike the other
+  two it is signed in on the person's cloud computer itself, and its calls go to Cursor
+  directly; the server only keeps the cloud agent's model (`own:cursor:auto`) and names the
+  plan in a limit ("Paused: the Cursor plan's limit is reached").
+  - `cursor-install.ts` downloads the pinned archive (2026.11.11-b912975, 176 MB, 538 MB
+    unpacked) with curl, checks its sha256 against the one written in the file, and unpacks it
+    into `/var/tmp/simeon-cursor`, outside the backup. Installed the first time Cursor is
+    connected, or again by a turn on a computer made afresh. Log: `cursor installed version=…`,
+    `cursor install failed reason=…`.
+  - `cursor-account.ts` (`CursorOnComputer`) runs `agent login` with no browser: the program
+    prints a link to Cursor's own site, the person opens it and approves, and the program
+    writes its sign-in to `/home/box/.config/cursor/auth.json`. There is no code to type.
+    That the file is there is what says connected; the engine never opens it, and it is not
+    in the backup (`BOX_HOME_CURSOR_CREDENTIALS`). Only a link on Cursor's own site is ever
+    handed to an app. Log: `cursor sign-in started`, `sign-in link shown`, `connected`,
+    `sign-in ended code=…`, `signed out`.
+  - The apps call `startCursorSignIn`, `getCursorSignIn` and `signOutCursor` (states: `none`,
+    `installing`, `waiting` with the link and when it ends, `connected`, `failed`).
+  - `cursor-turn.ts` runs `agent -p --output-format stream-json --force --trust --sandbox
+    disabled --workspace <checkout> [--resume <session>] "<task>"`. The program has no place
+    for Simeon's brief, so a new session's task begins with it. It names its own model. Its
+    answer is its last words; a failure is read from its error output (no sign-in, a limit, a
+    session it no longer has).
+  - `coding-choice.ts` adds Cursor after the server's programs while its sign-in is on the
+    computer. So with Claude or ChatGPT also connected, a cloud agent runs in Cursor only when
+    the person names it ("in Cursor"): the agent passes `program: "cursor"` to `CloudAgent`
+    launch. A named program that isn't connected puts its card alone in the chat, and the
+    agent waits for that one (`ModelConnectWait`).
+  - To disconnect, the person asks an agent (`CloudAgent` `disconnect_program`, confirmed
+    first): Cursor has no row in Settings › AI Models, which lists the plans the agents'
+    own model runs on.
+  - Checked with Cursor's real program, its network cut off, against a stand-in on the
+    loopback: the install (the real download, its fingerprint, the unpacking), the sign-in
+    link read, the approval and the sign-in file, the sign-out, and a turn with no sign-in,
+    with a refused sign-in and at a limit. Not run: a turn that reaches a model (it needs a
+    Cursor account), so the events of a turn that works are read from the program's own code.
 - **The programs offered** (`own_models.coding_rows`). `/desktop/api/models/available` ends with
   rows of the role `coding`: Claude Code's when a Claude account is usable (`transportApi:
   claude-code`), Codex's when a ChatGPT one is (`transportApi: codex`), the chosen model's

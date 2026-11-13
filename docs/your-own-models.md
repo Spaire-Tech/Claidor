@@ -771,6 +771,29 @@ Codex 0.168.0 program against a stand-in server). Nothing reached
 chatgpt.com, so whether ChatGPT accepts Codex's calls relayed this way is
 not known until a real run.
 
+## 12. Cursor codes for a cloud agent on the person's Cursor plan (13 November 2026)
+
+The founder: "Cursor now". A cloud agent's coding can run in Cursor's own
+command-line agent, beside Claude Code and Codex
+(`docs/services-agents.md`, section 1).
+
+- Cursor is not a model for the person's agents and has no row in Settings ›
+  AI Models. It is connected from the chat's card ("Connect Cursor", "Runs on
+  your Cursor plan."), and only cloud agents use it.
+- The sign-in is Cursor's own, on the person's cloud computer: Cursor's
+  program prints a link to Cursor's site, the person approves there, and the
+  program keeps the sign-in on the computer. Simeon Labs' server never has
+  it, and it is not in the computer's backup. Cursor's calls go from the
+  computer to Cursor; none passes through the server.
+- The card's dialog says so: the agents keep the model they have, the
+  sign-in stays on the cloud computer, and to disconnect the person asks an
+  agent.
+- Which program codes when several are connected: Claude Code or Codex as
+  before; Cursor when the person names it, or when it is the only one.
+
+What is not known until a real run with a Cursor account: a turn that reaches
+a model (how its answer and its limits read in practice).
+
 ## Sources
 
 - Reason: reasonmachines.com/guides/use-all-your-ai-subscriptions;
