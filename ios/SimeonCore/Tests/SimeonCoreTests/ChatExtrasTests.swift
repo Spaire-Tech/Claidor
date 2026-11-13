@@ -789,17 +789,22 @@ final class ModelConnectCardTests: XCTestCase {
     XCTAssertEqual(Chat.rows([entry]).last?.kind, "model-connect")
     XCTAssertEqual(Chat.rows([entry]).last?.side, .agent(nil))
 
-    XCTAssertEqual(ModelConnectCard.title("claude", connected: false), "Connect Claude")
-    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: false), "Connect ChatGPT")
-    XCTAssertEqual(ModelConnectCard.line("claude", connected: false), "Cloud agents code in Claude Code.")
-    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: false), "Cloud agents code in Codex.")
+    // The card names the programs (13 November 2026, the founder: "its connect codex or connect claude code"); the plans' names stay Settings'.
+    XCTAssertEqual(ModelConnectCard.title("claude", connected: false), "Connect Claude Code")
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: false), "Connect Codex")
+    XCTAssertEqual(ModelConnectCard.line("claude", connected: false), "Runs on your Claude plan.")
+    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: false), "Runs on your ChatGPT plan.")
     // Once connected a row reads as a connected app's: the name alone.
-    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: true), "ChatGPT")
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: true), "Codex")
+    XCTAssertEqual(ModelConnectCard.title("claude", connected: true), "Claude Code")
     XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: true), "")
     XCTAssertEqual(ModelConnectCard.connectLabel, "Connect")
-    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude, ChatGPT")
+    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude Code, Codex")
     XCTAssertEqual(ModelConnectCard.program("claude"), "Claude Code")
     XCTAssertEqual(ModelConnectCard.program("chatgpt"), "Codex")
+    // Each program's own logo, the cut-outs the apps ship (`Mascots/`).
+    XCTAssertEqual(ModelConnectCard.logo("claude"), "claudecode")
+    XCTAssertEqual(ModelConnectCard.logo("chatgpt"), "codex")
 
     XCTAssertEqual(ModelConnectCard.nextPoll(anyConnected: false), 4, "the accounts read again while both rows wait")
     XCTAssertNil(ModelConnectCard.nextPoll(anyConnected: true))

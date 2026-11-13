@@ -28858,60 +28858,60 @@
         }
       }
     },
-    "Cloud agents code in %@." : {
+    "Runs on your %@ plan." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cloud-Agenten programmieren in %@."
+            "value" : "Läuft über dein %@-Abo."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los agentes en la nube programan en %@."
+            "value" : "Funciona con tu plan de %@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les agents cloud codent dans %@."
+            "value" : "Tourne sur ton forfait %@."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gli agenti cloud programmano in %@."
+            "value" : "Lavora con il tuo piano %@."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cloudagenten coderen in %@."
+            "value" : "Draait op je %@-abonnement."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agenci w chmurze programują w %@."
+            "value" : "Działa na twoim planie %@."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agentes na nuvem programam no %@."
+            "value" : "Roda no seu plano do %@."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Molnagenter kodar i %@."
+            "value" : "Körs på ditt %@-abonnemang."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bulut ajanları %@ içinde kod yazar."
+            "value" : "%@ planınla çalışır."
           }
         }
       }

@@ -868,11 +868,13 @@ struct ConnectAppRow<End: View>: View {
   let title: String
   let line: String
   let look: Look
+  /** A program's own logo in place of the app's tile (`ProgramLogo`): Claude Code's or Codex's. */
+  var logo: String? = nil
   @ViewBuilder var end: () -> End
 
   var body: some View {
     HStack(spacing: 12) {
-      AppLogoTile(name: app, look: look)
+      if let logo { ProgramLogo(name: logo) } else { AppLogoTile(name: app, look: look) }
       VStack(alignment: .leading, spacing: 0) {
         Text(title)
           .font(.system(size: 13, weight: .medium))
@@ -1234,14 +1236,17 @@ struct GitHubSignInCardView: View {
 }
 
 /**
- * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
  * November 2026, the founder: "when neither of them is connected, the user
  * is given a choice of both cards to connect"): what a cloud agent's coding
- * runs on. Each row is a provider drawn as an app's card is, with Connect in
- * the cards' blue pill: the consent AI Models shows, then that provider's
- * own sign-in sheet over the window (`MacConnector.connectModel`). A
- * connected provider reads as a connected app does: its name and
- * "Connected" in the green capsule. What is connected is the app's own
+ * runs in. Each row is a program, by its own name and its own logo bare
+ * (`ProgramLogo`; the founder, the same day: "its connect codex or connect
+ * claude code ... for the card specifically its that. but settings is
+ * claude and chat gpt"), over whose plan it runs on, with Connect in the
+ * cards' blue pill: the consent AI Models shows for that plan, then its own
+ * sign-in sheet over the window (`MacConnector.connectModel`). A connected
+ * program reads as a connected app does: its name and "Connected" in the
+ * green capsule. What is connected is the app's own
  * accounts (`store.aiModels`), read again while both rows wait, so a sign-in
  * finished on another device shows too. The agent goes on by itself once
  * one is connected.
@@ -1256,7 +1261,7 @@ struct ModelConnectCardView: View {
     CardShell(look: look, spacing: 14) {
       ForEach(card.providers, id: \.self) { provider in
         let connected = model.connected(provider)
-        ConnectAppRow(app: AIModels.providerName(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), look: look) {
+        ConnectAppRow(app: ModelConnectCard.program(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), look: look, logo: ModelConnectCard.logo(provider)) {
           Group {
             if connected {
               ConnectedCapsule(look: look)
@@ -1283,6 +1288,28 @@ struct ModelConnectCardView: View {
         try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
       }
     }
+  }
+}
+
+/**
+ * Claude Code's or Codex's own logo, whole and bare (13 November 2026, the
+ * founder: "its full logo no white or dark background"): no tile, no ground
+ * and no hairline behind it, in the place an app's 40 tile takes. The
+ * cut-outs (`Mascots/`) keep a clear margin around the picture, so it is
+ * drawn a fifth larger than its place and the picture itself fills the 40.
+ */
+struct ProgramLogo: View {
+  let name: String
+  var size: CGFloat = 40
+
+  var body: some View {
+    Image("Mascots/\(name)")
+      .resizable()
+      .interpolation(.high)
+      .scaledToFit()
+      .frame(width: size * 1.2, height: size * 1.2)
+      .frame(width: size, height: size)
+      .accessibilityHidden(true)
   }
 }
 

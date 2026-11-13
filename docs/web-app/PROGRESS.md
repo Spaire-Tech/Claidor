@@ -842,6 +842,49 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: the connect card names the programs, Claude Code and Codex, with their logos bare
+
+The founder, on the card below as first built ("Connect Claude", "Connect
+ChatGPT", each on an app's tile): "So let me stop u here. Its connect codex
+or connect claude code. And its full logo no white or dark background. For
+the card specifically its that. But settings is claude and chat gpt. They
+are two dif things".
+
+- The rows read "Connect Claude Code" and "Connect Codex", and "Claude
+  Code" or "Codex" once connected (`modelConnectTitle`). The chat list's
+  line reads "Connect Claude Code, Codex" (`modelConnectPreview`).
+- Each row's picture is the program's own logo, the cut-outs the app
+  already ships (`assets/mascots/claudecode.png`, `codex.png`;
+  `modelConnectLogo`), drawn whole in an app icon's 40 place with nothing
+  behind it: no tile, no ground, no hairline (`.program-logo`). The
+  cut-outs keep a clear margin, so the picture is drawn at 48 and fills
+  the 40.
+- The line under each name says whose plan it runs on, which is the
+  account Connect signs in to: "Runs on your Claude plan.", "Runs on your
+  ChatGPT plan." (one sentence in SimeonCore's catalogue, in its nine
+  languages, in place of "Cloud agents code in %@.").
+- Settings › AI Models, the consent and the sign-in sheets are unchanged:
+  they name the plans, Claude and ChatGPT.
+- The agent is told to name the two as the card does (the engine's
+  `MODEL_CONNECT_CARD_TEXT` and the brief).
+
+Decisions (mine, to the founder's words): the line under each name keeps
+the plan's name, so "Connect Codex" opening ChatGPT's sign-in is no
+surprise; the consent that follows stays AI Models' own ("Connect
+ChatGPT"), since that is the account being connected.
+
+Checked: the web app's tests (1,292 pass), types, ESLint and Prettier on
+the changed files; the words made again and the build committed. In
+Chromium against the stand-in, light and dark: "Connect Claude Code" over
+"Runs on your Claude plan." and "Connect Codex" over "Runs on your ChatGPT
+plan."; each logo loaded, 48 in a 40 place, its ground transparent, no
+tile, no border or shadow; Connect on Codex's row through the consent and
+ChatGPT's sheet to "Codex / Connected"; the shell 520 wide (418 narrow),
+nothing sideways, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift
+parses, not built with Xcode).
+
 ### 13 November 2026: the card that offers Claude and ChatGPT to connect; cloud agents in Codex
 
 The founder: "need to build this: Codex's is wired up and shows whenever a

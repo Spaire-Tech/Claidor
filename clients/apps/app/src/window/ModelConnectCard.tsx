@@ -1,4 +1,4 @@
-// The chat's card that offers Claude and ChatGPT to connect
+// The chat's card that offers Claude Code and Codex to connect
 // (`model-connect`, 13 November 2026, the founder: "when neither of them is
 // connected, the user is given a choice of both cards to connect"): the
 // Mac's `ModelConnectCardView` (mac/Simeon/Cards.swift), the shared core's
@@ -6,12 +6,15 @@
 // Claude plan, or in Codex on their ChatGPT plan; a launch that finds
 // neither connected puts this card in the chat.
 //
-// Each row is a provider drawn as an app to connect is: its icon (40), the
-// title and what connecting it is for, and Connect in the cards' blue pill.
-// Connect shows the consent AI Models shows, then that provider's own
-// sign-in sheet (SettingsModels.tsx's), over the window. A connected
-// provider reads as a connected app does: its name and "Connected" in the
-// green capsule. What is connected is the window's own accounts
+// Each row is a program, by its own name and its own logo (the founder, the
+// same day: "its connect codex or connect claude code. and its full logo no
+// white or dark background. for the card specifically its that. but
+// settings is claude and chat gpt"): the logo whole and bare in an app
+// icon's place (40), "Connect Codex" over whose plan it runs on, and Connect
+// in the cards' blue pill. Connect shows the consent AI Models shows for
+// that plan, then its own sign-in sheet (SettingsModels.tsx's), over the
+// window. A connected program reads as a connected app does: its name and
+// "Connected" in the green capsule. What is connected is the window's own accounts
 // (`store.aiModels`), read again every four seconds while the card is on
 // screen and both rows wait, for ten minutes at most. The agent goes on by
 // itself once one is connected.
@@ -25,10 +28,10 @@ import { claude, providerName } from '../core/aiModels'
 import {
   connectedWord,
   modelConnectLine,
+  modelConnectLogo,
   modelConnectNextPoll,
   modelConnectPolls,
   modelConnectTitle,
-  providerIconURL,
   type ModelConnectCard,
 } from '../core/connectCards'
 import { modelConsent } from '../core/connectConsent'
@@ -36,9 +39,9 @@ import { connectWord } from '../core/connecting'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { CardShell } from './Cards'
-import { AppLogoTile } from './ConnectCards'
 import './ConnectCards.css'
 import { useConnector } from './connector'
+import { mascotURL } from './mascots'
 import { ChatGPTConnectSheet, ClaudeConnectSheet } from './SettingsModels'
 import { useWatched } from './useStore'
 
@@ -109,10 +112,9 @@ export function ModelConnectCardView({
           const line = modelConnectLine(provider, connected)
           return (
             <div key={provider} className="connector-row">
-              <AppLogoTile
-                name={providerName(provider)}
-                icon={providerIconURL(provider)}
-              />
+              <span className="program-logo" aria-hidden="true">
+                <img src={mascotURL(modelConnectLogo(provider))} alt="" />
+              </span>
               <div className="connector-words">
                 <span className="connector-title">
                   {modelConnectTitle(provider, connected)}

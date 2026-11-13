@@ -221,9 +221,28 @@
   gap: 12px;
 }
 
-/* Claude and ChatGPT, both to connect (13 November 2026): two app rows in one shell, 14 apart. */
+/* Claude Code and Codex, both to connect (13 November 2026): two rows in one shell, 14 apart. */
 .card-shell.model-connect-card {
   gap: 14px;
+}
+
+/* A program's own logo, whole and bare, in an app icon's place (the founder:
+   "its full logo no white or dark background"): no tile, no ground, no
+   hairline. The cut-outs keep a clear margin, so the picture is drawn a
+   fifth larger than its 40 and fills it. */
+.program-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+}
+
+.program-logo img {
+  width: 48px;
+  height: 48px;
+  max-width: none;
+  object-fit: contain;
 }
 
 .model-connect-card .card-button:focus-visible {
