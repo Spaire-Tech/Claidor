@@ -150,6 +150,11 @@ class TestTrialPointer:
         _later(mocker, 11)
         folder.trial = "../../etc/passwd"
         assert await load_trial_bundle(BASE) is None
+        # A file cut short in the upload is no engine either.
+        _later(mocker, 22)
+        folder.files["eeeeeee5"] = _tar(TRIAL_HOST)[:40]
+        folder.trial = "eeeeeee5"
+        assert await load_trial_bundle(BASE) is None
 
     async def test_one_fixed_file_has_no_trial(self, folder: Folder) -> None:
         assert await load_trial_bundle(f"{BASE}/sand-host-bundle-aaaaaaa1.tgz") is None

@@ -855,8 +855,15 @@ async def load_trial_bundle(url: str) -> HostBundle | None:
     try:
         version = await _current_version(base, TRIAL_VERSION_FILE)
         bundle = await _fetch_bundle(f"{base}/{HOST_BUNDLE_PREFIX}-{version}.tgz")
-    except (BoxHostError, httpx.HTTPError, tarfile.TarError) as error:
-        log.info("sand.box.bundle.trial_unread", base=base, error=str(error))
+    except Exception as error:
+        # Whatever went wrong (not there, not a bundle, a file cut short), the
+        # trial accounts run everyone's engine: a trial never takes a
+        # computer down.
+        log.info(
+            "sand.box.bundle.trial_unread",
+            base=base,
+            error=str(error) or type(error).__name__,
+        )
         _trial_unread[base] = now
         return None
     _trial_unread.pop(base, None)
