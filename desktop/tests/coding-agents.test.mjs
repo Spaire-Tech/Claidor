@@ -694,7 +694,8 @@ test("the manager: the launch asks for the computer, Claude and GitHub are check
     let reads = 0;
     manager.attachModelWait({ wait: (agentId) => waited.push(agentId) });
     assert.deepEqual(await manager.codingReady("agent-1", () => undefined, async () => { reads += 1; }), { ok: false, text: module.MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: ["claude", "chatgpt"] }, waitFor: "model" });
-    assert.match(module.MODEL_CONNECT_CARD_TEXT, /Claude and ChatGPT[\s\S]*resumed automatically once one is connected/);
+    // The agent names the programs as the card does (13 November 2026, the founder: "its connect codex or connect claude code").
+    assert.match(module.MODEL_CONNECT_CARD_TEXT, /Claude Code and Codex[\s\S]*resumed automatically once one is connected/);
     assert.deepEqual([waited, reads], [["agent-1"], 1]);
     // Connected a moment ago in AI Models: the list read again finds it, and no card is shown.
     let known;

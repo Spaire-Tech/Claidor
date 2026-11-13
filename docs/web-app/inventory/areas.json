@@ -219,7 +219,7 @@
    "mac/Simeon/TranscriptSelection.swift"
   ],
   "mac_lines": 8308,
-  "core_lines": 5217,
+  "core_lines": 5228,
   "views": 63,
   "files_needing_a_mac": 15,
   "strings": 329,
@@ -247,11 +247,11 @@
    "mac/Simeon/OnePasswordCards.swift",
    "mac/Simeon/UserFormCard.swift"
   ],
-  "mac_lines": 4642,
+  "mac_lines": 4669,
   "core_lines": 1786,
-  "views": 69,
+  "views": 70,
   "files_needing_a_mac": 3,
-  "strings": 309,
+  "strings": 307,
   "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],

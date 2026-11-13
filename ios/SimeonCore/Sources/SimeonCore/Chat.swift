@@ -319,7 +319,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case cloudAgent(id: String, bcId: String)
   /** "Connect GitHub" with a one-time code (`github-sign-in`): GitHub signed in on the computer for a cloud agent's coding (GitHubSignInCard). */
   case gitHubSignIn(id: String, card: GitHubSignInCard)
-  /** "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`): what a cloud agent's coding runs on, when neither is connected (ModelConnectCard). */
+  /** "Connect Claude Code" and "Connect Codex" in one card (`model-connect`): what a cloud agent's coding runs on, when neither is connected (ModelConnectCard). */
   case modelConnect(id: String, card: ModelConnectCard)
   /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
   case purchase(id: String, card: PurchaseCard)
@@ -721,27 +721,38 @@ public struct ModelConnectCard: Hashable, Sendable {
     providers = kept.isEmpty ? ModelConnectCard.offered : kept
   }
 
-  /** The program that codes on a provider's plan, by its own name. */
+  /**
+   * The program that codes on a provider's plan, by its own name. The card
+   * names the programs, Claude Code and Codex; Settings › AI Models names the
+   * plans, Claude and ChatGPT (the founder, 13 November 2026: "its connect
+   * codex or connect claude code ... for the card specifically its that. but
+   * settings is claude and chat gpt. they are two dif things").
+   */
   public static func program(_ provider: String) -> String {
     provider == AIModels.chatGPT ? "Codex" : "Claude Code"
   }
 
-  /** A row's title: "Connect Claude" while there is something to do, "Claude" once it is connected, as a connected app's card names the app. */
+  /** The program's own logo (`Mascots/<name>`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
+  public static func logo(_ provider: String) -> String {
+    provider == AIModels.chatGPT ? "codex" : "claudecode"
+  }
+
+  /** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
   public static func title(_ provider: String, connected: Bool) -> String {
-    let name = AIModels.providerName(provider)
+    let name = program(provider)
     return connected ? name : L10n.text("Connect \(name)")
   }
 
-  /** The line under a row's title: what connecting it is for; none once it is connected. */
+  /** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
   public static func line(_ provider: String, connected: Bool) -> String {
     if connected { return "" }
-    return L10n.text("Cloud agents code in \(program(provider)).")
+    return L10n.text("Runs on your \(AIModels.providerName(provider)) plan.")
   }
 
   public static var connectLabel: String { L10n.text("Connect") }
 
-  /** The card in the list of chats: "Connect Claude, ChatGPT". */
-  public static var preview: String { L10n.text("Connect \(offered.map(AIModels.providerName).joined(separator: ", "))") }
+  /** The card in the list of chats: "Connect Claude Code, Codex". */
+  public static var preview: String { L10n.text("Connect \(offered.map(program).joined(separator: ", "))") }
 
   /** Seconds until the accounts are read again while a row still waits; never once one is connected. */
   public static func nextPoll(anyConnected: Bool) -> Double? { anyConnected ? nil : 4 }

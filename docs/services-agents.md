@@ -77,10 +77,14 @@ Codex's, by the program it runs in.
   the sign-in, as it keeps Claude's.
 - **Neither Claude nor ChatGPT connected** (13 November 2026; the founder: "when neither of them
   is connected, the user is given a choice of both cards to connect"). The chat shows one card
-  with two rows, "Connect Claude" ("Cloud agents code in Claude Code.") and "Connect ChatGPT"
-  ("Cloud agents code in Codex."), each with Connect. Connect asks as AI Models does (the
-  consent, then that provider's own sign-in). The row then reads "Connected" in green and the
-  agent carries on by itself with the task, as after the GitHub card.
+  with two rows, each with Connect: "Connect Claude Code" ("Runs on your Claude plan.") and
+  "Connect Codex" ("Runs on your ChatGPT plan."). The card names the programs and draws each
+  one's own logo whole, with no tile behind it; Settings › AI Models names the plans, Claude and
+  ChatGPT (the founder, the same day: "its connect codex or connect claude code. and its full
+  logo no white or dark background. for the card specifically its that. but settings is claude
+  and chat gpt. they are two dif things"). Connect asks as AI Models does (the consent, then
+  that plan's own sign-in). The row then reads "Claude Code" or "Codex" with "Connected" in
+  green, and the agent carries on by itself with the task, as after the GitHub card.
 - **The plan's limit** (Claude's or ChatGPT's). The card says Paused; the agent says when the
   limit resets and offers to carry on then.
 - **ChatGPT disconnected during a run.** The run stops and the agent says to connect ChatGPT
@@ -167,7 +171,10 @@ Codex's, by the program it runs in.
   `ModelConnectWait` (`model-connect-wait.ts`) then reads the list every 6 s, for 20 minutes,
   and wakes the agent once one is connected (`resumeAfterModelConnect`). The apps read which
   is connected from their own AI Models accounts, every 4 s while the card waits
-  (`ModelConnectCard` in SimeonCore; `ModelConnectCardView` on Mac, iPhone and web).
+  (`ModelConnectCard` in SimeonCore; `ModelConnectCardView` on Mac, iPhone and web). The card
+  still carries the plans' ids (`claude`, `chatgpt`); the apps turn each into its program's
+  name and logo (`ModelConnectCard.program`, `.logo`; `ProgramLogo`, `.program-logo`). The
+  agent is told to name the two as the card does (`MODEL_CONNECT_CARD_TEXT`, the brief).
 - **Runner:** `runner/` (Render service `claidor-maty-runner`) still takes `maty-runner` jobs
   only: one model call over the conversation through the API's metered proxy, words only
   (`runner/src/engine.ts`, `runner/src/executor.ts`). Coding never goes there.
@@ -272,8 +279,9 @@ Codex's, by the program it runs in.
   missing session, the plan's limit with its reset time, ChatGPT not connected. The card's
   models in SimeonCore (`ModelConnectCardTests`) and the web app (`connectCards.test.ts`,
   `ModelConnectCard.test.tsx`); the web card in Chromium against a stand-in, light and dark:
-  both rows, Connect through the consent and ChatGPT's sign-in to "Connected", and a Codex
-  cloud agent's lines, card and mascot.
+  both rows by the programs' names with their logos bare (no tile, no ground), Connect through
+  the consent and ChatGPT's sign-in to "Codex / Connected", and a Codex cloud agent's lines,
+  card and mascot.
 * **Codex, not yet verified.** Nothing reached chatgpt.com: whether ChatGPT accepts Codex's
   calls relayed this way is not known until a real run. No run on a real computer (the npm
   install there, the home folder). The Mac and iPhone cards are not built with Xcode (their

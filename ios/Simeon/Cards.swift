@@ -941,11 +941,13 @@ struct ConnectAppRow<End: View>: View {
   let app: String
   let title: String
   let line: String
+  /** A program's own logo in place of the app's tile (`ProgramLogo`): Claude Code's or Codex's. */
+  var logo: String? = nil
   @ViewBuilder var end: () -> End
 
   var body: some View {
     HStack(spacing: 12) {
-      ConnectorTile(name: app)
+      if let logo { ProgramLogo(name: logo) } else { ConnectorTile(name: app) }
       VStack(alignment: .leading, spacing: 0) {
         Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         if !line.isEmpty {
@@ -1071,15 +1073,40 @@ struct GitHubSignInCardView: View {
 }
 
 /**
- * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * Claude Code's or Codex's own logo, whole and bare (13 November 2026, the
+ * founder: "its full logo no white or dark background"): no tile, no ground
+ * and no hairline behind it, in the place an app's 40 tile takes. The
+ * cut-outs (`Mascots/`) keep a clear margin around the picture, so it is
+ * drawn a fifth larger than its place and the picture itself fills the 40.
+ */
+struct ProgramLogo: View {
+  let name: String
+  var size: CGFloat = 40
+
+  var body: some View {
+    Image("Mascots/\(name)")
+      .resizable()
+      .interpolation(.high)
+      .scaledToFit()
+      .frame(width: size * 1.2, height: size * 1.2)
+      .frame(width: size, height: size)
+      .accessibilityHidden(true)
+  }
+}
+
+/**
+ * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
  * November 2026, the founder: "when neither of them is connected, the user
  * is given a choice of both cards to connect"): what a cloud agent's coding
- * runs on. Each row is a provider drawn as an app to connect is; Connect
- * shows the consent AI Models shows, then that provider's own sign-in sheet
- * (`ChatGPTConnectSheet`, `ClaudeConnectSheet`). A connected provider reads
- * as a connected app does. What is connected is the app's own accounts
- * (`store.aiModels`), read again while both rows wait. The agent goes on by
- * itself once one is connected.
+ * runs in. Each row is a program, by its own name and its own logo bare
+ * (the founder, the same day: "its connect codex or connect claude code ...
+ * for the card specifically its that. but settings is claude and chat
+ * gpt"), over whose plan it runs on. Connect shows the consent AI Models
+ * shows for that plan, then its own sign-in sheet (`ChatGPTConnectSheet`,
+ * `ClaudeConnectSheet`). A connected program reads as a connected app
+ * does. What is connected is the app's own accounts (`store.aiModels`),
+ * read again while both rows wait. The agent goes on by itself once one is
+ * connected.
  */
 struct ModelConnectCardView: View {
   let card: ModelConnectCard
@@ -1098,7 +1125,7 @@ struct ModelConnectCardView: View {
     VStack(alignment: .leading, spacing: 14) {
       ForEach(card.providers, id: \.self) { provider in
         let connected = model.connected(provider)
-        ConnectAppRow(app: AIModels.providerName(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected)) {
+        ConnectAppRow(app: ModelConnectCard.program(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), logo: ModelConnectCard.logo(provider)) {
           if connected {
             ConnectedMark()
           } else if !model.loaded && model.problem == nil {

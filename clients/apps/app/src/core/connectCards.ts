@@ -618,13 +618,13 @@ export function gitHubConnectedLabel(login: string | undefined): string {
   return login ? t`Connected as ${login}` : t('Connected')
 }
 
-// MARK: Claude or ChatGPT, for a cloud agent's coding
+// MARK: Claude Code or Codex, for a cloud agent's coding
 
 /** The providers a cloud agent's coding can run on (`ModelConnectCard.offered`). */
 export const modelConnectOffered: readonly string[] = [claude, chatGPT]
 
 /**
- * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
  * November 2026, the founder: "when neither of them is connected, the user
  * is given a choice of both cards to connect"; `ModelConnectCard` in the
  * shared core): the providers offered, in the order shown. A cloud agent
@@ -632,6 +632,11 @@ export const modelConnectOffered: readonly string[] = [claude, chatGPT]
  * ChatGPT plan; a launch that finds neither connected puts this card in the
  * chat. It carries no state: what is connected is the person's own accounts
  * (`store.aiModels`).
+ *
+ * The card names the programs; Settings › AI Models names the plans (the
+ * founder, the same day: "its connect codex or connect claude code ... for
+ * the card specifically its that. but settings is claude and chat gpt. they
+ * are two dif things").
  */
 export interface ModelConnectCard {
   providers: string[]
@@ -659,24 +664,29 @@ export function modelConnectProgram(provider: string): string {
   return provider === chatGPT ? 'Codex' : 'Claude Code'
 }
 
-/** A row's title: "Connect Claude" while there is something to do, "Claude" once it is connected, as a connected app's card names the app. */
+/** The program's own logo (`assets/mascots/<name>.png`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
+export function modelConnectLogo(provider: string): string {
+  return provider === chatGPT ? 'codex' : 'claudecode'
+}
+
+/** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
 export function modelConnectTitle(
   provider: string,
   connected: boolean,
 ): string {
-  const name = providerName(provider)
+  const name = modelConnectProgram(provider)
   return connected ? name : t`Connect ${name}`
 }
 
-/** The line under a row's title: what connecting it is for; none once it is connected. */
+/** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
 export function modelConnectLine(provider: string, connected: boolean): string {
   if (connected) return ''
-  return t`Cloud agents code in ${modelConnectProgram(provider)}.`
+  return t`Runs on your ${providerName(provider)} plan.`
 }
 
-/** The card in the list of chats: "Connect Claude, ChatGPT". */
+/** The card in the list of chats: "Connect Claude Code, Codex". */
 export function modelConnectPreview(): string {
-  return t`Connect ${modelConnectOffered.map(providerName).join(', ')}`
+  return t`Connect ${modelConnectOffered.map(modelConnectProgram).join(', ')}`
 }
 
 /** Seconds until the accounts are read again while a row still waits; never once one is connected. */
