@@ -624,6 +624,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["resumeAfterMcpAuth", "boxHandoff"],
   ["resumeAfterListenerConnect", "boxHandoff"],
   ["resumeAfterGitHubConnect", "boxHandoff"],
+  ["resumeAfterModelConnect", "boxHandoff"],
   ["subscribeAutomations", "automationRuntime"],
   ["getAgentAutomations", "automationRuntime"],
   ["listAllAutomations", "automationRuntime"],

@@ -181,6 +181,21 @@ export class BoxHandoffResume {
     );
   }
 
+  /**
+   * Claude or ChatGPT finished connecting from the chat's card that offers
+   * both (13 November 2026, `host/cloud-agents/model-connect-wait.ts`): the
+   * agent that waited on it launches the coding it paused for. `coder` is
+   * the program that can code now.
+   */
+  async resumeAfterModelConnect(agentId: string, coder: string): Promise<void> {
+    const [plan, program] = coder === "codex" ? ["ChatGPT", "Codex"] : ["Claude", "Claude Code"];
+    await this.resumeWithHiddenPrompt(
+      agentId,
+      `[${plan} is now connected, so cloud agents can code in ${program} on the user's own ${plan} plan. Your first action is a SendMessage telling the user it's connected, then launch the cloud agent you paused for (CloudAgent "launch" with the same repository and task). Remember: nothing reaches the user unless it's inside a SendMessage.]`,
+      "tray.resumeAfterListenerFailed",
+    );
+  }
+
   async resumeWithHiddenPrompt(
     agentId: string,
     prompt: string,

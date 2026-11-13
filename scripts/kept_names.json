@@ -739,6 +739,17 @@
     {
       "kind": "contract",
       "names": [
+        "spacex"
+      ],
+      "paths": [
+        "clients/apps/web/public/app-next/assets/index-*.js"
+      ],
+      "match": "xai:.SpaceXAI.,google:",
+      "reason": "The web app's built index file is minified, so the API-key provider's name in its table (xai: SpaceXAI, kept by the rule above) can land on one line with the picture of the bot's mascot, which that rule refuses: this keeps the provider table's name there and nothing else."
+    },
+    {
+      "kind": "contract",
+      "names": [
         "grok",
         "xai"
       ],

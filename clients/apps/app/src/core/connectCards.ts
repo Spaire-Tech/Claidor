@@ -15,6 +15,7 @@
 // an icon from the core's own GeneratedAppIcons.swift.
 
 import iconListSource from '../../../../../ios/SimeonCore/Sources/SimeonCore/GeneratedAppIcons.swift?raw'
+import { chatGPT, claude, providerName } from './aiModels'
 import type { ConnectedApp } from './connectedApps'
 import type { Entry } from './entry'
 import { type AgentFace, faceById, faceByVersion } from './faces'
@@ -616,6 +617,77 @@ export function gitHubSignInWords(): {
 export function gitHubConnectedLabel(login: string | undefined): string {
   return login ? t`Connected as ${login}` : t('Connected')
 }
+
+// MARK: Claude or ChatGPT, for a cloud agent's coding
+
+/** The providers a cloud agent's coding can run on (`ModelConnectCard.offered`). */
+export const modelConnectOffered: readonly string[] = [claude, chatGPT]
+
+/**
+ * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"; `ModelConnectCard` in the
+ * shared core): the providers offered, in the order shown. A cloud agent
+ * codes in Claude Code on the person's Claude plan, or in Codex on their
+ * ChatGPT plan; a launch that finds neither connected puts this card in the
+ * chat. It carries no state: what is connected is the person's own accounts
+ * (`store.aiModels`).
+ */
+export interface ModelConnectCard {
+  providers: string[]
+}
+
+export function modelConnectCard(entry: Entry): ModelConnectCard | undefined {
+  const message = entry.message
+  if (str(field(message, 'type')) !== 'model-connect') return undefined
+  const kept: string[] = []
+  for (const one of arr(field(message, 'providers')) ?? []) {
+    const provider = text(one)
+    if (
+      provider != null &&
+      modelConnectOffered.includes(provider) &&
+      !kept.includes(provider)
+    )
+      kept.push(provider)
+  }
+  // A card that names none it knows (an engine newer than this app) still offers the two.
+  return { providers: kept.length > 0 ? kept : [...modelConnectOffered] }
+}
+
+/** The program that codes on a provider's plan, by its own name. */
+export function modelConnectProgram(provider: string): string {
+  return provider === chatGPT ? 'Codex' : 'Claude Code'
+}
+
+/** A row's title: "Connect Claude" while there is something to do, "Claude" once it is connected, as a connected app's card names the app. */
+export function modelConnectTitle(
+  provider: string,
+  connected: boolean,
+): string {
+  const name = providerName(provider)
+  return connected ? name : t`Connect ${name}`
+}
+
+/** The line under a row's title: what connecting it is for; none once it is connected. */
+export function modelConnectLine(provider: string, connected: boolean): string {
+  if (connected) return ''
+  return t`Cloud agents code in ${modelConnectProgram(provider)}.`
+}
+
+/** The card in the list of chats: "Connect Claude, ChatGPT". */
+export function modelConnectPreview(): string {
+  return t`Connect ${modelConnectOffered.map(providerName).join(', ')}`
+}
+
+/** Seconds until the accounts are read again while a row still waits; never once one is connected. */
+export function modelConnectNextPoll(
+  anyConnected: boolean,
+): number | undefined {
+  return anyConnected ? undefined : 4
+}
+
+/** The most times the accounts are read again for one card: ten minutes, then a card left on screen with nothing connected stops asking. */
+export const modelConnectPolls = 150
 
 /** Where Open would have gone (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). Never made; the card opens the pull request instead (View PR, 11 November 2026). */
 export function cloudAgentWebURL(bcId: string): string {

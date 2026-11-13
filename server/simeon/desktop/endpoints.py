@@ -776,9 +776,18 @@ async def models_available(
     not.
 
     The person's own model, when they chose one (`own_models.rows`), comes
-    first: the engine takes the first row of each role."""
+    first: the engine takes the first row of each role. Last come the rows
+    that say what a cloud agent's coding runs in on the computer, Claude
+    Code or Codex (`own_models.coding_rows`, 13 November 2026), under a role
+    of their own, which an engine that doesn't know it never reads."""
     user = desktop_session.user
-    return _ok([*await own_models.rows(session, user), *available_rows(user)])
+    return _ok(
+        [
+            *await own_models.rows(session, user),
+            *available_rows(user),
+            *await own_models.coding_rows(session, user),
+        ]
+    )
 
 
 @router.get("/api/models/pricing-catalog", name="desktop:pricing")

@@ -28,6 +28,12 @@ request, the changes, Claude Code's session); it is merged into the agent's
 `work.limitedUntilMs` is the person's Claude plan out of usage: the run
 stops and the app shows it paused until then.
 
+Since 13 November 2026 the coding runs in Claude Code or in Codex, on the
+person's ChatGPT plan (`host/cloud-agents/coding-run.ts`,
+`host/codex/`). `work.modelId` names the model that codes
+(`own:claude:…`, `own:chatgpt:…`), and so the program: the app reads it
+back as the composer's model, and the limit's words name its plan.
+
 Only the person's own credential reaches these (a signed-in app or their
 computer's own, never a cloud job's), and only that person's computer jobs:
 a job that is somebody else's, or the cloud runner's, is 404. Nothing of
@@ -96,10 +102,13 @@ class ComputerWork(BaseModel):
     filesChanged: int | None = Field(default=None, ge=0)
     commitCount: int | None = Field(default=None, ge=0)
     files: list[ComputerFile] | None = None
-    #: Claude Code's session, resumed by the agent's next turn.
+    #: Claude Code's session, or Codex's, resumed by the agent's next turn.
     sessionId: str | None = Field(default=None, max_length=64)
-    #: When the person's Claude plan lets the work go on; 0 clears it.
+    #: When the person's plan lets the work go on; 0 clears it.
     limitedUntilMs: int | None = Field(default=None, ge=0)
+    #: The model that codes (`own:claude:…` in Claude Code, `own:chatgpt:…`
+    #: in Codex): which program the cloud agent runs in.
+    modelId: str | None = Field(default=None, max_length=WORD_MAX_LENGTH)
 
 
 class ComputerUpdate(BaseModel):

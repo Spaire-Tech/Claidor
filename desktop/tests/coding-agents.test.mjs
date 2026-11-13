@@ -216,14 +216,14 @@ test("a turn whose session is gone starts a new one with the whole exchange; one
   }
 });
 
-test("the stops: Claude not chosen, GitHub not connected, not GitHub, the plan's limit (paused, with when), Claude signed out, the person's Stop", async () => {
+test("the stops: neither Claude nor ChatGPT connected, GitHub not connected, not GitHub, the plan's limit (paused, with when), Claude signed out, the person's Stop", async () => {
   const { module, dispose } = await load();
   const s = await stage();
   try {
     const never = async () => { throw new Error("Claude Code must not run"); };
     let outcome = await module.runCodingJob(job(), { choice: () => undefined, account, env: s.env, runClaude: never, log: quiet });
     assert.deepEqual([outcome.kind, outcome.retryable], ["failed", false]);
-    assert.match(outcome.reason, /Claude isn't connected[\s\S]*Settings › AI Models/);
+    assert.match(outcome.reason, /Neither Claude nor ChatGPT is connected[\s\S]*Settings › AI Models/);
 
     outcome = await module.runCodingJob(job(), { choice, account: async () => ({ connected: false }), env: s.env, runClaude: never, log: quiet });
     assert.match(outcome.reason, /GitHub isn't connected on the box/);
@@ -575,6 +575,98 @@ test("the sign-in's options against this machine's own gh", { skip: machineGh ==
   }
 });
 
+const CODEX_SESSION = "01a1d3ff-d8f5-7491-a258-a863ed913521";
+/** Codex as a function: it says it's on it, writes a file and commits it, as it would in the checkout. */
+function codexThatCommits(stageEnv, file = "codex.txt") {
+  const seen = [];
+  const run = async (input) => {
+    seen.push(input);
+    input.onEvent?.({ type: "item.completed", item: { type: "agent_message", text: "On it. I'll add the file first." } });
+    input.onEvent?.({ type: "item.completed", item: { type: "command_execution", command: "ls", aggregated_output: "README.md", exit_code: 0 } });
+    await writeFile(path.join(input.cwd, file), "From Codex\n");
+    execFileSync("git", ["add", file], { cwd: input.cwd, env: stageEnv });
+    execFileSync("git", ["commit", "-q", "-m", `Add ${file}`], { cwd: input.cwd, env: stageEnv });
+    input.onEvent?.({ type: "item.completed", item: { type: "agent_message", text: "Added the note; the checks pass." } });
+    return { kind: "done", sessionId: CODEX_SESSION, text: "Added the note; the checks pass.", turns: 1 };
+  };
+  return { run, seen };
+}
+
+test("a cloud agent in Codex (13 November 2026): on the ChatGPT model and effort, its first words for the chat, the pull request says Codex, its model kept; its follow-up stays in Codex; another program's session isn't carried on; the stops name ChatGPT", async () => {
+  const { module, dispose } = await load();
+  const s = await stage();
+  try {
+    const never = async () => { throw new Error("Claude Code must not run"); };
+    const asked = [];
+    const pick = (kept) => { asked.push(kept); return { coder: "codex", model: "gpt-6.1-sol", effort: "medium", modelId: "own:chatgpt:gpt-6.1-sol" }; };
+    const codex = codexThatCommits(s.env);
+    const first = [];
+    const logged = [];
+    const outcome = await module.runCodingJob(job(), { choice: pick, account, env: s.env, runCodex: codex.run, runClaude: never, onFirstWords: (words, coder) => first.push([words, coder]), log: (line) => logged.push(line) });
+    assert.equal(outcome.kind, "done");
+    assert.equal(outcome.text, "Added the note; the checks pass.");
+    assert.deepEqual(asked, [undefined], "a launch that named no model: the first program connected");
+    assert.equal(outcome.work.modelId, "own:chatgpt:gpt-6.1-sol", "the server keeps the model, and so the program");
+    assert.equal(outcome.work.sessionId, CODEX_SESSION);
+    assert.equal(outcome.work.prNumber, 7);
+    assert.deepEqual(first, [["On it. I'll add the file first.", "codex"]], "its on-it, as its message back in the chat");
+    assert.deepEqual(outcome.work.updates.map((update) => update.text), ["On it. I'll add the file first."], "its words along the way, without the answer");
+    const input = codex.seen[0];
+    assert.deepEqual([input.model, input.effort, input.modelId, input.resume], ["gpt-6.1-sol", "medium", "own:chatgpt:gpt-6.1-sol", undefined]);
+    assert.equal(input.prompt, "Add a greeting file.");
+    assert.match(input.brief, /Commit your work on this branch[\s\S]*Don't push/);
+    assert.ok(input.cwd.endsWith(path.join("bc-1", "repo")));
+    assert.match(await readFile(path.join(s.dir, "pr-body.txt"), "utf8"), /Added the note; the checks pass\.\n\n---\nMade by Simeon, with Codex\.$/);
+    assert.ok(logged.some((line) => /codex model=gpt-6\.1-sol effort=medium resume=false/.test(line)));
+    assert.ok(logged.some((line) => /codex outcome=done/.test(line)));
+    assert.ok(!logged.join("\n").includes("Add a greeting"), "the task stays out of the log");
+
+    // Its follow-up: the program it began in (the server hands its model back), its session carried on.
+    const kept = { ...outcome.work };
+    delete kept.updates;
+    const codex2 = codexThatCommits(s.env, "more.txt");
+    const again = await module.runCodingJob(job({ id: "job-2", conversation: [{ role: "user", text: "Add a greeting file." }, { role: "assistant", text: "Added." }, { role: "user", text: "Also a note." }], work: kept }), { choice: pick, account, env: s.env, runCodex: codex2.run, runClaude: never, log: quiet });
+    assert.equal(again.kind, "done");
+    assert.equal(asked.at(-1), "codex");
+    assert.deepEqual([codex2.seen[0].resume, codex2.seen[0].prompt], [CODEX_SESSION, "Also a note."]);
+    assert.equal(again.work.branchName, outcome.work.branchName, "the same branch");
+
+    // One begun in Claude Code whose Claude is gone: Codex takes it, with the whole exchange, never Claude Code's session.
+    const codex3 = codexThatCommits(s.env, "third.txt");
+    const taken = await module.runCodingJob(job({ id: "job-3", bcId: "bc-2", conversation: [{ role: "user", text: "Fix it." }, { role: "assistant", text: "Fixed." }, { role: "user", text: "Add a test." }], work: { sessionId: SESSION, modelId: "own:claude:claude-opus-5-5" } }), { choice: pick, account, env: s.env, runCodex: codex3.run, runClaude: never, log: quiet });
+    assert.equal(taken.kind, "done");
+    assert.equal(asked.at(-1), "claude-code", "asked for the program it began in");
+    assert.equal(codex3.seen[0].resume, undefined);
+    assert.match(codex3.seen[0].prompt, /<message from="you">\nFixed\.[\s\S]*The person now says:\n\nAdd a test\.$/);
+    assert.equal(taken.work.modelId, "own:chatgpt:gpt-6.1-sol", "the server now knows it codes in Codex");
+
+    // The stops, in ChatGPT's name.
+    const until = Date.now() + 2 * 60 * 60_000;
+    let stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, runCodex: async () => ({ kind: "limited", sessionId: CODEX_SESSION, until, said: "usage limit" }) });
+    assert.deepEqual([stopped.kind, stopped.retryable], ["failed", false]);
+    assert.match(stopped.reason, /^ChatGPT's plan limit was reached, so the work is paused\. It resets at \d\d:\d\d UTC on \d+ \w+; a reply after that carries on where it stopped\.$/);
+    assert.equal(stopped.work.limitedUntilMs, until);
+    assert.equal(stopped.work.sessionId, CODEX_SESSION);
+
+    let signedOut = 0;
+    stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, onSignedOut: () => { signedOut += 1; }, runCodex: async () => ({ kind: "signed_out", said: "401" }) });
+    assert.match(stopped.reason, /^ChatGPT isn't connected any more\. The person connects ChatGPT again in Settings › AI Models/);
+    assert.equal(signedOut, 0, "that word is Claude's alone: ChatGPT is connected on the server");
+
+    stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, runCodex: async () => ({ kind: "not_installed" }) });
+    assert.deepEqual([stopped.reason, stopped.retryable], ["Codex isn't installed on the computer yet; it installs by itself.", true]);
+    stopped = await module.runCodingJob(job({ bcId: "bc-3" }), { choice: pick, account, env: s.env, log: quiet, runCodex: async () => ({ kind: "failed", said: "unexpected status 503: busy", exitCode: 1 }) });
+    assert.equal(stopped.reason, "Codex stopped: unexpected status 503: busy");
+
+    // An engine whose coding was given no way to the server for Codex says so, and starts nothing.
+    stopped = await module.runCodingJob(job({ bcId: "bc-4" }), { choice: pick, account, env: s.env, log: quiet, runClaude: never });
+    assert.equal(stopped.reason, "Codex can't run on this computer yet.");
+  } finally {
+    await s.dispose();
+    await dispose();
+  }
+});
+
 test("the manager: the launch asks for the computer, Claude and GitHub are checked first, Paused reads from the limit, links go to the pull request", async () => {
   const { module, dispose } = await load();
   try {
@@ -597,20 +689,36 @@ test("the manager: the launch asks for the computer, Claude and GitHub are check
     manager.attachGitHub({ startSignIn: async () => state, signInState: async () => state });
     assert.equal(manager.isCodingBusy(), true);
 
-    assert.deepEqual(await manager.codingReady("agent-1", () => undefined), { ok: false, text: module.CLAUDE_NOT_CONNECTED_TEXT });
+    // Neither Claude nor ChatGPT connected (13 November 2026): the card that offers both, the list read again first, and the agent waited for.
+    const waited = [];
+    let reads = 0;
+    manager.attachModelWait({ wait: (agentId) => waited.push(agentId) });
+    assert.deepEqual(await manager.codingReady("agent-1", () => undefined, async () => { reads += 1; }), { ok: false, text: module.MODEL_CONNECT_CARD_TEXT, card: { type: "model-connect", providers: ["claude", "chatgpt"] }, waitFor: "model" });
+    assert.match(module.MODEL_CONNECT_CARD_TEXT, /Claude and ChatGPT[\s\S]*resumed automatically once one is connected/);
+    assert.deepEqual([waited, reads], [["agent-1"], 1]);
+    // Connected a moment ago in AI Models: the list read again finds it, and no card is shown.
+    let known;
+    assert.equal((await manager.codingReady("agent-1", () => known, async () => { known = { model: "gpt-6.1-sol" }; })).text, module.GITHUB_CARD_TEXT);
+    assert.deepEqual(waited, ["agent-1"]);
     assert.deepEqual(await manager.codingReady("agent-1", () => ({ model: "opus" })), { ok: false, text: module.GITHUB_CARD_TEXT, card: { type: "github-sign-in", code: "WXYZ-1234", url: "https://github.com/login/device", expiresAtMs: 99 } });
     state = { state: "connected", login: "octo" };
     assert.deepEqual(await manager.codingReady("agent-1", () => ({ model: "opus" })), { ok: true });
     assert.deepEqual(await manager.getGitHubSignIn(), { state: "connected", login: "octo" });
 
+    // The model that codes travels with the launch, so the server knows the program from the start.
+    module.setSimeonCodingProgramsForTest([{ coder: "codex", model: "gpt-6.1-sol", effort: "medium", modelId: "own:chatgpt:gpt-6.1-sol" }]);
     const launched = await manager.launch({ prompt: "Fix it.", repoUrl: "simeonlabs/demo" });
+    module.setSimeonCodingProgramsForTest([]);
     assert.deepEqual([requests[1].usePrivateWorker, requests[1].labels], [true, [{ key: "executor", value: "computer" }]]);
+    assert.deepEqual(requests[1].requestedModels.map((one) => one.modelId), ["own:chatgpt:gpt-6.1-sol"]);
+    assert.deepEqual(requests[0].requestedModels, [], "the cloud runner's launch names none");
     assert.equal(launched.url, "", "no link to a page that was never made");
     await manager.reply({ bcId: launched.bcId, prompt: "Also the test." });
     assert.equal(kicks, 2, "the computer starts at once after a launch and after a follow-up");
 
     const got = await manager.get(launched.bcId);
     assert.equal(got.status, "paused");
+    assert.equal(got.coder, "claude-code", "the server names no model: every cloud agent before Codex ran in Claude Code");
     assert.match(got.error, /Paused: the Claude plan's limit is reached\nIt resets at 15:40 UTC on 12 November\./);
     assert.equal(module.cloudAgentUrl("bc-1", "https://github.com/o/r/pull/1"), "https://github.com/o/r/pull/1");
 
@@ -618,6 +726,9 @@ test("the manager: the launch asks for the computer, Claude and GitHub are check
     assert.match(paused.text, /^The cloud agent \(bc-1\) was paused before finishing\.\n\nPaused: the Claude plan's limit is reached\nIt resets at 15:40\.$/);
     const done = module.buildWatchResult("bc-1", 2, { composer: { branchName: "simeon/fix-0000", prUrl: "https://github.com/o/r/pull/1", filesChanged: 2, linesAdded: 3, linesRemoved: 1, commitCount: 1 }, summary: "Fixed." });
     assert.match(done.text, /Branch: simeon\/fix-0000\nPull request: https:\/\/github\.com\/o\/r\/pull\/1\nChanges: 1 commit, \+3\/-1 across 2 files\./);
+    // The program that coded, from the model the server keeps for the cloud agent.
+    assert.equal(done.coder, "claude-code");
+    assert.equal(module.buildWatchResult("bc-1", 2, { composer: { requestedModel: { modelId: "own:chatgpt:gpt-6.1-sol" } }, summary: "Fixed." }).coder, "codex");
     manager.dispose();
   } finally {
     await dispose();
@@ -642,6 +753,10 @@ test("the CloudAgent tool: nothing is launched while Claude or GitHub is missing
     assert.equal(launched.length, 1);
     assert.match(text, /^Launched cloud agent bc-9\.\nIt runs on your own computer \(the box\), in Claude Code on the user's own Claude plan\. It clones the repository, works on a new branch, builds and tests, then pushes the branch and opens a pull request/);
     assert.doesNotMatch(text, /does not open a pull request/);
+    // The program that codes now is named in the launch's own words (13 November 2026).
+    const inCodex = await module.runCloudAgentAction(ctx, { action: "launch", prompt: "Fix it.", repo_url: "simeonlabs/demo" }, { ...deps, coder: () => "codex" });
+    assert.match(inCodex, /^Launched cloud agent bc-9\.\nIt runs on your own computer \(the box\), in Codex on the user's own ChatGPT plan\. It clones the repository/);
+    launched.length = 1;
 
     // What the agent asked is handed to the engine before the tool answers (the chat's "Messaged" line, 13 November
     // 2026), with the name it gave; the answer says the chat shows the exchange and the card comes by itself.

@@ -692,7 +692,7 @@ function openPage(url: string): void {
  * needs gone"). Connected, it says which model the agents now use. The code
  * lasts 15 minutes; closing the sheet stops the asking.
  */
-function ChatGPTConnectSheet({
+export function ChatGPTConnectSheet({
   model,
   provider,
   close,
@@ -833,7 +833,7 @@ function ChatGPTConnectSheet({
  * to the computer; nothing more. Connected, it says which model the agents
  * now use. Closed before the code, the computer's sign-in ends.
  */
-function ClaudeConnectSheet({
+export function ClaudeConnectSheet({
   model,
   close,
 }: {

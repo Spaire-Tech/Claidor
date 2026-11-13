@@ -72,7 +72,10 @@ SpaceXAI (xAI's API) is also one of the providers a person brings their own
 API key for (10 November 2026, `docs/your-own-models.md`, section 7). Its
 own rule keeps `xai`, `spacex` and its models' name, Grok, in the files of
 that feature only (the website's AI models pages and SpaceXAI's mark
-included), under the same condition.
+included), under the same condition. The web app's built index file is
+minified, so that provider's name in its table can land on one line with the
+picture of the bot's mascot, which the condition refuses: one more rule keeps
+exactly the table's name (`xai: SpaceXAI`) in that file (13 November 2026).
 
 The Simeon Network (10 November 2026, `docs/services-agents.md`, section 18)
 names the agents that join it as the products they are: Cursor, the coding

@@ -31,6 +31,12 @@ final class MacConnector {
   }
 
   private(set) var asking: Ask?
+  /**
+   * The AI provider whose sign-in sheet a chat card opened (ChatGPT's code
+   * sheet, Claude's), or none (13 November 2026): the sheets AI Models
+   * opens, here over the window (`ConnectConsentLayer`).
+   */
+  var modelSignIn: String?
   /** The app whose sign-in sheet is open (its name), or none. */
   private(set) var connecting: String?
   @ObservationIgnored private var session: ASWebAuthenticationSession?
@@ -50,6 +56,15 @@ final class MacConnector {
   /** A consent of its own (ChatGPT's and Claude's plans, `ConnectConsent(modelProvider:)`), then `go` on Connect. */
   func ask(consent: ConnectConsent, then go: @escaping @MainActor () async -> Void) {
     asking = Ask(consent: consent, go: go)
+  }
+
+  /**
+   * Connect on the chat's card that offers Claude and ChatGPT
+   * (`ModelConnectCardView`): the consent AI Models shows for the provider,
+   * then its own sign-in sheet.
+   */
+  func connectModel(_ provider: String) {
+    ask(consent: ConnectConsent(modelProvider: provider)) { [weak self] in self?.modelSignIn = provider }
   }
 
   func cancel() { asking = nil }
@@ -305,9 +320,11 @@ final class SignInSheetState: @unchecked Sendable {
 /** The consent over the whole window, the chat dimmed behind it (as Deep Links and About sit). */
 struct ConnectConsentLayer: View {
   @Environment(\.colorScheme) private var scheme
+  @Environment(AppStore.self) private var store
 
   var body: some View {
     let connector = MacConnector.shared
+    let model = store.aiModels
     ZStack {
       if let ask = connector.asking {
         let look = Look(scheme)
@@ -322,6 +339,13 @@ struct ConnectConsentLayer: View {
     }
     .animation(.easeOut(duration: 0.18), value: connector.asking?.id)
     .ignoresSafeArea()
+    // A chat card's Connect for Claude or ChatGPT: the provider's own sign-in sheet, as AI Models opens it.
+    .sheet(isPresented: Binding(get: { connector.modelSignIn != nil && connector.modelSignIn != AIModels.claude }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacChatGPTConnectSheet(model: model, provider: connector.modelSignIn ?? AIModels.chatGPT)
+    }
+    .sheet(isPresented: Binding(get: { connector.modelSignIn == AIModels.claude }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacClaudeConnectSheet(model: model)
+    }
   }
 }
 

@@ -44,8 +44,8 @@ Where the work runs (11 November 2026, as the upstream app's, at the
 founder's word): the upstream app's cloud agents ran in its maker's
 virtual machines, which cloned the repository, made a branch, coded and
 opened the pull request. Simeon's run on the person's own computer, in
-Claude Code on their own Claude plan (`host/cloud-agents/coding-run.ts`):
-a launch from an engine that asks for it (`usePrivateWorker` with the
+Claude Code on their own Claude plan, or in Codex on their ChatGPT plan
+(13 November 2026; `host/cloud-agents/coding-run.ts`): a launch from an engine that asks for it (`usePrivateWorker` with the
 `executor: computer` label) makes a `computer` job, which only that
 person's computer claims (`cloud_agents_computer.py`). A launch from an
 older engine still goes to the cloud runner, which answers in words.
@@ -214,9 +214,22 @@ def _words(work: dict[str, Any], key: str) -> str:
     return value if isinstance(value, str) else ""
 
 
+def coding_model_id(agent: SandCloudAgent) -> str:
+    """The model that codes for `agent`: the one its computer last said
+    (`work.modelId`), else the one its launch asked for."""
+    said = (agent.work or {}).get("modelId")
+    return said if isinstance(said, str) and said else (agent.model_id or "")
+
+
+def coding_plan_name(agent: SandCloudAgent) -> str:
+    """Whose plan the coding runs on, as the person knows it: ChatGPT when
+    Codex codes (`own:chatgpt:…`), Claude otherwise."""
+    return "ChatGPT" if coding_model_id(agent).startswith("own:chatgpt:") else "Claude"
+
+
 def limited_until_ms(agent: SandCloudAgent, job: MatyJob) -> int | None:
-    """When the person's Claude plan lets the work go on, for a turn the
-    plan's limit stopped; None otherwise."""
+    """When the person's plan (Claude's, or ChatGPT's) lets the work go on,
+    for a turn the plan's limit stopped; None otherwise."""
     if job.status is not MatyJobStatus.failed:
         return None
     until = (agent.work or {}).get("limitedUntilMs")
@@ -282,9 +295,11 @@ class CloudAgentsService:
             "hasStartedVm": job.status is not MatyJobStatus.queued,
             "isKilled": job.status is MatyJobStatus.failed
             and job.error in CANCELLED_REASONS,
+            # The model that codes, which says the program too (Claude Code
+            # or Codex): the computer's own word once it has started.
             **(
-                {"requestedModel": {"modelId": agent.model_id}}
-                if agent.model_id
+                {"requestedModel": {"modelId": coding_model_id(agent)}}
+                if coding_model_id(agent)
                 else {}
             ),
         }
@@ -325,7 +340,8 @@ class CloudAgentsService:
                 "error": ERROR_CUSTOM_MESSAGE,
                 "details": (
                     {
-                        "title": "Paused: the Claude plan's limit is reached",
+                        "title": f"Paused: the {coding_plan_name(agent)} plan's "
+                        "limit is reached",
                         "detail": job.error,
                         "additionalInfo": {"rateLimitReason": LIMIT_REASON},
                     }

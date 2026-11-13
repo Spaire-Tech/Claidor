@@ -780,6 +780,38 @@ final class GitHubSignInCardTests: XCTestCase {
   }
 }
 
+/** The card that offers Claude and ChatGPT to connect (`model-connect`, 13 November 2026): its rows, their words, and when the accounts are read again. */
+final class ModelConnectCardTests: XCTestCase {
+  func testTheCardItsRowsAndTheirWords() {
+    let entry = Entry(["kind": "send-message", "id": "m1", "message": ["type": "model-connect", "providers": ["claude", "chatgpt"]]])!
+    guard case .modelConnect("m1", let card)? = Chat.rows([entry]).last else { return XCTFail() }
+    XCTAssertEqual(card.providers, ["claude", "chatgpt"])
+    XCTAssertEqual(Chat.rows([entry]).last?.kind, "model-connect")
+    XCTAssertEqual(Chat.rows([entry]).last?.side, .agent(nil))
+
+    XCTAssertEqual(ModelConnectCard.title("claude", connected: false), "Connect Claude")
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: false), "Connect ChatGPT")
+    XCTAssertEqual(ModelConnectCard.line("claude", connected: false), "Cloud agents code in Claude Code.")
+    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: false), "Cloud agents code in Codex.")
+    // Once connected a row reads as a connected app's: the name alone.
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: true), "ChatGPT")
+    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: true), "")
+    XCTAssertEqual(ModelConnectCard.connectLabel, "Connect")
+    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude, ChatGPT")
+    XCTAssertEqual(ModelConnectCard.program("claude"), "Claude Code")
+    XCTAssertEqual(ModelConnectCard.program("chatgpt"), "Codex")
+
+    XCTAssertEqual(ModelConnectCard.nextPoll(anyConnected: false), 4, "the accounts read again while both rows wait")
+    XCTAssertNil(ModelConnectCard.nextPoll(anyConnected: true))
+  }
+
+  func testOnlyTheTwoItKnowsAndBothWhenItNamesNone() {
+    XCTAssertEqual(ModelConnectCard(["providers": ["chatgpt", "gemini", "chatgpt", 7]])?.providers, ["chatgpt"], "a provider no cloud agent codes on is left out, one named twice shown once")
+    XCTAssertEqual(ModelConnectCard(["providers": ["something-new"]])?.providers, ["claude", "chatgpt"])
+    XCTAssertEqual(ModelConnectCard([:])?.providers, ["claude", "chatgpt"])
+  }
+}
+
 /** A link card's page, read by the Electron app's rules: which addresses, which redirects, what of the page. */
 final class LinkMetadataTests: XCTestCase {
   func testWhichAddressesMayBeRead() {
