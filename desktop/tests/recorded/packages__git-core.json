@@ -1,0 +1,284 @@
+{
+ "part": "packages/git-core",
+ "surface": {
+  "diagnostics": {
+   "appendGitDiagnostics": "function"
+  },
+  "exec": {
+   "gitExecFile": "function"
+  },
+  "env": {
+   "createGitProcessEnv": "function"
+  },
+  "redaction": {
+   "redactHttpUrlUserinfo": "function"
+  }
+ },
+ "scenarios": {
+  "a failure's code and exit code are added to its message, once": {
+   "returned": [
+    "clone failed [git: gitErrorCode=NotAGitRepository exitCode=128]",
+    "clone failed [git: exitCode=1]",
+    "clone failed",
+    "clone failed [git: exitCode=1]",
+    "clone failed",
+    "clone failed",
+    "clone failed",
+    "clone failed [git: exitCode=128]"
+   ]
+  },
+  "git's own words are added when asked, cut at 2,048 and with sign-ins taken out of addresses": {
+   "returned": [
+    "push failed [git: exitCode=1]\n--- git stderr ---\nfatal: unable to access 'https://example.com/a/b.git/': 403",
+    "push failed [git: exitCode=1]",
+    "push failed [git: exitCode=1]",
+    2097,
+    "xxxxxxxxxxxxx… [truncated to 2048 chars]",
+    "push failed [git: exitCode=1]"
+   ]
+  },
+  "an address loses its sign-in, its query and its fragment, and keeps what follows it": {
+   "returned": [
+    "https://example.com/repo.git",
+    "see https://example.com/a, then (http://host:8080/p).",
+    "HTTPS://Example.com/Path",
+    "http://host/path",
+    "https://example.com/a@b/c",
+    "https://example.com",
+    "https://example.com",
+    "no address here, ssh://git@example.com/x.git stays",
+    "two: https://x.test/1 https://y.test/2\"",
+    "https://",
+    "https://host/",
+    ""
+   ]
+  },
+  "git's environment: the language, no pager, the command named, four settings pinned": {
+   "returned": [
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8",
+     "VSCODE_GIT_COMMAND": "status"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "less",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "C",
+     "RECORDED_A": "spawner",
+     "RECORDED_B": "options",
+     "VSCODE_GIT_COMMAND": "log"
+    }
+   ]
+  },
+  "settings already given are counted, a pinned one among them is overwritten in place, a bad count starts over": {
+   "returned": [
+    {
+     "GIT_CONFIG_COUNT": "5",
+     "GIT_CONFIG_KEY_0": "user.name",
+     "GIT_CONFIG_KEY_1": "safe.bareRepository",
+     "GIT_CONFIG_KEY_2": "core.fsmonitor",
+     "GIT_CONFIG_KEY_3": "core.hooksPath",
+     "GIT_CONFIG_KEY_4": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "Ada",
+     "GIT_CONFIG_VALUE_1": "explicit",
+     "GIT_CONFIG_VALUE_2": "false",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_CONFIG_VALUE_4": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "core.fsmonitor",
+     "GIT_CONFIG_KEY_1": "core.hooksPath",
+     "GIT_CONFIG_KEY_2": "safe.bareRepository",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "false",
+     "GIT_CONFIG_VALUE_1": "/dev/null",
+     "GIT_CONFIG_VALUE_2": "explicit",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "5",
+     "GIT_CONFIG_KEY_0": "core.fsmonitor",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "safe.bareRepository",
+     "GIT_CONFIG_KEY_3": "core.hooksPath",
+     "GIT_CONFIG_KEY_4": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "false",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "explicit",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_CONFIG_VALUE_4": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "4",
+     "GIT_CONFIG_KEY_0": "safe.bareRepository",
+     "GIT_CONFIG_KEY_1": "core.fsmonitor",
+     "GIT_CONFIG_KEY_2": "core.hooksPath",
+     "GIT_CONFIG_KEY_3": "core.attributesFile",
+     "GIT_CONFIG_VALUE_0": "explicit",
+     "GIT_CONFIG_VALUE_1": "false",
+     "GIT_CONFIG_VALUE_2": "/dev/null",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "6",
+     "GIT_CONFIG_KEY_0": "a.b",
+     "GIT_CONFIG_KEY_1": "c.d",
+     "GIT_CONFIG_KEY_2": "safe.bareRepository",
+     "GIT_CONFIG_KEY_3": "core.fsmonitor",
+     "GIT_CONFIG_KEY_4": "core.hooksPath",
+     "GIT_CONFIG_KEY_5": "core.attributesFile",
+     "GIT_CONFIG_VALUE_2": "explicit",
+     "GIT_CONFIG_VALUE_3": "false",
+     "GIT_CONFIG_VALUE_4": "/dev/null",
+     "GIT_CONFIG_VALUE_5": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    },
+    {
+     "GIT_CONFIG_COUNT": "5",
+     "GIT_CONFIG_KEY_1": "safe.bareRepository",
+     "GIT_CONFIG_KEY_2": "core.fsmonitor",
+     "GIT_CONFIG_KEY_3": "core.hooksPath",
+     "GIT_CONFIG_KEY_4": "core.attributesFile",
+     "GIT_CONFIG_VALUE_1": "explicit",
+     "GIT_CONFIG_VALUE_2": "false",
+     "GIT_CONFIG_VALUE_3": "/dev/null",
+     "GIT_CONFIG_VALUE_4": "/dev/null",
+     "GIT_PAGER": "cat",
+     "LANG": "en_US.UTF-8",
+     "LC_ALL": "en_US.UTF-8"
+    }
+   ]
+  },
+  "a git command is run with that environment, its command read past git's own options": {
+   "returned": [
+    {
+     "stdout": "command=status pager=cat lang=en_US.UTF-8 count=4 first=safe.bareRepository mine= args=status --short\n",
+     "stderr": "to stderr\n"
+    },
+    {
+     "stdout": "command=log pager=cat lang=en_US.UTF-8 count=4 first=safe.bareRepository mine=given args=-c a=b -C /somewhere --git-dir x --work-tree y --no-pager log -1\n",
+     "stderr": "to stderr\n"
+    },
+    {
+     "stdout": "command= pager=cat lang=en_US.UTF-8 count=4 first=safe.bareRepository mine= args=--version\n",
+     "stderr": "to stderr\n"
+    },
+    {
+     "stdout": "command= pager=cat lang=en_US.UTF-8 count=4 first=safe.bareRepository mine= args=\n",
+     "stderr": "to stderr\n"
+    },
+    {
+     "failed": {
+      "code": 3,
+      "stdout": "command=fail pager=cat lang=en_US.UTF-8 count=4 first=safe.bareRepository mine= args=fail\n",
+      "stderr": "to stderr\n"
+     }
+    }
+   ]
+  }
+ }
+}

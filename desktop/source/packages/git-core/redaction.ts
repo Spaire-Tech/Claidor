@@ -1,16 +1,28 @@
-const HTTP_URL_PATTERN = /https?:\/\/\S+/gi;
-const TRAILING_URL_WRAPPER = /[)"'<>,.;:\]}]$/;
-function splitTrailingUrlWrappers(candidate: string): { url: string; wrappers: string } {
-  let urlEnd = candidate.length;
-  while (urlEnd > 0 && TRAILING_URL_WRAPPER.test(candidate.slice(urlEnd - 1, urlEnd))) urlEnd -= 1;
-  return { url: candidate.slice(0, urlEnd), wrappers: candidate.slice(urlEnd) };
+/**
+ * Addresses in a text, kept free of what could sign in: the name and
+ * password before the host, and everything from "?" or "#" on.
+ */
+const ADDRESS = /https?:\/\/\S+/gi;
+/** Punctuation that closes a sentence, a quote or a bracket around an address, and is not part of it. */
+const CLOSING = new Set([")", '"', "'", "<", ">", ",", ".", ";", ":", "]", "}"]);
+
+function withoutSignIn(found: string): string {
+  // What follows the address in the text (a full stop, a closing bracket) is put back untouched.
+  let end = found.length;
+  while (end > 0 && CLOSING.has(found[end - 1]!)) end -= 1;
+  const after = found.slice(end);
+  let address = found.slice(0, end);
+  const extras = address.search(/[?#]/);
+  if (extras !== -1) address = address.slice(0, extras);
+  // The sign-in, when there is one, sits between "//" and the last "@" before the path.
+  const hostStart = address.indexOf("//") + 2;
+  const pathStart = address.slice(hostStart).search(/[/?#]/);
+  const hostEnd = pathStart === -1 ? address.length : hostStart + pathStart;
+  const at = address.lastIndexOf("@", hostEnd - 1);
+  if (at < hostStart) return address + after;
+  return address.slice(0, hostStart) + address.slice(at + 1) + after;
 }
-function redactHttpUrlCandidate(candidate: string): string {
-  const { url, wrappers } = splitTrailingUrlWrappers(candidate);
-  const sensitiveSuffixStart = url.search(/[?#]/);
-  const clean = sensitiveSuffixStart === -1 ? url : url.slice(0, sensitiveSuffixStart), authorityStart = clean.indexOf("//") + 2;
-  const delimiter = clean.slice(authorityStart).search(/[/?#]/), authorityEnd = delimiter === -1 ? clean.length : authorityStart + delimiter;
-  const userinfoEnd = clean.lastIndexOf("@", authorityEnd - 1);
-  return userinfoEnd < authorityStart ? clean + wrappers : clean.slice(0, authorityStart) + clean.slice(userinfoEnd + 1) + wrappers;
+
+export function redactHttpUrlUserinfo(value: string): string {
+  return value.replace(ADDRESS, withoutSignIn);
 }
-export const redactHttpUrlUserinfo = (value: string): string => value.replace(HTTP_URL_PATTERN, redactHttpUrlCandidate);

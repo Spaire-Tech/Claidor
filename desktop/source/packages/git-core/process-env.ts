@@ -1,41 +1,50 @@
+/**
+ * The environment git runs in for the agents: English output whatever the
+ * machine's language, no pager, the git command named for whoever watches the
+ * process, and four settings pinned so that a checkout's own configuration
+ * cannot run hooks or attribute filters, start a file watcher, or be taken
+ * for a bare repository.
+ */
 import { devNull } from "node:os";
 
-const PINNED_GIT_CONFIG_ENTRIES = [
+/** Settings forced on every git command, given as git's own GIT_CONFIG_KEY_n and GIT_CONFIG_VALUE_n pairs. */
+const PINNED: ReadonlyArray<readonly [key: string, value: string]> = [
   ["safe.bareRepository", "explicit"],
   ["core.fsmonitor", "false"],
   ["core.hooksPath", devNull],
   ["core.attributesFile", devNull],
-] as const;
+];
 
-function readGitConfigCount(env: NodeJS.ProcessEnv): number {
+/** How many settings the environment already carries; anything that is not a count is none. */
+function settingsGiven(env: NodeJS.ProcessEnv): number {
   const raw = env.GIT_CONFIG_COUNT;
   if (raw === undefined || raw === "") return 0;
-  const parsed = Number.parseInt(String(raw), 10);
-  return !Number.isFinite(parsed) || parsed < 0 ? 0 : parsed;
+  const count = Number.parseInt(String(raw), 10);
+  return Number.isFinite(count) && count >= 0 ? count : 0;
 }
 
-function applyPinnedGitConfig(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const count = readGitConfigCount(env);
-  const result = { ...env };
-  const foundKeys = new Set<string>();
-  for (let index = 0; index < count; index++) {
-    const existingKey = result[`GIT_CONFIG_KEY_${index}`];
-    for (const [pinnedKey, pinnedValue] of PINNED_GIT_CONFIG_ENTRIES) {
-      if (existingKey === pinnedKey) {
-        result[`GIT_CONFIG_VALUE_${index}`] = pinnedValue;
-        foundKeys.add(pinnedKey);
-      }
-    }
+function pin(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const out = { ...env };
+  const given = settingsGiven(env);
+  const pinnedValue = new Map(PINNED);
+  const overwritten = new Set<string>();
+  // A pinned setting the caller already listed keeps its place and takes the pinned value.
+  for (let slot = 0; slot < given; slot += 1) {
+    const key = out[`GIT_CONFIG_KEY_${slot}`];
+    if (key === undefined || !pinnedValue.has(key)) continue;
+    out[`GIT_CONFIG_VALUE_${slot}`] = pinnedValue.get(key);
+    overwritten.add(key);
   }
-  let nextIndex = count;
-  for (const [pinnedKey, pinnedValue] of PINNED_GIT_CONFIG_ENTRIES) {
-    if (foundKeys.has(pinnedKey)) continue;
-    result[`GIT_CONFIG_KEY_${nextIndex}`] = pinnedKey;
-    result[`GIT_CONFIG_VALUE_${nextIndex}`] = pinnedValue;
-    nextIndex++;
+  // The others follow the caller's own.
+  let next = given;
+  for (const [key, value] of PINNED) {
+    if (overwritten.has(key)) continue;
+    out[`GIT_CONFIG_KEY_${next}`] = key;
+    out[`GIT_CONFIG_VALUE_${next}`] = value;
+    next += 1;
   }
-  if (nextIndex !== count) result.GIT_CONFIG_COUNT = String(nextIndex);
-  return result;
+  if (next !== given) out.GIT_CONFIG_COUNT = String(next);
+  return out;
 }
 
 export function createGitProcessEnv(options: {
@@ -43,7 +52,8 @@ export function createGitProcessEnv(options: {
   readonly optionsEnv?: NodeJS.ProcessEnv | undefined;
   readonly command?: string | undefined;
 }): NodeJS.ProcessEnv {
-  const merged: NodeJS.ProcessEnv = {
+  // Later wins: the machine's, the spawner's, the fixed three, then the caller's own.
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     ...options.spawnerEnv,
     LC_ALL: "en_US.UTF-8",
@@ -51,7 +61,8 @@ export function createGitProcessEnv(options: {
     GIT_PAGER: "cat",
     ...options.optionsEnv,
   };
-  if (options.command !== undefined) merged.VSCODE_GIT_COMMAND = options.command;
-  else delete merged.VSCODE_GIT_COMMAND;
-  return applyPinnedGitConfig(merged);
+  // The command is named for the process's watchers; a name left from an earlier command never stays.
+  if (options.command === undefined) delete env.VSCODE_GIT_COMMAND;
+  else env.VSCODE_GIT_COMMAND = options.command;
+  return pin(env);
 }

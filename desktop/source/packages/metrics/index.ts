@@ -1,8 +1,20 @@
+/**
+ * Counters, gauges and histograms for the agent's loop. A metric is only a
+ * name and a kind: what it measures is handed to whichever backend the
+ * context carries, and a context that carries none measures nothing.
+ */
 import { createKey, type Context } from "../context/core.js";
 
 export type MetricType = "counter" | "gauge" | "histogram";
-export interface MetricHandle { name: string; type: MetricType; description?: string; labelNames?: readonly string[] }
 export type MetricLabels = Readonly<Record<string, string>>;
+
+export interface MetricHandle {
+  name: string;
+  type: MetricType;
+  description?: string;
+  labelNames?: readonly string[];
+}
+
 export interface MetricsBackend {
   record(context: Context, handle: MetricHandle, value: number, labels?: MetricLabels): void;
   increment(context: Context, handle: MetricHandle, value: number, labels?: MetricLabels): void;
@@ -10,36 +22,61 @@ export interface MetricsBackend {
   histogram(context: Context, handle: MetricHandle, value: number, labels?: MetricLabels): void;
 }
 
-const defaultMetricsBackend: MetricsBackend = { record() {}, increment() {}, gauge() {}, histogram() {} };
-export const metricsKey = createKey(Symbol("metricsBackend"), defaultMetricsBackend);
-export const getMetricsBackend = (context: Context): MetricsBackend => context.get(metricsKey);
+interface MetricOptions {
+  description?: string;
+  labelNames?: readonly string[];
+}
 
-function handle(name: string, type: MetricType, options?: { description?: string; labelNames?: readonly string[] }): MetricHandle {
-  // The shipped runtime keeps both optional keys even when their values are undefined.
-  // These assertions erase only the type-level undefined while preserving that object shape.
+/** The backend of a context that was given none: every measure is dropped. */
+const silent: MetricsBackend = { record() {}, increment() {}, gauge() {}, histogram() {} };
+
+export const metricsKey = createKey(Symbol("metricsBackend"), silent);
+
+export function getMetricsBackend(context: Context): MetricsBackend {
+  return context.get(metricsKey);
+}
+
+/**
+ * A metric's handle. Both optional fields are always on it, undefined when
+ * not given: a backend may list a handle's keys, and finds the same four
+ * whatever the metric was made with.
+ */
+function describe(name: string, type: MetricType, options: MetricOptions | undefined): MetricHandle {
   return { name, type, description: options?.description as string, labelNames: options?.labelNames as readonly string[] };
 }
 
-export function createCounter(name: string, options?: { description?: string; labelNames?: readonly string[] }) {
-  const metric = handle(name, "counter", options);
+/** What every metric can do besides its own verb: hand a raw value to the backend's `record`. */
+function recorder(handle: MetricHandle) {
+  return (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).record(context, handle, value, labels);
+}
+
+export function createCounter(name: string, options?: MetricOptions) {
+  const handle = describe(name, "counter", options);
   return {
-    increment: (context: Context, value = 1, labels?: MetricLabels): void => getMetricsBackend(context).increment(context, metric, value, labels),
-    record: (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).record(context, metric, value, labels),
+    /** Counts one more, or `value` more. */
+    increment(context: Context, value = 1, labels?: MetricLabels): void {
+      getMetricsBackend(context).increment(context, handle, value, labels);
+    },
+    record: recorder(handle),
   };
 }
 
-export function createGauge(name: string, options?: { description?: string; labelNames?: readonly string[] }) {
-  const metric = handle(name, "gauge", options);
+export function createGauge(name: string, options?: MetricOptions) {
+  const handle = describe(name, "gauge", options);
   return {
-    gauge: (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).gauge(context, metric, value, labels),
-    record: (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).record(context, metric, value, labels),
+    gauge(context: Context, value: number, labels?: MetricLabels): void {
+      getMetricsBackend(context).gauge(context, handle, value, labels);
+    },
+    record: recorder(handle),
   };
 }
 
-export function createHistogram(name: string, options?: { description?: string; labelNames?: readonly string[] }) {
-  const metric = handle(name, "histogram", options);
+export function createHistogram(name: string, options?: MetricOptions) {
+  const handle = describe(name, "histogram", options);
   return {
-    histogram: (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).histogram(context, metric, value, labels),
-    record: (context: Context, value: number, labels?: MetricLabels): void => getMetricsBackend(context).record(context, metric, value, labels),
+    histogram(context: Context, value: number, labels?: MetricLabels): void {
+      getMetricsBackend(context).histogram(context, handle, value, labels);
+    },
+    record: recorder(handle),
   };
 }

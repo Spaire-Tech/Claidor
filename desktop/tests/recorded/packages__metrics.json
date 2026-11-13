@@ -1,0 +1,217 @@
+{
+ "part": "packages/metrics",
+ "surface": {
+  "metrics": {
+   "createCounter": "function",
+   "createGauge": "function",
+   "createHistogram": "function",
+   "getMetricsBackend": "function",
+   "metricsKey": "object"
+  }
+ },
+ "scenarios": {
+  "a counter counts by one unless told, and records a value": {
+   "returned": {
+    "calls": [
+     {
+      "method": "increment",
+      "sameContext": true,
+      "handle": {
+       "name": "turns_started",
+       "type": "counter",
+       "description": {
+        "$": "undefined"
+       },
+       "labelNames": {
+        "$": "undefined"
+       }
+      },
+      "value": 1,
+      "labels": {
+       "$": "undefined"
+      }
+     },
+     {
+      "method": "increment",
+      "sameContext": true,
+      "handle": {
+       "name": "turns_started",
+       "type": "counter",
+       "description": {
+        "$": "undefined"
+       },
+       "labelNames": {
+        "$": "undefined"
+       }
+      },
+      "value": 5,
+      "labels": {
+       "$": "undefined"
+      }
+     },
+     {
+      "method": "increment",
+      "sameContext": true,
+      "handle": {
+       "name": "tool_calls",
+       "type": "counter",
+       "description": "Calls made",
+       "labelNames": [
+        "tool",
+        "outcome"
+       ]
+      },
+      "value": 2,
+      "labels": {
+       "tool": "Shell",
+       "outcome": "ok"
+      }
+     },
+     {
+      "method": "record",
+      "sameContext": true,
+      "handle": {
+       "name": "tool_calls",
+       "type": "counter",
+       "description": "Calls made",
+       "labelNames": [
+        "tool",
+        "outcome"
+       ]
+      },
+      "value": 9,
+      "labels": {
+       "tool": "Read"
+      }
+     }
+    ],
+    "methods": [
+     [
+      "increment",
+      "record"
+     ],
+     [
+      "increment",
+      "record"
+     ]
+    ]
+   }
+  },
+  "a gauge and a histogram pass their values on with their own kind": {
+   "returned": {
+    "calls": [
+     {
+      "method": "gauge",
+      "sameContext": true,
+      "handle": {
+       "name": "open_sessions",
+       "type": "gauge",
+       "description": "Sessions open now",
+       "labelNames": {
+        "$": "undefined"
+       }
+      },
+      "value": 3,
+      "labels": {
+       "$": "undefined"
+      }
+     },
+     {
+      "method": "record",
+      "sameContext": true,
+      "handle": {
+       "name": "open_sessions",
+       "type": "gauge",
+       "description": "Sessions open now",
+       "labelNames": {
+        "$": "undefined"
+       }
+      },
+      "value": 4,
+      "labels": {
+       "region": "eu"
+      }
+     },
+     {
+      "method": "histogram",
+      "sameContext": true,
+      "handle": {
+       "name": "turn_seconds",
+       "type": "histogram",
+       "description": {
+        "$": "undefined"
+       },
+       "labelNames": [
+        "model"
+       ]
+      },
+      "value": 1.5,
+      "labels": {
+       "model": "a"
+      }
+     },
+     {
+      "method": "record",
+      "sameContext": true,
+      "handle": {
+       "name": "turn_seconds",
+       "type": "histogram",
+       "description": {
+        "$": "undefined"
+       },
+       "labelNames": [
+        "model"
+       ]
+      },
+      "value": 0,
+      "labels": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "methods": [
+     [
+      "gauge",
+      "record"
+     ],
+     [
+      "histogram",
+      "record"
+     ]
+    ]
+   }
+  },
+  "the backend is read from the context under the metrics key, whose own backend does nothing": {
+   "returned": {
+    "asked": [
+     true
+    ],
+    "sameBackend": true,
+    "keyFields": [
+     "defaultValue",
+     "symbol"
+    ],
+    "fallbackMethods": [
+     "gauge",
+     "histogram",
+     "increment",
+     "record"
+    ],
+    "fallbackAnswers": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ]
+   }
+  }
+ }
+}
