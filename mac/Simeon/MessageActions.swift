@@ -393,7 +393,15 @@ enum MessageMenu {
       control.focusCount += 1
     }
 
+    /**
+     * The words chosen in the chat, when the choice runs through this
+     * message (a drag, a double click), as ⌘C copies them; else the whole
+     * message. Until 12 November 2026 it was always the whole message, its
+     * Markdown marks and all, whatever was chosen (the founder: "pasting and
+     * copying dont work").
+     */
     @MainActor @objc func copyText() {
+      if let chosen = TranscriptSelection.current, chosen.includes(bubble.id), chosen.copy() { return }
       NSPasteboard.general.clearContents()
       NSPasteboard.general.setString(bubble.text, forType: .string)
     }
