@@ -22,7 +22,8 @@ Simeon is a team of always-on agents on your Mac, made by Simeon Labs. The repos
     - **`clients/apps/web/`**: This is the main web dashboard application.
     - **`clients/packages/ui/`**: A shared library of React components built with Radix UI and Tailwind CSS.
     - **`clients/packages/client/`**: The generated API client and data-fetching hooks.
-- **`desktop/`**: The Mac app (Electron). See `docs/building-the-app.md`.
+- **`mac/`**: The Mac app (SwiftUI). See `mac/README.md`.
+- **`desktop/`**: The retired Electron Mac app, kept to build the agents' engine and the old web window (`desktop/web/`). See `desktop/README.md` and `docs/building-the-app.md`.
 - **`runner/`**: The cloud runner (Node).
 - **`dev/`**: Contains scripts and tools for development.
 - **`docs/`**: How Simeon fits together, how to build it, what the server does, and how to run the servers.
