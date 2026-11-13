@@ -84,12 +84,18 @@ async function withDaemon(options, run) {
 
 test("a command that outlives its wait is moved to the background, keeps running, and its file gets the whole output and the footer", async () => {
   await withDaemon({}, async ({ shell, ended, parse }) => {
+    // The command runs three seconds and its wait is 300 ms. The call must answer well before the command could
+    // have ended; the bound leaves two seconds for a busy machine to start a shell (with one second and a bound
+    // of 900 ms, a busy Mac failed this at the engine's check before a release, 13 November 2026).
     const started = Date.now();
-    const events = await shell({ command: "echo first; sleep 1; echo second", timeout: 300 });
-    assert.ok(Date.now() - started < 900, "the Shell call answered at its wait, not when the command ended");
+    const events = await shell({ command: "echo first; sleep 3; echo second", timeout: 300 });
+    const took = Date.now() - started;
+    assert.ok(took < 2_500, `the Shell call answered at its wait, not when the command ended (${took} ms)`);
     const cases = events.map(event => event.case);
     assert.deepEqual(cases.filter(name => name !== "stdout"), ["start", "backgrounded"], "no exit: it is still running");
-    assert.match(events.filter(event => event.case === "stdout").map(event => event.value.data).join(""), /first/);
+    const heard = events.filter(event => event.case === "stdout").map(event => event.value.data).join("");
+    assert.match(heard, /first/);
+    assert.doesNotMatch(heard, /second/, "it answered before the command's last line, whatever the clock says");
     const backgrounded = events.at(-1).value;
     assert.ok(backgrounded.shellId >= 1_000, "a shell id the agent waits on");
     assert.equal(backgrounded.msToWait, 300);
@@ -97,7 +103,7 @@ test("a command that outlives its wait is moved to the background, keeps running
     assert.ok(backgrounded.pid > 0);
     const file = await ended(backgrounded.shellId);
     assert.match(file, /^---\n/);
-    assert.match(file, /command: "echo first; sleep 1; echo second"/);
+    assert.match(file, /command: "echo first; sleep 3; echo second"/);
     assert.match(file, /first\n[\s\S]*second\n/, "the output before and after the move, in order");
     const footer = parse(file);
     assert.deepEqual(footer, { isComplete: true, exitCode: 0 });
