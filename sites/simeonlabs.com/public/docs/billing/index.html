@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=e0ac8473">
+<link rel="stylesheet" href="/site.css?v=76455af9">
 <style>
 /* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
@@ -198,14 +198,15 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 </head>
 <body>
 
+<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav>
-    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div></div>
     </details>
   </div>
 </header>
@@ -225,8 +226,8 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <h2 id="start-your-free-trial">Start your free trial</h2>
 <p>Every account gets one 7-day free trial, with one week of Standard credits, whichever plan you choose. How it starts depends on where you sign up.</p>
 <p><strong>On iPhone.</strong> The trial starts when you first sign in, with no card. When the 7 days or the credits run out, the app shows the plans so you can choose one.</p>
-<p><strong>On the web or the Mac:</strong></p>
-<ol><li>Go to <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a>, or choose <strong>Start Free Trial</strong> in the Mac app, and sign in.</li><li>Under <strong>Choose your plan</strong>, choose <strong>Start your Standard Trial</strong> (or Pro, or Max).</li><li>Add a card on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s checkout page. Nothing is charged today.</li><li>The page says <strong>You're all set!</strong> Open Simeon and sign in with the same account.</li></ol>
+<p><strong>On the web, a Mac or a Windows PC:</strong></p>
+<ol><li>Go to <a href="https://app.simeonlabs.com/billing">app.simeonlabs.com/billing</a>, or choose <strong>Start Free Trial</strong> in the Mac or Windows app, and sign in.</li><li>Under <strong>Choose your plan</strong>, choose <strong>Start your Standard Trial</strong> (or Pro, or Max).</li><li>Add a card on <span class="brand" style="color:#635bff"><i class="logo" style="--m:url(/docs/brands/stripe.png?v=c1bc63ee);background:#635bff" aria-hidden="true"></i>Stripe</span>'s checkout page. Nothing is charged today.</li><li>The page says <strong>You're all set!</strong> Open Simeon and sign in with the same account.</li></ol>
 <p>When the 7 days end, your plan starts and your card is charged, unless you cancel the trial first.</p>
 <figure class="shot"><div class="pane" style="--c:#89acbc;--w:100%;aspect-ratio:5/4"><img class="e-right" src="/docs/img/billing-trial.webp" alt="Usage &amp; Billing during a trial: Trial usage at 31%, Ends in 5 days, Cancel Trial, then the plan with Start Plan Now and Upgrade to Pro" width="732" height="536" loading="lazy" decoding="async"></div><figcaption>During a trial, Usage &amp; Billing shows your trial credits and when the trial ends.</figcaption></figure>
 <p>During a trial you can:</p>
@@ -300,9 +301,9 @@ Every account gets one 7-day free trial, with one week of Standard credits, whic
 
 **On iPhone.** The trial starts when you first sign in, with no card. When the 7 days or the credits run out, the app shows the plans so you can choose one.
 
-**On the web or the Mac:**
+**On the web, a Mac or a Windows PC:**
 
-1. Go to [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), or choose **Start Free Trial** in the Mac app, and sign in.
+1. Go to [app.simeonlabs.com/billing](https://app.simeonlabs.com/billing), or choose **Start Free Trial** in the Mac or Windows app, and sign in.
 2. Under **Choose your plan**, choose **Start your Standard Trial** (or Pro, or Max).
 3. Add a card on Stripe&#x27;s checkout page. Nothing is charged today.
 4. The page says **You&#x27;re all set!** Open Simeon and sign in with the same account.
@@ -440,7 +441,7 @@ For a plan on the web, your invoices and receipts are under **Manage Billing**, 
   <div class="wrap">
     <div class="foot-top">
       <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
-      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a><a href="https://apps.microsoft.com/detail/9P588HGXP209">Download for Windows</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
     </div>
     <div class="foot-base">
       <a class="foot-word" href="/" aria-label="SimeonLabs"></a>

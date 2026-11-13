@@ -1299,6 +1299,8 @@ struct ChatRowView: View, Equatable {
       ListenerConnectCard(platform: platform, reason: reason)
     case .gitHubSignIn(_, let card):
       GitHubSignInCardView(card: card)
+    case .modelConnect(_, let card):
+      ModelConnectCardView(card: card)
     case .request(let id, let card):
       RequestCardView(entryId: id, agentId: agentId, card: card, openComputer: openComputer)
     case .teammates(_, let exchange, let entries):

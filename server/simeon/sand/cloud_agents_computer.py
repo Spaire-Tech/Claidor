@@ -14,7 +14,7 @@ the computer's side of it, the cloud runner's four verbs
 POST /desktop/api/cloud-agents/computer/claim             {runner}
   → {"job": null} | {"job": {id, bcId, name, repoUrl, baseBranch, modelId,
                              conversation, work, attempts}}
-POST /desktop/api/cloud-agents/computer/jobs/{id}/heartbeat {runner, work?}
+POST /desktop/api/cloud-agents/computer/jobs/{id}/heartbeat {runner, work?, updates?}
   → {id, status, cancelRequested}
 POST /desktop/api/cloud-agents/computer/jobs/{id}/complete  {runner, result,
                                                              messages?, work?}
@@ -27,6 +27,12 @@ request, the changes, Claude Code's session); it is merged into the agent's
 `SandCloudAgent.work`, which `GetBackgroundComposerInfo` reads. A fail with
 `work.limitedUntilMs` is the person's Claude plan out of usage: the run
 stops and the app shows it paused until then.
+
+Since 13 November 2026 the coding runs in Claude Code or in Codex, on the
+person's ChatGPT plan (`host/cloud-agents/coding-run.ts`,
+`host/codex/`). `work.modelId` names the model that codes
+(`own:claude:…`, `own:chatgpt:…`), and so the program: the app reads it
+back as the composer's model, and the limit's words name its plan.
 
 Only the person's own credential reaches these (a signed-in app or their
 computer's own, never a cloud job's), and only that person's computer jobs:
@@ -66,6 +72,12 @@ router = APIRouter(prefix="/api/cloud-agents/computer", include_in_schema=False)
 FILES_KEPT = 300
 #: A path, a branch, an address: far above anything honest.
 WORD_MAX_LENGTH = 2_000
+#: What a cloud agent said along the way (13 November 2026, for its
+#: conversation in the apps): the most lines kept of one turn and of the whole
+#: agent, and the longest one line may be.
+UPDATES_PER_TURN = 40
+UPDATES_KEPT = 200
+UPDATE_MAX_LENGTH = 4_000
 
 
 class ComputerFile(BaseModel):
@@ -90,10 +102,22 @@ class ComputerWork(BaseModel):
     filesChanged: int | None = Field(default=None, ge=0)
     commitCount: int | None = Field(default=None, ge=0)
     files: list[ComputerFile] | None = None
-    #: Claude Code's session, resumed by the agent's next turn.
+    #: Claude Code's session, or Codex's, resumed by the agent's next turn.
     sessionId: str | None = Field(default=None, max_length=64)
-    #: When the person's Claude plan lets the work go on; 0 clears it.
+    #: When the person's plan lets the work go on; 0 clears it.
     limitedUntilMs: int | None = Field(default=None, ge=0)
+    #: The model that codes (`own:claude:…` in Claude Code, `own:chatgpt:…`
+    #: in Codex, `own:cursor:…` in Cursor): which program the cloud agent
+    #: runs in.
+    modelId: str | None = Field(default=None, max_length=WORD_MAX_LENGTH)
+
+
+class ComputerUpdate(BaseModel):
+    """One thing the cloud agent said while it worked."""
+
+    model_config = ConfigDict(extra="ignore")
+    text: str = Field(min_length=1, max_length=UPDATE_MAX_LENGTH)
+    atMs: int = Field(default=0, ge=0)
 
 
 class ComputerBody(BaseModel):
@@ -101,6 +125,9 @@ class ComputerBody(BaseModel):
     #: The name the claim took its lease under (a label, not a credential).
     runner: str = Field(min_length=1, max_length=128)
     work: ComputerWork | None = None
+    #: What the cloud agent said so far in this turn: the whole list each
+    #: time, so one sent twice or out of order changes nothing.
+    updates: list[ComputerUpdate] | None = None
 
 
 class CompleteBody(ComputerBody):
@@ -140,6 +167,24 @@ def merged_work(kept: dict[str, Any], work: ComputerWork | None) -> dict[str, An
     return merged
 
 
+def merged_updates(
+    kept: list[dict[str, Any]] | None,
+    job_id: str,
+    updates: list[ComputerUpdate] | None,
+) -> list[dict[str, Any]]:
+    """Every turn's updates with this turn's written over what it had said
+    before: the last `UPDATES_PER_TURN` of the turn, `UPDATES_KEPT` in all."""
+    before = [update for update in kept or [] if isinstance(update, dict)]
+    if updates is None:
+        return before
+    others = [update for update in before if update.get("jobId") != job_id]
+    mine = [
+        {"text": update.text, "createdAtMs": update.atMs, "jobId": job_id}
+        for update in updates[-UPDATES_PER_TURN:]
+    ]
+    return [*others, *mine][-UPDATES_KEPT:]
+
+
 async def _job_and_agent(
     session: AsyncSession, desktop_session: DesktopSession, job_id: UUID
 ) -> tuple[MatyJob, SandCloudAgent]:
@@ -163,6 +208,22 @@ def _write_work(
     if work is None:
         return
     agent.work = merged_work(agent.work, work)
+    session.add(agent)
+
+
+def _write_updates(
+    session: AsyncSession,
+    agent: SandCloudAgent,
+    job: MatyJob,
+    updates: list[ComputerUpdate] | None,
+) -> None:
+    """What the cloud agent said in this turn, kept beside its work
+    (`work["updates"]`) for `GetBackgroundComposerConversation`."""
+    if updates is None:
+        return
+    work = dict(agent.work or {})
+    work["updates"] = merged_updates(work.get("updates"), str(job.id), updates)
+    agent.work = work
     session.add(agent)
 
 
@@ -217,7 +278,12 @@ async def claim(
                 "baseBranch": agent.base_branch,
                 "modelId": agent.model_id,
                 "conversation": job.conversation or [],
-                "work": agent.work or {},
+                # Its own words along the way are for the apps, not the computer.
+                "work": {
+                    key: value
+                    for key, value in (agent.work or {}).items()
+                    if key != "updates"
+                },
                 "attempts": job.attempts,
             }
         }
@@ -236,6 +302,7 @@ async def heartbeat(
     job, agent = await _job_and_agent(session, desktop_session, id)
     job = await maty.heartbeat(session, job.id, runner=body.runner)
     _write_work(session, agent, body.work)
+    _write_updates(session, agent, job, body.updates)
     return JSONResponse(_state(job))
 
 
@@ -249,6 +316,7 @@ async def complete(
     """The turn's answer, and the branch, pull request and changes it left."""
     job, agent = await _job_and_agent(session, desktop_session, id)
     _write_work(session, agent, body.work)
+    _write_updates(session, agent, job, body.updates)
     job = await maty.complete(
         session,
         job.id,
@@ -284,6 +352,7 @@ async def fail(
     left, else the run stops with the reason, which the agent is told."""
     job, agent = await _job_and_agent(session, desktop_session, id)
     _write_work(session, agent, body.work)
+    _write_updates(session, agent, job, body.updates)
     job = await maty.fail(
         session,
         job.id,

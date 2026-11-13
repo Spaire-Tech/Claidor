@@ -319,6 +319,8 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
   case cloudAgent(id: String, bcId: String)
   /** "Connect GitHub" with a one-time code (`github-sign-in`): GitHub signed in on the computer for a cloud agent's coding (GitHubSignInCard). */
   case gitHubSignIn(id: String, card: GitHubSignInCard)
+  /** "Connect Claude Code" and "Connect Codex" in one card (`model-connect`): what a cloud agent's coding runs on, when neither is connected (ModelConnectCard). */
+  case modelConnect(id: String, card: ModelConnectCard)
   /** A purchase waiting on the person, or how it went (`purchase`, the checkout card). */
   case purchase(id: String, card: PurchaseCard)
   /** What an agent found to buy, each with Buy and View website (`products`). */
@@ -334,7 +336,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     switch self {
     case .stamp(let id, _), .unread(let id), .flights(let id, _), .file(let id, _, _, _), .question(let id, _), .draft(let id, _),
          .connectors(let id, _, _, _), .listenerConnect(let id, _, _), .request(let id, _), .teammates(let id, _, _), .voiceCall(let id, _, _, _), .routines(let id, _, _),
-         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .gitHubSignIn(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _),
+         .notice(let id, _), .failedSend(let id, _), .queuedSend(let id, _), .thread(let id, _, _, _), .cloudAgent(let id, _), .gitHubSignIn(let id, _), .modelConnect(let id, _), .purchase(let id, _), .products(let id, _), .flightPassengers(let id, _), .joined(let id, _),
          .modelChange(let id, _): return id
     case .bubble(let bubble): return bubble.id
     }
@@ -362,6 +364,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .thread: return "thread"
     case .cloudAgent: return "cloud-agent"
     case .gitHubSignIn: return "github-sign-in"
+    case .modelConnect: return "model-connect"
     case .purchase: return "purchase"
     case .products: return "products"
     case .flightPassengers: return "flight-passengers"
@@ -387,7 +390,7 @@ public enum ChatRow: Identifiable, Hashable, Sendable {
     case .file(_, _, _, let fromPerson): return fromPerson ? .person : .agent(nil)
     case .failedSend, .queuedSend: return .person
     case .thread(_, _, _, let side): return side
-    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .gitHubSignIn, .purchase, .products, .flightPassengers, .joined: return .agent(nil)
+    case .flights, .question, .draft, .connectors, .listenerConnect, .request, .notice, .cloudAgent, .gitHubSignIn, .modelConnect, .purchase, .products, .flightPassengers, .joined: return .agent(nil)
     default: return .middle
     }
   }
@@ -574,11 +577,13 @@ public struct CloudAgentInfo: Hashable, Sendable {
   public let filesChanged: Int
   public let linesAdded: Int
   public let linesRemoved: Int
+  /** The program that codes for it, as the computer names it (`coder`: "claude-code", "codex"); empty from a computer that doesn't say. */
+  public let coder: String
 
   public init?(_ json: JSON) {
     guard json.object != nil else { return nil }
     let text = { (key: String) in json[key]?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-    name = text("name"); prompt = text("prompt"); branch = text("branchName")
+    name = text("name"); prompt = text("prompt"); branch = text("branchName"); coder = text("coder")
     status = Status(rawValue: text("status")) ?? .unknown
     pullRequestURL = text("prUrl"); pullRequestState = text("prState")
     pullRequestNumber = json["prNumber"]?.int.flatMap { $0 > 0 ? $0 : nil }
@@ -587,13 +592,13 @@ public struct CloudAgentInfo: Hashable, Sendable {
     linesRemoved = json["linesRemoved"]?.int ?? 0
   }
 
-  /** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
+  /** The badge: "Creating", "Running", "Done", "Failed" ("Error" until 13 November 2026; the founder: "the done mark. or the failed if it did"), "Expired", "Paused", "Status unavailable". */
   public var statusLabel: String {
     switch status {
     case .creating: return L10n.text("Creating")
     case .running: return L10n.text("Running")
     case .finished: return L10n.text("Done")
-    case .error: return L10n.text("Error")
+    case .error: return L10n.text("Failed")
     case .expired: return L10n.text("Expired")
     case .paused: return L10n.text("Paused")
     case .unknown: return L10n.text("Status unavailable")
@@ -636,6 +641,11 @@ public struct CloudAgentInfo: Hashable, Sendable {
     }
   }
 
+  /** The cloud agent as a party of its conversation's page, with the program that codes for it. */
+  public func party(_ bcId: String) -> Party {
+    Party(id: bcId, name: name, cloudAgent: true, coder: coder.isEmpty ? nil : coder)
+  }
+
   /** "3 files changed". */
   public var changedLabel: String? {
     guard filesChanged > 0 else { return nil }
@@ -646,6 +656,124 @@ public struct CloudAgentInfo: Hashable, Sendable {
   public static func webURL(_ bcId: String) -> URL? {
     URL(string: "https://app.simeonlabs.com/agents/" + (bcId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? bcId))
   }
+}
+
+/**
+ * One line of a cloud agent's conversation, as `getCloudAgentConversation`
+ * answers (13 November 2026; the founder: the agent "talks to the cloud
+ * agent the same way it talks to another agent"): what the agent asked it
+ * (`prompt`), what it said along the way (`update`) and each turn's answer.
+ * The apps draw them on the page two agents' messages have
+ * (`Chat.cloudAgentRows`).
+ */
+public struct CloudAgentLine: Hashable, Sendable, Identifiable {
+  public enum Role: String, Sendable { case prompt, update, answer }
+  public let id: String
+  public let role: Role
+  public let text: String
+  public let date: Date?
+
+  public init(id: String, role: Role, text: String, date: Date? = nil) {
+    self.id = id; self.role = role; self.text = text; self.date = date
+  }
+
+  init?(_ json: JSON) {
+    guard let id = json["id"]?.text, let role = Role(rawValue: json["role"]?.string ?? "") else { return nil }
+    let text = (json["text"]?.string ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !text.isEmpty else { return nil }
+    let at = json["atMs"]?.double ?? 0
+    self.init(id: id, role: role, text: text, date: at > 0 ? Date(timeIntervalSince1970: at / 1000) : nil)
+  }
+
+  /** The lines in `getCloudAgentConversation`'s answer (`{bcId, messages}`); nil when the computer answered with nothing. */
+  public static func lines(_ answer: JSON?) -> [CloudAgentLine]? {
+    guard let messages = answer?["messages"]?.array else { return nil }
+    return messages.compactMap { CloudAgentLine($0) }
+  }
+}
+
+/**
+ * "Connect Claude" and "Connect ChatGPT" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"). A cloud agent codes in
+ * Claude Code on the person's Claude plan, or in Codex on their ChatGPT
+ * plan; a launch that finds neither connected puts this card in the chat
+ * (`desktop/source/host/extensions/cloud-agents/cloud-agents-service.ts`,
+ * `codingReady`). Each row is one provider: Connect opens the sign-in AI
+ * Models opens for it (the consent first), and a provider that is connected
+ * reads as a connected app does. The card carries no state of its own: what
+ * is connected is read from the person's accounts (`AIModelsModel`), which
+ * the app reads again while the card waits. The agent goes on by itself once
+ * one is connected.
+ */
+public struct ModelConnectCard: Hashable, Sendable {
+  /** The providers offered, in the order shown (`claude`, `chatgpt`, `cursor`). */
+  public let providers: [String]
+
+  /**
+   * Cursor, the third program a cloud agent can code in (13 November 2026,
+   * the founder: "Cursor now"). It is no plan in AI Models: it is signed in
+   * on the person's cloud computer with Cursor's own program, and its row
+   * reads that computer (`CursorSignIn`).
+   */
+  public static let cursor = "cursor"
+
+  /** The providers a cloud agent's coding can run on. */
+  public static let offered = [AIModels.claude, AIModels.chatGPT, cursor]
+
+  /** A provider whose sign-in is on the cloud computer and read from it, not from AI Models. */
+  public static func onComputer(_ provider: String) -> Bool { provider == cursor }
+
+  public init?(_ message: JSON) {
+    let named = (message["providers"]?.array ?? []).compactMap { $0.text }.filter { ModelConnectCard.offered.contains($0) }
+    var seen = Set<String>()
+    let kept = named.filter { seen.insert($0).inserted }
+    // A card that names none it knows (an engine newer than this app) still offers them all.
+    providers = kept.isEmpty ? ModelConnectCard.offered : kept
+  }
+
+  /**
+   * The program that codes on a provider's plan, by its own name. The card
+   * names the programs, Claude Code and Codex; Settings › AI Models names the
+   * plans, Claude and ChatGPT (the founder, 13 November 2026: "its connect
+   * codex or connect claude code ... for the card specifically its that. but
+   * settings is claude and chat gpt. they are two dif things").
+   */
+  public static func program(_ provider: String) -> String {
+    provider == AIModels.chatGPT ? "Codex" : provider == cursor ? "Cursor" : "Claude Code"
+  }
+
+  /** Whose plan the program runs on, as the person knows it: Claude, ChatGPT, Cursor. */
+  public static func plan(_ provider: String) -> String {
+    provider == cursor ? "Cursor" : AIModels.providerName(provider)
+  }
+
+  /** The program's own logo (`Mascots/<name>`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
+  public static func logo(_ provider: String) -> String {
+    provider == AIModels.chatGPT ? "codex" : provider == cursor ? "cursor" : "claudecode"
+  }
+
+  /** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
+  public static func title(_ provider: String, connected: Bool) -> String {
+    let name = program(provider)
+    return connected ? name : L10n.text("Connect \(name)")
+  }
+
+  /** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
+  public static func line(_ provider: String, connected: Bool) -> String {
+    if connected { return "" }
+    return L10n.text("Runs on your \(plan(provider)) plan.")
+  }
+
+  public static var connectLabel: String { L10n.text("Connect") }
+
+  /** The card in the list of chats: "Connect Claude Code, Codex, Cursor"; a card for one program, that one's name. */
+  public static var preview: String { preview(offered) }
+  public static func preview(_ providers: [String]) -> String { L10n.text("Connect \(providers.map(program).joined(separator: ", "))") }
+  public var previewText: String { Self.preview(providers) }
+
+  /** Seconds until the accounts are read again while a row still waits; never once one is connected. */
+  public static func nextPoll(anyConnected: Bool) -> Double? { anyConnected ? nil : 4 }
 }
 
 /**
@@ -716,6 +844,22 @@ public struct GitHubSignInCard: Hashable, Sendable {
   }
   public static var expiredLabel: String { L10n.text("This code expired. Ask your agent for a new one.") }
   public static var failedLabel: String { L10n.text("GitHub couldn't be connected.") }
+
+  /** The card's title: "Connect GitHub" while there is something to do, "GitHub" once it is connected, as a connected app's card names the app (13 November 2026). */
+  public static func title(_ state: State?) -> String {
+    if case .connected = state { return "GitHub" }
+    return title
+  }
+
+  /** The line under the title: what to do with the code, why there's nothing more to do, or the account once it is connected (none when its name isn't known). */
+  public static func line(_ state: State?) -> String {
+    switch state {
+    case .connected(let login): return login ?? ""
+    case .expired: return expiredLabel
+    case .failed: return failedLabel
+    case .none, .waiting: return prompt
+    }
+  }
 }
 
 /** A picture an agent sent with a message (`message.images`): a `file://` path on its computer or an `https` address, and its shape when known. */
@@ -948,6 +1092,7 @@ public enum Chat {
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
     case "github-sign-in": return L10n.text("Connect GitHub")
+    case "model-connect": return ModelConnectCard(message)?.previewText ?? ModelConnectCard.preview
     case "purchase": return message["content"]?.string ?? L10n.text("Checkout")
     case "products": return message["content"]?.string ?? L10n.text("Products")
     case "flight-passengers": return message["content"]?.string ?? L10n.text("Traveller details")
@@ -1414,6 +1559,9 @@ public enum Chat {
         return .cloudAgent(id: entry.id, bcId: bcId)
       case "github-sign-in":
         if let card = GitHubSignInCard(message) { return .gitHubSignIn(id: entry.id, card: card) }
+        return .notice(id: entry.id, text: notShown)
+      case "model-connect":
+        if let card = ModelConnectCard(message) { return .modelConnect(id: entry.id, card: card) }
         return .notice(id: entry.id, text: notShown)
       case "purchase":
         if let card = PurchaseCard(message: message, entry: entry) { return .purchase(id: entry.id, card: card) }

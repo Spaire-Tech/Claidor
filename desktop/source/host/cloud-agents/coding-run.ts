@@ -1,7 +1,10 @@
 /**
  * One turn of a cloud agent's coding work, on the person's own computer, in
  * Claude Code on their own Claude plan (11 November 2026; the founder asked
- * for it to work exactly as the upstream app's).
+ * for it to work exactly as the upstream app's), or in Codex on their
+ * ChatGPT plan (13 November 2026, the founder: "running one in Codex is not
+ * built"), or in Cursor's own command-line agent on their Cursor plan (the
+ * same day: "Cursor now"; `coding-choice.ts` says which).
  *
  * The upstream app's cloud agents ran in its maker's virtual machines, which
  * cloned the repository, made a branch (`autoBranch`), coded, and pushed it
@@ -12,9 +15,12 @@
  *    `/home/box/code/<bcId>/repo`, kept for the agent's next turns;
  * 2. a branch `simeon/<what it is>-<4 hex>` from the base branch, or the
  *    agent's own branch on a follow-up;
- * 3. Claude Code (`claude -p`, unmodified, on the model and the effort the
- *    person chose) in that checkout, told to code, build, test and commit,
- *    and its session resumed on the agent's next turn;
+ * 3. Claude Code (`claude -p`), Codex (`codex exec`) or Cursor (`agent -p`),
+ *    unmodified, on the model and the effort the person chose (Cursor on
+ *    its own), in that checkout, told to code,
+ *    build, test and commit, and its session resumed on the agent's next
+ *    turn (a cloud agent keeps the program it began in while that one is
+ *    still connected);
  * 4. the branch pushed and the pull request opened (`gh pr create`), and the
  *    branch, the pull request and the changes reported for the card.
  *
@@ -24,8 +30,12 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { HOST_LOG_PREFIX, logHostLine } from "../../shared/host-log.js";
-import { runClaudeCodeTurn, usageFromEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
-import { gitHubBinary, gitHubEnv, runCommand, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
+import { assistantWords, runClaudeCodeTurn, usageFromEvent, type ClaudeCodeEvent, type ClaudeCodeOutcome, type ClaudeCodePlanWindow, type ClaudeCodeTurnInput } from "../claude-code/claude-code-turn.js";
+import type { CodexRelayDeps } from "../codex/codex-relay.js";
+import { codexWords, runCodexTurn, type CodexEvent, type CodexOutcome, type CodexTurnInput } from "../codex/codex-turn.js";
+import { cursorWords, runCursorTurn, type CursorEvent, type CursorOutcome, type CursorTurnInput } from "../cursor/cursor-turn.js";
+import { CLOUD_AGENT_CODER, coderName, coderOfModel, coderPlan, type CloudAgentCoder } from "./coding-choice.js";
+import { gitHubBinary, gitHubEnv, runCommand, withGitTrust, withoutTokens, type CommandResult, type GitHubAccount } from "./coding-github.js";
 
 /** Where each agent's checkout is kept (`<root>/<bcId>/repo`). */
 export const CODE_ROOT = "/home/box/code";
@@ -71,6 +81,38 @@ export interface CodingWork {
   files?: { path: string; added: number; removed: number }[];
   sessionId?: string;
   limitedUntilMs?: number;
+  /**
+   * The model that codes, as Simeon names it (`own:claude:…` in Claude Code,
+   * `own:chatgpt:…` in Codex): the server keeps it with the cloud agent, so
+   * its next turn, its card and its conversation know the program
+   * (`coderOfModel`).
+   */
+  modelId?: string;
+  /**
+   * What Claude Code said along the way in this turn, for the cloud agent's
+   * conversation in the apps (13 November 2026): its own words between its
+   * tools, the last `UPDATES_KEPT`. The server keeps them apart from the work
+   * (`createComputerServer` sends them as the report's `updates`).
+   */
+  updates?: CodingUpdate[];
+}
+
+export interface CodingUpdate { text: string; atMs: number }
+/** The most of a turn's updates kept, and the longest one may be (the server's `UPDATES_PER_TURN`, `UPDATE_MAX_LENGTH`). */
+export const UPDATES_KEPT = 40;
+export const UPDATE_MAX_LENGTH = 4_000;
+
+/** `updates` with one more thing said, the oldest dropped past `UPDATES_KEPT`; words said twice in a row are kept once. */
+export function withUpdate(updates: readonly CodingUpdate[], words: string, atMs: number): CodingUpdate[] {
+  const text = words.trim().slice(0, UPDATE_MAX_LENGTH);
+  if (text === "" || updates.at(-1)?.text === text) return [...updates];
+  return [...updates, { text, atMs }].slice(-UPDATES_KEPT);
+}
+
+/** `updates` without a last one that is the turn's answer itself, which the conversation shows as the answer. */
+export function withoutAnswer(updates: readonly CodingUpdate[], answer: string): CodingUpdate[] {
+  const last = updates.at(-1);
+  return last !== undefined && last.text === answer.trim().slice(0, UPDATE_MAX_LENGTH) ? updates.slice(0, -1) : [...updates];
 }
 
 export type CodingOutcome =
@@ -78,17 +120,32 @@ export type CodingOutcome =
   | { readonly kind: "failed"; readonly reason: string; readonly retryable: boolean; readonly work?: CodingWork };
 
 export interface CodingRunDeps {
-  /** The model and effort the person chose for Claude; none when Claude isn't their choice. */
-  readonly choice: () => { readonly model: string; readonly effort?: string } | undefined;
+  /**
+   * What the coding runs on (`codingChoice`): the program (Claude Code when
+   * none is named), its model and effort; `kept` is the program this cloud
+   * agent began in. None when no program is connected.
+   */
+  readonly choice: (kept?: CloudAgentCoder) => { readonly coder?: CloudAgentCoder; readonly model: string; readonly effort?: string; readonly modelId?: string } | undefined;
   /** Who is signed in to GitHub on this computer. */
   readonly account: () => Promise<GitHubAccount>;
   readonly root?: string;
   readonly env?: NodeJS.ProcessEnv;
   readonly runClaude?: (input: ClaudeCodeTurnInput) => Promise<ClaudeCodeOutcome>;
+  readonly runCodex?: (input: CodexTurnInput) => Promise<CodexOutcome>;
+  readonly runCursor?: (input: CursorTurnInput) => Promise<CursorOutcome>;
+  /** How Codex's calls reach Simeon Labs' server (`codex-relay.ts`); without it Codex can't run. */
+  readonly codexRelay?: Omit<CodexRelayDeps, "modelId">;
   readonly run?: typeof runCommand;
   readonly signal?: AbortSignal;
   /** What was found so far, for the heartbeat. */
   readonly onWork?: (work: CodingWork) => void;
+  /**
+   * The program's first words of this turn (13 November 2026): its "on it",
+   * which the chat of the agent that asked shows as the cloud agent's
+   * message back (`AgentToAgentMessaging.noteCloudAgentSaid`). Called once
+   * a turn, and not at all when the turn ends without a word before its answer.
+   */
+  readonly onFirstWords?: (words: string, coder: CloudAgentCoder) => void;
   /** The plan's use, as Claude Code says it. */
   readonly onUsage?: (windows: readonly ClaudeCodePlanWindow[]) => void;
   /** Claude Code isn't signed in any more. */
@@ -130,11 +187,12 @@ export function wholeExchange(conversation: readonly CodingMessage[]): string {
   return `${before}\n\nThe work so far is on this branch. The person now says:\n\n${unansweredWords(conversation)}`;
 }
 
-/** Claude Code's brief for the work, added to its own system prompt. */
+/** The program's brief for the work, added to its own (Claude Code's system prompt, Codex's developer instructions). */
 export function codingBrief(repo: { readonly owner: string; readonly name: string }, branch: string, base: string): string {
   return [
     `You're working for the person through Simeon, their team of agents, on their own computer. This folder is a checkout of ${repo.owner}/${repo.name} on the branch ${branch}, made from ${base}.`,
     "",
+    "- Before anything else, answer in one short sentence, as a teammate who was just handed the task would: that you're on it and what you'll look at first (\"On it. I'll read the README and the docs folder first.\"). No greeting, no list, no question. The person reads it in their chat while you work.",
     "- Do the task you're given: read the code you need, make the change, then build it and run its tests or checks, as a developer on this project would.",
     "- Commit your work on this branch as you go, with clear messages (git commit). Don't push, don't change branches and don't open a pull request: Simeon pushes this branch and opens the pull request when you finish.",
     "- If the build or the tests fail and you can't fix them, don't commit the broken part. Stop and say plainly what fails and what you'd need.",
@@ -182,12 +240,19 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     return { kind: "failed", reason: stopped ? RUN_CANCELLED_REASON : reason, retryable: retryable && !stopped, ...(work === undefined ? {} : { work }) };
   };
   try {
-    const choice = deps.choice();
-    if (choice === undefined) return failed("Claude isn't connected, so the coding can't run: the person connects Claude in Settings › AI Models, then asks again.");
+    // The program this cloud agent began in, as the server kept it (its computer's last word, else its launch's).
+    const kept = job.work;
+    const keptModelId = typeof kept.modelId === "string" && kept.modelId.startsWith("own:") ? kept.modelId : job.modelId.startsWith("own:") ? job.modelId : undefined;
+    const keptCoder = keptModelId === undefined ? undefined : coderOfModel(keptModelId);
+    const choice = deps.choice(keptCoder);
+    if (choice === undefined) return failed("Neither Claude, ChatGPT nor Cursor is connected, so the coding can't run: the person connects one of them (launching again shows the card), then asks again.");
+    const coder = choice.coder ?? CLOUD_AGENT_CODER;
+    const program = coderName(coder);
+    if (coder === "codex" && deps.codexRelay === undefined && deps.runCodex === undefined) return failed("Codex can't run on this computer yet.");
     const repo = gitHubRepoOf(job.repoUrl);
     if (repo === undefined) return failed(`Only GitHub repositories can be worked on for now, and ${job.repoUrl || "no repository"} isn't one.`);
     const account = await deps.account();
-    if (!account.connected) return failed("GitHub isn't connected on the computer, so the repository can't be opened. Launch the work again to show the Connect GitHub card.");
+    if (!account.connected) return failed("GitHub isn't connected on the box (the agents' own computer), so the repository can't be opened. Launch the work again to show the Connect GitHub card.");
 
     const folder = path.join(deps.root ?? env.SIMEON_CODE_ROOT?.trim() ?? CODE_ROOT, job.bcId.replace(/[^A-Za-z0-9._-]/g, "_"));
     const checkout = path.join(folder, "repo");
@@ -203,7 +268,6 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
       if (fetched.code !== 0) return failed(`Couldn't reach ${repo.owner}/${repo.name} on GitHub: ${lastLine(fetched)}`, true);
     }
 
-    const kept = job.work;
     const keptBase = typeof kept.baseBranch === "string" && BRANCH.test(kept.baseBranch) ? kept.baseBranch : undefined;
     let base = BRANCH.test(job.baseBranch) ? job.baseBranch : keptBase;
     if (base === undefined) {
@@ -227,50 +291,95 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     await git(["config", "user.name", author]);
     if (account.login !== undefined && account.id !== undefined) await git(["config", "user.email", `${account.id}+${account.login}@users.noreply.github.com`]);
 
-    const work: CodingWork = { branchName: branch, baseBranch: base, limitedUntilMs: 0 };
+    const work: CodingWork = { branchName: branch, baseBranch: base, limitedUntilMs: 0, ...(choice.modelId === undefined ? {} : { modelId: choice.modelId }) };
     deps.onWork?.(work);
     if (deps.signal?.aborted === true) return failed(RUN_CANCELLED_REASON, false, work);
 
-    const keptSession = typeof kept.sessionId === "string" && SESSION_ID.test(kept.sessionId) ? kept.sessionId : undefined;
-    const runClaude = deps.runClaude ?? runClaudeCodeTurn;
-    const turn = (resume: string | undefined): Promise<ClaudeCodeOutcome> => runClaude({
-      prompt: (resume === undefined ? wholeExchange(job.conversation) : unansweredWords(job.conversation)) || "Carry on with the task.",
-      model: choice.model,
-      ...(choice.effort === undefined ? {} : { effort: choice.effort }),
-      resume,
-      brief: codingBrief(repo, branch, base),
-      cwd: checkout,
-      allowedTools: CODING_TOOLS,
-      timeoutMs: CODING_TURN_TIMEOUT_MS,
-      env,
-      ...(deps.signal === undefined ? {} : { signal: deps.signal }),
-      onEvent: (event) => {
-        const windows = usageFromEvent(event);
-        if (windows !== undefined) try { deps.onUsage?.(windows); } catch { /* never in the way of the work */ }
-      },
-    });
+    // A session is its program's own: one begun in the other program isn't carried on (the whole exchange is given instead).
+    const keptSession = typeof kept.sessionId === "string" && SESSION_ID.test(kept.sessionId) && (keptCoder ?? CLOUD_AGENT_CODER) === coder ? kept.sessionId : undefined;
+    let spoke = false;
+    const heard = (said: string): void => {
+      if (said.trim() === "") return;
+      if (!spoke) {
+        spoke = true;
+        try { deps.onFirstWords?.(said.trim().slice(0, UPDATE_MAX_LENGTH), coder); } catch { /* never in the way of the work */ }
+      }
+      work.updates = withUpdate(work.updates ?? [], said, now());
+      try { deps.onWork?.(work); } catch { /* never in the way of the work */ }
+    };
+    const promptFor = (resume: string | undefined): string => (resume === undefined ? wholeExchange(job.conversation) : unansweredWords(job.conversation)) || "Carry on with the task.";
+    const brief = codingBrief(repo, branch, base);
+    const turn = (resume: string | undefined): Promise<ClaudeCodeOutcome | CodexOutcome | CursorOutcome> => coder === "cursor"
+      // Cursor names its own model, and reaches Cursor itself on the sign-in kept on this computer.
+      ? (deps.runCursor ?? runCursorTurn)({
+        prompt: promptFor(resume),
+        resume,
+        brief,
+        cwd: checkout,
+        timeoutMs: CODING_TURN_TIMEOUT_MS,
+        env: withGitTrust(env),
+        ...(deps.signal === undefined ? {} : { signal: deps.signal }),
+        onEvent: (event: CursorEvent) => heard(cursorWords(event)),
+      })
+      : coder === "codex"
+      ? (deps.runCodex ?? runCodexTurn)({
+        prompt: promptFor(resume),
+        model: choice.model,
+        modelId: choice.modelId ?? `own:chatgpt:${choice.model}`,
+        ...(choice.effort === undefined ? {} : { effort: choice.effort }),
+        resume,
+        brief,
+        cwd: checkout,
+        timeoutMs: CODING_TURN_TIMEOUT_MS,
+        env: withGitTrust(env),
+        ...(deps.signal === undefined ? {} : { signal: deps.signal }),
+        onEvent: (event: CodexEvent) => heard(codexWords(event)),
+        // Checked above: there is a relay, or a stand-in that needs none.
+        relay: deps.codexRelay ?? { getBackendUrl: () => "", getAccessToken: async () => "" },
+      })
+      : (deps.runClaude ?? runClaudeCodeTurn)({
+        prompt: promptFor(resume),
+        model: choice.model,
+        ...(choice.effort === undefined ? {} : { effort: choice.effort }),
+        resume,
+        brief,
+        cwd: checkout,
+        allowedTools: CODING_TOOLS,
+        timeoutMs: CODING_TURN_TIMEOUT_MS,
+        env: withGitTrust(env),
+        ...(deps.signal === undefined ? {} : { signal: deps.signal }),
+        onEvent: (event: ClaudeCodeEvent) => {
+          const windows = usageFromEvent(event);
+          if (windows !== undefined) try { deps.onUsage?.(windows); } catch { /* never in the way of the work */ }
+          heard(assistantWords(event));
+        },
+      });
     const started = now();
-    log(`claude model=${choice.model}${choice.effort === undefined ? "" : ` effort=${choice.effort}`} resume=${keptSession !== undefined}`);
+    const tag = coder === "codex" ? "codex" : coder === "cursor" ? "cursor" : "claude";
+    log(`${tag} model=${choice.model}${choice.effort === undefined ? "" : ` effort=${choice.effort}`} resume=${keptSession !== undefined}`);
     let outcome = await turn(keptSession);
     if (outcome.kind === "no_session" && keptSession !== undefined) outcome = await turn(undefined);
-    log(`claude outcome=${outcome.kind} ms=${now() - started}`);
+    log(`${tag} outcome=${outcome.kind} ms=${now() - started}`);
     if ("sessionId" in outcome && outcome.sessionId !== undefined && SESSION_ID.test(outcome.sessionId)) work.sessionId = outcome.sessionId;
 
     switch (outcome.kind) {
       case "aborted": return failed(RUN_CANCELLED_REASON, false, work);
       case "limited": {
         const until = outcome.until !== undefined && outcome.until > now() ? outcome.until : now() + 60 * 60_000;
-        return failed(`Claude's plan limit was reached, so the work is paused. It resets at ${limitWords(until)}; a reply after that carries on where it stopped.`, false, { ...work, limitedUntilMs: until });
+        return failed(`${coderPlan(coder)}'s plan limit was reached, so the work is paused. It resets at ${limitWords(until)}; a reply after that carries on where it stopped.`, false, { ...work, limitedUntilMs: until });
       }
       case "signed_out":
+        if (coder === "cursor") return failed("Cursor isn't signed in on the computer any more. The person connects Cursor again (launching in Cursor again shows its card); a reply then carries on.", false, work);
+        if (coder === "codex") return failed("ChatGPT isn't connected any more. The person connects ChatGPT again in Settings › AI Models; a reply then carries on.", false, work);
         try { deps.onSignedOut?.(); } catch { /* the caller's own trouble */ }
         return failed("Claude isn't signed in on the computer any more. The person connects Claude again in Settings › AI Models; a reply then carries on.", false, work);
-      case "not_installed": return failed("Claude Code isn't installed on the computer yet; it installs by itself.", true, work);
+      case "not_installed": return failed(`${program} isn't installed on the computer yet; it installs by itself.`, true, work);
       case "no_session":
-      case "failed": return failed(`Claude Code stopped: ${withoutTokens(outcome.kind === "failed" ? outcome.said : "its session is gone").slice(0, 600)}`, false, work);
+      case "failed": return failed(`${program} stopped: ${withoutTokens(outcome.kind === "failed" ? outcome.said : "its session is gone").slice(0, 600)}`, false, work);
       case "done": break;
     }
     const text = outcome.text.trim();
+    if (work.updates !== undefined) work.updates = withoutAnswer(work.updates, text);
 
     const ahead = await git(["rev-list", "--count", `origin/${base}..HEAD`]);
     const commits = Number(ahead.stdout.trim()) || 0;
@@ -281,13 +390,13 @@ export async function runCodingJob(job: CodingJob, deps: CodingRunDeps): Promise
     }
     let pushed = await git(["push", "-u", "origin", `${branch}:${branch}`], 30 * 60_000);
     if (pushed.code !== 0 && /non-fast-forward|fetch first|rejected/i.test(`${pushed.stderr}`)) pushed = await git(["push", "--force-with-lease", "-u", "origin", `${branch}:${branch}`], 30 * 60_000);
-    if (pushed.code !== 0) return failed(`The work is committed on the computer (branch ${branch}), but GitHub refused the push: ${lastLine(pushed)}${text === "" ? "" : `\n\nClaude Code's summary:\n${text.slice(0, 2_000)}`}`, false, work);
+    if (pushed.code !== 0) return failed(`The work is committed on the computer (branch ${branch}), but GitHub refused the push: ${lastLine(pushed)}${text === "" ? "" : `\n\n${program}'s summary:\n${text.slice(0, 2_000)}`}`, false, work);
 
     const viewPr = (): Promise<CommandResult> => run(gh, ["pr", "view", branch, "--repo", `${repo.owner}/${repo.name}`, "--json", "url,number,state,isDraft"], { cwd: checkout, env: gitEnv, timeoutMs: 60_000 });
     let view = await viewPr();
     if (view.code !== 0) {
       const title = (job.name.trim() || unansweredWords(job.conversation).split("\n")[0] || "Work from Simeon").slice(0, 120);
-      const body = `${text || "Work done by Simeon."}\n\n---\nMade by Simeon, with Claude Code.`;
+      const body = `${text || "Work done by Simeon."}\n\n---\nMade by Simeon, with ${program}.`;
       const created = await run(gh, ["pr", "create", "--repo", `${repo.owner}/${repo.name}`, "--base", base, "--head", branch, "--title", title, "--body-file", "-"], { cwd: checkout, env: gitEnv, input: body, timeoutMs: 120_000 });
       if (created.code !== 0) return failed(`The branch ${branch} is pushed, but GitHub didn't open the pull request: ${lastLine(created)}`, false, work);
       view = await viewPr();

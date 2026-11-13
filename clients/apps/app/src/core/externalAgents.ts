@@ -154,6 +154,19 @@ export function botAddress(kind: string | undefined): string {
   return path ? `${botsAddress}/${path}` : botsAddress
 }
 
+/**
+ * The mascot of the program that coded for a cloud agent (`Party.mascot`; 13
+ * November 2026, the founder: "it should be whatever agent is used. either
+ * claude code or codex"): the kind's own when it has one (Cursor's logo for
+ * a cloud agent in Cursor), else Claude Code's, since every cloud agent
+ * before `coder` ran in Claude Code.
+ */
+export function cloudAgentMascot(coder: string | undefined): string {
+  if (coder === 'cursor') return 'cursor'
+  const icon = coder == null ? undefined : botIcon(coder)
+  return icon != null && mascotIcons.has(icon) ? icon : 'claudecode'
+}
+
 /** The icon for a kind the server names (`network.KINDS`): a known bot's mascot (Claude Code's and Codex's the founder's), its maker's mark for another coding agent, none for one there is none of. */
 export function botIcon(kind: string): string | undefined {
   switch (kind) {

@@ -528,6 +528,109 @@ private struct ModelAccountRow: View {
 }
 
 /**
+ * Connect Cursor, from the chat's connect card (13 November 2026, the
+ * founder: "Cursor now"; the shared core's `CursorSignIn`, the Mac's
+ * `MacCursorConnectSheet`). Cursor is signed in on the person's cloud
+ * computer with Cursor's own program: the first time the program is put on
+ * the computer; then it gives a page on Cursor's own site, which the person
+ * opens and approves on. There is no code to type. The sheet asks the
+ * computer again every three seconds until it says connected. Closing it
+ * leaves the sign-in running on the computer: the card's row turns to
+ * Connected by itself. In the ChatGPT sheet's design.
+ */
+struct CursorConnectSheet: View {
+  @Environment(SimeonCore.AppStore.self) private var store
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.openURL) private var openURL
+  /** What the computer last said; nil while it is first asked. */
+  @State private var signIn: CursorSignIn?
+  @State private var attempt = 0
+  private let name = ModelConnectCard.program(ModelConnectCard.cursor)
+
+  private var connected: Bool { signIn?.connected == true }
+
+  var body: some View {
+    // Not asked yet reads as being set up.
+    let state = signIn?.state ?? CursorSignIn.State.installing
+    Form {
+      switch state {
+      case .installing:
+        Section {
+          HStack(spacing: 10) {
+            ProgressView()
+            Text(verbatim: CursorSignIn.settingUp(name)).foregroundStyle(Ink.secondary)
+          }
+        }
+        .listRowBackground(Color.clear)
+      case .connected:
+        Section {
+          Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
+          Text(verbatim: CursorSignIn.connectedTo(name)).foregroundStyle(Ink.primary)
+        }
+        .listRowBackground(Ink.groupedRow)
+      case .waiting(let url, _):
+        Section {
+          Text(verbatim: CursorSignIn.steps(name)).foregroundStyle(Ink.primary)
+          Button {
+            openURL(url)
+          } label: {
+            HStack {
+              Text(verbatim: CursorSignIn.open(name)).foregroundStyle(Ink.link)
+              Spacer()
+              Image(systemName: "arrow.up.right").foregroundStyle(Ink.secondary)
+            }
+          }
+        }
+        .listRowBackground(Ink.groupedRow)
+        Section {
+          HStack(spacing: 10) {
+            ProgressView()
+            Text(verbatim: CursorSignIn.waiting).foregroundStyle(Ink.secondary)
+          }
+        }
+        .listRowBackground(Color.clear)
+      case .failed, .none:
+        Section {
+          Text(verbatim: CursorSignIn.didNotFinish(name)).foregroundStyle(Ink.danger)
+          Button(CursorSignIn.tryAgain) { attempt += 1 }
+        }
+        .listRowBackground(Ink.groupedRow)
+      }
+    }
+    .groupedGround()
+    .navigationTitle("Connect \(name)")
+    .inlineBarTitle()
+    .toolbar {
+      ToolbarItem(placement: .cancellationAction) {
+        if connected { EmptyView() } else { Button("Cancel") { dismiss() } }
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        if connected { Button("Done") { dismiss() } } else { EmptyView() }
+      }
+    }
+    .task(id: attempt) { await run() }
+  }
+
+  /** The sign-in started on the computer, then asked after until it is connected or has ended. A new attempt starts afresh. */
+  private func run() async {
+    signIn = nil
+    // A computer that couldn't be asked reads as a sign-in that didn't finish.
+    var said = await store.startCursorSignIn() ?? CursorSignIn(state: .failed(why: ""))
+    signIn = said
+    while !Task.isCancelled {
+      switch said.state {
+      case .installing, .waiting: break
+      default: return
+      }
+      try? await Task.sleep(nanoseconds: UInt64(CursorSignIn.pollSeconds * 1_000_000_000))
+      if Task.isCancelled { return }
+      said = await store.cursorSignIn() ?? CursorSignIn(state: .failed(why: ""))
+      signIn = said
+    }
+  }
+}
+
+/**
  * Connect ChatGPT, as the Mac's sheet: "Copy this code", the code with
  * Copy; "Enter it on … and approve" with Open (Safari); "Waiting for you
  * to approve…", nothing more, while the server is asked every few
@@ -538,6 +641,10 @@ struct ChatGPTConnectSheet: View {
   let model: AIModelsModel
   /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
   var provider: String = AIModels.chatGPT
+  /** Opened from the chat's card for a cloud agent's coding: named as the program, Codex (13 November 2026, the founder: "it should say codex and claude code but only when it opens from the card"). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(provider) : AIModels.providerName(provider) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var signIn: ChatGPTSignIn?
@@ -551,7 +658,7 @@ struct ChatGPTConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("You're now connected to \(AIModels.providerName(provider)).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(name).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.expired), .some(.failed):
@@ -630,7 +737,7 @@ struct ChatGPTConnectSheet: View {
       }
     }
     .groupedGround()
-    .navigationTitle("Connect \(AIModels.providerName(provider))")
+    .navigationTitle("Connect \(name)")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
@@ -672,6 +779,10 @@ struct ChatGPTConnectSheet: View {
  */
 struct ClaudeConnectSheet: View {
   let model: AIModelsModel
+  /** Opened from the chat's card for a cloud agent's coding: named as the program, Claude Code (13 November 2026). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(AIModels.claude) : AIModels.providerName(AIModels.claude) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var signIn: ClaudeSignIn?
@@ -686,7 +797,7 @@ struct ClaudeConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("You're now connected to \(AIModels.providerName(AIModels.claude)).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(name).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.refused), .some(.failed):
@@ -752,7 +863,7 @@ struct ClaudeConnectSheet: View {
     .onDisappear {
       if signIn != nil, outcome == nil { Task { await model.cancelClaude() } }
     }
-    .navigationTitle("Connect Claude")
+    .navigationTitle(coding ? "Connect \(name)" : "Connect Claude")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {

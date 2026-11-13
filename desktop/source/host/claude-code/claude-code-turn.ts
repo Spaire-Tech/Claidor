@@ -93,6 +93,14 @@ export interface ClaudeCodeEvent {
   readonly [key: string]: unknown;
 }
 
+/** Claude Code's own words in one `assistant` line of its stream: the text parts, not its tools. */
+export function assistantWords(event: ClaudeCodeEvent): string {
+  if (event.type !== "assistant") return "";
+  const content = (event.message as { content?: unknown } | undefined)?.content;
+  if (!Array.isArray(content)) return "";
+  return content.filter((part): part is { type: string; text: string } => part?.type === "text" && typeof part.text === "string").map((part) => part.text).join("");
+}
+
 export type ClaudeCodeOutcome =
   /** The turn ran to its end; `text` is Claude Code's last words (sent to the person when it sent them nothing else, `claudeCodeReplyToSend`). */
   | { readonly kind: "done"; readonly sessionId: string; readonly text: string; readonly turns: number }
@@ -273,13 +281,8 @@ export async function runClaudeCodeTurn(input: ClaudeCodeTurnInput): Promise<Cla
       };
       const lines = new StreamJsonLines((event) => {
         if (typeof event.session_id === "string" && SESSION_ID.test(event.session_id)) sessionId = event.session_id;
-        if (event.type === "assistant") {
-          const content = (event.message as { content?: unknown } | undefined)?.content;
-          if (Array.isArray(content)) {
-            const words = content.filter((part): part is { type: string; text: string } => part?.type === "text" && typeof part.text === "string").map((part) => part.text).join("");
-            if (words !== "") lastText = words;
-          }
-        }
+        const words = assistantWords(event);
+        if (words !== "") lastText = words;
         if (event.type === "result") result = event;
         const limit = limited === undefined ? limitFromEvent(event) : undefined;
         if (limit !== undefined) {

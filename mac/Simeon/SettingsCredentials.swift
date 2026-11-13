@@ -202,7 +202,8 @@ struct MacSiteIconTile: View {
     .accessibilityHidden(true)
     .task(id: site) {
       guard let site else { icon = nil; return }
-      if let data = await SiteIcons.shared.icon(for: site) { icon = NSImage(data: data) }
+      // None for this site takes the last site's icon away too (a row drawn again for another login).
+      icon = await SiteIcons.shared.icon(for: site).flatMap { NSImage(data: $0) }
     }
   }
 }

@@ -61,6 +61,12 @@ body{font-family:var(--font)}
 .bar .btn:hover,.menu-acts .btn:hover{background:#2b2b2d}
 .bar .btn.soft,.menu-acts .btn.soft{background:#efeff0;color:#000}
 .bar .btn.soft:hover,.menu-acts .btn.soft:hover{background:#e5e5e7}
+/* A Windows PC (nav.py's OS_MARK puts `on-windows` on <html> before the bar is drawn): each Download for Windows, the
+   Microsoft Store's listing, shows where its Download for macOS neighbour does, at any width, and a narrow
+   window's Download for iOS does not. Over every page's own rules for these buttons, hence !important. */
+.btn.for-win{display:none!important}
+html.on-windows .btn.for-win{display:inline-flex!important}
+html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
 .menu{display:none}
 @media (max-width:1023px){
   .bar .bar-links,.bar .acts{display:none}

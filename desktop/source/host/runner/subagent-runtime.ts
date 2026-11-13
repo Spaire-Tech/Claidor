@@ -84,6 +84,8 @@ export interface BackgroundSubagentCompletion {
   readonly status: "completed" | "error";
   readonly result: string;
   readonly quietOrigin?: string;
+  /** A cloud agent's own name and words, and the program that coded (`CLOUD_AGENT_CODER`), for the line in the launching agent's chat (`CompletionRevivals.noteCloudAgentAnswers`). */
+  readonly cloudAgent?: { readonly name?: string; readonly said?: string; readonly coder?: string };
 }
 
 export interface RunningSubagentInfo {

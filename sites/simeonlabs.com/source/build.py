@@ -363,11 +363,14 @@ async def main():
     from versioning import version_assets
     home = open(f"{OUT}/index.html", encoding="utf-8").read()
     open(f"{OUT}/index.html", "w", encoding="utf-8").write(version_assets(home, OUT))
+    # The stylesheet every page shares, in place before the first page that names it by its version: written
+    # first, the legal pages linked a plain /site.css (13 November 2026).
+    import teams
+    teams.copy_site_css(OUT)
     # The Privacy Policy and the Terms (legal.py, legal/), at /privacy and /terms.
     import legal
     legal.build(OUT)
     # The starter packs' pages (teams.py, server/simeon/desktop/packs.json), at /marketplace.
-    import teams
     teams.build(OUT)
     # The Connectors page (connectors.py, the apps' connector catalogue), at /connectors.
     import connectors

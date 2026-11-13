@@ -106,6 +106,7 @@ import {
 import {
   type CatalogApp,
   type CloudAgentRead,
+  type CursorSignIn,
   type ListenerPlatform,
   appsComingSoonBuiltIn,
   catalogApp,
@@ -113,6 +114,7 @@ import {
   cloudAgentInfo,
   comingSoonFrom,
   connectedToolCount,
+  cursorSignInState,
   isComingSoon,
   isConnected,
   listenerConnectedIn,
@@ -129,6 +131,7 @@ import {
 } from './connecting'
 import { callTransport } from './elevenLabsVoice'
 import { Entry, appliedChange } from './entry'
+import { type CloudAgentLine, cloudAgentLines } from './exchanges'
 import {
   type AgentFace,
   faceForReset,
@@ -1943,6 +1946,33 @@ export class AppStore {
     }
   }
 
+  /** How Cursor's sign-in on the computer stands (`getCursorSignIn`), for the connect card's Cursor row; none when it couldn't be asked (an engine from before Cursor, or no computer). */
+  async cursorSignIn(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('getCursorSignIn')
+  }
+
+  /** Starts Cursor's sign-in on the computer (`startCursorSignIn`): its state then, with Cursor's link once its program has printed it. */
+  async startCursorSignIn(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('startCursorSignIn')
+  }
+
+  /** Signs Cursor out on the computer (`signOutCursor`). */
+  async signOutCursor(): Promise<CursorSignIn | undefined> {
+    return this.cursorCommand('signOutCursor')
+  }
+
+  private async cursorCommand(
+    command: string,
+  ): Promise<CursorSignIn | undefined> {
+    const backend = this.backend
+    if (!backend) return undefined
+    try {
+      return cursorSignInState(await backend.command(command, {}))
+    } catch {
+      return undefined
+    }
+  }
+
   /** How GitHub's sign-in on the computer stands (`getGitHubSignIn`), for the Connect GitHub card; none when it couldn't be asked. */
   async gitHubSignIn(): Promise<JSONValue | undefined> {
     const backend = this.backend
@@ -1969,6 +1999,21 @@ export class AppStore {
     }
     const info = cloudAgentInfo(answer)
     return info ? { kind: 'info', info } : { kind: 'empty' }
+  }
+
+  /** A cloud agent's conversation (`getCloudAgentConversation`): its lines, or none when it couldn't be asked or the computer knows none. */
+  async cloudAgentConversation(
+    bcId: string,
+  ): Promise<CloudAgentLine[] | undefined> {
+    const backend = this.backend
+    if (!backend || bcId === '') return undefined
+    try {
+      return cloudAgentLines(
+        await backend.command('getCloudAgentConversation', { bcId }),
+      )
+    } catch {
+      return undefined
+    }
   }
 
   // MARK: Step 3d's flight cards: the flights found and the travellers'

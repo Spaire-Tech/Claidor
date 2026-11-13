@@ -31,6 +31,12 @@ final class MacConnector {
   }
 
   private(set) var asking: Ask?
+  /**
+   * The AI provider whose sign-in sheet a chat card opened (ChatGPT's code
+   * sheet, Claude's), or none (13 November 2026): the sheets AI Models
+   * opens, here over the window (`ConnectConsentLayer`).
+   */
+  var modelSignIn: String?
   /** The app whose sign-in sheet is open (its name), or none. */
   private(set) var connecting: String?
   @ObservationIgnored private var session: ASWebAuthenticationSession?
@@ -50,6 +56,18 @@ final class MacConnector {
   /** A consent of its own (ChatGPT's and Claude's plans, `ConnectConsent(modelProvider:)`), then `go` on Connect. */
   func ask(consent: ConnectConsent, then go: @escaping @MainActor () async -> Void) {
     asking = Ask(consent: consent, go: go)
+  }
+
+  /**
+   * Connect on the chat's card that offers Claude Code and Codex
+   * (`ModelConnectCardView`): the consent and then the plan's own sign-in
+   * sheet, both under the program's name and logo (13 November 2026, the
+   * founder: "it should say codex and claude code but only when it opens
+   * from the card"). Settings › AI Models opens the same two under the
+   * plan's name.
+   */
+  func connectModel(_ provider: String) {
+    ask(consent: ConnectConsent(codingProvider: provider)) { [weak self] in self?.modelSignIn = provider }
   }
 
   func cancel() { asking = nil }
@@ -305,9 +323,11 @@ final class SignInSheetState: @unchecked Sendable {
 /** The consent over the whole window, the chat dimmed behind it (as Deep Links and About sit). */
 struct ConnectConsentLayer: View {
   @Environment(\.colorScheme) private var scheme
+  @Environment(AppStore.self) private var store
 
   var body: some View {
     let connector = MacConnector.shared
+    let model = store.aiModels
     ZStack {
       if let ask = connector.asking {
         let look = Look(scheme)
@@ -322,6 +342,17 @@ struct ConnectConsentLayer: View {
     }
     .animation(.easeOut(duration: 0.18), value: connector.asking?.id)
     .ignoresSafeArea()
+    // A chat card's Connect for Claude Code or Codex: the plan's own sign-in sheet, as AI Models opens it, under the program's name.
+    .sheet(isPresented: Binding(get: { connector.modelSignIn != nil && connector.modelSignIn != AIModels.claude && connector.modelSignIn != ModelConnectCard.cursor }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacChatGPTConnectSheet(model: model, provider: connector.modelSignIn ?? AIModels.chatGPT, coding: true)
+    }
+    // Cursor is signed in on the cloud computer, on Cursor's own page: a sheet of its own (13 November 2026).
+    .sheet(isPresented: Binding(get: { connector.modelSignIn == ModelConnectCard.cursor }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacCursorConnectSheet()
+    }
+    .sheet(isPresented: Binding(get: { connector.modelSignIn == AIModels.claude }, set: { if !$0 { connector.modelSignIn = nil } })) {
+      MacClaudeConnectSheet(model: model, coding: true)
+    }
   }
 }
 
@@ -386,8 +417,17 @@ private struct ConnectConsentDialog: View {
       .padding(16)
   }
 
-  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter); an app by its icon or tile. */
+  /** A program by its own logo, bare and without the tiles' shadow (`ProgramLogo`: Codex's or Claude Code's, from the chat's card); anything else on its tile. */
   @ViewBuilder private var logo: some View {
+    if let program = consent.programLogo {
+      ProgramLogo(name: program, size: 64)
+    } else {
+      tile.shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+    }
+  }
+
+  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter); an app by its icon or tile. */
+  @ViewBuilder private var tile: some View {
     if let provider = consent.provider, let icon = NSImage(named: "Providers/\(provider)") {
       AppIconImage(icon: icon, side: 64, look: look)
     } else {
@@ -398,7 +438,6 @@ private struct ConnectConsentDialog: View {
   private var content: some View {
     VStack(spacing: 0) {
       logo
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
         .padding(.top, 36)
         .accessibilityHidden(true)
       Text(consent.title)

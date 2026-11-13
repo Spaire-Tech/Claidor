@@ -397,6 +397,113 @@ export class AgentToAgentMessaging {
       void this.tm.roster.emitAgentUpdate(session.id);
     }
   }
+  /** Which agent asked each cloud agent last, for its first words back (`noteCloudAgentSaid`); the kept wake says the same after a restart. */
+  private readonly cloudAgentAskers = new Map<string, string>();
+  /**
+   * What an agent asked a cloud agent, at a launch or a follow-up, written
+   * into that agent's chat as its message to it ("Messaged", as a message to
+   * a teammate is; 13 November 2026, the founder: "message to and message
+   * from, like messaging agents work"). A line of the chat only: the launch
+   * itself went to the server. Never in the way of the launch.
+   */
+  noteCloudAgentAsked(
+    agentId: string,
+    cloudAgent: { readonly id: string; readonly name: string; readonly coder?: string },
+    text: string,
+  ): void {
+    try {
+      const words = text.trim();
+      if (cloudAgent.id === "" || words === "") return;
+      this.cloudAgentAskers.set(cloudAgent.id, agentId);
+      this.appendAgentOutboundEntry(
+        agentId,
+        {
+          id: cloudAgent.id,
+          name: cloudAgent.name.trim(),
+          kind: "cloud-agent",
+          ...(cloudAgent.coder === undefined ? {} : { coder: cloudAgent.coder }),
+        },
+        words,
+        Date.now(),
+      );
+    } catch {
+      /* the chat's line is extra */
+    }
+  }
+  /**
+   * A cloud agent's first words in a turn ("On it. I'll read the README
+   * first."), written into the chat of the agent that asked it as its
+   * message back ("Message from"), as a teammate's answer is. The agent that
+   * asked is the one `noteCloudAgentAsked` named, else the one whose wake is
+   * kept for it (after a restart). A line of the chat only: nobody is woken;
+   * the agent is woken when the cloud agent ends. True when a line was written.
+   */
+  async noteCloudAgentSaid(
+    cloudAgent: { readonly id: string; readonly name: string; readonly coder?: string },
+    text: string,
+  ): Promise<boolean> {
+    try {
+      const words = text.trim();
+      if (cloudAgent.id === "" || words === "") return false;
+      const kept = (this.tm.pendingWakeStore?.listPending?.() ?? []) as readonly { agentId?: string; kind?: string; workId?: string }[];
+      const agentId = this.cloudAgentAskers.get(cloudAgent.id)
+        ?? kept.find((marker) => marker.kind === "cloud-agent" && marker.workId === cloudAgent.id)?.agentId;
+      if (agentId === undefined || this.tm.sessions.deletedAgentIds?.has(agentId) === true) return false;
+      const session = this.tm.sessions.liveSessions.get(agentId) ?? await this.tm.sessions.resolveBackgroundSession(agentId);
+      if (session == null) return false;
+      this.appendCloudAgentAnswer(session, { id: cloudAgent.id, name: cloudAgent.name.trim(), ...(cloudAgent.coder === undefined ? {} : { coder: cloudAgent.coder }) }, words, Date.now());
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  /**
+   * A cloud agent's words, written into the chat of the agent that started
+   * it as a message from it (13 November 2026; the founder: the agent "talks
+   * to the cloud agent the same way it talks to another agent"): its first
+   * words in a turn (`noteCloudAgentSaid`) and its report at the end
+   * (`CompletionRevivals.noteCloudAgentAnswers`). The apps
+   * draw "Message from" with its name, and open its conversation from there.
+   * A line of the chat only: the agent itself is woken with the report apart
+   * (`runSubagentRevival`), and a cloud agent is no conversation partner.
+   * `coder` is the program that coded ("claude-code", "codex"): the apps
+   * draw its mascot as the cloud agent's picture.
+   */
+  appendCloudAgentAnswer(
+    session: any,
+    cloudAgent: {
+      readonly id: string;
+      readonly name: string;
+      readonly coder?: string;
+    },
+    text: string,
+    timestampMs: number,
+  ): void {
+    const isActive = session.id === this.tm.sessions.activeSession?.id;
+    const entries: readonly any[] = isActive ? getTranscript() : session.db.getTranscriptEntries();
+    // Said once: a turn whose first words are its whole answer isn't written twice.
+    const last = entries.findLast((entry) => entry?.kind === "message" && (entry.fromAgent?.id === cloudAgent.id || entry.toAgent?.id === cloudAgent.id));
+    if (last?.fromAgent?.id === cloudAgent.id && last.content === text) return;
+    const entry = {
+      kind: "message",
+      id: nextEntryId(entries, "user-message"),
+      role: "user",
+      content: text,
+      isStreaming: false,
+      timestampMs,
+      fromAgent: {
+        id: cloudAgent.id,
+        name: cloudAgent.name,
+        kind: "cloud-agent",
+        ...(cloudAgent.coder === undefined ? {} : { coder: cloudAgent.coder }),
+      },
+    };
+    if (isActive) this.tm.appendEntry(entry);
+    else {
+      session.db.appendTranscriptEntry(entry);
+      void this.tm.roster.emitAgentUpdate(session.id);
+    }
+  }
   appendAgentOutboundEntry(
     fromAgentId: string,
     toAgent: { readonly kind?: string; readonly [key: string]: unknown },

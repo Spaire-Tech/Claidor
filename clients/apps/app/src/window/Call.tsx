@@ -33,9 +33,17 @@ import {
   stampText,
   voiceChatLabel,
 } from '../core/chat'
-import { type ExchangeRow, exchangeRows, menuOrder } from '../core/exchanges'
+import { type CloudAgentInfo, cloudAgentNextPoll } from '../core/connectCards'
+import {
+  type CloudAgentLine,
+  type ExchangeRow,
+  cloudAgentRows,
+  exchangeRows,
+  menuOrder,
+} from '../core/exchanges'
+import { cloudAgentMascot } from '../core/externalAgents'
 import { pictureURL } from '../core/faces'
-import type { Agent, Party } from '../core/models'
+import { type Agent, type Party, shownName } from '../core/models'
 import type { AppStore } from '../core/store'
 import { followCallWindow } from '../desktop/callWindow'
 import { desktop } from '../desktop/desktop'
@@ -46,6 +54,7 @@ import { classes } from './classes'
 import { copyText } from './clipboard'
 import { ContextMenu } from './ContextMenu'
 import { somethingOver } from './Dialogs'
+import { mascotURL } from './mascots'
 import { Glyph as BarGlyph, useDismiss } from './MessageActions'
 import {
   MentionContext,
@@ -53,7 +62,7 @@ import {
   MessageBlocks,
 } from './MessageText'
 import { useWatched } from './useStore'
-import { useWindowModel } from './windowModel'
+import { type ChatCover, useWindowModel } from './windowModel'
 
 // MARK: Calling
 
@@ -86,6 +95,62 @@ export type BannerSource = Pick<
   | 'subscribe'
   | 'getVersion'
 >
+
+/**
+ * A cloud agent where an agent's picture would be (`CloudAgentMark`; 13
+ * November 2026, the founder: "it should be whatever agent is used. either
+ * claude code or codex"): the mascot of the program that coded, Claude
+ * Code's or Codex's, on Connect apps' tile (white, #2c2c2e on dark, a
+ * hairline), round as a picture.
+ */
+function CloudMark({ party, size }: { party: Party; size: number }) {
+  return (
+    <span
+      className="cloud-mark"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <img src={mascotURL(cloudAgentMascot(party.coder))} alt="" />
+    </span>
+  )
+}
+
+/** A party's picture: an agent's own, or a cloud agent's cloud. */
+function PartyMark({
+  store,
+  party,
+  size,
+}: {
+  store: Pick<BannerSource, 'agent' | 'agents'>
+  party: Party
+  size: number
+}) {
+  return party.cloudAgent ? (
+    <CloudMark party={party} size={size} />
+  ) : (
+    <MarkOf store={store} id={party.id} size={size} />
+  )
+}
+
+/** The cover a party's page is: two agents' messages, or a cloud agent's conversation. */
+function exchangeCover(
+  agentId: string,
+  peer: Party,
+): Extract<ChatCover, { kind: 'exchange' }> {
+  return {
+    kind: 'exchange',
+    agentId,
+    peerId: peer.id,
+    ...(peer.cloudAgent
+      ? {
+          cloudAgent: {
+            name: peer.name,
+            ...(peer.coder == null ? {} : { coder: peer.coder }),
+          },
+        }
+      : {}),
+  }
+}
 
 /** An agent's picture by its id (`AgentIdMark`): its own, or the quiet disc for one the app doesn't know. */
 function MarkOf({
@@ -656,7 +721,9 @@ export function CallRecordView({
  * "Messaged", "Message from" or "4 messages with", then the agent, or "2
  * agents" over their pictures. One agent's chip opens their messages over
  * the chat; with several, a menu of them ("Agents in this exchange") does,
- * at the pointer.
+ * at the pointer. A cloud agent's report is a "Message from" line too (13
+ * November 2026), under its own name with Claude Code's or Codex's mascot
+ * for its picture, and its chip opens its conversation.
  */
 export function ExchangeChip({
   store,
@@ -670,7 +737,8 @@ export function ExchangeChip({
   const model = useWindowModel()
   const [menu, setMenu] = useState<{ x: number; y: number }>()
   const peers = exchangePeers(exchange)
-  const title = peers.length === 1 ? peers[0]!.name : t`${peers.length} agents`
+  const title =
+    peers.length === 1 ? shownName(peers[0]!) : t`${peers.length} agents`
   const help =
     peers.length === 1 ? t`Open ${title}'s messages` : t`${title}, show list`
   return (
@@ -683,7 +751,7 @@ export function ExchangeChip({
         aria-haspopup={peers.length > 1 ? 'menu' : undefined}
         onClick={(event) => {
           if (peers.length === 1)
-            model.coverChat({ kind: 'exchange', agentId, peerId: peers[0]!.id })
+            model.coverChat(exchangeCover(agentId, peers[0]!))
           else if (peers.length > 1) {
             // From the keys (Return, Space) there is no pointer: the menu opens under the chip.
             if (event.detail === 0) {
@@ -695,7 +763,7 @@ export function ExchangeChip({
       >
         <span className="marks">
           {peers.slice(0, 3).map((peer) => (
-            <MarkOf key={peer.id} store={store} id={peer.id} size={16} />
+            <PartyMark key={peer.id} store={store} party={peer} size={16} />
           ))}
         </span>
         <span className="chip-title">{title}</span>
@@ -706,9 +774,7 @@ export function ExchangeChip({
           peers={menuOrder(peers)}
           at={menu}
           close={() => setMenu(undefined)}
-          pick={(peer) =>
-            model.coverChat({ kind: 'exchange', agentId, peerId: peer.id })
-          }
+          pick={(peer) => model.coverChat(exchangeCover(agentId, peer))}
         />
       )}
     </>
@@ -793,9 +859,9 @@ function PeersMenu({
             }}
           >
             <span className="menu-glyph peer-mark">
-              <MarkOf store={store} id={peer.id} size={18} />
+              <PartyMark store={store} party={peer} size={18} />
             </span>
-            <span className="menu-label">{peer.name}</span>
+            <span className="menu-label">{shownName(peer)}</span>
           </button>
         ))}
       </div>
@@ -845,6 +911,7 @@ export function ChatCoverView({
       store={store}
       agentId={agentId}
       peerId={cover.peerId}
+      cloudAgent={cover.cloudAgent}
       close={close}
     />
   )
@@ -926,50 +993,110 @@ function CopyMenuView({ menu, close }: { menu: CopyMenu; close: () => void }) {
  * the head (32) and over the foot (40) once there is more to see. A
  * message's actions are More alone with Copy; its author's name does not
  * open their chat.
+ *
+ * A cloud agent's conversation is the same page (13 November 2026; the
+ * founder: the agent "talks to the cloud agent the same way it talks to
+ * another agent"): opened from its card (Open) or its "Message from" line,
+ * its lines are what the agent asked it, what it said along the way and its
+ * answers, read from the computer (`getCloudAgentConversation`) and again
+ * every five seconds while it works, as its card asks; it stays at the
+ * newest line while the person is there.
  */
 function ExchangeView({
   store,
   agentId,
   peerId,
+  cloudAgent,
   close,
 }: {
   store: AppStore
   agentId: string
   peerId: string
+  cloudAgent?: { name: string; coder?: string }
   close: () => void
 }) {
   useWatched(store)
   useCoverKeys(close, true)
   const agent = store.agent(agentId)
   const entries = store.transcripts[agentId]
-  const rows = useMemo(
-    () =>
-      exchangeRows(
-        entries ?? [],
-        { id: agentId, name: agent?.name ?? '' },
-        peerId,
-      ),
-    [entries, agentId, agent?.name, peerId],
+  const isCloud = cloudAgent != null
+  const cloudName = cloudAgent?.name ?? ''
+  const coder = cloudAgent?.coder
+  // The cloud agent as a party of the page: its name, and the program that coded for its picture.
+  const cloud = useMemo<Party>(
+    () => ({
+      id: peerId,
+      name: cloudName,
+      cloudAgent: true,
+      ...(coder == null ? {} : { coder }),
+    }),
+    [peerId, cloudName, coder],
   )
-  // The peer as the chat named it, else as the roster does.
-  const peerName =
-    (entries ?? []).find((entry) => entry.teammate?.id === peerId)?.teammate
-      ?.name ||
-    store.agent(peerId)?.name ||
-    ''
+  const [cloudLines, setCloudLines] = useState<readonly CloudAgentLine[]>([])
+  useEffect(() => {
+    if (!isCloud) return
+    let stopped = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let known: CloudAgentInfo | undefined
+    const ask = async () => {
+      // Its state first: once that says it is done, the lines read after it are all of them.
+      const read = await store.cloudAgent(peerId)
+      if (stopped) return
+      if (read.kind === 'info') known = read.info
+      const lines = await store.cloudAgentConversation(peerId)
+      if (stopped) return
+      if (lines) setCloudLines(lines)
+      const wait = cloudAgentNextPoll(read, known)
+      if (wait != null) timer = setTimeout(() => void ask(), wait * 1000)
+    }
+    void ask()
+    return () => {
+      stopped = true
+      clearTimeout(timer)
+    }
+  }, [store, peerId, isCloud])
+  const rows = useMemo(() => {
+    const me = { id: agentId, name: agent?.name ?? '' }
+    return isCloud
+      ? cloudAgentRows(cloudLines, me, cloud)
+      : exchangeRows(entries ?? [], me, peerId)
+  }, [entries, agentId, agent?.name, peerId, isCloud, cloud, cloudLines])
+  const peer: Party = isCloud
+    ? cloud
+    : {
+        id: peerId,
+        // The peer as the chat named it, else as the roster does.
+        name:
+          (entries ?? []).find((entry) => entry.teammate?.id === peerId)
+            ?.teammate?.name ||
+          store.agent(peerId)?.name ||
+          '',
+      }
+  const peerName = shownName(peer)
   const box = useOpensAtNewest()
+  // A cloud agent's lines arrive after the page opens, and more while it works: the page keeps to the newest while the person is there.
+  const atNewest = useRef(true)
   const [fades, setFades] = useState({ top: false, bottom: false })
   const [menu, setMenu] = useState<CopyMenu>()
   const measure = () => {
     const element = box.current
     if (!element) return
+    atNewest.current =
+      element.scrollTop + element.clientHeight >= element.scrollHeight - 24
     setFades({
       top: element.scrollTop > 1,
       bottom:
         element.scrollTop + element.clientHeight < element.scrollHeight - 1,
     })
   }
-  useLayoutEffect(measure, [rows, box])
+  useLayoutEffect(() => {
+    const element = box.current
+    if (element && isCloud && atNewest.current)
+      element.scrollTop = element.scrollHeight
+    measure()
+    // `measure` reads the box as it is now; it is not a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, box, isCloud])
   const names = useMemo(
     () =>
       store.agents
@@ -1011,9 +1138,9 @@ function ExchangeView({
         className="exchange-head"
         aria-label={t`Agent exchange between ${agentName} and ${peerName}`}
       >
-        <Participant store={store} id={agentId} name={agentName} />
+        <Participant store={store} party={{ id: agentId, name: agentName }} />
         <ArrowsGlyph />
-        <Participant store={store} id={peerId} name={peerName} />
+        <Participant store={store} party={peer} />
       </header>
       <ReadOnlyNotice close={close} />
       {menu && <CopyMenuView menu={menu} close={() => setMenu(undefined)} />}
@@ -1022,18 +1149,11 @@ function ExchangeView({
 }
 
 /** One of the exchange's two agents in its head: its picture (20) and its name in a pill, 4 apart. */
-function Participant({
-  store,
-  id,
-  name,
-}: {
-  store: AppStore
-  id: string
-  name: string
-}) {
+function Participant({ store, party }: { store: AppStore; party: Party }) {
+  const name = shownName(party)
   return (
     <span className="exchange-party">
-      <MarkOf store={store} id={id} size={20} />
+      <PartyMark store={store} party={party} size={20} />
       <span className="name-pill" title={name}>
         {name}
       </span>
@@ -1080,10 +1200,10 @@ function ExchangeMessage({
   return (
     <div className="cover-row bubble-row group">
       <span className="gutter">
-        {row.last && <MarkOf store={store} id={row.sender.id} size={22} />}
+        {row.last && <PartyMark store={store} party={row.sender} size={22} />}
       </span>
       <div className="group-column">
-        {row.first && <span className="author">{row.sender.name}</span>}
+        {row.first && <span className="author">{shownName(row.sender)}</span>}
         <div
           className="message"
           onContextMenu={(event) => {

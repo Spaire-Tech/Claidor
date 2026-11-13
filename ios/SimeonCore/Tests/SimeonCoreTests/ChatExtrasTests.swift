@@ -626,6 +626,8 @@ final class CloudAgentTests: XCTestCase {
     XCTAssertEqual(CloudAgentInfo(["status": "finished", "filesChanged": 1])?.statusLabel, "Done")
     XCTAssertEqual(CloudAgentInfo(["status": "finished", "filesChanged": 1])?.changedLabel, "1 file changed")
     XCTAssertEqual(CloudAgentInfo(["status": "odd"])?.statusLabel, "Status unavailable")
+    // One that failed says so in plain words ("Error" until 13 November 2026).
+    XCTAssertEqual(CloudAgentInfo(["status": "error"])?.statusLabel, "Failed")
     XCTAssertNil(CloudAgentInfo(nil))
     XCTAssertEqual(CloudAgentInfo.webURL("bc 42")?.absoluteString, "https://app.simeonlabs.com/agents/bc%2042")
     XCTAssertEqual(info?.pullState, "open")
@@ -643,6 +645,85 @@ final class CloudAgentTests: XCTestCase {
     XCTAssertNil(CloudAgentInfo.nextPoll(after: .empty, known: nil))
     XCTAssertEqual(CloudAgentInfo.nextPoll(after: .failed, known: nil), 60)
     XCTAssertEqual(CloudAgentInfo.nextPoll(after: .failed, known: running), 5)
+  }
+
+  /**
+   * The cloud agent's conversation (13 November 2026): its report is a
+   * "Message from" line that names it, and its page is what it was asked,
+   * what it said along the way and its answers, on the page two agents'
+   * messages have.
+   */
+  func testItsReportIsAMessageFromItAndItsConversationIsAPage() {
+    // The line in the chat: a message from a cloud agent, which is not one of the person's agents.
+    let report = Entry(["kind": "message", "id": "m1", "role": "user", "content": "Opened pull request #7.", "fromAgent": ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent", "coder": "claude-code"]])!
+    XCTAssertEqual(report.fromAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code"))
+    XCTAssertEqual(report.fromAgent?.shownName, "Fix the login")
+    guard case .teammates("m1", let exchange, _)? = Chat.rows([report]).last else { return XCTFail() }
+    XCTAssertEqual(exchange, .single(inbound: true, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")))
+    // Its picture is the mascot of the program that coded: Claude Code's, Codex's, and Claude Code's when the computer doesn't say or names another.
+    XCTAssertEqual(report.fromAgent?.mascot, "claudecode")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true, coder: "codex").mascot, "codex")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true).mascot, "claudecode")
+    XCTAssertEqual(Party(id: "bc-1", name: "", cloudAgent: true, coder: "gemini").mascot, "claudecode")
+    XCTAssertNil(Party(id: "iris", name: "Iris").mascot)
+    XCTAssertNil(Party(id: "iris", name: "Iris", coder: "codex").coder)
+    XCTAssertEqual(CloudAgentInfo(["name": "Fix the login", "coder": "codex"])?.party("bc-42"), Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "codex"))
+    XCTAssertEqual(CloudAgentInfo(["name": "Fix the login"])?.party("bc-42").mascot, "claudecode")
+    XCTAssertEqual(exchange.label, "Message from")
+    // One the computer gave no name is "Cloud agent"; a teammate's kind changes nothing.
+    let unnamed = Entry(["kind": "message", "id": "m2", "role": "user", "content": "Done.", "fromAgent": ["id": "bc-43", "name": "", "kind": "cloud-agent"]])!
+    XCTAssertEqual(unnamed.fromAgent?.shownName, "Cloud agent")
+    let teammate = Entry(["kind": "message", "id": "m3", "role": "assistant", "content": "hi", "toAgent": ["id": "iris", "name": "Iris", "kind": "agent"]])!
+    XCTAssertEqual(teammate.toAgent, Party(id: "iris", name: "Iris"))
+    XCTAssertEqual(Party(id: "iris", name: "").shownName, "")
+
+    // The whole exchange reads as one with a teammate (13 November 2026): the launch is the agent's message to the
+    // cloud agent ("Messaged"), its first words fold in with it ("2 messages with"), and its card comes after its report.
+    let asker: JSON = ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent", "coder": "claude-code"]
+    let asked = Entry(["kind": "message", "id": "a1", "role": "assistant", "content": "Fix the login page.", "toAgent": asker])!
+    XCTAssertEqual(asked.toAgent, Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code"))
+    guard case .teammates("a1", let launch, _)? = Chat.rows([asked]).last else { return XCTFail() }
+    XCTAssertEqual(launch, .single(inbound: false, peer: Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")))
+    XCTAssertEqual(launch.label, "Messaged")
+    let onIt = Entry(["kind": "message", "id": "f1", "role": "user", "content": "On it. I'll read the sign-in code first.", "fromAgent": asker])!
+    guard case .teammates(_, let both, let said)? = Chat.rows([asked, onIt]).last else { return XCTFail() }
+    XCTAssertEqual(both, .thread(count: 2, peers: [Party(id: "bc-42", name: "Fix the login", cloudAgent: true, coder: "claude-code")]))
+    XCTAssertEqual(both.label, "2 messages with")
+    XCTAssertEqual(said.map(\.id), ["a1", "f1"])
+    let itsCard = Entry(["kind": "send-message", "id": "c1", "message": ["type": "cloud-agent", "bcId": "bc-42"]])!
+    let whole = Chat.rows([asked, onIt, Entry(["kind": "send-message", "id": "t1", "message": ["type": "text", "content": "It's on it."]])!, report, itsCard])
+    guard case .cloudAgent("c1", "bc-42")? = whole.last else { return XCTFail() }
+    XCTAssertEqual(whole.filter { if case .teammates = $0 { return true } else { return false } }.count, 2, "the launch's exchange, then its report, each a line of the chat")
+
+    // The computer's answer: empty lines and unknown roles are left out; nothing answered is nil.
+    let answer: JSON = ["bcId": "bc-42", "messages": [
+      ["id": "job-1-user", "role": "prompt", "text": "Fix the login.", "atMs": 1_700_000_000_000],
+      ["id": "update-job-1-0", "role": "update", "text": "Reading the sign-in code.", "atMs": 1_700_000_060_000],
+      ["id": "update-job-1-1", "role": "update", "text": "   "],
+      ["id": "x", "role": "odd", "text": "no"],
+      ["id": "job-1-0", "role": "answer", "text": "Opened pull request #7.", "atMs": 1_700_000_120_000],
+      ["id": "job-2-user", "role": "prompt", "text": "Add a test too."],
+    ]]
+    let lines = CloudAgentLine.lines(answer)!
+    XCTAssertEqual(lines.map(\.id), ["job-1-user", "update-job-1-0", "job-1-0", "job-2-user"])
+    XCTAssertEqual(lines.map(\.role), [.prompt, .update, .answer, .prompt])
+    XCTAssertEqual(lines[0].date, Date(timeIntervalSince1970: 1_700_000_000))
+    XCTAssertNil(lines[3].date)
+    XCTAssertNil(CloudAgentLine.lines(nil))
+    XCTAssertNil(CloudAgentLine.lines(["bcId": "bc-42"]))
+    XCTAssertEqual(CloudAgentLine.lines(["messages": []]), [])
+
+    // The page: the agent's side for what it asked, the cloud agent's for the rest; one stamp, runs joined.
+    let leo = Party(id: "leo", name: "Leo"), cloud = Party(id: "bc-42", name: "Fix the login", cloudAgent: true)
+    let rows = Chat.cloudAgentRows(lines, agent: leo, cloudAgent: cloud)
+    XCTAssertEqual(rows, [
+      .stamp(id: "stamp-job-1-user", date: Date(timeIntervalSince1970: 1_700_000_000)),
+      .message(id: "job-1-user", sender: leo, text: "Fix the login.", first: true, last: true),
+      .message(id: "update-job-1-0", sender: cloud, text: "Reading the sign-in code.", first: true, last: false),
+      .message(id: "job-1-0", sender: cloud, text: "Opened pull request #7.", first: false, last: true),
+      .message(id: "job-2-user", sender: leo, text: "Add a test too.", first: true, last: true),
+    ])
+    XCTAssertEqual(Chat.cloudAgentRows([], agent: leo, cloudAgent: cloud), [])
   }
 
   /** The plan's limit stopped the work (11 November 2026): "Paused", not asked again. */
@@ -665,6 +746,17 @@ final class GitHubSignInCardTests: XCTestCase {
     XCTAssertEqual(GitHubSignInCard.title, "Connect GitHub")
     XCTAssertEqual(GitHubSignInCard.connectedLabel("octo"), "Connected as octo")
     XCTAssertEqual(GitHubSignInCard.connectedLabel(nil), "Connected")
+    // Once connected the card reads as a connected app's: "GitHub", the account under it (13 November 2026).
+    XCTAssertEqual(GitHubSignInCard.title(nil), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.waiting), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.expired), "Connect GitHub")
+    XCTAssertEqual(GitHubSignInCard.title(.connected(login: "octo")), "GitHub")
+    XCTAssertEqual(GitHubSignInCard.line(nil), "Enter this code on GitHub to connect it to your computer.")
+    XCTAssertEqual(GitHubSignInCard.line(.waiting), "Enter this code on GitHub to connect it to your computer.")
+    XCTAssertEqual(GitHubSignInCard.line(.connected(login: "octo")), "octo")
+    XCTAssertEqual(GitHubSignInCard.line(.connected(login: nil)), "")
+    XCTAssertEqual(GitHubSignInCard.line(.expired), "This code expired. Ask your agent for a new one.")
+    XCTAssertEqual(GitHubSignInCard.line(.failed), "GitHub couldn't be connected.")
 
     XCTAssertEqual(card.state(["state": "waiting", "code": "WXYZ-1234"], nowMs: 1_000), .waiting)
     XCTAssertEqual(card.state(["state": "waiting", "code": "ABCD-0000"], nowMs: 1_000), .expired, "a newer sign-in waits on another code")
@@ -685,6 +777,87 @@ final class GitHubSignInCardTests: XCTestCase {
     XCTAssertNil(GitHubSignInCard(["code": "not a code"]))
     let entry = Entry(["kind": "send-message", "id": "g2", "message": ["type": "github-sign-in"]])!
     guard case .notice? = Chat.rows([entry]).last else { return XCTFail("a card it can't read says so") }
+  }
+}
+
+/** The card that offers Claude and ChatGPT to connect (`model-connect`, 13 November 2026): its rows, their words, and when the accounts are read again. */
+final class ModelConnectCardTests: XCTestCase {
+  func testTheCardItsRowsAndTheirWords() {
+    let entry = Entry(["kind": "send-message", "id": "m1", "message": ["type": "model-connect", "providers": ["claude", "chatgpt"]]])!
+    guard case .modelConnect("m1", let card)? = Chat.rows([entry]).last else { return XCTFail() }
+    XCTAssertEqual(card.providers, ["claude", "chatgpt"])
+    XCTAssertEqual(Chat.rows([entry]).last?.kind, "model-connect")
+    XCTAssertEqual(Chat.rows([entry]).last?.side, .agent(nil))
+
+    // The card names the programs (13 November 2026, the founder: "its connect codex or connect claude code"); the plans' names stay Settings'.
+    XCTAssertEqual(ModelConnectCard.title("claude", connected: false), "Connect Claude Code")
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: false), "Connect Codex")
+    XCTAssertEqual(ModelConnectCard.line("claude", connected: false), "Runs on your Claude plan.")
+    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: false), "Runs on your ChatGPT plan.")
+    // Once connected a row reads as a connected app's: the name alone.
+    XCTAssertEqual(ModelConnectCard.title("chatgpt", connected: true), "Codex")
+    XCTAssertEqual(ModelConnectCard.title("claude", connected: true), "Claude Code")
+    XCTAssertEqual(ModelConnectCard.line("chatgpt", connected: true), "")
+    XCTAssertEqual(ModelConnectCard.connectLabel, "Connect")
+    XCTAssertEqual(ModelConnectCard.preview, "Connect Claude Code, Codex, Cursor")
+    XCTAssertEqual(card.previewText, "Connect Claude Code, Codex", "the chat's preview names what this card offers")
+    XCTAssertEqual(ModelConnectCard.program("claude"), "Claude Code")
+    XCTAssertEqual(ModelConnectCard.program("chatgpt"), "Codex")
+    // Each program's own logo, the cut-outs the apps ship (`Mascots/`).
+    XCTAssertEqual(ModelConnectCard.logo("claude"), "claudecode")
+    XCTAssertEqual(ModelConnectCard.logo("chatgpt"), "codex")
+
+    XCTAssertEqual(ModelConnectCard.nextPoll(anyConnected: false), 4, "the accounts read again while both rows wait")
+    XCTAssertNil(ModelConnectCard.nextPoll(anyConnected: true))
+  }
+
+  func testOnlyTheTwoItKnowsAndBothWhenItNamesNone() {
+    XCTAssertEqual(ModelConnectCard(["providers": ["chatgpt", "gemini", "chatgpt", 7]])?.providers, ["chatgpt"], "a provider no cloud agent codes on is left out, one named twice shown once")
+    XCTAssertEqual(ModelConnectCard(["providers": ["something-new"]])?.providers, ["claude", "chatgpt", "cursor"])
+    XCTAssertEqual(ModelConnectCard([:])?.providers, ["claude", "chatgpt", "cursor"])
+  }
+
+  /** Cursor, the third program (13 November 2026, the founder: "Cursor now"): its row, and its sign-in read from the cloud computer. */
+  func testCursorIsTheThirdProgramSignedInOnTheComputer() {
+    let entry = Entry(["kind": "send-message", "id": "m2", "message": ["type": "model-connect", "providers": ["cursor"]]])!
+    guard case .modelConnect("m2", let card)? = Chat.rows([entry]).last else { return XCTFail() }
+    XCTAssertEqual(card.providers, ["cursor"], "a launch that named Cursor offers Cursor alone")
+    XCTAssertEqual(card.previewText, "Connect Cursor")
+    XCTAssertEqual(ModelConnectCard.title("cursor", connected: false), "Connect Cursor")
+    XCTAssertEqual(ModelConnectCard.title("cursor", connected: true), "Cursor")
+    XCTAssertEqual(ModelConnectCard.line("cursor", connected: false), "Runs on your Cursor plan.")
+    XCTAssertEqual(ModelConnectCard.logo("cursor"), "cursor")
+    XCTAssertTrue(ModelConnectCard.onComputer("cursor"))
+    XCTAssertFalse(ModelConnectCard.onComputer("claude"))
+    XCTAssertFalse(ModelConnectCard.onComputer("chatgpt"))
+    // A cloud agent that codes in Cursor is drawn with Cursor's logo.
+    XCTAssertEqual(ExternalAgents.cloudAgentMascot("cursor"), "cursor")
+
+    // The computer's word on the sign-in.
+    XCTAssertEqual(CursorSignIn(["state": "none"]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "installing"]).state, .installing)
+    XCTAssertEqual(CursorSignIn(["state": "connected"]).state, .connected)
+    XCTAssertTrue(CursorSignIn(["state": "connected"]).connected)
+    XCTAssertEqual(CursorSignIn(["state": "failed", "why": "ended"]).state, .failed(why: "ended"))
+    let waiting = CursorSignIn(["state": "waiting", "url": "https://cursor.com/loginDeepControl?challenge=a&uuid=b", "expiresAtMs": 1_794_000_000_000])
+    XCTAssertEqual(waiting.state, .waiting(url: URL(string: "https://cursor.com/loginDeepControl?challenge=a&uuid=b")!, expiresAt: Date(timeIntervalSince1970: 1_794_000_000)))
+    // Only a page on Cursor's own site is ever opened.
+    XCTAssertEqual(CursorSignIn(["state": "waiting", "url": "https://cursor.com.example.org/login", "expiresAtMs": 1]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "waiting", "url": "http://cursor.com/login", "expiresAtMs": 1]).state, .none)
+    XCTAssertEqual(CursorSignIn(["state": "something-new"]).state, .none)
+    XCTAssertEqual(CursorSignIn.open("Cursor"), "Open Cursor")
+    XCTAssertEqual(CursorSignIn.connectedTo("Cursor"), "You're now connected to Cursor.")
+
+    // Its consent: Cursor's plan for cloud agents alone; the agents' own model isn't touched, and nothing sends the person to AI Models.
+    let consent = ConnectConsent(codingProvider: "cursor")
+    XCTAssertEqual([consent.id, consent.title, consent.programLogo], ["coding:cursor", "Cursor", "cursor"])
+    XCTAssertEqual(consent.summary, "Run your cloud agents in Cursor, on your Cursor plan.")
+    XCTAssertEqual(consent.points.map(\.body), [
+      "Cloud agents code in Cursor on your Cursor plan, not on your Simeon credits. Your agents keep the model they have.",
+      "You approve on Cursor's own page, and the sign-in stays on your cloud computer. To disconnect, ask one of your agents.",
+      "Cloud agents in Cursor pause until it resets.",
+    ])
+    XCTAssertEqual(consent.smallPrint, ["You'll sign in on Cursor's own page. Simeon never sees your password."])
   }
 }
 

@@ -1,5 +1,6 @@
 import { agentSkillsFromWorkflowStore } from "./runner/workflow-agent-skills.js";
 import { isCloudAgentsServed } from "../shared/cloud-agents-availability.js";
+import { CLOUD_AGENT_CODER, codingChoice } from "./cloud-agents/coding-choice.js";
 import { dirname } from "node:path";
 import { SIMEON_WORKING_CONTEXT_TOKENS } from "../shared/inference/simeon-context-window.js";
 import { TranscriptMirrorOffloadPool } from "./agent-isolation/transcript-mirror-offload.js";
@@ -2151,22 +2152,55 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
           ),
           ...(watchCloudAgent === undefined ? {} : { watch: watchCloudAgent }),
           ...(reviewAction === undefined ? {} : { reviewAction }),
-          // The coding on this computer (11 November 2026): Claude chosen and
-          // GitHub connected, else what the agent says; the Connect GitHub
-          // card goes into this agent's chat when GitHub's sign-in starts.
+          // The coding on this computer (11 November 2026): Claude or
+          // ChatGPT connected, and GitHub, else what the agent says; the
+          // card to connect what is missing goes into this agent's chat
+          // (Claude and ChatGPT both offered, 13 November 2026; GitHub's
+          // when its sign-in starts).
+          coder: (program?: "claude-code" | "codex" | "cursor") => codingChoice(program)?.coder,
+          // Cursor has no row in Settings: the person asks an agent to disconnect it (13 November 2026).
+          ...(typeof (cloudAgents as { signOutCursor?: unknown }).signOutCursor !== "function"
+            ? {}
+            : {
+                disconnectProgram: async () => {
+                  const after = await (cloudAgents as unknown as { signOutCursor(): Promise<{ state: string }> }).signOutCursor();
+                  return after.state === "connected"
+                    ? "Cursor couldn't be disconnected on your own computer (the box). Tell the user plainly, and that this is on Simeon's side."
+                    : "Cursor is disconnected on your own computer (the box): its sign-in is gone from it. Cloud agents no longer run in Cursor until the user connects it again (launching in Cursor shows its card).";
+                },
+              }),
           ...(typeof (cloudAgents as { codingReady?: unknown }).codingReady !== "function"
             ? {}
             : {
-                codingReady: async () => {
+                codingReady: async (program?: "claude-code" | "codex" | "cursor") => {
                   const ready = await (cloudAgents as unknown as {
-                    codingReady(agentId: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
-                  }).codingReady(session.id);
+                    codingReady(agentId: string, choice?: undefined, refresh?: undefined, program?: string): Promise<{ ok: true } | { ok: false; text: string; card?: Record<string, unknown> }>;
+                  }).codingReady(session.id, undefined, undefined, program);
                   if (!ready.ok && ready.card !== undefined) {
                     hooks.transport.onUpdate({ type: "send-message", message: ready.card, timestampMs: Date.now() });
                   }
                   return ready.ok ? { ok: true as const } : { ok: false as const, text: ready.text };
                 },
               }),
+          // What this agent asks a cloud agent is a line of its chat, as a
+          // message to a teammate is ("Messaged", 13 November 2026): the
+          // launch with the name it gave, a follow-up with the name the
+          // server keeps. The cloud agent's own first words come back the
+          // same way (`cloud-agents/extension.ts`, `noteCloudAgentSaid`).
+          onLaunched: (event: { bcId: string; prompt: string; title?: string }) => {
+            // The program it was just launched in: the one the coding takes now (`codingChoice`).
+            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name: event.title ?? "", coder: codingChoice()?.coder ?? CLOUD_AGENT_CODER }, event.prompt);
+          },
+          onFollowupSent: async (event: { bcId: string; prompt: string }) => {
+            let name = "";
+            let coder: string = CLOUD_AGENT_CODER;
+            try {
+              const kept = await method(cloudAgents, "get")?.(event.bcId) as { name?: unknown; coder?: unknown } | null | undefined;
+              name = String(kept?.name ?? "");
+              if (typeof kept?.coder === "string" && kept.coder !== "") coder = kept.coder;
+            } catch { /* unnamed then */ }
+            method(transcript, "noteCloudAgentAsked")?.(session.id, { id: event.bcId, name, coder }, event.prompt);
+          },
         };
       })();
 
@@ -2956,6 +2990,18 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                   ...(cloudAgent.codingReady === undefined
                     ? {}
                     : { codingReady: cloudAgent.codingReady }),
+                  ...(cloudAgent.coder === undefined
+                    ? {}
+                    : { coder: cloudAgent.coder }),
+                  ...(cloudAgent.disconnectProgram === undefined
+                    ? {}
+                    : { disconnectProgram: cloudAgent.disconnectProgram }),
+                  ...(cloudAgent.onLaunched === undefined
+                    ? {}
+                    : { onLaunched: cloudAgent.onLaunched }),
+                  ...(cloudAgent.onFollowupSent === undefined
+                    ? {}
+                    : { onFollowupSent: cloudAgent.onFollowupSent }),
                 },
               }),
             }

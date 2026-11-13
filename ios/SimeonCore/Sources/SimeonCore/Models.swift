@@ -4,13 +4,44 @@ import Foundation
 public struct Party: Hashable, Sendable {
   public let id: String
   public let name: String
+  /**
+   * A cloud agent an agent started, not one of the person's agents (`kind`
+   * "cloud-agent", 13 November 2026): its `id` is the cloud agent's own, and
+   * its page is its conversation read from the computer
+   * (`Chat.cloudAgentRows`), not lines of this chat.
+   */
+  public let cloudAgent: Bool
+  /**
+   * The program that coded for a cloud agent, as the computer names it
+   * (`coder`: "claude-code", "codex"); nil for an agent, and for a cloud
+   * agent whose line doesn't say.
+   */
+  public let coder: String?
 
-  public init(id: String, name: String) { self.id = id; self.name = name }
+  public init(id: String, name: String, cloudAgent: Bool = false, coder: String? = nil) {
+    self.id = id; self.name = name; self.cloudAgent = cloudAgent; self.coder = cloudAgent ? coder : nil
+  }
 
   init?(_ json: JSON?) {
     guard let id = json?["id"]?.text else { return nil }
-    self.init(id: id, name: json?["name"]?.text ?? "")
+    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: json?["kind"]?.string == "cloud-agent", coder: json?["coder"]?.text)
   }
+
+  /**
+   * A cloud agent's picture (13 November 2026, the founder: "it should be
+   * whatever agent is used. either claude code or codex"): the mascot of
+   * the program that coded (`Mascots/<icon>`), Claude Code's when the
+   * computer doesn't say or names one with no mascot, since every cloud
+   * agent before `coder` ran in Claude Code. Nil for an agent, which has
+   * its own picture.
+   */
+  public var mascot: String? {
+    guard cloudAgent else { return nil }
+    return ExternalAgents.cloudAgentMascot(coder)
+  }
+
+  /** The name as the apps write it: a cloud agent the computer gave no name is "Cloud agent". */
+  public var shownName: String { name.isEmpty && cloudAgent ? L10n.text("Cloud agent") : name }
 
   /** A call written before calls were one line: its lines were messages with a peer `voice-call:<call>:<seconds>`. */
   public var earlierCall: (callId: String, seconds: Int)? {
@@ -373,6 +404,7 @@ public struct Entry: Identifiable, Hashable, Sendable {
       return names.isEmpty ? L10n.text("Connect tools") : L10n.text("Connect \(names.joined(separator: ", "))")
     case "listener-connect": return message["platform"]?.string == "slack" ? L10n.text("Connect Slack") : L10n.text("Connect GitHub")
     case "github-sign-in": return L10n.text("Connect GitHub")
+    case "model-connect": return ModelConnectCard.preview
     case "agent-joined": return message["name"]?.text.map { JoinedCard.title(name: $0) }
     case "attachment": return (message["file_name"]?.text ?? message["url"]?.text.map(fileName(ofURL:))).map(fileTitle) ?? L10n.text("Sent a file")
     default: return message["content"]?.text.map { by + plain($0) }

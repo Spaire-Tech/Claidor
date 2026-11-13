@@ -349,6 +349,37 @@ final class AIModelsTests: XCTestCase {
     XCTAssertNil(consent.note)
   }
 
+  /** The founder, 13 November 2026: "it should say codex and claude code but only when it opens from the card". */
+  func testTheCardsConsentNamesTheProgramAndSettingsStillNamesThePlan() {
+    let codex = ConnectConsent(codingProvider: AIModels.chatGPT)
+    XCTAssertEqual(codex.id, "coding:chatgpt")
+    XCTAssertEqual(codex.title, "Codex")
+    XCTAssertEqual(codex.summary, "Run your cloud agents in Codex, on your ChatGPT plan.")
+    XCTAssertEqual(codex.programLogo, "codex", "its page shows Codex's own logo")
+    XCTAssertNil(codex.provider, "not the plan's logo")
+    XCTAssertEqual(codex.points.map(\.title), ["What it does", "Control", "When your plan runs out"])
+    // The same account is connected, so the page says what it does for the person's own agents too.
+    XCTAssertEqual(codex.points[0].body, "Cloud agents code in Codex on your ChatGPT plan, not on your Simeon credits. Your agents use that plan too, unless you've picked another model.")
+    XCTAssertEqual(codex.points[2].body, "Cloud agents pause until it resets; your agents use Simeon's models meanwhile.")
+    // The sign-in is the plan's own page.
+    XCTAssertEqual(codex.smallPrint.first, "You'll sign in on ChatGPT's own page. Simeon never sees your password.")
+    XCTAssertNil(codex.note)
+
+    let claudeCode = ConnectConsent(codingProvider: AIModels.claude)
+    XCTAssertEqual(claudeCode.title, "Claude Code")
+    XCTAssertEqual(claudeCode.summary, "Run your cloud agents in Claude Code, on your Claude plan.")
+    XCTAssertEqual(claudeCode.programLogo, "claudecode")
+    XCTAssertEqual(claudeCode.smallPrint.first, "You'll sign in on Claude's own page. Simeon never sees your password.")
+
+    // Opened from Settings › AI Models, nothing changes: the plan's name and logo.
+    let plan = ConnectConsent(modelProvider: AIModels.chatGPT)
+    XCTAssertEqual(plan.title, "ChatGPT")
+    XCTAssertEqual(plan.summary, "Run your agents on your ChatGPT plan.")
+    XCTAssertEqual(plan.provider, AIModels.chatGPT)
+    XCTAssertNil(plan.programLogo)
+    XCTAssertNil(ConnectConsent(keyProvider: "deepseek", name: "DeepSeek").programLogo)
+  }
+
   func testAModelChangeIsALineWithEachModelsMark() {
     let line: (String, JSON, JSON) -> Entry = { id, from, to in
       Entry(["kind": "event", "id": .string(id), "timestampMs": 1_000, "event": ["type": "model-changed", "from": from, "to": to]])!

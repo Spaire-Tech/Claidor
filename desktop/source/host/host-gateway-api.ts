@@ -667,9 +667,18 @@ export function createHostGatewayApi(
         args.bcId,
         args.includeFiles
       ),
+    // A cloud agent's conversation: what it was asked, what it said along the way, its answers.
+    getCloudAgentConversation: (args: any) =>
+      method(deps.extensions.api("cloud-agents"), "getConversation")(args.bcId),
     // The Connect GitHub card's state: waiting with its code, connected, expired, failed or none.
     getGitHubSignIn: () =>
       method(deps.extensions.api("cloud-agents"), "getGitHubSignIn")(),
+    getCursorSignIn: () =>
+      method(deps.extensions.api("cloud-agents"), "getCursorSignIn")(),
+    startCursorSignIn: () =>
+      method(deps.extensions.api("cloud-agents"), "startCursorSignIn")(),
+    signOutCursor: () =>
+      method(deps.extensions.api("cloud-agents"), "signOutCursor")(),
     ensureForeverBox: async (args: any) =>
       deps.decorateForeverBoxStatus(
         await method(deps.extensions.api("forever-box"), "ensure")(args)

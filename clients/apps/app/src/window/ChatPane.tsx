@@ -57,6 +57,7 @@ import {
   steppedIndex,
 } from '../core/chatFind'
 import { type RunFlags, noRun } from '../core/chatRuns'
+import { modelConnectCard } from '../core/connectCards'
 import { pictureURL } from '../core/faces'
 import { fileKind } from '../core/filePreview'
 import { english, languageCode } from '../core/language'
@@ -107,6 +108,7 @@ import {
   type MentionSetting,
   MessageBlocks,
 } from './MessageText'
+import { ModelConnectCardView } from './ModelConnectCard'
 import { requestCardView } from './RequestCards'
 import { useSearchReveal } from './SearchPanel'
 import { ProductCover, shopCardView } from './ShopCards'
@@ -1204,6 +1206,7 @@ const cardCaps: Record<CardKind, number> = {
   listenerConnect: 520,
   cloudAgent: 640,
   gitHubSignIn: 520,
+  modelConnect: 520,
   joined: 460,
   flights: 680,
   flightPassengers: 520,
@@ -1289,6 +1292,11 @@ function cardView(kind: CardKind, card: CardProps): React.ReactNode {
     case 'gitHubSignIn':
     case 'joined':
       return connectCardView(kind, card)
+    // Claude or ChatGPT for a cloud agent's coding, both offered (ModelConnectCard.tsx).
+    case 'modelConnect': {
+      const read = modelConnectCard(card.entry)
+      return read && <ModelConnectCardView card={read} store={card.store} />
+    }
     // 3d: flights and the travellers' form (FlightCards.tsx).
     case 'flights':
     case 'flightPassengers':

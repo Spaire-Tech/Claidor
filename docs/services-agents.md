@@ -27,21 +27,77 @@ Conventions used below:
 ## 1. Cloud agents
 
 **For the person** (11 November 2026). An agent can hand a coding task to a cloud agent. The
-work runs on the person's own cloud computer, in Claude Code, on their own Claude plan, with the
-model and effort they chose in AI Models. It clones the repository, makes a branch
+work runs on the person's own cloud computer, in Claude Code on their own Claude plan, or in
+Codex on their own ChatGPT plan (13 November 2026; the founder: "running one in Codex is not
+built"), with the model and effort they chose in AI Models. It clones the repository, makes a branch
 (`simeon/<task>-<4 hex>`), writes the code, builds and tests it, pushes and opens a pull
-request. The chat's card shows its state (Creating, Running, Done, Error, Paused), the branch,
-"PR #12", the files and lines changed, and View PR opens the pull request. A reply carries on in
-the same Claude Code session on the same branch and pull request. Pausing it stops the run.
+request. Its card, which comes when it has finished, shows its state (Done, Failed, Paused), the
+branch, "PR #12", the files and lines changed, and View PR opens the pull request. A reply
+carries on in the same session of the same program, on the same branch and pull request. Pausing
+it stops the run.
+
+**Which program codes.** The one whose plan the person chose as their model in AI Models: Claude
+Code for a Claude model, Codex for a ChatGPT one, on that model and effort. With another model
+chosen (Simeon's, or a key's), Claude Code when Claude is connected, else Codex when ChatGPT is.
+A cloud agent keeps the program it started in for all its replies, while that plan stays
+connected.
+
+**In the chat it reads as messages, and the card comes at the end** (13 November 2026; the
+founder: "i never asked for a card i said plainly i wanted the message thing ... with message to
+and message from. like messaging agents work. so that means the agent should answer him and say
+on it. like a regular agent would. that card should only come once the job is done. with the
+view pr, open etc. and the done mark. or the failed if it did"):
+
+1. The agent says in a line of its own that it handed the work off.
+2. "Messaged <the cloud agent's name>": what the agent asked it, as a message to a teammate.
+3. "Message from <name>": the cloud agent's own first words ("On it. I'll read the README
+   first."). With the line before, the chat folds them as "2 messages with <name>".
+4. When it has ended: "Message from <name>" with its report, then its card (Done with View PR
+   and Open, or Failed, or Paused), then the agent's own few words about the result.
+
+No card is shown at the launch or while it runs. Each of the lines opens the cloud agent's
+conversation, as the card's Open does.
+
+**Its conversation** (13 November 2026; the founder: the agent "talks to the cloud agent the same
+way it talks to another agent"). Open on the card shows the cloud agent's conversation over the
+chat, on the page two agents' messages have: what the agent asked it, what it said along the way
+and its answers, read-only. While it works the page reads again every five seconds. When it
+finishes, its own words arrive in the agent's chat as a "Message from" line under the cloud
+agent's name, which opens the same page; the agent is woken with the report and tells the
+person, as before. The cloud agent's picture is the mascot of the program that coded (the
+founder: "it should be whatever agent is used. either claude code or codex"): Claude Code's or
+Codex's, by the program it runs in.
 
 - **GitHub, the first time.** The agent shows a Connect GitHub card (the upstream app's card 8):
   a one-time code, Copy code and Open GitHub. Once the person types the code on GitHub, the
-  card says "Connected as <login>" and the agent carries on by itself. The computer keeps the
-  sign-in, as it keeps Claude's.
-- **Claude not connected.** The agent asks the person to connect Claude in Settings › AI Models
-  before starting.
-- **The plan's limit.** The card says Paused; the agent says when the limit resets and offers to
-  carry on then.
+  card reads as a connected app's card ("GitHub", the account under it, "Connected" in green;
+  13 November 2026, the founder of the green tick and bold "Connected as" beside the stale
+  "Enter this code": "this is nowhere near our design") and the agent carries on by itself. The
+  routine's Connect Slack and Connect GitHub cards are drawn the same way. The computer keeps
+  the sign-in, as it keeps Claude's.
+- **Neither Claude nor ChatGPT connected** (13 November 2026; the founder: "when neither of them
+  is connected, the user is given a choice of both cards to connect"). The chat shows one card
+  with two rows, each with Connect: "Connect Claude Code" ("Runs on your Claude plan.") and
+  "Connect Codex" ("Runs on your ChatGPT plan."). The card names the programs and draws each
+  one's own logo whole, with no tile behind it; Settings › AI Models names the plans, Claude and
+  ChatGPT (the founder, the same day: "its connect codex or connect claude code. and its full
+  logo no white or dark background. for the card specifically its that. but settings is claude
+  and chat gpt. they are two dif things"). Connect asks as AI Models does (the consent, then
+  that plan's own sign-in), and both dialogs say the program's name with its logo when they
+  open from the card: "Codex", "Run your cloud agents in Codex, on your ChatGPT plan.", then
+  "Connect Codex" and "You're now connected to Codex." (the founder: "it should say codex and
+  claude code but only when it opens from the card"). Opened from Settings they still say
+  ChatGPT and Claude. The row then reads "Claude Code" or "Codex" with "Connected" in green,
+  and the agent carries on by itself with the task, as after the GitHub card.
+  - **It is the same account either way.** Connecting from the card connects the Claude or
+    ChatGPT plan in AI Models. As there, the person's own agents move to that plan when no
+    other model is chosen (`AIModelsModel`, `aiModels.ts`: `chosen == nil`). The card's dialog
+    says so ("Your agents use that plan too, unless you've picked another model."), and that a
+    cloud agent pauses when the plan runs out while the agents use Simeon's models.
+- **The plan's limit** (Claude's or ChatGPT's). The card says Paused; the agent says when the
+  limit resets and offers to carry on then.
+- **ChatGPT disconnected during a run.** The run stops and the agent says to connect ChatGPT
+  again in Settings › AI Models; a reply then carries on.
 - **Tests that fail.** The agent says what failed and asks how to go on.
 - **Which repository.** When it isn't clear, the agent asks with a question card; `gh repo list`
   on the computer names the person's own.
@@ -79,21 +135,146 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
     fetch), the branch, git's name and e-mail from the GitHub account, then Claude Code
     (`--resume` with the kept session), then the push, `gh pr create` (or the open pull
     request), and `git diff --numstat` against the base;
-  - `coding-github.ts` runs `gh auth login` with the device code, then `gh auth setup-git`;
-  - `coding-choice.ts` reads the person's Claude model and effort.
+  - `coding-github.ts` runs `gh auth login` with the device code, then `gh auth setup-git`.
+    Its options are only those the computer's own `gh` knows (`GITHUB_LOGIN_ARGS`): Debian
+    trixie's 2.46.0, older than a developer's. It also gives `git` the machine's trust
+    (`GIT_SSL_CAINFO` from `SSL_CERT_FILE`): on Azure the egress re-signs every site, and git
+    reads no `SSL_CERT_FILE`;
+  - `coding-choice.ts` picks the program, its model and effort (`codingChoice`), from the
+    server's list (below).
 
   While a turn runs, the computer counts as busy and is not put to sleep (`sand-host.ts`).
   GitHub's sign-in (`~/.config/gh/hosts.yml`) and the checkouts (`/home/box/code`) are left
   out of Simeon's backup.
+- **Codex** (13 November 2026, `host/codex/`). Claude Code signs in on the computer; Codex does
+  not. The person connected ChatGPT once, on the server, and no ChatGPT token is ever on the
+  computer.
+  - `codex-install.ts` installs the pinned Codex (`@openai/codex` 0.168.0) with npm into
+    `/var/tmp/simeon-codex` at the first turn that needs it. The turn waits up to two minutes
+    for it; past that it fails with "isn't installed on the computer yet; it installs by
+    itself", and the next try finds it there.
+  - `codex-turn.ts` runs `codex exec --json` (or `exec resume` with the kept session), the task
+    on its input, with a model provider of its own (`model_providers.simeon`) whose address is
+    the relay below. Its home is `/home/box/.simeon-codex` (sessions only, no sign-in).
+  - `codex-relay.ts` listens on the loopback for the turn, behind a key made for the turn. It
+    hands each of Codex's calls to `/desktop/api/proxy/v1/responses` with the computer's own
+    credential (asked again at each call), the model as `own:chatgpt:<model>`, the reason
+    `coding` and the body gzipped.
+  - Server (`own_models.relay`): a call with the reason `coding` on a ChatGPT model goes to
+    ChatGPT on the person's account with Codex's own body and headers, whatever model the
+    person chose, and never falls back to Simeon's model. Its refusals: 429
+    `usage_limit_reached` with when the limit ends, 401 `chatgpt_not_connected`, else ChatGPT's
+    own. The relay keeps both for the turn's outcome (Paused with the reset time; "ChatGPT isn't
+    connected any more").
+- **Cursor** (13 November 2026, `host/cursor/`; the founder: "Cursor now"). The third program:
+  Cursor's own command-line agent, unmodified, on the person's Cursor plan. Unlike the other
+  two it is signed in on the person's cloud computer itself, and its calls go to Cursor
+  directly; the server only keeps the cloud agent's model (`own:cursor:auto`) and names the
+  plan in a limit ("Paused: the Cursor plan's limit is reached").
+  - `cursor-install.ts` downloads the pinned archive (2026.11.11-b912975, 176 MB, 538 MB
+    unpacked) with curl, checks its sha256 against the one written in the file, and unpacks it
+    into `/var/tmp/simeon-cursor`, outside the backup. Installed the first time Cursor is
+    connected, or again by a turn on a computer made afresh. Log: `cursor installed version=…`,
+    `cursor install failed reason=…`.
+  - `cursor-account.ts` (`CursorOnComputer`) runs `agent login` with no browser: the program
+    prints a link to Cursor's own site, the person opens it and approves, and the program
+    writes its sign-in to `/home/box/.config/cursor/auth.json`. There is no code to type.
+    That the file is there is what says connected; the engine never opens it, and it is not
+    in the backup (`BOX_HOME_CURSOR_CREDENTIALS`). Only a link on Cursor's own site is ever
+    handed to an app. Log: `cursor sign-in started`, `sign-in link shown`, `connected`,
+    `sign-in ended code=…`, `signed out`.
+  - The apps call `startCursorSignIn`, `getCursorSignIn` and `signOutCursor` (states: `none`,
+    `installing`, `waiting` with the link and when it ends, `connected`, `failed`).
+  - `cursor-turn.ts` runs `agent -p --output-format stream-json --force --trust --sandbox
+    disabled --workspace <checkout> [--resume <session>] "<task>"`. The program has no place
+    for Simeon's brief, so a new session's task begins with it. It names its own model. Its
+    answer is its last words; a failure is read from its error output (no sign-in, a limit, a
+    session it no longer has).
+  - `coding-choice.ts` adds Cursor after the server's programs while its sign-in is on the
+    computer. So with Claude or ChatGPT also connected, a cloud agent runs in Cursor only when
+    the person names it ("in Cursor"): the agent passes `program: "cursor"` to `CloudAgent`
+    launch. A named program that isn't connected puts its card alone in the chat, and the
+    agent waits for that one (`ModelConnectWait`).
+  - To disconnect, the person asks an agent (`CloudAgent` `disconnect_program`, confirmed
+    first): Cursor has no row in Settings › AI Models, which lists the plans the agents'
+    own model runs on.
+  - Checked with Cursor's real program, its network cut off, against a stand-in on the
+    loopback: the install (the real download, its fingerprint, the unpacking), the sign-in
+    link read, the approval and the sign-in file, the sign-out, and a turn with no sign-in,
+    with a refused sign-in and at a limit. Not run: a turn that reaches a model (it needs a
+    Cursor account), so the events of a turn that works are read from the program's own code.
+- **The programs offered** (`own_models.coding_rows`). `/desktop/api/models/available` ends with
+  rows of the role `coding`: Claude Code's when a Claude account is usable (`transportApi:
+  claude-code`), Codex's when a ChatGPT one is (`transportApi: codex`), the chosen model's
+  provider first. The engine reads them (`simeonCodingPrograms` in `simeon-model-roles.ts`);
+  none means neither is connected.
+- **The program a cloud agent runs in** is its model's (`own:claude:…` or `own:chatgpt:…`): sent
+  with the launch, reported by each turn (`work.modelId`), kept by the server and returned as
+  `composer.requestedModel.modelId`. `coderOfModel` reads the program from it; a session is
+  only resumed in the program that made it.
+- **The card that offers both** (`model-connect`). `codingReady` reads the list again and, with
+  no program, posts `{type: "model-connect", providers: ["claude", "chatgpt"]}`.
+  `ModelConnectWait` (`model-connect-wait.ts`) then reads the list every 6 s, for 20 minutes,
+  and wakes the agent once one is connected (`resumeAfterModelConnect`). The apps read which
+  is connected from their own AI Models accounts, every 4 s while the card waits
+  (`ModelConnectCard` in SimeonCore; `ModelConnectCardView` on Mac, iPhone and web). The card
+  still carries the plans' ids (`claude`, `chatgpt`); the apps turn each into its program's
+  name and logo (`ModelConnectCard.program`, `.logo`; `ProgramLogo`, `.program-logo`). The
+  agent is told to name the two as the card does (`MODEL_CONNECT_CARD_TEXT`, the brief). The
+  dialog from the card is a consent of its own (`ConnectConsent(codingProvider:)`,
+  `codingConsent`; id `coding:<provider>`, whose `programLogo` the page draws bare), and the
+  sign-in sheets take `coding` for the program's name and logo; Settings keeps
+  `ConnectConsent(modelProvider:)` and the sheets as they were.
 - **Runner:** `runner/` (Render service `claidor-maty-runner`) still takes `maty-runner` jobs
   only: one model call over the conversation through the API's metered proxy, words only
   (`runner/src/engine.ts`, `runner/src/executor.ts`). Coding never goes there.
-- App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`) checks that Claude is
-  connected and GitHub signed in before a launch or a reply; when GitHub isn't, it puts the
-  `github-sign-in` card in the chat (`codingReady` in `host-runner-composition.ts`). The
+- App: the CloudAgent tool (`host/cloud-agents/cloud-agent-tool.ts`) checks that Claude or
+  ChatGPT is connected and GitHub signed in before a launch or a reply; when one isn't, it puts
+  the `model-connect` or the `github-sign-in` card in the chat (`codingReady` in
+  `cloud-agents-service.ts`). The
   manager and a poll loop check every 10 s for up to 5 hours
   (`host/extensions/cloud-agents/`). The card type is `cloud-agent`; its link is the pull
   request. The apps read the GitHub card's state with the box command `getGitHubSignIn`.
+- **The conversation.**
+  - What Claude Code says between its tools in a turn is kept as the turn's updates
+    (`coding-run.ts`, `withUpdate`: the last 40 of a turn, 4,000 characters each, the answer
+    itself left out) and sent beside the work on each heartbeat and at the end
+    (`createComputerServer` sends `updates` apart from `work`).
+  - The server keeps them in `sand_cloud_agents.work["updates"]` (the last 200, each with its
+    job) and never hands them back to the computer with a claim. `GetBackgroundComposerConversation`
+    lists them before their turn's answer, with a `bubbleId` that starts `update-`.
+  - The apps read it with the box command `getCloudAgentConversation` (`{bcId}` gives
+    `{bcId, messages: [{id, role: prompt | update | answer, text, atMs}]}`,
+    `cloudAgentLines` in `cloud-agents-service.ts`).
+  - The report that wakes the launching agent (`buildWatchResult`) also carries the cloud
+    agent's name and its own words (its summary, with the pull request's link when the summary
+    leaves it out). `CompletionRevivals.noteCloudAgentAnswers` writes them into that agent's
+    chat at the start of the wake's turn: `{kind: "message", role: "user", fromAgent: {id: <bcId>,
+    name, kind: "cloud-agent", coder}}`. The apps read `kind` to open the conversation instead
+    of the chat's own lines (`Party.cloudAgent`, `Chat.cloudAgentRows` in SimeonCore;
+    `cloudAgentRows` in the web app).
+  - **The launch and the first words** (13 November 2026). A launch or a follow-up that went
+    through is written into the agent's chat by the engine before the tool answers
+    (`onLaunched`, `onFollowupSent` in `host-runner-composition.ts`;
+    `AgentToAgentMessaging.noteCloudAgentAsked`): `{kind: "message", role: "assistant", toAgent:
+    {id: <bcId>, name, kind: "cloud-agent", coder}}`, with the title the agent gave as the name
+    (the tool's schema asks for one at every launch). Claude Code's brief (`codingBrief`) asks
+    it to begin with one short sentence saying it is on it; the first words of each turn
+    (`onFirstWords` in `coding-run.ts`) go to `noteCloudAgentSaid`, which writes them as a
+    message from the cloud agent in the chat of the agent that asked: the one the launch named,
+    else the one whose wake is kept for it (after a restart). Nobody is woken by them. Words
+    said twice in a row are written once.
+  - **The card, only at the end.** `noteCloudAgentAnswers` writes the `cloud-agent` card right
+    after the report, when the cloud agent has ended (done, failed or paused; a watch that gave
+    up waiting writes none). The agent no longer sends the card: its brief and the tool's
+    answer say the chat shows the exchange by itself, and a `cloud-agent` SendMessage while the
+    cloud agent runs, or after its card is there, is not shown (`cloudAgentCardDue` in
+    `send-message-shaping.ts`, asked in `turn-runtime.ts`: one card per run).
+  - **Who coded** (`coder`, `coderOfModel` in `coding-choice.ts`): "claude-code" or "codex", by
+    the names the Simeon Network gives them. It travels in
+    `getCloudAgentInfo`, `getCloudAgentConversation` and the line's `fromAgent`. The apps draw
+    its mascot (`Mascots/claudecode`, `Mascots/codex`; `Party.mascot`, `cloudAgentMascot`) on
+    Connect apps' tile, round, and draw Claude Code's when a computer doesn't say.
 
 * **Settings.** None new on Render. The server's migration `coding_on_computer_1111` adds
   `maty_jobs.executor` and `sand_cloud_agents.work`. The `maty-runner` jobs still need
@@ -105,17 +286,60 @@ the same Claude Code session on the same branch and pull request. Pausing it sto
   - Server: `[simeon] cloud-agent started bcId=… job=… repo=… model=… executor=computer`, then
     `cloud-agent computer claimed bcId=… job=… attempt=…`, `cloud-agent computer done … branch=…
     pr=…` or `cloud-agent computer failed … status=… limited=… retryable=…`.
-  - Computer (`/tmp/sand-host.log`): `[simeon] coding job=… claude model=… effort=… resume=…`,
-    `coding job=… claude outcome=…`, `coding job=… done commits=… files=… pr=…`; GitHub's
-    sign-in: `[simeon] github sign-in waiting for the person's code`, `github connected as …`.
+  - Computer (`/tmp/sand-host.log`): `[simeon] coding job=… claude model=… effort=… resume=…`
+    (`codex` in place of `claude` for a run in Codex), `coding job=… claude outcome=…`,
+    `coding job=… done commits=… files=… pr=…`; the programs the server offered: `coding=…` on
+    the model roles' line; Codex's install: `codex installed version=… ms=…` or `codex install failed reason=…`; GitHub's
+    sign-in: `[simeon] github sign-in waiting for the person's code`, `github connected as …`,
+    and `github sign-in failed before a code: <gh's own words>` when `gh` gave no code (the
+    agent is told the same words).
   - A card stuck at "Creating" means the computer hasn't claimed the job: look for `coding …
     claim didn't reach the server`.
 * **Tested.** The server's routes and routing (`server/tests/sand/test_cloud_agents_computer.py`,
-  14 tests). The engine's turn against stand-ins: a bare git origin, a `gh` script, a fake
-  Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 9 tests). The cards'
-  models in SimeonCore and the web app; the web card drawn in Chromium, light and dark.
-* **Not yet verified.** No run against real GitHub or Claude Code, on a cloud computer, a Mac or
-  an iPhone. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
+  18 tests with the updates). The engine's turn against stand-ins: a bare git origin, a `gh`
+  script, a fake Claude Code and a fake server (`desktop/tests/coding-agents.test.mjs`, 12
+  tests, with the launch's line handed over before the tool answers and the turn's first
+  words); the lines and the card in the chat (`desktop/tests/background-command-wake.test.mjs`:
+  the message to it, its first words, who asked after a restart, the card only at the end and
+  once per run). The whole exchange drawn in Chromium against a stand-in computer at the three
+  moments (launched, working, done) and for one that failed, light and dark, with the connect
+  cards waiting, connected and expired. The cards'
+  models in SimeonCore and the web app; the web card drawn in Chromium, light and dark. The
+  conversation: its lines and rows in SimeonCore (`CloudAgentTests`, run on Linux) and the web
+  app (`exchanges.test.ts`); the web page opened in Chromium against a stand-in computer, from
+  the card and from the "Message from" line, growing while the cloud agent works and no longer
+  asking once it is done, light and dark. The Mac's and the iPhone's pages are written and not
+  yet built or run.
+* **The first real try** (the founder, 13 November 2026) stopped at the sign-in: the command
+  passed `--skip-ssh-key`, which gh 2.46 does not have, so gh printed its help and no code came.
+  The option is gone; the sign-in's options and every other `gh` command of the turn were run
+  against Debian's gh 2.46.0-3 itself (its help, and the sign-in up to the call to GitHub,
+  which was not let through), and a stand-in that refuses what 2.46 refuses is in the tests.
+  Git's trust was measured against a stand-in https server (cloned with `GIT_SSL_CAINFO` only).
+* **A real run** (the founder, 13 November 2026, engine `ab26b72668ad`): GitHub connected as
+  their account and a cloud agent started on their computer with its branch. That run still
+  showed the card at the launch, which is what the lines above replace.
+* **Codex, tested** (13 November 2026). The server's coding path
+  (`server/tests/desktop/test_own_models.py`, `TestCodexCodesOnTheAccount`, 10 tests: the rows,
+  the body and headers kept, the limit, not connected, no fallback) and the model kept per
+  cloud agent (`test_cloud_agents_computer.py`). The engine's turn, relay and choice
+  (`desktop/tests/codex-coding.test.mjs`, 5 tests; `coding-agents.test.mjs`, 13 tests with a
+  cloud agent in Codex and the card that offers both). The real Codex 0.168.0 program run
+  through the engine's turn and relay against a stand-in server: a turn done, resumed, a
+  missing session, the plan's limit with its reset time, ChatGPT not connected. The card's
+  models in SimeonCore (`ModelConnectCardTests`) and the web app (`connectCards.test.ts`,
+  `ModelConnectCard.test.tsx`); the web card in Chromium against a stand-in, light and dark:
+  both rows by the programs' names with their logos bare (no tile, no ground), Connect through
+  the consent and ChatGPT's sign-in to "Codex / Connected", and a Codex cloud agent's lines,
+  card and mascot.
+* **Codex, not yet verified.** Nothing reached chatgpt.com: whether ChatGPT accepts Codex's
+  calls relayed this way is not known until a real run. No run on a real computer (the npm
+  install there, the home folder). The Mac and iPhone cards are not built with Xcode (their
+  Swift parses).
+* **Not yet verified.** The new lines and the card at the end have not run on a real computer:
+  whether Claude Code opens with its "on it" sentence, and the agent stops sending the card, is
+  only known from the instructions and the stand-ins. No cloud agent has been seen through to
+  its pull request by us. The Mac and iPhone cards are not built with Xcode (their Swift parses). Images
   attached to a launch are ignored.
 
 ## 2. Routines and event listeners
@@ -1810,8 +2034,18 @@ before.
   it, then the in-chat form or the computer handed over.
 - **The apps** (`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift`, shared;
   `ios/Simeon/CredentialsStore.swift`; `mac/Simeon/SettingsCredentials.swift`). A login's icon
-  is read on the device from the site itself (its touch icon, its icon, then `/favicon.ico`),
-  never a favicon service, kept a week (`SiteIcons`). A change sends only what changed; a
+  is read on the device from the site itself, never a favicon service (`SiteIcons`; the
+  Windows app's `windows/src/main/native/pictures.ts` follows the same rules): every icon
+  the site's page names, its touch icons first, then `/favicon.ico`; the first that is a
+  picture by its own bytes, whatever the site labels it, kept a week. "None" is kept a day,
+  and only when the site answered every request; a read that had no answer (no connection,
+  a name not found, a site too slow or busy) writes nothing and is asked again five minutes
+  later. An address that carries an IPv4 one (a phone network without IPv4, NAT64) is judged
+  by that IPv4 address. A site whose only icon is an SVG shows its first letter on the Mac
+  and the iPhone, which draw none. **When a login has no icon:** the app's recent activity
+  (Report an Issue with diagnostics) has a line `site icon: none (…)` with the reason for
+  each candidate (`svg`, `page`, `status 404`, `not drawn`, `no page`), or `site icon: none
+  for now, a request had no answer (…)`; never the site's name. A change sends only what changed; a
   password not read with Face ID is sent only when one was typed. The demo has a login and
   contact info (`Demo.swift`). The store's card in the chat: `StoreEntryCard` (core,
   `CredentialsStore.swift`), `StoreEntryCardView` (`mac/Simeon/OnePasswordCards.swift`,

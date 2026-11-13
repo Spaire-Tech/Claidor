@@ -9,6 +9,9 @@ export { claudeCodeBriefNote } from "../../source/host/claude-code/claude-code-a
 export { createBackgroundWatches } from "../../source/host/runner/background-work.js";
 export { pollShellTerminalFile } from "../../source/host/runner/shell-terminal-watch.js";
 export { buildShellRevivalPrompt, CompletionRevivals } from "../../source/host/extensions/transcript/completion-revivals.js";
+export { AgentToAgentMessaging } from "../../source/host/extensions/transcript/agent-to-agent-messaging.js";
+export { cloudAgentCardDue } from "../../source/host/extensions/transcript/send-message-shaping.js";
+export { AgentLifecycle } from "../../source/host/extensions/transcript/agent-lifecycle.js";
 export { buildSandBaseSystemPrompt } from "../../source/host/runner/system-prompt.js";
 export { terminalFileShellId, parseShellTerminalFooter } from "../../source/shared/background-commands.js";
 export { createContext } from "../../source/packages/context/core.js";

@@ -2,7 +2,9 @@
 
 The bar (the founder, 30 October 2026, with another site's for reference: "this
 style for the nav bar"): the wordmark, then Products, Solutions, Resources,
-Connectors and Pricing beside it; Contact Sales and Download on the right.
+Connectors and Pricing beside it; Contact Sales and Download on the right
+(Download fetches the Mac app, and on a Windows PC opens the Microsoft Store's
+listing: `OS_MARK`).
 Products and Solutions show their arrow but open nothing yet ("a drop down but
 that don't work until i figure out"); Resources opens Marketplace, Newsroom and Docs,
 on a hover or a tap, with no script. On a phone a menu button takes their place
@@ -19,6 +21,9 @@ from here. Their styles are site.css's.
 """
 
 MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
+# Simeon for Windows is in the Microsoft Store (13 November 2026): the Store installs and updates it, so the
+# site sends a Windows PC to its listing there, never to an installer of our own.
+WINDOWS_STORE = "https://apps.microsoft.com/detail/9P588HGXP209"
 TRY_FREE = "https://app.simeonlabs.com/billing?plan=standard"
 LOG_IN = "https://app.simeonlabs.com/login"
 
@@ -40,6 +45,20 @@ LINKS = (
 )
 
 
+# Which computer is reading. A Windows PC gets `on-windows` on <html> before the bar is drawn (the script stands just
+# before it, on every page), and site.css then shows each `.btn.for-win` (Download for Windows) in the place of
+# its `.btn.for-mac` neighbour, at any width; every other reader keeps the page as it was. The other computer's
+# download stays in the footer for both.
+OS_MARK = '<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>'
+
+
+def downloads(arrow="", cls="btn"):
+    """Download for macOS and, beside it, Download for Windows (the Microsoft Store's listing), the one a
+    Windows PC shows in its place. `arrow` is the mark after the words (teams.DOWNLOAD), if the page draws one."""
+    return (f'<a class="{cls} for-mac" href="{MAC_DOWNLOAD}">Download for macOS{arrow}</a>'
+            f'<a class="{cls} for-win" href="{WINDOWS_STORE}">Download for Windows{arrow}</a>')
+
+
 def _mark(key, current):
     return ' aria-current="page"' if key and key == current else ""
 
@@ -57,8 +76,9 @@ def bar(current=""):
     """The bar; `current` is the page's key (RESOURCES, LINKS, "contact"), or "" on another page."""
     resources = f"""<div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources{ARROW}</button><div class="drop-panel">{_links(RESOURCES, current)}</div></div>"""
     phone_resources = f"""<details class="menu-group"><summary>Resources{ARROW}</summary><div>{_links(RESOURCES, current)}</div></details>"""
-    buttons = f'<a class="btn soft" href="/contact"{_mark("contact", current)}>Contact Sales</a><a class="btn" href="{MAC_DOWNLOAD}">Download</a>'
-    return f"""<header class="bar">
+    buttons = f'<a class="btn soft" href="/contact"{_mark("contact", current)}>Contact Sales</a><a class="btn for-mac" href="{MAC_DOWNLOAD}">Download</a><a class="btn for-win" href="{WINDOWS_STORE}">Download</a>'
+    return f"""{OS_MARK}
+<header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages">{_soon("Products")}{_soon("Solutions")}{resources}{_links(LINKS, current)}</nav>
@@ -79,6 +99,7 @@ COLUMNS = (
         ("models", "/models", "Models"),
         ("pricing", "/pricing", "Pricing"),
         ("", MAC_DOWNLOAD, "Download for Mac"),
+        ("", WINDOWS_STORE, "Download for Windows"),
     )),
     ("Company", (
         ("newsroom", "/newsroom", "Newsroom"),

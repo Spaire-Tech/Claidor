@@ -125,7 +125,7 @@ test("the manager launches, polls, lists, dumps and reads the catalogue through 
     assert.ok(fake.seen.some((entry) => entry.path.endsWith("/GetUserPrivacyMode")), "the privacy pre-flight went to our DashboardService");
 
     let info = await manager.getInfo(launched.bcId);
-    assert.deepEqual(info, { bcId: launched.bcId, status: "creating", name: "Readme summary", prompt: "Summarise the README.", branchName: "", prUrl: "", prState: "none", prNumber: null, filesChanged: 0, linesAdded: 0, linesRemoved: 0, files: [] });
+    assert.deepEqual(info, { bcId: launched.bcId, status: "creating", coder: "claude-code", name: "Readme summary", prompt: "Summarise the README.", branchName: "", prUrl: "", prState: "none", prNumber: null, filesChanged: 0, linesAdded: 0, linesRemoved: 0, files: [] });
 
     fake.finish(launched.bcId, "The README says hello.");
     info = await manager.getInfo(launched.bcId, false);
@@ -184,10 +184,12 @@ test("the brief and the app say Simeon where the upstream app said the upstream 
     assert.doesNotMatch(enabled, /## Origin/);
     assert.match(enabled, /## Repositories/);
     // 11 November 2026: Claude Code on the person's computer clones, branches, pushes and opens the pull request, as the upstream's machines did.
-    assert.match(enabled, /The cloud agent is Claude Code on the user's own Claude plan/);
+    assert.match(enabled, /The cloud agent is Claude Code on the user's own Claude plan, or Codex on their ChatGPT plan/);
     assert.match(enabled, /it clones the repository, makes a new branch, writes the code, builds and tests it, then pushes the branch and opens a pull request/);
     assert.match(enabled, /Simeon's computer" \(the user's own computer\)/);
-    assert.match(enabled, /a Connect GitHub card in the chat/);
+    // 13 November 2026: neither connected, the chat offers both; GitHub's card as before.
+    assert.match(enabled, /puts a card in the chat: one that offers the programs to connect, by their own names \(Connect Claude Code, Connect Codex, Connect Cursor\), or a Connect GitHub card/);
+    assert.match(enabled, /When the user names the program \("in Cursor", "with Codex"\), pass it as launch's program/);
     assert.doesNotMatch(enabled, /does not check the repository out|app\.simeonlabs\.com\/agents/);
     assert.doesNotMatch(enabled, /mobile-ios-mac/, "no self-hosted pool is offered");
     assert.match(enabled, /"type":"environment","name":"Simeon's computer"/);

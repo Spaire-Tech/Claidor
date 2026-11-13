@@ -977,6 +977,10 @@ private struct TranscriptRow: View, Equatable {
       GitHubSignInCardView(card: card, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
         .padding(.top, startsGroup ? 12 : 0)
+    case .modelConnect(_, let card):
+      ModelConnectCardView(card: card, look: look)
+        .frame(maxWidth: limit(520), alignment: .leading)
+        .padding(.top, startsGroup ? 12 : 0)
     case .request(let id, .approval(let requestId, let summary, let reason, let command, let status, let surface, let proposedRule)):
       ApprovalCardView(entryId: id, agentId: agentId, requestId: requestId, summary: summary, reason: reason, command: command, status: status, surface: surface, proposedRule: proposedRule, look: look)
         .frame(maxWidth: limit(520), alignment: .leading)
@@ -1456,7 +1460,10 @@ private struct EventChip<Leading: View>: View {
  * Agents talking to each other, folded (`JIn`): "Messaged", "Message from"
  * or "4 messages with", then the agent, or "2 agents" over their
  * pictures. One agent's chip opens their messages over the chat; with
- * several, a menu of them (`Agents in this exchange`) does.
+ * several, a menu of them (`Agents in this exchange`) does. A cloud
+ * agent's report is a "Message from" line too, under its own name with
+ * Claude Code's or Codex's mascot for its picture, and its chip opens its
+ * conversation.
  */
 private struct ExchangeEvent: View {
   let exchange: Exchange
@@ -1466,7 +1473,7 @@ private struct ExchangeEvent: View {
 
   var body: some View {
     let peers = exchange.peers
-    let title = peers.count == 1 ? peers[0].name : String(localized: "\(peers.count) agents")
+    let title = peers.count == 1 ? peers[0].shownName : String(localized: "\(peers.count) agents")
     SystemEvent(label: exchange.label, look: look) {
       EventChip(title: title, help: peers.count == 1 ? String(localized: "Open \(title)'s messages") : String(localized: "\(title), show list"), look: look, action: {
         if peers.count == 1 {
@@ -1475,9 +1482,14 @@ private struct ExchangeEvent: View {
           ExchangeMenu.show(peers: peers, store: store, control: control, dark: look.dark)
         }
       }) {
-        // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
-        MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? MarkMember.of(id: peer.id) },
-                unit: 16, counted: false)
+        if peers.count == 1, peers[0].cloudAgent {
+          // A cloud agent's picture is the mascot of the program that coded (13 November 2026).
+          CloudAgentMark(party: peers[0], size: 16, look: look)
+        } else {
+          // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).
+          MarkRow(members: peers.prefix(3).map { peer in store.agent(peer.id).map { MarkMember.of($0) } ?? MarkMember.of(id: peer.id) },
+                  unit: 16, counted: false)
+        }
       }
     }
   }

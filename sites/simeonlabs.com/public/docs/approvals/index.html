@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap">
-<link rel="stylesheet" href="/site.css?v=e0ac8473">
+<link rel="stylesheet" href="/site.css?v=76455af9">
 <style>
 /* The Marketplace pages (/marketplace, /marketplace/<pack>): the home page's bar, type and colours (source/page.html) around
    the starter packs. Light only, every colour set here. Made by teams.py from server/simeon/desktop/packs.json. */
@@ -198,14 +198,15 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 </head>
 <body>
 
+<script>if(/Windows NT/.test(navigator.userAgent))document.documentElement.classList.add("on-windows")</script>
 <header class="bar">
   <div class="wrap">
     <a class="wordmark" href="/" aria-label="SimeonLabs home"></a>
     <nav class="bar-links" aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drops"><button class="drop" type="button" aria-haspopup="true">Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="drop-panel"><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></div><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav>
-    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div>
+    <div class="acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn" href="https://api.simeonlabs.com/desktop/download/mac">Download</a></div></div>
+      <div class="menu-in"><nav aria-label="Pages"><button class="drop" type="button" aria-disabled="true">Products<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="drop" type="button" aria-disabled="true">Solutions<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button><details class="menu-group"><summary>Resources<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div><a href="/marketplace">Marketplace</a><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a></div></details><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a></nav><div class="menu-acts"><a class="btn soft" href="/contact">Contact Sales</a><a class="btn for-mac" href="https://api.simeonlabs.com/desktop/download/mac">Download</a><a class="btn for-win" href="https://apps.microsoft.com/detail/9P588HGXP209">Download</a></div></div>
     </details>
   </div>
 </header>
@@ -220,7 +221,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
     <div class="words">
 <p>Your agents work on their own, but some things wait for you: an email that goes out under your name, a payment, an answer only you know, a password. For each of these the agent puts a card in its chat and stops until you answer it.</p>
 <p>This page covers each card and what happens when you answer, how purchases are approved, how agents use your Mac, and how your data is kept.</p>
-<div class="table"><table><thead><tr><th>Card</th><th>When you see it</th><th>Your answer</th></tr></thead><tbody><tr><td><strong>Email or <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> draft</strong></td><td>An agent wrote something that would go out under your name.</td><td><strong>Send email</strong> (or <strong>Send message</strong>), or <strong>Discard</strong></td></tr><tr><td><strong>Checkout</strong></td><td>An agent has an order ready to pay.</td><td><strong>Allow</strong> or <strong>Deny</strong></td></tr><tr><td><strong>Question</strong></td><td>The agent needs something only you know, like a budget or a date.</td><td>Pick an answer, write your own, or <strong>Skip</strong></td></tr><tr><td><strong>Secrets</strong></td><td>A task needs an API key or another secret.</td><td><strong>Save securely</strong> or <strong>Not now</strong></td></tr><tr><td><strong>Sign-in</strong></td><td>A page on the agent's computer needs a login or a code.</td><td><strong>Open</strong> the secure form and <strong>Fill in</strong>, or <strong>Not now</strong></td></tr><tr><td><strong>Your turn on the computer</strong></td><td>A step only you can do, like a passkey or a captcha.</td><td><strong>Take over</strong>, then <strong>I'm done</strong>, or <strong>Skip</strong></td></tr><tr><td><strong>Run commands on your computer</strong></td><td>An agent wants to run a command or open files on your Mac.</td><td><strong>Always allow</strong>, <strong>Allow once</strong> or <strong>Never</strong></td></tr></tbody></table></div>
+<div class="table"><table><thead><tr><th>Card</th><th>When you see it</th><th>Your answer</th></tr></thead><tbody><tr><td><strong>Email or <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> draft</strong></td><td>An agent wrote something that would go out under your name.</td><td><strong>Send email</strong> (or <strong>Send message</strong>), or <strong>Discard</strong></td></tr><tr><td><strong>Checkout</strong></td><td>An agent has an order ready to pay.</td><td><strong>Allow</strong> or <strong>Deny</strong></td></tr><tr><td><strong>Question</strong></td><td>The agent needs something only you know, like a budget or a date.</td><td>Pick an answer, write your own, or <strong>Skip</strong></td></tr><tr><td><strong>Secrets</strong></td><td>A task needs an API key or another secret.</td><td><strong>Save securely</strong> or <strong>Not now</strong></td></tr><tr><td><strong>Sign-in</strong></td><td>A page on the agent's computer needs a login or a code.</td><td><strong>Open</strong> the secure form and <strong>Fill in</strong>, or <strong>Not now</strong></td></tr><tr><td><strong>Your turn on the computer</strong></td><td>A step only you can do, like a passkey or a captcha.</td><td><strong>Take over</strong>, then <strong>I'm done</strong>, or <strong>Skip</strong></td></tr><tr><td><strong>Run commands on your computer</strong></td><td>An agent wants to run a command or open files on your Mac or PC.</td><td><strong>Always allow</strong>, <strong>Allow once</strong> or <strong>Never</strong></td></tr></tbody></table></div>
 <p>Cards look and work the same on the Mac, on iPhone and on the web. When an agent stops on a card, you get a notification that it needs you, with what it's asking.</p>
 <h2 id="emails-and-messages">Emails and messages</h2>
 <p>An email or a <span class="brand" style="color:#4a154b"><img class="logo" src="/docs/brands/slack.png?v=5b272967" alt="" aria-hidden="true">Slack</span> message that would go out under your name comes as a draft card first. Nothing is sent until you send it.</p>
@@ -266,7 +267,7 @@ html{scroll-padding-top:calc(clamp(52px,3.8*var(--vw,1vw),76px) + 24px)}
 <h3 id="what-happens-if-i-don-t-answer-a-card">What happens if I don't answer a card?</h3>
 <p>The agent waits. A card ends the agent's turn, so it doesn't carry on around it or ask again. Answer whenever you're ready: the agent's row in your chat list shows what it's asking.</p>
 <h3 id="can-a-routine-or-another-agent-approve-a-purchase">Can a routine or another agent approve a purchase?</h3>
-<p>No. Only you can allow a checkout, in the Simeon app on your Mac, iPhone or the web. Other agents and the assistants you've connected can't answer it.</p>
+<p>No. Only you can allow a checkout, in the Simeon app on your Mac, Windows PC, iPhone or the web. Other agents and the assistants you've connected can't answer it.</p>
 <h3 id="i-chose-allow-by-mistake-can-i-stop-the-purchase">I chose Allow by mistake. Can I stop the purchase?</h3>
 <p>If the card still says <strong>Approve with <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span></strong>, decline the purchase in the <span class="brand" style="color:#00964e"><img class="logo" src="/docs/brands/link.png?v=0ce1b95f" alt="" aria-hidden="true">Link</span> app and nothing is paid. Once the card says <strong>Ordered</strong>, the order is placed: cancel it with the shop, as you would any order.</p>
 <h3 id="can-an-agent-send-a-message-without-the-draft-card">Can an agent send a message without the draft card?</h3>
@@ -293,7 +294,7 @@ This page covers each card and what happens when you answer, how purchases are a
 | **Secrets** | A task needs an API key or another secret. | **Save securely** or **Not now** |
 | **Sign-in** | A page on the agent&#x27;s computer needs a login or a code. | **Open** the secure form and **Fill in**, or **Not now** |
 | **Your turn on the computer** | A step only you can do, like a passkey or a captcha. | **Take over**, then **I&#x27;m done**, or **Skip** |
-| **Run commands on your computer** | An agent wants to run a command or open files on your Mac. | **Always allow**, **Allow once** or **Never** |
+| **Run commands on your computer** | An agent wants to run a command or open files on your Mac or PC. | **Always allow**, **Allow once** or **Never** |
 
 Cards look and work the same on the Mac, on iPhone and on the web. When an agent stops on a card, you get a notification that it needs you, with what it&#x27;s asking.
 
@@ -421,7 +422,7 @@ The agent waits. A card ends the agent&#x27;s turn, so it doesn&#x27;t carry on 
 
 ### Can a routine or another agent approve a purchase?
 
-No. Only you can allow a checkout, in the Simeon app on your Mac, iPhone or the web. Other agents and the assistants you&#x27;ve connected can&#x27;t answer it.
+No. Only you can allow a checkout, in the Simeon app on your Mac, Windows PC, iPhone or the web. Other agents and the assistants you&#x27;ve connected can&#x27;t answer it.
 
 ### I chose Allow by mistake. Can I stop the purchase?
 
@@ -446,7 +447,7 @@ Only when you&#x27;ve told it, in that chat, to send that exact message to those
   <div class="wrap">
     <div class="foot-top">
       <a class="foot-mark" href="/" aria-label="SimeonLabs home"></a>
-      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
+      <nav class="foot-cols" aria-label="Site"><div class="foot-col"><h2>Product</h2><a href="/marketplace">Marketplace</a><a href="/connectors">Connectors</a><a href="/models">Models</a><a href="/pricing">Pricing</a><a href="https://api.simeonlabs.com/desktop/download/mac">Download for Mac</a><a href="https://apps.microsoft.com/detail/9P588HGXP209">Download for Windows</a></div><div class="foot-col"><h2>Company</h2><a href="/newsroom">Newsroom</a><a href="/docs" aria-current="page">Docs</a><a href="/contact">Contact</a></div><div class="foot-col"><h2>Legal</h2><a href="/privacy">Privacy policy</a><a href="/terms">Terms of service</a></div><div class="foot-col"><h2>Get started</h2><a href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><a href="https://app.simeonlabs.com/login">Log in</a></div></nav>
     </div>
     <div class="foot-base">
       <a class="foot-word" href="/" aria-label="SimeonLabs"></a>

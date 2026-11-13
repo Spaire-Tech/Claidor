@@ -15,11 +15,22 @@
 // an icon from the core's own GeneratedAppIcons.swift.
 
 import iconListSource from '../../../../../ios/SimeonCore/Sources/SimeonCore/GeneratedAppIcons.swift?raw'
+import { chatGPT, claude, providerName } from './aiModels'
 import type { ConnectedApp } from './connectedApps'
 import type { Entry } from './entry'
 import { type AgentFace, faceById, faceByVersion } from './faces'
 import { brandLogos, brandMentions } from './generatedBrands'
-import { arr, bool, field, int, isObject, num, str, text } from './json'
+import {
+  arr,
+  bool,
+  field,
+  int,
+  isObject,
+  type JSONValue,
+  num,
+  str,
+  text,
+} from './json'
 import { t } from './l10n'
 import { type Agent, hasPicture } from './models'
 
@@ -418,6 +429,8 @@ export interface CloudAgentInfo {
   filesChanged: number
   linesAdded: number
   linesRemoved: number
+  /** The program that codes for it, as the computer names it (`coder`: "claude-code", "codex"); empty from a computer that doesn't say. */
+  coder: string
 }
 
 export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
@@ -436,13 +449,14 @@ export function cloudAgentInfo(json: unknown): CloudAgentInfo | undefined {
     filesChanged: int(field(json, 'filesChanged')) ?? 0,
     linesAdded: int(field(json, 'linesAdded')) ?? 0,
     linesRemoved: int(field(json, 'linesRemoved')) ?? 0,
+    coder: words('coder'),
   }
 }
 
 /** The card when nothing could be read and nothing is coming: "Cloud agent", "Status unavailable". */
 export const unavailableCloudAgent: CloudAgentInfo = cloudAgentInfo({})!
 
-/** The badge: "Creating", "Running", "Done", "Error", "Expired", "Paused", "Status unavailable". */
+/** The badge: "Creating", "Running", "Done", "Failed" ("Error" until 13 November 2026), "Expired", "Paused", "Status unavailable". */
 export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
   switch (info.status) {
     case 'creating':
@@ -452,7 +466,7 @@ export function cloudAgentStatusLabel(info: CloudAgentInfo): string {
     case 'finished':
       return t('Done')
     case 'error':
-      return t('Error')
+      return t('Failed')
     case 'expired':
       return t('Expired')
     case 'paused':
@@ -573,9 +587,18 @@ export function gitHubSignInNextPoll(
   return state == null || state.kind === 'waiting' ? 3 : undefined
 }
 
-/** The line under the title: what to do with the code, or why there's nothing more to do. */
+/** The card's title: "Connect GitHub" while there is something to do, "GitHub" once it is connected (as a connected app's card names the app). */
+export function gitHubSignInTitle(
+  state: GitHubSignInState | undefined,
+): string {
+  return state?.kind === 'connected' ? 'GitHub' : t('Connect GitHub')
+}
+
+/** The line under the title: what to do with the code, why there's nothing more to do, or the account once it is connected (none when its name isn't known). */
 export function gitHubSignInLine(state: GitHubSignInState | undefined): string {
   switch (state?.kind) {
+    case 'connected':
+      return state.login ?? ''
     case 'expired':
       return t('This code expired. Ask your agent for a new one.')
     case 'failed':
@@ -604,6 +627,192 @@ export function gitHubSignInWords(): {
 export function gitHubConnectedLabel(login: string | undefined): string {
   return login ? t`Connected as ${login}` : t('Connected')
 }
+
+// MARK: Claude Code or Codex, for a cloud agent's coding
+
+/** The providers a cloud agent's coding can run on (`ModelConnectCard.offered`). */
+export const modelConnectOffered: readonly string[] = [
+  claude,
+  chatGPT,
+  'cursor',
+]
+
+/**
+ * Cursor, the third program a cloud agent can code in (13 November 2026, the
+ * founder: "Cursor now"; `ModelConnectCard.cursor`). It is no plan in AI
+ * Models: it is signed in on the person's cloud computer with Cursor's own
+ * program, and its row reads that computer (`cursorSignInState`).
+ */
+export const cursor = 'cursor'
+
+/** A provider whose sign-in is on the cloud computer and read from it, not from AI Models. */
+export function modelConnectOnComputer(provider: string): boolean {
+  return provider === cursor
+}
+
+/** Whose plan the program runs on, as the person knows it: Claude, ChatGPT, Cursor. */
+export function modelConnectPlan(provider: string): string {
+  return provider === cursor ? 'Cursor' : providerName(provider)
+}
+
+/**
+ * Cursor's sign-in on the cloud computer, as the engine says it
+ * (`getCursorSignIn`, `startCursorSignIn`; the core's `CursorSignIn`): its
+ * program being put on the computer, the page on Cursor's own site to
+ * approve on, connected, or why it ended.
+ */
+export type CursorSignIn =
+  | { state: 'none' }
+  | { state: 'installing' }
+  | { state: 'waiting'; url: string; expiresAtMs: number }
+  | { state: 'connected' }
+  | { state: 'failed'; why: string }
+
+/** A page on Cursor's own site, over https: the only kind the sheet opens. */
+export function isCursorPage(link: string): boolean {
+  try {
+    const url = new URL(link)
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'cursor.com' || url.hostname.endsWith('.cursor.com'))
+    )
+  } catch {
+    return false
+  }
+}
+
+export function cursorSignInState(record: JSONValue | undefined): CursorSignIn {
+  switch (str(field(record, 'state'))) {
+    case 'connected':
+      return { state: 'connected' }
+    case 'installing':
+      return { state: 'installing' }
+    case 'failed':
+      return { state: 'failed', why: str(field(record, 'why')) ?? '' }
+    case 'waiting': {
+      const url = str(field(record, 'url')) ?? ''
+      const expires = field(record, 'expiresAtMs')
+      return isCursorPage(url)
+        ? {
+            state: 'waiting',
+            url,
+            expiresAtMs: typeof expires === 'number' ? expires : 0,
+          }
+        : { state: 'none' }
+    }
+    default:
+      return { state: 'none' }
+  }
+}
+
+/** Seconds until the computer is asked again while the sheet waits (`CursorSignIn.pollSeconds`). */
+export const cursorPollSeconds = 3
+
+/** The sheet's words, with the program's name given (`CursorSignIn`'s). */
+export const cursorSheetWords = {
+  settingUp: (program: string): string =>
+    t`Setting up ${program} on your computer…`,
+  steps: (program: string): string =>
+    t`Open ${program}'s page and approve the sign-in there. This updates by itself.`,
+  open: (program: string): string => t`Open ${program}`,
+  waiting: (): string => t('Waiting for you to approve…'),
+  didNotFinish: (program: string): string =>
+    t`${program}'s sign-in didn't finish. Try again.`,
+  tryAgain: (): string => t('Try Again'),
+}
+
+/**
+ * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"; `ModelConnectCard` in the
+ * shared core): the providers offered, in the order shown. A cloud agent
+ * codes in Claude Code on the person's Claude plan, or in Codex on their
+ * ChatGPT plan; a launch that finds neither connected puts this card in the
+ * chat. It carries no state: what is connected is the person's own accounts
+ * (`store.aiModels`).
+ *
+ * The card names the programs; Settings › AI Models names the plans (the
+ * founder, the same day: "its connect codex or connect claude code ... for
+ * the card specifically its that. but settings is claude and chat gpt. they
+ * are two dif things").
+ */
+export interface ModelConnectCard {
+  providers: string[]
+}
+
+export function modelConnectCard(entry: Entry): ModelConnectCard | undefined {
+  const message = entry.message
+  if (str(field(message, 'type')) !== 'model-connect') return undefined
+  return { providers: modelConnectProviders(message) }
+}
+
+/** The providers a `model-connect` message offers: the ones this app knows, each once; all of them when it names none it knows. */
+export function modelConnectProviders(
+  message: JSONValue | undefined,
+): string[] {
+  const kept: string[] = []
+  for (const one of arr(field(message, 'providers')) ?? []) {
+    const provider = text(one)
+    if (
+      provider != null &&
+      modelConnectOffered.includes(provider) &&
+      !kept.includes(provider)
+    )
+      kept.push(provider)
+  }
+  // A card that names none it knows (an engine newer than this app) still offers them all.
+  return kept.length > 0 ? kept : [...modelConnectOffered]
+}
+
+/** The program that codes on a provider's plan, by its own name. */
+export function modelConnectProgram(provider: string): string {
+  return provider === chatGPT
+    ? 'Codex'
+    : provider === cursor
+      ? 'Cursor'
+      : 'Claude Code'
+}
+
+/** The program's own logo (`assets/mascots/<name>.png`), drawn whole and bare: no tile, no white or dark ground (the founder: "its full logo no white or dark background"). */
+export function modelConnectLogo(provider: string): string {
+  return provider === chatGPT
+    ? 'codex'
+    : provider === cursor
+      ? 'cursor'
+      : 'claudecode'
+}
+
+/** A row's title: "Connect Codex" while there is something to do, "Codex" once it is connected, as a connected app's card names the app. */
+export function modelConnectTitle(
+  provider: string,
+  connected: boolean,
+): string {
+  const name = modelConnectProgram(provider)
+  return connected ? name : t`Connect ${name}`
+}
+
+/** The line under a row's title: whose plan the program runs on, which is the account Connect signs in to; none once it is connected. */
+export function modelConnectLine(provider: string, connected: boolean): string {
+  if (connected) return ''
+  return t`Runs on your ${modelConnectPlan(provider)} plan.`
+}
+
+/** The card in the list of chats: "Connect Claude Code, Codex, Cursor"; a card for one program, that one's name. */
+export function modelConnectPreview(
+  providers: readonly string[] = modelConnectOffered,
+): string {
+  return t`Connect ${providers.map(modelConnectProgram).join(', ')}`
+}
+
+/** Seconds until the accounts are read again while a row still waits; never once one is connected. */
+export function modelConnectNextPoll(
+  anyConnected: boolean,
+): number | undefined {
+  return anyConnected ? undefined : 4
+}
+
+/** The most times the accounts are read again for one card: ten minutes, then a card left on screen with nothing connected stops asking. */
+export const modelConnectPolls = 150
 
 /** Where Open would have gone (`cloudAgentWebUrl`): Simeon's page for the run, its id written as a path's part (`urlPathAllowed` without "/"). Never made; the card opens the pull request instead (View PR, 11 November 2026). */
 export function cloudAgentWebURL(bcId: string): string {

@@ -842,6 +842,369 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 13 November 2026: a saved login's site icon, the Windows reader kept in step with the Mac's
+
+The founder: "theres an issue with the favicon of the saved logins in the
+mac and iphone. they dont all appear. some do others dont. in windows they
+all appear". The fix is in the shared core (`SiteIcons`,
+`ios/SimeonCore/Sources/SimeonCore/CredentialsStore.swift` and
+`LinkMetadata.swift`); the Windows reader (`windows/src/main/native/`)
+follows the same rules, so it was changed with it. The web app's own code
+(`clients/apps/app`) did not change, and its build was not made again.
+
+- **Measured first.** Both real readers were run from this session on the
+  same 226 public sites (the core's Swift on Linux, the Windows reader in
+  Node). Before: the Mac's found an icon for 193, the Windows one for 188;
+  the Windows one alone for 7, the Mac's alone for 12. So the two sets of
+  rules were close, and what differs on a real Mac or iPhone is partly what
+  can't run here (Apple's own network and picture code, and the network the
+  device is on).
+- **What was found, and changed in both readers.**
+  - A read that failed for any reason (no connection, a slow site, the app
+    put aside mid-read) was kept as "none" for a week. Now "none" is kept a
+    day and only when the site answered every request; a read that had no
+    answer writes nothing (the Mac and iPhone ask again five minutes later;
+    the Windows app's window keeps its answer for the run, so there it is
+    the next start).
+  - Only the first touch icon and the first icon of a page were tried. Now
+    every one is (three of each at most), then `/favicon.ico`.
+  - An address in 64:ff9b::/96 was refused whole. A network without IPv4
+    (NAT64: many phone networks) gives such an address for every site that
+    has only IPv4, so on it those sites had no icon and no link card. It is
+    now judged by the IPv4 address it carries (`embeddedIPv4`), as
+    "::ffff:1.2.3.4" is; the private ones stay refused.
+- **Changed on the Mac and iPhone only.** A picture is judged by its first
+  bytes, not by the site's label for it (2 of the 226 serve their icon as
+  "application/octet-stream"); icons are asked for as the Windows app asks
+  (any picture), so a site hands over its own file and not another format
+  (20 of 193 came back as AVIF or WebP before); a file with several pictures
+  (an .ico) gives its largest; the kept answers moved to a new folder
+  (`Caches/site-icons-2`), so the earlier "none"s are asked again; a row
+  drawn again for another login no longer keeps the last one's icon; a site
+  left without an icon writes its reason in the app's recent activity, never
+  its name.
+- **Changed on Windows only.** A page longer than 512 KB was dropped whole,
+  and its site had no icon unless it had a `/favicon.ico`; now its first
+  512 KB are read (the head is there).
+- **Checked.** After: the Mac's reader 196 of 226 with none lost, the
+  Windows one 200 with 13 gained (the long pages) and one lost to a site
+  that answered 502 on that run; both find the same 195. The core's tests
+  (`SiteIconsTests`, ten, with stand-in sites) and the Windows app's
+  (`test/native.test.ts`, 18) pass; `npm run typecheck` in `windows/`.
+- **Not checked.** On a Mac, an iPhone or a PC: the Swift only parses here,
+  and Apple's picture code (`bounded`) does not run on Linux. Whether this
+  is the whole of what the founder saw is not known until it has run there.
+  The four sites the Windows reader alone still finds here (three of
+  Microsoft's, one of Cloudflare's) differ by the network code of this
+  session's Linux, not by a rule.
+- **Left as it is.** A site whose only icon is an SVG (1 of the 226) shows
+  its first letter on the Mac and the iPhone, which draw none; the Windows
+  app draws it.
+- **Next.** The founder's check on the Mac and the iPhone after the next
+  build; if a login still has no icon, its `site icon: none (…)` line in a
+  report says why.
+
+### 13 November 2026: Connect Cursor, the card's third row
+
+The founder: "Cursor now". A cloud agent's coding can run in Cursor's own
+command-line agent on the person's Cursor plan (the engine and server side:
+`docs/services-agents.md`, section 1).
+
+- **Done in the web app.** The connect card offers a third program
+  (`modelConnectOffered`, `cursor`): "Connect Cursor", "Runs on your Cursor
+  plan.", with Cursor's own app icon (`assets/mascots/cursor.png`, cut from
+  the logo file on Cursor's brand page). Cursor is signed in on the cloud
+  computer, so its row reads the computer (`store.cursorSignIn`,
+  `getCursorSignIn`) on the card's own clock, not AI Models. Connect shows a
+  consent of its own (`codingConsent('cursor')`: the agents keep their model;
+  the sign-in stays on the cloud computer; to disconnect, ask an agent) and
+  then `CursorConnectSheet.tsx`: "Setting up Cursor on your computer…", then
+  "Open Cursor" (only a page on Cursor's own site is ever opened,
+  `isCursorPage`) with "Waiting for you to approve…", then "You're now
+  connected to Cursor."; a sign-in that didn't finish says so, with Try
+  Again. A card for one program alone ("in Cursor") draws that row only, and
+  the chat list's preview names what the card offers. A cloud agent that
+  codes in Cursor carries Cursor's logo on its lines (`cloudAgentMascot`).
+- **Checked.** `pnpm typecheck`, `pnpm test` (1,298 pass), `pnpm build`; in
+  Chromium against a stand-in server and computer, light and dark: the three
+  rows with their logos loaded, the consent's words, the sheet's three
+  states, the link opened (Cursor's site, never reached: `window.open` was
+  stood in), the row turned to Connected, the card for Cursor alone, Try
+  Again, 620 px wide with nothing sideways, no console errors.
+- **Not checked.** Against a real computer or a real Cursor account. The Mac
+  and iPhone screens (`MacCursorConnectSheet`, `CursorConnectSheet`) only
+  parse here; they were not built or run.
+- **Decisions, mine, for the founder to confirm.** Cursor's app icon as its
+  logo. No row for Cursor in Settings › AI Models (that page is the plans
+  the agents' own model runs on): disconnecting is asked of an agent. With
+  Claude or ChatGPT also connected, Cursor codes only when the person names
+  it.
+- **Next.** A real run once the engine is published; a Settings row for
+  Cursor if the founder wants one.
+
+### 13 November 2026: the dialog opened from the connect card says Codex and Claude Code
+
+The founder, asked whether the dialog after Connect should keep saying
+ChatGPT and Claude: "It should say codex and claude code but only when it
+opens from the card".
+
+- Connect on the card opens a consent of its own (`codingConsent`, the
+  core's `ConnectConsent(codingProvider:)`): the title is the program
+  ("Codex", "Claude Code"), under its own logo drawn bare at 64, with "Run
+  your cloud agents in Codex, on your ChatGPT plan." and its three points
+  in words for a cloud agent.
+- The sign-in sheet that follows (`ChatGPTConnectSheet`,
+  `ClaudeConnectSheet`, with `coding`) reads "Connect Codex" or "Connect
+  Claude Code" with the same logo (36), and ends "You're now connected to
+  Codex.".
+- Opened from Settings › AI Models, both are as they were: "ChatGPT",
+  "Claude", the plans' icons.
+- The bare logo is one part now (`ProgramLogo` in `ConnectCards.tsx`), used
+  by the card, the consent and the sheets.
+- Four new sentences in SimeonCore's catalogue, in its nine languages.
+
+Decisions (mine, to the founder's words):
+- The plan is still named where it is the plan or the page to sign in on
+  ("on your ChatGPT plan", "You'll sign in on ChatGPT's own page."): Codex
+  has no plan or sign-in page of its own.
+- The dialog says what connecting does to the person's own agents ("Your
+  agents use that plan too, unless you've picked another model."). It is
+  the same account as in Settings, and the app moves the agents to a newly
+  connected plan when no other model is chosen. Whether a connection made
+  from the card should leave the agents' model alone is the founder's to
+  decide; nothing in what connecting does was changed here.
+
+Checked: the web app's tests (1,297 pass), types, ESLint and Prettier on
+the changed files; the words made again and the build committed. In
+Chromium against the stand-in, light and dark: Connect on Claude Code's row
+opens "Claude Code" with its logo (64, its ground transparent, no shadow)
+and is cancelled; Connect on Codex's row opens "Codex", then "Connect
+Codex" with the code, then "You're now connected to Codex.", and the row
+reads "Codex / Connected"; no console errors. From Settings, the plan's
+dialog and sheets are covered by the tests, not opened in the browser.
+
+Not checked: the Mac's and the iPhone's dialogs and sheets (written, their
+Swift parses, not built with Xcode).
+
+### 13 November 2026: the connect card names the programs, Claude Code and Codex, with their logos bare
+
+The founder, on the card below as first built ("Connect Claude", "Connect
+ChatGPT", each on an app's tile): "So let me stop u here. Its connect codex
+or connect claude code. And its full logo no white or dark background. For
+the card specifically its that. But settings is claude and chat gpt. They
+are two dif things".
+
+- The rows read "Connect Claude Code" and "Connect Codex", and "Claude
+  Code" or "Codex" once connected (`modelConnectTitle`). The chat list's
+  line reads "Connect Claude Code, Codex" (`modelConnectPreview`).
+- Each row's picture is the program's own logo, the cut-outs the app
+  already ships (`assets/mascots/claudecode.png`, `codex.png`;
+  `modelConnectLogo`), drawn whole in an app icon's 40 place with nothing
+  behind it: no tile, no ground, no hairline (`.program-logo`). The
+  cut-outs keep a clear margin, so the picture is drawn at 48 and fills
+  the 40.
+- The line under each name says whose plan it runs on, which is the
+  account Connect signs in to: "Runs on your Claude plan.", "Runs on your
+  ChatGPT plan." (one sentence in SimeonCore's catalogue, in its nine
+  languages, in place of "Cloud agents code in %@.").
+- Settings › AI Models, the consent and the sign-in sheets are unchanged:
+  they name the plans, Claude and ChatGPT.
+- The agent is told to name the two as the card does (the engine's
+  `MODEL_CONNECT_CARD_TEXT` and the brief).
+
+Decisions (mine, to the founder's words): the line under each name keeps
+the plan's name, so "Connect Codex" opening ChatGPT's sign-in is no
+surprise; the consent that follows stays AI Models' own ("Connect
+ChatGPT"), since that is the account being connected.
+
+Checked: the web app's tests (1,292 pass), types, ESLint and Prettier on
+the changed files; the words made again and the build committed. In
+Chromium against the stand-in, light and dark: "Connect Claude Code" over
+"Runs on your Claude plan." and "Connect Codex" over "Runs on your ChatGPT
+plan."; each logo loaded, 48 in a 40 place, its ground transparent, no
+tile, no border or shadow; Connect on Codex's row through the consent and
+ChatGPT's sheet to "Codex / Connected"; the shell 520 wide (418 narrow),
+nothing sideways, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift
+parses, not built with Xcode).
+
+### 13 November 2026: the card that offers Claude and ChatGPT to connect; cloud agents in Codex
+
+The founder: "need to build this: Codex's is wired up and shows whenever a
+cloud agent is marked as run by Codex, but running one in Codex is not
+built. also when neither of them is connected, the user is given a choice
+of both cards to connect. after that we probably should do cursor".
+
+- Running a cloud agent in Codex is the server's and the engine's
+  (`docs/services-agents.md`, section 1; `docs/your-own-models.md`,
+  section 11). The web app already drew Codex's mascot for a cloud agent
+  marked as Codex's; nothing in those rows changed.
+- New in the chat: the `model-connect` card (`modelConnectCard` in
+  `core/connectCards.ts`, `ModelConnectCardView` in
+  `window/ModelConnectCard.tsx`, 520 wide). One shell with a row per
+  provider the engine names (Claude, ChatGPT; both when it names none it
+  knows): the provider's logo, "Connect Claude" with "Cloud agents code in
+  Claude Code." under it, and Connect. A connected row reads the
+  provider's name alone with "Connected" in the green capsule.
+- Connect asks as AI Models does: the consent
+  (`useConnector().ask(…, {consent: modelConsent(provider)})`), then that
+  provider's own sheet (`ChatGPTConnectSheet`, `ClaudeConnectSheet`, now
+  exported from `SettingsModels.tsx`), drawn in the page's body so it sits
+  over the chat.
+- Which row is connected is read from the app's own AI Models accounts
+  (`store.aiModels.connected`). While neither is, the card reads them
+  again every 4 s, 150 times at most (`modelConnectNextPoll`), so a
+  sign-in finished on another device shows too. The engine wakes the
+  agent by itself once one is connected.
+- One new sentence in SimeonCore's catalogue, "Cloud agents code in %@.",
+  in its nine languages; the words made again and the build committed.
+- The name check has one more kept line: the built index file's line that
+  holds the API-key providers' table (`docs/kept-names.md`).
+
+Decisions (mine, to the founder's words): one card with two rows, not two
+cards one under the other, so the choice reads as one question; the line
+under each name says which program codes ("Claude Code", "Codex") and
+nothing about plans, to stay on one line; the card lives in a file of its
+own because `SettingsModels.tsx` already imports the connect cards.
+
+Checked: the web app's tests (1,291 pass), types, ESLint and Prettier on
+the changed files (`pnpm lint` still names four older files, none of
+these). In Chromium against the stand-in, light and dark: both rows
+offered; Connect opens the consent, then ChatGPT's sheet, and the row
+turns to "ChatGPT / Connected"; the card with Claude already connected,
+and with both; a Codex cloud agent's "Messaged" line, its done card and
+its conversation's head with Codex's mascot; the shell 520 wide (418 in a
+narrow window), 20 round, nothing sideways, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift
+parses, not built with Xcode); the card on a real computer with a real
+account; anything against chatgpt.com.
+
+Next: cloud agents in Cursor, on the founder's word.
+
+### 13 November 2026: a cloud agent's exchange as messages, its card at the end, and the connect cards redrawn
+
+The founder, on the first real run (the card appeared at the launch, and
+the Connect GitHub card said "Connected as" with a green tick beside its
+stale "Enter this code"): "i never asked for a card i said plainly i wanted
+the message thing ... with message to and message from. like messaging
+agents work. so that means the agent should answer him and say on it. like
+a regular agent would. that card should only come once the job is done.
+with the view pr, open etc. and the done mark. or the failed if it did.
+also the connected. what is that design ... this is nowhere near our
+design".
+
+- The exchange is the engine's to write, not the web app's: the launch as
+  the agent's message to the cloud agent, its first words as its message
+  back, and the card only once it has ended (`docs/services-agents.md`,
+  "In the chat it reads as messages"). The web app already drew such lines
+  ("Messaged", "Message from", "2 messages with", each opening the cloud
+  agent's conversation); nothing in the chat's rows changed.
+- The cloud agent's card says "Failed" where it said "Error"
+  (`cloudAgentStatusLabel`; the word is new in SimeonCore's catalogue, in
+  its nine languages).
+- Connect GitHub (`GitHubSignInCardView`) and the routine's Connect Slack
+  and Connect GitHub (`ListenerConnectCardView`) are drawn as an app to
+  connect is: the card's own shell (20 round, 14 by 16), the app's icon
+  (40), the title and a line under it, "Connected" in the green capsule.
+  Once connected the card names the app ("GitHub", the account under it;
+  "Slack") and drops the line that said what to do
+  (`gitHubSignInTitle`, `gitHubSignInLine`). The green tick and its styles
+  are gone; the routine card's Connect is the cards' main pill.
+
+Decisions (mine, to the founder's words): "Failed" for a cloud agent that
+ended in an error; the routine's two cards redrawn with the GitHub one,
+since they showed the same tick; a connected card shows the account alone
+as its line, so "Connected" is said once.
+
+Checked: the web app's tests, types, ESLint and Prettier on the changed
+files; the words made again from the catalogues and the build committed. In
+Chromium against the stand-in, light and dark: the chat at the launch (the
+connected GitHub card, the agent's line, "Messaged"), while it works ("2
+messages with" and no card), and done ("Message from", then the card with
+Done, Open and View PR, then the agent's line); one that failed (the card
+says Failed, with Open alone); the line opens the conversation; the
+connect cards waiting, connected and expired, every icon loaded, no tick
+left, nothing sideways at 620 wide, no console errors.
+
+Not checked: the Mac's and the iPhone's cards (written, their Swift parses,
+not built); the engine's new lines on a real computer.
+
+### 13 November 2026: a cloud agent's picture is Claude Code's or Codex's mascot
+
+The founder, on the page above: "you put a cloude avatar. it should be
+whatever agent is used. either claude code or codex."
+
+- The cloud is gone. A cloud agent's picture, in the conversation's head,
+  beside its messages and on its "Message from" chip, is the mascot of the
+  program that coded (`assets/mascots/claudecode.png`, `codex.png`, the ones
+  External Agents uses), on Connect apps' tile (white, #2c2c2e on dark, a
+  hairline), round as a picture (`CloudMark` in `Call.tsx`, `.cloud-mark`).
+- The computer says which program (`coder`: "claude-code", "codex") in
+  `getCloudAgentInfo`, `getCloudAgentConversation` and the line's
+  `fromAgent`; `cloudAgentMascot` (externalAgents.ts) picks the mascot, and
+  Claude Code's when a computer doesn't say. Every cloud agent runs in
+  Claude Code today, so Codex's shows only once one can run in Codex.
+
+Checked: the web app's tests, types, ESLint and Prettier on the changed
+files; the build committed. In Chromium against the stand-in, light and
+dark: a cloud agent the stand-in says ran in Claude Code shows Claude Code's
+mascot in the chip, the head and beside its last message; one it says ran in
+Codex shows Codex's; both pictures load; no console errors.
+
+Not checked: the Mac's and the iPhone's (written, not built); a real cloud
+agent.
+
+### 13 November 2026: a cloud agent's conversation, and its report as a message from it
+
+The founder, with screenshots of another app: the agent should "talk to the
+cloud agent the same way it talks to another agent and give him the prompt,
+and then the agent let him know once things are done and then he tells us".
+Built in the Mac app, the iPhone app and here at once (the engine and the
+server too: `docs/services-agents.md`, "Cloud agents").
+
+- **The page.** A cloud agent's conversation is the page two agents'
+  messages have (`ExchangeView` in `Call.tsx`): what the agent asked it on
+  the agent's side, what it said along the way and its answers on the
+  cloud agent's, read-only, a cloud where an agent's picture would be. Its
+  lines come from the computer (`getCloudAgentConversation`,
+  `store.cloudAgentConversation`), again every five seconds while it works
+  (its state is read first, so the lines read after "done" are all of
+  them), and the page stays at the newest line while the person is there.
+- **Open.** The cloud agent's card has Open again, before View PR: it opens
+  the page over the chat. It was left out on 3 November because it went to
+  a page that doesn't exist.
+- **"Message from".** The cloud agent's report is a line of the chat, as a
+  teammate's message is, under the cloud agent's own name; its chip opens
+  the same page. A party is a cloud agent when the entry says so
+  (`fromAgent.kind` "cloud-agent", `Party.cloudAgent`); one with no name is
+  "Cloud agent".
+- **The core.** `cloudAgentLines` and `cloudAgentRows` in `exchanges.ts`,
+  beside `exchangeRows`, whose row builder they share (Exchanges.swift does
+  the same). `ChatCover`'s exchange carries `cloudAgent: {name}` for these.
+- No new words: "Open", "Cloud agent", "Message from" and the page's own
+  were in the Mac's catalogues already.
+
+Checked: the web app's tests (1,285 passed, three of them new in
+`exchanges.test.ts`), types, ESLint and Prettier; the build committed. In
+Chromium against a stand-in server and computer, light and dark: the card
+shows Open and View PR; Open shows the five lines with one stamp, the
+agent's name and picture on its prompt, the cloud agent's name over its run
+and its cloud beside the last; Escape and Close Chat close it; the "Message
+from" chip shows the cloud and opens the same page; a teammate's chip still
+opens the two agents' own messages; with a cloud agent that is still
+working the page grew from two lines to five and stopped asking once it was
+done; no console errors. SimeonCore's tests for the same rows ran on Linux.
+
+Not checked: against a real cloud agent (none has run to its end yet: the
+GitHub sign-in fix of #726 needs an engine publish first); in the Windows
+app's own window; the Mac's and the iPhone's pages, which are written and
+not built or run.
+
+Next: follow the pull request (checks failed, merged, a review) and wake the
+cloud agent with it; the founder decides which events and the limits.
+
 ### 13 November 2026: the old window is gone from app.simeonlabs.com
 
 The founder: the `/app` page "should not be available to anyone". It served

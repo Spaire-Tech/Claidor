@@ -155,6 +155,13 @@ public enum ExternalAgents {
     }
   }
 
+  /** The mascot of the program that coded for a cloud agent (`Party.mascot`): the kind's own when it has one (Cursor's logo for a cloud agent in Cursor, 13 November 2026), else Claude Code's. */
+  public static func cloudAgentMascot(_ coder: String?) -> String {
+    if coder == ModelConnectCard.cursor { return "cursor" }
+    guard let coder, let icon = icon(for: coder), mascots.contains(icon) else { return "claudecode" }
+    return icon
+  }
+
   /** A row of the page. */
   public struct Row: Identifiable, Equatable, Sendable {
     /** The server's row id for a connected bot (its kind, or `client:…`), else the known bot's kind. */

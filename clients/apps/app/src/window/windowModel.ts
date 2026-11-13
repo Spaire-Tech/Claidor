@@ -76,7 +76,13 @@ export type ComputerAsk =
  */
 export type ChatCover =
   | { kind: 'call'; agentId: string; lineId: string }
-  | { kind: 'exchange'; agentId: string; peerId: string }
+  | {
+      kind: 'exchange'
+      agentId: string
+      peerId: string
+      /** The peer is a cloud agent the agent started (13 November 2026): the page is its conversation, read from the computer, under this name, with the mascot of the program that coded. */
+      cloudAgent?: { name: string; coder?: string }
+    }
   /** A product of a products card opened over the chat (ShopCards.tsx's `ProductPage`), by its place on the card. */
   | { kind: 'product'; agentId: string; entryId: string; index: number }
 

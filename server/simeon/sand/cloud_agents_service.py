@@ -44,8 +44,8 @@ Where the work runs (11 November 2026, as the upstream app's, at the
 founder's word): the upstream app's cloud agents ran in its maker's
 virtual machines, which cloned the repository, made a branch, coded and
 opened the pull request. Simeon's run on the person's own computer, in
-Claude Code on their own Claude plan (`host/cloud-agents/coding-run.ts`):
-a launch from an engine that asks for it (`usePrivateWorker` with the
+Claude Code on their own Claude plan, or in Codex on their ChatGPT plan
+(13 November 2026; `host/cloud-agents/coding-run.ts`): a launch from an engine that asks for it (`usePrivateWorker` with the
 `executor: computer` label) makes a `computer` job, which only that
 person's computer claims (`cloud_agents_computer.py`). A launch from an
 older engine still goes to the cloud runner, which answers in words.
@@ -214,9 +214,26 @@ def _words(work: dict[str, Any], key: str) -> str:
     return value if isinstance(value, str) else ""
 
 
+def coding_model_id(agent: SandCloudAgent) -> str:
+    """The model that codes for `agent`: the one its computer last said
+    (`work.modelId`), else the one its launch asked for."""
+    said = (agent.work or {}).get("modelId")
+    return said if isinstance(said, str) and said else (agent.model_id or "")
+
+
+def coding_plan_name(agent: SandCloudAgent) -> str:
+    """Whose plan the coding runs on, as the person knows it: ChatGPT when
+    Codex codes (`own:chatgpt:…`), Cursor when Cursor's own agent does
+    (`own:cursor:…`, 13 November 2026), Claude otherwise."""
+    model = coding_model_id(agent)
+    if model.startswith("own:chatgpt:"):
+        return "ChatGPT"
+    return "Cursor" if model.startswith("own:cursor:") else "Claude"
+
+
 def limited_until_ms(agent: SandCloudAgent, job: MatyJob) -> int | None:
-    """When the person's Claude plan lets the work go on, for a turn the
-    plan's limit stopped; None otherwise."""
+    """When the person's plan (Claude's, or ChatGPT's) lets the work go on,
+    for a turn the plan's limit stopped; None otherwise."""
     if job.status is not MatyJobStatus.failed:
         return None
     until = (agent.work or {}).get("limitedUntilMs")
@@ -282,9 +299,11 @@ class CloudAgentsService:
             "hasStartedVm": job.status is not MatyJobStatus.queued,
             "isKilled": job.status is MatyJobStatus.failed
             and job.error in CANCELLED_REASONS,
+            # The model that codes, which says the program too (Claude Code
+            # or Codex): the computer's own word once it has started.
             **(
-                {"requestedModel": {"modelId": agent.model_id}}
-                if agent.model_id
+                {"requestedModel": {"modelId": coding_model_id(agent)}}
+                if coding_model_id(agent)
                 else {}
             ),
         }
@@ -325,7 +344,8 @@ class CloudAgentsService:
                 "error": ERROR_CUSTOM_MESSAGE,
                 "details": (
                     {
-                        "title": "Paused: the Claude plan's limit is reached",
+                        "title": f"Paused: the {coding_plan_name(agent)} plan's "
+                        "limit is reached",
                         "detail": job.error,
                         "additionalInfo": {"rateLimitReason": LIMIT_REASON},
                     }
@@ -382,11 +402,38 @@ class CloudAgentsService:
             )
         return rows
 
-    def conversation(self, job: MatyJob) -> list[dict[str, Any]]:
+    def conversation(
+        self, job: MatyJob, updates: list[dict[str, Any]] | None = None
+    ) -> list[dict[str, Any]]:
         """`simeon.v1.ConversationMessage`s, as
-        `convertConversationMessagesToTrace` reads them."""
+        `convertConversationMessagesToTrace` reads them.
+
+        `updates` are what the cloud agent said along the way
+        (`SandCloudAgent.work["updates"]`, written by the computer's
+        heartbeat): AI messages whose `bubbleId` starts `update-`, each
+        turn's before that turn's answer, and a turn with no answer yet
+        (still running, or stopped) at the end."""
+        by_turn: dict[str, list[dict[str, Any]]] = {}
+        for update in updates or []:
+            if isinstance(update, dict) and str(update.get("text") or "").strip():
+                by_turn.setdefault(str(update.get("jobId") or ""), []).append(update)
         rows: list[dict[str, Any]] = []
+
+        def said_along_the_way(turn: str) -> None:
+            for number, update in enumerate(by_turn.pop(turn, [])):
+                rows.append(
+                    {
+                        "text": str(update.get("text") or ""),
+                        "type": MESSAGE_AI,
+                        "bubbleId": f"update-{turn}-{number}",
+                        "isAgentic": True,
+                        "createdAt": str(update.get("createdAtMs") or 0),
+                    }
+                )
+
         for index, message in enumerate(job.conversation or []):
+            if message.get("role") != "user":
+                said_along_the_way(str(message.get("jobId") or job.id))
             created = message.get("createdAtMs") or 0
             rows.append(
                 {
@@ -399,6 +446,8 @@ class CloudAgentsService:
                     "createdAt": str(created),
                 }
             )
+        for turn in list(by_turn):
+            said_along_the_way(turn)
         return rows
 
     def environment(self) -> dict[str, Any]:
@@ -633,8 +682,8 @@ class CloudAgentsService:
     async def transcript(
         self, session: AsyncSession, user: User, bc_id: str
     ) -> list[dict[str, Any]]:
-        _, job = await self._agent(session, user, bc_id)
-        return self.conversation(job)
+        agent, job = await self._agent(session, user, bc_id)
+        return self.conversation(job, (agent.work or {}).get("updates"))
 
     # --- the runner's side -----------------------------------------------
 

@@ -790,8 +790,7 @@ struct ConnectorCard: View {
       }
       Spacer(minLength: 0)
       if isConnected {
-        // Green, word and tick (the founder, 16 October 2026).
-        Label(Connecting.connected, systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.success).labelStyle(.titleAndIcon)
+        ConnectedMark()
       } else if store.isComingSoon(name) {
         // Not one an agent can be given yet (`AppsComingSoon`).
         PluginPill(title: AppsComingSoon.label, fill: Ink.pillButton, ink: Ink.tertiary)
@@ -908,9 +907,11 @@ struct ConnectConsentSheet: View {
     .presentationDragIndicator(.visible)
   }
 
-  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter), with an app icon's corners; an app by its tile. */
+  /** A program by its own logo, bare (`ProgramLogo`: Codex's or Claude Code's, from the chat's card); a plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter), with an app icon's corners; an app by its tile. */
   @ViewBuilder private var logo: some View {
-    if let provider = consent.provider, let icon = UIImage(named: "Providers/\(provider)") {
+    if let program = consent.programLogo {
+      ProgramLogo(name: program, size: 56)
+    } else if let provider = consent.provider, let icon = UIImage(named: "Providers/\(provider)") {
       let shape = RoundedRectangle(cornerRadius: 56 * ConnectorLogo.iconCorner, style: .continuous)
       Image(uiImage: icon)
         .resizable()
@@ -925,12 +926,51 @@ struct ConnectConsentSheet: View {
   }
 }
 
+/** "✓ Connected" in green, word and tick (the founder, 16 October 2026): how an app's card, a routine's Connect card and the Connect GitHub card say it is connected. */
+struct ConnectedMark: View {
+  var body: some View {
+    Label(Connecting.connected, systemImage: "checkmark").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.success).labelStyle(.titleAndIcon)
+  }
+}
+
 /**
- * "Connect Slack" (`sand-listener-connect-card`, view-3mdFcnEj.js): the
- * app's logo, "Connect Slack" with why ("Connect Slack so this routine can
- * fire.", or the window's own line), and Connect; once linked, "Slack
- * connected" and a green check. Connect opens the linking page outside the
- * app, as the Mac does, and the card asks every five seconds until linked.
+ * The row an app's card is made of (`ConnectorCard`), for the two cards
+ * that connect one app (a routine's Slack or GitHub, GitHub on the
+ * computer): the app's tile, its title (13, 500) and a line under it, then
+ * what the card says or offers at the right.
+ */
+struct ConnectAppRow<End: View>: View {
+  let app: String
+  let title: String
+  let line: String
+  /** A program's own logo in place of the app's tile (`ProgramLogo`): Claude Code's or Codex's. */
+  var logo: String? = nil
+  @ViewBuilder var end: () -> End
+
+  var body: some View {
+    HStack(spacing: 12) {
+      if let logo { ProgramLogo(name: logo) } else { ConnectorTile(name: app) }
+      VStack(alignment: .leading, spacing: 0) {
+        Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+        if !line.isEmpty {
+          Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      Spacer(minLength: 0)
+      end()
+    }
+  }
+}
+
+/**
+ * "Connect Slack" (`sand-listener-connect-card`, view-3mdFcnEj.js), drawn
+ * as an app to connect is (13 November 2026, the founder of the green tick
+ * in a circle: "this is nowhere near our design"): the app's tile, "Connect
+ * Slack" with why ("Connect Slack so this routine can fire.", or the
+ * window's own line), and Connect; once linked, the app's name and
+ * "✓ Connected" as a connected app's card. Connect opens the linking page
+ * outside the app, as the Mac does, and the card asks every five seconds
+ * until linked.
  */
 struct ListenerConnectCard: View {
   let platform: String
@@ -948,17 +988,9 @@ struct ListenerConnectCard: View {
   }
 
   var body: some View {
-    HStack(spacing: 12) {
-      ConnectorTile(name: name, size: 32)
-      VStack(alignment: .leading, spacing: 2) {
-        Text(connected == true ? "\(name) connected" : "Connect \(name)").font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
-        if connected != true {
-          Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
-        }
-      }
-      Spacer(minLength: 0)
+    ConnectAppRow(app: name, title: connected == true ? name : String(localized: "Connect \(name)"), line: connected == true ? "" : line) {
       if connected == true {
-        Label("Connected", systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.success).labelStyle(ConnectedLabel())
+        ConnectedMark()
       } else if connected == nil || opening {
         ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
       } else {
@@ -985,13 +1017,15 @@ struct ListenerConnectCard: View {
 
 /**
  * "Connect GitHub" with a one-time code (`github-sign-in`, 11 November 2026;
- * SimeonCore's `GitHubSignInCard`): GitHub's tile and the title with a line
- * under it, as Connect Slack above, then the code large in monospaced figures
- * and the card's buttons, Copy code and Open GitHub (our blue, last). The
- * person opens GitHub's page on this iPhone, signs in to GitHub there as
- * usual and types the code; the card asks the computer every three seconds
- * and turns to "Connected as octo" with a green check, or says the code
- * expired. The agent goes on by itself once GitHub is connected.
+ * SimeonCore's `GitHubSignInCard`), drawn as an app to connect is (13
+ * November 2026): GitHub's tile and the title with a line under it, then the
+ * code large in monospaced figures and the card's buttons, Copy code and
+ * Open GitHub (our blue, last). The person opens GitHub's page on this
+ * iPhone, signs in to GitHub there as usual and types the code; the card
+ * asks the computer every three seconds. Once GitHub is connected the code
+ * and its line go, and the card reads as a connected app's: "GitHub", the
+ * account under it, "✓ Connected". A code that ran out says it expired. The
+ * agent goes on by itself once GitHub is connected.
  */
 struct GitHubSignInCardView: View {
   let card: GitHubSignInCard
@@ -1002,27 +1036,12 @@ struct GitHubSignInCardView: View {
   @State private var copied = false
 
   private var waiting: Bool { state == nil || state == .waiting }
-  private var line: String {
-    switch state {
-    case .expired: return GitHubSignInCard.expiredLabel
-    case .failed: return GitHubSignInCard.failedLabel
-    default: return GitHubSignInCard.prompt
-    }
-  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 14) {
-      HStack(spacing: 12) {
-        ConnectorTile(name: "GitHub", size: 32)
-        VStack(alignment: .leading, spacing: 2) {
-          Text(GitHubSignInCard.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(Ink.primary)
-          if case .connected = state {} else {
-            Text(line).font(.system(size: 13)).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
-          }
-        }
-        Spacer(minLength: 0)
+      ConnectAppRow(app: "GitHub", title: GitHubSignInCard.title(state), line: GitHubSignInCard.line(state)) {
         if case .connected(let login) = state {
-          Label(GitHubSignInCard.connectedLabel(login), systemImage: "checkmark.circle.fill").font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.success).labelStyle(ConnectedLabel())
+          ConnectedMark().accessibilityLabel(GitHubSignInCard.connectedLabel(login))
         }
       }
       if waiting {
@@ -1055,12 +1074,121 @@ struct GitHubSignInCardView: View {
   }
 }
 
-/** The green check beside the green "Connected". */
-private struct ConnectedLabel: LabelStyle {
-  func makeBody(configuration: Configuration) -> some View {
-    HStack(spacing: 4) {
-      configuration.icon.foregroundStyle(Ink.success)
-      configuration.title
+/**
+ * Claude Code's or Codex's own logo, whole and bare (13 November 2026, the
+ * founder: "its full logo no white or dark background"): no tile, no ground
+ * and no hairline behind it, in the place an app's 40 tile takes. The
+ * cut-outs (`Mascots/`) keep a clear margin around the picture, so it is
+ * drawn a fifth larger than its place and the picture itself fills the 40.
+ */
+struct ProgramLogo: View {
+  let name: String
+  var size: CGFloat = 40
+
+  var body: some View {
+    Image("Mascots/\(name)")
+      .resizable()
+      .interpolation(.high)
+      .scaledToFit()
+      .frame(width: size * 1.2, height: size * 1.2)
+      .frame(width: size, height: size)
+      .accessibilityHidden(true)
+  }
+}
+
+/**
+ * "Connect Claude Code" and "Connect Codex" in one card (`model-connect`, 13
+ * November 2026, the founder: "when neither of them is connected, the user
+ * is given a choice of both cards to connect"): what a cloud agent's coding
+ * runs in. Each row is a program, by its own name and its own logo bare
+ * (the founder, the same day: "its connect codex or connect claude code ...
+ * for the card specifically its that. but settings is claude and chat
+ * gpt"), over whose plan it runs on. Connect shows the consent AI Models
+ * shows for that plan, then its own sign-in sheet (`ChatGPTConnectSheet`,
+ * `ClaudeConnectSheet`). A connected program reads as a connected app
+ * does. What is connected is the app's own accounts (`store.aiModels`),
+ * read again while both rows wait. The agent goes on by itself once one is
+ * connected.
+ */
+struct ModelConnectCardView: View {
+  let card: ModelConnectCard
+  @Environment(AppStore.self) private var store
+  @Environment(\.chatWidth) private var width
+  /** The consent an app's Connect shows, before the provider's sign-in; Connect on it marks `confirmed`. */
+  @State private var asking: ConnectConsent?
+  @State private var pending: String?
+  @State private var confirmed = false
+  /** The provider whose code sheet is open (ChatGPT's). */
+  @State private var connectingByCode: String?
+  @State private var connectingClaude = false
+  /** Cursor's own sheet (it is signed in on the cloud computer, on Cursor's page; 13 November 2026). */
+  @State private var connectingCursor = false
+  /** What the computer last said of Cursor's sign-in (its row reads the cloud computer, not AI Models); `cursorAsked` once it has answered or couldn't be asked. */
+  @State private var cursorSignIn: CursorSignIn?
+  @State private var cursorAsked = false
+
+  private func isConnected(_ provider: String) -> Bool {
+    ModelConnectCard.onComputer(provider) ? cursorSignIn?.connected == true : store.aiModels.connected(provider)
+  }
+
+  var body: some View {
+    let model = store.aiModels
+    VStack(alignment: .leading, spacing: 14) {
+      ForEach(card.providers, id: \.self) { provider in
+        let connected = isConnected(provider)
+        // Still being read: the accounts for a plan's row, the computer for Cursor's.
+        let reading = ModelConnectCard.onComputer(provider) ? !cursorAsked : !model.loaded && model.problem == nil
+        ConnectAppRow(app: ModelConnectCard.program(provider), title: ModelConnectCard.title(provider, connected: connected), line: ModelConnectCard.line(provider, connected: connected), logo: ModelConnectCard.logo(provider)) {
+          if connected {
+            ConnectedMark()
+          } else if reading {
+            ProgressView().controlSize(.small).accessibilityLabel("Checking connection status")
+          } else {
+            Button(ModelConnectCard.connectLabel) {
+              confirmed = false
+              pending = provider
+              asking = ConnectConsent(codingProvider: provider)
+            }
+            .buttonStyle(Tactile(look: CardPillStyle(tone: .main, height: 32)))
+          }
+        }
+      }
+    }
+    .card()
+    .frame(maxWidth: ChatMetrics.bubbleMax(width), alignment: .leading)
+    // The sign-in opens once the consent has gone, as an app's Connect does.
+    .sheet(item: $asking, onDismiss: {
+      guard confirmed, let provider = pending else { pending = nil; return }
+      confirmed = false
+      pending = nil
+      if provider == ModelConnectCard.cursor { connectingCursor = true } else if provider == AIModels.claude { connectingClaude = true } else { connectingByCode = provider }
+    }) { consent in
+      ConnectConsentSheet(consent: consent) { confirmed = true }
+    }
+    .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
+      NavigationStack { ChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT, coding: true) }
+    }
+    .sheet(isPresented: $connectingClaude) {
+      NavigationStack { ClaudeConnectSheet(model: model, coding: true) }
+    }
+    .sheet(isPresented: $connectingCursor, onDismiss: {
+      // The row follows what the sheet left on the computer.
+      Task { cursorSignIn = await store.cursorSignIn() }
+    }) {
+      NavigationStack { CursorConnectSheet() }
+    }
+    .task(id: card.providers) {
+      // For ten minutes at most: a card left on screen with nothing connected stops asking.
+      for _ in 0..<150 {
+        if Task.isCancelled { return }
+        await model.load()
+        if card.providers.contains(ModelConnectCard.cursor) {
+          cursorSignIn = await store.cursorSignIn()
+          cursorAsked = true
+        }
+        guard let wait = ModelConnectCard.nextPoll(anyConnected: card.providers.contains(where: isConnected)) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
     }
   }
 }
@@ -2247,8 +2375,7 @@ struct PeerStack: View {
   var body: some View {
     HStack(spacing: -size * 0.375) {
       ForEach(Array(peers.prefix(3).enumerated()), id: \.offset) { _, peer in
-        AgentIdAvatar(id: peer.id)
-          .frame(width: size, height: size)
+        PartyAvatar(party: peer, size: size)
       }
     }
   }
@@ -2259,7 +2386,10 @@ struct PeerStack: View {
  * each agent it names has a page of its own with this one (the founder, 9
  * October 2026: "when an agent message many at the same time, its not all
  * in one chat. its each by each"). One agent: the line opens its page. More:
- * a menu of them, by name, and the one picked opens.
+ * a menu of them, by name, and the one picked opens. A cloud agent's report
+ * is a "Message from" line too (13 November 2026), under its own name with
+ * Claude Code's or Codex's mascot for its picture, and it opens the cloud
+ * agent's conversation.
  */
 struct TeammatesLine: View {
   let exchange: Exchange
@@ -2275,7 +2405,7 @@ struct TeammatesLine: View {
       Text(exchange.label)
       if peers.count > 1 {
         Menu {
-          ForEach(peers, id: \.id) { peer in Button(peer.name) { open(peer) } }
+          ForEach(peers, id: \.id) { peer in Button(peer.shownName) { open(peer) } }
         } label: {
           chip
         }
@@ -2298,7 +2428,7 @@ struct TeammatesLine: View {
   private var chip: some View {
     HStack(spacing: 4) {
       PeerStack(peers: exchange.peers)
-      Text(exchange.peers.count == 1 ? exchange.peers[0].name : String(localized: "\(exchange.peers.count) agents"))
+      Text(exchange.peers.count == 1 ? exchange.peers[0].shownName : String(localized: "\(exchange.peers.count) agents"))
     }
     .padding(.vertical, 4).padding(.leading, 4).padding(.trailing, 6)
     .tapRoom(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -2326,6 +2456,13 @@ struct ExchangeRoute: Hashable, Identifiable {
  * "Read-only" at the foot. Its lines are everything the two said to each
  * other in this agent's chat (`Chat.exchangeRows`, tested), newest at the
  * bottom.
+ *
+ * A cloud agent's conversation is the same page (13 November 2026; the
+ * founder: the agent "talks to the cloud agent the same way it talks to
+ * another agent"): opened from its card (Open) or its "Message from" line,
+ * its lines are what the agent asked it, what it said along the way and its
+ * answers (`Chat.cloudAgentRows`, tested), read from the computer and again
+ * every five seconds while it works, as its card asks.
  */
 struct ExchangePage: View {
   let route: ExchangeRoute
@@ -2334,12 +2471,16 @@ struct ExchangePage: View {
   @Environment(AppStore.self) private var store
   @Environment(\.colorScheme) private var scheme
   @State private var width: CGFloat = 361
+  /** A cloud agent's conversation, as last read from the computer. */
+  @State private var cloudLines: [CloudAgentLine] = []
 
   var body: some View {
     // Read so the page follows the chat as it grows; the lines themselves are the chat's kept entries.
     let _ = store.rows(for: route.agentId)
     let me = Party(id: route.agentId, name: store.agent(route.agentId)?.name ?? "")
-    let rows = Chat.exchangeRows(store.transcripts[route.agentId] ?? fallback, agent: me, peerId: route.peer.id)
+    let rows = route.peer.cloudAgent
+      ? Chat.cloudAgentRows(cloudLines, agent: me, cloudAgent: route.peer)
+      : Chat.exchangeRows(store.transcripts[route.agentId] ?? fallback, agent: me, peerId: route.peer.id)
     let mentioning = Mentioning(names: store.mentionNames, personName: store.account?.name, dark: scheme == .dark)
     ScrollView {
       LazyVStack(alignment: .leading, spacing: 0) {
@@ -2357,7 +2498,7 @@ struct ExchangePage: View {
               .frame(width: 28)
               VStack(alignment: .leading, spacing: 3) {
                 if first {
-                  Text(sender.name).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
+                  Text(sender.shownName).font(.system(size: 13)).foregroundStyle(Ink.secondary).padding(.leading, 12)
                 }
                 // Cut as the chat's bubbles are: a message of megabytes laid out whole holds the screen still.
                 MarkdownView(blocks: Markdown.cachedBlocks(Chat.clipped(text, limit: 20_000).text), mentioning: mentioning.spoken(by: sender.id))
@@ -2389,6 +2530,19 @@ struct ExchangePage: View {
     }
     .background(Ink.ground)
     .inlineBarTitle()
+    .task(id: route.id) {
+      guard route.peer.cloudAgent else { return }
+      cloudLines = []
+      var known: CloudAgentInfo?
+      while !Task.isCancelled {
+        // Its state first: once that says it is done, the lines read after it are all of them.
+        let read = await store.cloudAgent(route.peer.id)
+        if case .info(let info) = read { known = info }
+        if let lines = await store.cloudAgentConversation(route.peer.id) { cloudLines = lines }
+        guard let wait = CloudAgentInfo.nextPoll(after: read, known: known) else { return }
+        try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
+      }
+    }
   }
 }
 
@@ -2404,13 +2558,13 @@ struct ExchangeHeadline: View {
         PartyAvatar(party: peer, size: 44)
       }
       .frame(height: 52)
-      Text("\(me.name) and \(peer.name)").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
+      Text("\(me.name) and \(peer.shownName)").font(.system(size: 13, weight: .medium)).foregroundStyle(Ink.primary).lineLimit(1)
         .padding(.horizontal, 12).padding(.vertical, 4)
         .glassEffect(.regular, in: .capsule)
     }
     .padding(.horizontal, 70)
     .accessibilityElement(children: .ignore)
-    .accessibilityLabel("\(me.name) and \(peer.name)")
+    .accessibilityLabel("\(me.name) and \(peer.shownName)")
     .allowsHitTesting(false)
     // Up into the bar's row, beside its back button, as the chat's.
     #if os(iOS)
@@ -2428,7 +2582,22 @@ struct PartyAvatar: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    AgentIdAvatar(id: party.id).frame(width: size, height: size)
+    if party.cloudAgent {
+      // A cloud agent's picture is the mascot of the program that coded, Claude Code's or Codex's (13 November 2026,
+      // the founder: "it should be whatever agent is used"), on Connect apps' tile, round as a picture.
+      Image("Mascots/\(party.mascot ?? "claudecode")")
+        .resizable()
+        .interpolation(.high)
+        .scaledToFit()
+        .padding(size * 0.1)
+        .frame(width: size, height: size)
+        .background(Ink.appsTile)
+        .clipShape(Circle())
+        .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+        .accessibilityHidden(true)
+    } else {
+      AgentIdAvatar(id: party.id).frame(width: size, height: size)
+    }
   }
 }
 

@@ -21,7 +21,14 @@ from pytest_mock import MockerFixture
 from simeon.config import settings
 from simeon.models import User
 from simeon.postgres import AsyncSession
-from simeon.sand.cloud_agents_computer import ComputerWork, merged_work
+from simeon.sand.cloud_agents_computer import (
+    UPDATES_KEPT,
+    UPDATES_PER_TURN,
+    ComputerUpdate,
+    ComputerWork,
+    merged_updates,
+    merged_work,
+)
 from tests.sand.test_cloud_agents import (
     BC,
     RUNNER,
@@ -336,6 +343,7 @@ class TestStops:
         detailed = await _info(client, headers, bc_id)
         assert detailed["composer"]["status"] == 3
         details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the Claude plan's limit is reached"
         assert details["additionalInfo"]["rateLimitReason"] == "sand_included_limit"
         assert details["detail"] == reason
         assert "summary" not in detailed
@@ -354,6 +362,96 @@ class TestStops:
         again = await _computer_claim(client, headers)
         assert again is not None
         assert "limitedUntilMs" not in again["work"]
+
+    async def test_a_run_in_codex_names_its_model_and_chatgpt_s_limit(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """The computer says which model codes (13 November 2026): the app
+        reads it back as the cloud agent's model, the next turn is handed
+        it, and a limit names the plan it ran on."""
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        job = await _computer_claim(client, headers)
+        assert job is not None
+        beat = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "work": {"modelId": "own:chatgpt:gpt-6.1-sol", "sessionId": "t-1"},
+            },
+        )
+        assert beat.status_code == 200, beat.text
+        detailed = await _info(client, headers, bc_id)
+        assert detailed["composer"]["requestedModel"] == {
+            "modelId": "own:chatgpt:gpt-6.1-sol"
+        }
+        failed = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/fail",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "reason": "ChatGPT's plan limit was reached.",
+                "retryable": False,
+                "work": {"limitedUntilMs": 1_794_150_000_000},
+            },
+        )
+        assert failed.status_code == 200, failed.text
+        detailed = await _info(client, headers, bc_id)
+        details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the ChatGPT plan's limit is reached"
+        assert details["additionalInfo"]["rateLimitReason"] == "sand_included_limit"
+
+        await client.post(
+            f"{BC}/AddAsyncFollowupBackgroundComposer",
+            json={
+                "bcId": bc_id,
+                "followupConversationAction": _user_message("Continue."),
+                "synchronous": False,
+                "followupSource": "grok-bot",
+            },
+            headers=headers,
+        )
+        again = await _computer_claim(client, headers)
+        assert again is not None
+        assert again["work"]["modelId"] == "own:chatgpt:gpt-6.1-sol"
+        assert again["work"]["sessionId"] == "t-1"
+
+    async def test_a_run_in_cursor_names_its_model_and_cursor_s_limit(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Cursor's own agent is the third program (13 November 2026): its
+        model is kept with the cloud agent as the others' are, and a limit
+        names Cursor's plan."""
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        job = await _computer_claim(client, headers)
+        assert job is not None
+        beat = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "work": {"modelId": "own:cursor:auto", "sessionId": "c-1"},
+            },
+        )
+        assert beat.status_code == 200, beat.text
+        detailed = await _info(client, headers, bc_id)
+        assert detailed["composer"]["requestedModel"] == {"modelId": "own:cursor:auto"}
+        failed = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/fail",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "reason": "Cursor's plan limit was reached.",
+                "retryable": False,
+                "work": {"limitedUntilMs": 1_794_150_000_000},
+            },
+        )
+        assert failed.status_code == 200, failed.text
+        detailed = await _info(client, headers, bc_id)
+        details = detailed["permanentError"]["details"]
+        assert details["title"] == "Paused: the Cursor plan's limit is reached"
 
     async def test_another_stop_tells_the_agent_why(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -424,6 +522,168 @@ class TestStops:
             json={"runner": "computer-1"},
         )
         assert response.status_code == 401
+
+
+async def _conversation(
+    client: httpx.AsyncClient, headers: dict[str, str], bc_id: str
+) -> list[tuple[int, str]]:
+    response = await client.post(
+        f"{BC}/GetBackgroundComposerConversation",
+        json={"bcId": bc_id},
+        headers=headers,
+    )
+    assert response.status_code == 200, response.text
+    return [(row["type"], row["text"]) for row in response.json()["conversation"]]
+
+
+@pytest.mark.asyncio
+class TestAlongTheWay:
+    """What the cloud agent says while it works (13 November 2026): the
+    computer's heartbeat carries it, and the conversation the apps read has it
+    between the prompt and the answer."""
+
+    async def test_updates_are_in_the_conversation_before_the_turn_s_answer(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        job = await _computer_claim(client, headers)
+        assert job is not None
+        assert "updates" not in job["work"]
+
+        beat = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "updates": [{"text": "Reading the login code.", "atMs": 1_000}],
+            },
+        )
+        assert beat.status_code == 200, beat.text
+        assert await _conversation(client, headers, bc_id) == [
+            (1, "Fix the login bug."),
+            (2, "Reading the login code."),
+        ]
+
+        # The whole list each time: one more line, and the first is not doubled.
+        said = [
+            {"text": "Reading the login code.", "atMs": 1_000},
+            {"text": "The redirect drops the query. Fixing it.", "atMs": 2_000},
+        ]
+        again = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={"runner": "computer-1", "updates": said},
+        )
+        assert again.status_code == 200, again.text
+        # A heartbeat with none keeps what was said, and the card's work with it.
+        kept = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/heartbeat",
+            headers=headers,
+            json={"runner": "computer-1", "work": {"branchName": "simeon/login"}},
+        )
+        assert kept.status_code == 200, kept.text
+        info = await _info(client, headers, bc_id)
+        assert info["composer"]["branchName"] == "simeon/login"
+
+        done = await client.post(
+            f"{COMPUTER}/jobs/{job['id']}/complete",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "result": "Fixed the login redirect.",
+                "messages": [
+                    {"role": "assistant", "text": "Fixed the login redirect."}
+                ],
+                "updates": said,
+            },
+        )
+        assert done.status_code == 200, done.text
+        assert await _conversation(client, headers, bc_id) == [
+            (1, "Fix the login bug."),
+            (2, "Reading the login code."),
+            (2, "The redirect drops the query. Fixing it."),
+            (2, "Fixed the login redirect."),
+        ]
+
+    async def test_a_follow_up_s_updates_come_after_the_first_turn_s_answer(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        bc_id = await _start(client, headers)
+        first = await _computer_claim(client, headers)
+        assert first is not None
+        await client.post(
+            f"{COMPUTER}/jobs/{first['id']}/complete",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "result": "Done.",
+                "messages": [{"role": "assistant", "text": "Done."}],
+                "updates": [{"text": "Looking.", "atMs": 1_000}],
+            },
+        )
+        followed = await client.post(
+            f"{BC}/AddAsyncFollowupBackgroundComposer",
+            json={
+                "bcId": bc_id,
+                "followupConversationAction": _user_message("Add a test too."),
+            },
+            headers=headers,
+        )
+        assert followed.status_code == 200, followed.text
+        second = await _computer_claim(client, headers)
+        assert second is not None
+        assert second["id"] != first["id"]
+        assert "updates" not in second["work"], "its own words are not sent back"
+        await client.post(
+            f"{COMPUTER}/jobs/{second['id']}/heartbeat",
+            headers=headers,
+            json={
+                "runner": "computer-1",
+                "updates": [{"text": "Writing the test.", "atMs": 5_000}],
+            },
+        )
+        assert await _conversation(client, headers, bc_id) == [
+            (1, "Fix the login bug."),
+            (2, "Looking."),
+            (2, "Done."),
+            (1, "Add a test too."),
+            (2, "Writing the test."),
+        ]
+
+
+class TestMergedUpdates:
+    def test_a_turn_s_list_replaces_what_the_turn_said_and_keeps_the_others(
+        self,
+    ) -> None:
+        kept = [
+            {"text": "a", "createdAtMs": 1, "jobId": "one"},
+            {"text": "b", "createdAtMs": 2, "jobId": "two"},
+        ]
+        merged = merged_updates(
+            kept, "two", [ComputerUpdate(text="b"), ComputerUpdate(text="c", atMs=3)]
+        )
+        assert merged == [
+            {"text": "a", "createdAtMs": 1, "jobId": "one"},
+            {"text": "b", "createdAtMs": 0, "jobId": "two"},
+            {"text": "c", "createdAtMs": 3, "jobId": "two"},
+        ]
+        assert merged_updates(kept, "two", None) == kept, "none sent: all kept"
+
+    def test_only_the_last_of_a_turn_and_of_the_agent_are_kept(self) -> None:
+        many = [ComputerUpdate(text=str(n)) for n in range(UPDATES_PER_TURN + 5)]
+        turn = merged_updates([], "one", many)
+        assert len(turn) == UPDATES_PER_TURN
+        assert turn[-1]["text"] == str(UPDATES_PER_TURN + 4)
+        full = [
+            {"text": str(n), "createdAtMs": n, "jobId": f"job-{n}"}
+            for n in range(UPDATES_KEPT)
+        ]
+        merged = merged_updates(full, "new", [ComputerUpdate(text="last")])
+        assert len(merged) == UPDATES_KEPT
+        assert merged[0]["text"] == "1"
+        assert merged[-1]["text"] == "last"
 
 
 class TestMergedWork:

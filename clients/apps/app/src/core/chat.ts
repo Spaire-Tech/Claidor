@@ -17,6 +17,7 @@ import {
   pictureExtensions,
   sameDay,
 } from './chatRuns'
+import { modelConnectPreview, modelConnectProviders } from './connectCards'
 import { Entry, earlierCall } from './entry'
 import {
   type JSONValue,
@@ -208,6 +209,7 @@ export type CardKind =
   | 'storeEntry'
   | 'cloudAgent'
   | 'gitHubSignIn'
+  | 'modelConnect'
   | 'purchase'
   | 'products'
   | 'flightPassengers'
@@ -673,6 +675,8 @@ export function cardText(message: unknown): string {
         : t('Connect GitHub')
     case 'github-sign-in':
       return t('Connect GitHub')
+    case 'model-connect':
+      return modelConnectPreview(modelConnectProviders(message as JSONValue))
     case 'purchase':
       return str(field(message, 'content')) ?? t('Checkout')
     case 'products':
@@ -1458,6 +1462,8 @@ export function rowFor(entry: Entry): ChatRow | undefined {
             : undefined
         case 'github-sign-in':
           return card('gitHubSignIn')
+        case 'model-connect':
+          return card('modelConnect')
         case 'purchase':
           return card('purchase')
         case 'products':

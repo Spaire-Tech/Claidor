@@ -73,7 +73,33 @@ const CLAUDE_CODE_MODEL = /^[a-z][a-z0-9.-]{0,63}$/;
 /** The efforts Claude Code takes (`claude --help`, 2.1.311). */
 const CLAUDE_CODE_EFFORTS: ReadonlySet<string> = new Set(["low", "medium", "high", "xhigh", "max"]);
 
+/** The wire of a cloud agent's coding in Codex on the computer (the server's `CODEX_TRANSPORT`). */
+export const CODEX_TRANSPORT = "codex";
+/** The role of the rows that say what a cloud agent's coding runs in (the server's `CODING_ROLE`). */
+export const CODING_ROLE = "coding";
+/** A Codex model name as `-m` takes it (`gpt-6.1-sol`), and an effort (`model_reasoning_effort`). */
+const CODEX_MODEL = /^[a-z][a-z0-9.-]{0,63}$/;
+const CODEX_EFFORT = /^[a-z]{2,12}$/;
+
+/**
+ * A program a cloud agent's coding may run in on this computer (13 November
+ * 2026): Claude Code on the person's Claude plan, or Codex on their ChatGPT
+ * plan, with the model and the effort it is given. The server lists the ones
+ * connected, the one to take first (`coding_rows` in
+ * `server/simeon/desktop/own_models.py`); none listed, neither is connected.
+ */
+export interface SimeonCodingProgram {
+  readonly coder: "claude-code" | "codex";
+  /** The model as the program names it (`claude-opus-5-5`, `gpt-6.1-sol`). */
+  readonly model: string;
+  readonly effort?: string;
+  /** The model as Simeon names it (`own:claude:claude-opus-5-5`, `own:chatgpt:gpt-6.1-sol`). */
+  readonly modelId: string;
+}
+
 let current: SimeonModelRoles = {};
+/** The coding programs of the last read, kept apart from the roles as the names are. */
+let codingPrograms: readonly SimeonCodingProgram[] = [];
 /**
  * The roles the engine's last run kept (`model-roles.json` as this run found
  * it at its start): the model the agents were last on before this engine
@@ -154,6 +180,45 @@ export function rememberSimeonModelNames(body: unknown): void {
   }
   modelNames = names;
   claudeCodeModelId = claude;
+}
+
+/** The programs a cloud agent's coding may run in, the one to take first; empty when neither is connected (or the server is an older one). */
+export function simeonCodingPrograms(): readonly SimeonCodingProgram[] {
+  return codingPrograms;
+}
+
+/** The coding programs in one `/desktop/api/models/available` answer: its rows of the `coding` role, in their order. */
+export function parseSimeonCodingPrograms(body: unknown): SimeonCodingProgram[] {
+  const rows = (body as { data?: unknown } | null | undefined)?.data;
+  if (!Array.isArray(rows)) return [];
+  const programs: SimeonCodingProgram[] = [];
+  for (const row of rows as (Row & { codexModel?: unknown; codexEffort?: unknown })[]) {
+    if (row == null || row.role !== CODING_ROLE || row.accessible === false || typeof row.modelId !== "string" || row.modelId.trim() === "") continue;
+    const modelId = row.modelId.trim();
+    if (row.transportApi === CLAUDE_CODE_TRANSPORT && typeof row.claudeCodeModel === "string" && CLAUDE_CODE_MODEL.test(row.claudeCodeModel.trim())) {
+      const effort = typeof row.claudeCodeEffort === "string" && CLAUDE_CODE_EFFORTS.has(row.claudeCodeEffort) ? row.claudeCodeEffort : undefined;
+      programs.push({ coder: "claude-code", model: row.claudeCodeModel.trim(), ...(effort === undefined ? {} : { effort }), modelId });
+    } else if (row.transportApi === CODEX_TRANSPORT && typeof row.codexModel === "string" && CODEX_MODEL.test(row.codexModel.trim())) {
+      const effort = typeof row.codexEffort === "string" && CODEX_EFFORT.test(row.codexEffort) ? row.codexEffort : undefined;
+      programs.push({ coder: "codex", model: row.codexModel.trim(), ...(effort === undefined ? {} : { effort }), modelId });
+    }
+  }
+  return programs;
+}
+
+export function setSimeonCodingProgramsForTest(programs: readonly SimeonCodingProgram[]): void {
+  codingPrograms = [...programs];
+}
+
+/**
+ * The roles read again now, whatever the last read's age (the chat's card to
+ * connect Claude or ChatGPT waits on it, `model-connect-wait.ts`). True when
+ * the server answered.
+ */
+export async function readSimeonModelRolesNow(): Promise<boolean> {
+  const source = liveSource;
+  if (source === undefined) return false;
+  return await refreshSimeonModelRoles(source) !== undefined;
 }
 
 export function setSimeonModelRolesForTest(roles: SimeonModelRoles): void {
@@ -285,9 +350,10 @@ export async function refreshSimeonModelRoles(source: SimeonModelRolesSource): P
     }
     current = roles;
     rememberSimeonModelNames(body);
+    codingPrograms = parseSimeonCodingPrograms(body);
     lastReadAt = Date.now();
     if (source.rememberIn !== undefined) keep(source.rememberIn, roles);
-    note(`${HOST_LOG_PREFIX} model-roles ${rolesLine(roles)}`);
+    note(`${HOST_LOG_PREFIX} model-roles ${rolesLine(roles)}${codingPrograms.length === 0 ? "" : ` coding=${codingPrograms.map((one) => `${one.coder}:${one.model}`).join(",")}`}`);
     return roles;
   } catch (error) {
     note(`${HOST_LOG_PREFIX} model-roles unread reason=${error instanceof Error ? error.message : String(error)}`);

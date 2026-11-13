@@ -61,7 +61,7 @@ Your data stays in your account, and it's never used to train AI models.
 
 | | |
 |---|---|
-| **A Mac** | With Apple silicon, on macOS 15 or later. [Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac). |
+| **A Mac or a Windows PC** | A Mac with Apple silicon on macOS 15 or later ([Download Simeon for macOS](https://api.simeonlabs.com/desktop/download/mac)), or a PC with Windows 10 or 11 ([get Simeon from the Microsoft Store](https://apps.microsoft.com/detail/9P588HGXP209)). |
 | **An account** | Sign up with your email, Google or Apple. |
 | **A plan** | Standard is $30 a month, Pro $100 and Max $200. Each starts with a 7-day free trial. Plans differ in how much your agents can do each week. See [Plans and billing](/docs/billing). |
 
@@ -69,9 +69,9 @@ You don't need API keys or accounts with AI companies: the models your agents us
 
 ## Common questions
 
-### Does Simeon keep working when my Mac is closed?
+### Does Simeon keep working when my computer is closed?
 
-Yes. Your agents work on the cloud computer, not on your Mac, so routines run on schedule while your Mac is asleep or closed. The computer sleeps when nobody uses it and wakes when there's work.
+Yes. Your agents work on the cloud computer, not on your own, so routines run on schedule while your Mac or PC is asleep or closed. The computer sleeps when nobody uses it and wakes when there's work.
 
 ### Can several agents work at the same time?
 

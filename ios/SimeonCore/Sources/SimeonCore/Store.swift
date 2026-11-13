@@ -1385,6 +1385,31 @@ public final class AppStore {
     return CloudAgentInfo(answer).map(CloudAgentInfo.Read.info) ?? .empty
   }
 
+  /** A cloud agent's conversation (`getCloudAgentConversation`): its lines, or nil when it couldn't be asked or the computer knows none. */
+  public func cloudAgentConversation(_ bcId: String) async -> [CloudAgentLine]? {
+    guard let backend, !bcId.isEmpty else { return nil }
+    guard let answer = try? await backend.command("getCloudAgentConversation", ["bcId": .string(bcId)]) else { return nil }
+    return CloudAgentLine.lines(answer)
+  }
+
+  /** How Cursor's sign-in on the computer stands (`getCursorSignIn`), for the connect card's Cursor row; nil when it couldn't be asked (an engine from before Cursor, or no computer). */
+  public func cursorSignIn() async -> CursorSignIn? {
+    guard let backend, let record = try? await backend.command("getCursorSignIn", [:]) else { return nil }
+    return CursorSignIn(record)
+  }
+
+  /** Starts Cursor's sign-in on the computer (`startCursorSignIn`): its state then, with Cursor's link once its program has printed it. */
+  public func startCursorSignIn() async -> CursorSignIn? {
+    guard let backend, let record = try? await backend.command("startCursorSignIn", [:]) else { return nil }
+    return CursorSignIn(record)
+  }
+
+  /** Signs Cursor out on the computer (`signOutCursor`). */
+  public func signOutCursor() async -> CursorSignIn? {
+    guard let backend, let record = try? await backend.command("signOutCursor", [:]) else { return nil }
+    return CursorSignIn(record)
+  }
+
   /** How GitHub's sign-in on the computer stands (`getGitHubSignIn`), for the Connect GitHub card; nil when it couldn't be asked. */
   public func gitHubSignIn() async -> JSON? {
     guard let backend else { return nil }

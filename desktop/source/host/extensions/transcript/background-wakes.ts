@@ -88,6 +88,18 @@ export class BackgroundWakes {
   ): void {
     this.agentToAgent.appendAgentOutboundEntry(...args);
   }
+  /** The agent's launch or follow-up, as its message to the cloud agent in its chat. */
+  noteCloudAgentAsked(
+    ...args: Parameters<AgentToAgentMessaging["noteCloudAgentAsked"]>
+  ): void {
+    this.agentToAgent.noteCloudAgentAsked(...args);
+  }
+  /** The cloud agent's first words in a turn, as its message back in the chat of the agent that asked. */
+  noteCloudAgentSaid(
+    ...args: Parameters<AgentToAgentMessaging["noteCloudAgentSaid"]>
+  ): Promise<boolean> {
+    return this.agentToAgent.noteCloudAgentSaid(...args);
+  }
 
   deliverToChannel(
     runSession: any,

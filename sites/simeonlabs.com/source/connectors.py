@@ -212,7 +212,7 @@ def finder(apps, kinds, assets):
 # Questions on connecting an app, each one what the apps do today (ConnectConsent.swift, the sign-in sheet;
 # docs/services-agents.md, 7): how to connect, what agents reach, staying in charge, where it goes, Coming soon.
 CONN_QA = [
-    ("How do I connect an app?", "In Simeon on your Mac or iPhone, open Connect apps and choose the app, or say yes when an agent asks for one in the chat. You sign in once, and Simeon never sees your password. A few apps ask for a key from your account with them instead."),
+    ("How do I connect an app?", "In Simeon on your Mac, Windows PC or iPhone, open Connect apps and choose the app, or say yes when an agent asks for one in the chat. You sign in once, and Simeon never sees your password. A few apps ask for a key from your account with them instead."),
     ("What can my agents do in an app?", "What your account there allows: your email in Gmail, your deals in HubSpot or your books in QuickBooks, for example. Before you sign in, Simeon shows what your agents will be able to read and use."),
     ("Will they act without asking me?", "Auto-review asks for your OK before steps it judges risky, and you can turn off any of an app's tools, or remove the app, in Settings › Connect apps. Agents can still get things wrong, so look over their work, especially at first."),
     ("Where does my information go?", "What your agents read in an app becomes part of your chats with them and is sent to the AI models that do the work. The app's own terms and privacy policy apply to what it shares with Simeon."),

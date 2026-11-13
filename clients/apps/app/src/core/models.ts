@@ -19,11 +19,37 @@ import { t } from './l10n'
 export interface Party {
   id: string
   name: string
+  /**
+   * A cloud agent an agent started, not one of the person's agents (`kind`
+   * "cloud-agent", 13 November 2026): its `id` is the cloud agent's own, and
+   * its page is its conversation read from the computer (`cloudAgentRows`),
+   * not lines of this chat. Left out for everyone else.
+   */
+  cloudAgent?: true
+  /**
+   * The program that coded for a cloud agent, as the computer names it
+   * (`coder`: "claude-code", "codex"): the app draws its mascot as the cloud
+   * agent's picture (`cloudAgentMascot` in externalAgents.ts). Left out for
+   * an agent, and for a cloud agent whose line doesn't say.
+   */
+  coder?: string
 }
 
 export function partyFrom(json: unknown): Party | undefined {
   const id = text(field(json, 'id'))
-  return id ? { id, name: text(field(json, 'name')) ?? '' } : undefined
+  if (!id) return undefined
+  const party: Party = { id, name: text(field(json, 'name')) ?? '' }
+  if (str(field(json, 'kind')) === 'cloud-agent') {
+    party.cloudAgent = true
+    const coder = text(field(json, 'coder'))
+    if (coder) party.coder = coder
+  }
+  return party
+}
+
+/** A party's name as the app writes it (`shownName`): a cloud agent the computer gave no name is "Cloud agent". */
+export function shownName(party: Party): string {
+  return party.name === '' && party.cloudAgent ? t('Cloud agent') : party.name
 }
 
 /**

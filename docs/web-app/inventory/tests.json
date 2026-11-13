@@ -1,7 +1,7 @@
 [
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/AIModelsTests.swift",
-  "tests": 18
+  "tests": 19
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/AccessTests.swift",
@@ -45,7 +45,7 @@
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatExtrasTests.swift",
-  "tests": 43
+  "tests": 47
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/ChatPeekTests.swift",
@@ -238,6 +238,10 @@
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/SimeonNetworkTests.swift",
   "tests": 3
+ },
+ {
+  "file": "ios/SimeonCore/Tests/SimeonCoreTests/SiteIconsTests.swift",
+  "tests": 10
  },
  {
   "file": "ios/SimeonCore/Tests/SimeonCoreTests/SleepingComputerTests.swift",

@@ -72,7 +72,10 @@ SpaceXAI (xAI's API) is also one of the providers a person brings their own
 API key for (10 November 2026, `docs/your-own-models.md`, section 7). Its
 own rule keeps `xai`, `spacex` and its models' name, Grok, in the files of
 that feature only (the website's AI models pages and SpaceXAI's mark
-included), under the same condition.
+included), under the same condition. The web app's built index file is
+minified, so that provider's name in its table can land on one line with the
+picture of the bot's mascot, which the condition refuses: one more rule keeps
+exactly the table's name (`xai: SpaceXAI`) in that file (13 November 2026).
 
 The Simeon Network (10 November 2026, `docs/services-agents.md`, section 18)
 names the agents that join it as the products they are: Cursor, the coding
@@ -84,6 +87,14 @@ only the words `Cursor`, `Grok Bot` and the client name `"grok"` there. Settings
 same way: the Bots rule covers its files on the server, in SimeonCore, the three apps and their
 words, and the network's rule its server files' `Cursor` (Grok Bot signs in with Cursor's
 registration).
+
+Cloud agents in Cursor (13 November 2026, `docs/services-agents.md`, section 1): Cursor's own
+command-line agent is a program a cloud agent's coding can run in, beside Claude Code and Codex.
+One more **contract** rule covers the files that install it, sign in to it on the computer, run
+a turn in it and offer it on the chat's connect card (the engine's `host/cursor/` and cloud
+agent files, the server's plan name, SimeonCore and the three apps' card and sheet, their
+tests): they name it as the product it is, with its download address and the site its sign-in
+page is on. A second rule keeps the same in the web app's built index file.
 
 ## The wire, for one release
 

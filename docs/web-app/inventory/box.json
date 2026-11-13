@@ -26,7 +26,7 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "buyProduct",
@@ -68,14 +68,14 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "completeMcpOAuth",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/LoopbackSignIn.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "connectOnePassword",
@@ -89,7 +89,7 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "createAgent",
@@ -100,7 +100,7 @@
     "ios/SimeonCore/Sources/SimeonCore/StoreNewChat.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreRebuild.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "createAgentAutomation",
@@ -108,7 +108,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "createGroup",
@@ -117,7 +117,7 @@
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreNewChat.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "deleteAgentAutomation",
@@ -125,7 +125,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "deleteAgents",
@@ -133,21 +133,21 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "desktopMcp",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "discardDraft",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "dismissOnePasswordConnect",
@@ -161,7 +161,7 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "dismissUserForm",
@@ -175,14 +175,14 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "duplicateAgent",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "ensureForeverBox",
@@ -190,7 +190,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getAgentAutomations",
@@ -198,14 +198,14 @@
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getAgentChannels",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Jump.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getAgentTranscriptTail",
@@ -213,28 +213,42 @@
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
     "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getAgentWorkflows",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
+  },
+  {
+   "command": "getCloudAgentConversation",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
   },
   {
    "command": "getCloudAgentInfo",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
+  },
+  {
+   "command": "getCursorSignIn",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
   },
   {
    "command": "getForeverBoxStatus",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getGitHubSignIn",
@@ -251,49 +265,49 @@
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreSettings.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getListenerConnectUrl",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getListenerIntegrations",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "getSubagents",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "handBackForeverBox",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/StoreComputer.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "isAgentNetworkEnabled",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Jump.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "isGlobalSearchEnabled",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Search.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "kickstartAgent",
@@ -301,56 +315,56 @@
     "ios/SimeonCore/Sources/SimeonCore/Onboarding.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "listAgents",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "listAllAutomations",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Search.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "openAgentTail",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "reactToMessage",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "readAttachmentChunk",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "readAttachmentImage",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "readAttachmentText",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "refreshUserName",
@@ -364,28 +378,28 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/StoreRebuild.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "resolveAutoReviewApproval",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "resolveLocalToolPermission",
    "files": [
     "mac/Simeon/MacLocalPermission.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "respondToWidget",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "runAgentAutomationNow",
@@ -393,35 +407,35 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "searchAgents",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Search.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "searchMedia",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Search.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "sendDraft",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "sendPrompt",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setAgentAutomationEnabled",
@@ -429,7 +443,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setAgentAvatarBytes",
@@ -438,21 +452,21 @@
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreFaces.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setAgentHiddenFromSidebar",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setAgentNotifyOnUpdates",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setAgentUnread",
@@ -460,7 +474,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Backend.swift",
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setGroupMembers",
@@ -468,7 +482,7 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "setHostSettings",
@@ -480,7 +494,21 @@
     "mac/Simeon/MacLocalPermission.swift",
     "mac/Simeon/MacServices.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
+  },
+  {
+   "command": "signOutCursor",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
+  },
+  {
+   "command": "startCursorSignIn",
+   "files": [
+    "ios/SimeonCore/Sources/SimeonCore/Store.swift"
+   ],
+   "old_web_app": false
   },
   {
    "command": "startFlightBooking",
@@ -508,7 +536,7 @@
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "submitUserForm",
@@ -539,7 +567,7 @@
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreFaces.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "updateAgentAutomation",
@@ -547,21 +575,21 @@
     "ios/SimeonCore/Sources/SimeonCore/Store.swift",
     "ios/SimeonCore/Sources/SimeonCore/StoreAgents.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "uploadAttachment",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/Store.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   },
   {
    "command": "voiceCall",
    "files": [
     "ios/SimeonCore/Sources/SimeonCore/VoiceCall.swift"
    ],
-   "old_web_app": true
+   "old_web_app": false
   }
  ],
  "host_commands": [
@@ -622,8 +650,10 @@
   "getAsyncTasks",
   "getBoxSecretsStatus",
   "getBoxStoreStatus",
+  "getCloudAgentConversation",
   "getCloudAgentInfo",
   "getConversationOutline",
+  "getCursorSignIn",
   "getForeverBoxStatus",
   "getGitHubSignIn",
   "getHostSettings",
@@ -696,8 +726,10 @@
   "setHostSettings",
   "setSharedRoomTyping",
   "setWindowFocused",
+  "signOutCursor",
   "skillsCatalog",
   "snapshotBoxStoreNow",
+  "startCursorSignIn",
   "startFlightBooking",
   "startTeachRecording",
   "stopAgentTask",

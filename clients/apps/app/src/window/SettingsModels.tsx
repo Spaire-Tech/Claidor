@@ -65,13 +65,17 @@ import {
   usable,
   usageLine,
 } from '../core/aiModels'
-import { providerIconURL } from '../core/connectCards'
+import {
+  modelConnectLogo,
+  modelConnectProgram,
+  providerIconURL,
+} from '../core/connectCards'
 import { keyConsent, modelConsent } from '../core/connectConsent'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { classes } from './classes'
 import { copyText } from './clipboard'
-import { AppLogoTile } from './ConnectCards'
+import { AppLogoTile, ProgramLogo } from './ConnectCards'
 import './ConnectCards.css'
 import { useConnector } from './connector'
 import { ContextMenu, type MenuLine } from './ContextMenu'
@@ -680,7 +684,7 @@ function RenameAccountAlert({
 }
 
 /** A page of the web opened in a new tab, without `opener` or the referrer (in the Windows app, the default browser). */
-function openPage(url: string): void {
+export function openPage(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
@@ -692,16 +696,21 @@ function openPage(url: string): void {
  * needs gone"). Connected, it says which model the agents now use. The code
  * lasts 15 minutes; closing the sheet stops the asking.
  */
-function ChatGPTConnectSheet({
+export function ChatGPTConnectSheet({
   model,
   provider,
+  coding = false,
   close,
 }: {
   model: Model
   /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
   provider: string
+  /** Opened from the chat's card for a cloud agent's coding: named and drawn as the program, Codex (13 November 2026, the founder: "it should say codex and claude code but only when it opens from the card"). */
+  coding?: boolean
   close: () => void
 }) {
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  const name = coding ? modelConnectProgram(provider) : providerName(provider)
   const [signIn, setSignIn] = useState<ChatGPTSignIn>()
   const [outcome, setOutcome] = useState<ChatGPTPoll>()
   const [copied, setCopied] = useState(false)
@@ -739,7 +748,7 @@ function ChatGPTConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return <ConnectedEnd provider={provider} close={close} />
+      return <ConnectedEnd provider={provider} name={name} close={close} />
     if (outcome?.kind === 'expired' || outcome?.kind === 'failed')
       return (
         <>
@@ -809,16 +818,14 @@ function ChatGPTConnectSheet({
   }
 
   return (
-    <Sheet
-      label={t`Connect ${providerName(provider)}`}
-      close={close}
-      className="models-sheet"
-    >
+    <Sheet label={t`Connect ${name}`} close={close} className="models-sheet">
       <div className="models-sheet-head">
-        <ProviderIcon provider={provider} side={36} />
-        <h2 className="models-sheet-title">
-          {t`Connect ${providerName(provider)}`}
-        </h2>
+        {coding ? (
+          <ProgramLogo name={modelConnectLogo(provider)} side={36} />
+        ) : (
+          <ProviderIcon provider={provider} side={36} />
+        )}
+        <h2 className="models-sheet-title">{t`Connect ${name}`}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={close} />
       </div>
       {body()}
@@ -833,13 +840,19 @@ function ChatGPTConnectSheet({
  * to the computer; nothing more. Connected, it says which model the agents
  * now use. Closed before the code, the computer's sign-in ends.
  */
-function ClaudeConnectSheet({
+export function ClaudeConnectSheet({
   model,
+  coding = false,
   close,
 }: {
   model: Model
+  /** Opened from the chat's card for a cloud agent's coding: named and drawn as the program, Claude Code (13 November 2026). */
+  coding?: boolean
   close: () => void
 }) {
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  const name = coding ? modelConnectProgram(claude) : providerName(claude)
+  const title = coding ? t`Connect ${name}` : t('Connect Claude')
   const [signIn, setSignIn] = useState<ClaudeSignIn>()
   const [code, setCode] = useState('')
   const [finishing, setFinishing] = useState(false)
@@ -894,7 +907,7 @@ function ClaudeConnectSheet({
 
   const body = () => {
     if (outcome?.kind === 'connected')
-      return <ConnectedEnd provider={claude} close={close} />
+      return <ConnectedEnd provider={claude} name={name} close={close} />
     if (outcome)
       return (
         <>
@@ -962,10 +975,14 @@ function ClaudeConnectSheet({
   }
 
   return (
-    <Sheet label={t('Connect Claude')} close={shut} className="models-sheet">
+    <Sheet label={title} close={shut} className="models-sheet">
       <div className="models-sheet-head">
-        <ProviderIcon provider={claude} side={36} />
-        <h2 className="models-sheet-title">{t('Connect Claude')}</h2>
+        {coding ? (
+          <ProgramLogo name={modelConnectLogo(claude)} side={36} />
+        ) : (
+          <ProviderIcon provider={claude} side={36} />
+        )}
+        <h2 className="models-sheet-title">{title}</h2>
         <PanelDisc symbol="xmark" label={t('Close')} onClick={shut} />
       </div>
       {body()}
@@ -1123,11 +1140,14 @@ function KeyConnectSheet({
 }
 
 /** Connected (both sheets): the green tick and "Connected", "You're now connected to Claude." (the founder: "just say you're now connected to claude"), and Done. */
-function ConnectedEnd({
+export function ConnectedEnd({
   provider,
+  name,
   close,
 }: {
   provider: string
+  /** The program, when the sheet opened from the chat's card ("You're now connected to Codex."); the plan's own name otherwise. */
+  name?: string
   close: () => void
 }) {
   return (
@@ -1148,7 +1168,7 @@ function ConnectedEnd({
           {t('Connected')}
         </span>
         <span className="models-sheet-words">
-          {t`You're now connected to ${providerName(provider)}.`}
+          {t`You're now connected to ${name ?? providerName(provider)}.`}
         </span>
       </div>
       <div className="models-sheet-end">

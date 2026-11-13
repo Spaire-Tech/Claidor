@@ -345,7 +345,12 @@ class TestTheChoice:
         rows = (
             await client.get("/desktop/api/models/available", headers=headers)
         ).json()["data"]
-        assert not any(row["modelId"].startswith("own:") for row in rows)
+        # The agents' roles are Simeon's again. The account stays connected,
+        # so a cloud agent's coding may still run in Codex on it (its own
+        # role, 13 November 2026).
+        assert [row["role"] for row in rows if row["modelId"].startswith("own:")] == [
+            "coding"
+        ]
 
     async def test_a_signed_out_account_gives_the_agents_back_to_simeon(
         self, client: httpx.AsyncClient, session: AsyncSession, user: User
@@ -1526,3 +1531,284 @@ class TestPlanUsage:
         assert refused.status_code == 422
         anonymous = await client.post(route, json={"windows": windows})
         assert anonymous.status_code == 401
+
+
+def _codex_request(model: str = SOL) -> dict[str, Any]:
+    """What Codex itself writes for a model it sends the short request to
+    (measured against a stand-in, Codex 0.168.0): no `tools`, its own
+    reasoning and text, and `client_metadata`."""
+    return {
+        "model": model,
+        "stream": True,
+        "input": [
+            {
+                "type": "message",
+                "role": "developer",
+                "content": [{"type": "input_text", "text": "You are Codex."}],
+            },
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "Fix the README"}],
+            },
+        ],
+        "tool_choice": "auto",
+        "parallel_tool_calls": True,
+        "reasoning": {"effort": "high", "context": "all_turns"},
+        "store": False,
+        "include": ["reasoning.encrypted_content"],
+        "prompt_cache_key": "thread-1",
+        "text": {"verbosity": "low"},
+        "client_metadata": {"x-codex-installation-id": "abc"},
+    }
+
+
+CODEX_HEADERS = {
+    "x-simeon-call-reason": "coding",
+    "originator": "codex_exec",
+    "session-id": "sess-1",
+    "thread-id": "thread-1",
+    "x-client-request-id": "req-1",
+    "x-codex-window-id": "thread-1:0",
+    "x-codex-beta-features": "remote_compaction_v2",
+    "x-openai-internal-codex-responses-lite": "true",
+    "x-something-else": "not Codex's",
+}
+
+
+@pytest.mark.asyncio
+class TestCodexCodesOnTheAccount:
+    """A cloud agent's coding in Codex on the person's computer (13 November
+    2026): which program codes, and Codex's own calls on the ChatGPT
+    account."""
+
+    async def _coding(
+        self, client: httpx.AsyncClient, headers: dict[str, str]
+    ) -> list[dict[str, Any]]:
+        listed = await client.get("/desktop/api/models/available", headers=headers)
+        assert listed.status_code == 200, listed.text
+        return [row for row in listed.json()["data"] if row.get("role") == "coding"]
+
+    async def test_neither_connected_nothing_codes(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        assert await self._coding(client, headers) == []
+
+    async def test_chatgpt_connected_codes_in_codex_whatever_the_agents_model(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        [row] = await self._coding(client, headers)
+        assert row["transportApi"] == "codex"
+        assert row["codexModel"] == "gpt-6.1-sol"
+        assert row["codexEffort"] == "medium"
+        assert row["modelId"] == SOL
+        # The agents' own roles are Simeon's still: nothing was chosen.
+        listed = await client.get("/desktop/api/models/available", headers=headers)
+        primary = next(r for r in listed.json()["data"] if r.get("role") == "primary")
+        assert not primary["modelId"].startswith("own:")
+
+    async def test_the_chosen_models_program_comes_first_on_that_model(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        assert (await _claude(client, headers)).status_code == 200
+        # Claude was just connected, and so chosen: Claude Code first.
+        rows = await self._coding(client, headers)
+        assert [row["transportApi"] for row in rows] == ["claude-code", "codex"]
+        assert rows[0]["claudeCodeModel"] == "claude-opus-5-5"
+        assert rows[0]["claudeCodeEffort"] == "high"
+
+        chose = await client.put(
+            "/desktop/api/models/own",
+            headers=headers,
+            json={"model": "own:chatgpt:gpt-6-luna", "effort": "high"},
+        )
+        assert chose.status_code == 200, chose.text
+        rows = await self._coding(client, headers)
+        assert [row["transportApi"] for row in rows] == ["codex", "claude-code"]
+        assert rows[0]["codexModel"] == "gpt-6-luna"
+        assert rows[0]["codexEffort"] == "high"
+        # The other program on its first model and its own effort.
+        assert rows[1]["claudeCodeModel"] == "claude-opus-5-5"
+
+        back = await _choose(client, headers, None)
+        assert back.status_code == 200
+        rows = await self._coding(client, headers)
+        assert [row["transportApi"] for row in rows] == ["claude-code", "codex"]
+        assert rows[1]["codexModel"] == "gpt-6.1-sol"
+
+    async def test_a_plan_without_a_model_codes_on_the_first_it_has(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user, plan="hc_consumption", choose=None)
+        [row] = await self._coding(client, headers)
+        assert row["codexModel"] == "gpt-6.1-terra"
+
+    async def test_codexs_call_goes_to_chatgpt_as_codex_wrote_it(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        access = _access("coding")
+        # Nothing chosen: the agents are on Simeon's models, the coding on
+        # the person's plan all the same.
+        await _account(session, user, access=access, choose=None)
+        with respx.mock(assert_all_called=True) as mock:
+            route = mock.post(RESPONSES).mock(return_value=_stream())
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers={**headers, **CODEX_HEADERS},
+                json=_codex_request(),
+            )
+        assert answer.status_code == 200, answer.text
+        assert answer.content == _completed()
+        sent = route.calls[0].request
+        assert sent.headers["authorization"] == f"Bearer {access}"
+        assert sent.headers["chatgpt-account-id"] == "acct_one"
+        assert sent.headers["originator"] == "codex_exec"
+        assert sent.headers["session-id"] == "sess-1"
+        assert sent.headers["thread-id"] == "thread-1"
+        assert sent.headers["x-codex-window-id"] == "thread-1:0"
+        assert sent.headers["x-openai-internal-codex-responses-lite"] == "true"
+        assert "x-something-else" not in sent.headers
+        assert "x-simeon-call-reason" not in sent.headers
+        assert json.loads(sent.content) == {
+            **_codex_request(),
+            "model": "gpt-6.1-sol",
+        }
+        [row] = await _usage(session, user)
+        assert row.model == SOL
+        assert row.provider == "chatgpt"
+        assert row.credits == 0
+        assert row.reason == "coding"
+
+    async def test_the_plans_limit_goes_back_to_codex_never_to_simeons_model(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        resets = int((utc_now() + timedelta(hours=2)).timestamp())
+        limited = httpx.Response(
+            429,
+            json={
+                "error": {
+                    "type": "usage_limit_reached",
+                    "plan_type": "plus",
+                    "resets_at": resets,
+                }
+            },
+        )
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(return_value=limited)
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers={**headers, **CODEX_HEADERS},
+                json=_codex_request(),
+            )
+        assert answer.status_code == 429, answer.text
+        assert answer.json()["error"]["type"] == "usage_limit_reached"
+        assert answer.json()["error"]["resets_at"] == resets
+
+        # The account is skipped until then; Codex is told the same, with
+        # the time, and ChatGPT isn't asked.
+        with respx.mock(assert_all_called=False) as mock:
+            route = mock.post(RESPONSES).mock(return_value=_stream())
+            again = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers={**headers, **CODEX_HEADERS},
+                json=_codex_request(),
+            )
+        assert not route.called
+        assert again.status_code == 429
+        assert again.json()["error"]["type"] == "usage_limit_reached"
+        assert again.json()["error"]["resets_at"] == resets
+        assert await _usage(session, user) == []
+
+    async def test_chatgpt_busy_is_said_to_codex_not_answered_by_simeons(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(RESPONSES).mock(
+                return_value=httpx.Response(503, json={"error": {"message": "busy"}})
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers={**headers, **CODEX_HEADERS},
+                json=_codex_request(),
+            )
+        assert answer.status_code == 503
+        assert answer.json()["error"]["message"] == "busy"
+        assert await _usage(session, user) == []
+
+    async def test_without_chatgpt_connected_codex_is_told_so(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        answer = await client.post(
+            "/desktop/api/proxy/v1/responses",
+            headers={**headers, **CODEX_HEADERS},
+            json=_codex_request(),
+        )
+        assert answer.status_code == 401, answer.text
+        assert answer.json()["error"]["type"] == "chatgpt_not_connected"
+
+    async def test_a_sign_in_chatgpt_no_longer_takes_reads_as_not_connected(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        headers = await _headers(client, session, user)
+        await _account(session, user)
+        with respx.mock(assert_all_called=True) as mock:
+            mock.post(f"{AUTH}/oauth/token").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id_token": _id_token(
+                            "acct_one", "acct_one@example.com", "plus"
+                        ),
+                        "access_token": _access("again"),
+                        "refresh_token": "rt_two",
+                    },
+                )
+            )
+            mock.post(RESPONSES).mock(
+                return_value=httpx.Response(401, json={"error": {"message": "no"}})
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers={**headers, **CODEX_HEADERS},
+                json=_codex_request(),
+            )
+        assert answer.status_code == 401
+        assert answer.json()["error"]["type"] == "chatgpt_not_connected"
+
+    async def test_a_call_that_isnt_codexs_coding_keeps_the_old_rules(
+        self, client: httpx.AsyncClient, session: AsyncSession, user: User
+    ) -> None:
+        """Nothing chosen and no `coding` reason: answered by Simeon's
+        model, never on the account, as before."""
+        headers = await _headers(client, session, user)
+        await _account(session, user, choose=None)
+        with respx.mock(assert_all_called=True) as mock:
+            simeon = mock.post(f"{settings.DESKTOP_OPENAI_BASE_URL}/v1/responses").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "id": "resp_s",
+                        "output": [],
+                        "usage": {"input_tokens": 10, "output_tokens": 1},
+                    },
+                )
+            )
+            answer = await client.post(
+                "/desktop/api/proxy/v1/responses",
+                headers=headers,
+                json=_engine_request(stream=False),
+            )
+        assert answer.status_code == 200, answer.text
+        assert simeon.called
