@@ -95,6 +95,37 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
   }
 
   /**
+   * The consent Connect shows on the chat's card for a cloud agent's coding
+   * (`ModelConnectCard`; 13 November 2026, the founder: "it should say codex
+   * and claude code but only when it opens from the card"): the plan's page
+   * under the program's name and logo, Codex or Claude Code, with its words
+   * for a cloud agent. Settings › AI Models keeps `init(modelProvider:)`,
+   * which names the plan. The same account is connected either way, so the
+   * page also says what it does for the person's own agents: they move to
+   * the plan when no other model is chosen (`AIModelsModel`), and fall back
+   * to Simeon's when it runs out, where a cloud agent pauses.
+   */
+  public init(codingProvider provider: String) {
+    let program = ModelConnectCard.program(provider)
+    let plan = AIModels.providerName(provider)
+    id = "coding:\(provider)"
+    title = program
+    summary = L10n.text("Run your cloud agents in \(program), on your \(plan) plan.")
+    route = .unknown
+    points = [
+      Point(symbol: "square.stack.3d.up", title: L10n.text("What it does"), body: L10n.text("Cloud agents code in \(program) on your \(plan) plan, not on your Simeon credits.") + " " + L10n.text("Your agents use that plan too, unless you've picked another model.")),
+      Point(symbol: "hand.raised", title: L10n.text("Control"), body: L10n.text("Choose the model in the message field, or go back to Simeon's anytime. Disconnect in Settings → AI Models.")),
+      Point(symbol: "checkmark.circle", title: L10n.text("When your plan runs out"), body: L10n.text("Cloud agents pause until it resets; your agents use Simeon's models meanwhile.")),
+    ]
+    smallPrint = [
+      // The sign-in is the plan's own page: ChatGPT's, Claude's.
+      Self.signInLine(.unknown, title: plan),
+      L10n.text("Voice calls, dictation and video still use your Simeon credits."),
+    ]
+    note = nil
+  }
+
+  /**
    * Connect on an API key's line (10 November 2026): the same page as a
    * plan's, its words for a key the person pastes, which the provider bills.
    */
@@ -113,6 +144,12 @@ public struct ConnectConsent: Identifiable, Equatable, Sendable {
       L10n.text("Voice calls, dictation and video still use your Simeon credits."),
     ]
     note = nil
+  }
+
+  /** The program of a coding consent (`coding:`), whose own logo the page shows bare (`Mascots/<name>`, `ModelConnectCard.logo`); none for any other. */
+  public var programLogo: String? {
+    let prefix = "coding:"
+    return id.hasPrefix(prefix) ? ModelConnectCard.logo(String(id.dropFirst(prefix.count))) : nil
   }
 
   /** The AI provider of a plan's or a key's consent (`model:` or `key:`), whose own logo the page shows (`Providers/<provider>`); none for an app, found by its name. */

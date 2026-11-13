@@ -7,6 +7,7 @@
 
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import { codingConsent, modelConsent } from '../core/connectConsent'
 import { AppStore } from '../core/store'
 import { ConsentLayer, consentKey } from './ConnectConsent'
 import { Connector } from './connector'
@@ -56,6 +57,57 @@ describe('the consent on screen', () => {
     )
     expect(page).toContain('What it does')
     expect(page.match(/class="consent-point"/g)).toHaveLength(3)
+  })
+
+  // The founder, 13 November 2026: "it should say codex and claude code but only when it opens from the card".
+  it("names the program with its own logo, bare, when it opens from the chat's card", () => {
+    const connector = new Connector(new AppStore(), {
+      openTab: () => undefined,
+      wait: async () => {},
+    })
+    connector.ask('Codex', async () => {}, {
+      signIn: false,
+      consent: codingConsent('chatgpt'),
+    })
+    const page = renderToStaticMarkup(<ConsentLayer connector={connector} />)
+    expect(page).toMatch(
+      /role="dialog" aria-modal="true" aria-label="Connect Codex"/,
+    )
+    expect(page).toContain(
+      '<div class="consent-title" role="heading" aria-level="2">Codex</div>',
+    )
+    expect(page).toContain(
+      'Run your cloud agents in Codex, on your ChatGPT plan.',
+    )
+    // Codex's own logo, with no tile and no shadow behind it.
+    expect(page).toMatch(
+      /<span class="consent-logo bare" aria-hidden="true"><span class="program-logo"[^>]*><img src="[^"]*codex[^"]*"/,
+    )
+    expect(page).not.toContain('class="app-icon"')
+    expect(page).not.toContain('logo-tile')
+    // ChatGPT is still named where it is the plan and the page to sign in on.
+    expect(page).toContain('You&#x27;ll sign in on ChatGPT&#x27;s own page.')
+  })
+
+  it('names the plan with its own icon when it opens from Settings', () => {
+    const connector = new Connector(new AppStore(), {
+      openTab: () => undefined,
+      wait: async () => {},
+    })
+    connector.ask('ChatGPT', async () => {}, {
+      signIn: false,
+      consent: modelConsent('chatgpt'),
+    })
+    const page = renderToStaticMarkup(<ConsentLayer connector={connector} />)
+    expect(page).toMatch(/aria-label="Connect ChatGPT"/)
+    expect(page).toContain(
+      '<div class="consent-title" role="heading" aria-level="2">ChatGPT</div>',
+    )
+    expect(page).toContain('Run your agents on your ChatGPT plan.')
+    expect(page).toContain('<span class="consent-logo" aria-hidden="true">')
+    expect(page).toContain('class="app-icon"')
+    expect(page).not.toContain('program-logo')
+    expect(page).not.toContain('Codex')
   })
 
   it('tells the person in the window’s alert when the browser refused the tab', async () => {

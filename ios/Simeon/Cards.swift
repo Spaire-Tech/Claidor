@@ -907,9 +907,11 @@ struct ConnectConsentSheet: View {
     .presentationDragIndicator(.visible)
   }
 
-  /** A plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter), with an app icon's corners; an app by its tile. */
+  /** A program by its own logo, bare (`ProgramLogo`: Codex's or Claude Code's, from the chat's card); a plan's or a key's provider by its own logo (`Providers/<provider>`, so Amazon Bedrock and Z.AI are never a letter), with an app icon's corners; an app by its tile. */
   @ViewBuilder private var logo: some View {
-    if let provider = consent.provider, let icon = UIImage(named: "Providers/\(provider)") {
+    if let program = consent.programLogo {
+      ProgramLogo(name: program, size: 56)
+    } else if let provider = consent.provider, let icon = UIImage(named: "Providers/\(provider)") {
       let shape = RoundedRectangle(cornerRadius: 56 * ConnectorLogo.iconCorner, style: .continuous)
       Image(uiImage: icon)
         .resizable()
@@ -1134,7 +1136,7 @@ struct ModelConnectCardView: View {
             Button(ModelConnectCard.connectLabel) {
               confirmed = false
               pending = provider
-              asking = ConnectConsent(modelProvider: provider)
+              asking = ConnectConsent(codingProvider: provider)
             }
             .buttonStyle(Tactile(look: CardPillStyle(tone: .main, height: 32)))
           }
@@ -1153,10 +1155,10 @@ struct ModelConnectCardView: View {
       ConnectConsentSheet(consent: consent) { confirmed = true }
     }
     .sheet(isPresented: Binding(get: { connectingByCode != nil }, set: { if !$0 { connectingByCode = nil } })) {
-      NavigationStack { ChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT) }
+      NavigationStack { ChatGPTConnectSheet(model: model, provider: connectingByCode ?? AIModels.chatGPT, coding: true) }
     }
     .sheet(isPresented: $connectingClaude) {
-      NavigationStack { ClaudeConnectSheet(model: model) }
+      NavigationStack { ClaudeConnectSheet(model: model, coding: true) }
     }
     .task(id: card.providers) {
       // For ten minutes at most: a card left on screen with nothing connected stops asking.

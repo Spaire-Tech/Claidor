@@ -83,6 +83,11 @@
   filter: drop-shadow(0 2px 12px rgb(0 0 0 / 0.12));
 }
 
+/* A program's own logo (Codex's, Claude Code's) is bare: nothing behind it, the tiles' shadow included. */
+.consent-logo.bare {
+  filter: none;
+}
+
 /* The app (22, 600), 16 under the logo; what it does (14, the second ink), 6 under, 64 a side. */
 .consent-title {
   padding-top: 16px;

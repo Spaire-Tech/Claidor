@@ -55,6 +55,7 @@ import './ConnectCards.css'
 import { classes } from './classes'
 import { copyText } from './clipboard'
 import { useConnector, useConnectorWatched } from './connector'
+import { mascotURL } from './mascots'
 import { openPending } from './outside'
 import { useDarkScheme } from './theme'
 import { useWindowModel } from './windowModel'
@@ -225,6 +226,35 @@ function ConnectorCardView({
         )}
       </div>
     </CardShell>
+  )
+}
+
+/**
+ * Claude Code's or Codex's own logo, whole and bare, in an app icon's place
+ * (`ProgramLogo` on the Mac; 13 November 2026, the founder: "its full logo
+ * no white or dark background"): no tile, no ground, no hairline. The
+ * cut-outs (`assets/mascots/`) keep a clear margin, so the picture is drawn
+ * a fifth larger than its place and fills it.
+ */
+export function ProgramLogo({
+  name,
+  side = 40,
+}: {
+  name: string
+  side?: number
+}) {
+  return (
+    <span
+      className="program-logo"
+      style={{ width: side, height: side }}
+      aria-hidden="true"
+    >
+      <img
+        src={mascotURL(name)}
+        alt=""
+        style={{ width: side * 1.2, height: side * 1.2 }}
+      />
+    </span>
   )
 }
 

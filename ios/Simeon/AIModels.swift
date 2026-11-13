@@ -538,6 +538,10 @@ struct ChatGPTConnectSheet: View {
   let model: AIModelsModel
   /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
   var provider: String = AIModels.chatGPT
+  /** Opened from the chat's card for a cloud agent's coding: named as the program, Codex (13 November 2026, the founder: "it should say codex and claude code but only when it opens from the card"). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(provider) : AIModels.providerName(provider) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var signIn: ChatGPTSignIn?
@@ -551,7 +555,7 @@ struct ChatGPTConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("You're now connected to \(AIModels.providerName(provider)).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(name).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.expired), .some(.failed):
@@ -630,7 +634,7 @@ struct ChatGPTConnectSheet: View {
       }
     }
     .groupedGround()
-    .navigationTitle("Connect \(AIModels.providerName(provider))")
+    .navigationTitle("Connect \(name)")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
@@ -672,6 +676,10 @@ struct ChatGPTConnectSheet: View {
  */
 struct ClaudeConnectSheet: View {
   let model: AIModelsModel
+  /** Opened from the chat's card for a cloud agent's coding: named as the program, Claude Code (13 November 2026). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(AIModels.claude) : AIModels.providerName(AIModels.claude) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.openURL) private var openURL
   @State private var signIn: ClaudeSignIn?
@@ -686,7 +694,7 @@ struct ClaudeConnectSheet: View {
       case .some(.connected):
         Section {
           Label("Connected", systemImage: "checkmark.circle.fill").foregroundStyle(Ink.success)
-          Text("You're now connected to \(AIModels.providerName(AIModels.claude)).").foregroundStyle(Ink.primary)
+          Text("You're now connected to \(name).").foregroundStyle(Ink.primary)
         }
         .listRowBackground(Ink.groupedRow)
       case .some(.refused), .some(.failed):
@@ -752,7 +760,7 @@ struct ClaudeConnectSheet: View {
     .onDisappear {
       if signIn != nil, outcome == nil { Task { await model.cancelClaude() } }
     }
-    .navigationTitle("Connect Claude")
+    .navigationTitle(coding ? "Connect \(name)" : "Connect Claude")
     .inlineBarTitle()
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {

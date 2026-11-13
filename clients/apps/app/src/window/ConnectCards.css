@@ -229,18 +229,14 @@
 /* A program's own logo, whole and bare, in an app icon's place (the founder:
    "its full logo no white or dark background"): no tile, no ground, no
    hairline. The cut-outs keep a clear margin, so the picture is drawn a
-   fifth larger than its 40 and fills it. */
+   fifth larger than its place and fills it (`ProgramLogo` sets both sizes). */
 .program-logo {
   flex: none;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
 }
 
 .program-logo img {
-  width: 48px;
-  height: 48px;
   max-width: none;
   object-fit: contain;
 }

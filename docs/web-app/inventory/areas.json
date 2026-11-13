@@ -447,11 +447,11 @@
    "mac/Simeon/PluginsModel.swift",
    "mac/Simeon/PluginsWindow.swift"
   ],
-  "mac_lines": 3280,
-  "core_lines": 3894,
+  "mac_lines": 3291,
+  "core_lines": 3931,
   "views": 50,
   "files_needing_a_mac": 3,
-  "strings": 1427,
+  "strings": 1431,
   "strings_in_old_web_app": 0,
   "box_commands": [],
   "box_commands_not_in_old_web_app": [],
@@ -499,7 +499,7 @@
    "mac/Simeon/SettingsUsage.swift",
    "mac/Simeon/SettingsWindow.swift"
   ],
-  "mac_lines": 5830,
+  "mac_lines": 5838,
   "core_lines": 4028,
   "views": 78,
   "files_needing_a_mac": 11,

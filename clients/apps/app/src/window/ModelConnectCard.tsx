@@ -11,9 +11,10 @@
 // white or dark background. for the card specifically its that. but
 // settings is claude and chat gpt"): the logo whole and bare in an app
 // icon's place (40), "Connect Codex" over whose plan it runs on, and Connect
-// in the cards' blue pill. Connect shows the consent AI Models shows for
-// that plan, then its own sign-in sheet (SettingsModels.tsx's), over the
-// window. A connected program reads as a connected app does: its name and
+// in the cards' blue pill. Connect shows the consent, then the plan's own
+// sign-in sheet (SettingsModels.tsx's), over the window, both under the
+// program's name and logo when they open from here (`codingConsent`, the
+// sheets' `coding`); from Settings they name the plan. A connected program reads as a connected app does: its name and
 // "Connected" in the green capsule. What is connected is the window's own accounts
 // (`store.aiModels`), read again every four seconds while the card is on
 // screen and both rows wait, for ten minutes at most. The agent goes on by
@@ -24,24 +25,25 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { claude, providerName } from '../core/aiModels'
+import { claude } from '../core/aiModels'
 import {
   connectedWord,
   modelConnectLine,
   modelConnectLogo,
   modelConnectNextPoll,
   modelConnectPolls,
+  modelConnectProgram,
   modelConnectTitle,
   type ModelConnectCard,
 } from '../core/connectCards'
-import { modelConsent } from '../core/connectConsent'
+import { codingConsent } from '../core/connectConsent'
 import { connectWord } from '../core/connecting'
 import type { AppStore } from '../core/store'
 import { t } from '../l10n'
 import { CardShell } from './Cards'
+import { ProgramLogo } from './ConnectCards'
 import './ConnectCards.css'
 import { useConnector } from './connector'
-import { mascotURL } from './mascots'
 import { ChatGPTConnectSheet, ClaudeConnectSheet } from './SettingsModels'
 import { useWatched } from './useStore'
 
@@ -95,11 +97,13 @@ export function ModelConnectCardView({
 
   const connect = (provider: string) => {
     const open = async () => setSigningIn(provider)
-    // The consent an app's Connect shows, then the sign-in, as in AI Models.
+    // The consent an app's Connect shows, then the sign-in, as in AI Models,
+    // both under the program's name here (the founder: "it should say codex
+    // and claude code but only when it opens from the card").
     if (connector)
-      connector.ask(providerName(provider), open, {
+      connector.ask(modelConnectProgram(provider), open, {
         signIn: false,
-        consent: modelConsent(provider),
+        consent: codingConsent(provider),
       })
     else void open()
   }
@@ -112,9 +116,7 @@ export function ModelConnectCardView({
           const line = modelConnectLine(provider, connected)
           return (
             <div key={provider} className="connector-row">
-              <span className="program-logo" aria-hidden="true">
-                <img src={mascotURL(modelConnectLogo(provider))} alt="" />
-              </span>
+              <ProgramLogo name={modelConnectLogo(provider)} />
               <div className="connector-words">
                 <span className="connector-title">
                   {modelConnectTitle(provider, connected)}
@@ -152,12 +154,14 @@ export function ModelConnectCardView({
           signingIn === claude ? (
             <ClaudeConnectSheet
               model={model}
+              coding
               close={() => setSigningIn(undefined)}
             />
           ) : (
             <ChatGPTConnectSheet
               model={model}
               provider={signingIn}
+              coding
               close={() => setSigningIn(undefined)}
             />
           ),

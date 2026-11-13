@@ -557,6 +557,10 @@ struct MacChatGPTConnectSheet: View {
   let model: AIModelsModel
   /** ChatGPT, or Grok (10 November 2026: the same sheet, Grok's page and code). */
   var provider: String = AIModels.chatGPT
+  /** Opened from the chat's card for a cloud agent's coding: named and drawn as the program, Codex (13 November 2026, the founder: "it should say codex and claude code but only when it opens from the card"). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(provider) : AIModels.providerName(provider) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
   @State private var signIn: ChatGPTSignIn?
@@ -568,8 +572,8 @@ struct MacChatGPTConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        MacProviderIcon(provider: provider, look: look, side: 36)
-        Text("Connect \(AIModels.providerName(provider))")
+        if coding { ProgramLogo(name: ModelConnectCard.logo(provider), size: 36) } else { MacProviderIcon(provider: provider, look: look, side: 36) }
+        Text("Connect \(name)")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
           .accessibilityAddTraits(.isHeader)
@@ -593,7 +597,7 @@ struct MacChatGPTConnectSheet: View {
         Label("Connected", systemImage: "checkmark.circle.fill")
           .font(PanelType.row)
           .foregroundStyle(look.settingsGreen)
-        Text("You're now connected to \(AIModels.providerName(provider)).")
+        Text("You're now connected to \(name).")
           .font(PanelType.row)
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)
@@ -702,6 +706,10 @@ struct MacChatGPTConnectSheet: View {
  */
 struct MacClaudeConnectSheet: View {
   let model: AIModelsModel
+  /** Opened from the chat's card for a cloud agent's coding: named and drawn as the program, Claude Code (13 November 2026). */
+  var coding = false
+  /** The name the sheet says: the plan's, or the program's from the card. */
+  private var name: String { coding ? ModelConnectCard.program(AIModels.claude) : AIModels.providerName(AIModels.claude) }
   @Environment(\.dismiss) private var dismiss
   @Environment(\.colorScheme) private var scheme
   @State private var signIn: ClaudeSignIn?
@@ -715,8 +723,8 @@ struct MacClaudeConnectSheet: View {
     let look = Look(scheme)
     VStack(alignment: .leading, spacing: 20) {
       HStack(spacing: 12) {
-        MacProviderIcon(provider: AIModels.claude, look: look, side: 36)
-        Text("Connect Claude")
+        if coding { ProgramLogo(name: ModelConnectCard.logo(AIModels.claude), size: 36) } else { MacProviderIcon(provider: AIModels.claude, look: look, side: 36) }
+        Text(coding ? "Connect \(name)" : "Connect Claude")
           .font(PanelType.title)
           .foregroundStyle(look.ink)
           .accessibilityAddTraits(.isHeader)
@@ -740,7 +748,7 @@ struct MacClaudeConnectSheet: View {
         Label("Connected", systemImage: "checkmark.circle.fill")
           .font(PanelType.row)
           .foregroundStyle(look.settingsGreen)
-        Text("You're now connected to \(AIModels.providerName(AIModels.claude)).")
+        Text("You're now connected to \(name).")
           .font(PanelType.row)
           .foregroundStyle(look.ink)
           .fixedSize(horizontal: false, vertical: true)

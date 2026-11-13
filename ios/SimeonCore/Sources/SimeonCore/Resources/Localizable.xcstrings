@@ -28916,6 +28916,238 @@
         }
       }
     },
+    "Run your cloud agents in %@, on your %@ plan." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lass deine Cloud-Agenten in %@ laufen, über dein %@-Abo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz que tus agentes en la nube funcionen en %@, con tu plan de %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fais tourner tes agents cloud dans %@, sur ton forfait %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fai lavorare i tuoi agenti cloud in %@, con il tuo piano %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat je cloudagenten draaien in %@, op je %@-abonnement."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uruchamiaj swoich agentów w chmurze w %@, na planie %@."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode seus agentes na nuvem no %@, no seu plano do %@."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kör dina molnagenter i %@, på ditt %@-abonnemang."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bulut ajanlarını %@ içinde, %@ planınla çalıştır."
+          }
+        }
+      }
+    },
+    "Cloud agents code in %@ on your %@ plan, not on your Simeon credits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud-Agenten programmieren in %@ mit deinem %@-Tarif, nicht mit deinen Simeon-Credits."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los agentes en la nube programan en %@ con tu plan de %@, no con tus créditos de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les agents cloud codent dans %@ avec ton forfait %@, et non avec tes crédits Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli agenti cloud programmano in %@ con il tuo piano %@, non con i tuoi crediti Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloudagenten coderen in %@ met je %@-abonnement, niet met je Simeon-credits."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci w chmurze programują w %@ na twoim planie %@, a nie na twoich kredytach Simeon."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes na nuvem programam no %@ com seu plano do %@, não com seus créditos do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Molnagenter kodar i %@ med ditt %@-abonnemang, inte med dina Simeon-krediter."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bulut ajanları %@ içinde, Simeon kredilerinle değil %@ planınla kod yazar."
+          }
+        }
+      }
+    },
+    "Your agents use that plan too, unless you've picked another model." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Agenten nutzen diesen Tarif auch, außer du hast ein anderes Modell gewählt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus agentes también usan ese plan, salvo que hayas elegido otro modelo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tes agents utilisent aussi ce forfait, sauf si tu as choisi un autre modèle."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anche i tuoi agenti usano quel piano, a meno che tu non abbia scelto un altro modello."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je agenten gebruiken dat abonnement ook, tenzij je een ander model hebt gekozen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoi agenci też korzystają z tego planu, chyba że masz wybrany inny model."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus agentes também usam esse plano, a menos que você tenha escolhido outro modelo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dina agenter använder också det abonnemanget, om du inte har valt en annan modell."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başka bir model seçmediysen ajanların da bu planı kullanır."
+          }
+        }
+      }
+    },
+    "Cloud agents pause until it resets; your agents use Simeon's models meanwhile." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud-Agenten pausieren, bis er zurückgesetzt wird; deine Agenten nutzen so lange Simeons Modelle."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los agentes en la nube se pausan hasta que se restablezca; mientras tanto, tus agentes usan los modelos de Simeon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les agents cloud se mettent en pause jusqu’à sa réinitialisation ; entre-temps, tes agents utilisent les modèles de Simeon."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gli agenti cloud vanno in pausa finché non si azzera; nel frattempo i tuoi agenti usano i modelli di Simeon."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloudagenten pauzeren tot het wordt gereset; je agenten gebruiken intussen de modellen van Simeon."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agenci w chmurze wstrzymują pracę, dopóki się nie odnowi; w tym czasie twoi agenci używają modeli Simeona."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agentes na nuvem ficam em pausa até ele ser renovado; enquanto isso, seus agentes usam os modelos do Simeon."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Molnagenter pausas tills det återställs; under tiden använder dina agenter Simeons modeller."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bulut ajanları yenilenene kadar duraklar; bu sürede ajanların Simeon’un modellerini kullanır."
+          }
+        }
+      }
+    },
     "Cloud computer" : {
       "localizations" : {
         "de" : {
