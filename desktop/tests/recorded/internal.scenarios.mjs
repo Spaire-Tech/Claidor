@@ -149,6 +149,27 @@ function manualClock(log) {
 }
 
 /**
+ * A clock that runs every timer at once, inside the call that sets it, as
+ * a clock made for "no waiting" might. A timer of it that is dropped has
+ * always run already, and the log says so.
+ */
+function hastyClock(log) {
+  let timers = 0;
+  return {
+    now: () => 0,
+    monotonicNow: () => 0,
+    schedule(delayMs, callback) {
+      timers += 1;
+      const number = timers;
+      log.push(`clock: timer ${number} set for ${delayMs} and run at once`);
+      callback();
+      log.push(`clock: timer ${number} has run; the call that set it returns`);
+      return { dispose() { log.push(`clock: timer ${number} dropped, though it had run`); } };
+    },
+  };
+}
+
+/**
  * The machine's own timer functions replaced, for the length of `run`, by
  * ones that only note what they are asked. A timer's handle is an object
  * that can be unref'd, as Node's is, or a plain number, as a browser's is.
@@ -791,6 +812,8 @@ export const scenarios = [
       [{ id: 'with "quotes"', dependencies: [] }, { id: 'with "quotes"', dependencies: [] }],
       [{ id: "a", dependencies: [] }, { id: "A", dependencies: [] }],
       [{ id: "1", dependencies: [] }, { id: 1, dependencies: [] }],
+      [{ id: 1, dependencies: [] }, { id: "1", dependencies: [] }],
+      [{ id: 1, dependencies: ["1"] }, { id: "1", dependencies: [] }, { id: "0", dependencies: [1] }],
       [{ id: 1, dependencies: [] }, { id: 1, dependencies: [] }],
       [{ id: Number.NaN, dependencies: [] }, { id: Number.NaN, dependencies: [] }],
       [{ id: undefined, dependencies: [] }, { dependencies: [] }],
@@ -887,6 +910,9 @@ export const scenarios = [
       afterOthers: tried(() => extensions.resolveHostExtensionBootOrder([{ id: undefined, dependencies: [] }, { id: "a", dependencies: [] }, { id: "b", dependencies: ["a"] }])),
       asAPeer: tried(() => extensions.resolveHostExtensionBootOrder([{ id: undefined, dependencies: ["a"] }, { id: "a", dependencies: [] }])),
       nullIsAnIdLikeAnother: tried(() => extensions.resolveHostExtensionBootOrder([{ id: null, dependencies: [] }, { id: "a", dependencies: [null] }])),
+      besideACircle: tried(() => extensions.resolveHostExtensionBootOrder([{ id: undefined, dependencies: [] }, { id: "a", dependencies: ["b"] }, { id: "b", dependencies: ["a"] }])),
+      waitingOnACircle: tried(() => extensions.resolveHostExtensionBootOrder([{ id: undefined, dependencies: ["a"] }, { id: "a", dependencies: ["b"] }, { id: "b", dependencies: ["a"] }])),
+      inACircle: tried(() => extensions.resolveHostExtensionBootOrder([{ id: undefined, dependencies: ["a"] }, { id: "a", dependencies: [undefined] }])),
     }),
   },
   {
@@ -2181,7 +2207,11 @@ export const scenarios = [
       const cut = outcomeOf(() => policy.runWithRetry(async (attempt) => { log.push(`try ${attempt}`); throw new Error(`failure ${attempt}`); }, cutSignal.signal));
       await drained();
       cutSignal.abort("the reason");
-      return { log, result, cut: await cut, stillListening: [noted.live(), cutSignal.live()] };
+      const cutAnswer = await cut;
+      log.push("— a signal that had aborted already: it is listened to all the same, until the run ends —");
+      const before = notingSignal(log, { aborted: true, reason: "an earlier reason" });
+      const refused = await outcomeOf(() => policy.runWithRetry(async () => { log.push("the work is asked"); }, before.signal));
+      return { log, result, cut: cutAnswer, refused, stillListening: [noted.live(), cutSignal.live(), before.live()] };
     },
   },
   {
@@ -2866,6 +2896,8 @@ export const scenarios = [
         ["gives up, then fails by its promise", ({ caller }) => { caller.abort(reason); return Promise.reject(new Error("the work's own failure")); }],
         ["gives up, then throws at once", ({ caller }) => { caller.abort(reason); throw new Error("the work's own failure"); }],
         ["the deadline passes, then never answers", ({ time }) => { time.run(1); return new Promise(() => {}); }],
+        ["the caller gives up, then the deadline passes, then never answers", ({ caller, time }) => { caller.abort(reason); time.run(1); return new Promise(() => {}); }],
+        ["the deadline passes, then the caller gives up, then never answers", ({ caller, time }) => { time.run(1); caller.abort(reason); return new Promise(() => {}); }],
         ["the deadline passes, then throws at once", ({ time }) => { time.run(1); throw new Error("the work's own failure"); }],
       ]) {
         const log = [];
@@ -3019,6 +3051,128 @@ export const scenarios = [
       scheduling.createExpiryPolicy(time.clock, RIGHT.expiry).arm("key", () => {}).dispose();
       await scheduling.createDeadlinePolicy(time.clock, RIGHT.deadline).run(async () => {});
       return log;
+    },
+  },
+  {
+    name: "over a clock that runs timers at once, a debounced function and a watchdog run inside the very call that sets them, and the timer that has run is dropped at the next call",
+    run: ({ scheduling }) => {
+      const log = [];
+      const clock = hastyClock(log);
+      const save = scheduling.createDebouncePolicy(clock, { name: "save", delayMs: 0 }).wrap((what) => { log.push(`fn runs with ${what}`); });
+      save("first");
+      log.push("— the first call has returned; a second —");
+      save("second");
+      log.push("— dispose, then a call after it —");
+      save.dispose();
+      save("third");
+      log.push("— a watchdog —");
+      const watch = scheduling.createIdleWatchdogPolicy(clock, { name: "stream", idleMs: 0 }).arm(() => { log.push("onIdle runs"); });
+      log.push("— arm has returned; a kick —");
+      watch.kick();
+      log.push("— dispose, then a kick after it —");
+      watch.dispose();
+      watch.kick();
+      return log;
+    },
+  },
+  {
+    name: "over a clock that runs timers at once, polling ticks again as soon as each tick has finished; disposed from inside a tick nothing is dropped, disposed between ticks the timer that has run is",
+    run: async ({ scheduling }) => {
+      const log = [];
+      const policy = scheduling.createPollingPolicy(hastyClock(log), { name: "inbox", intervalMs: 1 });
+      let ticks = 0;
+      const fromInside = policy.start(() => {
+        ticks += 1;
+        log.push(`tick ${ticks} runs`);
+        if (ticks === 3) {
+          log.push("the third tick disposes the polling");
+          fromInside.dispose();
+        }
+        return Promise.resolve();
+      });
+      await drained();
+      fromInside.dispose();
+      log.push("— another polling, whose second tick takes its time —");
+      let later = 0;
+      let finish;
+      const fromOutside = policy.start(() => {
+        later += 1;
+        log.push(`tick ${later} runs`);
+        return later === 2 ? new Promise((resolve) => { finish = resolve; }) : Promise.resolve();
+      });
+      await drained();
+      log.push("— disposed while the second tick is at it —");
+      fromOutside.dispose();
+      finish();
+      await drained();
+      return log;
+    },
+  },
+  {
+    name: "over a clock that runs timers at once, an expiry calls onExpire inside the arming and keeps the key as armed, with a timer that has run",
+    run: ({ scheduling }) => {
+      const log = [];
+      const policy = scheduling.createExpiryPolicy(hastyClock(log), { name: "typing", ttlMs: 0 });
+      const first = policy.arm("ada", () => { log.push("the first arming expires"); });
+      log.push("— the first arming has returned; the key is armed again —");
+      const second = policy.arm("ada", () => { log.push("the second arming expires"); });
+      log.push("— the first handle is disposed: nothing; then the second, twice —");
+      first.dispose();
+      second.dispose();
+      second.dispose();
+      return log;
+    },
+  },
+  {
+    name: "over a clock that runs timers at once, a deadline has passed before the work is asked: the work gets a signal aborted with the deadline error, and still wins if it answers at once",
+    run: async ({ scheduling }) => {
+      const out = {};
+      for (const [label, work] of [
+        ["answers at once", async () => "the answer"],
+        ["answers with no promise", () => "the answer"],
+        ["answers a turn later", async () => { await null; return "the answer"; }],
+        ["never answers", () => new Promise(() => {})],
+        ["fails by its promise", async () => { throw new Error("the work's own failure"); }],
+        ["throws at once", () => { throw new Error("the work's own failure"); }],
+      ]) {
+        const log = [];
+        const policy = scheduling.createDeadlinePolicy(hastyClock(log), { name: "connect", timeoutMs: 0 });
+        let signal;
+        const { result, unheard } = await unheardDuring(() => outcomeOf(() => policy.run((given) => {
+          signal = given;
+          log.push(`the work is asked, with a signal that has ${given.aborted ? "" : "not "}aborted`);
+          return work();
+        })));
+        out[label] = { log, answer: result, theWorksSignalAbortedWithADeadlineError: signal.reason instanceof scheduling.DeadlineExceededError, unheard, theUnheardIsThatError: unheard.map((left) => left === signal.reason) };
+      }
+      return out;
+    },
+  },
+  {
+    name: "over a clock that runs timers at once, a wait before another try is over before its signal is looked at: it is kept even if the signal had aborted, and the listener it then adds is never removed",
+    run: async ({ scheduling }) => {
+      const log = [];
+      const policy = scheduling.createRetryPolicy(hastyClock(log), { name: "fetch", maxAttempts: 3, initialDelayMs: 0, maxDelayMs: 0 });
+      const plain = policy.schedule(1);
+      const plainAnswer = await outcomeOf(() => plain.elapsed);
+      log.push("— with a signal —");
+      const noted = notingSignal(log);
+      const withSignal = policy.schedule(1, noted.signal);
+      const withSignalAnswer = await outcomeOf(() => withSignal.elapsed);
+      log.push("— dropped after that, then the signal aborts —");
+      withSignal.dispose();
+      noted.abort("too late to matter");
+      log.push("— with a signal that had aborted already —");
+      const before = notingSignal(log, { aborted: true, reason: "an earlier reason" });
+      const lateAnswer = await outcomeOf(() => policy.schedule(1, before.signal).elapsed);
+      log.push("— work that fails twice, then answers, with a real signal —");
+      const controller = new AbortController();
+      const run = await outcomeOf(() => policy.runWithRetry(async (attempt) => {
+        log.push(`try ${attempt}`);
+        if (attempt < 3) throw new Error(`failure ${attempt}`);
+        return "the answer";
+      }, controller.signal));
+      return { log, plainAnswer, withSignalAnswer, lateAnswer, stillListeningToTheNotedSignal: noted.live(), run, leftListeningToTheRealSignalAfterTheRun: listening(controller.signal) };
     },
   },
   {

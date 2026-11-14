@@ -2334,6 +2334,19 @@
      ]
     },
     {
+     "gave": [
+      1,
+      "1"
+     ]
+    },
+    {
+     "gave": [
+      "1",
+      1,
+      "0"
+     ]
+    },
+    {
      "threw": {
       "$": "error",
       "name": "HostExtensionGraphError",
@@ -3260,6 +3273,36 @@
       null,
       "a"
      ]
+    },
+    "besideACircle": {
+     "threw": {
+      "$": "error",
+      "name": "HostExtensionGraphError",
+      "message": "host extension boot order became empty unexpectedly",
+      "extra": {
+       "name": "HostExtensionGraphError"
+      }
+     }
+    },
+    "waitingOnACircle": {
+     "threw": {
+      "$": "error",
+      "name": "HostExtensionGraphError",
+      "message": "host extension peer cycle: a → b → a",
+      "extra": {
+       "name": "HostExtensionGraphError"
+      }
+     }
+    },
+    "inACircle": {
+     "threw": {
+      "$": "error",
+      "name": "HostExtensionGraphError",
+      "message": "host extension peer cycle: a →  → a",
+      "extra": {
+       "name": "HostExtensionGraphError"
+      }
+     }
     }
    }
   },
@@ -9117,7 +9160,10 @@
      "signal: listener 2 is told",
      "clock: timer 2 dropped",
      "signal: listener 2 removed for \"abort\" (it was gone already)",
-     "signal: listener 1 removed for \"abort\" (it was gone already)"
+     "signal: listener 1 removed for \"abort\" (it was gone already)",
+     "— a signal that had aborted already: it is listened to all the same, until the run ends —",
+     "signal: listener 1 added for \"abort\" with {\"once\":true}",
+     "signal: listener 1 removed for \"abort\""
     ],
     "result": {
      "broken": {
@@ -9129,7 +9175,11 @@
     "cut": {
      "broken": "the reason"
     },
+    "refused": {
+     "broken": "an earlier reason"
+    },
     "stillListening": [
+     0,
      0,
      0
     ]
@@ -10185,6 +10235,64 @@
      "theUnheardIsWhatTheWorksSignalAbortedWith": [],
      "afterwardsListening": 0
     },
+    "the caller gives up, then the deadline passes, then never answers": {
+     "log": [
+      "clock: timer 1 set for 8000",
+      "clock: timer 1 runs",
+      "clock: timer 1 dropped (though it had run)"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "DeadlineExceededError",
+       "message": "Deadline exceeded for connect",
+       "extra": {
+        "policyName": "connect",
+        "code": "deadline_exceeded",
+        "name": "DeadlineExceededError"
+       }
+      }
+     },
+     "theReasonItself": false,
+     "theWorksSignal": {
+      "aborted": true,
+      "withWhatCameOut": false,
+      "withTheReason": true,
+      "withADeadlineError": false
+     },
+     "unheard": [],
+     "theUnheardIsWhatTheWorksSignalAbortedWith": [],
+     "afterwardsListening": 0
+    },
+    "the deadline passes, then the caller gives up, then never answers": {
+     "log": [
+      "clock: timer 1 set for 8000",
+      "clock: timer 1 runs",
+      "clock: timer 1 dropped (though it had run)"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "DeadlineExceededError",
+       "message": "Deadline exceeded for connect",
+       "extra": {
+        "policyName": "connect",
+        "code": "deadline_exceeded",
+        "name": "DeadlineExceededError"
+       }
+      }
+     },
+     "theReasonItself": false,
+     "theWorksSignal": {
+      "aborted": true,
+      "withWhatCameOut": true,
+      "withTheReason": false,
+      "withADeadlineError": true
+     },
+     "unheard": [],
+     "theUnheardIsWhatTheWorksSignalAbortedWith": [],
+     "afterwardsListening": 0
+    },
     "the deadline passes, then throws at once": {
      "log": [
       "clock: timer 1 set for 8000",
@@ -10441,6 +10549,237 @@
     "clock: timer 6 set for 10",
     "clock: timer 6 dropped"
    ]
+  },
+  "over a clock that runs timers at once, a debounced function and a watchdog run inside the very call that sets them, and the timer that has run is dropped at the next call": {
+   "returned": [
+    "clock: timer 1 set for 0 and run at once",
+    "fn runs with first",
+    "clock: timer 1 has run; the call that set it returns",
+    "— the first call has returned; a second —",
+    "clock: timer 1 dropped, though it had run",
+    "clock: timer 2 set for 0 and run at once",
+    "fn runs with second",
+    "clock: timer 2 has run; the call that set it returns",
+    "— dispose, then a call after it —",
+    "clock: timer 2 dropped, though it had run",
+    "— a watchdog —",
+    "clock: timer 3 set for 0 and run at once",
+    "onIdle runs",
+    "clock: timer 3 has run; the call that set it returns",
+    "— arm has returned; a kick —",
+    "clock: timer 3 dropped, though it had run",
+    "clock: timer 4 set for 0 and run at once",
+    "onIdle runs",
+    "clock: timer 4 has run; the call that set it returns",
+    "— dispose, then a kick after it —",
+    "clock: timer 4 dropped, though it had run"
+   ]
+  },
+  "over a clock that runs timers at once, polling ticks again as soon as each tick has finished; disposed from inside a tick nothing is dropped, disposed between ticks the timer that has run is": {
+   "returned": [
+    "tick 1 runs",
+    "clock: timer 1 set for 1 and run at once",
+    "tick 2 runs",
+    "clock: timer 1 has run; the call that set it returns",
+    "clock: timer 2 set for 1 and run at once",
+    "tick 3 runs",
+    "the third tick disposes the polling",
+    "clock: timer 2 has run; the call that set it returns",
+    "— another polling, whose second tick takes its time —",
+    "tick 1 runs",
+    "clock: timer 3 set for 1 and run at once",
+    "tick 2 runs",
+    "clock: timer 3 has run; the call that set it returns",
+    "— disposed while the second tick is at it —",
+    "clock: timer 3 dropped, though it had run"
+   ]
+  },
+  "over a clock that runs timers at once, an expiry calls onExpire inside the arming and keeps the key as armed, with a timer that has run": {
+   "returned": [
+    "clock: timer 1 set for 0 and run at once",
+    "the first arming expires",
+    "clock: timer 1 has run; the call that set it returns",
+    "— the first arming has returned; the key is armed again —",
+    "clock: timer 1 dropped, though it had run",
+    "clock: timer 2 set for 0 and run at once",
+    "the second arming expires",
+    "clock: timer 2 has run; the call that set it returns",
+    "— the first handle is disposed: nothing; then the second, twice —",
+    "clock: timer 2 dropped, though it had run"
+   ]
+  },
+  "over a clock that runs timers at once, a deadline has passed before the work is asked: the work gets a signal aborted with the deadline error, and still wins if it answers at once": {
+   "returned": {
+    "answers at once": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "kept": "the answer"
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [],
+     "theUnheardIsThatError": []
+    },
+    "answers with no promise": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "kept": "the answer"
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [],
+     "theUnheardIsThatError": []
+    },
+    "answers a turn later": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "DeadlineExceededError",
+       "message": "Deadline exceeded for connect",
+       "extra": {
+        "policyName": "connect",
+        "code": "deadline_exceeded",
+        "name": "DeadlineExceededError"
+       }
+      }
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [],
+     "theUnheardIsThatError": []
+    },
+    "never answers": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "DeadlineExceededError",
+       "message": "Deadline exceeded for connect",
+       "extra": {
+        "policyName": "connect",
+        "code": "deadline_exceeded",
+        "name": "DeadlineExceededError"
+       }
+      }
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [],
+     "theUnheardIsThatError": []
+    },
+    "fails by its promise": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "Error",
+       "message": "the work's own failure"
+      }
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [],
+     "theUnheardIsThatError": []
+    },
+    "throws at once": {
+     "log": [
+      "clock: timer 1 set for 0 and run at once",
+      "clock: timer 1 has run; the call that set it returns",
+      "the work is asked, with a signal that has aborted",
+      "clock: timer 1 dropped, though it had run"
+     ],
+     "answer": {
+      "broken": {
+       "$": "error",
+       "name": "Error",
+       "message": "the work's own failure"
+      }
+     },
+     "theWorksSignalAbortedWithADeadlineError": true,
+     "unheard": [
+      {
+       "$": "error",
+       "name": "DeadlineExceededError",
+       "message": "Deadline exceeded for connect",
+       "extra": {
+        "policyName": "connect",
+        "code": "deadline_exceeded",
+        "name": "DeadlineExceededError"
+       }
+      }
+     ],
+     "theUnheardIsThatError": [
+      true
+     ]
+    }
+   }
+  },
+  "over a clock that runs timers at once, a wait before another try is over before its signal is looked at: it is kept even if the signal had aborted, and the listener it then adds is never removed": {
+   "returned": {
+    "log": [
+     "clock: timer 1 set for 0 and run at once",
+     "clock: timer 1 has run; the call that set it returns",
+     "— with a signal —",
+     "clock: timer 2 set for 0 and run at once",
+     "clock: timer 2 has run; the call that set it returns",
+     "signal: listener 1 added for \"abort\" with {\"once\":true}",
+     "— dropped after that, then the signal aborts —",
+     "signal: aborts",
+     "signal: listener 1 is told",
+     "— with a signal that had aborted already —",
+     "clock: timer 3 set for 0 and run at once",
+     "clock: timer 3 has run; the call that set it returns",
+     "— work that fails twice, then answers, with a real signal —",
+     "try 1",
+     "clock: timer 4 set for 0 and run at once",
+     "clock: timer 4 has run; the call that set it returns",
+     "try 2",
+     "clock: timer 5 set for 0 and run at once",
+     "clock: timer 5 has run; the call that set it returns",
+     "try 3"
+    ],
+    "plainAnswer": {
+     "kept": {
+      "$": "undefined"
+     }
+    },
+    "withSignalAnswer": {
+     "kept": {
+      "$": "undefined"
+     }
+    },
+    "lateAnswer": {
+     "kept": {
+      "$": "undefined"
+     }
+    },
+    "stillListeningToTheNotedSignal": 0,
+    "run": {
+     "kept": "the answer"
+    },
+    "leftListeningToTheRealSignalAfterTheRun": 2
+   }
   },
   "the policies over the machine's clock ask that clock for their timers as it is at the time, so a schedule put on it later is the one they use": {
    "returned": {
