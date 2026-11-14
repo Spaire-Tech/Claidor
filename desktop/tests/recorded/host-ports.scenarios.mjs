@@ -637,6 +637,19 @@ export const scenarios = [
       };
     },
   },
+  {
+    name: "when two schemas are not JSON, the one thrown is of the provider that appeared first, not of the tool that came first",
+    run: async ({ mcpState }) => {
+      const failure = (tools) => mcpState.createSandMcpStateExecutor(providerOf(tools).provider).execute({}).then(() => "gave", (error) => ({ class: error.constructor.name, message: error.message }));
+      const notJson = { "a function": () => {}, "a big number": 5n, "a symbol": Symbol("s"), undefinedInAList: [undefined] };
+      return {
+        "each on its own": Object.fromEntries(await Promise.all(Object.entries(notJson).map(async ([name, inputSchema]) => [name, await failure([tool("a", "one", { inputSchema })])]))),
+        "b's function comes before a's big number, and a appeared first": await failure([tool("a", "one"), tool("b", "two", { inputSchema: notJson["a function"] }), tool("a", "three", { inputSchema: notJson["a big number"] })]),
+        "the same with b first": await failure([tool("b", "two", { inputSchema: notJson["a function"] }), tool("a", "one"), tool("a", "three", { inputSchema: notJson["a big number"] })]),
+        "two in one provider: the earlier tool's": await failure([tool("a", "one", { inputSchema: notJson["a symbol"] }), tool("a", "two", { inputSchema: notJson["a big number"] })]),
+      };
+    },
+  },
 
   // ----- sand-analytics-types.ts
   {

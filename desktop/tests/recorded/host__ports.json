@@ -3062,6 +3062,40 @@
     }
    }
   },
+  "when two schemas are not JSON, the one thrown is of the provider that appeared first, not of the tool that came first": {
+   "returned": {
+    "each on its own": {
+     "a function": {
+      "class": "Error",
+      "message": "cannot decode google.protobuf.Value from JSON () => {}"
+     },
+     "a big number": {
+      "class": "Error",
+      "message": "cannot decode google.protobuf.Value from JSON 5"
+     },
+     "a symbol": {
+      "class": "Error",
+      "message": "cannot decode google.protobuf.Value from JSON Symbol(s)"
+     },
+     "undefinedInAList": {
+      "class": "Error",
+      "message": "cannot decode google.protobuf.Value from JSON undefined"
+     }
+    },
+    "b's function comes before a's big number, and a appeared first": {
+     "class": "Error",
+     "message": "cannot decode google.protobuf.Value from JSON 5"
+    },
+    "the same with b first": {
+     "class": "Error",
+     "message": "cannot decode google.protobuf.Value from JSON () => {}"
+    },
+    "two in one provider: the earlier tool's": {
+     "class": "Error",
+     "message": "cannot decode google.protobuf.Value from JSON Symbol(s)"
+    }
+   }
+  },
   "a message's length falls into one of six sizes: nothing, under 20, under 100, under 500, under 2,000, and more": {
    "returned": {
     "a length of -1": "empty",
