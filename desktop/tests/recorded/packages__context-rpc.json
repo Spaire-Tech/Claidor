@@ -67,7 +67,28 @@
      ],
      "aNewFunctionEachTime": true,
      "parametersWithoutDefaults": 2,
-     "functionName": ""
+     "functionName": "",
+     "cannotBeMadeWithNew": true,
+     "anOrdinaryObjectBehind": true,
+     "aNoteLeftOnIt": [
+      "kept",
+      [
+       "ask",
+       "watch",
+       "send",
+       "talk",
+       "note"
+      ]
+     ],
+     "aMethodTakenOff": [
+      "undefined",
+      [
+       "ask",
+       "watch",
+       "send",
+       "note"
+      ]
+     ]
     },
     "log": []
    }
@@ -1047,6 +1068,154 @@
     ]
    }
   },
+  "the part's own options: trace headers and the headers function are read once, when the client is made; whether to use the context's signal is read again at every call": {
+   "returned": {
+    "outcome": {
+     "whenMade": [
+      "injectTraceHeaders",
+      "extractHeaders"
+     ],
+     "atTheTwoCalls": [
+      "enableAbortSignal",
+      "enableAbortSignal"
+     ],
+     "sent": [
+      {
+       "header": [],
+       "signal": "none"
+      },
+      {
+       "header": [],
+       "signal": "the context's own"
+      }
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "the context's own",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 2
+      }
+     ],
+     [
+      "span 2",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 2",
+      "end"
+     ]
+    ]
+   }
+  },
+  "null for the part's own options: the runtime's error when the client is made": {
+   "returned": {
+    "outcome": {
+     "threwAtOnce": {
+      "aRuntimeError": "TypeError"
+     }
+    },
+    "log": []
+   }
+  },
   "a call made with the context of another call starts its span under that call's span": {
    "returned": {
     "outcome": {
@@ -1884,6 +2053,366 @@
         [
          "traceparent",
          "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-100"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "trace headers, the span saying of itself: flags of one and a half: written in sixteens as they are": {
+   "returned": {
+    "outcome": {
+     "answer": {
+      "said": "yes"
+     },
+     "header": [
+      [
+       "backend-traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1.8"
+      ],
+      [
+       "traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1.8"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1.8"
+        ],
+        [
+         "traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1.8"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "trace headers, the span saying of itself: flags below zero: the sign stays": {
+   "returned": {
+    "outcome": {
+     "answer": {
+      "said": "yes"
+     },
+     "header": [
+      [
+       "backend-traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331--1"
+      ],
+      [
+       "traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331--1"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331--1"
+        ],
+        [
+         "traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331--1"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "trace headers, the span saying of itself: flags given as words: used as they are": {
+   "returned": {
+    "outcome": {
+     "answer": {
+      "said": "yes"
+     },
+     "header": [
+      [
+       "backend-traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-07"
+      ],
+      [
+       "traceparent",
+       "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-07"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-07"
+        ],
+        [
+         "traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-07"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "trace headers, the span saying of itself: ids that are not text: made text": {
+   "returned": {
+    "outcome": {
+     "answer": {
+      "said": "yes"
+     },
+     "header": [
+      [
+       "backend-traceparent",
+       "00-12-34-01"
+      ],
+      [
+       "traceparent",
+       "00-12-34-01"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-12-34-01"
+        ],
+        [
+         "traceparent",
+         "00-12-34-01"
         ]
        ],
        "contextValues": {
@@ -4684,6 +5213,332 @@
     ]
    }
   },
+  "headers: the caller's headers as words: each letter lands under its place": {
+   "returned": {
+    "outcome": {
+     "areHeaders": true,
+     "notTheCallersOwn": true,
+     "sent": [
+      [
+       "0",
+       "a"
+      ],
+      [
+       "1",
+       "b"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "0",
+         "a"
+        ],
+        [
+         "1",
+         "b"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "headers: the caller's headers as a number: nothing": {
+   "returned": {
+    "outcome": {
+     "areHeaders": true,
+     "notTheCallersOwn": true,
+     "sent": []
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "headers: the caller's headers as null, zero or empty words: nothing": {
+   "returned": {
+    "outcome": {
+     "areHeaders": true,
+     "notTheCallersOwn": true,
+     "sent": []
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "turn",
+        "rpc.ask"
+       ]
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true,
+           "theOneTheHeadersFunctionGot": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
+  "headers: the headers function answering words: each letter lands under its place": {
+   "returned": {
+    "outcome": {
+     "areHeaders": true,
+     "notTheCallersOwn": true,
+     "sent": [
+      [
+       "0",
+       "o"
+      ],
+      [
+       "1",
+       "k"
+      ]
+     ]
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "turn",
+        "rpc.ask"
+       ]
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "0",
+         "o"
+        ],
+        [
+         "1",
+         "k"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true,
+           "theOneTheHeadersFunctionGot": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
+     ]
+    ]
+   }
+  },
   "the headers function is given the span's context, and reads what the caller's context carries": {
    "returned": {
     "outcome": [
@@ -6769,6 +7624,83 @@
        "name": "Error",
        "message": "the reader gave up"
       }
+     ]
+    ]
+   }
+  },
+  "a thing that only says it is a stream: wrapped all the same, and reading it is the runtime's error, the span left open": {
+   "returned": {
+    "outcome": {
+     "keys": [
+      "Symbol(Symbol.asyncIterator)"
+     ],
+     "threwAtOnce": {
+      "aRuntimeError": "TypeError"
+     }
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.constructor",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "constructor",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ]
+    ]
+   }
+  },
+  "a stream whose return is there but is no function: the span closes OK, then the runtime's error comes out": {
+   "returned": {
+    "outcome": {
+     "returned": {
+      "aRuntimeError": "TypeError"
+     },
+     "next": {
+      "aRuntimeError": "TypeError"
+     }
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.constructor",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "constructor",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "span 1",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 1",
+      "end"
      ]
     ]
    }
@@ -11981,6 +12913,991 @@
       "removeEventListener",
       "abort",
       "listener 8"
+     ]
+    ]
+   }
+  },
+  "a method is called on the bare client with two things: the input, and options that are a new object, always with headers, signal and context values": {
+   "returned": {
+    "outcome": [
+     {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": {
+       "$": "undefined"
+      },
+      "optionKeys": [
+       "headers",
+       "signal",
+       "contextValues"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ]
+      ],
+      "signal": "none",
+      "contextValues": {
+       "theCallersOwn": false,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": {
+       "$": "undefined"
+      }
+     },
+     {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": "the input",
+      "optionKeys": [
+       "headers",
+       "signal",
+       "contextValues"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+       ]
+      ],
+      "signal": "none",
+      "contextValues": {
+       "theCallersOwn": false,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": {
+       "$": "undefined"
+      }
+     },
+     {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": "the input",
+      "optionKeys": [
+       "headers",
+       "signal",
+       "contextValues"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203334-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203334-01"
+       ]
+      ],
+      "signal": "none",
+      "contextValues": {
+       "theCallersOwn": false,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 2",
+      "spanContext"
+     ],
+     [
+      "span 2",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 2",
+      "end"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 3",
+      "spanContext"
+     ],
+     [
+      "span 3",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 3",
+      "end"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 4",
+      "spanContext"
+     ],
+     [
+      "span 4",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 4",
+      "end"
+     ]
+    ]
+   }
+  },
+  "the options keep the caller's keys in the caller's order, the three the part sets taking the place of the caller's or coming last": {
+   "returned": {
+    "outcome": {
+     "got": {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": "the input",
+      "optionKeys": [
+       "contextValues",
+       "timeoutMs",
+       "signal",
+       "onTrailer",
+       "headers",
+       "anythingElse",
+       "Symbol(recorded.option)"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ],
+       [
+        "x-caller",
+        "1"
+       ]
+      ],
+      "signal": "a third one",
+      "contextValues": {
+       "theCallersOwn": true,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": 40
+     },
+     "theCallersOptionsUntouched": [
+      "contextValues",
+      "timeoutMs",
+      "signal",
+      "onTrailer",
+      "headers",
+      "anythingElse",
+      "Symbol(recorded.option)"
+     ],
+     "stillTheCallersHeaders": [
+      "x-caller"
+     ],
+     "stillTheCallersSignal": true
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 2",
+      "spanContext"
+     ],
+     [
+      "span 2",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 2",
+      "end"
+     ]
+    ]
+   }
+  },
+  "options the caller only inherits: the headers, the signal and the context values are read all the same, and the rest (a timeout) is not passed on": {
+   "returned": {
+    "outcome": [
+     {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": 1,
+      "optionKeys": [
+       "headers",
+       "signal",
+       "contextValues"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203332-01"
+       ],
+       [
+        "x-inherited",
+        "1"
+       ]
+      ],
+      "signal": "the caller's own",
+      "contextValues": {
+       "theCallersOwn": false,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": {
+       "$": "undefined"
+      }
+     },
+     {
+      "calledOnTheBareClient": true,
+      "argumentCount": 2,
+      "input": 2,
+      "optionKeys": [
+       "headers",
+       "signal",
+       "contextValues"
+      ],
+      "headers": [
+       [
+        "backend-traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+       ],
+       [
+        "traceparent",
+        "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+       ]
+      ],
+      "signal": "none",
+      "contextValues": {
+       "theCallersOwn": false,
+       "holds": [
+        [
+         "sand.callerContext",
+         {
+          "context": [
+           "turn",
+           "rpc.probe"
+          ],
+          "madeFromTheCallers": true
+         }
+        ]
+       ]
+      },
+      "timeoutMs": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 2",
+      "spanContext"
+     ],
+     [
+      "span 2",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 2",
+      "end"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.probe",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "probe",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 3",
+      "spanContext"
+     ],
+     [
+      "span 3",
+      "setStatus",
+      {
+       "code": 1
+      }
+     ],
+     [
+      "span 3",
+      "end"
+     ]
+    ]
+   }
+  },
+  "a context that keeps nothing: calls and streams go out and come back all the same, and the span that was started is told nothing": {
+   "returned": {
+    "outcome": {
+     "good": {
+      "said": "yes"
+     },
+     "bad": {
+      "threw": "just words"
+     },
+     "stream": {
+      "items": [
+       "a"
+      ],
+      "ended": "failed",
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "the line dropped"
+      }
+     },
+     "atOnce": "[object Object]"
+    },
+    "log": [
+     [
+      "the context",
+      "withName",
+      "rpc.ask"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "forgetful"
+       ]
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "the context's own",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "x-added",
+         "yes"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "forgetful"
+           ],
+           "madeFromTheCallers": true,
+           "theOneTheHeadersFunctionGot": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "the context",
+      "withName",
+      "rpc.ask"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "forgetful"
+       ]
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "the context's own",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "x-added",
+         "yes"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "forgetful"
+           ],
+           "madeFromTheCallers": true,
+           "theOneTheHeadersFunctionGot": true
+          }
+         ]
+        ]
+       },
+       "input": 2
+      }
+     ],
+     [
+      "the context",
+      "withName",
+      "rpc.watch"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "watch",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "forgetful"
+       ]
+      }
+     ],
+     [
+      "transport",
+      "stream",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Watch",
+       "localName": "watch",
+       "signal": "the context's own",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "x-added",
+         "yes"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "forgetful"
+           ],
+           "madeFromTheCallers": true,
+           "theOneTheHeadersFunctionGot": true
+          }
+         ]
+        ]
+       }
+      }
+     ],
+     [
+      "the stream",
+      "next"
+     ],
+     [
+      "the stream",
+      "next"
+     ],
+     [
+      "the context",
+      "withName",
+      "rpc.toString"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "toString",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "the headers function",
+      "asked",
+      {
+       "context": [
+        "forgetful"
+       ]
+      }
+     ]
+    ]
+   }
+  },
+  "a thrown thing that cannot be made into words: with a span, that failure comes out in place of it and the span is left open; with none, the thing itself comes out": {
+   "returned": {
+    "outcome": {
+     "withASpan": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "no words for this"
+     },
+     "atOnceWithASpan": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "no words for this"
+     },
+     "streamWithASpan": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "no words for this"
+     },
+     "withNone": true,
+     "streamWithNone": true
+    },
+    "log": [
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 1",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+        ],
+        [
+         "traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.ask"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 1
+      }
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.ask",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 2",
+      "spanContext"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "rpc.watch",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "watch",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "span 3",
+      "spanContext"
+     ],
+     [
+      "transport",
+      "stream",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Watch",
+       "localName": "watch",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [
+        [
+         "backend-traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+        ],
+        [
+         "traceparent",
+         "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203333-01"
+        ]
+       ],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "turn",
+            "rpc.watch"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       }
+      }
+     ],
+     [
+      "the stream",
+      "next"
+     ],
+     [
+      "the caller",
+      "goes on with a context that keeps nothing"
+     ],
+     [
+      "the context",
+      "withName",
+      "rpc.ask"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "ask",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "unary",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Ask",
+       "localName": "ask",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "forgetful"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       },
+       "input": 4
+      }
+     ],
+     [
+      "the context",
+      "withName",
+      "rpc.watch"
+     ],
+     [
+      "tracer context-tracer",
+      "startSpan",
+      {
+       "name": "forgetful",
+       "options": {
+        "kind": 2,
+        "attributes": {
+         "rpc.method": "watch",
+         "rpc.system": "connect"
+        }
+       },
+       "under": null
+      }
+     ],
+     [
+      "transport",
+      "stream",
+      {
+       "service": "recorded.v1.Desk",
+       "method": "Watch",
+       "localName": "watch",
+       "signal": "none",
+       "timeoutMs": {
+        "$": "undefined"
+       },
+       "header": [],
+       "contextValues": {
+        "theCallersOwn": false,
+        "holds": [
+         [
+          "sand.callerContext",
+          {
+           "context": [
+            "forgetful"
+           ],
+           "madeFromTheCallers": true
+          }
+         ]
+        ]
+       }
+      }
+     ],
+     [
+      "the stream",
+      "next"
      ]
     ]
    }

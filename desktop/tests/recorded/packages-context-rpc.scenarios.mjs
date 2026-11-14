@@ -250,6 +250,10 @@ const SHAPE = [
         aNewFunctionEachTime: client.ask !== client.ask,
         parametersWithoutDefaults: client.ask.length,
         functionName: client.ask.name,
+        cannotBeMadeWithNew: (() => { try { new client.ask(); return false; } catch { return true; } })(),
+        anOrdinaryObjectBehind: Object.getPrototypeOf(client) === Object.prototype,
+        aNoteLeftOnIt: ((client.note = "kept"), [client.note, Object.keys(client)]),
+        aMethodTakenOff: (delete client.talk, [typeof client.talk, Object.keys(client)]),
       };
     }),
   },
@@ -276,6 +280,59 @@ const SHAPE = [
       const bare = client.valueOf(desk.ctx);
       bare[mark] = function (input) { return `marked ${input}`; };
       return client[mark](desk.ctx, "this");
+    }),
+  },
+];
+
+/** A function put on the client object, so that what the part hands a method is seen as it is. */
+function probeOn(client, desk) {
+  const bare = client.valueOf(desk.ctx);
+  desk.log.length = 0;
+  client.probe = function (input, options) {
+    return {
+      calledOnTheBareClient: this === bare,
+      argumentCount: arguments.length,
+      input,
+      optionKeys: Reflect.ownKeys(options).map(String),
+      headers: [...options.headers],
+      signal: desk.whichSignal(options.signal),
+      contextValues: desk.whatValues(options.contextValues),
+      timeoutMs: options.timeoutMs,
+    };
+  };
+  return client;
+}
+
+const WHAT_A_METHOD_GETS = [
+  {
+    name: "a method is called on the bare client with two things: the input, and options that are a new object, always with headers, signal and context values",
+    run: atDesk((desk) => {
+      const client = probeOn(desk.client(), desk);
+      return [client.probe(desk.ctx), client.probe(desk.ctx, "the input"), client.probe(desk.ctx, "the input", {}, "a fourth thing")];
+    }),
+  },
+  {
+    name: "the options keep the caller's keys in the caller's order, the three the part sets taking the place of the caller's or coming last",
+    run: atDesk((desk) => {
+      const client = probeOn(desk.client({ enableAbortSignal: true }), desk);
+      const mark = Symbol("recorded.option");
+      const caller = new AbortController();
+      desk.callersSignal = caller.signal;
+      desk.callersValues = { set(key, value) { this[key.id] = value; return this; } };
+      const options = { contextValues: desk.callersValues, timeoutMs: 40, signal: caller.signal, onTrailer: () => {}, [mark]: "kept", headers: { "x-caller": "1" }, anythingElse: true };
+      const got = client.probe(desk.ctx, "the input", options);
+      return { got, theCallersOptionsUntouched: Reflect.ownKeys(options).map(String), stillTheCallersHeaders: Object.keys(options.headers), stillTheCallersSignal: options.signal === caller.signal };
+    }),
+  },
+  {
+    name: "options the caller only inherits: the headers, the signal and the context values are read all the same, and the rest (a timeout) is not passed on",
+    run: atDesk((desk) => {
+      const client = probeOn(desk.client(), desk);
+      const caller = new AbortController();
+      desk.callersSignal = caller.signal;
+      const inherited = Object.create({ timeoutMs: 40, headers: { "x-inherited": "1" }, signal: caller.signal });
+      const hidden = Object.defineProperty({}, "timeoutMs", { value: 40, enumerable: false });
+      return [client.probe(desk.ctx, 1, inherited), client.probe(desk.ctx, 2, hidden)];
     }),
   },
 ];
@@ -354,6 +411,29 @@ const UNARY_CALLS = [
     }),
   },
   {
+    name: "the part's own options: trace headers and the headers function are read once, when the client is made; whether to use the context's signal is read again at every call",
+    run: atDesk(async (desk) => {
+      const reads = [];
+      const own = { injectTraceHeaders: false, extractHeaders: undefined, enableAbortSignal: false };
+      const client = desk.client(new Proxy(own, { get(target, name) { reads.push(String(name)); return target[name]; } }));
+      const whenMade = [...reads];
+      reads.length = 0;
+      await client.ask(desk.ctx, 1);
+      own.injectTraceHeaders = true;
+      own.extractHeaders = () => ({ "x-late": "yes" });
+      own.enableAbortSignal = true;
+      await client.ask(desk.ctx, 2);
+      return { whenMade, atTheTwoCalls: reads, sent: desk.calls.map((call) => ({ header: [...call.header], signal: desk.whichSignal(call.signal) })) };
+    }),
+  },
+  {
+    name: "null for the part's own options: the runtime's error when the client is made",
+    run: atDesk((desk) => {
+      const result = atOnce(() => desk.client(null));
+      return { threwAtOnce: runtimeError(result.threwAtOnce) };
+    }),
+  },
+  {
     name: "a call made with the context of another call starts its span under that call's span",
     run: atDesk(async (desk) => {
       const client = desk.client();
@@ -376,6 +456,10 @@ const SPAN_CONTEXTS = [
   ["flags of 16: 10", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 16 })],
   ["flags of 255: ff", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 255 })],
   ["flags of 256: three digits", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 256 })],
+  ["flags of one and a half: written in sixteens as they are", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 1.5 })],
+  ["flags below zero: the sign stays", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: -1 })],
+  ["flags given as words: used as they are", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: "7" })],
+  ["ids that are not text: made text", () => ({ traceId: 12, spanId: 34, traceFlags: 1 })],
   ["a trace state that can write itself", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 1, traceState: { serialize: () => "vendor=one,other=two", toString: () => "not this" } })],
   ["a trace state that cannot: it is turned to text", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 1, traceState: { serialize: "not a function", toString: () => "vendor=text" } })],
   ["a trace state that is already text", () => ({ traceId: TRACE_ID, spanId: "b7ad6b7169203331", traceFlags: 1, traceState: "vendor=plain" })],
@@ -434,6 +518,10 @@ const HEADER_ROWS = [
   ["no trace headers and a headers function answering nothing: only the caller's", { inject: false, extract: () => undefined }, () => ({ "x-caller": "kept" })],
   ["no headers from anyone: empty Headers all the same", { inject: false }, () => undefined],
   ["cookies set twice by the caller: the last one stays", {}, () => new Headers([["set-cookie", "a=1"], ["set-cookie", "b=2"]])],
+  ["the caller's headers as words: each letter lands under its place", { inject: false }, () => "ab"],
+  ["the caller's headers as a number: nothing", { inject: false }, () => 5],
+  ["the caller's headers as null, zero or empty words: nothing", { inject: false, extract: () => 0 }, () => null],
+  ["the headers function answering words: each letter lands under its place", { inject: false, extract: () => "ok" }, () => undefined],
 ];
 
 const HEADERS = [
@@ -630,7 +718,81 @@ const ODD_ANSWERS = [
   },
 ];
 
+/** A stand-in context that keeps nothing it is given: a span put on it is not found again. */
+function forgetful(log) {
+  const ctx = {
+    name: "forgetful",
+    signal: new AbortController().signal,
+    get: (key) => key.defaultValue,
+    with: () => ctx,
+    withName: (name) => { log.push(["the context", "withName", name]); return ctx; },
+    getParent: () => undefined,
+    getPath: () => ["forgetful"],
+  };
+  return ctx;
+}
+
+/** Something thrown that fails when it is turned into words. */
+const wordless = () => ({ toString() { throw new RangeError("no words for this"); } });
+
+const WITHOUT_A_SPAN = [
+  {
+    name: "a context that keeps nothing: calls and streams go out and come back all the same, and the span that was started is told nothing",
+    run: atDesk(async (desk) => {
+      desk.ctx = forgetful(desk.log);
+      const client = desk.client({ enableAbortSignal: true, extractHeaders: desk.headersFrom(() => ({ "x-added": "yes" })) });
+      const good = await client.ask(desk.ctx, 1);
+      desk.answers.unary = async () => { throw "just words"; };
+      const bad = await outcomeOf(() => client.ask(desk.ctx, 2));
+      desk.answers.stream = async () => ({ header: new Headers(), trailer: new Headers(), message: scripted(desk.log, "the stream", [{ value: "a" }, { error: new Error("the line dropped") }]) });
+      const stream = await readAll(client.watch(desk.ctx, 3));
+      return { good, bad, stream, atOnce: client.toString(desk.ctx) };
+    }),
+  },
+  {
+    name: "a thrown thing that cannot be made into words: with a span, that failure comes out in place of it and the span is left open; with none, the thing itself comes out",
+    run: atDesk(async (desk) => {
+      const thing = wordless();
+      desk.answers.unary = async () => { throw thing; };
+      const withASpan = await outcomeOf(() => desk.client().ask(desk.ctx, 1));
+      const atOnceWithASpan = atOnce(() => desk.client({ extractHeaders: () => { throw thing; } }).ask(desk.ctx, 2));
+      desk.answers.stream = async () => ({ header: new Headers(), trailer: new Headers(), message: scripted(desk.log, "the stream", [{ error: thing }]) });
+      const streamWithASpan = await readAll(desk.client().watch(desk.ctx, 3));
+      desk.log.push(["the caller", "goes on with a context that keeps nothing"]);
+      desk.ctx = forgetful(desk.log);
+      const withNone = await outcomeOf(() => desk.client().ask(desk.ctx, 4));
+      const streamWithNone = await readAll(desk.client().watch(desk.ctx, 5));
+      return {
+        withASpan: withASpan.threw,
+        atOnceWithASpan: atOnceWithASpan.threwAtOnce,
+        streamWithASpan: streamWithASpan.threw,
+        withNone: withNone.threw === thing,
+        streamWithNone: streamWithNone.threw === thing,
+      };
+    }),
+  },
+];
+
 const STREAMS = [
+  {
+    name: "a thing that only says it is a stream: wrapped all the same, and reading it is the runtime's error, the span left open",
+    run: atDesk((desk) => {
+      const client = desk.client();
+      const wrapped = client.constructor(desk.ctx, { [Symbol.asyncIterator]: "not a function" });
+      const result = atOnce(() => wrapped[Symbol.asyncIterator]());
+      return { keys: Reflect.ownKeys(wrapped).map(String), threwAtOnce: runtimeError(result.threwAtOnce) };
+    }),
+  },
+  {
+    name: "a stream whose return is there but is no function: the span closes OK, then the runtime's error comes out",
+    run: atDesk(async (desk) => {
+      const client = desk.client();
+      const reader = client.constructor(desk.ctx, { [Symbol.asyncIterator]: () => ({ next: "no", return: "no", throw: "no" }) })[Symbol.asyncIterator]();
+      const returned = await outcomeOf(() => reader.return());
+      const next = await outcomeOf(() => reader.next());
+      return { returned: runtimeError(returned.threw), next: runtimeError(next.threw) };
+    }),
+  },
   {
     name: "a server stream: the one message goes out as a stream of one, the span stays open until the last item is read, then closes OK",
     run: atDesk(async (desk) => {
@@ -1024,4 +1186,4 @@ const SIGNALS = [
   },
 ];
 
-export const scenarios = [...SHAPE, ...UNARY_CALLS, ...TRACE_HEADERS, ...HEADERS, ...CONTEXT_VALUES, ...UNARY_FAILURES, ...ODD_ANSWERS, ...STREAMS, ...SIGNALS];
+export const scenarios = [...SHAPE, ...UNARY_CALLS, ...TRACE_HEADERS, ...HEADERS, ...CONTEXT_VALUES, ...UNARY_FAILURES, ...ODD_ANSWERS, ...STREAMS, ...SIGNALS, ...WHAT_A_METHOD_GETS, ...WITHOUT_A_SPAN];
