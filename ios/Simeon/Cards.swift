@@ -2582,19 +2582,28 @@ struct PartyAvatar: View {
   @Environment(AppStore.self) private var store
 
   var body: some View {
-    if party.cloudAgent {
+    if party.marked {
       // A cloud agent's picture is the mascot of the program that coded, Claude Code's or Codex's (13 November 2026,
-      // the founder: "it should be whatever agent is used"), on Connect apps' tile, round as a picture.
-      Image("Mascots/\(party.mascot ?? "claudecode")")
-        .resizable()
-        .interpolation(.high)
-        .scaledToFit()
-        .padding(size * 0.1)
-        .frame(width: size, height: size)
-        .background(Ink.appsTile)
-        .clipShape(Circle())
-        .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
-        .accessibilityHidden(true)
+      // the founder: "it should be whatever agent is used"), on Connect apps' tile, round as a picture. An agent
+      // outside Simeon (14 November 2026) is drawn the same way: the mascot of what it is, or its name's first letter.
+      Group {
+        if let mascot = party.mascot {
+          Image("Mascots/\(mascot)")
+            .resizable()
+            .interpolation(.high)
+            .scaledToFit()
+            .padding(size * 0.1)
+        } else {
+          Text(party.initial)
+            .font(.system(size: size * 0.5, weight: .semibold))
+            .foregroundStyle(.secondary)
+        }
+      }
+      .frame(width: size, height: size)
+      .background(Ink.appsTile)
+      .clipShape(Circle())
+      .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
+      .accessibilityHidden(true)
     } else {
       AgentIdAvatar(id: party.id).frame(width: size, height: size)
     }

@@ -33,16 +33,35 @@ export interface Party {
    * an agent, and for a cloud agent whose line doesn't say.
    */
   coder?: string
+  /**
+   * An agent outside Simeon on the person's network, a bot or a coding
+   * agent (`kind` "network", 14 November 2026): its `id` is "network:" and
+   * its address, and its messages are lines of this chat, as a teammate's.
+   * Left out for everyone else.
+   */
+  network?: true
+  /**
+   * What an agent outside Simeon is, as the server names it (`bot`: "dots",
+   * "muse", "claude-code"…): the app draws its mascot as its picture
+   * (`networkMascot` in externalAgents.ts). Left out for anyone else, and
+   * for one whose line doesn't say.
+   */
+  bot?: string
 }
 
 export function partyFrom(json: unknown): Party | undefined {
   const id = text(field(json, 'id'))
   if (!id) return undefined
   const party: Party = { id, name: text(field(json, 'name')) ?? '' }
-  if (str(field(json, 'kind')) === 'cloud-agent') {
+  const kind = str(field(json, 'kind'))
+  if (kind === 'cloud-agent') {
     party.cloudAgent = true
     const coder = text(field(json, 'coder'))
     if (coder) party.coder = coder
+  } else if (kind === 'network') {
+    party.network = true
+    const bot = text(field(json, 'bot'))
+    if (bot) party.bot = bot
   }
   return party
 }

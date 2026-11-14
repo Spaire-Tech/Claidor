@@ -842,6 +842,38 @@ For the founder, each to be answered before the step that needs it:
 
 Newest first.
 
+### 14 November 2026: a bot on the network is drawn with its own mascot
+
+The founder, 14 November 2026: "the avatar is not a simeon avatar, but
+[the bot's]. like codex. if it came from dots, its dots". A bot or a coding
+agent on the person's Simeon network now writes to an agent as itself, and
+the engine names it on the line (`fromAgent` and `toAgent`: `kind`
+"network", `bot` what it is; `docs/services-agents.md`).
+
+**Done.** `core/models.ts`: a party of `kind` "network" keeps `network` and
+`bot` (`Models.swift`'s `Party`). `core/externalAgents.ts`: `networkMascot`
+gives its kind's mascot (Dots, Muse, the third bot, Claude Code, Codex,
+Cursor), none for a kind that has no mascot. `window/Call.tsx`: the chip in
+the chat, the list of several, the two-agent page's head and its rows draw
+such a party as a cloud agent is drawn, the mascot on Connect apps' tile,
+or the first letter of its name when it has none; the page takes the party
+as the chat's latest line names it. The same in the core and the Mac's and
+the iPhone's views (`Party.marked`, `Party.mascot`, `CloudAgentMark`,
+`PartyAvatar`). No word was added.
+
+**Checked.** `pnpm test` (one new test in `core/exchanges.test.ts`: the
+party read from both lines, the mascots, a line from the first release,
+the two lines as one page), `tsc`, `pnpm build` committed, the inventory
+run again.
+
+**Not checked.** Nothing was looked at in a browser, on Windows, on a Mac
+or on an iPhone. The Swift was not compiled here (no Swift on this
+machine): `swift test` in `ios/SimeonCore` and a Mac and iPhone build are
+owed.
+
+**Next.** The mention of such a bot inside a message's words still draws a
+face its name picks.
+
 ### 13 November 2026: a saved login's site icon, the Windows reader kept in step with the Mac's
 
 The founder: "theres an issue with the favicon of the saved logins in the

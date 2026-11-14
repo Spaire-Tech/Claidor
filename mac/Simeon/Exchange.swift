@@ -125,7 +125,9 @@ struct ExchangeView: View {
  * founder: "it should be whatever agent is used. either claude code or
  * codex"): the mascot of the program that coded (`Party.mascot`, Claude
  * Code's or Codex's), on Connect apps' tile (white, #2c2c2e on dark, a
- * hairline), round as a picture.
+ * hairline), round as a picture. An agent outside Simeon (a bot or a coding
+ * agent on the person's network, 14 November 2026) is drawn the same way:
+ * the mascot of what it is, or the first letter of its name.
  */
 struct CloudAgentMark: View {
   let party: Party
@@ -134,12 +136,17 @@ struct CloudAgentMark: View {
 
   var body: some View {
     Group {
-      if let mascot = NSImage(named: "Mascots/\(party.mascot ?? "claudecode")") {
+      // A cloud agent always has a mascot (`Party.mascot`); an agent outside Simeon with none has its letter.
+      if let name = party.mascot, let mascot = NSImage(named: "Mascots/\(name)") {
         Image(nsImage: mascot)
           .resizable()
           .interpolation(.high)
           .scaledToFit()
           .padding(size * 0.1)
+      } else if party.network {
+        Text(party.initial)
+          .font(.system(size: size * 0.5, weight: .semibold))
+          .foregroundStyle(look.ink.opacity(0.6))
       } else {
         Color.clear
       }
@@ -184,7 +191,7 @@ private struct ExchangeHeader: View {
     let name = party.shownName
     return HStack(spacing: 4) {
       Group {
-        if party.cloudAgent {
+        if party.marked {
           CloudAgentMark(party: party, size: 20, look: look)
         } else {
           AgentIdMark(id: party.id, agents: store.agents, size: 20)
@@ -233,7 +240,7 @@ private struct ExchangeMessage: View {
     let limit = max(0, min(column * 0.88, 640, column - 82))
     HStack(alignment: .bottom, spacing: 8) {
       Group {
-        if last, sender.cloudAgent {
+        if last, sender.marked {
           CloudAgentMark(party: sender, size: 22, look: look)
         } else if last {
           AgentIdMark(id: sender.id, agents: store.agents, size: 22)

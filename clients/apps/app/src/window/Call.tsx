@@ -41,7 +41,7 @@ import {
   exchangeRows,
   menuOrder,
 } from '../core/exchanges'
-import { cloudAgentMascot } from '../core/externalAgents'
+import { cloudAgentMascot, networkMascot } from '../core/externalAgents'
 import { pictureURL } from '../core/faces'
 import { type Agent, type Party, shownName } from '../core/models'
 import type { AppStore } from '../core/store'
@@ -101,21 +101,36 @@ export type BannerSource = Pick<
  * November 2026, the founder: "it should be whatever agent is used. either
  * claude code or codex"): the mascot of the program that coded, Claude
  * Code's or Codex's, on Connect apps' tile (white, #2c2c2e on dark, a
- * hairline), round as a picture.
+ * hairline), round as a picture. An agent outside Simeon (a bot or a coding
+ * agent on the person's network, 14 November 2026) is drawn the same way:
+ * the mascot of what it is, or the first letter of its name.
  */
 function CloudMark({ party, size }: { party: Party; size: number }) {
+  const mascot = party.cloudAgent
+    ? cloudAgentMascot(party.coder)
+    : networkMascot(party.bot)
+  const url = mascot == null ? undefined : mascotURL(mascot)
   return (
     <span
       className="cloud-mark"
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
-      <img src={mascotURL(cloudAgentMascot(party.coder))} alt="" />
+      {url != null ? (
+        <img src={url} alt="" />
+      ) : (
+        <span
+          className="cloud-mark-letter"
+          style={{ fontSize: Math.round(size * 0.5) }}
+        >
+          {shownName(party).slice(0, 1).toUpperCase()}
+        </span>
+      )}
     </span>
   )
 }
 
-/** A party's picture: an agent's own, or a cloud agent's cloud. */
+/** A party's picture: an agent's own, a cloud agent's mascot, or the mascot of an agent outside Simeon. */
 function PartyMark({
   store,
   party,
@@ -125,7 +140,7 @@ function PartyMark({
   party: Party
   size: number
 }) {
-  return party.cloudAgent ? (
+  return party.cloudAgent || party.network ? (
     <CloudMark party={party} size={size} />
   ) : (
     <MarkOf store={store} id={party.id} size={size} />
@@ -1061,16 +1076,16 @@ function ExchangeView({
       ? cloudAgentRows(cloudLines, me, cloud)
       : exchangeRows(entries ?? [], me, peerId)
   }, [entries, agentId, agent?.name, peerId, isCloud, cloud, cloudLines])
+  // The peer as the chat named it (an agent outside Simeon with what it is, for its mascot), else as the roster does.
+  let named: Party | undefined
+  for (const entry of entries ?? [])
+    if (entry.teammate?.id === peerId) named = entry.teammate
   const peer: Party = isCloud
     ? cloud
     : {
+        ...named,
         id: peerId,
-        // The peer as the chat named it, else as the roster does.
-        name:
-          (entries ?? []).find((entry) => entry.teammate?.id === peerId)
-            ?.teammate?.name ||
-          store.agent(peerId)?.name ||
-          '',
+        name: named?.name || store.agent(peerId)?.name || '',
       }
   const peerName = shownName(peer)
   const box = useOpensAtNewest()

@@ -11,7 +11,7 @@ import {
   exchangeRows,
   menuOrder,
 } from './exchanges'
-import { cloudAgentMascot } from './externalAgents'
+import { cloudAgentMascot, networkMascot } from './externalAgents'
 import type { JSONObject } from './json'
 import { type Party, shownName } from './models'
 
@@ -234,5 +234,74 @@ describe("a cloud agent's conversation (CloudAgentTests)", () => {
       },
     ])
     expect(cloudAgentRows([], leo, cloud)).toEqual([])
+  })
+})
+
+describe('an agent outside Simeon (a bot or a coding agent on the network)', () => {
+  it('is named by its line, with what it is for its mascot, and its two lines are one page', () => {
+    // 14 November 2026, the founder: "the avatar is not a simeon avatar".
+    const dots = {
+      id: 'network:ana/windows-version',
+      name: 'Dots',
+      kind: 'network',
+      bot: 'dots',
+    }
+    const asked = Entry.from({
+      kind: 'message',
+      id: 'm1',
+      role: 'user',
+      content: 'Check the Windows build',
+      timestampMs: 1_760_000_000_000,
+      clientNonce: 'net-1',
+      fromAgent: { ...dots, answer: 'send' },
+    })!
+    const answered = Entry.from({
+      kind: 'message',
+      id: 'm2',
+      role: 'assistant',
+      content: 'On it.',
+      timestampMs: 1_760_000_060_000,
+      toAgent: dots,
+    })!
+    const party = {
+      id: 'network:ana/windows-version',
+      name: 'Dots',
+      network: true,
+      bot: 'dots',
+    }
+    expect(asked.fromAgent).toEqual(party)
+    expect(answered.toAgent).toEqual(party)
+    expect(asked.teammate).toEqual(party)
+
+    // Its picture: the mascot of what it is; none for a kind with no mascot, or a line that doesn't say.
+    expect(networkMascot(party.bot)).toBe('dots')
+    expect(networkMascot('muse')).toBe('muse')
+    expect(networkMascot('claude-code')).toBe('claudecode')
+    expect(networkMascot('cursor')).toBe('cursor')
+    expect(networkMascot('gemini')).toBeUndefined()
+    expect(networkMascot('agent')).toBeUndefined()
+    expect(networkMascot(undefined)).toBeUndefined()
+    // A line from the first release of that day says only that it is one.
+    const earlier = Entry.from({
+      kind: 'message',
+      id: 'm0',
+      role: 'user',
+      content: 'Hello',
+      fromAgent: { id: 'network:ana/dots', name: 'Dots', kind: 'network' },
+    })!
+    expect(earlier.fromAgent).toEqual({
+      id: 'network:ana/dots',
+      name: 'Dots',
+      network: true,
+    })
+
+    // The message and the answer are one conversation, in order, each from its sender.
+    const me = { id: 'tessa', name: 'Tessa' }
+    const rows = exchangeRows([asked, answered], me, party.id).filter(
+      (row) => row.kind === 'message',
+    )
+    expect(
+      rows.map((row) => (row.kind === 'message' ? row.sender.name : '')),
+    ).toEqual(['Dots', 'Tessa'])
   })
 })

@@ -167,6 +167,18 @@ export function cloudAgentMascot(coder: string | undefined): string {
   return icon != null && mascotIcons.has(icon) ? icon : 'claudecode'
 }
 
+/**
+ * The mascot of an agent outside Simeon (`Party.mascot`; 14 November 2026,
+ * the founder: "the avatar is not a simeon avatar"): its kind's own, none
+ * for a kind that has no mascot or a line that doesn't say what it is.
+ */
+export function networkMascot(kind: string | undefined): string | undefined {
+  if (kind == null) return undefined
+  if (kind === 'cursor') return 'cursor'
+  const icon = botIcon(kind)
+  return icon != null && mascotIcons.has(icon) ? icon : undefined
+}
+
 /** The icon for a kind the server names (`network.KINDS`): a known bot's mascot (Claude Code's and Codex's the founder's), its maker's mark for another coding agent, none for one there is none of. */
 export function botIcon(kind: string): string | undefined {
   switch (kind) {

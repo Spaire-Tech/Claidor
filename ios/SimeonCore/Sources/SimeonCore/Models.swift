@@ -17,14 +17,28 @@ public struct Party: Hashable, Sendable {
    * agent whose line doesn't say.
    */
   public let coder: String?
+  /**
+   * An agent outside Simeon on the person's network, a bot or a coding
+   * agent (`kind` "network", 14 November 2026): its `id` is "network:" and
+   * its address, and its messages are lines of this chat, as a teammate's.
+   */
+  public let network: Bool
+  /**
+   * What an agent outside Simeon is, as the server names it (`bot`: "dots",
+   * "muse", "claude-code"…); nil for anyone else, and for one whose line
+   * doesn't say.
+   */
+  public let bot: String?
 
-  public init(id: String, name: String, cloudAgent: Bool = false, coder: String? = nil) {
+  public init(id: String, name: String, cloudAgent: Bool = false, coder: String? = nil, network: Bool = false, bot: String? = nil) {
     self.id = id; self.name = name; self.cloudAgent = cloudAgent; self.coder = cloudAgent ? coder : nil
+    self.network = network; self.bot = network ? bot : nil
   }
 
   init?(_ json: JSON?) {
     guard let id = json?["id"]?.text else { return nil }
-    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: json?["kind"]?.string == "cloud-agent", coder: json?["coder"]?.text)
+    let kind = json?["kind"]?.string
+    self.init(id: id, name: json?["name"]?.text ?? "", cloudAgent: kind == "cloud-agent", coder: json?["coder"]?.text, network: kind == "network", bot: json?["bot"]?.text)
   }
 
   /**
@@ -32,13 +46,22 @@ public struct Party: Hashable, Sendable {
    * whatever agent is used. either claude code or codex"): the mascot of
    * the program that coded (`Mascots/<icon>`), Claude Code's when the
    * computer doesn't say or names one with no mascot, since every cloud
-   * agent before `coder` ran in Claude Code. Nil for an agent, which has
-   * its own picture.
+   * agent before `coder` ran in Claude Code. An agent outside Simeon has
+   * the mascot of what it is (14 November 2026, the founder: "the avatar
+   * is not a simeon avatar"), nil when its kind has none or its line
+   * doesn't say. Nil for an agent, which has its own picture.
    */
   public var mascot: String? {
-    guard cloudAgent else { return nil }
-    return ExternalAgents.cloudAgentMascot(coder)
+    if cloudAgent { return ExternalAgents.cloudAgentMascot(coder) }
+    guard network, let bot else { return nil }
+    return ExternalAgents.networkMascot(bot)
   }
+
+  /** Whether its picture is a mark on Connect apps' tile and not a face: a cloud agent's, or an agent's outside Simeon. */
+  public var marked: Bool { cloudAgent || network }
+
+  /** The letter on the tile of one with no mascot: the first of its name. */
+  public var initial: String { String(shownName.prefix(1)).uppercased() }
 
   /** The name as the apps write it: a cloud agent the computer gave no name is "Cloud agent". */
   public var shownName: String { name.isEmpty && cloudAgent ? L10n.text("Cloud agent") : name }
