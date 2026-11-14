@@ -1,0 +1,1514 @@
+{
+ "part": "shared/media-attachments",
+ "surface": {
+  "attachments": {
+   "SAND_ATTACHMENT_KINDS": "array",
+   "formatAttachmentSentSummary": "function",
+   "kindPhrase": "function",
+   "mergeKindCounts": "function"
+  }
+ },
+ "scenarios": {
+  "the eleven sorts of attachment, in their order": {
+   "returned": {
+    "kinds": [
+     "image",
+     "video",
+     "audio",
+     "pdf",
+     "markdown",
+     "table",
+     "json",
+     "text",
+     "document",
+     "archive",
+     "file"
+    ],
+    "isAList": true,
+    "frozen": false,
+    "theSameListEachTime": true
+   }
+  },
+  "a sort and a count in words: the singular for exactly one, the plural for every other count": {
+   "returned": {
+    "image": [
+     "1 image",
+     "0 images",
+     "2 images",
+     "11 images",
+     "-1 images",
+     "1.5 images",
+     "0.5 images",
+     "1.0000001 images",
+     "NaN images",
+     "Infinity images",
+     "1e+21 images",
+     "1 images",
+     "2 images",
+     "true images",
+     "null images",
+     "undefined images",
+     "1 images"
+    ],
+    "video": [
+     "1 video",
+     "0 videos",
+     "2 videos",
+     "11 videos",
+     "-1 videos",
+     "1.5 videos",
+     "0.5 videos",
+     "1.0000001 videos",
+     "NaN videos",
+     "Infinity videos",
+     "1e+21 videos",
+     "1 videos",
+     "2 videos",
+     "true videos",
+     "null videos",
+     "undefined videos",
+     "1 videos"
+    ],
+    "audio": [
+     "1 audio file",
+     "0 audio files",
+     "2 audio files",
+     "11 audio files",
+     "-1 audio files",
+     "1.5 audio files",
+     "0.5 audio files",
+     "1.0000001 audio files",
+     "NaN audio files",
+     "Infinity audio files",
+     "1e+21 audio files",
+     "1 audio files",
+     "2 audio files",
+     "true audio files",
+     "null audio files",
+     "undefined audio files",
+     "1 audio files"
+    ],
+    "pdf": [
+     "1 PDF",
+     "0 PDFs",
+     "2 PDFs",
+     "11 PDFs",
+     "-1 PDFs",
+     "1.5 PDFs",
+     "0.5 PDFs",
+     "1.0000001 PDFs",
+     "NaN PDFs",
+     "Infinity PDFs",
+     "1e+21 PDFs",
+     "1 PDFs",
+     "2 PDFs",
+     "true PDFs",
+     "null PDFs",
+     "undefined PDFs",
+     "1 PDFs"
+    ],
+    "markdown": [
+     "1 Markdown file",
+     "0 Markdown files",
+     "2 Markdown files",
+     "11 Markdown files",
+     "-1 Markdown files",
+     "1.5 Markdown files",
+     "0.5 Markdown files",
+     "1.0000001 Markdown files",
+     "NaN Markdown files",
+     "Infinity Markdown files",
+     "1e+21 Markdown files",
+     "1 Markdown files",
+     "2 Markdown files",
+     "true Markdown files",
+     "null Markdown files",
+     "undefined Markdown files",
+     "1 Markdown files"
+    ],
+    "table": [
+     "1 spreadsheet",
+     "0 spreadsheets",
+     "2 spreadsheets",
+     "11 spreadsheets",
+     "-1 spreadsheets",
+     "1.5 spreadsheets",
+     "0.5 spreadsheets",
+     "1.0000001 spreadsheets",
+     "NaN spreadsheets",
+     "Infinity spreadsheets",
+     "1e+21 spreadsheets",
+     "1 spreadsheets",
+     "2 spreadsheets",
+     "true spreadsheets",
+     "null spreadsheets",
+     "undefined spreadsheets",
+     "1 spreadsheets"
+    ],
+    "json": [
+     "1 JSON file",
+     "0 JSON files",
+     "2 JSON files",
+     "11 JSON files",
+     "-1 JSON files",
+     "1.5 JSON files",
+     "0.5 JSON files",
+     "1.0000001 JSON files",
+     "NaN JSON files",
+     "Infinity JSON files",
+     "1e+21 JSON files",
+     "1 JSON files",
+     "2 JSON files",
+     "true JSON files",
+     "null JSON files",
+     "undefined JSON files",
+     "1 JSON files"
+    ],
+    "text": [
+     "1 text file",
+     "0 text files",
+     "2 text files",
+     "11 text files",
+     "-1 text files",
+     "1.5 text files",
+     "0.5 text files",
+     "1.0000001 text files",
+     "NaN text files",
+     "Infinity text files",
+     "1e+21 text files",
+     "1 text files",
+     "2 text files",
+     "true text files",
+     "null text files",
+     "undefined text files",
+     "1 text files"
+    ],
+    "document": [
+     "1 document",
+     "0 documents",
+     "2 documents",
+     "11 documents",
+     "-1 documents",
+     "1.5 documents",
+     "0.5 documents",
+     "1.0000001 documents",
+     "NaN documents",
+     "Infinity documents",
+     "1e+21 documents",
+     "1 documents",
+     "2 documents",
+     "true documents",
+     "null documents",
+     "undefined documents",
+     "1 documents"
+    ],
+    "archive": [
+     "1 archive",
+     "0 archives",
+     "2 archives",
+     "11 archives",
+     "-1 archives",
+     "1.5 archives",
+     "0.5 archives",
+     "1.0000001 archives",
+     "NaN archives",
+     "Infinity archives",
+     "1e+21 archives",
+     "1 archives",
+     "2 archives",
+     "true archives",
+     "null archives",
+     "undefined archives",
+     "1 archives"
+    ],
+    "file": [
+     "1 file",
+     "0 files",
+     "2 files",
+     "11 files",
+     "-1 files",
+     "1.5 files",
+     "0.5 files",
+     "1.0000001 files",
+     "NaN files",
+     "Infinity files",
+     "1e+21 files",
+     "1 files",
+     "2 files",
+     "true files",
+     "null files",
+     "undefined files",
+     "1 files"
+    ]
+   }
+  },
+  "a sort that is not one of the eleven has no words": {
+   "returned": [
+    [
+     "Image",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     "images",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     "",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     " image",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     "photo",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     {
+      "$": "undefined"
+     },
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     null,
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     0,
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ],
+    [
+     "constructor",
+     [
+      "1 undefined",
+      "2 undefined"
+     ]
+    ],
+    [
+     "toString",
+     [
+      "1 undefined",
+      "2 undefined"
+     ]
+    ],
+    [
+     "__proto__",
+     [
+      "1 undefined",
+      "2 undefined"
+     ]
+    ],
+    [
+     "hasOwnProperty",
+     [
+      "1 undefined",
+      "2 undefined"
+     ]
+    ],
+    [
+     "length",
+     [
+      {
+       "threw": "TypeError"
+      },
+      {
+       "threw": "TypeError"
+      }
+     ]
+    ]
+   ]
+  },
+  "counts are merged by sort in the order each sort first comes, without those of nothing or less; an unknown sort counts as a file": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     []
+    ],
+    [
+     null,
+     []
+    ],
+    [
+     [],
+     []
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 1
+      },
+      {
+       "kind": "image",
+       "count": 2
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 3
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "pdf",
+       "count": 2
+      },
+      {
+       "kind": "image",
+       "count": 1
+      },
+      {
+       "kind": "pdf",
+       "count": 3
+      },
+      {
+       "kind": "video",
+       "count": 1
+      },
+      {
+       "kind": "image",
+       "count": 4
+      }
+     ],
+     [
+      {
+       "kind": "pdf",
+       "count": 5
+      },
+      {
+       "kind": "image",
+       "count": 5
+      },
+      {
+       "kind": "video",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 0
+      }
+     ],
+     []
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": -1
+      },
+      {
+       "kind": "pdf",
+       "count": 0
+      },
+      {
+       "kind": "video",
+       "count": {
+        "$": "number",
+        "v": "NaN"
+       }
+      }
+     ],
+     []
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 0
+      },
+      {
+       "kind": "pdf",
+       "count": 1
+      },
+      {
+       "kind": "image",
+       "count": 2
+      }
+     ],
+     [
+      {
+       "kind": "pdf",
+       "count": 1
+      },
+      {
+       "kind": "image",
+       "count": 2
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 0.5
+      },
+      {
+       "kind": "image",
+       "count": 0.25
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 0.75
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": {
+        "$": "number",
+        "v": "Infinity"
+       }
+      },
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": {
+        "$": "number",
+        "v": "Infinity"
+       }
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "photo",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "photo",
+       "count": 1
+      },
+      {
+       "kind": "file",
+       "count": 2
+      },
+      {
+       "kind": "sketch",
+       "count": 3
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 6
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "file",
+       "count": 2
+      },
+      {
+       "kind": "photo",
+       "count": 1
+      },
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 3
+      },
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "Image",
+       "count": 1
+      },
+      {
+       "kind": "IMAGE",
+       "count": 1
+      },
+      {
+       "kind": " image",
+       "count": 1
+      },
+      {
+       "kind": "",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 4
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "constructor",
+       "count": 1
+      },
+      {
+       "kind": "toString",
+       "count": 1
+      },
+      {
+       "kind": "__proto__",
+       "count": 1
+      },
+      {
+       "kind": "hasOwnProperty",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 4
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": {
+        "$": "undefined"
+       },
+       "count": 1
+      },
+      {
+       "kind": null,
+       "count": 1
+      },
+      {
+       "kind": 7,
+       "count": 1
+      },
+      {
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 4
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 1
+      },
+      {
+       "kind": "video",
+       "count": 2
+      },
+      {
+       "kind": "audio",
+       "count": 3
+      },
+      {
+       "kind": "pdf",
+       "count": 4
+      },
+      {
+       "kind": "markdown",
+       "count": 5
+      },
+      {
+       "kind": "table",
+       "count": 6
+      },
+      {
+       "kind": "json",
+       "count": 7
+      },
+      {
+       "kind": "text",
+       "count": 8
+      },
+      {
+       "kind": "document",
+       "count": 9
+      },
+      {
+       "kind": "archive",
+       "count": 10
+      },
+      {
+       "kind": "file",
+       "count": 11
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 1
+      },
+      {
+       "kind": "video",
+       "count": 2
+      },
+      {
+       "kind": "audio",
+       "count": 3
+      },
+      {
+       "kind": "pdf",
+       "count": 4
+      },
+      {
+       "kind": "markdown",
+       "count": 5
+      },
+      {
+       "kind": "table",
+       "count": 6
+      },
+      {
+       "kind": "json",
+       "count": 7
+      },
+      {
+       "kind": "text",
+       "count": 8
+      },
+      {
+       "kind": "document",
+       "count": 9
+      },
+      {
+       "kind": "archive",
+       "count": 10
+      },
+      {
+       "kind": "file",
+       "count": 11
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "file",
+       "count": 11
+      },
+      {
+       "kind": "archive",
+       "count": 10
+      },
+      {
+       "kind": "document",
+       "count": 9
+      },
+      {
+       "kind": "text",
+       "count": 8
+      },
+      {
+       "kind": "json",
+       "count": 7
+      },
+      {
+       "kind": "table",
+       "count": 6
+      },
+      {
+       "kind": "markdown",
+       "count": 5
+      },
+      {
+       "kind": "pdf",
+       "count": 4
+      },
+      {
+       "kind": "audio",
+       "count": 3
+      },
+      {
+       "kind": "video",
+       "count": 2
+      },
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ],
+     [
+      {
+       "kind": "file",
+       "count": 11
+      },
+      {
+       "kind": "archive",
+       "count": 10
+      },
+      {
+       "kind": "document",
+       "count": 9
+      },
+      {
+       "kind": "text",
+       "count": 8
+      },
+      {
+       "kind": "json",
+       "count": 7
+      },
+      {
+       "kind": "table",
+       "count": 6
+      },
+      {
+       "kind": "markdown",
+       "count": 5
+      },
+      {
+       "kind": "pdf",
+       "count": 4
+      },
+      {
+       "kind": "audio",
+       "count": 3
+      },
+      {
+       "kind": "video",
+       "count": 2
+      },
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": 1,
+       "name": "extra fields are left behind"
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 1
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image"
+      },
+      {
+       "kind": "pdf",
+       "count": {
+        "$": "undefined"
+       }
+      },
+      {
+       "kind": "video",
+       "count": null
+      }
+     ],
+     []
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": "2"
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": "02"
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": "2"
+      },
+      {
+       "kind": "image",
+       "count": 3
+      },
+      {
+       "kind": "image",
+       "count": "4"
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": "0234"
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": true
+      },
+      {
+       "kind": "image",
+       "count": true
+      }
+     ],
+     [
+      {
+       "kind": "image",
+       "count": 2
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "kind": "image",
+       "count": {
+        "$": "bigint",
+        "v": "1"
+       }
+      }
+     ],
+     {
+      "threw": "TypeError"
+     }
+    ]
+   ]
+  },
+  "merged counts are new entries of a sort and a count, in a new list each time": {
+   "returned": {
+    "fields": [
+     [
+      "kind",
+      "count"
+     ]
+    ],
+    "notTheEntryGiven": true,
+    "aNewListEachTime": true,
+    "nothingGivesANewEmptyListEachTime": true,
+    "aListLikeThingIsNotAList": {
+     "threw": "TypeError"
+    },
+    "aListOfNoLengthThatIsNoList": [],
+    "aText": [
+     [],
+     {
+      "threw": "TypeError"
+     }
+    ],
+    "anEntryThatIsNothing": [
+     {
+      "threw": "TypeError"
+     },
+     {
+      "threw": "TypeError"
+     }
+    ],
+    "aSet": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "what was sent, in words: the count as a whole number of at least one, with the sort when there is only one": {
+   "returned": {
+    "noSorts": [
+     [
+      1,
+      "Sent 1 file"
+     ],
+     [
+      0,
+      "Sent 1 file"
+     ],
+     [
+      2,
+      "Sent 2 files"
+     ],
+     [
+      3.9,
+      "Sent 3 files"
+     ],
+     [
+      -5,
+      "Sent 1 file"
+     ],
+     [
+      0.2,
+      "Sent 1 file"
+     ],
+     [
+      1.999,
+      "Sent 1 file"
+     ],
+     [
+      {
+       "$": "number",
+       "v": "NaN"
+      },
+      "Sent NaN files"
+     ],
+     [
+      {
+       "$": "number",
+       "v": "Infinity"
+      },
+      "Sent Infinity files"
+     ],
+     [
+      {
+       "$": "number",
+       "v": "-Infinity"
+      },
+      "Sent 1 file"
+     ],
+     [
+      "3",
+      "Sent 3 files"
+     ],
+     [
+      "three",
+      "Sent NaN files"
+     ],
+     [
+      null,
+      "Sent 1 file"
+     ],
+     [
+      {
+       "$": "undefined"
+      },
+      "Sent NaN files"
+     ],
+     [
+      true,
+      "Sent 1 file"
+     ]
+    ],
+    "oneSort": [
+     [
+      1,
+      "Sent 1 image"
+     ],
+     [
+      0,
+      "Sent 1 image"
+     ],
+     [
+      2,
+      "Sent 2 images"
+     ],
+     [
+      3.9,
+      "Sent 3 images"
+     ],
+     [
+      -5,
+      "Sent 1 image"
+     ],
+     [
+      {
+       "$": "number",
+       "v": "NaN"
+      },
+      "Sent NaN images"
+     ]
+    ],
+    "everySortAlone": {
+     "image": [
+      "Sent 1 image",
+      "Sent 4 images"
+     ],
+     "video": [
+      "Sent 1 video",
+      "Sent 4 videos"
+     ],
+     "audio": [
+      "Sent 1 audio file",
+      "Sent 4 audio files"
+     ],
+     "pdf": [
+      "Sent 1 PDF",
+      "Sent 4 PDFs"
+     ],
+     "markdown": [
+      "Sent 1 Markdown file",
+      "Sent 4 Markdown files"
+     ],
+     "table": [
+      "Sent 1 spreadsheet",
+      "Sent 4 spreadsheets"
+     ],
+     "json": [
+      "Sent 1 JSON file",
+      "Sent 4 JSON files"
+     ],
+     "text": [
+      "Sent 1 text file",
+      "Sent 4 text files"
+     ],
+     "document": [
+      "Sent 1 document",
+      "Sent 4 documents"
+     ],
+     "archive": [
+      "Sent 1 archive",
+      "Sent 4 archives"
+     ],
+     "file": [
+      "Sent 1 file",
+      "Sent 4 files"
+     ]
+    },
+    "noCountAtAll": "Sent NaN files",
+    "aBigInt": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "what was sent, with its sorts: several sorts follow the count of files after a middle dot, each with its own count": {
+   "returned": [
+    [
+     [
+      3,
+      null
+     ],
+     "Sent 3 files"
+    ],
+    [
+     [
+      3,
+      {
+       "$": "undefined"
+      }
+     ],
+     "Sent 3 files"
+    ],
+    [
+     [
+      3,
+      []
+     ],
+     "Sent 3 files"
+    ],
+    [
+     [
+      3,
+      [
+       {
+        "kind": "image",
+        "count": 0
+       }
+      ]
+     ],
+     "Sent 3 files"
+    ],
+    [
+     [
+      3,
+      [
+       {
+        "kind": "image",
+        "count": 3
+       }
+      ]
+     ],
+     "Sent 3 images"
+    ],
+    [
+     [
+      3,
+      [
+       {
+        "kind": "image",
+        "count": 1
+       },
+       {
+        "kind": "image",
+        "count": 2
+       }
+      ]
+     ],
+     "Sent 3 images"
+    ],
+    [
+     [
+      3,
+      [
+       {
+        "kind": "image",
+        "count": 2
+       },
+       {
+        "kind": "pdf",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 3 files · 2 images, 1 PDF"
+    ],
+    [
+     [
+      3,
+      [
+       {
+        "kind": "pdf",
+        "count": 1
+       },
+       {
+        "kind": "image",
+        "count": 2
+       }
+      ]
+     ],
+     "Sent 3 files · 1 PDF, 2 images"
+    ],
+    [
+     [
+      1,
+      [
+       {
+        "kind": "image",
+        "count": 2
+       },
+       {
+        "kind": "pdf",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 1 file · 2 images, 1 PDF"
+    ],
+    [
+     [
+      0,
+      [
+       {
+        "kind": "image",
+        "count": 1
+       },
+       {
+        "kind": "pdf",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 1 file · 1 image, 1 PDF"
+    ],
+    [
+     [
+      5,
+      [
+       {
+        "kind": "image",
+        "count": 1
+       },
+       {
+        "kind": "pdf",
+        "count": 0
+       }
+      ]
+     ],
+     "Sent 5 images"
+    ],
+    [
+     [
+      5,
+      [
+       {
+        "kind": "photo",
+        "count": 2
+       }
+      ]
+     ],
+     "Sent 5 files"
+    ],
+    [
+     [
+      5,
+      [
+       {
+        "kind": "photo",
+        "count": 2
+       },
+       {
+        "kind": "sketch",
+        "count": 3
+       }
+      ]
+     ],
+     "Sent 5 files"
+    ],
+    [
+     [
+      5,
+      [
+       {
+        "kind": "photo",
+        "count": 2
+       },
+       {
+        "kind": "image",
+        "count": 3
+       }
+      ]
+     ],
+     "Sent 5 files · 2 files, 3 images"
+    ],
+    [
+     [
+      2,
+      [
+       {
+        "kind": "audio",
+        "count": 1
+       },
+       {
+        "kind": "markdown",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 2 files · 1 audio file, 1 Markdown file"
+    ],
+    [
+     [
+      2.7,
+      [
+       {
+        "kind": "image",
+        "count": 1.5
+       },
+       {
+        "kind": "table",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 2 files · 1.5 images, 1 spreadsheet"
+    ],
+    [
+     [
+      11,
+      [
+       {
+        "kind": "image",
+        "count": 1
+       },
+       {
+        "kind": "video",
+        "count": 2
+       },
+       {
+        "kind": "audio",
+        "count": 3
+       },
+       {
+        "kind": "pdf",
+        "count": 4
+       },
+       {
+        "kind": "markdown",
+        "count": 5
+       },
+       {
+        "kind": "table",
+        "count": 6
+       },
+       {
+        "kind": "json",
+        "count": 7
+       },
+       {
+        "kind": "text",
+        "count": 8
+       },
+       {
+        "kind": "document",
+        "count": 9
+       },
+       {
+        "kind": "archive",
+        "count": 10
+       },
+       {
+        "kind": "file",
+        "count": 11
+       }
+      ]
+     ],
+     "Sent 11 files · 1 image, 2 videos, 3 audio files, 4 PDFs, 5 Markdown files, 6 spreadsheets, 7 JSON files, 8 text files, 9 documents, 10 archives, 11 files"
+    ],
+    [
+     [
+      {
+       "$": "number",
+       "v": "NaN"
+      },
+      [
+       {
+        "kind": "image",
+        "count": 1
+       },
+       {
+        "kind": "pdf",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent NaN files · 1 image, 1 PDF"
+    ],
+    [
+     [
+      2,
+      [
+       {
+        "kind": "image",
+        "count": "1"
+       },
+       {
+        "kind": "pdf",
+        "count": 1
+       }
+      ]
+     ],
+     "Sent 2 files · 01 images, 1 PDF"
+    ],
+    [
+     [
+      2,
+      "image"
+     ],
+     {
+      "threw": "TypeError"
+     }
+    ],
+    [
+     [
+      2,
+      [
+       null
+      ]
+     ],
+     {
+      "threw": "TypeError"
+     }
+    ]
+   ]
+  }
+ }
+}
