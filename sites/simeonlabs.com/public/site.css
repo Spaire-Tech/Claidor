@@ -79,7 +79,7 @@ body{font-family:var(--font)}
 .drop-panel a.pm-i{display:flex;flex-direction:column;gap:3px;padding:11px 14px;border-radius:12px}
 .pm-i b{font-weight:400;font-size:15px;line-height:1.25;color:var(--ink)}
 .pm-i span{font-size:13px;line-height:1.35;color:#86868b}
-.pm-pics{position:relative;width:440px;height:360px;border-radius:14px;overflow:hidden}
+.pm-pics{position:relative;width:440px;height:360px;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.08)}
 .pm-pics i{position:absolute;inset:0;display:none;background:center/cover no-repeat}
 .drops:hover .pm-pics i:first-child,.drops:focus-within .pm-pics i:first-child{display:block}
 .pm:has(.pm-i:hover) .pm-pics i:first-child,.pm:has(.pm-i:focus-visible) .pm-pics i:first-child{display:none}

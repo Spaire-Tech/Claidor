@@ -37,9 +37,13 @@ ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l
 # Product and Resources (the founder, 14 November 2026, with another site's Products menu for reference: "we need
 # better names for the things in products. and include voice call. also i want it to be design like this. with a
 # design on the right. Same for ressources"): each item's name over a line of what it is, and on the right the
-# picture of the item the pointer is on (img/menu/<picture>.webp: a screenshot of the app on an agent's colour
-# beside two of the cards' photos, made 14 November 2026; the Newsroom's is the SimeonLabs pond painting, the App Store's
-# header), the first item's until then.
+# picture of the item the pointer is on, the first item's until then (img/menu/<picture>.webp, made 14 November
+# 2026, each over the whole picture: Teammates, the app's "just joined your team" card (Maya, clay-23, in her face's
+# colour) on a softer ground of that colour; Cloud computer, a browser on Google with Watching and Take control
+# under it, on a soft blue-grey; Voice calls, the launch film's call window (Kai, clay-12) on white; Routines, the
+# routine editor;
+# Approvals, a checkout waiting for Allow beside two of the cards' photos; the Newsroom, the SimeonLabs pond
+# painting, the App Store's header; Docs, the docs' own overview page; AI Models, twelve model makers' logos).
 # Each: key (a page passes it as `current`), address, name, the line under it, picture.
 PRODUCT = (
     ("", "/docs/agents", "Teammates", "Hire agents for any job, each with a name, a face and a chat of its own.", "teammates"),
