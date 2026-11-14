@@ -38,7 +38,8 @@ ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l
 # better names for the things in products. and include voice call. also i want it to be design like this. with a
 # design on the right. Same for ressources"): each item's name over a line of what it is, and on the right the
 # picture of the item the pointer is on (img/menu/<picture>.webp: a screenshot of the app on an agent's colour
-# beside two of the cards' photos, made 14 November 2026), the first item's until then.
+# beside two of the cards' photos, made 14 November 2026; the Newsroom's is the SimeonLabs pond painting, the App Store's
+# header), the first item's until then.
 # Each: key (a page passes it as `current`), address, name, the line under it, picture.
 PRODUCT = (
     ("", "/docs/agents", "Teammates", "Hire agents for any job, each with a name, a face and a chat of its own.", "teammates"),
