@@ -345,6 +345,45 @@ export const scenarios = [
     },
   },
   {
+    name: "a great many nodes: a list given flat is written whatever its length, but a list inside a list, a Fragment's children or a component's answer that holds too many is refused",
+    run: (modules) => {
+      const { jsx, jsxs, Fragment, renderContent } = kit(modules);
+      // Far below and far above what the JavaScript engine can pass to one call (about 125,000 here).
+      const few = 50_000;
+      const many = 250_000;
+      const texts = (count) => Array.from({ length: count }, () => "a");
+      const items = (count) => Array.from({ length: count }, () => jsx("li", { children: "a" }));
+      const shapes = [
+        ["a flat list of texts", (count) => texts(count)],
+        ["a paragraph's children", (count) => jsxs("p", { children: texts(count) })],
+        ["pre's children", (count) => jsxs("pre", { children: texts(count) })],
+        ["a Conversation's children", (count) => jsxs("Conversation", { children: texts(count) })],
+        ["a dash list's items", (count) => jsxs("ul", { children: items(count) })],
+        ["a numbered list's items", (count) => jsxs("ol", { children: items(count) })],
+        ["one list of many items inside a dash item", (count) => jsx("ul", { children: jsxs("li", { children: ["text", jsxs("ul", { children: items(count) })] }) })],
+        ["one list of many items inside a numbered item that has no text", (count) => jsx("ol", { children: jsx("li", { children: jsxs("ul", { children: items(count) }) }) })],
+        ["a list inside a list", (count) => [texts(count)]],
+        ["a list of nothings inside a list", (count) => ["a", Array.from({ length: count }, () => null)]],
+        ["a Fragment's children, by name", (count) => ["x", jsxs("Fragment", { children: texts(count) })]],
+        ["a Fragment's children, by function", (count) => ["x", jsxs(Fragment, { children: texts(count) })]],
+        ["what a component returns", (count) => ["x", jsx(() => texts(count), {})]],
+        ["what a component returns, alone", (count) => jsx(() => texts(count), {})],
+        ["a dash list's items in an inner list", (count) => jsxs("ul", { children: [items(count)] })],
+        ["a numbered list's items in an inner list", (count) => jsxs("ol", { children: [items(count)] })],
+        ["an item's children in an inner list", (count) => jsx("ul", { children: jsxs("li", { children: [texts(count)] }) })],
+        ["many lists inside one item", (count) => jsx("ul", { children: jsxs("li", { children: Array.from({ length: count }, () => jsx("ul", { children: jsx("li", { children: "a" }) })) }) })],
+      ];
+      const told = (make, count) => {
+        const text = renderContent(make(count));
+        return { length: text.length, start: text.slice(0, 12), end: text.slice(-12) };
+      };
+      return table(shapes.flatMap(([words, make]) => [
+        [`${words}, fifty thousand`, () => told(make, few)],
+        [`${words}, two hundred and fifty thousand`, () => told(make, many)],
+      ]));
+    },
+  },
+  {
     name: "what is not a node is refused: an object without a type, a big number, a symbol, a function, a date",
     run: (modules) => {
       const { texts, jsx } = kit(modules);

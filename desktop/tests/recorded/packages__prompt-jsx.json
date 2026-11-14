@@ -987,6 +987,206 @@
     "as a Fragment's children": "[ab]"
    }
   },
+  "a great many nodes: a list given flat is written whatever its length, but a list inside a list, a Fragment's children or a component's answer that holds too many is refused": {
+   "returned": {
+    "a flat list of texts, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a flat list of texts, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a paragraph's children, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a paragraph's children, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "pre's children, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "pre's children, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Conversation's children, fifty thousand": {
+     "length": 99999,
+     "start": "a\na\na\na\na\na\n",
+     "end": "\na\na\na\na\na\na"
+    },
+    "a Conversation's children, two hundred and fifty thousand": {
+     "length": 499999,
+     "start": "a\na\na\na\na\na\n",
+     "end": "\na\na\na\na\na\na"
+    },
+    "a dash list's items, fifty thousand": {
+     "length": 199999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a dash list's items, two hundred and fifty thousand": {
+     "length": 999999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a numbered list's items, fifty thousand": {
+     "length": 438893,
+     "start": "1. a\n2. a\n3.",
+     "end": ". a\n50000. a"
+    },
+    "a numbered list's items, two hundred and fifty thousand": {
+     "length": 2388894,
+     "start": "1. a\n2. a\n3.",
+     "end": " a\n250000. a"
+    },
+    "one list of many items inside a dash item, fifty thousand": {
+     "length": 300006,
+     "start": "- text\n  - a",
+     "end": "\n  - a\n  - a"
+    },
+    "one list of many items inside a dash item, two hundred and fifty thousand": {
+     "length": 1500006,
+     "start": "- text\n  - a",
+     "end": "\n  - a\n  - a"
+    },
+    "one list of many items inside a numbered item that has no text, fifty thousand": {
+     "length": 349999,
+     "start": "1. - a\n   - ",
+     "end": "  - a\n   - a"
+    },
+    "one list of many items inside a numbered item that has no text, two hundred and fifty thousand": {
+     "length": 1749999,
+     "start": "1. - a\n   - ",
+     "end": "  - a\n   - a"
+    },
+    "a list inside a list, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a list inside a list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a list of nothings inside a list, fifty thousand": {
+     "length": 1,
+     "start": "a",
+     "end": "a"
+    },
+    "a list of nothings inside a list, two hundred and fifty thousand": {
+     "length": 1,
+     "start": "a",
+     "end": "a"
+    },
+    "a Fragment's children, by name, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Fragment's children, by name, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a Fragment's children, by function, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Fragment's children, by function, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "what a component returns, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "what a component returns, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "what a component returns, alone, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "what a component returns, alone, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a dash list's items in an inner list, fifty thousand": {
+     "length": 199999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a dash list's items in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a numbered list's items in an inner list, fifty thousand": {
+     "length": 438893,
+     "start": "1. a\n2. a\n3.",
+     "end": ". a\n50000. a"
+    },
+    "a numbered list's items in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "an item's children in an inner list, fifty thousand": {
+     "length": 50002,
+     "start": "- aaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "an item's children in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "many lists inside one item, fifty thousand": {
+     "length": 299999,
+     "start": "  - a\n  - a\n",
+     "end": "\n  - a\n  - a"
+    },
+    "many lists inside one item, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    }
+   }
+  },
   "what is not a node is refused: an object without a type, a big number, a symbol, a function, a date": {
    "returned": {
     "an empty object, alone": {
