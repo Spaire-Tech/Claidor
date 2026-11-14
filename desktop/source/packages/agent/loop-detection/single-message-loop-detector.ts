@@ -41,19 +41,26 @@ export interface SingleMessageLoopDetectorHooks {
 }
 
 /**
- * The characters tables and boxes are drawn with: rules, sides, corners and
- * joints, and the plain characters that stand in for them. A line made of
- * these repeats by nature and is no sign of a loop.
+ * The characters tables and boxes are drawn with, by the stroke they are
+ * drawn in. A line made of these repeats by nature and is no sign of a loop.
+ *
+ * Each is written out as a text of its own on purpose. A set made by walking
+ * one long text answers just the same, but every question put to it took
+ * half as long again when measured (the question is asked of the whole line
+ * at every character).
  */
-const BOX_CHARACTERS = new Set(
-  [
-    "─━═-_",
-    "│┃║|",
-    "┌┐└┘╔╗╚╝┏┓┗┛╓╖╙╜",
-    "├┤┬┴┼╟╢╤╧╫╠╣╦╩╬╞╡╥╨╪",
-    "+",
-  ].join(""),
-);
+const BOX_CHARACTERS = new Set([
+  // Plain characters that stand in for strokes.
+  "-", "_", "|", "+",
+  // Light strokes.
+  "─", "│", "┌", "┐", "└", "┘", "├", "┤", "┬", "┴", "┼",
+  // Heavy strokes.
+  "━", "┃", "┏", "┓", "┗", "┛",
+  // Double strokes.
+  "═", "║", "╔", "╗", "╚", "╝", "╠", "╣", "╦", "╩", "╬",
+  // Double strokes that meet light ones.
+  "╓", "╖", "╙", "╜", "╟", "╢", "╤", "╧", "╫", "╞", "╡", "╥", "╨", "╪",
+]);
 /** The share of a line's characters, spaces and tabs aside, that makes it the border of a box. */
 const BORDER_SHARE = 0.8;
 /** How many lines are remembered for each repetition of lines asked for. */
