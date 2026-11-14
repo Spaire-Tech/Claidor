@@ -508,8 +508,8 @@ export const scenarios = [
         [
           ["an empty text", ""],
           ["plain letters", "hello"],
-          ["accents, a wide letter and a face", "été 日 😀"],
-          ["a text that starts with the byte order mark", "﻿a"],
+          ["accents, a wide letter and a face", "\u00e9t\u00e9 \u65e5 \ud83d\ude00"],
+          ["a text that starts with the byte order mark", "\ufeffa"],
           ["half of a pair alone is stored as the replacement character", "a\ud800b"],
           ["a line break and a zero", "a\n\u0000"],
           ["nothing at all is stored as no bytes", undefined],
@@ -548,8 +548,8 @@ export const scenarios = [
         aLetterCutShortDoesNotLeakIntoTheNextRead: [serde.utf8Serde.deserialize(bytes("61c3")), serde.utf8Serde.deserialize(bytes("a962"))],
         blobType: first,
         aNewAnswerEachTime: serde.utf8Serde.getBlobType() !== first,
-        anotherSerdeDoesTheSame: [another.serialize("hé"), another.deserialize(bytes("68c3a9")), another.getBlobType()],
-        thereAndBack: ["", "hello", "été 日 😀", "line\nline\ttab"].map((text) => serde.utf8Serde.deserialize(serde.utf8Serde.serialize(text)) === text),
+        anotherSerdeDoesTheSame: [another.serialize("h\u00e9"), another.deserialize(bytes("68c3a9")), another.getBlobType()],
+        thereAndBack: ["", "hello", "\u00e9t\u00e9 \u65e5 \ud83d\ude00", "line\nline\ttab"].map((text) => serde.utf8Serde.deserialize(serde.utf8Serde.serialize(text)) === text),
       };
     },
   },
@@ -650,7 +650,7 @@ export const scenarios = [
             ["a plus sign", "+f"],
             ["the 0x some write in front", "0x1f"],
             ["spaces inside", "0a b 1"],
-            ["a capital whose small form is two characters long", "İ"],
+            ["a capital whose small form is two characters long", "\u0130"],
             ["a text object", new String("0a")],
             ["a number", 5],
             ["a list holding a text", ["0a"]],
@@ -748,8 +748,12 @@ export const scenarios = [
       new Uint8Array(shared).set([0x61, 0x62, 0x63]);
       const promise = blobs.getBlobId(undefined);
       const nothing = await outcome(() => promise);
+      const changing = bytes("616263");
+      const whileChanging = blobs.getBlobId(changing);
+      changing.fill(0);
       return {
         ofAbc: key,
+        bytesWrittenOverRightAfterTheCallDoNotChangeTheKey: hex(await whileChanging) === hex(key),
         thirtyTwoNewBytes: key.constructor === Uint8Array && key.length === 32 && key !== given && key.byteOffset === 0,
         theBytesGivenAreUntouched: hex(given),
         aNewKeyEachTime: (await blobs.getBlobId(given)) !== key,
@@ -1542,7 +1546,9 @@ export const scenarios = [
           return { gave, told, timesTheClockWasRead: reads.count };
         });
       const KIB_512 = 512 * 1024;
+      const heavy = (await load(KIB_512, 0)).told;
       return {
+        eachMeasureIsHandedLabelsOfItsOwn: new Set(heavy.filter((entry) => entry.labels !== undefined).map((entry) => entry.labels)).size,
         smallAndFast: await load(10, 0),
         oneByteUnderTheSize: await load(KIB_512 - 1, 0),
         atTheSize: await load(KIB_512, 0),
@@ -1736,6 +1742,59 @@ export const scenarios = [
     },
   },
 
+  {
+    name: "a write that waits on a slow store gives the key of whatever was written meanwhile",
+    run: async ({ reference }) => {
+      const ctx = { the: "context" };
+      /** A store that does not hold blobs for good, whose next write waits until it is let go. */
+      const slowStore = (blobsByHex, events) => {
+        const { store } = keeping(blobsByHex, { events, durable: false });
+        const quick = store.setBlob;
+        const hold = { next: undefined };
+        store.setBlob = (...given) => {
+          const done = quick(...given);
+          if (hold.next === undefined) return done;
+          const waiting = hold.next;
+          hold.next = undefined;
+          return waiting.promise;
+        };
+        return { store, hold };
+      };
+      // Eager: written once; a second write, unchanged, stores the bytes again and waits; meanwhile another value is set and written.
+      const eagerEvents = [];
+      const eagerStore = slowStore({}, eagerEvents);
+      const eager = new reference.EagerReference(notingSerde(eagerEvents), eagerStore.store, "first");
+      const firstKey = await eager.writeToBlobStore(ctx);
+      eagerEvents.splice(0);
+      eagerStore.hold.next = later();
+      const letGo = eagerStore.hold.next;
+      const waiting = eager.writeToBlobStore(ctx);
+      await settle();
+      eager.set("second");
+      const secondKey = await eager.writeToBlobStore(ctx);
+      letGo.resolve();
+      const waitedKey = await waiting;
+      // Lazy: loaded; a write, unchanged, stores the loaded bytes again and waits; meanwhile another value is set and written.
+      const lazyEvents = [];
+      const lazyStore = slowStore({ "0a": utf8("stored text") }, lazyEvents);
+      const lazy = new reference.LazyReference(notingSerde(lazyEvents), lazyStore.store, bytes("0a"));
+      await lazy.get(ctx);
+      lazyEvents.splice(0);
+      lazyStore.hold.next = later();
+      const lazyLetGo = lazyStore.hold.next;
+      const lazyWaiting = lazy.writeToBlobStore(ctx);
+      await settle();
+      lazy.set("second");
+      const lazySecondKey = await lazy.writeToBlobStore(ctx);
+      lazyLetGo.resolve();
+      const lazyWaitedKey = await lazyWaiting;
+      return {
+        eager: { theWriteThatWaitedGaveTheSecondKey: waitedKey === secondKey && secondKey !== firstKey, events: eagerEvents.map((event) => (typeof event === "string" ? event.replace(/ = .*/, "").replace(hex(firstKey), "the first key").replace(hex(secondKey), "the second key") : "callback")) },
+        lazy: { theWriteThatWaitedGaveTheSecondKey: lazyWaitedKey === lazySecondKey && hex(lazySecondKey) !== "0a", events: lazyEvents.map((event) => (typeof event === "string" ? event.replace(/ = .*/, "").replace(hex(lazySecondKey), "the second key") : "callback")) },
+      };
+    },
+  },
+
   // ---- subagent-states ------------------------------------------------------
   {
     name: "with no keys of subagents kept apart, the subagents' states are the ones written in the conversation itself",
@@ -1862,7 +1921,23 @@ export const scenarios = [
         startedAfterEachAnswer.push(started.length);
       }
       const found = await promise;
+      // Two subagents the conversation holds, both with a blob that is gone: the warning for each comes when its answer does.
+      const { ctx, told } = surroundings();
+      const answers = [];
+      const lacking = { getBlob: () => (answers.push(later()), answers.at(-1).promise) };
+      const both = subagents.resolveSubagentPersistedStates(
+        ctx,
+        structureFrom(agentStore, stored.structure({ inline: { first: stored.subagent({ created: 1, used: 1 }), second: stored.subagent({ created: 2, used: 2 }) }, refs: { first: "aa01", second: "aa02" } })),
+        lacking,
+      );
+      await settle();
+      answers[1].resolve(undefined);
+      await settle();
+      const afterTheSecondAnswer = told.map((entry) => entry.log.metadata.subagentId);
+      answers[0].resolve(undefined);
+      const kept = await both;
       return {
+        warningsComeAsEachAnswerDoes: { afterTheSecondAnswer, atTheEnd: told.map((entry) => entry.log.metadata.subagentId), subagents: Object.keys(kept) },
         startedAtFirst,
         startedAfterEachAnswer,
         mostAtOnce,
@@ -2022,7 +2097,7 @@ export const scenarios = [
       const written = (value) => asText(serde.serialize(value));
       const fresh = pinned(() => written(agentStore.getDefaultAgentMetadata()));
       const reread = pinned(() => written(serde.deserialize(serde.serialize(agentStore.getDefaultAgentMetadata("agent-a")))));
-      const accented = serde.serialize({ ...whole, name: "Été 日 😀" });
+      const accented = serde.serialize({ ...whole, name: "\u00c9t\u00e9 \u65e5 \ud83d\ude00" });
       return {
         blobType: [serde.getBlobType(), serde.getBlobType() !== serde.getBlobType()],
         aNewAgent: fresh.gave,
@@ -2126,7 +2201,7 @@ export const scenarios = [
     run: ({ agentStore }) => {
       const serde = new agentStore.AgentMetadataSerde();
       const read = (blob) => pinned(() => serde.deserialize(blob));
-      const good = '{"agentId":"agent-a","latestRootBlobId":"0a","name":"né","mode":"plan","isRunEverything":false,"createdAt":5,"blobEncryptionKey":"' + "ab".repeat(32) + '"}';
+      const good = '{"agentId":"agent-a","latestRootBlobId":"0a","name":"n\u00e9","mode":"plan","isRunEverything":false,"createdAt":5,"blobEncryptionKey":"' + "ab".repeat(32) + '"}';
       const goodBytes = utf8(good);
       const issues = (text) => {
         const { gave } = read(utf8(text));

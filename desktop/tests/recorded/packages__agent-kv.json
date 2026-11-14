@@ -833,6 +833,7 @@
      "$": "bytes",
      "v": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     },
+    "bytesWrittenOverRightAfterTheCallDoNotChangeTheKey": true,
     "thirtyTwoNewBytes": true,
     "theBytesGivenAreUntouched": "616263",
     "aNewKeyEachTime": true,
@@ -2274,6 +2275,7 @@
   },
   "a lazy reference tells of a load that is large (512 KiB or more) or slow to read (100 ms or more), and of no other": {
    "returned": {
+    "eachMeasureIsHandedLabelsOfItsOwn": 3,
     "smallAndFast": {
      "gave": "read",
      "told": [],
@@ -2861,6 +2863,30 @@
     }
    }
   },
+  "a write that waits on a slow store gives the key of whatever was written meanwhile": {
+   "returned": {
+    "eager": {
+     "theWriteThatWaitedGaveTheSecondKey": true,
+     "events": [
+      "isBlobDurable the first key",
+      "setBlob the first key",
+      "serialize \"second\"",
+      "getBlobType",
+      "setBlob the second key"
+     ]
+    },
+    "lazy": {
+     "theWriteThatWaitedGaveTheSecondKey": true,
+     "events": [
+      "isBlobDurable 0a",
+      "setBlob 0a",
+      "serialize \"second\"",
+      "getBlobType",
+      "setBlob the second key"
+     ]
+    }
+   }
+  },
   "with no keys of subagents kept apart, the subagents' states are the ones written in the conversation itself": {
    "returned": {
     "aPromise": true,
@@ -3188,6 +3214,19 @@
   },
   "subagents' blobs are asked for eight at a time, and the answers keep the order of the conversation": {
    "returned": {
+    "warningsComeAsEachAnswerDoes": {
+     "afterTheSecondAnswer": [
+      "second"
+     ],
+     "atTheEnd": [
+      "second",
+      "first"
+     ],
+     "subagents": [
+      "first",
+      "second"
+     ]
+    },
     "startedAtFirst": [
      "aa01",
      "aa02",
