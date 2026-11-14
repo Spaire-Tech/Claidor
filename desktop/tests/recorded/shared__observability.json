@@ -6491,6 +6491,699 @@
     }
    }
   },
+  "a closing asked during a send set off by a full buffer ends that send's own run: the passes that follow are the closing's, one for each batch left": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "polling stops",
+    "closing asked while the first batch is in flight",
+    "flush settled, waiting 172: event#129 to event#300",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "128: event#129 to event#256"
+    },
+    "flush settled, waiting 44: event#257 to event#300",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "44: event#257 to event#300"
+    },
+    "flush settled, waiting none",
+    "closed: true"
+   ]
+  },
+  "a closed transport that kept what it could not send sends one batch at a round that was still under way, never batch after batch": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "128: event#129 to event#256"
+     },
+     "polling stops",
+     "client 2 made",
+     {
+      "send": 3,
+      "client": 2,
+      "logs": "128: event#129 to event#256"
+     },
+     "closed: false; waiting 172: event#129 to event#300",
+     "a round at 59999 ms",
+     "tick",
+     "waiting 172: event#129 to event#300",
+     "a round at 60000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 4,
+      "client": 3,
+      "logs": "128: event#129 to event#256"
+     },
+     {
+      "send": 5,
+      "client": 3,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "waiting 44: event#257 to event#300",
+     "a round at 74999 ms",
+     "tick",
+     "waiting 44: event#257 to event#300",
+     "a round at 75000 ms",
+     "tick",
+     {
+      "send": 6,
+      "client": 3,
+      "logs": "44: event#257 to event#300"
+     },
+     "waiting none"
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported"
+    }
+   }
+  },
+  "a listener that fails when a failed batch is put back into a full buffer is told while the batch is still held twice, fails the flush, and leaves the schedule not told of the failure": {
+   "returned": {
+    "flushed": {
+     "threw": "Error",
+     "message": "listener broke"
+    },
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "2: event#0 to event#0b"
+     },
+     "in flight; 1001 held in all",
+     "entry 0 dropped, while 1002 are held in all, 2 of them entry 0b",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "128: event#0b to event#127"
+     },
+     "1000 held in all: event#0b, event#1, event#2, event#3; counters {\"ship_failed\":\"2 seen, 0 reported\",\"overflow_evicted\":\"1 seen, 0 reported\"}",
+     "the send that the full buffer had set off has failed too; counters {\"ship_failed\":\"2 seen, 0 reported\",\"overflow_evicted\":\"1 seen, 0 reported\"}",
+     "a round at 29999 ms",
+     "tick",
+     "a round at 30000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 3,
+      "client": 3,
+      "logs": "128: event#0b to event#127"
+     },
+     "entry 0b delivered",
+     {
+      "send": 4,
+      "client": 3,
+      "logs": "2: sand.telemetry.dropped to sand.telemetry.dropped"
+     },
+     {
+      "send": 5,
+      "client": 3,
+      "logs": "128: event#128 to event#255"
+     },
+     {
+      "send": 6,
+      "client": 3,
+      "logs": "128: event#256 to event#383"
+     },
+     {
+      "send": 7,
+      "client": 3,
+      "logs": "128: event#384 to event#511"
+     },
+     {
+      "send": 8,
+      "client": 3,
+      "logs": "128: event#512 to event#639"
+     },
+     {
+      "send": 9,
+      "client": 3,
+      "logs": "128: event#640 to event#767"
+     },
+     {
+      "send": 10,
+      "client": 3,
+      "logs": "128: event#768 to event#895"
+     },
+     {
+      "send": 11,
+      "client": 3,
+      "logs": "104: event#896 to event#999"
+     }
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported",
+     "overflow_evicted": "1 seen, 1 reported"
+    },
+    "waiting": "none"
+   }
+  },
+  "what follows a landing comes after the same number of turns of the promise queue, for each kind of pass": {
+   "returned": {
+    "a batch asked for and taken at once": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "flush on demand: true",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch in the air that lands well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch in the air that fails": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand: false",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch that lands well with drops to report, then the report lands": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "the report lands",
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a report of drops alone that lands well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a report of drops alone that the server takes half of": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: false",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "two batches, the second asked for by the first's flush": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: restored#1 to restored#128"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "2: restored#129 to restored#130"
+     },
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "flush settled",
+     "turn 11",
+     "turn 12",
+     "flush on demand: true"
+    ],
+    "a confirmed shipment that lands well, and one that fails": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: crash"
+     },
+     "turn 1",
+     "turn 2",
+     "confirmed: true",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: crash"
+     },
+     "turn 1",
+     "turn 2",
+     "confirmed: false",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a round whose batch lands well": [
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "round: undefined",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a round with nothing to send": [
+     "tick",
+     "turn 1",
+     "turn 2",
+     "round: undefined",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a clearing with a batch in the air, which then lands": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand: true",
+     "clearing: undefined",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a clearing with nothing in the air": [
+     "turn 1",
+     "turn 2",
+     "clearing: undefined",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the 128th entry queued": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the labels arriving at a held transport": [
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a flush on demand at a held transport, and at one with nothing to send": [
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "flush on demand: false",
+     "turn 6",
+     "polling starts",
+     "turn 1",
+     "flush on demand of the other: true",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "the settled listener fails after a batch that landed well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a batch that failed": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand failed: settled listener broke",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a report of drops alone": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a batch that landed when pending had been cleared": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand failed: settled listener broke",
+     "clearing: undefined",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a report of drops that landed when pending had been cleared": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "clearing: undefined",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails at a round": [
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "console: [structured-log-transport] flush tick failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "round: undefined",
+     "turn 11",
+     "turn 12"
+    ],
+    "a closing with a batch to send, and a second closing": [
+     "polling stops",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "closing: true",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "second closing: true",
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "turn 4"
+    ]
+   }
+  },
   "a transport cannot be made without its platform labels, and reads its polling, deadline and client only when it needs them": {
    "returned": {
     "noLabels": {

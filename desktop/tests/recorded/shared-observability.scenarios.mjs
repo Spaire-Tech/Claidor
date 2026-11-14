@@ -71,6 +71,14 @@ async function withStandIns(run) {
 
 /** All that was queued by promises has run. */
 const idle = () => new Promise((resolve) => setImmediate(resolve));
+/**
+ * A ruler laid beside what happens next: one mark in `events` for each turn of the promise queue. Where another
+ * event falls between the marks is how many turns it took to come about.
+ */
+function ruler(events, turns = 12) {
+  let turn = Promise.resolve();
+  for (let n = 1; n <= turns; n += 1) turn = turn.then(() => void events.push(`turn ${n}`));
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Trace headers
@@ -2284,6 +2292,265 @@ export const scenarios = [
           await around.tick();
           seen[name] = { queued, events: around.events };
         }
+        return seen;
+      }),
+  },
+  {
+    name: "a closing asked during a send set off by a full buffer ends that send's own run: the passes that follow are the closing's, one for each batch left",
+    run: ({ transport }) =>
+      withStandIns(async (world) => {
+        const around = setting(world, { brief: true, script: [{ wait: true }] });
+        const made = around.make(transport);
+        made.setFlushSettledListener(() => around.note(`flush settled, waiting ${waitingIn(made)}`));
+        around.put(made, 1, 300);
+        await idle();
+        const closing = made.dispose().then((answer) => around.note(`closed: ${answer}`));
+        around.note("closing asked while the first batch is in flight");
+        around.waiting[0].resolve();
+        await closing;
+        await idle();
+        return around.events;
+      }),
+  },
+  {
+    name: "a closed transport that kept what it could not send sends one batch at a round that was still under way, never batch after batch",
+    run: ({ transport }) =>
+      withStandIns(async (world) => {
+        const around = setting(world, { brief: true, script: [{}, { fail: own("offline") }, { fail: own("offline") }] });
+        const made = around.make(transport, { retainUndeliveredOnDispose: true });
+        around.put(made, 1, 300);
+        await idle();
+        const closed = await made.dispose();
+        around.note(`closed: ${closed}; waiting ${waitingIn(made)}`);
+        const round = async (after) => {
+          world.time = START + after;
+          around.note(`a round at ${after} ms`);
+          await around.tick();
+          await idle();
+          around.note(`waiting ${waitingIn(made)}`);
+        };
+        await round(59_999);
+        await round(60_000);
+        await round(60_000 + 14_999);
+        await round(60_000 + 15_000);
+        return { events: around.events, counters: drops(made) };
+      }),
+  },
+  {
+    name: "a listener that fails when a failed batch is put back into a full buffer is told while the batch is still held twice, fails the flush, and leaves the schedule not told of the failure",
+    run: ({ transport }) =>
+      withStandIns(async (world) => {
+        const around = setting(world, { brief: true, script: [{ wait: true }, { fail: own("offline") }] });
+        const made = around.make(transport);
+        made.enqueueAt("info", "event", { n: "0" }, START, (settlement) => {
+          around.note(`entry 0 ${settlement}, while ${made.capturePending().length} are held in all, ${made.capturePending().filter((log) => log.metadata.n === "0b").length} of them entry 0b`);
+          throw own("listener broke");
+        });
+        made.enqueueAt("info", "event", { n: "0b" }, START, around.settled("entry 0b"));
+        const flushing = triedLater(() => made.flushNow());
+        await idle();
+        around.put(made, 1, 999);
+        around.note(`in flight; ${made.capturePending().length} held in all`);
+        around.waiting[0].reject(own("offline"));
+        const flushed = await flushing;
+        const held = made.capturePending();
+        around.note(`${held.length} held in all: ${held.slice(0, 4).map(label).join(", ")}; counters ${JSON.stringify(drops(made))}`);
+        await idle();
+        around.note(`the send that the full buffer had set off has failed too; counters ${JSON.stringify(drops(made))}`);
+        const round = async (after) => {
+          world.time = START + after;
+          around.note(`a round at ${after} ms`);
+          await around.tick();
+          await idle();
+        };
+        await round(29_999);
+        await round(30_000);
+        return { flushed, events: around.events, counters: drops(made), waiting: waitingIn(made) };
+      }),
+  },
+  {
+    name: "what follows a landing comes after the same number of turns of the promise queue, for each kind of pass",
+    run: ({ transport }) =>
+      withStandIns(async (world) => {
+        const seen = {};
+        const scene = async (name, script, run, options = {}) => {
+          const around = setting(world, { brief: true, script });
+          const made = around.make(transport, options.held ? { holdForIdentity: true, identityHoldExpiry: around.identityHoldExpiry } : {});
+          made.setFlushSettledListener(() => {
+            around.note("flush settled");
+            // A listener that fails at once ends its pass with a promise that has already failed.
+            if (options.settledListenerFails) throw own("settled listener broke");
+          });
+          const start = around.events.length;
+          await run(around, made, (what, promise) => promise.then((answer) => around.note(`${what}: ${String(answer)}`), (error) => around.note(`${what} failed: ${error.message}`)));
+          await idle();
+          await idle();
+          seen[name] = around.events.slice(start);
+        };
+        await scene("a batch asked for and taken at once", [], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          ruler(around.events);
+        });
+        await scene("a batch in the air that lands well", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        });
+        await scene("a batch in the air that fails", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].reject(own("offline"));
+          ruler(around.events);
+        });
+        await scene("a batch that lands well with drops to report, then the report lands", [{ wait: true }, { wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          made.recordDropped("account_rotated", 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+          await idle();
+          around.note("the report lands");
+          around.waiting[1].resolve();
+          ruler(around.events);
+        });
+        await scene("a report of drops alone that lands well", [{ wait: true }], async (around, made, follow) => {
+          made.recordDropped("account_rotated", 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        });
+        await scene("a report of drops alone that the server takes half of", [{ wait: true }], async (around, made, follow) => {
+          made.recordDropped("account_rotated", 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve({ logsProcessed: 0, logsDropped: 1 });
+          ruler(around.events);
+        });
+        await scene("two batches, the second asked for by the first's flush", [{ wait: true }], async (around, made, follow) => {
+          const records = Array.from({ length: 130 }, (_, at) => ({ level: "info", message: "restored", metadata: { n: String(at + 1) }, timestamp: START }));
+          const restored = around.make(transport, { initialCheckpoint: { counterId: "x", counters: transport.emptyDropCounters(), records } });
+          restored.setFlushSettledListener(() => around.note("flush settled"));
+          follow("flush on demand", restored.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        });
+        await scene("a confirmed shipment that lands well, and one that fails", [{ wait: true }, { wait: true }], async (around, made, follow) => {
+          follow("confirmed", made.shipConfirmed("error", "crash", {}));
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+          await idle();
+          follow("confirmed", made.shipConfirmed("error", "crash", {}));
+          await idle();
+          around.waiting[1].reject(own("offline"));
+          ruler(around.events);
+        });
+        await scene("a round whose batch lands well", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("round", around.tick());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        });
+        await scene("a round with nothing to send", [], async (around, made, follow) => {
+          follow("round", around.tick());
+          ruler(around.events);
+        });
+        await scene("a clearing with a batch in the air, which then lands", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          follow("clearing", made.clearPending());
+          around.waiting[0].resolve();
+          ruler(around.events);
+        });
+        await scene("a clearing with nothing in the air", [], async (around, made, follow) => {
+          follow("clearing", made.clearPending());
+          ruler(around.events);
+        });
+        await scene("the 128th entry queued", [], async (around, made) => {
+          around.put(made, 1, 128);
+          ruler(around.events);
+        });
+        await scene("the labels arriving at a held transport", [], async (around, made) => {
+          around.put(made, 1);
+          made.setIdentityTags({ id: "x" });
+          ruler(around.events);
+        }, { held: true });
+        await scene("a flush on demand at a held transport, and at one with nothing to send", [], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          ruler(around.events, 6);
+          await idle();
+          const other = around.make(transport);
+          follow("flush on demand of the other", other.flushNow());
+          ruler(around.events, 6);
+        }, { held: true });
+        const failing = { settledListenerFails: true };
+        await scene("the settled listener fails after a batch that landed well", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        }, failing);
+        await scene("the settled listener fails after a batch that failed", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].reject(own("offline"));
+          ruler(around.events);
+        }, failing);
+        await scene("the settled listener fails after a report of drops alone", [{ wait: true }], async (around, made, follow) => {
+          made.recordDropped("account_rotated", 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          around.waiting[0].resolve();
+          ruler(around.events);
+        }, failing);
+        await scene("the settled listener fails after a batch that landed when pending had been cleared", [{ wait: true }], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          follow("clearing", made.clearPending());
+          around.waiting[0].resolve();
+          ruler(around.events);
+        }, failing);
+        await scene("the settled listener fails after a report of drops that landed when pending had been cleared", [{ wait: true }], async (around, made, follow) => {
+          made.recordDropped("account_rotated", 1);
+          follow("flush on demand", made.flushNow());
+          await idle();
+          follow("clearing", made.clearPending());
+          around.waiting[0].resolve();
+          ruler(around.events);
+        }, failing);
+        await scene("the settled listener fails at a round", [], async (around, made, follow) => {
+          around.put(made, 1);
+          const real = console.error;
+          console.error = (...given) => void around.note(`console: ${given[0]} ${given[1]?.message}`);
+          try {
+            follow("round", around.tick());
+            ruler(around.events);
+            await idle();
+          } finally {
+            console.error = real;
+          }
+        }, failing);
+        await scene("a closing with a batch to send, and a second closing", [], async (around, made, follow) => {
+          around.put(made, 1);
+          follow("closing", made.dispose());
+          ruler(around.events);
+          await idle();
+          follow("second closing", made.dispose());
+          ruler(around.events, 4);
+        });
         return seen;
       }),
   },
