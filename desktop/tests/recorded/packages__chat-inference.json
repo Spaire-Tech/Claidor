@@ -7692,6 +7692,179 @@
     }
    }
   },
+  "a message changed by someone else while its pictures are looked at: what is read again afterwards, and what is not": {
+   "returned": {
+    "the person's list replaced": {
+     "fields": [
+      "role",
+      "content",
+      "note"
+     ],
+     "content": [
+      "image/bmp",
+      "image/bmp"
+     ],
+     "lines": [
+      {
+       "originalSize": 70,
+       "newSize": 70,
+       "newMimeType": "image/bmp"
+      },
+      {
+       "originalSize": 66,
+       "newSize": 66,
+       "newMimeType": "image/bmp"
+      }
+     ]
+    },
+    "a tool's list of results replaced": {
+     "content": [
+      {
+       "toolCallId": "call-0",
+       "items": [
+        "image/bmp"
+       ]
+      },
+      {
+       "toolCallId": "new-1",
+       "items": [
+        "image/bmp"
+       ]
+      },
+      {
+       "toolCallId": "new-2",
+       "items": [
+        "image/bmp"
+       ]
+      }
+     ],
+     "lines": [
+      {
+       "partIndex": 0,
+       "expContentIndex": 0,
+       "originalSize": 70,
+       "newSize": 70,
+       "newMimeType": "image/bmp"
+      },
+      {
+       "partIndex": 1,
+       "expContentIndex": 0,
+       "originalSize": 66,
+       "newSize": 66,
+       "newMimeType": "image/bmp"
+      },
+      {
+       "partIndex": 2,
+       "expContentIndex": 0,
+       "originalSize": 74,
+       "newSize": 74,
+       "newMimeType": "image/bmp"
+      }
+     ]
+    },
+    "a result's list of items replaced": {
+     "items": [
+      "image/bmp",
+      "image/bmp",
+      "image/bmp"
+     ],
+     "lines": [
+      {
+       "partIndex": 0,
+       "expContentIndex": 0,
+       "originalSize": 70,
+       "newSize": 70,
+       "newMimeType": "image/bmp"
+      },
+      {
+       "partIndex": 0,
+       "expContentIndex": 1,
+       "originalSize": 66,
+       "newSize": 66,
+       "newMimeType": "image/bmp"
+      },
+      {
+       "partIndex": 0,
+       "expContentIndex": 2,
+       "originalSize": 74,
+       "newSize": 74,
+       "newMimeType": "image/bmp"
+      }
+     ]
+    },
+    "a picture's bytes swapped right after the call": {
+     "answer": {
+      "fields": [
+       "role",
+       "content"
+      ],
+      "restAsItWas": true,
+      "contentIsNew": true,
+      "content": [
+       {
+        "type": "image",
+        "image": {
+         "held": "Uint8Array",
+         "bytes": 70,
+         "sha256": "72070c6c276476ba7d0f15b78d66d041675aea7112581afca3172aa2225f8f04"
+        },
+        "mimeType": "image/bmp"
+       }
+      ]
+     },
+     "lines": [
+      {
+       "originalSize": 66,
+       "newSize": 70,
+       "newMimeType": "image/bmp"
+      }
+     ]
+    },
+    "a tool's picture renamed right after the call": {
+     "answer": {
+      "fields": [
+       "role",
+       "content"
+      ],
+      "restAsItWas": true,
+      "contentIsNew": true,
+      "content": [
+       {
+        "fields": [
+         "type",
+         "toolCallId",
+         "toolName",
+         "result",
+         "experimental_content"
+        ],
+        "itemsAreNew": true,
+        "experimental_content": [
+         {
+          "type": "image",
+          "data": {
+           "base64Letters": 96,
+           "bytes": 70,
+           "sha256": "72070c6c276476ba7d0f15b78d66d041675aea7112581afca3172aa2225f8f04"
+          },
+          "mimeType": "image/bmp",
+          "note": "added meanwhile"
+         }
+        ]
+       }
+      ]
+     },
+     "lines": [
+      {
+       "partIndex": 0,
+       "expContentIndex": 0,
+       "originalSize": 70,
+       "newSize": 70,
+       "newMimeType": "image/bmp"
+      }
+     ]
+    }
+   }
+  },
   "what stands in a tool's lists in place of a piece: nothing is refused by JavaScript, a word is passed over": {
    "returned": {
     "nothing in the list of results": {

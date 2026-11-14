@@ -1552,6 +1552,67 @@ export const scenarios = [
     },
   },
   {
+    name: "a message changed by someone else while its pictures are looked at: what is read again afterwards, and what is not",
+    run: async ({ pictures }) => {
+      /** Runs `change` once, when the first line is written. */
+      const changingOnce = (change) => {
+        let changed = false;
+        return listening({
+          onLine: () => {
+            if (changed) return;
+            changed = true;
+            change();
+          },
+        });
+      };
+      const kinds = (list) => list.map((piece) => piece.mimeType ?? piece.text ?? piece.type);
+
+      // The person's message is given another list of pieces: the walk goes on over the list it began with.
+      const person = userWith(picturePiece(bmp(2, 2), "image/png"), picturePiece(bmp(3, 1), "image/png"));
+      const forPerson = changingOnce(() => {
+        person.content = [{ type: "text", text: "put in its place" }];
+        person.note = "added meanwhile";
+      });
+      const personAfter = await pictures.resizeImagesInMessage(forPerson.context, person);
+
+      // A tool's message is given another list of results: the results after the one being looked at are taken from the new list.
+      const tool = toolWith([pictureItem(bmp(2, 2), "image/png")], [pictureItem(bmp(3, 1), "image/png")]);
+      const forTool = changingOnce(() => {
+        tool.content = [{ type: "text", text: "first of the new list" }, { type: "tool-result", toolCallId: "new-1", experimental_content: [pictureItem(bmp(4, 1), "image/png")] }, { type: "tool-result", toolCallId: "new-2", experimental_content: [pictureItem(bmp(1, 5), "image/png")] }];
+      });
+      const toolAfter = await pictures.resizeImagesInMessage(forTool.context, tool);
+
+      // A result is given another list of items: the items after the one being looked at are taken from the new list.
+      const result = toolWith([pictureItem(bmp(2, 2), "image/png"), { type: "text", text: "second of the first list" }]);
+      const forResult = changingOnce(() => {
+        result.content[0].experimental_content = [{ type: "text", text: "first of the new list" }, pictureItem(bmp(4, 1), "image/png"), pictureItem(bmp(1, 5), "image/png")];
+      });
+      const resultAfter = await pictures.resizeImagesInMessage(forResult.context, result);
+
+      // A picture's bytes and kind changed right after the call: the copy made at the call is the one made smaller, but the size and kind compared and written are read afterwards.
+      const swapped = userWith(picturePiece(bmp(2, 2), "image/bmp"));
+      const forSwapped = listening();
+      const swappedPending = pictures.resizeImagesInMessage(forSwapped.context, swapped);
+      swapped.content[0].image = bmp(3, 1);
+      const swappedAfter = await swappedPending;
+
+      const renamed = toolWith([pictureItem(bmp(2, 2), "image/bmp")]);
+      const forRenamed = listening();
+      const renamedPending = pictures.resizeImagesInMessage(forRenamed.context, renamed);
+      renamed.content[0].experimental_content[0].mimeType = "image/tiff";
+      renamed.content[0].experimental_content[0].note = "added meanwhile";
+      const renamedAfter = await renamedPending;
+
+      return {
+        "the person's list replaced": { fields: Object.keys(personAfter), content: kinds(personAfter.content), lines: forPerson.lines.map((line) => line.metadata) },
+        "a tool's list of results replaced": { content: toolAfter.content.map((piece) => (Array.isArray(piece.experimental_content) ? { toolCallId: piece.toolCallId, items: kinds(piece.experimental_content) } : piece)), lines: forTool.lines.map((line) => line.metadata) },
+        "a result's list of items replaced": { items: kinds(resultAfter.content[0].experimental_content), lines: forResult.lines.map((line) => line.metadata) },
+        "a picture's bytes swapped right after the call": { answer: userTold(swapped, swappedAfter), lines: forSwapped.lines.map((line) => line.metadata) },
+        "a tool's picture renamed right after the call": { answer: toolTold(renamed, renamedAfter), lines: forRenamed.lines.map((line) => line.metadata) },
+      };
+    },
+  },
+  {
     name: "what stands in a tool's lists in place of a piece: nothing is refused by JavaScript, a word is passed over",
     run: async ({ pictures }) =>
       casesInTurn(
