@@ -49,14 +49,12 @@ type StoragePurpose =
   | PrivacyCapability.STORAGE_FOR_LOGGING
   | PrivacyCapability.STORAGE_FOR_USAGE;
 
-const STORAGE_PURPOSES: readonly PrivacyCapability[] = [
-  PrivacyCapability.STORAGE_FOR_TRAINING,
-  PrivacyCapability.STORAGE_FOR_LOGGING,
-  PrivacyCapability.STORAGE_FOR_USAGE,
-];
-
 function isStoragePurpose(purpose: PrivacyCapability): purpose is StoragePurpose {
-  return STORAGE_PURPOSES.includes(purpose);
+  return (
+    purpose === PrivacyCapability.STORAGE_FOR_TRAINING ||
+    purpose === PrivacyCapability.STORAGE_FOR_LOGGING ||
+    purpose === PrivacyCapability.STORAGE_FOR_USAGE
+  );
 }
 
 /**

@@ -15,7 +15,7 @@
 import { DataClassification, type PrivacyCapability } from "./classification.js";
 import { createRedactedString } from "./factory.js";
 import { toPrivacyContext, type PrivacyContext } from "./privacy-context.js";
-import { PrivacyMode } from "./privacy-mode.js";
+import type { PrivacyMode } from "./privacy-mode.js";
 import { getRedactionAwareDisplayValue } from "./shouldRedact.js";
 import { isRedactedString, RedactedString, type RedactedUnwrapOptions } from "./types.js";
 
@@ -67,9 +67,13 @@ class RedactedTextPart {
   }
 }
 
-/** The context an image or a file is held with. With none given, the mode is not known. */
+/**
+ * The context an image or a file is held with. With none given the mode is
+ * unspecified, by its number itself (0) and not by what the list of modes
+ * says at that moment.
+ */
 function contextFor(modeOrContext: PrivacyMode | PrivacyContext): PrivacyContext {
-  return modeOrContext ? toPrivacyContext(modeOrContext) : { privacyMode: PrivacyMode.UNSPECIFIED };
+  return modeOrContext ? toPrivacyContext(modeOrContext) : { privacyMode: 0 };
 }
 
 /**
@@ -221,6 +225,17 @@ class RedactedToolResultPart {
 // What has been wrapped already.
 
 /**
+ * Whether wrappings are remembered: whole messages, and lists of parts. Both
+ * are on, and nothing in the part changes them. They are settings all the
+ * same, copied into an object of their own when the file is loaded and read
+ * each time they matter, because that is how the part has always held them
+ * and it can be seen from outside: a setting that Object.prototype answers
+ * for while the file loads is never copied, and is asked of it from then on.
+ */
+const ALWAYS_REMEMBERED = { messageIdentity: true, contentIdentity: true };
+const remembering = Object.assign({}, ALWAYS_REMEMBERED);
+
+/**
  * The wrappings made under one mode and one enforcement choice: whole
  * messages, and the lists of parts of each role.
  */
@@ -262,6 +277,7 @@ function wrappedOnce<Part>(
   content: readonly ContentPart[],
   wrapPart: (part: ContentPart) => Part,
 ): readonly Part[] {
+  if (!remembering.contentIdentity) return content.map((part) => wrapPart(part));
   const before = known.get(content);
   if (before !== undefined) return before;
   const wrapped = content.map((part) => wrapPart(part));
@@ -305,10 +321,12 @@ export function toRedactedCoreMessage(
 ): RedactedCoreMessageLike {
   const context = toPrivacyContext(modeOrContext);
   const remembered = rememberedFor(context);
-  const before = remembered.messages.get(message);
-  if (before !== undefined) return before;
+  if (remembering.messageIdentity) {
+    const before = remembered.messages.get(message);
+    if (before !== undefined) return before;
+  }
   const wrapped = wrapMessage(message, context, remembered);
-  remembered.messages.set(message, wrapped);
+  if (remembering.messageIdentity) remembered.messages.set(message, wrapped);
   return wrapped;
 }
 
