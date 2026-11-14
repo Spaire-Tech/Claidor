@@ -1,3 +1,4 @@
+/** Everything the context package offers, from one place. */
 export * from "./abort-reason.js";
 export * from "./browser-bridge.js";
 export * from "./core.js";

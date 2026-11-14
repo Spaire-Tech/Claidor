@@ -1,0 +1,7060 @@
+{
+ "part": "packages/context",
+ "surface": {
+  "abortReason": {
+   "getAbortReasonInfo": "function"
+  },
+  "browserBridge": {},
+  "core": {
+   "createContext": "function",
+   "createKey": "function"
+  },
+  "index": {
+   "DisposableSpan": "class",
+   "INHERITABLE_SPAN_ATTRIBUTES_KEY": "object",
+   "createContext": "function",
+   "createContextFromRemoteSpanContext": "function",
+   "createContextFromSpanContext": "function",
+   "createKey": "function",
+   "createLogger": "function",
+   "createSpan": "function",
+   "getAbortReasonInfo": "function",
+   "getLoggerBackend": "function",
+   "getSpan": "function",
+   "getSpanContextData": "function",
+   "getTracer": "function",
+   "loggerKey": "object",
+   "recordCompletedSpanIfParented": "function",
+   "reportEvent": "function",
+   "withInheritableAttribute": "function",
+   "withLogAttributes": "function",
+   "withSpan": "function",
+   "withSuppressedChildSpans": "function"
+  },
+  "logger": {
+   "createLogger": "function",
+   "getLoggerBackend": "function",
+   "loggerKey": "object",
+   "withLogAttributes": "function"
+  },
+  "otel": {
+   "DisposableSpan": "class",
+   "INHERITABLE_SPAN_ATTRIBUTES_KEY": "object",
+   "createContextFromRemoteSpanContext": "function",
+   "createContextFromSpanContext": "function",
+   "createSpan": "function",
+   "getSpan": "function",
+   "getSpanContextData": "function",
+   "getTracer": "function",
+   "recordCompletedSpanIfParented": "function",
+   "reportEvent": "function",
+   "withInheritableAttribute": "function",
+   "withSpan": "function",
+   "withSuppressedChildSpans": "function"
+  }
+ },
+ "scenarios": {
+  "an abort reason is told by its kind: an error by its name and message, a text by its words, nothing, or else its type": {
+   "returned": {
+    "an error": {
+     "abortReasonType": "error",
+     "abortReasonName": "Error",
+     "abortReasonMessage": "boom"
+    },
+    "a type error": {
+     "abortReasonType": "error",
+     "abortReasonName": "TypeError",
+     "abortReasonMessage": "wrong type"
+    },
+    "an error of the engine's own kind": {
+     "abortReasonType": "error",
+     "abortReasonName": "ToolCallAbortedError",
+     "abortReasonMessage": "the person stopped it"
+    },
+    "an error with an empty message": {
+     "abortReasonType": "error",
+     "abortReasonName": "Error",
+     "abortReasonMessage": ""
+    },
+    "an error with no message": {
+     "abortReasonType": "error",
+     "abortReasonName": "Error",
+     "abortReasonMessage": ""
+    },
+    "what a controller aborts with when given nothing": {
+     "abortReasonType": "error",
+     "abortReasonName": "AbortError",
+     "abortReasonMessage": "This operation was aborted"
+    },
+    "a timeout as the runtime makes it": {
+     "abortReasonType": "error",
+     "abortReasonName": "TimeoutError",
+     "abortReasonMessage": "The operation was aborted due to timeout"
+    },
+    "an error whose name is a number": {
+     "abortReasonType": "error",
+     "abortReasonName": 404,
+     "abortReasonMessage": "named by a number"
+    },
+    "an object that only inherits from Error": {
+     "abortReasonType": "error",
+     "abortReasonName": "Error",
+     "abortReasonMessage": ""
+    },
+    "an error made in another realm": {
+     "abortReasonType": "object"
+    },
+    "an object that only looks like an error": {
+     "abortReasonType": "object"
+    },
+    "a text": {
+     "abortReasonType": "string",
+     "abortReasonMessage": "a text"
+    },
+    "an empty text": {
+     "abortReasonType": "string",
+     "abortReasonMessage": ""
+    },
+    "a boxed text": {
+     "abortReasonType": "object"
+    },
+    "undefined": {
+     "abortReasonType": "undefined"
+    },
+    "null": {
+     "abortReasonType": "object"
+    },
+    "zero": {
+     "abortReasonType": "number"
+    },
+    "a number": {
+     "abortReasonType": "number"
+    },
+    "not a number": {
+     "abortReasonType": "number"
+    },
+    "true": {
+     "abortReasonType": "boolean"
+    },
+    "false": {
+     "abortReasonType": "boolean"
+    },
+    "a big number": {
+     "abortReasonType": "bigint"
+    },
+    "a symbol": {
+     "abortReasonType": "symbol"
+    },
+    "a function": {
+     "abortReasonType": "function"
+    },
+    "a list": {
+     "abortReasonType": "object"
+    },
+    "an object": {
+     "abortReasonType": "object"
+    },
+    "no argument": {
+     "abortReasonType": "undefined"
+    },
+    "takes": 1
+   }
+  },
+  "a key is its symbol and its default value, in that order, whatever they are": {
+   "returned": {
+    "fields": [
+     "symbol",
+     "defaultValue"
+    ],
+    "theSymbolGiven": true,
+    "theDefaultGiven": true,
+    "anotherObjectEachTime": true,
+    "others": [
+     {
+      "symbol": {
+       "$": "symbol",
+       "v": "n"
+      },
+      "defaultValue": 0
+     },
+     {
+      "symbol": {
+       "$": "symbol",
+       "v": ""
+      },
+      "defaultValue": {
+       "$": "undefined"
+      }
+     },
+     {
+      "symbol": {
+       "$": "symbol",
+       "v": "shared"
+      },
+      "defaultValue": null
+     },
+     {
+      "symbol": "not a symbol",
+      "defaultValue": "text"
+     },
+     {
+      "symbol": {
+       "$": "undefined"
+      },
+      "defaultValue": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "canBeWrittenOn": true,
+    "aPlainObject": true,
+    "takes": 2
+   }
+  },
+  "a new context: not canceled, no reason, no name, nothing before it, an empty path, a signal of its own": {
+   "returned": {
+    "first": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": []
+    },
+    "before": {
+     "$": "undefined"
+    },
+    "signal": {
+     "isAnAbortSignal": true,
+     "aborted": false,
+     "theSameAtEachRead": true,
+     "anotherForEachContext": true
+    },
+    "second": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": []
+    },
+    "notTheSameContext": true,
+    "takes": 0,
+    "listening": 0
+   }
+  },
+  "what a context shows when its fields are listed: the one before it, its values, its name, its signal": {
+   "returned": {
+    "fields": {
+     "root": [
+      "parent: undefined",
+      "values: a map of 0",
+      "name: undefined",
+      "signal: a signal"
+     ],
+     "named": [
+      "parent: a context",
+      "values: a map of 0",
+      "name: a",
+      "signal: a signal"
+     ],
+     "with one value": [
+      "parent: a context",
+      "values: a map of 1",
+      "name: undefined",
+      "signal: a signal"
+     ],
+     "with two values": [
+      "parent: a context",
+      "values: a map of 2",
+      "name: undefined",
+      "signal: a signal"
+     ],
+     "named after two values": [
+      "parent: a context",
+      "values: a map of 0",
+      "name: b",
+      "signal: a signal"
+     ],
+     "cancelable": [
+      "parent: a context",
+      "values: a map of 0",
+      "name: undefined",
+      "signal: a signal"
+     ],
+     "detached": [
+      "parent: a context",
+      "values: a map of 0",
+      "name: undefined",
+      "signal: a signal"
+     ]
+    },
+    "className": "_ContextImpl",
+    "oneClassForAll": true,
+    "asJson": "{\"parent\":{\"parent\":{\"parent\":{\"values\":{},\"signal\":{}},\"values\":{},\"name\":\"a\",\"signal\":{}},\"values\":{},\"signal\":{}},\"values\":{},\"name\":\"b\",\"signal\":{}}",
+    "fieldsCanBeWritten": [
+     {
+      "field": "parent",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     {
+      "field": "values",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     {
+      "field": "name",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     {
+      "field": "signal",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    ],
+    "canceledAndReasonAreReadOnTheClass": [
+     "function",
+     "function"
+    ],
+    "canBeAddedTo": {
+     "extensible": true,
+     "sealed": false,
+     "frozen": false
+    },
+    "asText": "[object Object]"
+   }
+  },
+  "a value set on a context is read from it and from every context made from it, never from the one before": {
+   "returned": {
+    "root": [
+     "none",
+     0,
+     {
+      "$": "undefined"
+     }
+    ],
+    "red": [
+     "red",
+     0,
+     {
+      "$": "undefined"
+     }
+    ],
+    "big": [
+     "red",
+     10,
+     {
+      "$": "undefined"
+     }
+    ],
+    "blue": [
+     "blue",
+     10,
+     {
+      "$": "undefined"
+     }
+    ],
+    "named": [
+     "blue",
+     10,
+     {
+      "$": "undefined"
+     }
+    ],
+    "cancelable": [
+     "blue",
+     10,
+     {
+      "$": "undefined"
+     }
+    ],
+    "detached": [
+     "blue",
+     10,
+     {
+      "$": "undefined"
+     }
+    ],
+    "last": [
+     "blue",
+     10,
+     {
+      "an": "object"
+     }
+    ],
+    "theVeryObjectSet": true,
+    "aNewContextEachTime": true,
+    "madeFromTheOneAsked": [
+     true,
+     true,
+     true
+    ],
+    "noNameOfItsOwn": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "theSameSignalAsBefore": [
+     true,
+     true
+    ],
+    "aKeyIsItsSymbol": {
+     "set": "blue",
+     "unset": "another default"
+    },
+    "branchesDoNotMix": [
+     "none",
+     1,
+     0
+    ],
+    "notAKey": {
+     "read": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'symbol')"
+       }
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of null (reading 'symbol')"
+       }
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      {
+       "returned": "its own default"
+      }
+     ],
+     "set": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'symbol')"
+       }
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of null (reading 'symbol')"
+       }
+      },
+      "under no symbol",
+      1
+     ]
+    }
+   }
+  },
+  "a value of null or undefined is given as it is by the context that holds it, and as the default by those made from it by name or cancel": {
+   "returned": {
+    "cases": {
+     "null": {
+      "holder": null,
+      "made from it by name": "the default",
+      "made from it by cancel": "the default",
+      "made from it detached": "the default",
+      "made from it by another value": null,
+      "made by another value, then by name": "the default"
+     },
+     "undefined": {
+      "holder": {
+       "$": "undefined"
+      },
+      "made from it by name": "the default",
+      "made from it by cancel": "the default",
+      "made from it detached": "the default",
+      "made from it by another value": {
+       "$": "undefined"
+      },
+      "made by another value, then by name": "the default"
+     },
+     "zero": {
+      "holder": 0,
+      "made from it by name": 0,
+      "made from it by cancel": 0,
+      "made from it detached": 0,
+      "made from it by another value": 0,
+      "made by another value, then by name": 0
+     },
+     "an empty text": {
+      "holder": "",
+      "made from it by name": "",
+      "made from it by cancel": "",
+      "made from it detached": "",
+      "made from it by another value": "",
+      "made by another value, then by name": ""
+     },
+     "false": {
+      "holder": false,
+      "made from it by name": false,
+      "made from it by cancel": false,
+      "made from it detached": false,
+      "made from it by another value": false,
+      "made by another value, then by name": false
+     },
+     "not a number": {
+      "holder": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "made from it by name": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "made from it by cancel": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "made from it detached": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "made from it by another value": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "made by another value, then by name": {
+       "$": "number",
+       "v": "NaN"
+      }
+     }
+    },
+    "defaults": [
+     null,
+     {
+      "$": "undefined"
+     },
+     null,
+     {
+      "$": "undefined"
+     }
+    ]
+   }
+  },
+  "a name stays on the context it was given to; the path lists the names from the first to the last and skips the empty ones": {
+   "returned": {
+    "turn": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": "turn",
+     "path": [
+      "turn"
+     ]
+    },
+    "tool": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": "tool",
+     "path": [
+      "turn",
+      "tool"
+     ]
+    },
+    "cancelable": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn",
+      "tool"
+     ]
+    },
+    "step": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": "step",
+     "path": [
+      "turn",
+      "tool",
+      "step"
+     ]
+    },
+    "theEmptyNameIsKept": "",
+    "aFreshListEachTime": [
+     "turn",
+     "tool",
+     "step"
+    ],
+    "sameNameTwice": [
+     "a",
+     "a"
+    ],
+    "aSlashIsNotSplit": [
+     "a/b",
+     "c"
+    ],
+    "namesThatAreNotTexts": [
+     {
+      "name": 7,
+      "path": [
+       "first",
+       7
+      ]
+     },
+     {
+      "name": 0,
+      "path": [
+       "first"
+      ]
+     },
+     {
+      "name": null,
+      "path": [
+       "first"
+      ]
+     },
+     {
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "first"
+      ]
+     },
+     {
+      "name": false,
+      "path": [
+       "first"
+      ]
+     },
+     {
+      "name": true,
+      "path": [
+       "first",
+       true
+      ]
+     },
+     {
+      "name": [
+       "x"
+      ],
+      "path": [
+       "first",
+       [
+        "x"
+       ]
+      ]
+     }
+    ],
+    "noName": {
+     "$": "undefined"
+    },
+    "before": [
+     true,
+     true
+    ],
+    "theSameSignalAsBefore": true,
+    "aNewContextEachTime": true
+   }
+  },
+  "a value, a path and a cancel are carried through five thousand contexts made one from another": {
+   "returned": {
+    "before": {
+     "value": "from the first",
+     "unset": "its default",
+     "path": [
+      "n0",
+      "n1000",
+      "n2000",
+      "n3000",
+      "n4000"
+     ],
+     "canceled": false
+    },
+    "after": {
+     "canceled": true,
+     "reason": "from the first"
+    }
+   }
+  },
+  "a cancel stops its own context with the reason given, and everything made from it; the one before goes on": {
+   "returned": {
+    "cases": {
+     "an error": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": {
+        "$": "error",
+        "name": "Error",
+        "message": "stop"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": true,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     },
+     "a text": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": "stop",
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": true,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     },
+     "nothing": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": {
+        "$": "error",
+        "name": "AbortError",
+        "message": "This operation was aborted"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": false,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     },
+     "null": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": null,
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": true,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     },
+     "zero": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": 0,
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": true,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     },
+     "an object": {
+      "before": false,
+      "returned": {
+       "$": "undefined"
+      },
+      "context": {
+       "canceled": true,
+       "reason": {
+        "why": "because"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "work"
+       ]
+      },
+      "theReasonGiven": true,
+      "below": {
+       "byName": true,
+       "inner": true,
+       "detached": false
+      },
+      "theSameReasonBelow": [
+       true,
+       true
+      ],
+      "above": false
+     }
+    },
+    "whatWithCancelGives": {
+     "aPair": true,
+     "cancelTakes": 1,
+     "cancelIsNamed": "",
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "noName": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "a cancel used again changes nothing, and a context made from a canceled one is canceled from the start with the same reason": {
+   "returned": {
+    "afterThree": {
+     "canceled": true,
+     "theFirstReason": true
+    },
+    "lateBefore": {
+     "canceled": true,
+     "theSameReason": true
+    },
+    "lateAfterItsOwnCancel": true,
+    "listeningToACanceledOne": 0,
+    "aCancelBelowLeavesTheRest": {
+     "parentOfInner": false,
+     "sibling": false
+    },
+    "eachKeepsItsOwnReason": [
+     "inner first",
+     "the sibling later"
+    ]
+   }
+  },
+  "when a context is canceled, those made from it hear it in the order they were made, each before whoever listens to it after": {
+   "returned": [
+    "a, asked before any was made from it: stop",
+    "d: stop",
+    "b: stop",
+    "c: stop",
+    "c by name: stop",
+    "a, asked after: stop"
+   ]
+  },
+  "each context that can be canceled listens to the one before it once, until that one is canceled; names, values and detaching listen to nothing": {
+   "returned": {
+    "at first": 0,
+    "after one cancelable": 1,
+    "after a name, a value and a detached one": 1,
+    "after a timeout": 2,
+    "on the timeout's own signal": 1,
+    "after a deadline to come": 3,
+    "after a deadline already passed": 4,
+    "on the passed deadline's own signal": 0,
+    "after a timeout with a cancel": 5,
+    "on the cancel under that timeout": 1,
+    "on that timeout's own signal": 1,
+    "after the first one was canceled by itself": 5,
+    "on the first one": 0,
+    "after four more": 9,
+    "after the parent was canceled": 0,
+    "on the timeout's own signal, after": 0,
+    "after more were made from the canceled parent": 0
+   }
+  },
+  "a detached context is reached by no cancel above it, and keeps the names and values of the one before": {
+   "returned": {
+    "parent": {
+     "canceled": true,
+     "reason": "stop",
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn"
+     ]
+    },
+    "early": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn"
+     ]
+    },
+    "late": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn"
+     ]
+    },
+    "values": [
+     "kept",
+     "kept"
+    ],
+    "before": [
+     true,
+     true
+    ],
+    "signalsOfTheirOwn": [
+     true,
+     true
+    ],
+    "below": {
+     "canceled": true,
+     "reason": "only below",
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn",
+      "after"
+     ]
+    },
+    "lateAfterTheCancelBelow": false,
+    "aNewContextEachTime": true
+   }
+  },
+  "a timeout asks for one timer of the length given and, when it rings, cancels with 'context deadline exceeded'": {
+   "returned": {
+    "before": {
+     "canceled": false,
+     "reason": {
+      "$": "undefined"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn"
+     ]
+    },
+    "after": {
+     "canceled": true,
+     "reason": {
+      "$": "error",
+      "name": "Error",
+      "message": "context deadline exceeded"
+     },
+     "name": {
+      "$": "undefined"
+     },
+     "path": [
+      "turn"
+     ]
+    },
+    "theReason": {
+     "isAnError": true,
+     "name": "Error",
+     "message": "context deadline exceeded",
+     "fields": [],
+     "cause": {
+      "$": "undefined"
+     }
+    },
+    "belowIsCanceledWithIt": true,
+    "before2": true,
+    "rootGoesOn": false,
+    "ringingAgainKeepsTheReason": true,
+    "anErrorOfItsOwnForEach": true,
+    "asked": [
+     {
+      "set": 0,
+      "ms": 1000,
+      "more": 0
+     },
+     {
+      "set": 1,
+      "ms": 1000,
+      "more": 0
+     },
+     {
+      "ring": 0
+     },
+     {
+      "clear": 0
+     },
+     {
+      "ring": 0
+     },
+     {
+      "ring": 1
+     },
+     {
+      "clear": 1
+     }
+    ],
+    "aSignalOfItsOwn": true,
+    "noName": {
+     "$": "undefined"
+    }
+   }
+  },
+  "a timeout's timer is cleared when the context is canceled from above first, and the reason is the one from above": {
+   "returned": {
+    "afterCancel": [
+     {
+      "canceled": true,
+      "theReasonFromAbove": true
+     },
+     {
+      "canceled": true,
+      "theReasonFromAbove": true
+     },
+     {
+      "canceled": true,
+      "theReasonFromAbove": true
+     }
+    ],
+    "afterRingingAnyway": [
+     true,
+     true,
+     true
+    ],
+    "whenTheOuterOneRings": {
+     "outer": "context deadline exceeded",
+     "innerHasTheOutersReason": true,
+     "longerHasTheOutersReason": true,
+     "parent": false
+    },
+    "asked": [
+     {
+      "set": 0,
+      "ms": 500,
+      "more": 0
+     },
+     {
+      "set": 1,
+      "ms": 100,
+      "more": 0
+     },
+     {
+      "set": 2,
+      "ms": 900,
+      "more": 0
+     },
+     {
+      "clear": 0
+     },
+     {
+      "clear": 1
+     },
+     {
+      "clear": 2
+     },
+     {
+      "ring": 0
+     },
+     {
+      "ring": 1
+     },
+     {
+      "set": 3,
+      "ms": 50,
+      "more": 0
+     },
+     {
+      "set": 4,
+      "ms": 10,
+      "more": 0
+     },
+     {
+      "set": 5,
+      "ms": 90,
+      "more": 0
+     },
+     {
+      "ring": 3
+     },
+     {
+      "clear": 3
+     },
+     {
+      "clear": 4
+     },
+     {
+      "clear": 5
+     }
+    ]
+   }
+  },
+  "a timeout made from a context already canceled is canceled from the start, and its timer is asked for all the same and never cleared": {
+   "returned": {
+    "atOnce": {
+     "canceled": true,
+     "theParentsReason": true
+    },
+    "waitingOnItsOwnSignal": 1,
+    "afterItRings": true,
+    "asked": [
+     {
+      "set": 0,
+      "ms": 60000,
+      "more": 0
+     },
+     {
+      "ring": 0
+     }
+    ]
+   }
+  },
+  "the length of a timeout is handed to the timer as it is, whatever it is": {
+   "returned": {
+    "canceledAtOnce": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    "asked": [
+     {
+      "set": 0,
+      "ms": 0,
+      "more": 0
+     },
+     {
+      "set": 1,
+      "ms": 1,
+      "more": 0
+     },
+     {
+      "set": 2,
+      "ms": -1,
+      "more": 0
+     },
+     {
+      "set": 3,
+      "ms": 1.5,
+      "more": 0
+     },
+     {
+      "set": 4,
+      "ms": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "more": 0
+     },
+     {
+      "set": 5,
+      "ms": {
+       "$": "number",
+       "v": "Infinity"
+      },
+      "more": 0
+     },
+     {
+      "set": 6,
+      "ms": 2147483648,
+      "more": 0
+     },
+     {
+      "set": 7,
+      "ms": "20",
+      "more": 0
+     },
+     {
+      "set": 8,
+      "ms": null,
+      "more": 0
+     },
+     {
+      "set": 9,
+      "ms": {
+       "$": "undefined"
+      },
+      "more": 0
+     },
+     {
+      "set": 10,
+      "ms": {
+       "$": "undefined"
+      },
+      "more": 0
+     }
+    ]
+   }
+  },
+  "with the machine's own timers: a short timeout cancels in time, a cancel by hand comes first and keeps its reason, and a canceled timeout leaves no timer waiting": {
+   "returned": {
+    "waitingWithALongOne": 1,
+    "waitingAfterItsCancel": 0,
+    "long": "no need to wait",
+    "atOnce": [
+     false,
+     false,
+     false
+    ],
+    "after": [
+     {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      }
+     },
+     {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      }
+     }
+    ],
+    "byHand": {
+     "canceled": true,
+     "reason": "by hand"
+    },
+    "root": false
+   }
+  },
+  "a deadline later than now is a timeout of what is left; one at now, before now or of no date is canceled at once and asks for no timer": {
+   "returned": {
+    "one millisecond from now": {
+     "context": {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 1,
+       "more": 0
+      }
+     ],
+     "clockRead": 1,
+     "parent": false
+    },
+    "a quarter of a second from now": {
+     "context": {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 250,
+       "more": 0
+      }
+     ],
+     "clockRead": 1,
+     "parent": false
+    },
+    "the last moment a date can hold": {
+     "context": {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 8638205439112935,
+       "more": 0
+      }
+     ],
+     "clockRead": 1,
+     "parent": false
+    },
+    "now": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [],
+     "clockRead": 1,
+     "parent": false
+    },
+    "one millisecond ago": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [],
+     "clockRead": 1,
+     "parent": false
+    },
+    "long ago": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [],
+     "clockRead": 1,
+     "parent": false
+    },
+    "no date at all": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [],
+     "clockRead": 1,
+     "parent": false
+    },
+    "to come, from a canceled context": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "stopped before"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": true,
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 250,
+       "more": 0
+      }
+     ],
+     "clockRead": 1,
+     "parent": true
+    },
+    "passed, from a canceled context": {
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "stopped before"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": true,
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [],
+     "clockRead": 1,
+     "parent": true
+    },
+    "a number instead of a date": {
+     "threw": "a TypeError of the runtime's own: what was to be called is not a function",
+     "asked": [],
+     "clockRead": 0
+    },
+    "nothing instead of a date": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'getTime')"
+     },
+     "asked": [],
+     "clockRead": 0
+    },
+    "an object that tells its time": {
+     "context": {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "theParentsReason": {
+      "$": "undefined"
+     },
+     "before": true,
+     "aSignalOfItsOwn": true,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 40,
+       "more": 0
+      }
+     ],
+     "clockRead": 1,
+     "parent": false
+    }
+   }
+  },
+  "the clock is read once for each deadline, and each deadline that has passed cancels with an error of its own": {
+   "returned": {
+    "canceled": [
+     false,
+     false,
+     true,
+     true
+    ],
+    "messages": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     "context deadline exceeded",
+     "context deadline exceeded"
+    ],
+    "errorsOfTheirOwn": true,
+    "asked": [
+     {
+      "set": 0,
+      "ms": 150,
+      "more": 0
+     },
+     {
+      "set": 1,
+      "ms": 50,
+      "more": 0
+     }
+    ],
+    "clockRead": 4
+   }
+  },
+  "a timeout with a cancel: the cancel is one context above the timeout, and either one stops the work": {
+   "returned": {
+    "canceled by hand": {
+     "start": {
+      "pair": 2,
+      "context": {
+       "canceled": false,
+       "reason": {
+        "$": "undefined"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "turn"
+       ]
+      },
+      "stepsBack": 2,
+      "signals": [
+       true,
+       true
+      ]
+     },
+     "returned": {
+      "$": "undefined"
+     },
+     "context": {
+      "canceled": true,
+      "reason": "by hand",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "between": {
+      "canceled": true,
+      "reason": "by hand",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "root": false,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 750,
+       "more": 0
+      },
+      {
+       "clear": 0
+      }
+     ]
+    },
+    "canceled by hand with nothing": {
+     "start": {
+      "pair": 2,
+      "context": {
+       "canceled": false,
+       "reason": {
+        "$": "undefined"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "turn"
+       ]
+      },
+      "stepsBack": 2,
+      "signals": [
+       true,
+       true
+      ]
+     },
+     "returned": {
+      "$": "undefined"
+     },
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "AbortError",
+       "message": "This operation was aborted"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "between": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "AbortError",
+       "message": "This operation was aborted"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "root": false,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 750,
+       "more": 0
+      },
+      {
+       "clear": 0
+      }
+     ]
+    },
+    "the timer rings": {
+     "start": {
+      "pair": 2,
+      "context": {
+       "canceled": false,
+       "reason": {
+        "$": "undefined"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "turn"
+       ]
+      },
+      "stepsBack": 2,
+      "signals": [
+       true,
+       true
+      ]
+     },
+     "returned": {
+      "$": "undefined"
+     },
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "between": {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "root": false,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 750,
+       "more": 0
+      },
+      {
+       "ring": 0
+      },
+      {
+       "clear": 0
+      }
+     ]
+    },
+    "the timer rings, then the cancel": {
+     "start": {
+      "pair": 2,
+      "context": {
+       "canceled": false,
+       "reason": {
+        "$": "undefined"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "turn"
+       ]
+      },
+      "stepsBack": 2,
+      "signals": [
+       true,
+       true
+      ]
+     },
+     "returned": {
+      "$": "undefined"
+     },
+     "context": {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "between": {
+      "canceled": true,
+      "reason": "too late",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "root": false,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 750,
+       "more": 0
+      },
+      {
+       "ring": 0
+      },
+      {
+       "clear": 0
+      }
+     ]
+    },
+    "the cancel, then the timer rings": {
+     "start": {
+      "pair": 2,
+      "context": {
+       "canceled": false,
+       "reason": {
+        "$": "undefined"
+       },
+       "name": {
+        "$": "undefined"
+       },
+       "path": [
+        "turn"
+       ]
+      },
+      "stepsBack": 2,
+      "signals": [
+       true,
+       true
+      ]
+     },
+     "returned": {
+      "$": "undefined"
+     },
+     "context": {
+      "canceled": true,
+      "reason": "first",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "between": {
+      "canceled": true,
+      "reason": "first",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     "root": false,
+     "asked": [
+      {
+       "set": 0,
+       "ms": 750,
+       "more": 0
+      },
+      {
+       "clear": 0
+      },
+      {
+       "ring": 0
+      }
+     ]
+    }
+   }
+  },
+  "a context asks the one before it through what that one answers itself: its get, its name, its parent, its signal, its own timeout and cancel": {
+   "returned": {
+    "valueBelow": [
+     "from the stand-in",
+     "from the stand-in",
+     "from the base"
+    ],
+    "pathBelow": [
+     "another line",
+     "renamed",
+     "leaf"
+    ],
+    "pathOfItself": [
+     "another line",
+     "renamed"
+    ],
+    "signalBelow": {
+     "itself": {
+      "canceled": true,
+      "reason": "the stand-in's signal"
+     },
+     "byName": true,
+     "byCancel": "the stand-in's signal",
+     "byTimeout": "the stand-in's signal",
+     "detached": false
+    },
+    "withoutASignal": {
+     "byName": true,
+     "byValue": false
+    },
+    "deadlineBelow": [
+     "what its own withTimeout gives",
+     {
+      "canceled": true,
+      "reason": {
+       "$": "error",
+       "name": "Error",
+       "message": "context deadline exceeded"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "base"
+      ]
+     }
+    ],
+    "bothBelow": [
+     "what its own withTimeout gives",
+     "its own cancel"
+    ],
+    "asked": [
+     "get",
+     "get",
+     "withTimeout 300",
+     "withCancel",
+     "withTimeout 40"
+    ],
+    "timersAsked": [
+     {
+      "set": 0,
+      "ms": 5,
+      "more": 0
+     }
+    ]
+   }
+  },
+  "the logger key is a symbol named loggerBackend and the terminal backend; a context with no backend of its own gives that one": {
+   "returned": {
+    "fields": [
+     "symbol",
+     "defaultValue"
+    ],
+    "symbol": {
+     "$": "symbol",
+     "v": "loggerBackend"
+    },
+    "terminalBackend": {
+     "fields": [
+      "log"
+     ],
+     "logTakes": 2
+    },
+    "unset": true,
+    "unsetBelow": true,
+    "set": true,
+    "setBelow": true,
+    "aStandInContext": {
+     "given": true,
+     "askedWithTheKey": [
+      true
+     ]
+    },
+    "notAContext": [
+     {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     {
+      "threw": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "Cannot read properties of undefined (reading 'get')"
+      }
+     },
+     {
+      "threw": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "Cannot read properties of undefined (reading 'get')"
+      }
+     }
+    ],
+    "takes": 1
+   }
+  },
+  "each of a logger's four methods hands the context's backend one entry: level, message, context, the error if any, what was added, the time": {
+   "returned": {
+    "methods": [
+     "debug",
+     "info",
+     "warn",
+     "error"
+    ],
+    "named": [
+     "debug",
+     "info",
+     "warn",
+     "error"
+    ],
+    "take": [
+     3,
+     3,
+     3,
+     4
+    ],
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "entries": [
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "debug",
+       "message": "a debug line",
+       "context": "the context logged with",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "info",
+       "message": "an info line",
+       "context": "the context logged with",
+       "metadata": {
+        "n": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:08.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "warn",
+       "message": "a warning",
+       "context": "the context logged with",
+       "metadata": {},
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:09.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "error",
+       "message": "an error",
+       "context": "the context logged with",
+       "error": {
+        "$": "error",
+        "name": "Error",
+        "message": "it failed"
+       },
+       "metadata": {
+        "where": "here"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:10.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "error",
+       "message": "an error with nothing thrown",
+       "context": "the context logged with",
+       "error": {
+        "$": "undefined"
+       },
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:11.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "error",
+       "message": "an error that is a text",
+       "context": "the context logged with",
+       "error": "it failed",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:12.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "info",
+       "message": "what was added is a text",
+       "context": "the context logged with",
+       "metadata": "text",
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:13.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "debug",
+       "message": {
+        "$": "undefined"
+       },
+       "context": "the context logged with",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:14.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "the context logged with",
+      "entry": {
+       "level": "info",
+       "message": 42,
+       "context": "the context logged with",
+       "metadata": null,
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:15.065Z"
+       }
+      }
+     }
+    ],
+    "clockRead": 9,
+    "theErrorAndTheAddedAreTheOnesGiven": [
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "a logger's name changes nothing, its methods work on their own, and the backend is read again from the context at each line": {
+   "returned": {
+    "first": [
+     {
+      "calledOnTheBackend": true,
+      "context": "one",
+      "entry": {
+       "level": "info",
+       "message": "to the first",
+       "context": "one",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "one",
+      "entry": {
+       "level": "error",
+       "message": "to the first again",
+       "context": "one",
+       "error": "why",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:10.065Z"
+       }
+      }
+     }
+    ],
+    "second": [
+     {
+      "calledOnTheBackend": true,
+      "context": "two",
+      "entry": {
+       "level": "info",
+       "message": "to the second",
+       "context": "two",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:08.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "below two",
+      "entry": {
+       "level": "warn",
+       "message": "to the second, from below",
+       "context": "below two",
+       "metadata": {
+        "$": "undefined"
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:09.065Z"
+       }
+      }
+     }
+    ],
+    "aLoggerOfItsOwnEachTime": true,
+    "takes": 1,
+    "aStandInContextIsAsked": [
+     "get loggerBackend",
+     "log once",
+     "get loggerBackend",
+     "log twice"
+    ],
+    "noBackend": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'log')"
+     }
+    },
+    "badBackends": {
+     "a backend that cannot log": {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     "a backend that cannot log, under attributes": {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     "a backend that throws": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "thrown by the backend"
+      }
+     },
+     "a backend that throws, under attributes": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "thrown by the backend"
+      }
+     }
+    },
+    "notAContext": [
+     {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     {
+      "threw": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "Cannot read properties of undefined (reading 'get')"
+      }
+     }
+    ]
+   }
+  },
+  "attributes added to a context come before what each line adds, and the line wins where both name the same thing": {
+   "returned": {
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "entries": [
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "info",
+       "message": "nothing added",
+       "context": "with attributes",
+       "metadata": {
+        "tool": "Shell",
+        "attempt": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "info",
+       "message": "something added",
+       "context": "with attributes",
+       "metadata": {
+        "tool": "Shell",
+        "attempt": "from the line",
+        "extra": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:08.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "error",
+       "message": "an error",
+       "context": "with attributes",
+       "error": {
+        "$": "error",
+        "name": "Error",
+        "message": "it failed"
+       },
+       "metadata": {
+        "tool": "Shell",
+        "attempt": 1,
+        "extra": 2
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:09.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes twice",
+      "entry": {
+       "level": "info",
+       "message": "twice, nothing added",
+       "context": "with attributes twice",
+       "metadata": {
+        "tool": "Shell",
+        "attempt": 2,
+        "model": "m",
+        "id": 7
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:10.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes twice",
+      "entry": {
+       "level": "warn",
+       "message": "twice, something added",
+       "context": "with attributes twice",
+       "metadata": {
+        "tool": "from the line",
+        "attempt": 2,
+        "model": "m",
+        "id": "from the line",
+        "z": 0
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:11.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "base",
+      "entry": {
+       "level": "info",
+       "message": "the context before is as it was",
+       "context": "base",
+       "metadata": {
+        "own": true
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:12.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "info",
+       "message": "added: a text",
+       "context": "with attributes",
+       "metadata": {
+        "0": "a",
+        "1": "b",
+        "tool": "Shell",
+        "attempt": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:13.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "info",
+       "message": "added: a list",
+       "context": "with attributes",
+       "metadata": {
+        "0": "x",
+        "tool": "Shell",
+        "attempt": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:14.065Z"
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "with attributes",
+      "entry": {
+       "level": "info",
+       "message": "added: null",
+       "context": "with attributes",
+       "metadata": {
+        "tool": "Shell",
+        "attempt": 1
+       },
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:15.065Z"
+       }
+      }
+     }
+    ],
+    "madeFromTheContextGiven": [
+     true,
+     {
+      "canceled": false,
+      "reason": {
+       "$": "undefined"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "turn"
+      ]
+     },
+     [
+      "turn",
+      "inner"
+     ]
+    ],
+    "aBackendOfItsOwn": [
+     [
+      "log",
+      "log",
+      2
+     ]
+    ],
+    "takes": 2
+   }
+  },
+  "attributes: the backend is the one the context had when they were added, the entry handed on is a new one with the same time, and nothing comes back": {
+   "returned": {
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "before": [
+     {
+      "calledOnTheBackend": true,
+      "context": "with another backend set after",
+      "entry": {
+       "level": "info",
+       "message": "through the attributes",
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       },
+       "metadata": {
+        "a": 1,
+        "b": 2
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "none",
+      "entry": {
+       "message": "an entry with only a message",
+       "metadata": {
+        "a": 1
+       }
+      }
+     }
+    ],
+    "after": [
+     {
+      "calledOnTheBackend": true,
+      "context": "with another backend set after",
+      "entry": {
+       "level": "info",
+       "message": "the backend set after takes the line, with no attributes",
+       "context": "with another backend set after",
+       "metadata": {
+        "$": "undefined"
+       }
+      }
+     }
+    ],
+    "handedOn": {
+     "fields": [
+      "level",
+      "message",
+      "timestamp",
+      "metadata"
+     ],
+     "firstArgument": "any first argument",
+     "aNewEntry": true,
+     "theSameTime": true,
+     "theEntryGivenIsUntouched": [
+      "level",
+      "message",
+      "timestamp"
+     ]
+    },
+    "none": [
+     true,
+     true,
+     true
+    ],
+    "noAttributes": [
+     {
+      "calledOnTheBackend": true,
+      "context": "none",
+      "entry": {
+       "level": "info",
+       "message": "attributes: undefined",
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       },
+       "metadata": {
+        "own": 1
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "none",
+      "entry": {
+       "level": "info",
+       "message": "attributes: null",
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       },
+       "metadata": {
+        "own": 1
+       }
+      }
+     },
+     {
+      "calledOnTheBackend": true,
+      "context": "none",
+      "entry": {
+       "level": "info",
+       "message": "attributes: ab",
+       "timestamp": {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       },
+       "metadata": {
+        "0": "a",
+        "1": "b",
+        "own": 1
+       }
+      }
+     }
+    ],
+    "aStandInContext": {
+     "given": {
+      "whatItsOwnWithGives": [
+       "log"
+      ]
+     },
+     "asked": [
+      "get loggerBackend",
+      "with loggerBackend"
+     ]
+    },
+    "notAContext": [
+     {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     {
+      "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+     },
+     {
+      "threw": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "Cannot read properties of undefined (reading 'with')"
+      }
+     }
+    ]
+   }
+  },
+  "the terminal backend writes a line: the time of day, the level in five places, the message, the path of the context, through the console's log, warn or error": {
+   "returned": {
+    "levels": [
+     [
+      {
+       "log": "09:08:07.065 DEBUG a debug line ctx=turn/tool"
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  a info line ctx=turn/tool"
+      }
+     ],
+     [
+      {
+       "warn": "09:08:07.065 WARN  a warn line ctx=turn/tool"
+      }
+     ],
+     [
+      {
+       "error": "09:08:07.065 ERROR a error line ctx=turn/tool"
+      }
+     ]
+    ],
+    "no names on the way": [
+     {
+      "log": "09:08:07.065 INFO  a line"
+     }
+    ],
+    "names with a slash and an empty one": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=a/b/c"
+     }
+    ],
+    "no context in the entry": [
+     {
+      "log": "09:08:07.065 INFO  a line"
+     }
+    ],
+    "the path is the entry's context, not the first argument": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=in the entry"
+     }
+    ],
+    "an object that tells a path": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=x/y"
+     }
+    ],
+    "an object that tells an empty path": [
+     {
+      "log": "09:08:07.065 INFO  a line"
+     }
+    ],
+    "an object that tells its path as a text": {
+     "lines": [],
+     "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+    },
+    "an object that tells an empty text": [
+     {
+      "log": "09:08:07.065 INFO  a line"
+     }
+    ],
+    "an object that tells no path": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'length')"
+     }
+    },
+    "an object that tells a path of things that are not texts": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=1//x,y/"
+     }
+    ],
+    "an object whose path throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "no path"
+     }
+    },
+    "its log, taken off it, works on its own": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=turn/tool"
+     }
+    ],
+    "how often the path is asked for": [
+     "getPath"
+    ],
+    "what the backend gives back": {
+     "$": "undefined"
+    }
+   }
+  },
+  "the time of day is twelve characters cut from the time as the world writes it, at the same place whatever the year": {
+   "returned": {
+    "midnight": [
+     {
+      "log": "00:00:00.000 INFO  m"
+     }
+    ],
+    "the last millisecond of a day": [
+     {
+      "log": "23:59:59.999 INFO  m"
+     }
+    ],
+    "a year of five figures": [
+     {
+      "log": "06T07:08:09. INFO  m"
+     }
+    ],
+    "a year before the first": [
+     {
+      "log": "06T07:08:09. INFO  m"
+     }
+    ],
+    "no date at all": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Invalid time value"
+     }
+    },
+    "a number instead of a date": {
+     "lines": [],
+     "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+    },
+    "a text instead of a date": {
+     "lines": [],
+     "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+    },
+    "nothing": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'toISOString')"
+     }
+    },
+    "an object that writes itself": [
+     {
+      "log": "BCDEFGHIJKLM INFO  m"
+     }
+    ]
+   }
+  },
+  "a level that is not one of the four writes nothing and throws; a message is written as it prints": {
+   "returned": {
+    "levels": {
+     "\"trace\"": {
+      "lines": [],
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unhandled log level: trace"
+      }
+     },
+     "\"INFO\"": {
+      "lines": [],
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unhandled log level: INFO"
+      }
+     },
+     "\"\"": {
+      "lines": [],
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unhandled log level: "
+      }
+     },
+     "\"fatal\"": {
+      "lines": [],
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unhandled log level: fatal"
+      }
+     },
+     "\"Warn\"": {
+      "lines": [],
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unhandled log level: Warn"
+      }
+     }
+    },
+    "a level that is a number": {
+     "lines": [],
+     "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+    },
+    "no level": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'toUpperCase')"
+     }
+    },
+    "a level of null": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'toUpperCase')"
+     }
+    },
+    "an object that writes itself as a level": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unhandled log level: [object Object]"
+     }
+    },
+    "no entry": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'timestamp')"
+     }
+    },
+    "messages": [
+     [
+      {
+       "log": "09:08:07.065 INFO  42"
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  a,b"
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  printed"
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO  two\nlines"
+      }
+     ],
+     [
+      {
+       "log": "09:08:07.065 INFO   spaces kept "
+      }
+     ]
+    ],
+    "an error line's message that is not a text": [
+     {
+      "error": "09:08:07.065 ERROR 42"
+     }
+    ]
+   }
+  },
+  "a level that is not one of the four is found out last: the path is asked for and what was added is written out before the line is refused": {
+   "returned": {
+    "a level unknown, a path, something added": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unhandled log level: trace"
+     }
+    },
+    "a level unknown, a field that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "a level unknown, an error that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "a level unknown, no date": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Invalid time value"
+     }
+    },
+    "no level, a path": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'toUpperCase')"
+     }
+    },
+    "a level known, a field that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "asked": [
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a key is asked for its text",
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a field is read",
+     "— level, context, error —",
+     "the path is asked for",
+     "a field is read",
+     "— level, timestamp, context —",
+     "— context —",
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a field is read"
+    ]
+   }
+  },
+  "a message that is not a text is left as it prints; only on an error line in colour is a missing message written out as the word": {
+   "returned": {
+    "plain, info": {
+     "a number": [
+      {
+       "log": "09:08:07.065 INFO  42"
+      }
+     ],
+     "null": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "undefined": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "an empty text": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "a list": [
+      {
+       "log": "09:08:07.065 INFO  a,b"
+      }
+     ],
+     "a text": [
+      {
+       "log": "09:08:07.065 INFO  text"
+      }
+     ]
+    },
+    "plain, error": {
+     "a number": [
+      {
+       "error": "09:08:07.065 ERROR 42"
+      }
+     ],
+     "null": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "undefined": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "an empty text": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "a list": [
+      {
+       "error": "09:08:07.065 ERROR a,b"
+      }
+     ],
+     "a text": [
+      {
+       "error": "09:08:07.065 ERROR text"
+      }
+     ]
+    },
+    "in colour, info": {
+     "a number": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m 42"
+      }
+     ],
+     "null": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "undefined": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "an empty text": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "a list": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a,b"
+      }
+     ],
+     "a text": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m text"
+      }
+     ]
+    },
+    "in colour, warn": {
+     "a number": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m 42"
+      }
+     ],
+     "null": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "undefined": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "an empty text": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "a list": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m a,b"
+      }
+     ],
+     "a text": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m text"
+      }
+     ]
+    },
+    "in colour, error": {
+     "a number": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1m42\u001b[0m"
+      }
+     ],
+     "null": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mnull\u001b[0m"
+      }
+     ],
+     "undefined": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mundefined\u001b[0m"
+      }
+     ],
+     "an empty text": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1m\u001b[0m"
+      }
+     ],
+     "a list": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1ma,b\u001b[0m"
+      }
+     ],
+     "a text": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mtext\u001b[0m"
+      }
+     ]
+    }
+   }
+  },
+  "what a thing is taken for when it could be two: a summary before anything, a date or a pattern before an error, an error before a list, a map or bytes; the error of a line is an error first": {
+   "returned": {
+    "among what was added": {
+     "a list that is also a summary": "{v: <a list>}",
+     "an error that is also a summary": "{v: <an error>}",
+     "a date that is also a summary": "{v: <a date>}",
+     "a date with a message": "{v: 2026-11-13T09:08:07.065Z}",
+     "a pattern with a name": "{v: /x/}",
+     "a list with a message": "{v: Error: listed}",
+     "a map with a name": "{v: mapped}",
+     "a set with a cause": "{v: Error cause=\"why\"}",
+     "an array buffer with a name": "{v: buffered}",
+     "a function with a message": "{v: [Function named]}",
+     "a boxed text with a name": "{v: boxed}",
+     "an object with a name and fields": "{v: Shell cause={code: 1}}"
+    },
+    "as what was added": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line meta=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line meta=<an error>",
+     "a date that is also a summary": "09:08:07.065 INFO  a line meta=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line meta=2026-11-13T09:08:07.065Z",
+     "a pattern with a name": "09:08:07.065 INFO  a line meta=/x/",
+     "a list with a message": "09:08:07.065 INFO  a line meta=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line meta=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line meta=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line meta=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line meta=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line meta=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line meta=Shell cause={code: 1}"
+    },
+    "as the context": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line context=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line context=<an error>",
+     "a date that is also a summary": "09:08:07.065 INFO  a line context=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line context=2026-11-13T09:08:07.065Z",
+     "a pattern with a name": "09:08:07.065 INFO  a line context=/x/",
+     "a list with a message": "09:08:07.065 INFO  a line context=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line context=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line context=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line context=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line context=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line context=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line context=Shell cause={code: 1}"
+    },
+    "as the error": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line error=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line error=Error: m\n  at a place",
+     "a date that is also a summary": "09:08:07.065 INFO  a line error=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line error=Error: dated",
+     "a pattern with a name": "09:08:07.065 INFO  a line error=named",
+     "a list with a message": "09:08:07.065 INFO  a line error=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line error=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line error=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line error=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line error=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line error=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line error=Shell cause={code: 1}"
+    }
+   }
+  },
+  "a logger's line, step by step: the time is taken, the backend is read from the context, the backend is handed the entry": {
+   "returned": [
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"a line\"",
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"an error\"",
+    "— attributes are added —",
+    "get loggerBackend",
+    "with loggerBackend",
+    "— a line through them —",
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"with attributes\"",
+    "— no backend to be had —",
+    "the clock is read",
+    "get loggerBackend, which throws",
+    "thrown: TypeError"
+   ]
+  },
+  "a context in the entry that is no context is written as context=, when it holds anything; what was added is written as meta=, when it holds anything": {
+   "returned": {
+    "context": {
+     "an object": "09:08:07.065 INFO  a line context={requestId: \"r-1\", attempt: 2}",
+     "an empty object": "09:08:07.065 INFO  a line",
+     "a text": "09:08:07.065 INFO  a line context=\"abc\"",
+     "an empty text": "09:08:07.065 INFO  a line",
+     "a number": "09:08:07.065 INFO  a line",
+     "zero": "09:08:07.065 INFO  a line",
+     "true": "09:08:07.065 INFO  a line",
+     "false": "09:08:07.065 INFO  a line",
+     "null": "09:08:07.065 INFO  a line",
+     "a list": "09:08:07.065 INFO  a line context=[\"a\", 1]",
+     "an empty list": "09:08:07.065 INFO  a line",
+     "an object whose getPath is not a function": "09:08:07.065 INFO  a line context={getPath: \"no\", id: 1}",
+     "a function": "09:08:07.065 INFO  a line",
+     "a function with a field": "09:08:07.065 INFO  a line context=[Function]",
+     "an error": "09:08:07.065 INFO  a line",
+     "a map": "09:08:07.065 INFO  a line",
+     "a date": "09:08:07.065 INFO  a line"
+    },
+    "added": {
+     "an object": "09:08:07.065 INFO  a line meta={n: 1, text: \"t\"}",
+     "an empty object": "09:08:07.065 INFO  a line",
+     "undefined": "09:08:07.065 INFO  a line",
+     "null": "09:08:07.065 INFO  a line",
+     "a list": "09:08:07.065 INFO  a line meta=[\"a\"]",
+     "an empty list": "09:08:07.065 INFO  a line",
+     "a text": "09:08:07.065 INFO  a line meta=\"ab\"",
+     "an empty text": "09:08:07.065 INFO  a line",
+     "a number": "09:08:07.065 INFO  a line",
+     "true": "09:08:07.065 INFO  a line",
+     "an object with a name": "09:08:07.065 INFO  a line meta=Shell",
+     "an object with a message": "09:08:07.065 INFO  a line meta=Error: hello",
+     "a map": "09:08:07.065 INFO  a line",
+     "a real context": "09:08:07.065 INFO  a line meta=inside"
+    },
+    "all three at once": "09:08:07.065 INFO  a line context={id: 1} meta={n: 2} error=\"why\"",
+    "a path and what was added": "09:08:07.065 INFO  a line ctx=turn meta={n: 2}"
+   }
+  },
+  "an error is written after the line as error=, by its name and message, and the lines of its trace follow, each trimmed and two spaces in": {
+   "returned": {
+    "a traced error": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=TypeError: wrong type\n  at first (file:///a.js:1:2)\n  at second (file:///b.js:3:4)"
+     }
+    ],
+    "a trace with blank lines and odd spacing": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: odd\n  at tabbed\n  no indent at all\n  at deep"
+     }
+    ],
+    "a trace of one line": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: short"
+     }
+    ],
+    "an empty trace": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: empty trace"
+     }
+    ],
+    "a trace that is not a text": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: no trace"
+     }
+    ],
+    "a trace whose first line is not the error": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: first line dropped\n  at kept"
+     }
+    ],
+    "with a context path and what was added": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong ctx=turn meta={n: 1} error=TypeError: wrong type\n  at first (file:///a.js:1:2)\n  at second (file:///b.js:3:4)"
+     }
+    ],
+    "on an info line": [
+     {
+      "log": "09:08:07.065 INFO  it went wrong error=TypeError: wrong type\n  at first (file:///a.js:1:2)\n  at second (file:///b.js:3:4)"
+     }
+    ],
+    "an error with no message": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error\n  at somewhere"
+     }
+    ],
+    "an error whose name is not a text": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: m"
+     }
+    ],
+    "an error with a cause": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: outer cause=RangeError: inner\n  at outerPlace"
+     }
+    ],
+    "causes three deep, the last a text": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: one cause=Error: two cause=Error: three cause=\"the root of it\""
+     }
+    ],
+    "a cause that is the error itself": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: around cause=[Circular]"
+     }
+    ],
+    "a cause that is an object": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: with details cause={code: \"E_FAIL\", retry: false}"
+     }
+    ],
+    "a cause of null": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: null cause cause=null"
+     }
+    ],
+    "a cause of undefined": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: undefined cause"
+     }
+    ],
+    "an object with a message": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error: only a message"
+     }
+    ],
+    "an object with a name": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=OnlyAName"
+     }
+    ],
+    "an object with a trace": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error\n  at kept"
+     }
+    ],
+    "an object with a cause": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Error cause=\"why\""
+     }
+    ],
+    "an object with a message that is not a text": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=Named"
+     }
+    ],
+    "an object with other fields": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error={code: \"E_FAIL\", n: 1}"
+     }
+    ],
+    "an empty object": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error={}"
+     }
+    ],
+    "a text": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=\"it failed\""
+     }
+    ],
+    "a number": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=404"
+     }
+    ],
+    "null": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=null"
+     }
+    ],
+    "false": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=false"
+     }
+    ],
+    "a list": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=[\"a\", Error: in a list]"
+     }
+    ],
+    "an abort as the runtime makes it": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong error=AbortError: This operation was aborted\n  at abort"
+     }
+    ],
+    "undefined": [
+     {
+      "error": "09:08:07.065 ERROR it went wrong"
+     }
+    ]
+   }
+  },
+  "values added to a line are written short: texts in quotes and cut at 200, numbers, dates, patterns, functions and symbols as they print": {
+   "returned": {
+    "a text": "{v: \"hello\"}",
+    "an empty text": "{v: \"\"}",
+    "a text with quotes and a new line": "{v: \"say \\\"hi\\\"\\nnext \\\\ tab\\t\"}",
+    "a text of 199": "{v: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+    "a text of 200": "{v: \"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}",
+    "a text of 201": "{v: \"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc...\"}",
+    "a text of 500": "{v: \"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd...\"}",
+    "a text cut inside a character of two halves": "{v: \"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\\ud83d...\"}",
+    "zero": "{v: 0}",
+    "minus zero": "{v: 0}",
+    "a fraction": "{v: 0.1}",
+    "a large number": "{v: 1e+21}",
+    "not a number": "{v: NaN}",
+    "infinity": "{v: -Infinity}",
+    "true": "{v: true}",
+    "false": "{v: false}",
+    "a big number": "{v: 12345678901234567890n}",
+    "a symbol": "{v: Symbol(why)}",
+    "a symbol with no description": "{v: Symbol()}",
+    "null": "{v: null}",
+    "undefined": "{v: undefined}",
+    "a named function": "{v: [Function namedFunction]}",
+    "an arrow function": "{v: [Function an arrow function]}",
+    "a class": "{v: [Function Shape]}",
+    "a date": "{v: 2026-11-13T09:08:07.065Z}",
+    "no date at all": "{v: Invalid Date}",
+    "a pattern": "{v: /a+b/gi}",
+    "a boxed number": "{v: {}}",
+    "a boxed text": "{v: {0: \"a\", 1: \"b\"}}",
+    "a summary": "{v: <3 files>}",
+    "a summary with other fields": "{v: <>}",
+    "a summary whose words are not a text": "{v: {kind: \"summary\", summary: 3}}",
+    "a summary of another kind": "{v: {kind: \"other\", summary: \"3 files\"}}",
+    "an error": "{v: RangeError: out of range}",
+    "an error with a cause": "{v: Error: outer cause=Error: inner}",
+    "a promise": "{v: {}}",
+    "a weak map": "{v: {}}",
+    "an address": "{v: {}}"
+   }
+  },
+  "lists are written in brackets, 40 items at most with the rest counted, and a gap in a list is left blank": {
+   "returned": {
+    "an empty list": "{v: []}",
+    "a list": "{v: [1, \"two\", null, undefined, true]}",
+    "lists in a list": "{v: [[1, [2, [3]]], []]}",
+    "a list of 39": "{v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]}",
+    "a list of 40": "{v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]}",
+    "a list of 41": "{v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, ... 1 more]}",
+    "a list of 100": "{v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, ... 60 more]}",
+    "a list with gaps": "{v: [1, , 3, , ]}",
+    "a list of nothing but gaps": "{v: [, , ]}",
+    "a list with a field": "{v: [\"a\"]}",
+    "a set": "{v: [1, \"two\", [3]]}",
+    "an empty set": "{v: []}",
+    "a set of 41": "{v: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, ... 1 more]}",
+    "objects in a list": "{v: [{a: 1}, {b: [2]}]}",
+    "an error in a list": "{v: [Error: in a list]}"
+   }
+  },
+  "objects are written field by field, 50 fields at most with the rest counted; a field named name, message, stack or cause makes the object an error": {
+   "returned": {
+    "an empty object": "{v: {}}",
+    "an object": "{v: {a: 1, b: \"two\", c: null, d: undefined}}",
+    "objects in an object": "{v: {a: {b: {c: {}}}}}",
+    "numbered fields come first": "{v: {1: \"one\", 2: \"two\", b: 1, a: 3}}",
+    "an object of 49 fields": "{v: {f0: 0, f1: 1, f2: 2, f3: 3, f4: 4, f5: 5, f6: 6, f7: 7, f8: 8, f9: 9, f10: 10, f11: 11, f12: 12, f13: 13, f14: 14, f15: 15, f16: 16, f17: 17, f18: 18, f19: 19, f20: 20, f21: 21, f22: 22, f23: 23, f24: 24, f25: 25, f26: 26, f27: 27, f28: 28, f29: 29, f30: 30, f31: 31, f32: 32, f33: 33, f34: 34, f35: 35, f36: 36, f37: 37, f38: 38, f39: 39, f40: 40, f41: 41, f42: 42, f43: 43, f44: 44, f45: 45, f46: 46, f47: 47, f48: 48}}",
+    "an object of 50 fields": "{v: {f0: 0, f1: 1, f2: 2, f3: 3, f4: 4, f5: 5, f6: 6, f7: 7, f8: 8, f9: 9, f10: 10, f11: 11, f12: 12, f13: 13, f14: 14, f15: 15, f16: 16, f17: 17, f18: 18, f19: 19, f20: 20, f21: 21, f22: 22, f23: 23, f24: 24, f25: 25, f26: 26, f27: 27, f28: 28, f29: 29, f30: 30, f31: 31, f32: 32, f33: 33, f34: 34, f35: 35, f36: 36, f37: 37, f38: 38, f39: 39, f40: 40, f41: 41, f42: 42, f43: 43, f44: 44, f45: 45, f46: 46, f47: 47, f48: 48, f49: 49}}",
+    "an object of 51 fields": "{v: {f0: 0, f1: 1, f2: 2, f3: 3, f4: 4, f5: 5, f6: 6, f7: 7, f8: 8, f9: 9, f10: 10, f11: 11, f12: 12, f13: 13, f14: 14, f15: 15, f16: 16, f17: 17, f18: 18, f19: 19, f20: 20, f21: 21, f22: 22, f23: 23, f24: 24, f25: 25, f26: 26, f27: 27, f28: 28, f29: 29, f30: 30, f31: 31, f32: 32, f33: 33, f34: 34, f35: 35, f36: 36, f37: 37, f38: 38, f39: 39, f40: 40, f41: 41, f42: 42, f43: 43, f44: 44, f45: 45, f46: 46, f47: 47, f48: 48, f49: 49, ... 1 more}}",
+    "an object made by a class": "{v: {x: 1, y: 2}}",
+    "an object with no prototype": "{v: {a: 1}}",
+    "hidden and symbol fields are left out": "{v: {shown: 1}}",
+    "a field that is computed": "{v: {computed: \"computed when written\"}}",
+    "fields from above are left out": "{v: {own: 2}}",
+    "an object with a name": "{v: Shell}",
+    "an object with a name that is not a text": "{v: Error}",
+    "an object with a message": "{v: Error: hello}",
+    "an object with an empty message": "{v: Error}",
+    "an object with a name and a message": "{v: Tool: ran}",
+    "an object with a stack": "{v: Error}",
+    "an object with a cause": "{v: Error cause={deeper: true}}",
+    "an object with a cause of undefined": "{v: Error}",
+    "an object that inherits a name": "{v: FromAbove}",
+    "a field that throws when read": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     },
+     "wrote": 0
+    }
+   }
+  },
+  "maps are written as Map{key => value}, 50 pairs at most with the rest counted; a key that cannot be written as a text stops the line": {
+   "returned": {
+    "an empty map": "{v: Map{}}",
+    "a map": "{v: Map{\"a\" => 1, 2 => \"two\", null => undefined}}",
+    "keys that are objects, lists, symbols and dates": "{v: Map{{id: 1} => \"object\", [1, 2] => \"list\", Symbol(s) => \"symbol\", 2026-11-13T09:08:07.065Z => \"date\"}}",
+    "a map in a map": "{v: Map{\"outer\" => Map{\"inner\" => Map{}}}}",
+    "a map of 49": "{v: Map{\"k0\" => 0, \"k1\" => 1, \"k2\" => 2, \"k3\" => 3, \"k4\" => 4, \"k5\" => 5, \"k6\" => 6, \"k7\" => 7, \"k8\" => 8, \"k9\" => 9, \"k10\" => 10, \"k11\" => 11, \"k12\" => 12, \"k13\" => 13, \"k14\" => 14, \"k15\" => 15, \"k16\" => 16, \"k17\" => 17, \"k18\" => 18, \"k19\" => 19, \"k20\" => 20, \"k21\" => 21, \"k22\" => 22, \"k23\" => 23, \"k24\" => 24, \"k25\" => 25, \"k26\" => 26, \"k27\" => 27, \"k28\" => 28, \"k29\" => 29, \"k30\" => 30, \"k31\" => 31, \"k32\" => 32, \"k33\" => 33, \"k34\" => 34, \"k35\" => 35, \"k36\" => 36, \"k37\" => 37, \"k38\" => 38, \"k39\" => 39, \"k40\" => 40, \"k41\" => 41, \"k42\" => 42, \"k43\" => 43, \"k44\" => 44, \"k45\" => 45, \"k46\" => 46, \"k47\" => 47, \"k48\" => 48}}",
+    "a map of 50": "{v: Map{\"k0\" => 0, \"k1\" => 1, \"k2\" => 2, \"k3\" => 3, \"k4\" => 4, \"k5\" => 5, \"k6\" => 6, \"k7\" => 7, \"k8\" => 8, \"k9\" => 9, \"k10\" => 10, \"k11\" => 11, \"k12\" => 12, \"k13\" => 13, \"k14\" => 14, \"k15\" => 15, \"k16\" => 16, \"k17\" => 17, \"k18\" => 18, \"k19\" => 19, \"k20\" => 20, \"k21\" => 21, \"k22\" => 22, \"k23\" => 23, \"k24\" => 24, \"k25\" => 25, \"k26\" => 26, \"k27\" => 27, \"k28\" => 28, \"k29\" => 29, \"k30\" => 30, \"k31\" => 31, \"k32\" => 32, \"k33\" => 33, \"k34\" => 34, \"k35\" => 35, \"k36\" => 36, \"k37\" => 37, \"k38\" => 38, \"k39\" => 39, \"k40\" => 40, \"k41\" => 41, \"k42\" => 42, \"k43\" => 43, \"k44\" => 44, \"k45\" => 45, \"k46\" => 46, \"k47\" => 47, \"k48\" => 48, \"k49\" => 49}}",
+    "a map of 51": "{v: Map{\"k0\" => 0, \"k1\" => 1, \"k2\" => 2, \"k3\" => 3, \"k4\" => 4, \"k5\" => 5, \"k6\" => 6, \"k7\" => 7, \"k8\" => 8, \"k9\" => 9, \"k10\" => 10, \"k11\" => 11, \"k12\" => 12, \"k13\" => 13, \"k14\" => 14, \"k15\" => 15, \"k16\" => 16, \"k17\" => 17, \"k18\" => 18, \"k19\" => 19, \"k20\" => 20, \"k21\" => 21, \"k22\" => 22, \"k23\" => 23, \"k24\" => 24, \"k25\" => 25, \"k26\" => 26, \"k27\" => 27, \"k28\" => 28, \"k29\" => 29, \"k30\" => 30, \"k31\" => 31, \"k32\" => 32, \"k33\" => 33, \"k34\" => 34, \"k35\" => 35, \"k36\" => 36, \"k37\" => 37, \"k38\" => 38, \"k39\" => 39, \"k40\" => 40, \"k41\" => 41, \"k42\" => 42, \"k43\" => 43, \"k44\" => 44, \"k45\" => 45, \"k46\" => 46, \"k47\" => 47, \"k48\" => 48, \"k49\" => 49, ... 1 more}}",
+    "a key that tells its own text": "{v: Map{{toString: [Function toString]} => 1}}",
+    "a key with no prototype": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert object to primitive value"
+     },
+     "wrote": 0
+    },
+    "a key that throws when written": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a key"
+     },
+     "wrote": 0
+    },
+    "a map with a field": "{v: Map{\"k\" => 1}}",
+    "the key was asked for its text": [
+     "toString"
+    ]
+   }
+  },
+  "bytes are written as their kind and how many: ArrayBuffer(n), Uint8Array(n), Buffer(n); where the kind cannot be read, TypedArray": {
+   "returned": {
+    "an array buffer": "{v: ArrayBuffer(8)}",
+    "an empty array buffer": "{v: ArrayBuffer(0)}",
+    "bytes": "{v: Uint8Array(3)}",
+    "no bytes": "{v: Uint8Array(0)}",
+    "numbers of eight bytes each": "{v: Float64Array(16)}",
+    "a part of a buffer": "{v: Uint16Array(6)}",
+    "a data view": "{v: DataView(6)}",
+    "a node buffer": "{v: Buffer(3)}",
+    "a shared buffer": "{v: {}}",
+    "bytes whose kind is hidden": "{v: TypedArray(2)}",
+    "bytes whose kind has no name": "{v: TypedArray(3)}",
+    "bytes whose kind has an empty name": "{v: (4)}",
+    "bytes with a name field": "{v: treated as an error}"
+   }
+  },
+  "where the machine has no ArrayBuffer, or one that cannot tell a view, bytes are written like any object": {
+   "returned": {
+    "no ArrayBuffer": {
+     "an array buffer": "{v: {}}",
+     "bytes": "{v: {0: 1, 1: 2}}",
+     "an object": "{v: {a: 1}}",
+     "an object with no prototype": "{v: {a: 1}}",
+     "a map": "{v: Map{\"k\" => 1}}"
+    },
+    "an ArrayBuffer that cannot tell a view": {
+     "an array buffer": "{v: {}}",
+     "bytes": "{v: {0: 1, 1: 2}}",
+     "an object": "{v: {a: 1}}",
+     "an object with no prototype": "{v: {a: 1}}",
+     "a map": "{v: Map{\"k\" => 1}}"
+    },
+    "an ArrayBuffer that calls everything a view": {
+     "an object": "09:08:07.065 INFO  a line meta=Object(undefined)",
+     "an object that says how many bytes it has": "09:08:07.065 INFO  a line meta=Object(12)",
+     "an object with no prototype": "09:08:07.065 INFO  a line meta=TypedArray(undefined)",
+     "an object whose kind has no name": "09:08:07.065 INFO  a line meta=TypedArray(3)",
+     "an object made by a class": "09:08:07.065 INFO  a line meta=Shape(undefined)",
+     "a list": "09:08:07.065 INFO  a line meta=[1]",
+     "an object inside what was added": "Object(undefined)"
+    },
+    "the machine's own, after": {
+     "an array buffer": "{v: ArrayBuffer(8)}",
+     "bytes": "{v: Uint8Array(2)}",
+     "an object": "{v: {a: 1}}",
+     "an object with no prototype": "{v: {a: 1}}",
+     "a map": "{v: Map{\"k\" => 1}}"
+    }
+   }
+  },
+  "six levels deep, lists, maps and objects are written by their kind only; texts and numbers are written at any depth, and so are errors": {
+   "returned": {
+    "an object four levels in": "{v: {in: {in: {in: {in: {leaf: 1}}}}}}",
+    "an object five levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "an object six levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "an empty object five levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "a text five levels in": "{v: {in: {in: {in: {in: {in: \"deep\"}}}}}}",
+    "a text six levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "an object made by a class, five levels in": "{v: {in: {in: {in: {in: {in: [Shape]}}}}}}",
+    "an object made by a class with no name, five levels in": "{v: {in: {in: {in: {in: {in: []}}}}}}",
+    "an object with no prototype, five levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "an object whose constructor has no name, five levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "a list four levels in": "{v: [[[[[1, 2, 3]]]]]}",
+    "a list five levels in": "{v: [[[[[[Array(3)]]]]]]}",
+    "an empty list five levels in": "{v: {in: {in: {in: {in: {in: [Array(0)]}}}}}}",
+    "a map four levels in": "{v: Map{\"k\" => Map{\"k\" => Map{\"k\" => Map{\"k\" => Map{\"a\" => 1}}}}}}",
+    "a map five levels in": "{v: Map{\"k\" => Map{\"k\" => Map{\"k\" => Map{\"k\" => Map{\"k\" => Map(2)}}}}}}",
+    "a set five levels in": "{v: {in: {in: {in: {in: {in: [Array(2)]}}}}}}",
+    "bytes five levels in": "{v: {in: {in: {in: {in: {in: Uint8Array(2)}}}}}}",
+    "a date five levels in": "{v: {in: {in: {in: {in: {in: 2026-11-13T09:08:07.065Z}}}}}}",
+    "an error five levels in": "{v: {in: {in: {in: {in: {in: Error: deep error cause=[Object]}}}}}}",
+    "causes eight deep": "{v: Error: e cause=Error: e cause=Error: e cause=Error: e cause=Error: e cause=Error: e cause=Error: e cause=Error: e cause=\"the root\"}",
+    "an object under four causes": "{v: Error: e cause=Error: e cause=Error: e cause=Error: e cause={a: 1}}",
+    "an object under five causes": "{v: Error: e cause=Error: e cause=Error: e cause=Error: e cause=Error: e cause=[Object]}",
+    "a summary five levels in": "{v: {in: {in: {in: {in: {in: <kept short>}}}}}}",
+    "a map's key five levels in": "{v: [[[[Map{[Object] => [Array(1)]}]]]]}"
+   }
+  },
+  "a thing that holds itself is written as [Circular] where it comes round; the same thing held twice side by side is written twice": {
+   "returned": {
+    "an object in itself": "{v: {id: 1, self: [Circular]}}",
+    "a list in itself": "{v: [1, [Circular]]}",
+    "a map in itself, as a value and as a key": "{v: Map{\"self\" => [Circular], [Circular] => \"as a key\"}}",
+    "a set in itself": "{v: [[[[[[Array(1)]]]]]]}",
+    "an error whose cause leads back to it": "{v: Error: round cause={back: [Circular]}}",
+    "two objects in each other": "{v: {b: {a: [Circular]}}}",
+    "the same object twice": "{v: {first: {shared: true}, second: {shared: true}, list: [{shared: true}, {shared: true}]}}",
+    "an object in itself, four levels in": "{v: {in: {in: {in: {in: {id: 1, self: [Object]}}}}}}",
+    "an object in itself, five levels in": "{v: {in: {in: {in: {in: {in: [Object]}}}}}}",
+    "the same object as context, as what was added and as the error, then on a second line": [
+     {
+      "log": "09:08:07.065 INFO  a line context={id: 1, self: [Circular]} meta={id: 1, self: [Circular]} error={id: 1, self: [Circular]}"
+     },
+     {
+      "log": "09:08:07.065 INFO  a line meta={again: {id: 1, self: [Circular]}}"
+     }
+    ]
+   }
+  },
+  "a context put among what is added is written as an error would be, by its name alone, or as Error when it has none": {
+   "returned": {
+    "a new context": "{v: Error}",
+    "a named context": "{v: turn}",
+    "a context made from a named one": "{v: Error}",
+    "a context with an empty name": "{v: }",
+    "a context whose name is a number": "{v: Error}",
+    "a canceled context": "{v: Error}",
+    "a named context five levels in": "{v: {in: {in: {in: {in: {in: deep}}}}}}",
+    "a context as the error of a line": [
+     {
+      "error": "09:08:07.065 ERROR a line error=as the error"
+     }
+    ],
+    "a context as what was added": [
+     {
+      "log": "09:08:07.065 INFO  a line meta=as what was added"
+     }
+    ],
+    "the terminal backend, as a value": "{v: {log: [Function log]}}",
+    "a key": "{v: {symbol: Symbol(colour), defaultValue: \"none\"}}"
+   }
+  },
+  "in colour: each part of a line and each kind of value has its own colour, and every coloured piece ends with a reset": {
+   "returned": {
+    "debug": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[35mDEBUG\u001b[0m a debug line \u001b[2mctx=turn/tool\u001b[0m"
+     }
+    ],
+    "info": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m an info line \u001b[2mctx=turn/tool\u001b[0m \u001b[2mmeta=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mn\u001b[0m: \u001b[33m1\u001b[0m\u001b[2m}\u001b[0m"
+     }
+    ],
+    "warn": [
+     {
+      "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m a warning \u001b[2mcontext=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mrequestId\u001b[0m: \u001b[32m\"r-1\"\u001b[0m\u001b[2m}\u001b[0m"
+     }
+    ],
+    "error": [
+     {
+      "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1man error\u001b[0m \u001b[2mctx=turn/tool\u001b[0m \u001b[2mmeta=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mn\u001b[0m: \u001b[33m1\u001b[0m\u001b[2m}\u001b[0m \u001b[2merror=\u001b[0m\u001b[31mTypeError: wrong type\u001b[0m \u001b[2mcause=\u001b[0m\u001b[31mError: inner\u001b[0m\n  \u001b[2mat first (file:///a.js:1:2)\u001b[0m\n  \u001b[2mat second\u001b[0m"
+     }
+    ],
+    "an error that is a text": [
+     {
+      "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1man error\u001b[0m \u001b[2merror=\u001b[0m\u001b[32m\"it failed\"\u001b[0m"
+     }
+    ],
+    "every kind of value": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a line \u001b[2mmeta=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mtext\u001b[0m: \u001b[32m\"hello\"\u001b[0m\u001b[2m, \u001b[0m\u001b[36mnumber\u001b[0m: \u001b[33m1.5\u001b[0m\u001b[2m, \u001b[0m\u001b[36mbig\u001b[0m: \u001b[33m10n\u001b[0m\u001b[2m, \u001b[0m\u001b[36myes\u001b[0m: \u001b[35mtrue\u001b[0m\u001b[2m, \u001b[0m\u001b[36mnothing\u001b[0m: \u001b[90mnull\u001b[0m\u001b[2m, \u001b[0m\u001b[36mmissing\u001b[0m: \u001b[90mundefined\u001b[0m\u001b[2m, \u001b[0m\u001b[36msymbol\u001b[0m: \u001b[36mSymbol(s)\u001b[0m\u001b[2m, \u001b[0m\u001b[36mfn\u001b[0m: \u001b[2m[Function namedFunction]\u001b[0m\u001b[2m, \u001b[0m\u001b[36mdate\u001b[0m: \u001b[32m2026-11-13T09:08:07.065Z\u001b[0m\u001b[2m, \u001b[0m\u001b[36mnoDate\u001b[0m: \u001b[32mInvalid Date\u001b[0m\u001b[2m, \u001b[0m\u001b[36mpattern\u001b[0m: \u001b[36m/x/g\u001b[0m\u001b[2m, \u001b[0m\u001b[36msummary\u001b[0m: \u001b[2m<3 files>\u001b[0m\u001b[2m, \u001b[0m\u001b[36merror\u001b[0m: \u001b[31mRangeError: out of range\u001b[0m \u001b[2mcause=\u001b[0m\u001b[32m\"why\"\u001b[0m\u001b[2m, \u001b[0m\u001b[36mlist\u001b[0m: \u001b[2m[\u001b[0m\u001b[33m1\u001b[0m\u001b[2m, \u001b[0m\u001b[32m\"two\"\u001b[0m\u001b[2m]\u001b[0m\u001b[2m, \u001b[0m\u001b[36memptyList\u001b[0m: \u001b[2m[]\u001b[0m\u001b[2m, \u001b[0m\u001b[36mlongList\u001b[0m: \u001b[2m[\u001b[0m\u001b[33m0\u001b[0m\u001b[2m, \u001b[0m\u001b[33m1\u001b[0m\u001b[2m, \u001b[0m\u001b[33m2\u001b[0m\u001b[2m, \u001b[0m\u001b[33m3\u001b[0m\u001b[2m, \u001b[0m\u001b[33m4\u001b[0m\u001b[2m, \u001b[0m\u001b[33m5\u001b[0m\u001b[2m, \u001b[0m\u001b[33m6\u001b[0m\u001b[2m, \u001b[0m\u001b[33m7\u001b[0m\u001b[2m, \u001b[0m\u001b[33m8\u001b[0m\u001b[2m, \u001b[0m\u001b[33m9\u001b[0m\u001b[2m, \u001b[0m\u001b[33m10\u001b[0m\u001b[2m, \u001b[0m\u001b[33m11\u001b[0m\u001b[2m, \u001b[0m\u001b[33m12\u001b[0m\u001b[2m, \u001b[0m\u001b[33m13\u001b[0m\u001b[2m, \u001b[0m\u001b[33m14\u001b[0m\u001b[2m, \u001b[0m\u001b[33m15\u001b[0m\u001b[2m, \u001b[0m\u001b[33m16\u001b[0m\u001b[2m, \u001b[0m\u001b[33m17\u001b[0m\u001b[2m, \u001b[0m\u001b[33m18\u001b[0m\u001b[2m, \u001b[0m\u001b[33m19\u001b[0m\u001b[2m, \u001b[0m\u001b[33m20\u001b[0m\u001b[2m, \u001b[0m\u001b[33m21\u001b[0m\u001b[2m, \u001b[0m\u001b[33m22\u001b[0m\u001b[2m, \u001b[0m\u001b[33m23\u001b[0m\u001b[2m, \u001b[0m\u001b[33m24\u001b[0m\u001b[2m, \u001b[0m\u001b[33m25\u001b[0m\u001b[2m, \u001b[0m\u001b[33m26\u001b[0m\u001b[2m, \u001b[0m\u001b[33m27\u001b[0m\u001b[2m, \u001b[0m\u001b[33m28\u001b[0m\u001b[2m, \u001b[0m\u001b[33m29\u001b[0m\u001b[2m, \u001b[0m\u001b[33m30\u001b[0m\u001b[2m, \u001b[0m\u001b[33m31\u001b[0m\u001b[2m, \u001b[0m\u001b[33m32\u001b[0m\u001b[2m, \u001b[0m\u001b[33m33\u001b[0m\u001b[2m, \u001b[0m\u001b[33m34\u001b[0m\u001b[2m, \u001b[0m\u001b[33m35\u001b[0m\u001b[2m, \u001b[0m\u001b[33m36\u001b[0m\u001b[2m, \u001b[0m\u001b[33m37\u001b[0m\u001b[2m, \u001b[0m\u001b[33m38\u001b[0m\u001b[2m, \u001b[0m\u001b[33m39\u001b[0m\u001b[2m, \u001b[0m\u001b[2m... 2 more\u001b[0m\u001b[2m]\u001b[0m\u001b[2m, \u001b[0m\u001b[36mbuffer\u001b[0m: \u001b[2mArrayBuffer(4)\u001b[0m\u001b[2m, \u001b[0m\u001b[36mbytes\u001b[0m: \u001b[2mUint8Array(3)\u001b[0m\u001b[2m, \u001b[0m\u001b[36mmap\u001b[0m: \u001b[2mMap{\u001b[0m\u001b[32m\"k\"\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m1\u001b[0m\u001b[2m}\u001b[0m\u001b[2m, \u001b[0m\u001b[36memptyMap\u001b[0m: \u001b[2mMap{\u001b[0m\u001b[2m}\u001b[0m\u001b[2m, \u001b[0m\u001b[36mset\u001b[0m: \u001b[2m[\u001b[0m\u001b[32m\"s\"\u001b[0m\u001b[2m]\u001b[0m\u001b[2m, \u001b[0m\u001b[36mobject\u001b[0m: \u001b[2m{\u001b[0m\u001b[36minner\u001b[0m: \u001b[2m{}\u001b[0m\u001b[2m}\u001b[0m\u001b[2m, \u001b[0m\u001b[36mround\u001b[0m: \u001b[2m{\u001b[0m\u001b[36mid\u001b[0m: \u001b[33m1\u001b[0m\u001b[2m, \u001b[0m\u001b[36mself\u001b[0m: \u001b[2m[Circular]\u001b[0m\u001b[2m}\u001b[0m\u001b[2m, \u001b[0m\u001b[36mdeep\u001b[0m: \u001b[2m{\u001b[0m\u001b[36min\u001b[0m: \u001b[2m{\u001b[0m\u001b[36min\u001b[0m: \u001b[2m{\u001b[0m\u001b[36min\u001b[0m: \u001b[2m{\u001b[0m\u001b[36min\u001b[0m: \u001b[2m{\u001b[0m\u001b[36min\u001b[0m: \u001b[2m[Object]\u001b[0m\u001b[2m}\u001b[0m\u001b[2m}\u001b[0m\u001b[2m}\u001b[0m\u001b[2m}\u001b[0m\u001b[2m}\u001b[0m\u001b[2m, \u001b[0m\u001b[36mdeepList\u001b[0m: \u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[Array(1)]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m, \u001b[0m\u001b[36mdeepMap\u001b[0m: \u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2m[\u001b[0m\u001b[2mMap(1)\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m]\u001b[0m\u001b[2m}\u001b[0m"
+     }
+    ],
+    "an object of 51 fields": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a line \u001b[2mmeta=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mf0\u001b[0m: \u001b[33m0\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf1\u001b[0m: \u001b[33m1\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf2\u001b[0m: \u001b[33m2\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf3\u001b[0m: \u001b[33m3\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf4\u001b[0m: \u001b[33m4\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf5\u001b[0m: \u001b[33m5\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf6\u001b[0m: \u001b[33m6\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf7\u001b[0m: \u001b[33m7\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf8\u001b[0m: \u001b[33m8\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf9\u001b[0m: \u001b[33m9\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf10\u001b[0m: \u001b[33m10\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf11\u001b[0m: \u001b[33m11\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf12\u001b[0m: \u001b[33m12\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf13\u001b[0m: \u001b[33m13\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf14\u001b[0m: \u001b[33m14\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf15\u001b[0m: \u001b[33m15\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf16\u001b[0m: \u001b[33m16\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf17\u001b[0m: \u001b[33m17\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf18\u001b[0m: \u001b[33m18\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf19\u001b[0m: \u001b[33m19\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf20\u001b[0m: \u001b[33m20\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf21\u001b[0m: \u001b[33m21\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf22\u001b[0m: \u001b[33m22\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf23\u001b[0m: \u001b[33m23\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf24\u001b[0m: \u001b[33m24\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf25\u001b[0m: \u001b[33m25\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf26\u001b[0m: \u001b[33m26\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf27\u001b[0m: \u001b[33m27\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf28\u001b[0m: \u001b[33m28\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf29\u001b[0m: \u001b[33m29\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf30\u001b[0m: \u001b[33m30\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf31\u001b[0m: \u001b[33m31\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf32\u001b[0m: \u001b[33m32\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf33\u001b[0m: \u001b[33m33\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf34\u001b[0m: \u001b[33m34\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf35\u001b[0m: \u001b[33m35\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf36\u001b[0m: \u001b[33m36\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf37\u001b[0m: \u001b[33m37\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf38\u001b[0m: \u001b[33m38\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf39\u001b[0m: \u001b[33m39\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf40\u001b[0m: \u001b[33m40\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf41\u001b[0m: \u001b[33m41\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf42\u001b[0m: \u001b[33m42\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf43\u001b[0m: \u001b[33m43\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf44\u001b[0m: \u001b[33m44\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf45\u001b[0m: \u001b[33m45\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf46\u001b[0m: \u001b[33m46\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf47\u001b[0m: \u001b[33m47\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf48\u001b[0m: \u001b[33m48\u001b[0m\u001b[2m, \u001b[0m\u001b[36mf49\u001b[0m: \u001b[33m49\u001b[0m\u001b[2m, \u001b[0m\u001b[2m... 1 more\u001b[0m\u001b[2m}\u001b[0m"
+     }
+    ],
+    "a map of 51": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a line \u001b[2mmeta=\u001b[0m\u001b[2m{\u001b[0m\u001b[36mm\u001b[0m: \u001b[2mMap{\u001b[0m\u001b[33m0\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m0\u001b[0m\u001b[2m, \u001b[0m\u001b[33m1\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m1\u001b[0m\u001b[2m, \u001b[0m\u001b[33m2\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m2\u001b[0m\u001b[2m, \u001b[0m\u001b[33m3\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m3\u001b[0m\u001b[2m, \u001b[0m\u001b[33m4\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m4\u001b[0m\u001b[2m, \u001b[0m\u001b[33m5\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m5\u001b[0m\u001b[2m, \u001b[0m\u001b[33m6\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m6\u001b[0m\u001b[2m, \u001b[0m\u001b[33m7\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m7\u001b[0m\u001b[2m, \u001b[0m\u001b[33m8\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m8\u001b[0m\u001b[2m, \u001b[0m\u001b[33m9\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m9\u001b[0m\u001b[2m, \u001b[0m\u001b[33m10\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m10\u001b[0m\u001b[2m, \u001b[0m\u001b[33m11\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m11\u001b[0m\u001b[2m, \u001b[0m\u001b[33m12\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m12\u001b[0m\u001b[2m, \u001b[0m\u001b[33m13\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m13\u001b[0m\u001b[2m, \u001b[0m\u001b[33m14\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m14\u001b[0m\u001b[2m, \u001b[0m\u001b[33m15\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m15\u001b[0m\u001b[2m, \u001b[0m\u001b[33m16\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m16\u001b[0m\u001b[2m, \u001b[0m\u001b[33m17\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m17\u001b[0m\u001b[2m, \u001b[0m\u001b[33m18\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m18\u001b[0m\u001b[2m, \u001b[0m\u001b[33m19\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m19\u001b[0m\u001b[2m, \u001b[0m\u001b[33m20\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m20\u001b[0m\u001b[2m, \u001b[0m\u001b[33m21\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m21\u001b[0m\u001b[2m, \u001b[0m\u001b[33m22\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m22\u001b[0m\u001b[2m, \u001b[0m\u001b[33m23\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m23\u001b[0m\u001b[2m, \u001b[0m\u001b[33m24\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m24\u001b[0m\u001b[2m, \u001b[0m\u001b[33m25\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m25\u001b[0m\u001b[2m, \u001b[0m\u001b[33m26\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m26\u001b[0m\u001b[2m, \u001b[0m\u001b[33m27\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m27\u001b[0m\u001b[2m, \u001b[0m\u001b[33m28\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m28\u001b[0m\u001b[2m, \u001b[0m\u001b[33m29\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m29\u001b[0m\u001b[2m, \u001b[0m\u001b[33m30\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m30\u001b[0m\u001b[2m, \u001b[0m\u001b[33m31\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m31\u001b[0m\u001b[2m, \u001b[0m\u001b[33m32\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m32\u001b[0m\u001b[2m, \u001b[0m\u001b[33m33\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m33\u001b[0m\u001b[2m, \u001b[0m\u001b[33m34\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m34\u001b[0m\u001b[2m, \u001b[0m\u001b[33m35\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m35\u001b[0m\u001b[2m, \u001b[0m\u001b[33m36\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m36\u001b[0m\u001b[2m, \u001b[0m\u001b[33m37\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m37\u001b[0m\u001b[2m, \u001b[0m\u001b[33m38\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m38\u001b[0m\u001b[2m, \u001b[0m\u001b[33m39\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m39\u001b[0m\u001b[2m, \u001b[0m\u001b[33m40\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m40\u001b[0m\u001b[2m, \u001b[0m\u001b[33m41\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m41\u001b[0m\u001b[2m, \u001b[0m\u001b[33m42\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m42\u001b[0m\u001b[2m, \u001b[0m\u001b[33m43\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m43\u001b[0m\u001b[2m, \u001b[0m\u001b[33m44\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m44\u001b[0m\u001b[2m, \u001b[0m\u001b[33m45\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m45\u001b[0m\u001b[2m, \u001b[0m\u001b[33m46\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m46\u001b[0m\u001b[2m, \u001b[0m\u001b[33m47\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m47\u001b[0m\u001b[2m, \u001b[0m\u001b[33m48\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m48\u001b[0m\u001b[2m, \u001b[0m\u001b[33m49\u001b[0m \u001b[2m=>\u001b[0m \u001b[33m49\u001b[0m\u001b[2m, \u001b[0m\u001b[2m... 1 more\u001b[0m\u001b[2m}\u001b[0m\u001b[2m}\u001b[0m"
+     }
+    ]
+   }
+  },
+  "colour is decided once, when the file is loaded, from the environment then: NO_COLOR and a dumb terminal say no, FORCE_COLOR says yes or no, and otherwise a terminal says yes": {
+   "returned": {
+    "coloured": {
+     "no process at all": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "a process with nothing in it": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "no environment, a terminal": "in colour",
+     "an environment of null, a terminal": "in colour",
+     "an empty environment, no output": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "an empty environment, an output that says nothing": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "an empty environment, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "an empty environment, a terminal": "in colour",
+     "a terminal that says yes in its own way": "in colour",
+     "NO_COLOR=1, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "NO_COLOR empty, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "NO_COLOR there with no value, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "NO_COLOR from above, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "NO_COLOR and FORCE_COLOR=1": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "no_color in small letters, a terminal": "in colour",
+     "TERM=dumb, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "TERM=dumb and FORCE_COLOR=1": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "TERM=DUMB, a terminal": "in colour",
+     "TERM=xterm, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR=1, not a terminal": "in colour",
+     "FORCE_COLOR=true, not a terminal": "in colour",
+     "FORCE_COLOR=1, no output": "in colour",
+     "FORCE_COLOR=0, a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR=0, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR=2, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR=2, a terminal": "in colour",
+     "FORCE_COLOR empty, a terminal": "in colour",
+     "FORCE_COLOR=false, a terminal": "in colour",
+     "FORCE_COLOR=TRUE, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR the number 1, not a terminal": "09:08:07.065 INFO  a line ctx=turn meta={n: 1}",
+     "FORCE_COLOR the number 0, a terminal": "in colour"
+    },
+    "decided in colour, then the environment says no": [
+     {
+      "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a line"
+     }
+    ],
+    "decided plain, then the environment says yes": [
+     {
+      "log": "09:08:07.065 INFO  a line"
+     }
+    ]
+   }
+  },
+  "the console written to is the one that was there when the file was loaded, and its log, warn and error are looked up at each line": {
+   "returned": {
+    "atLoad": [
+     "the console at load, log: 09:08:07.065 INFO  with the machine's console back",
+     "the console at load, log: 09:08:07.065 INFO  with another console in its place",
+     "the console at load, warn: 09:08:07.065 WARN  a warning",
+     "the console at load, error: 09:08:07.065 ERROR an error error=\"why\"",
+     "the console at load, a log put on it after: 09:08:07.065 INFO  after its log was replaced"
+    ],
+    "later": [],
+    "throughTheReal": [],
+    "withoutItsOwnWarn": [
+     {
+      "warn": "09:08:07.065 WARN  its warn is the machine's again"
+     }
+    ]
+   }
+  },
+  "the backend the test itself loaded writes through the machine's console, and a logger with no backend set reaches it": {
+   "returned": {
+    "lines": [
+     {
+      "log": "09:08:07.065 DEBUG a debug line ctx=turn/tool"
+     },
+     {
+      "log": "09:08:08.065 INFO  an info line ctx=turn/tool meta={n: 1}"
+     },
+     {
+      "warn": "09:08:09.065 WARN  a warning ctx=turn/tool meta={tool: \"Shell\", n: 2}"
+     },
+     {
+      "error": "09:08:10.065 ERROR an error ctx=turn/tool meta={n: 3} error=Error: it failed\n  at somewhere (file:///a.js:1:2)"
+     },
+     {
+      "log": "09:08:11.065 INFO  no names, nothing added"
+     }
+    ],
+    "direct": [
+     {
+      "log": "09:08:07.065 INFO  a line ctx=turn/tool meta={direct: true}"
+     }
+    ],
+    "nothingComesBack": true,
+    "clockRead": 5
+   }
+  },
+  "a tracer is asked of OpenTelemetry by name, 'context-tracer' unless another is given": {
+   "returned": {
+    "withTracing": {
+     "theStandInsTracer": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "asked": [
+      {
+       "getTracer": "context-tracer"
+      },
+      {
+       "getTracer": "mine"
+      },
+      {
+       "getTracer": "context-tracer"
+      },
+      {
+       "getTracer": ""
+      },
+      {
+       "getTracer": null
+      },
+      {
+       "getTracer": 7
+      }
+     ]
+    },
+    "withNoTracingSetUp": {
+     "startSpan": "function",
+     "recording": false,
+     "spanContext": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0
+     }
+    },
+    "takes": 0
+   }
+  },
+  "a span is started under the context's own name, or 'anonymous-context'; the first one is also kept as the root, with the time it started": {
+   "returned": {
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"anonymous-context\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "kind": 2,
+       "attributes": {
+        "rpc.method": "run"
+       }
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 2, \"turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 3, \"anonymous-context\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 4, \"anonymous-context\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "tool",
+      "given": 3,
+      "options": {
+       "kind": 2,
+       "attributes": {
+        "rpc.method": "run"
+       }
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 2, \"turn\""
+      },
+      "started": "span 5, \"tool\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "step",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 5, \"tool\""
+      },
+      "started": "span 6, \"step\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 2, \"turn\""
+      },
+      "started": "span 7, \"anonymous-context\""
+     }
+    ],
+    "theOptionsGiven": [
+     true,
+     true
+    ],
+    "spans": [
+     "span 1, \"anonymous-context\"",
+     "span 2, \"turn\"",
+     "span 3, \"anonymous-context\"",
+     "span 4, \"anonymous-context\"",
+     "span 5, \"tool\"",
+     "span 6, \"step\"",
+     "span 7, \"anonymous-context\""
+    ],
+    "contextsMadeOnTheWay": {
+     "unnamed": 3,
+     "named": 4,
+     "child": 2,
+     "grandchild": 2
+    },
+    "paths": [
+     [],
+     [
+      "turn"
+     ],
+     [
+      "turn",
+      "tool"
+     ],
+     [
+      "turn",
+      "tool",
+      "step"
+     ]
+    ],
+    "noNameOfItsOwn": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "noSpanBefore": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "clockRead": 7,
+    "takes": [
+     2,
+     1
+    ]
+   }
+  },
+  "attributes to hand down are set on the span of the context they are added to, and on every span started below it, in the order they were added": {
+   "returned": {
+    "key": {
+     "fields": [
+      "symbol",
+      "defaultValue"
+     ],
+     "symbol": {
+      "$": "symbol",
+      "v": "otel.inheritable_span_attributes"
+     },
+     "default": {}
+    },
+    "byDefault": {
+     "value": {},
+     "theSameObjectForAll": true,
+     "untouchedAfter": []
+    },
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"anonymous-context\""
+     },
+     {
+      "on": "span 1, \"anonymous-context\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "on": "span 1, \"anonymous-context\"",
+      "setAttribute": [
+       "dev",
+       true
+      ]
+     },
+     "— a span is there now —",
+     {
+      "on": "span 1, \"anonymous-context\"",
+      "setAttribute": [
+       "9",
+       "nine"
+      ]
+     },
+     {
+      "on": "span 1, \"anonymous-context\"",
+      "setAttribute": [
+       "team",
+       "red"
+      ]
+     },
+     {
+      "on": "span 1, \"anonymous-context\"",
+      "setAttribute": [
+       "1",
+       [
+        "one"
+       ]
+      ]
+     },
+     "— a span below —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "tool",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"anonymous-context\""
+      },
+      "started": "span 2, \"tool\""
+     },
+     {
+      "on": "span 2, \"tool\"",
+      "setAttribute": [
+       "1",
+       [
+        "one"
+       ]
+      ]
+     },
+     {
+      "on": "span 2, \"tool\"",
+      "setAttribute": [
+       "9",
+       "nine"
+      ]
+     },
+     {
+      "on": "span 2, \"tool\"",
+      "setAttribute": [
+       "team",
+       "red"
+      ]
+     },
+     {
+      "on": "span 2, \"tool\"",
+      "setAttribute": [
+       "dev",
+       true
+      ]
+     },
+     "— a span beside, from before the later attributes —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "beside",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"anonymous-context\""
+      },
+      "started": "span 3, \"beside\""
+     },
+     {
+      "on": "span 3, \"beside\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "on": "span 3, \"beside\"",
+      "setAttribute": [
+       "dev",
+       true
+      ]
+     },
+     "— attributes that are an object with fields from above —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 4, \"anonymous-context\""
+     },
+     {
+      "on": "span 4, \"anonymous-context\"",
+      "setAttribute": [
+       "own",
+       "own"
+      ]
+     },
+     {
+      "on": "span 4, \"anonymous-context\"",
+      "setAttribute": [
+       "inherited",
+       "from above"
+      ]
+     }
+    ],
+    "attributes": {
+     "beforeAnySpan": {
+      "team": "blue",
+      "dev": true
+     },
+     "more": {
+      "1": [
+       "one"
+      ],
+      "9": "nine",
+      "team": "red",
+      "dev": true
+     },
+     "below": {
+      "1": [
+       "one"
+      ],
+      "9": "nine",
+      "team": "red",
+      "dev": true
+     },
+     "root": {},
+     "addedToTheObjectFromAbove": {
+      "own": "own",
+      "added": 1
+     }
+    },
+    "aNewObjectEachTime": true,
+    "madeFromTheContextGiven": [
+     2,
+     3
+    ],
+    "takes": 3
+   }
+  },
+  "the attributes every context starts with are one object: what is written on it is set on every span, until it is taken off": {
+   "returned": [
+    "start span 1, \"elsewhere\"",
+    "span 1, \"elsewhere\": leaked=to all",
+    "start span 2, \"other\"",
+    "span 2, \"other\": leaked=to all",
+    "start span 3, \"seen\"",
+    "span 3, \"seen\": leaked=to all",
+    "span 2, \"other\": event.seen=0",
+    "span 3, \"seen\": event.seen=0",
+    "start span 4, \"after\""
+   ]
+  },
+  "the values a context carries for spans and for logging are kept under symbols with these names, in the order they were set": {
+   "returned": {
+    "a new context": [],
+    "a first span": [
+     "otel.span",
+     "otel.root_span",
+     "otel.root_start_ms"
+    ],
+    "a span below, by name": [
+     "otel.span"
+    ],
+    "a span below, with no name between": [
+     "otel.span",
+     "otel.root_span",
+     "otel.root_start_ms"
+    ],
+    "child spans suppressed": [
+     "otel.suppress_child_spans"
+    ],
+    "an attribute to hand down": [
+     "otel.inheritable_span_attributes"
+    ],
+    "a backend, an attribute, suppressed, then a span": [
+     "loggerBackend",
+     "otel.inheritable_span_attributes",
+     "otel.suppress_child_spans",
+     "otel.span",
+     "otel.root_span",
+     "otel.root_start_ms"
+    ],
+    "log attributes": [
+     "loggerBackend"
+    ],
+    "from a span known elsewhere": [
+     "otel.span"
+    ],
+    "standing for a span known elsewhere, on a context with a span": [
+     "otel.span",
+     "otel.root_span",
+     "otel.root_start_ms"
+    ]
+   }
+  },
+  "with child spans suppressed: under a span no further span is started and the same context comes back; with no span above, one is started": {
+   "returned": {
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     "— suppressed under a span —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     "— suppressed with no span above —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "first",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 2, \"first\""
+     },
+     "— and below the span that was started —",
+     {
+      "getTracer": "context-tracer"
+     }
+    ],
+    "sameContext": true,
+    "theSpanAbove": true,
+    "madeFromTheContextGiven": [
+     1,
+     {
+      "$": "undefined"
+     },
+     [
+      "turn"
+     ]
+    ],
+    "first": "span 2, \"first\"",
+    "secondIsFirst": true,
+    "takes": 1
+   }
+  },
+  "createSpan gives the context and its span together, and ends the span when let go, as often as it is let go; a suppressed one ends nothing": {
+   "returned": {
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "kind": 1
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 2, \"anonymous-context\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "tool",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 3, \"tool\""
+     },
+     "— suppressed under a span —",
+     {
+      "getTracer": "context-tracer"
+     },
+     "— suppressed with no span above —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "alone",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 4, \"alone\""
+     },
+     "— let go: held twice, below, the suppressed one, the one started alone —",
+     {
+      "on": "span 1, \"turn\"",
+      "end": []
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "end": []
+     },
+     {
+      "on": "span 3, \"tool\"",
+      "end": []
+     },
+     {
+      "on": "span 4, \"alone\"",
+      "end": []
+     }
+    ],
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "held": {
+     "fields": [
+      "ctx",
+      "span",
+      "shouldEnd"
+     ],
+     "isADisposableSpan": true,
+     "className": "DisposableSpan",
+     "span": "span 1, \"turn\"",
+     "theContextsSpan": true,
+     "contextsMadeOnTheWay": 4,
+     "endsWhenLetGo": true
+    },
+    "unnamed": "span 2, \"anonymous-context\"",
+    "below": "span 3, \"tool\"",
+    "suppressed": {
+     "theSameContext": true,
+     "theSpanAbove": true,
+     "endsWhenLetGo": false
+    },
+    "quietRoot": {
+     "span": "span 4, \"alone\"",
+     "endsWhenLetGo": true
+    },
+    "takes": 2
+   }
+  },
+  "a DisposableSpan made by hand ends its span when let go unless told not to, and holds the context and span it was given": {
+   "returned": {
+    "ended": [
+     {
+      "told nothing": []
+     },
+     {
+      "told yes": []
+     },
+     {
+      "told undefined": []
+     },
+     {
+      "told a text": []
+     }
+    ],
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "fields": {
+     "told nothing": [
+      "ctx: true",
+      "span: told nothing",
+      "shouldEnd: true"
+     ],
+     "told yes": [
+      "ctx: true",
+      "span: told yes",
+      "shouldEnd: true"
+     ],
+     "told no": [
+      "ctx: true",
+      "span: told no",
+      "shouldEnd: false"
+     ],
+     "told undefined": [
+      "ctx: true",
+      "span: told undefined",
+      "shouldEnd: true"
+     ],
+     "told null": [
+      "ctx: true",
+      "span: told null",
+      "shouldEnd: null"
+     ],
+     "told zero": [
+      "ctx: true",
+      "span: told zero",
+      "shouldEnd: 0"
+     ],
+     "told a text": [
+      "ctx: true",
+      "span: told a text",
+      "shouldEnd: yes"
+     ]
+    },
+    "whatCanBeDoneWithOne": [
+     "constructor",
+     "Symbol.dispose"
+    ],
+    "takes": 2,
+    "noSpan": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'end')"
+     }
+    },
+    "notCalledWithNew": true
+   }
+  },
+  "what a span is known by elsewhere: its trace, its id, its flags (0 when child spans are suppressed) and its state as a text; nothing when there is no span or it cannot say": {
+   "returned": {
+    "plainAnswer": [
+     {
+      "traceId": "trace of span 1, \"turn\"",
+      "spanId": "id of span 1, \"turn\"",
+      "traceFlags": 1,
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     {
+      "traceId": "trace of span 1, \"turn\"",
+      "spanId": "id of span 1, \"turn\"",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     {
+      "traceId": "trace of span 1, \"turn\"",
+      "spanId": "id of span 1, \"turn\"",
+      "traceFlags": 1,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "fields": [
+     "traceId",
+     "spanId",
+     "traceFlags",
+     "traceState"
+    ],
+    "a state that writes itself": [
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 1,
+      "traceState": "vendor=value"
+     },
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 0,
+      "traceState": "vendor=value"
+     }
+    ],
+    "a state that is a text": [
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 1,
+      "traceState": ""
+     },
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 0,
+      "traceState": ""
+     }
+    ],
+    "a state of null": [
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 1,
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "flags of zero and other fields": [
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     {
+      "traceId": "t",
+      "spanId": "s",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "missing fields": [
+     {
+      "traceId": {
+       "$": "undefined"
+      },
+      "spanId": {
+       "$": "undefined"
+      },
+      "traceFlags": {
+       "$": "undefined"
+      },
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     {
+      "traceId": {
+       "$": "undefined"
+      },
+      "spanId": {
+       "$": "undefined"
+      },
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "the flags are not read when suppressed": [
+     [
+      {
+       "traceId": "t",
+       "spanId": "s",
+       "traceFlags": 3,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      {
+       "traceId": "t",
+       "spanId": "s",
+       "traceFlags": 0,
+       "traceState": {
+        "$": "undefined"
+       }
+      }
+     ],
+     [
+      "read"
+     ]
+    ],
+    "a span that says nothing": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "a span that throws": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "a state that throws": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "no span": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "a context that throws": {
+     "$": "undefined"
+    },
+    "not a context": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "spanContext": "asked"
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "spanContext": "asked"
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "spanContext": "asked"
+     },
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by",
+     "the span is asked what it is known by"
+    ],
+    "takes": 1
+   }
+  },
+  "a context made from a span known elsewhere starts a span under it, 'child.span' unless named, on a new context or the one given": {
+   "returned": {
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "child.span",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 1, \"child.span\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "remote.turn",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 2, \"remote.turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "child.span",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 3, \"child.span\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "child.span",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 4, \"child.span\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "remote.turn",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 5, \"remote.turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "more",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true,
+        "traceState": "kept",
+        "extra": "kept too"
+       }
+      },
+      "started": "span 6, \"more\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "child.span",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "t",
+        "spanId": "s",
+        "isRemote": true
+       }
+      },
+      "started": "span 7, \"child.span\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "from nothing",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "isRemote": true
+       }
+      },
+      "started": "span 8, \"from nothing\""
+     }
+    ],
+    "made": {
+     "only the span": {
+      "span": "span 1, \"child.span\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 1,
+      "canceled": false
+     },
+     "named": {
+      "span": "span 2, \"remote.turn\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "remote.turn"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2,
+      "canceled": false
+     },
+     "an empty name": {
+      "span": "span 3, \"child.span\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 1,
+      "canceled": false
+     },
+     "on a context": {
+      "span": "span 4, \"child.span\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "existing"
+      ],
+      "madeFromTheOneGiven": 1,
+      "depth": 2,
+      "canceled": false
+     },
+     "named, on a context": {
+      "span": "span 5, \"remote.turn\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "existing",
+       "remote.turn"
+      ],
+      "madeFromTheOneGiven": 2,
+      "depth": 3,
+      "canceled": false
+     },
+     "more fields, and said not to be remote": {
+      "span": "span 6, \"more\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "more"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2,
+      "canceled": false
+     },
+     "no flags": {
+      "span": "span 7, \"child.span\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 1,
+      "canceled": false
+     },
+     "nothing known": {
+      "span": "span 8, \"from nothing\"",
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "from nothing"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2,
+      "canceled": false
+     }
+    },
+    "theGivenIsUntouched": [
+     "traceId",
+     "spanId",
+     "traceFlags"
+    ],
+    "clockRead": 0,
+    "takes": 3
+   }
+  },
+  "a context made to stand for a span known elsewhere starts nothing: its span only repeats what was given, marked as remote": {
+   "returned": {
+    "askedWhileMaking": 0,
+    "made": {
+     "only the span": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 1
+     },
+     "named": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "remote.turn"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2
+     },
+     "an empty name": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 1
+     },
+     "on a context": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "existing"
+      ],
+      "madeFromTheOneGiven": 1,
+      "depth": 2
+     },
+     "named, on a context": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "existing",
+       "remote.turn"
+      ],
+      "madeFromTheOneGiven": 2,
+      "depth": 3
+     },
+     "more fields, and said not to be remote": {
+      "known": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "isRemote": true,
+       "extra": "kept too"
+      },
+      "state": "vendor=value",
+      "recording": false,
+      "data": {
+       "traceId": "0af7651916cd43dd8448eb211c80319c",
+       "spanId": "b7ad6b7169203331",
+       "traceFlags": 1,
+       "traceState": "vendor=value"
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "more"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2
+     },
+     "nothing known": {
+      "known": {
+       "isRemote": true
+      },
+      "state": {
+       "$": "undefined"
+      },
+      "recording": false,
+      "data": {
+       "traceId": {
+        "$": "undefined"
+       },
+       "spanId": {
+        "$": "undefined"
+       },
+       "traceFlags": {
+        "$": "undefined"
+       },
+       "traceState": {
+        "$": "undefined"
+       }
+      },
+      "name": {
+       "$": "undefined"
+      },
+      "path": [
+       "from nothing"
+      ],
+      "madeFromTheOneGiven": "not made from it",
+      "depth": 2
+     }
+    },
+    "aSpanBelowAndAnEvent": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "below",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 1, \"below\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "arrived",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "0af7651916cd43dd8448eb211c80319c",
+        "spanId": "b7ad6b7169203331",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 2, \"arrived\""
+     },
+     {
+      "on": "span 2, \"arrived\"",
+      "setAttribute": [
+       "event.arrived",
+       0
+      ]
+     },
+     {
+      "on": "span 2, \"arrived\"",
+      "end": []
+     }
+    ],
+    "below": "span 1, \"below\"",
+    "clockRead": 2,
+    "takes": 3
+   }
+  },
+  "a finished span is recorded only under a span, and not where child spans are suppressed: started with the options given and ended at the time given": {
+   "returned": {
+    "noSpan": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "askedWithNoSpan": 0,
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     "— under a span —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "slow",
+      "given": 3,
+      "options": {
+       "startTime": 1794560886565,
+       "attributes": {
+        "durationMs": 500
+       }
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 2, \"slow\""
+     },
+     {
+      "on": "span 2, \"slow\"",
+      "end": [
+       1794560887065
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "no end given",
+      "given": 3,
+      "options": {
+       "startTime": 1794560886565,
+       "attributes": {
+        "durationMs": 500
+       }
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 3, \"no end given\""
+     },
+     {
+      "on": "span 3, \"no end given\"",
+      "end": [
+       {
+        "$": "undefined"
+       }
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 4, \"anonymous-context\""
+     },
+     {
+      "on": "span 4, \"anonymous-context\"",
+      "end": [
+       {
+        "$": "undefined"
+       }
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "a date",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 5, \"a date\""
+     },
+     {
+      "on": "span 5, \"a date\"",
+      "end": [
+       {
+        "$": "date",
+        "v": "2026-11-13T09:08:07.065Z"
+       }
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "a pair",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 6, \"a pair\""
+     },
+     {
+      "on": "span 6, \"a pair\"",
+      "end": [
+       [
+        1,
+        2
+       ]
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "zero",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 7, \"zero\""
+     },
+     {
+      "on": "span 7, \"zero\"",
+      "end": [
+       0
+      ]
+     },
+     "— suppressed under a span —"
+    ],
+    "returned": [
+     "span 2, \"slow\"",
+     "span 3, \"no end given\"",
+     "span 4, \"anonymous-context\"",
+     "span 5, \"a date\"",
+     "span 6, \"a pair\"",
+     "span 7, \"zero\""
+    ],
+    "suppressed": {
+     "$": "undefined"
+    },
+    "theContextGivenKeepsItsSpan": "span 1, \"turn\"",
+    "takes": 3
+   }
+  },
+  "an event is a span of no length under the context's span; how long after the root span started is written on the root span and on the event": {
+   "returned": {
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     "— under the root span —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "first_token",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 2, \"first_token\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.first_token",
+       7
+      ]
+     },
+     {
+      "on": "span 2, \"first_token\"",
+      "setAttribute": [
+       "event.first_token",
+       7
+      ]
+     },
+     {
+      "on": "span 2, \"first_token\"",
+      "end": []
+     },
+     "— under a span below it, with attributes to hand down —",
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "tool",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 3, \"tool\""
+     },
+     {
+      "on": "span 3, \"tool\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "tool.started",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 3, \"tool\""
+      },
+      "started": "span 4, \"tool.started\""
+     },
+     {
+      "on": "span 4, \"tool.started\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.tool.started",
+       21
+      ]
+     },
+     {
+      "on": "span 4, \"tool.started\"",
+      "setAttribute": [
+       "event.tool.started",
+       21
+      ]
+     },
+     {
+      "on": "span 4, \"tool.started\"",
+      "end": []
+     },
+     "— where child spans are suppressed —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "still told",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 3, \"tool\""
+      },
+      "started": "span 5, \"still told\""
+     },
+     {
+      "on": "span 5, \"still told\"",
+      "setAttribute": [
+       "team",
+       "blue"
+      ]
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.still told",
+       28
+      ]
+     },
+     {
+      "on": "span 5, \"still told\"",
+      "setAttribute": [
+       "event.still told",
+       28
+      ]
+     },
+     {
+      "on": "span 5, \"still told\"",
+      "end": []
+     },
+     "— under a span made from one known elsewhere: no root, no start time —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "remote",
+      "given": 3,
+      "options": {
+       "kind": 0
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": {
+        "traceId": "t",
+        "spanId": "s",
+        "traceFlags": 1,
+        "isRemote": true
+       }
+      },
+      "started": "span 6, \"remote\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "arrived",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 6, \"remote\""
+      },
+      "started": "span 7, \"arrived\""
+     },
+     {
+      "on": "span 6, \"remote\"",
+      "setAttribute": [
+       "event.arrived",
+       0
+      ]
+     },
+     {
+      "on": "span 7, \"arrived\"",
+      "setAttribute": [
+       "event.arrived",
+       0
+      ]
+     },
+     {
+      "on": "span 7, \"arrived\"",
+      "end": []
+     },
+     "— names that are not plain —",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 8, \"\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.",
+       42
+      ]
+     },
+     {
+      "on": "span 8, \"\"",
+      "setAttribute": [
+       "event.",
+       42
+      ]
+     },
+     {
+      "on": "span 8, \"\"",
+      "end": []
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": {
+       "$": "undefined"
+      },
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 9, \"undefined\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.undefined",
+       49
+      ]
+     },
+     {
+      "on": "span 9, \"undefined\"",
+      "setAttribute": [
+       "event.undefined",
+       49
+      ]
+     },
+     {
+      "on": "span 9, \"undefined\"",
+      "end": []
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "with spaces and.dots",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 10, \"with spaces and.dots\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.with spaces and.dots",
+       56
+      ]
+     },
+     {
+      "on": "span 10, \"with spaces and.dots\"",
+      "setAttribute": [
+       "event.with spaces and.dots",
+       56
+      ]
+     },
+     {
+      "on": "span 10, \"with spaces and.dots\"",
+      "end": []
+     }
+    ],
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "clockRead": 9,
+    "takes": 2
+   }
+  },
+  "an event never throws: whatever fails on the way stops it there and is swallowed": {
+   "returned": {
+    "outcomes": {
+     "the event's span cannot be started": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "the root span cannot be written on": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "the event's span cannot be written on": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "the event's span cannot be ended": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "no tracer can be had": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "no tracer can be had, for a span": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "getTracer"
+      }
+     },
+     "a context that throws": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "not a context": [
+      {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       }
+      }
+     ]
+    },
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "a tracer that cannot start",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"a tracer that cannot start\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     "startSpan throws",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "a root that cannot be written on",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 2, \"a root that cannot be written on\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "e",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 2, \"a root that cannot be written on\""
+      },
+      "started": "span 3, \"e\""
+     },
+     "setAttribute on the root span throws",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "an event that cannot be written on",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 4, \"an event that cannot be written on\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "e",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 4, \"an event that cannot be written on\""
+      },
+      "started": "span 5, \"e\""
+     },
+     {
+      "on": "span 4, \"an event that cannot be written on\"",
+      "setAttribute": [
+       "event.e",
+       7
+      ]
+     },
+     "setAttribute on the event's span throws",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "e2",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 4, \"an event that cannot be written on\""
+      },
+      "started": "span 6, \"e2\""
+     },
+     {
+      "on": "span 4, \"an event that cannot be written on\"",
+      "setAttribute": [
+       "event.e2",
+       14
+      ]
+     },
+     {
+      "on": "span 6, \"e2\"",
+      "setAttribute": [
+       "event.e2",
+       14
+      ]
+     },
+     "end throws",
+     "getTracer throws",
+     "getTracer throws",
+     {
+      "getTracer": "context-tracer"
+     },
+     "the context's get throws",
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     }
+    ]
+   }
+  },
+  "a tracer that cannot start a span, or a span that cannot be written on or ended, stops everything but an event with the runtime's own error": {
+   "returned": {
+    "outcomes": {
+     "a tracer that cannot start a span": {
+      "withSpan": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "createSpan": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "createContextFromSpanContext": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "reportEvent": {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      "underASpan": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      }
+     },
+     "a span that cannot be written on": {
+      "nothing to hand down": true,
+      "an attribute added to its context": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "a span started where there are attributes to hand down": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "an event under it": {
+       "returned": {
+        "$": "undefined"
+       }
+      }
+     },
+     "a span that cannot be ended": {
+      "a finished span": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "a span let go": {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      "an event": {
+       "returned": {
+        "$": "undefined"
+       }
+      }
+     }
+    },
+    "asked": [
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "turn",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 1, \"turn\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "cannot be written on",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 2, \"cannot be written on\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "anonymous-context",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 3, \"anonymous-context\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "e",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 2, \"cannot be written on\""
+      },
+      "started": "span 4, \"e\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "finished",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 5, \"finished\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "held",
+      "given": 2,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "$": "undefined"
+      },
+      "started": "span 6, \"held\""
+     },
+     {
+      "getTracer": "context-tracer"
+     },
+     {
+      "startSpan": "e",
+      "given": 3,
+      "options": {
+       "$": "undefined"
+      },
+      "under": {
+       "active": {
+        "$": "undefined"
+       },
+       "above": "span 1, \"turn\""
+      },
+      "started": "span 7, \"e\""
+     },
+     {
+      "on": "span 1, \"turn\"",
+      "setAttribute": [
+       "event.e",
+       0
+      ]
+     },
+     {
+      "on": "span 7, \"e\"",
+      "setAttribute": [
+       "event.e",
+       0
+      ]
+     }
+    ]
+   }
+  },
+  "a span is started on top of whatever context OpenTelemetry says is active, with the span above put on it; a first span is handed no context at all": {
+   "returned": [
+    {
+     "startSpan": "first",
+     "given": 2,
+     "under": {
+      "$": "undefined"
+     }
+    },
+    {
+     "startSpan": "below",
+     "given": 3,
+     "under": {
+      "active": "the stand-in's active context",
+      "above": "span 1, \"first\""
+     }
+    },
+    {
+     "startSpan": "below, by createSpan",
+     "given": 3,
+     "under": {
+      "active": "the stand-in's active context",
+      "above": "span 1, \"first\""
+     }
+    },
+    {
+     "startSpan": "event",
+     "given": 3,
+     "under": {
+      "active": "the stand-in's active context",
+      "above": "span 1, \"first\""
+     }
+    },
+    {
+     "startSpan": "finished",
+     "given": 3,
+     "under": {
+      "active": "the stand-in's active context",
+      "above": "span 1, \"first\""
+     }
+    },
+    {
+     "startSpan": "remote",
+     "given": 3,
+     "under": {
+      "active": "the stand-in's active context",
+      "above": {
+       "traceId": "t",
+       "spanId": "s",
+       "traceFlags": 1,
+       "isRemote": true
+      }
+     }
+    }
+   ]
+  },
+  "what each of the span functions asks of the context it is given, in order": {
+   "returned": {
+    "withSpan": {
+     "no span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "with otel.root_span",
+      "with otel.root_start_ms"
+     ],
+     "under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span"
+     ],
+     "suppressed under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans"
+     ],
+     "suppressed, no span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "with otel.root_span",
+      "with otel.root_start_ms"
+     ]
+    },
+    "getSpan": {
+     "no span": [
+      "get otel.span"
+     ],
+     "under a span": [
+      "get otel.span"
+     ],
+     "suppressed under a span": [
+      "get otel.span"
+     ],
+     "suppressed, no span": [
+      "get otel.span"
+     ]
+    },
+    "createSpan": {
+     "no span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "with otel.root_span",
+      "with otel.root_start_ms",
+      "get otel.span"
+     ],
+     "under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "get otel.span"
+     ],
+     "suppressed under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span"
+     ],
+     "suppressed, no span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "with otel.root_span",
+      "with otel.root_start_ms",
+      "get otel.span"
+     ]
+    },
+    "withSuppressedChildSpans": {
+     "no span": [
+      "with otel.suppress_child_spans"
+     ],
+     "under a span": [
+      "with otel.suppress_child_spans"
+     ],
+     "suppressed under a span": [
+      "with otel.suppress_child_spans"
+     ],
+     "suppressed, no span": [
+      "with otel.suppress_child_spans"
+     ]
+    },
+    "withInheritableAttribute": {
+     "no span": [
+      "get otel.inheritable_span_attributes",
+      "get otel.span",
+      "with otel.inheritable_span_attributes"
+     ],
+     "under a span": [
+      "get otel.inheritable_span_attributes",
+      "get otel.span",
+      "with otel.inheritable_span_attributes"
+     ],
+     "suppressed under a span": [
+      "get otel.inheritable_span_attributes",
+      "get otel.span",
+      "with otel.inheritable_span_attributes"
+     ],
+     "suppressed, no span": [
+      "get otel.inheritable_span_attributes",
+      "get otel.span",
+      "with otel.inheritable_span_attributes"
+     ]
+    },
+    "getSpanContextData": {
+     "no span": [
+      "get otel.span"
+     ],
+     "under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans"
+     ],
+     "suppressed under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans"
+     ],
+     "suppressed, no span": [
+      "get otel.span"
+     ]
+    },
+    "recordCompletedSpanIfParented": {
+     "no span": [
+      "get otel.span"
+     ],
+     "under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "get otel.span",
+      "get otel.suppress_child_spans",
+      "name",
+      "get otel.inheritable_span_attributes",
+      "with otel.span",
+      "get otel.span"
+     ],
+     "suppressed under a span": [
+      "get otel.span",
+      "get otel.suppress_child_spans"
+     ],
+     "suppressed, no span": [
+      "get otel.span"
+     ]
+    },
+    "reportEvent": {
+     "no span": [
+      "get otel.span"
+     ],
+     "under a span": [
+      "get otel.span",
+      "get otel.inheritable_span_attributes",
+      "get otel.root_start_ms",
+      "get otel.root_span"
+     ],
+     "suppressed under a span": [
+      "get otel.span",
+      "get otel.inheritable_span_attributes",
+      "get otel.root_start_ms",
+      "get otel.root_span"
+     ],
+     "suppressed, no span": [
+      "get otel.span"
+     ]
+    },
+    "createContextFromSpanContext": [
+     [
+      "with otel.span"
+     ],
+     [
+      "withName named",
+      "with otel.span"
+     ]
+    ],
+    "createContextFromRemoteSpanContext": [
+     [
+      "with otel.span"
+     ],
+     [
+      "withName named",
+      "with otel.span"
+     ]
+    ],
+    "a logger's line": [
+     "get loggerBackend"
+    ],
+    "withLogAttributes": [
+     "get loggerBackend",
+     "with loggerBackend"
+    ],
+    "getLoggerBackend": [
+     "get loggerBackend"
+    ],
+    "notAContext": {
+     "withSpan": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'get')"
+       }
+      }
+     ],
+     "getSpan": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'get')"
+       }
+      }
+     ],
+     "createSpan": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'get')"
+       }
+      }
+     ],
+     "withSuppressedChildSpans": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'with')"
+       }
+      }
+     ],
+     "withInheritableAttribute": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'get')"
+       }
+      }
+     ],
+     "recordCompletedSpanIfParented": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Cannot read properties of undefined (reading 'get')"
+       }
+      }
+     ],
+     "createContextFromSpanContext": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      }
+     ],
+     "createContextFromRemoteSpanContext": [
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      },
+      {
+       "threw": "a TypeError of the runtime's own: what was to be called is not a function"
+      }
+     ]
+    }
+   }
+  },
+  "each span function, step by step: what it asks of the tracer, the context, the spans and the clock, in order": {
+   "returned": {
+    "withSpan, a first span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"anonymous-context\", given 2",
+     "get otel.inheritable_span_attributes",
+     "span 2, \"anonymous-context\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "with otel.root_span",
+     "with otel.root_start_ms"
+    ],
+    "withSpan, under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"tool\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 3, \"tool\": setAttribute",
+     "the clock is read",
+     "with otel.span"
+    ],
+    "withSpan, suppressed under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans"
+    ],
+    "withSpan, not a context": [
+     "a tracer is asked for",
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "createSpan, under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"tool\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 4, \"tool\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "get otel.span",
+     "span 4, \"tool\": end"
+    ],
+    "createSpan, suppressed under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "get otel.span"
+    ],
+    "createSpan, not a context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "withInheritableAttribute, under a span": [
+     "get otel.inheritable_span_attributes",
+     "get otel.span",
+     "span 1, \"anonymous-context\": setAttribute",
+     "with otel.inheritable_span_attributes"
+    ],
+    "getSpanContextData, under a span": [
+     "get otel.span",
+     "span 1, \"anonymous-context\": spanContext",
+     "get otel.suppress_child_spans"
+    ],
+    "recordCompletedSpanIfParented, under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"finished\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 5, \"finished\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "get otel.span",
+     "span 5, \"finished\": end"
+    ],
+    "recordCompletedSpanIfParented, not a context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "reportEvent, under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "the tracer starts \"event\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 6, \"event\": setAttribute",
+     "the clock is read",
+     "get otel.root_start_ms",
+     "get otel.root_span",
+     "span 1, \"anonymous-context\": setAttribute",
+     "span 6, \"event\": setAttribute",
+     "span 6, \"event\": end"
+    ],
+    "reportEvent, no span": [
+     "a tracer is asked for",
+     "get otel.span"
+    ],
+    "reportEvent, not a context": [
+     "a tracer is asked for"
+    ],
+    "createContextFromSpanContext, named, on a context": [
+     "a tracer is asked for",
+     "the tracer starts \"remote\", given 3",
+     "withName remote",
+     "with otel.span"
+    ],
+    "createContextFromSpanContext, on something that is no context": [
+     "a tracer is asked for",
+     "the tracer starts \"remote\", given 3",
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "createContextFromRemoteSpanContext, named, on a context": [
+     "withName remote",
+     "with otel.span"
+    ],
+    "createContextFromRemoteSpanContext, on something that is no context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ]
+   }
+  },
+  "with no tracing set up, spans are started and ended all the same and record nothing: no trace, no id, flags of 0": {
+   "returned": {
+    "held": {
+     "recording": false,
+     "data": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    },
+    "below": {
+     "recording": false,
+     "data": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0,
+      "traceState": {
+       "$": "undefined"
+      }
+     },
+     "aSpanOfItsOwn": true
+    },
+    "underASpanKnownElsewhere": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 1,
+     "traceState": {
+      "$": "undefined"
+     }
+    },
+    "returned": [
+     {
+      "$": "undefined"
+     },
+     false,
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ]
+   }
+  },
+  "each load of the part has keys of its own: what is set under one load's keys the other does not see, though either can use the other's contexts": {
+   "returned": {
+    "here": {
+     "backend": true,
+     "span": "span 1, \"anonymous-context\"",
+     "attributes": {
+      "k": 1
+     },
+     "data": {
+      "traceId": "trace of span 1, \"anonymous-context\"",
+      "spanId": "id of span 1, \"anonymous-context\"",
+      "traceFlags": 1,
+      "traceState": {
+       "$": "undefined"
+      }
+     }
+    },
+    "there": {
+     "backend": true,
+     "span": {
+      "$": "undefined"
+     },
+     "attributes": {},
+     "data": {
+      "$": "undefined"
+     }
+    },
+    "keysOfTheirOwn": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "notSharedByName": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "theOthersFunctionsOnThisContext": {
+     "path": [
+      "turn",
+      "there"
+     ],
+     "aFirstSpanForTheOther": "span 2, \"there\"",
+     "aContextOfTheOthersHere": "span 3, \"from there\""
+    }
+   }
+  },
+  "the index hands on everything the five files export, the very same things, and the browser bridge exports nothing": {
+   "returned": {
+    "from": {
+     "DisposableSpan": "otel",
+     "INHERITABLE_SPAN_ATTRIBUTES_KEY": "otel",
+     "createContext": "core",
+     "createContextFromRemoteSpanContext": "otel",
+     "createContextFromSpanContext": "otel",
+     "createKey": "core",
+     "createLogger": "logger",
+     "createSpan": "otel",
+     "getAbortReasonInfo": "abortReason",
+     "getLoggerBackend": "logger",
+     "getSpan": "otel",
+     "getSpanContextData": "otel",
+     "getTracer": "otel",
+     "loggerKey": "logger",
+     "recordCompletedSpanIfParented": "otel",
+     "reportEvent": "otel",
+     "withInheritableAttribute": "otel",
+     "withLogAttributes": "logger",
+     "withSpan": "otel",
+     "withSuppressedChildSpans": "otel"
+    },
+    "nothingLeftOut": true,
+    "nothingTwice": true,
+    "browserBridge": []
+   }
+  }
+ }
+}

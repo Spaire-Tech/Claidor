@@ -1,3 +1,10 @@
+/**
+ * Logging through the context. A logger writes nothing itself: it hands each
+ * line to the backend the context carries, so whoever makes a context
+ * decides where the lines of everything below it go. A context that was
+ * given no backend has the terminal backend of this file, which writes one
+ * readable line through the console.
+ */
 import { createKey, type Context, type ContextKey } from "./core.js";
 
 export type ContextLogLevel = "debug" | "info" | "warn" | "error";
@@ -22,133 +29,74 @@ export interface ContextLogger {
   error(context: Context, message: string, error: unknown, metadata?: Readonly<Record<string, unknown>>): void;
 }
 
-interface InlineSummary {
-  readonly kind: "summary";
-  readonly summary: string;
-}
+// ── The terminal backend: one line for an entry, short enough to read ──
 
-interface InlineSerializerContext {
-  readonly path: readonly (string | number)[];
-  readonly depth: number;
-}
+/** How deep lists, maps and objects are written out; deeper, only their kind is. */
+const MAX_DEPTH = 6;
+/** How many fields of an object, or pairs of a map, are written before the rest is only counted. */
+const MAX_FIELDS = 50;
+/** The same for the items of a list. */
+const MAX_ITEMS = 40;
+/** How many characters of a text are written before it is cut. */
+const MAX_TEXT = 200;
+/** What sets the lines of an error's trace in from the line they belong to. */
+const TRACE_INDENT = "  ";
 
-interface PrettyConsole {
-  log(value: string): void;
-  warn(value: string): void;
-  error(value: string): void;
-}
-
-interface PrettyTerminalLoggerOptions {
-  readonly indent?: number;
-  readonly maxDepth?: number;
-  readonly maxEntries?: number;
-  readonly maxArrayLength?: number;
-  readonly maxStringLength?: number;
-  readonly includeTimestamp?: boolean;
-  readonly includeContextPath?: boolean;
-  readonly inlineSerializer?: (value: unknown, context: InlineSerializerContext) => unknown;
-  readonly useColors?: boolean;
-  readonly console?: PrettyConsole;
-}
-
-interface RenderOptions {
-  readonly indent: string;
-  readonly maxDepth: number;
-  readonly maxEntries: number;
-  readonly maxArrayLength: number;
-  readonly maxStringLength: number;
-  readonly includeTimestamp: boolean;
-  readonly includeContextPath: boolean;
-  readonly inlineSerializer: PrettyTerminalLoggerOptions["inlineSerializer"];
-}
-
-interface ColorPalette {
-  readonly dim: (value: string) => string;
-  readonly gray: (value: string) => string;
-  readonly red: (value: string) => string;
-  readonly green: (value: string) => string;
-  readonly yellow: (value: string) => string;
-  readonly blue: (value: string) => string;
-  readonly magenta: (value: string) => string;
-  readonly cyan: (value: string) => string;
-  readonly bold: (value: string) => string;
-  readonly level: (level: ContextLogLevel, value: string) => string;
-}
-
-const DEFAULT_INDENT = 2;
-const DEFAULT_MAX_DEPTH = 6;
-const DEFAULT_MAX_ENTRIES = 50;
-const DEFAULT_MAX_ARRAY_LENGTH = 40;
-const DEFAULT_MAX_STRING_LENGTH = 200;
-
-function shouldUseColors(useColors?: boolean): boolean {
-  if (typeof useColors === "boolean") return useColors;
+/**
+ * Whether lines are coloured, from where the process runs: NO_COLOR, set to
+ * anything, and TERM=dumb say no; then FORCE_COLOR says yes ("1", "true") or
+ * no ("0"); otherwise an output that is a terminal says yes.
+ */
+function colourWanted(): boolean {
   if (typeof process === "undefined") return false;
   const env = process.env ?? {};
-  if ("NO_COLOR" in env) return false;
-  if (env.TERM === "dumb") return false;
-  const forceColor = env.FORCE_COLOR;
-  if (forceColor === "1" || forceColor === "true") return true;
-  if (forceColor === "0") return false;
+  if ("NO_COLOR" in env || env.TERM === "dumb") return false;
+  const forced = env.FORCE_COLOR;
+  if (forced === "1" || forced === "true") return true;
+  if (forced === "0") return false;
   return Boolean(process.stdout?.isTTY);
 }
 
-function createColorPalette(enabled: boolean): ColorPalette {
-  const reset = "\u001b[0m";
-  const withCodes = (codes: readonly number[]) => (value: string): string =>
-    enabled ? `\u001b[${codes.join(";")}m${value}${reset}` : value;
-  const dim = withCodes([2]);
-  const gray = withCodes([90]);
-  const red = withCodes([31]);
-  const green = withCodes([32]);
-  const yellow = withCodes([33]);
-  const blue = withCodes([34]);
-  const magenta = withCodes([35]);
-  const cyan = withCodes([36]);
-  const bold = withCodes([1]);
-  const boldRed = withCodes([1, 31]);
-  return {
-    dim,
-    gray,
-    red,
-    green,
-    yellow,
-    blue,
-    magenta,
-    cyan,
-    bold,
-    level(level, value) {
-      switch (level) {
-        case "debug": return magenta(value);
-        case "info": return blue(value);
-        case "warn": return yellow(value);
-        case "error": return boldRed(value);
-      }
-    },
-  };
+/** Decided once, when this file is loaded, and for every line after. */
+const COLOURED = colourWanted();
+/** The console as it was when this file was loaded. Its methods are looked up at each line. */
+const output = console;
+
+type Paint = (text: string) => string;
+
+/** The text between the codes given and a reset; where nothing is coloured, the very thing it was handed. */
+function paint(...codes: number[]): Paint {
+  return (text) => (COLOURED ? `\u001b[${codes.join(";")}m${text}\u001b[0m` : text);
 }
 
-function resolveRenderOptions(options: PrettyTerminalLoggerOptions): RenderOptions {
-  return {
-    indent: " ".repeat(options.indent ?? DEFAULT_INDENT),
-    maxDepth: options.maxDepth ?? DEFAULT_MAX_DEPTH,
-    maxEntries: options.maxEntries ?? DEFAULT_MAX_ENTRIES,
-    maxArrayLength: options.maxArrayLength ?? DEFAULT_MAX_ARRAY_LENGTH,
-    maxStringLength: options.maxStringLength ?? DEFAULT_MAX_STRING_LENGTH,
-    includeTimestamp: options.includeTimestamp ?? true,
-    includeContextPath: options.includeContextPath ?? true,
-    inlineSerializer: options.inlineSerializer,
-  };
+const bold = paint(1);
+const dim = paint(2);
+const red = paint(31);
+const green = paint(32);
+const yellow = paint(33);
+const blue = paint(34);
+const magenta = paint(35);
+const cyan = paint(36);
+const gray = paint(90);
+
+interface LevelLook {
+  /** The colour of the level's name. */
+  readonly tint: Paint;
+  /** Whether the message is written in bold. */
+  readonly loud: boolean;
+  /** The console's method the line goes through. */
+  readonly through: "log" | "warn" | "error";
 }
 
-function formatTimestamp(timestamp: Date): string {
-  return timestamp.toISOString().slice(11, 23);
-}
+const LEVELS = new Map<unknown, LevelLook>([
+  ["debug", { tint: magenta, loud: false, through: "log" }],
+  ["info", { tint: blue, loud: false, through: "log" }],
+  ["warn", { tint: yellow, loud: false, through: "warn" }],
+  ["error", { tint: paint(1, 31), loud: true, through: "error" }],
+]);
 
-function isContext(value: unknown): value is Context {
-  return typeof value === "object" && value !== null && "getPath" in value &&
-    typeof (value as { getPath?: unknown }).getPath === "function";
-}
+/** The fields that make an object be written as an error, whatever else it is. */
+const ERROR_FIELDS = ["message", "stack", "name", "cause"] as const;
 
 type ErrorLike = Record<PropertyKey, unknown> & {
   readonly name?: unknown;
@@ -157,246 +105,203 @@ type ErrorLike = Record<PropertyKey, unknown> & {
   readonly cause?: unknown;
 };
 
-function isErrorLike(value: unknown): value is ErrorLike {
+function looksLikeAnError(value: unknown): value is ErrorLike {
   if (typeof value !== "object" || value === null) return false;
-  return "message" in value || "stack" in value || "name" in value || "cause" in value;
+  return ERROR_FIELDS.some((field) => field in value);
 }
 
-function isInlineSummary(value: unknown): value is InlineSummary {
-  return typeof value === "object" && value !== null &&
-    (value as { kind?: unknown }).kind === "summary" &&
-    typeof (value as { summary?: unknown }).summary === "string";
+/** An object that stands for something too long to write: only its summary is written. */
+function isSummary(value: unknown): value is { readonly kind: "summary"; readonly summary: string } {
+  if (typeof value !== "object" || value === null) return false;
+  const held = value as { kind?: unknown; summary?: unknown };
+  return held.kind === "summary" && typeof held.summary === "string";
 }
 
-function truncateString(value: string, maxLength: number): string {
-  return value.length <= maxLength ? value : `${value.slice(0, maxLength)}...`;
+/** Whether an entry's context can say where the line comes from. Anything else is written out like a value. */
+function tellsItsPath(value: unknown): value is Pick<Context, "getPath"> {
+  if (typeof value !== "object" || value === null) return false;
+  return "getPath" in value && typeof value.getPath === "function";
 }
 
-function applyInlineSerializer(
-  value: unknown,
-  options: RenderOptions,
-  path: readonly (string | number)[],
-  depth: number,
-): unknown {
-  if (!options.inlineSerializer) return value;
-  try {
-    const serialized = options.inlineSerializer(value, { path, depth });
-    return serialized === undefined ? value : serialized;
-  } catch {
-    return value;
+/** Twelve characters of the time as ISO writes it: hours, minutes, seconds and milliseconds, in UTC. */
+function timeOfDay(timestamp: Date): string {
+  return timestamp.toISOString().slice(11, 23);
+}
+
+/** Pieces between an opening and a closing mark, with commas, and a count of what was left out. */
+function enclosed(opening: string, pieces: string[], leftOut: number, closing: string): string {
+  if (leftOut > 0) pieces.push(dim(`... ${leftOut} more`));
+  return `${dim(opening)}${pieces.join(dim(", "))}${dim(closing)}`;
+}
+
+/**
+ * One value, written short. `open` holds the lists, maps, objects and errors
+ * being written around it, so that one found inside itself is named and not
+ * followed. What a value is taken for is decided in this order: a summary
+ * first, then the plain kinds, a date or a pattern, anything with an error's
+ * fields, a list, bytes, a map, a set, and last any other object.
+ */
+function brief(value: unknown, depth: number, open: WeakSet<object>): string {
+  if (isSummary(value)) return dim(`<${value.summary}>`);
+  if (value === null) return gray("null");
+  if (value === undefined) return gray("undefined");
+  switch (typeof value) {
+    case "string":
+      return green(JSON.stringify(value.length <= MAX_TEXT ? value : `${value.slice(0, MAX_TEXT)}...`));
+    case "number":
+      return yellow(String(value));
+    case "boolean":
+      return magenta(String(value));
+    case "bigint":
+      return yellow(`${value}n`);
+    case "symbol":
+      return cyan(value.toString());
+    case "function":
+      return dim(`[Function${value.name ? ` ${value.name}` : ""}]`);
   }
-}
-
-function formatInlineValue(
-  input: unknown,
-  options: RenderOptions,
-  colors: ColorPalette,
-  depth: number,
-  seen: WeakSet<object>,
-  path: readonly (string | number)[],
-): string {
-  let value = applyInlineSerializer(input, options, path, depth);
-  if (isInlineSummary(value)) return colors.dim(`<${value.summary}>`);
-  if (value === null) return colors.gray("null");
-  if (value === undefined) return colors.gray("undefined");
-  if (typeof value === "string") return colors.green(JSON.stringify(truncateString(value, options.maxStringLength)));
-  if (typeof value === "number") return colors.yellow(String(value));
-  if (typeof value === "boolean") return colors.magenta(String(value));
-  if (typeof value === "bigint") return colors.yellow(`${value}n`);
-  if (typeof value === "symbol") return colors.cyan(value.toString());
-  if (typeof value === "function") return colors.dim(`[Function${value.name ? ` ${value.name}` : ""}]`);
-  if (value instanceof Date) return colors.green(Number.isNaN(value.getTime()) ? "Invalid Date" : value.toISOString());
-  if (value instanceof RegExp) return colors.cyan(value.toString());
-  if (isErrorLike(value)) return formatErrorSummary(value, options, colors, depth, seen, path);
-  if (Array.isArray(value)) return formatInlineArray(value, options, colors, depth, seen, path);
-  if (typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer) return colors.dim(`ArrayBuffer(${value.byteLength})`);
-  if (typeof ArrayBuffer !== "undefined" && typeof ArrayBuffer.isView === "function" && ArrayBuffer.isView(value)) {
-    const typedArray = value as ArrayBufferView;
-    const label = typedArray.constructor?.name ?? "TypedArray";
-    return colors.dim(`${label}(${typedArray.byteLength})`);
+  if (value instanceof Date) return green(Number.isNaN(value.getTime()) ? "Invalid Date" : value.toISOString());
+  if (value instanceof RegExp) return cyan(value.toString());
+  if (looksLikeAnError(value)) return errorBrief(value, depth, open);
+  if (Array.isArray(value)) return listBrief(value, depth, open);
+  if (typeof ArrayBuffer !== "undefined") {
+    if (value instanceof ArrayBuffer) return dim(`ArrayBuffer(${value.byteLength})`);
+    if (typeof ArrayBuffer.isView === "function" && ArrayBuffer.isView(value)) {
+      return dim(`${value.constructor?.name ?? "TypedArray"}(${value.byteLength})`);
+    }
   }
-  if (value instanceof Map) return formatInlineMap(value, options, colors, depth, seen, path);
-  if (value instanceof Set) return formatInlineArray(Array.from(value.values()), options, colors, depth, seen, path);
-  return formatInlineObject(value, options, colors, depth, seen, path);
+  if (value instanceof Map) return mapBrief(value, depth, open);
+  // A set is written as the list of what it holds. The set itself is not kept in `open`.
+  if (value instanceof Set) return listBrief(Array.from(value.values()), depth, open);
+  return objectBrief(value, depth, open);
 }
 
-function formatErrorSummary(
-  error: ErrorLike,
-  options: RenderOptions,
-  colors: ColorPalette,
-  depth: number,
-  seen: WeakSet<object>,
-  path: readonly (string | number)[],
-): string {
-  if (seen.has(error)) return colors.dim("[Circular]");
-  seen.add(error);
+/** An error by its name and message, and its cause after it. Errors are followed however deep they are. */
+function errorBrief(error: ErrorLike, depth: number, open: WeakSet<object>): string {
+  if (open.has(error)) return dim("[Circular]");
+  open.add(error);
   const name = typeof error.name === "string" ? error.name : "Error";
   const message = typeof error.message === "string" ? error.message : "";
-  let result = colors.red(message ? `${name}: ${message}` : name);
+  let told = red(message ? `${name}: ${message}` : name);
   if ("cause" in error && error.cause !== undefined) {
-    const cause = formatInlineValue(error.cause, options, colors, depth + 1, seen, path.concat("cause"));
-    result = `${result} ${colors.dim("cause=")}${cause}`;
+    told = `${told} ${dim("cause=")}${brief(error.cause, depth + 1, open)}`;
   }
-  seen.delete(error);
-  return result;
+  open.delete(error);
+  return told;
 }
 
-function formatInlineArray(
-  value: readonly unknown[],
-  options: RenderOptions,
-  colors: ColorPalette,
-  depth: number,
-  seen: WeakSet<object>,
-  path: readonly (string | number)[],
-): string {
-  if (depth >= options.maxDepth) return colors.dim(`[Array(${value.length})]`);
-  if (seen.has(value)) return colors.dim("[Circular]");
-  seen.add(value);
-  if (value.length === 0) {
-    seen.delete(value);
-    return colors.dim("[]");
-  }
-  const limit = Math.min(value.length, options.maxArrayLength);
-  const items = value.slice(0, limit).map((entry, index) =>
-    formatInlineValue(entry, options, colors, depth + 1, seen, path.concat(index)));
-  if (value.length > limit) items.push(colors.dim(`... ${value.length - limit} more`));
-  const result = `${colors.dim("[")}${items.join(colors.dim(", "))}${colors.dim("]")}`;
-  seen.delete(value);
-  return result;
+function listBrief(list: readonly unknown[], depth: number, open: WeakSet<object>): string {
+  if (depth >= MAX_DEPTH) return dim(`[Array(${list.length})]`);
+  if (open.has(list)) return dim("[Circular]");
+  if (list.length === 0) return dim("[]");
+  open.add(list);
+  const written = Math.min(list.length, MAX_ITEMS);
+  // A gap in the list stays a gap here, and is written as nothing between its commas.
+  const items = list.slice(0, written).map((item) => brief(item, depth + 1, open));
+  open.delete(list);
+  return enclosed("[", items, list.length - written, "]");
 }
 
-function formatInlineMap(
-  value: Map<unknown, unknown>,
-  options: RenderOptions,
-  colors: ColorPalette,
-  depth: number,
-  seen: WeakSet<object>,
-  path: readonly (string | number)[],
-): string {
-  if (depth >= options.maxDepth) return colors.dim(`Map(${value.size})`);
-  if (seen.has(value)) return colors.dim("[Circular]");
-  seen.add(value);
-  const entries = Array.from(value.entries());
-  const limit = Math.min(entries.length, options.maxEntries);
-  const items = entries.slice(0, limit).map(([key, entryValue]) => {
-    const renderedKey = formatInlineValue(key, options, colors, depth + 1, seen, path.concat("<key>"));
-    const renderedValue = formatInlineValue(entryValue, options, colors, depth + 1, seen, path.concat(String(key)));
-    return `${renderedKey} ${colors.dim("=>")} ${renderedValue}`;
+function mapBrief(map: Map<unknown, unknown>, depth: number, open: WeakSet<object>): string {
+  if (depth >= MAX_DEPTH) return dim(`Map(${map.size})`);
+  if (open.has(map)) return dim("[Circular]");
+  open.add(map);
+  const pairs = Array.from(map.entries());
+  const written = Math.min(pairs.length, MAX_FIELDS);
+  const items = pairs.slice(0, written).map(([key, held]) => {
+    const keyWritten = brief(key, depth + 1, open);
+    // Each key is also turned into a text, as it always was, though that text is not written: a key that cannot be one stops the line here.
+    String(key);
+    return `${keyWritten} ${dim("=>")} ${brief(held, depth + 1, open)}`;
   });
-  if (entries.length > limit) items.push(colors.dim(`... ${entries.length - limit} more`));
-  const result = `${colors.dim("Map{")}${items.join(colors.dim(", "))}${colors.dim("}")}`;
-  seen.delete(value);
-  return result;
+  open.delete(map);
+  return enclosed("Map{", items, pairs.length - written, "}");
 }
 
-function formatInlineObject(
-  value: object,
-  options: RenderOptions,
-  colors: ColorPalette,
-  depth: number,
-  seen: WeakSet<object>,
-  path: readonly (string | number)[],
-): string {
-  if (depth >= options.maxDepth) {
-    const label = (value as { constructor?: { name?: string } }).constructor?.name ?? "Object";
-    return colors.dim(`[${label}]`);
+function objectBrief(value: object, depth: number, open: WeakSet<object>): string {
+  if (depth >= MAX_DEPTH) return dim(`[${value.constructor?.name ?? "Object"}]`);
+  if (open.has(value)) return dim("[Circular]");
+  const fields = Object.entries(value);
+  if (fields.length === 0) return dim("{}");
+  open.add(value);
+  const written = Math.min(fields.length, MAX_FIELDS);
+  const items = fields.slice(0, written).map(([field, held]) => `${cyan(field)}: ${brief(held, depth + 1, open)}`);
+  open.delete(value);
+  return enclosed("{", items, fields.length - written, "}");
+}
+
+/**
+ * Writes an entry: the time of day, the level, the message, then where it
+ * comes from (`ctx=`) or what its context holds (`context=`), what was added
+ * (`meta=`) and the error (`error=`), whose trace follows on lines of its
+ * own. Everything is written out before the level is looked at for the last
+ * time: an entry whose level is none of the four is refused only then.
+ */
+function writeLine(entry: ContextLogEntry): void {
+  const pieces: string[] = [dim(timeOfDay(entry.timestamp))];
+  const label = entry.level.toUpperCase().padEnd(5);
+  const look = LEVELS.get(entry.level);
+  pieces.push(look ? look.tint(label) : label);
+  pieces.push(look?.loud ? bold(entry.message) : entry.message);
+
+  const open = new WeakSet<object>();
+  const from = entry.context;
+  if (tellsItsPath(from)) {
+    const path = from.getPath();
+    if (path.length > 0) pieces.push(dim(`ctx=${path.join("/")}`));
+  } else if (from && Object.keys(from).length > 0) {
+    pieces.push(`${dim("context=")}${brief(from, 0, open)}`);
   }
-  if (seen.has(value)) return colors.dim("[Circular]");
-  seen.add(value);
-  const entries = Object.entries(value);
-  if (entries.length === 0) {
-    seen.delete(value);
-    return colors.dim("{}");
+  if (entry.metadata && Object.keys(entry.metadata).length > 0) {
+    pieces.push(`${dim("meta=")}${brief(entry.metadata, 0, open)}`);
   }
-  const limit = Math.min(entries.length, options.maxEntries);
-  const items = entries.slice(0, limit).map(([key, entryValue]) =>
-    `${colors.cyan(key)}: ${formatInlineValue(entryValue, options, colors, depth + 1, seen, path.concat(key))}`);
-  if (entries.length > limit) items.push(colors.dim(`... ${entries.length - limit} more`));
-  const result = `${colors.dim("{")}${items.join(colors.dim(", "))}${colors.dim("}")}`;
-  seen.delete(value);
-  return result;
+
+  const lines = [pieces.join(" ")];
+  const failure = entry.error;
+  if (looksLikeAnError(failure)) {
+    lines[0] = `${lines[0]} ${dim("error=")}${errorBrief(failure, 0, open)}`;
+    if (typeof failure.stack === "string") {
+      // The trace's first line says the error again, and is left out.
+      for (const traced of failure.stack.split("\n").slice(1)) {
+        const trimmed = traced.trim();
+        if (trimmed) lines.push(`${TRACE_INDENT}${dim(trimmed)}`);
+      }
+    }
+  } else if (failure !== undefined) {
+    lines[0] = `${lines[0]} ${dim("error=")}${brief(failure, 0, open)}`;
+  }
+
+  if (look === undefined) throw new Error(`Unhandled log level: ${String(entry.level)}`);
+  output[look.through](lines.join("\n"));
 }
 
-function createPrettyTerminalLoggerBackend(options: PrettyTerminalLoggerOptions = {}): ContextLoggerBackend {
-  const renderOptions = resolveRenderOptions(options);
-  const colors = createColorPalette(shouldUseColors(options.useColors));
-  const outputConsole = options.console ?? console;
-  return {
-    log(_context, entry) {
-      const parts: string[] = [];
-      if (renderOptions.includeTimestamp) parts.push(colors.dim(formatTimestamp(entry.timestamp)));
-      const levelLabel = entry.level.toUpperCase().padEnd(5);
-      parts.push(colors.level(entry.level, levelLabel));
-      parts.push(entry.level === "error" ? colors.bold(entry.message) : entry.message);
-      if (renderOptions.includeContextPath && isContext(entry.context)) {
-        const path = entry.context.getPath();
-        if (path.length > 0) parts.push(colors.dim(`ctx=${path.join("/")}`));
-      }
-      const seen = new WeakSet<object>();
-      if (!isContext(entry.context) && entry.context && Object.keys(entry.context as object).length > 0) {
-        const value = formatInlineValue(entry.context, renderOptions, colors, 0, seen, ["context"]);
-        parts.push(`${colors.dim("context=")}${value}`);
-      }
-      if (entry.metadata && Object.keys(entry.metadata).length > 0) {
-        const value = formatInlineValue(entry.metadata, renderOptions, colors, 0, seen, ["metadata"]);
-        parts.push(`${colors.dim("meta=")}${value}`);
-      }
-      const outputLines = [parts.join(" ")];
-      if (entry.error !== undefined) {
-        const value = isErrorLike(entry.error)
-          ? formatErrorSummary(entry.error, renderOptions, colors, 0, seen, ["error"])
-          : formatInlineValue(entry.error, renderOptions, colors, 0, seen, ["error"]);
-        outputLines[0] = `${outputLines[0]} ${colors.dim("error=")}${value}`;
-        if (isErrorLike(entry.error) && typeof entry.error.stack === "string") {
-          for (const line of entry.error.stack.split("\n").slice(1)) {
-            const trimmed = line.trim();
-            if (trimmed) outputLines.push(`${renderOptions.indent}${colors.dim(trimmed)}`);
-          }
-        }
-      }
-      const output = outputLines.join("\n");
-      switch (entry.level) {
-        case "debug":
-        case "info": outputConsole.log(output); break;
-        case "warn": outputConsole.warn(output); break;
-        case "error": outputConsole.error(output); break;
-        default: throw new Error(`Unhandled log level: ${String(entry.level)}`);
-      }
-    },
-  };
-}
+/** The backend of a context that was given none. */
+const terminal: ContextLoggerBackend = { log: (_context, entry) => writeLine(entry) };
 
-const defaultLoggerBackendImpl = createPrettyTerminalLoggerBackend();
-const defaultLoggerBackend: ContextLoggerBackend = {
-  log: (context, entry) => defaultLoggerBackendImpl.log(context, entry),
-};
+// ── What the rest of the engine uses ──
 
-export const loggerKey: ContextKey<ContextLoggerBackend> = createKey(
-  Symbol("loggerBackend"),
-  defaultLoggerBackend,
-);
+export const loggerKey: ContextKey<ContextLoggerBackend> = createKey(Symbol("loggerBackend"), terminal);
 
 export function getLoggerBackend(context: Context): ContextLoggerBackend {
   return context.get(loggerKey);
 }
 
+/** A logger. The name is not used: a line says where it comes from by the names of its context. */
 export function createLogger(_name: string): ContextLogger {
-  function log(context: Context, entry: Omit<ContextLogEntry, "timestamp">): void {
+  /** Stamps a line with the time, then hands it to the backend its context carries at that moment. */
+  function hand(context: Context, line: Omit<ContextLogEntry, "timestamp">): void {
     const timestamp = new Date();
-    getLoggerBackend(context).log(context, { ...entry, timestamp });
+    getLoggerBackend(context).log(context, { ...line, timestamp });
   }
   return {
-    debug: (context, message, metadata) => log(context, { level: "debug", message, context, metadata }),
-    info: (context, message, metadata) => log(context, { level: "info", message, context, metadata }),
-    warn: (context, message, metadata) => log(context, { level: "warn", message, context, metadata }),
-    error: (context, message, error, metadata) => log(context, { level: "error", message, context, error, metadata }),
+    debug: (context, message, metadata) => hand(context, { level: "debug", message, context, metadata }),
+    info: (context, message, metadata) => hand(context, { level: "info", message, context, metadata }),
+    warn: (context, message, metadata) => hand(context, { level: "warn", message, context, metadata }),
+    error: (context, message, error, metadata) => hand(context, { level: "error", message, context, error, metadata }),
   };
 }
 
-function createLoggerMiddleware(
-  backend: ContextLoggerBackend,
-  attributes: Readonly<Record<string, unknown>>,
-): ContextLoggerBackend {
+/** A backend that puts the attributes before what each line adds, and hands the line on. Where both name the same thing, the line's own wins. */
+function withAttributes(backend: ContextLoggerBackend, attributes: Readonly<Record<string, unknown>>): ContextLoggerBackend {
   return {
     log(context, entry) {
       backend.log(context, { ...entry, metadata: { ...attributes, ...entry.metadata } });
@@ -404,9 +309,10 @@ function createLoggerMiddleware(
   };
 }
 
-export function withLogAttributes(
-  context: Context,
-  attributes: Readonly<Record<string, unknown>>,
-): Context {
-  return context.with(loggerKey, createLoggerMiddleware(context.get(loggerKey), { ...attributes }));
+/**
+ * A context whose lines all carry `attributes`. The attributes are copied
+ * now, and the lines go to the backend the context has now.
+ */
+export function withLogAttributes(context: Context, attributes: Readonly<Record<string, unknown>>): Context {
+  return context.with(loggerKey, withAttributes(context.get(loggerKey), { ...attributes }));
 }
