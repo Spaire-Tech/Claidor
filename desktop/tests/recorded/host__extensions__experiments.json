@@ -3,17 +3,6 @@
  "surface": {
   "extension": {
    "experimentsExtension": "object"
-  },
-  "service": {
-   "BASE_POLL_INTERVAL_MS": "number",
-   "BOOTSTRAP_TIMEOUT_MS": "number",
-   "GATE_READY_TIMEOUT_MS": "number",
-   "MIN_POLL_INTERVAL_MS": "number",
-   "POLL_JITTER_FRACTION": "number",
-   "SandExperimentService": "class",
-   "computePollDelayMs": "function",
-   "envGateOverride": "function",
-   "jitteredSandExperimentPollIntervalMs": "function"
   }
  },
  "scenarios": {

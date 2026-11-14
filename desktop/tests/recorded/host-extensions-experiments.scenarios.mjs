@@ -6,16 +6,13 @@ import path from "node:path";
 export const part = "host/extensions/experiments";
 export const modules = {
   extension: "source/host/extensions/experiments/extension.ts",
-  // Not of this part: the service the extension starts. It is listed so that a scenario can watch the calls the
-  // extension makes on it, and stand in for one of its answers, through the class's own public methods.
+};
+// Not of this part: the service the extension starts. It is borrowed so that a scenario can watch the calls the
+// extension makes on it, and stand in for one of its answers, through the class's own public methods.
+export const borrowed = {
   service: "source/shared/node/experiments/simeon-experiments.ts",
 };
 export const covers = ["source/host/extensions/experiments/"];
-
-const NOT_OF_THIS_PART = "belongs to shared/node/experiments, not to this part: the file is listed only for its class";
-export const skipped = Object.fromEntries(
-  ["BASE_POLL_INTERVAL_MS", "MIN_POLL_INTERVAL_MS", "POLL_JITTER_FRACTION", "BOOTSTRAP_TIMEOUT_MS", "GATE_READY_TIMEOUT_MS", "computePollDelayMs", "envGateOverride", "jitteredSandExperimentPollIntervalMs"].map((name) => [`service.${name}`, NOT_OF_THIS_PART]),
-);
 
 /** Every setting the extension or its service looks at. The machine's own are put aside while a scenario runs. */
 const NO_SETTINGS = Object.fromEntries(
