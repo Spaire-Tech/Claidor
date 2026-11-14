@@ -871,6 +871,21 @@ or on an iPhone. The Swift was not compiled here (no Swift on this
 machine): `swift test` in `ios/SimeonCore` and a Mac and iPhone build are
 owed.
 
+**The mascot is the whole picture** (later that day, the founder: "i
+wanted the full avatar of the agent. for it not to be behind a background
+white or dark. … also do the same for cusor codex and claude code").
+`window/Call.css`, `Call.tsx`: the mascot fills the picture's place with
+nothing behind it, for an agent outside Simeon and for a cloud agent alike;
+the two that are dark themselves (`darkMascots`: the black ball and
+Cursor's) have a thin light edge round their own shape on the dark ground
+(`--mascot-edge`), or they would not be seen there. Only the letter of one
+with no mascot keeps the tile. The same in the Mac's `CloudAgentMark` and
+the iPhone's `PartyAvatar`. Checked: the six mascots rendered in Chromium
+with these rules, light and dark, at the chip's size; `tsc`, `pnpm test`,
+`pnpm build` committed. Not checked: the app itself in a browser, and no
+Swift was compiled. Settings › External Agents and the connect cards keep
+their tiles: the founder asked for the agent's picture.
+
 **Next.** The mention of such a bot inside a message's words still draws a
 face its name picks.
 

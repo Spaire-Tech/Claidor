@@ -41,7 +41,11 @@ import {
   exchangeRows,
   menuOrder,
 } from '../core/exchanges'
-import { cloudAgentMascot, networkMascot } from '../core/externalAgents'
+import {
+  cloudAgentMascot,
+  darkMascots,
+  networkMascot,
+} from '../core/externalAgents'
 import { pictureURL } from '../core/faces'
 import { type Agent, type Party, shownName } from '../core/models'
 import type { AppStore } from '../core/store'
@@ -100,10 +104,13 @@ export type BannerSource = Pick<
  * A cloud agent where an agent's picture would be (`CloudAgentMark`; 13
  * November 2026, the founder: "it should be whatever agent is used. either
  * claude code or codex"): the mascot of the program that coded, Claude
- * Code's or Codex's, on Connect apps' tile (white, #2c2c2e on dark, a
- * hairline), round as a picture. An agent outside Simeon (a bot or a coding
- * agent on the person's network, 14 November 2026) is drawn the same way:
- * the mascot of what it is, or the first letter of its name.
+ * Code's or Codex's. An agent outside Simeon (a bot or a coding agent on
+ * the person's network, 14 November 2026) is drawn the same way: the mascot
+ * of what it is. The mascot is the whole picture, with nothing behind it
+ * (that day, the founder: "i wanted the full avatar of the agent. for it not
+ * to be behind a background white or dark"); a dark one has a thin light
+ * edge on a dark ground. One with no mascot has the first letter of its
+ * name on Connect apps' tile.
  */
 function CloudMark({ party, size }: { party: Party; size: number }) {
   const mascot = party.cloudAgent
@@ -112,12 +119,20 @@ function CloudMark({ party, size }: { party: Party; size: number }) {
   const url = mascot == null ? undefined : mascotURL(mascot)
   return (
     <span
-      className="cloud-mark"
+      className={url != null ? 'cloud-mark' : 'cloud-mark cloud-mark-lettered'}
       style={{ width: size, height: size }}
       aria-hidden="true"
     >
       {url != null ? (
-        <img src={url} alt="" />
+        <img
+          className={
+            mascot != null && darkMascots.has(mascot)
+              ? 'cloud-mark-dark'
+              : undefined
+          }
+          src={url}
+          alt=""
+        />
       ) : (
         <span
           className="cloud-mark-letter"
