@@ -1,3 +1,12 @@
+/**
+ * The person's own permissions file, `permissions.json` in their settings
+ * folder: the terminal commands and MCP tools that run without asking, and
+ * their auto-run instructions.
+ *
+ * The file is read leniently: what can be made out of a file with mistakes
+ * in it still counts. A file that gives no command, no tool and no
+ * instruction is treated as no file at all. Nothing here writes to it.
+ */
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -22,102 +31,117 @@ export interface EffectivePermissions extends Permissions {
 
 export type PermissionsTransformer = (permissions: Permissions) => Permissions | void;
 
-export class PermissionsFileProvider {
-  private readonly permissions: Permissions;
-  private readonly autoRunInstructions: {
-    allowInstructions: readonly string[];
-    blockInstructions: readonly string[];
+const FILE_NAME = "permissions.json";
+
+/** What a file's text comes to. */
+interface FileContents {
+  readonly rules: Permissions;
+  readonly instructions: PermissionsAutoRunInstructions;
+}
+
+function isText(entry: unknown): entry is string {
+  return typeof entry === "string";
+}
+
+/** The texts of a field that should hold a list; none when it holds anything else. */
+function textsIn(field: unknown): string[] {
+  return Array.isArray(field) ? field.filter(isText) : [];
+}
+
+/**
+ * A field of the file by its name, whatever capitals the file wrote it
+ * with. When several are so named, the first in the file is the one read,
+ * whatever it holds.
+ */
+function fieldNamed(file: Record<string, unknown>, name: string): unknown {
+  const wanted = name.toLowerCase();
+  const written = Object.keys(file).find((key) => key.toLowerCase() === wanted);
+  return written === undefined ? undefined : file[written];
+}
+
+/** A rule of one kind for each entry: `Shell(ls)`, `Mcp(server:tool)`. */
+function rulesOf(kind: "Shell" | "Mcp", entries: readonly string[]): string[] {
+  return entries.map((entry) => `${kind}(${entry})`);
+}
+
+/**
+ * The rules and instructions in a file's text, or undefined when it holds
+ * none of either. `autoReview` is read first, and `autoRun` only when
+ * `autoReview` is missing or null. Commands come before tools in the rules,
+ * and a file never denies anything.
+ */
+function contentsOf(text: string): FileContents | undefined {
+  const read: unknown = parse(text);
+  if (!read || typeof read !== "object") return undefined;
+  const file = read as Record<string, unknown>;
+
+  const commands = textsIn(fieldNamed(file, "terminalAllowlist"));
+  const tools = textsIn(fieldNamed(file, "mcpAllowlist"));
+  const autoRun = parsePermissionsAutoRunConfig(fieldNamed(file, "autoReview") ?? fieldNamed(file, "autoRun"));
+  const instructions: PermissionsAutoRunInstructions = {
+    allowInstructions: autoRun?.allowInstructions ?? [],
+    blockInstructions: autoRun?.blockInstructions ?? [],
   };
 
-  constructor(
-    permissions: Permissions,
-    autoRunInstructions: PermissionsAutoRunInstructions,
-  ) {
-    this.permissions = permissions;
-    this.autoRunInstructions = autoRunInstructions;
+  const found = commands.length + tools.length + instructions.allowInstructions.length + instructions.blockInstructions.length;
+  if (found === 0) return undefined;
+  return {
+    rules: { allow: [...rulesOf("Shell", commands), ...rulesOf("Mcp", tools)], deny: [] },
+    instructions,
+  };
+}
+
+export class PermissionsFileProvider {
+  /** Both are kept as given, not copied: a later change to them is seen here. */
+  private readonly rules: Permissions;
+  private readonly instructions: PermissionsAutoRunInstructions;
+
+  constructor(permissions: Permissions, autoRunInstructions: PermissionsAutoRunInstructions) {
+    this.rules = permissions;
+    this.instructions = autoRunInstructions;
   }
 
+  /** Where the person's file is, by the settings of the process at the time of asking. */
   static getPermissionsFilePath(): string {
-    return join(getConfigDir(), "permissions.json");
+    return join(getConfigDir(), FILE_NAME);
   }
 
+  /**
+   * The file at `filePath`, or the person's own when no path is given.
+   * Undefined when there is no file there, when it cannot be read, or when
+   * it holds no rule and no instruction. It is read anew each time.
+   */
   static async load(filePath?: string): Promise<PermissionsFileProvider | undefined> {
-    const path = filePath ?? PermissionsFileProvider.getPermissionsFilePath();
-    if (!existsSync(path)) {
-      return undefined;
-    }
+    const file = filePath ?? PermissionsFileProvider.getPermissionsFilePath();
+    if (!existsSync(file)) return undefined;
     try {
-      const raw = await readFile(path, "utf8");
-      const parsed = parse(raw);
-      if (!parsed || typeof parsed !== "object") {
-        return undefined;
-      }
-      const config = parsed as Record<string, unknown>;
-      const mcpEntries = filterStrings(getFieldCaseInsensitive(config, "mcpAllowlist"));
-      const terminalEntries = filterStrings(getFieldCaseInsensitive(config, "terminalAllowlist"));
-      const autoRunConfig =
-        getFieldCaseInsensitive(config, "autoReview") ??
-        getFieldCaseInsensitive(config, "autoRun");
-      const autoRun = parsePermissionsAutoRunConfig(autoRunConfig);
-      const autoRunInstructions = {
-        allowInstructions: autoRun?.allowInstructions ?? [],
-        blockInstructions: autoRun?.blockInstructions ?? [],
-      };
-      if (
-        mcpEntries.length === 0 &&
-        terminalEntries.length === 0 &&
-        autoRunInstructions.allowInstructions.length === 0 &&
-        autoRunInstructions.blockInstructions.length === 0
-      ) {
-        return undefined;
-      }
-      const allow = [
-        ...terminalEntries.map(command => `Shell(${command})`),
-        ...mcpEntries.map(entry => `Mcp(${entry})`),
-      ];
-      return new PermissionsFileProvider({ allow, deny: [] }, autoRunInstructions);
+      const contents = contentsOf(await readFile(file, "utf8"));
+      if (contents === undefined) return undefined;
+      return new PermissionsFileProvider(contents.rules, contents.instructions);
     } catch {
       return undefined;
     }
   }
 
+  /** The file's rules, the same lists each time, with the approval mode and the policy that every file is given. */
   async getPermissions(): Promise<EffectivePermissions> {
+    const { allow, deny } = this.rules;
     return {
-      allow: this.permissions.allow,
-      deny: this.permissions.deny,
+      allow,
+      deny,
       approvalMode: "unrestricted",
       userConfiguredPolicy: { type: "insecure_none" },
     };
   }
 
+  /** The file's instructions, in lists of the caller's own to change. */
   getAutoRunInstructions(): PermissionsAutoRunInstructions {
     return {
-      allowInstructions: [...this.autoRunInstructions.allowInstructions],
-      blockInstructions: [...this.autoRunInstructions.blockInstructions],
+      allowInstructions: [...this.instructions.allowInstructions],
+      blockInstructions: [...this.instructions.blockInstructions],
     };
   }
 
-  async updatePermissions(transformer: PermissionsTransformer): Promise<void> {
-    void transformer;
-  }
-}
-
-function filterStrings(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value.filter((entry): entry is string => typeof entry === "string");
-}
-
-function getFieldCaseInsensitive(
-  object: Record<string, unknown>,
-  key: string,
-): unknown {
-  const lower = key.toLowerCase();
-  for (const candidate of Object.keys(object)) {
-    if (candidate.toLowerCase() === lower) {
-      return object[candidate];
-    }
-  }
-  return undefined;
+  /** The file is not written from here: the change asked for is dropped, and is never called. */
+  async updatePermissions(_change: PermissionsTransformer): Promise<void> {}
 }
