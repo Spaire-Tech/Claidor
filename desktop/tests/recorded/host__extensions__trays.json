@@ -1,0 +1,1504 @@
+{
+ "part": "host/extensions/trays",
+ "surface": {
+  "service": {
+   "MAX_TRAYS": "number",
+   "TrayManager": "class"
+  },
+  "extension": {
+   "traysExtension": "object"
+  }
+ },
+ "scenarios": {
+  "no more than twenty trays are kept": {
+   "returned": 20
+  },
+  "an error becomes a tray with the clock's time and a new id, and only the fields it was given": {
+   "returned": {
+    "a title and a detail": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "It failed",
+      "detail": "Something went wrong",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "every field": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T",
+      "detail": "D",
+      "requestId": "req-1",
+      "createdAt": 1000,
+      "errorKind": "network",
+      "rawDetail": "raw",
+      "actions": [
+       {
+        "kind": "retry"
+       },
+       "open"
+      ],
+      "dedupeKey": "key",
+      "count": 4
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "the fields in another order": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T",
+      "detail": "D",
+      "requestId": "req-1",
+      "createdAt": 1000,
+      "errorKind": "network",
+      "rawDetail": "raw",
+      "actions": [
+       "open"
+      ],
+      "dedupeKey": "key",
+      "count": 4
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "no actions in the list": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "an empty kind and raw detail": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000,
+      "errorKind": "",
+      "rawDetail": ""
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "fields that are null": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": null,
+      "title": "T",
+      "detail": "D",
+      "requestId": null,
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "a dedupe key and no count": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000,
+      "dedupeKey": "key",
+      "count": 1
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "a dedupe key and a count of zero": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000,
+      "dedupeKey": "key",
+      "count": 0
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "a count and no dedupe key": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "an empty dedupe key": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000,
+      "dedupeKey": "",
+      "count": 1
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "fields a tray does not have": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T",
+      "detail": "D",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    },
+    "nothing but an empty object": {
+     "tray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": {
+       "$": "undefined"
+      },
+      "detail": {
+       "$": "undefined"
+      },
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "told": true,
+     "kept": true
+    }
+   }
+  },
+  "the tray handed back is the one kept and the one listeners are told, with the very list of actions it was given": {
+   "returned": {
+    "aNewListAfterEachPush": true,
+    "theSameListWhileNothingChanges": true,
+    "theEmptyListWasLeftEmpty": 0,
+    "theListOfOneWasLeftAtOne": 1,
+    "trayIsTheOneKept": true,
+    "trayIsTheOneTold": true,
+    "itsActionsAreTheListGiven": true,
+    "events": [
+     {
+      "type": "pushed",
+      "tray": {
+       "kind": "error",
+       "id": "id-1",
+       "agentId": {
+        "$": "undefined"
+       },
+       "title": "T",
+       "detail": "D",
+       "requestId": {
+        "$": "undefined"
+       },
+       "createdAt": 1000,
+       "actions": [
+        {
+         "kind": "retry"
+        }
+       ]
+      }
+     },
+     {
+      "type": "pushed",
+      "tray": {
+       "kind": "error",
+       "id": "id-2",
+       "agentId": {
+        "$": "undefined"
+       },
+       "title": "T2",
+       "detail": "D2",
+       "requestId": {
+        "$": "undefined"
+       },
+       "createdAt": 2000
+      }
+     }
+    ]
+   }
+  },
+  "an error with a dedupe key the list already holds takes the place of that tray, where it was, and is counted": {
+   "returned": {
+    "original": {
+     "kind": "error",
+     "id": "id-2",
+     "agentId": "agent-a",
+     "title": "old title",
+     "detail": "old detail",
+     "requestId": "req-old",
+     "createdAt": 2000,
+     "errorKind": "old-kind",
+     "rawDetail": "old raw",
+     "actions": [
+      "old"
+     ],
+     "dedupeKey": "key",
+     "count": 1
+    },
+    "updated": {
+     "kind": "error",
+     "id": "id-2",
+     "agentId": "agent-a",
+     "title": "new title",
+     "detail": "new detail",
+     "requestId": {
+      "$": "undefined"
+     },
+     "createdAt": 4000,
+     "errorKind": {
+      "$": "undefined"
+     },
+     "rawDetail": {
+      "$": "undefined"
+     },
+     "actions": {
+      "$": "undefined"
+     },
+     "dedupeKey": "key",
+     "count": 2
+    },
+    "aNewObject": true,
+    "askedForTheUpdate": [
+     "clock"
+    ],
+    "position": 1,
+    "titles": [
+     "first",
+     "new title",
+     "last"
+    ],
+    "aNewList": true,
+    "theOldListStillHoldsTheOriginal": true,
+    "lastEvent": {
+     "type": "pushed",
+     "tray": {
+      "kind": "error",
+      "id": "id-2",
+      "agentId": "agent-a",
+      "title": "new title",
+      "detail": "new detail",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 4000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 2
+     }
+    },
+    "toldTheUpdated": true,
+    "eventsInAll": 4
+   }
+  },
+  "what each new push with the same dedupe key leaves in the tray": {
+   "returned": {
+    "nothing but title and detail": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 2,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 4
+     }
+    },
+    "a count": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 7,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 7
+     }
+    },
+    "a count of zero": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 0,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 0
+     }
+    },
+    "a count that is null": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 2,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 4
+     }
+    },
+    "every field": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": "req-2",
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 2,
+      "errorKind": "kind-2",
+      "rawDetail": "raw-2",
+      "actions": [
+       "b",
+       "c"
+      ]
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": "req-2",
+      "createdAt": 2000,
+      "errorKind": "kind-2",
+      "rawDetail": "raw-2",
+      "actions": [
+       "b",
+       "c"
+      ],
+      "dedupeKey": "key",
+      "count": 4
+     }
+    },
+    "no actions in the list": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 2,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": "T2",
+      "detail": "D2",
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 4
+     }
+    },
+    "no title and no detail": {
+     "overABareTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": {
+       "$": "undefined"
+      },
+      "detail": {
+       "$": "undefined"
+      },
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "dedupeKey": "key",
+      "count": 2,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      }
+     },
+     "overAFullTray": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": "agent-a",
+      "title": {
+       "$": "undefined"
+      },
+      "detail": {
+       "$": "undefined"
+      },
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 2000,
+      "errorKind": {
+       "$": "undefined"
+      },
+      "rawDetail": {
+       "$": "undefined"
+      },
+      "actions": {
+       "$": "undefined"
+      },
+      "dedupeKey": "key",
+      "count": 4
+     }
+    }
+   }
+  },
+  "pushes with one dedupe key count up; keys are told apart exactly": {
+   "returned": {
+    "counts": [
+     1,
+     2,
+     3,
+     4,
+     40,
+     41
+    ],
+    "asked": "clock id clock clock clock clock clock clock id clock id clock id clock id clock id clock",
+    "trays": [
+     [
+      "id-1",
+      "key",
+      41,
+      6000
+     ],
+     [
+      "id-2",
+      "Key",
+      1,
+      7000
+     ],
+     [
+      "id-3",
+      "key ",
+      1,
+      8000
+     ],
+     [
+      "id-4",
+      "",
+      2,
+      12000
+     ],
+     [
+      "id-5",
+      1,
+      1,
+      10000
+     ],
+     [
+      "id-6",
+      "1",
+      1,
+      11000
+     ]
+    ]
+   }
+  },
+  "a kept tray that lost its count is counted from one": {
+   "returned": {
+    "kind": "error",
+    "id": "id-1",
+    "agentId": {
+     "$": "undefined"
+    },
+    "title": "T",
+    "detail": "D",
+    "requestId": {
+     "$": "undefined"
+    },
+    "createdAt": 2000,
+    "dedupeKey": "key",
+    "count": 2,
+    "errorKind": {
+     "$": "undefined"
+    },
+    "rawDetail": {
+     "$": "undefined"
+    },
+    "actions": {
+     "$": "undefined"
+    }
+   }
+  },
+  "the twenty-first tray pushes the oldest out, after it has been told as pushed": {
+   "returned": {
+    "atTwenty": {
+     "trays": 20,
+     "dismissedSoFar": 0
+    },
+    "atTwentyOne": {
+     "ids": [
+      "id-2",
+      "id-3",
+      "id-4",
+      "id-5",
+      "id-6",
+      "id-7",
+      "id-8",
+      "id-9",
+      "id-10",
+      "id-11",
+      "id-12",
+      "id-13",
+      "id-14",
+      "id-15",
+      "id-16",
+      "id-17",
+      "id-18",
+      "id-19",
+      "id-20",
+      "id-21"
+     ],
+     "newEvents": [
+      {
+       "type": "pushed",
+       "tray": {
+        "kind": "error",
+        "id": "id-21",
+        "agentId": {
+         "$": "undefined"
+        },
+        "title": "t21",
+        "detail": "d21",
+        "requestId": {
+         "$": "undefined"
+        },
+        "createdAt": 21000
+       }
+      },
+      {
+       "type": "dismissed",
+       "id": "id-1"
+      }
+     ],
+     "handedBackIsKept": true,
+     "theListOfTwentyWasLeftAsItWas": true
+    },
+    "afterOneMore": {
+     "ids": [
+      "id-3",
+      "id-4",
+      "id-5",
+      "id-6",
+      "id-7",
+      "id-8",
+      "id-9",
+      "id-10",
+      "id-11",
+      "id-12",
+      "id-13",
+      "id-14",
+      "id-15",
+      "id-16",
+      "id-17",
+      "id-18",
+      "id-19",
+      "id-20",
+      "id-21",
+      "id-22"
+     ],
+     "newEvents": [
+      [
+       "pushed",
+       "id-22"
+      ],
+      [
+       "dismissed",
+       "id-2"
+      ]
+     ]
+    }
+   }
+  },
+  "a push that takes the place of a tray never pushes one out": {
+   "returned": {
+    "trays": 20,
+    "ids": "id-1 id-2 id-3 id-4 id-5 id-6 id-7 id-8 id-9 id-10 id-11 id-12 id-13 id-14 id-15 id-16 id-17 id-18 id-19 id-20",
+    "counts": "2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2",
+    "events": []
+   }
+  },
+  "a listener that throws stops the push where it is: the tray is kept, later listeners are not told, nothing is pushed out": {
+   "returned": {
+    "whileFailing": {
+     "thrown": [
+      "the listener's own error",
+      "the listener's own error",
+      "the listener's own error"
+     ],
+     "trays": 23,
+     "toldToTheFirstListener": [
+      "pushed",
+      "pushed",
+      "pushed"
+     ],
+     "toldToTheLaterListener": []
+    },
+    "onceItNoLongerThrows": {
+     "trays": 20,
+     "ids": "id-5 id-6 id-7 id-8 id-9 id-10 id-11 id-12 id-13 id-14 id-15 id-16 id-17 id-18 id-19 id-20 id-21 id-22 id-23 id-24",
+     "newEvents": [
+      [
+       "pushed",
+       "id-24"
+      ],
+      [
+       "dismissed",
+       "id-1"
+      ],
+      [
+       "dismissed",
+       "id-2"
+      ],
+      [
+       "dismissed",
+       "id-3"
+      ],
+      [
+       "dismissed",
+       "id-4"
+      ]
+     ],
+     "toldToTheLaterListener": [
+      "pushed",
+      "dismissed",
+      "dismissed",
+      "dismissed",
+      "dismissed"
+     ]
+    }
+   }
+  },
+  "a listener that throws while trays are taken away: the trays are gone all the same, and the rest of the telling is lost": {
+   "returned": {
+    "dismiss": {
+     "thrown": "the listener's own error",
+     "left": [
+      "id-1",
+      "id-3",
+      "id-4"
+     ],
+     "toldBeforeTheFailure": [
+      {
+       "type": "dismissed",
+       "id": "id-2"
+      }
+     ]
+    },
+    "clearAll": {
+     "thrown": "the listener's own error",
+     "left": [],
+     "toldBeforeTheFailure": [
+      {
+       "type": "cleared"
+      }
+     ]
+    },
+    "clearForAgent": {
+     "thrown": "the listener's own error",
+     "left": [
+      "id-4"
+     ],
+     "toldBeforeTheFailure": [
+      {
+       "type": "dismissed",
+       "id": "id-1"
+      }
+     ]
+    }
+   }
+  },
+  "a tray is dismissed by its id: listeners are told once, and an id the list does not hold changes nothing": {
+   "returned": {
+    "unknown": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "untouched": true,
+    "one": true,
+    "afterOne": [
+     "b",
+     "b",
+     "c"
+    ],
+    "two": true,
+    "again": false,
+    "left": [
+     [
+      "c",
+      "t4"
+     ]
+    ],
+    "aNewList": true,
+    "theOldListStillHoldsFour": 4,
+    "events": [
+     {
+      "type": "dismissed",
+      "id": "a"
+     },
+     {
+      "type": "dismissed",
+      "id": "b"
+     }
+    ]
+   }
+  },
+  "all trays are cleared at once and listeners told so; an empty list is left alone": {
+   "returned": {
+    "onEmpty": {
+     "$": "undefined"
+    },
+    "emptyLeftAlone": true,
+    "cleared": {
+     "$": "undefined"
+    },
+    "left": 0,
+    "aNewList": true,
+    "theOldListStillHoldsThree": 3,
+    "events": [
+     {
+      "type": "cleared"
+     }
+    ],
+    "clearedAgainLeavesTheSameList": true
+   }
+  },
+  "an agent's trays are taken away together, each told as dismissed in the order they were kept": {
+   "returned": {
+    "unknown": {
+     "$": "undefined"
+    },
+    "untouched": true,
+    "cleared": {
+     "$": "undefined"
+    },
+    "afterAgentA": {
+     "left": [
+      [
+       "id-2",
+       "agent-b"
+      ],
+      [
+       "id-3",
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       "id-5",
+       null
+      ],
+      [
+       "id-7",
+       "Agent-a"
+      ]
+     ],
+     "events": [
+      {
+       "type": "dismissed",
+       "id": "id-1"
+      },
+      {
+       "type": "dismissed",
+       "id": "id-4"
+      },
+      {
+       "type": "dismissed",
+       "id": "id-6"
+      }
+     ]
+    },
+    "afterNoAgent": {
+     "left": [
+      [
+       "id-2",
+       "agent-b"
+      ],
+      [
+       "id-5",
+       null
+      ],
+      [
+       "id-7",
+       "Agent-a"
+      ]
+     ],
+     "events": [
+      {
+       "type": "dismissed",
+       "id": "id-3"
+      }
+     ]
+    },
+    "afterNull": {
+     "left": [
+      [
+       "id-2",
+       "agent-b"
+      ],
+      [
+       "id-7",
+       "Agent-a"
+      ]
+     ],
+     "events": [
+      {
+       "type": "dismissed",
+       "id": "id-5"
+      }
+     ]
+    }
+   }
+  },
+  "listeners are told in the order they came, as often as they were added, until each is taken away": {
+   "returned": {
+    "afterPush": [
+     [
+      "first",
+      1,
+      "pushed"
+     ],
+     [
+      "second",
+      "EventEmitter",
+      "pushed"
+     ],
+     [
+      "first",
+      1,
+      "pushed"
+     ]
+    ],
+    "whatStoppingGives": "EventEmitter",
+    "sameThingEveryTime": true,
+    "afterOneStop": [
+     [
+      "first",
+      1,
+      "cleared"
+     ],
+     [
+      "second",
+      "EventEmitter",
+      "cleared"
+     ]
+    ],
+    "afterAllStopped": []
+   }
+  },
+  "a listener added during an event waits for the next one; one taken away during an event is still told it": {
+   "returned": {
+    "afterPush": [
+     [
+      "early",
+      "pushed"
+     ],
+     [
+      "late",
+      "pushed"
+     ]
+    ],
+    "afterClear": [
+     [
+      "early",
+      "cleared"
+     ],
+     [
+      "late",
+      "cleared"
+     ],
+     [
+      "added during",
+      "cleared"
+     ]
+    ],
+    "afterAnotherPush": [
+     [
+      "early",
+      "pushed"
+     ],
+     [
+      "added during",
+      "pushed"
+     ]
+    ]
+   }
+  },
+  "the eleventh listener on one list makes Node warn of a leak, once": {
+   "returned": {
+    "ten": [],
+    "eleventh": [
+     {
+      "name": "MaxListenersExceededWarning",
+      "type": "event",
+      "count": 11,
+      "raisedBy": "EventEmitter"
+     }
+    ],
+    "twelfth": []
+   }
+  },
+  "a push given nothing fails after the clock was asked and changes nothing; a text or a number makes a tray with no fields": {
+   "returned": {
+    "nothing": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)",
+     "asked": [
+      "clock"
+     ],
+     "trays": 0,
+     "events": 0
+    },
+    "null": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)",
+     "asked": [
+      "clock"
+     ],
+     "trays": 0,
+     "events": 0
+    },
+    "a text": {
+     "gave": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": {
+       "$": "undefined"
+      },
+      "detail": {
+       "$": "undefined"
+      },
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "trays": 1,
+     "events": 1
+    },
+    "a number": {
+     "gave": {
+      "kind": "error",
+      "id": "id-1",
+      "agentId": {
+       "$": "undefined"
+      },
+      "title": {
+       "$": "undefined"
+      },
+      "detail": {
+       "$": "undefined"
+      },
+      "requestId": {
+       "$": "undefined"
+      },
+      "createdAt": 1000
+     },
+     "asked": [
+      "clock",
+      "id"
+     ],
+     "trays": 1,
+     "events": 1
+    }
+   }
+  },
+  "left to itself a list takes random ids and the time of day": {
+   "returned": {
+    "idsAreRandom": true,
+    "idsDiffer": true,
+    "times": [
+     1700000000123,
+     1700000000456,
+     1700000000789
+    ],
+    "theReplacedTrayKeepsItsId": true,
+    "methods": [
+     "clearAll",
+     "clearForAgent",
+     "dismiss",
+     "getTrays",
+     "pushError",
+     "subscribe"
+    ]
+   }
+  },
+  "the extension is declared under the id trays, with no peers": {
+   "returned": {
+    "keys": [
+     "kind",
+     "id",
+     "dependencies",
+     "start"
+    ],
+    "kind": "host-extension",
+    "id": "trays",
+    "dependencies": [],
+    "frozen": [
+     true,
+     true
+    ],
+    "start": {
+     "kind": "function",
+     "parameters": 0
+    }
+   }
+  },
+  "started, the extension hands the host six ways into one list of its own and asks nothing of the host": {
+   "returned": {
+    "aPromise": false,
+    "ways": [
+     [
+      "list",
+      "function",
+      0
+     ],
+     [
+      "dismiss",
+      "function",
+      1
+     ],
+     [
+      "clearAll",
+      "function",
+      0
+     ],
+     [
+      "subscribe",
+      "function",
+      1
+     ],
+     [
+      "pushError",
+      "function",
+      1
+     ],
+     [
+      "clearForAgent",
+      "function",
+      1
+     ]
+    ],
+    "answers": {
+     "list": [
+      {
+       "kind": "error",
+       "id": "<first>",
+       "agentId": "agent-a",
+       "title": "t1",
+       "detail": "d1",
+       "requestId": {
+        "$": "undefined"
+       },
+       "createdAt": 1700000000000
+      },
+      {
+       "kind": "error",
+       "id": "<second>",
+       "agentId": "agent-b",
+       "title": "t2",
+       "detail": "d2",
+       "requestId": {
+        "$": "undefined"
+       },
+       "createdAt": 1700000000000,
+       "dedupeKey": "key",
+       "count": 1
+      },
+      {
+       "kind": "error",
+       "id": "<third>",
+       "agentId": "agent-a",
+       "title": "t3",
+       "detail": "d3",
+       "requestId": {
+        "$": "undefined"
+       },
+       "createdAt": 1700000000000
+      }
+     ],
+     "listIsTheSameUntilAChange": true,
+     "idsAreRandom": true,
+     "dismissUnknown": false,
+     "dismissNoId": false,
+     "dismissNothing": {
+      "threw": "TypeError",
+      "message": "(the runtime's own words)"
+     },
+     "dismissFirst": true,
+     "afterDismiss": [
+      "<second>",
+      "<third>"
+     ],
+     "clearForAgent": {
+      "$": "undefined"
+     },
+     "afterClearForAgent": [
+      "<second>"
+     ],
+     "clearAll": {
+      "$": "undefined"
+     },
+     "afterClearAll": 0
+    },
+    "events": [
+     [
+      "pushed",
+      "<first>",
+      true
+     ],
+     [
+      "pushed",
+      "<second>",
+      true
+     ],
+     [
+      "pushed",
+      "<third>",
+      true
+     ],
+     [
+      "dismissed",
+      "<first>"
+     ],
+     [
+      "dismissed",
+      "<third>"
+     ],
+     [
+      "cleared",
+      {
+       "$": "undefined"
+      }
+     ]
+    ],
+    "whatStoppingGives": "EventEmitter",
+    "theOtherStartHasItsOwnList": 0,
+    "eachStartNewWays": true,
+    "callsOnTheHost": [],
+    "leftToUndo": 0
+   }
+  }
+ }
+}

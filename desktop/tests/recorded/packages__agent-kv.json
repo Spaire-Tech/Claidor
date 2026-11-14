@@ -43,9 +43,6 @@
    "getAgentMetadataSchema": "function",
    "getDefaultAgentMetadata": "function",
    "isValidBlobEncryptionKeyHex": "function"
-  },
-  "disposable": {
-   "Disposable": "class"
   }
  },
  "scenarios": {

@@ -11,7 +11,9 @@ import { trace } from "@opentelemetry/api";
 export const part = "packages/context-rpc";
 export const modules = {
   rpc: "source/packages/context-rpc/index.ts",
-  // Not this part's code: the contexts the part is given are real ones, made by the package it is built on.
+};
+// Not this part's code: the contexts the part is given are real ones, made by the package it is built on.
+export const borrowed = {
   context: "source/packages/context/core.ts",
 };
 

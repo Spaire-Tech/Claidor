@@ -1,0 +1,1098 @@
+{
+ "part": "host/extensions/state-backstop",
+ "surface": {
+  "service": {
+   "DEFAULT_MAX_SNAPSHOT_BYTES": "number",
+   "SAND_STATE_BACKSTOP_REL_PATH": "string",
+   "STATE_BACKSTOP_DEBOUNCE_MS": "number",
+   "SandStateBackstop": "class",
+   "isStateBackstopEnabled": "function",
+   "readStoreDbBytes": "function"
+  },
+  "extension": {
+   "createStateBackstopExtension": "function"
+  }
+ },
+ "scenarios": {
+  "the copy is kept as state/store.db, is at most 64 MiB, and is made five seconds after the last call for it": {
+   "returned": {
+    "path": "state/store.db",
+    "cap": 67108864,
+    "wait": 5000
+   }
+  },
+  "the switch is on for 1, true or yes, in any case and with blanks around, and off for anything else": {
+   "returned": {
+    "table": {
+     "(not set)": false,
+     "\"\"": false,
+     "\"1\"": true,
+     "\"true\"": true,
+     "\"yes\"": true,
+     "\"TRUE\"": true,
+     "\"Yes\"": true,
+     "\" 1 \"": true,
+     "\"\\ttrue\\n\"": true,
+     "\"0\"": false,
+     "\"false\"": false,
+     "\"no\"": false,
+     "\"on\"": false,
+     "\"y\"": false,
+     "\"2\"": false,
+     "\"11\"": false,
+     "\"true!\"": false,
+     "\"1 1\"": false,
+     "\"enabled\"": false
+    },
+    "fromTheProcess": [
+     false,
+     true,
+     false
+    ],
+    "anotherSettingIsNotRead": false,
+    "noSettingsAtAll": {
+     "failed": {
+      "class": "TypeError",
+      "code": {
+       "$": "undefined"
+      },
+      "message": "(the runtime's own words)"
+     }
+    }
+   }
+  },
+  "the state file is read whole after a checkpoint; a file that is not there is not checkpointed and gives nothing": {
+   "returned": {
+    "missing": null,
+    "checkpointsForMissing": 0,
+    "read": {
+     "class": "Buffer",
+     "bytes": {
+      "$": "bytes",
+      "v": "000102fa"
+     }
+    },
+    "afterAChangingCheckpoint": {
+     "$": "bytes",
+     "v": "000102fa0707"
+    },
+    "whenTheCheckpointFails": "the checkpoint failed",
+    "aFolder": "EISDIR",
+    "checkpoints": [
+     [
+      "<tmp>/store.db"
+     ],
+     [
+      "<tmp>/store.db"
+     ]
+    ]
+   }
+  },
+  "an agent's state file is store.db in the agent's own folder under the agents' folder": {
+   "returned": {
+    "/stand-in/agents": [
+     "\"agent-a\" -> /stand-in/agents/agent-a/store.db",
+     "\"\" -> /stand-in/agents/store.db",
+     "\"a/b\" -> /stand-in/agents/a/b/store.db",
+     "\"../elsewhere\" -> /stand-in/elsewhere/store.db",
+     "\"a b\" -> /stand-in/agents/a b/store.db",
+     "\".\" -> /stand-in/agents/store.db",
+     "\"agent-a/\" -> /stand-in/agents/agent-a/store.db"
+    ],
+    "/stand-in/agents/": [
+     "\"agent-a\" -> /stand-in/agents/agent-a/store.db",
+     "\"\" -> /stand-in/agents/store.db",
+     "\"a/b\" -> /stand-in/agents/a/b/store.db",
+     "\"../elsewhere\" -> /stand-in/elsewhere/store.db",
+     "\"a b\" -> /stand-in/agents/a b/store.db",
+     "\".\" -> /stand-in/agents/store.db",
+     "\"agent-a/\" -> /stand-in/agents/agent-a/store.db"
+    ],
+    "relative/agents": [
+     "\"agent-a\" -> relative/agents/agent-a/store.db",
+     "\"\" -> relative/agents/store.db",
+     "\"a/b\" -> relative/agents/a/b/store.db",
+     "\"../elsewhere\" -> relative/elsewhere/store.db",
+     "\"a b\" -> relative/agents/a b/store.db",
+     "\".\" -> relative/agents/store.db",
+     "\"agent-a/\" -> relative/agents/agent-a/store.db"
+    ],
+    "(an empty root)": [
+     "\"agent-a\" -> agent-a/store.db",
+     "\"\" -> store.db",
+     "\"a/b\" -> a/b/store.db",
+     "\"../elsewhere\" -> ../elsewhere/store.db",
+     "\"a b\" -> a b/store.db",
+     "\".\" -> store.db",
+     "\"agent-a/\" -> agent-a/store.db"
+    ]
+   }
+  },
+  "a snapshot reads the file, asks the map for the agent's store, puts the very bytes there, and says so in the log": {
+   "returned": {
+    "aPromise": true,
+    "result": {
+     "status": "uploaded",
+     "bytes": 5
+    },
+    "calls": [
+     {
+      "call": "readDbBytes",
+      "given": [
+       "/stand-in/agents/agent-a/store.db"
+      ]
+     },
+     {
+      "call": "sourceMap.getOrCreate",
+      "given": [
+       "agent-a"
+      ]
+     },
+     {
+      "call": "provider.forStore",
+      "given": [
+       "source-of-agent-a"
+      ]
+     },
+     {
+      "call": "store(source-of-agent-a).put",
+      "given": [
+       "state/store.db",
+       "the very bytes that were read"
+      ]
+     },
+     {
+      "call": "log",
+      "given": [
+       "uploaded agent-a (5B)"
+      ],
+      "calledOnTheBackstop": true
+     }
+    ],
+    "anEmptyFile": {
+     "result": {
+      "status": "uploaded",
+      "bytes": 0
+     },
+     "calls": [
+      "readDbBytes",
+      "sourceMap.getOrCreate",
+      "provider.forStore",
+      "store(source-of-agent-b).put",
+      "log"
+     ],
+     "log": [
+      "uploaded agent-b (0B)"
+     ]
+    }
+   }
+  },
+  "an agent with no state file is skipped without a word and without asking for its store": {
+   "returned": {
+    "null": {
+     "result": {
+      "status": "skipped",
+      "reason": "no store.db"
+     },
+     "calls": [
+      {
+       "call": "readDbBytes",
+       "given": [
+        "/stand-in/agents/agent-a/store.db"
+       ]
+      }
+     ]
+    },
+    "undefined": {
+     "result": {
+      "status": "skipped",
+      "reason": "no store.db"
+     },
+     "calls": [
+      {
+       "call": "readDbBytes",
+       "given": [
+        "/stand-in/agents/agent-a/store.db"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "a state file over the limit is skipped and the log says by how much; at the limit it is copied": {
+   "returned": [
+    {
+     "limit": 10,
+     "size": 9,
+     "result": {
+      "status": "uploaded",
+      "bytes": 9
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "uploaded agent-a (9B)"
+     ]
+    },
+    {
+     "limit": 10,
+     "size": 10,
+     "result": {
+      "status": "uploaded",
+      "bytes": 10
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "uploaded agent-a (10B)"
+     ]
+    },
+    {
+     "limit": 10,
+     "size": 11,
+     "result": {
+      "status": "skipped",
+      "reason": "store.db 11B over 10B cap"
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "skip agent-a: store.db 11B over 10B cap"
+     ]
+    },
+    {
+     "limit": 0,
+     "size": 0,
+     "result": {
+      "status": "uploaded",
+      "bytes": 0
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "uploaded agent-a (0B)"
+     ]
+    },
+    {
+     "limit": 0,
+     "size": 1,
+     "result": {
+      "status": "skipped",
+      "reason": "store.db 1B over 0B cap"
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "skip agent-a: store.db 1B over 0B cap"
+     ]
+    },
+    {
+     "limit": "(none given)",
+     "size": 67108864,
+     "result": {
+      "status": "uploaded",
+      "bytes": 67108864
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "uploaded agent-a (67108864B)"
+     ]
+    },
+    {
+     "limit": "(none given)",
+     "size": 67108865,
+     "result": {
+      "status": "skipped",
+      "reason": "store.db 67108865B over 67108864B cap"
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "skip agent-a: store.db 67108865B over 67108864B cap"
+     ]
+    },
+    {
+     "limit": null,
+     "size": 67108865,
+     "result": {
+      "status": "skipped",
+      "reason": "store.db 67108865B over 67108864B cap"
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "skip agent-a: store.db 67108865B over 67108864B cap"
+     ]
+    },
+    {
+     "limit": 1.5,
+     "size": 1,
+     "result": {
+      "status": "uploaded",
+      "bytes": 1
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "uploaded agent-a (1B)"
+     ]
+    },
+    {
+     "limit": 1.5,
+     "size": 2,
+     "result": {
+      "status": "skipped",
+      "reason": "store.db 2B over 1.5B cap"
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "skip agent-a: store.db 2B over 1.5B cap"
+     ]
+    }
+   ]
+  },
+  "a snapshot that fails at any step ends as an error with the failure's words, told to the log; it does not fail the caller": {
+   "returned": {
+    "the file cannot be read": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "the disk failed"
+      }
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "snapshot agent-a failed: the disk failed"
+     ]
+    },
+    "the map of stores fails": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "the map failed"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, log",
+     "log": [
+      "snapshot agent-a failed: the map failed"
+     ]
+    },
+    "the store cannot be found": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "no such store"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, log",
+     "log": [
+      "snapshot agent-a failed: no such store"
+     ]
+    },
+    "the store refuses the bytes": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "the store is full"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "snapshot agent-a failed: the store is full"
+     ]
+    },
+    "a failure that is a text": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "just words"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "snapshot agent-a failed: just words"
+     ]
+    },
+    "a failure that is null": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "Unknown error"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "snapshot agent-a failed: Unknown error"
+     ]
+    },
+    "a failure with no words but a cause": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "the cause's words"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "snapshot agent-a failed: the cause's words"
+     ]
+    },
+    "a failure with blanks around its words": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "spaced"
+      }
+     },
+     "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, log",
+     "log": [
+      "snapshot agent-a failed: spaced"
+     ]
+    },
+    "a failure of another class": {
+     "result": {
+      "gave": {
+       "status": "error",
+       "error": "out of range"
+      }
+     },
+     "calls": "readDbBytes, log",
+     "log": [
+      "snapshot agent-a failed: out of range"
+     ]
+    },
+    "the map gives nothing": {
+     "status": "error",
+     "theLogSaysTheSameWords": true,
+     "calls": "readDbBytes, sourceMap.getOrCreate, log"
+    }
+   }
+  },
+  "left to itself a backstop logs to the console under its own name": {
+   "returned": [
+    [
+     "[sand-state-backstop] uploaded agent-a (5B)"
+    ],
+    [
+     "[sand-state-backstop] snapshot agent-b failed: the store is full"
+    ],
+    [
+     "[sand-state-backstop] skip agent-c: store.db 99B over 5B cap"
+    ]
+   ]
+  },
+  "the copy is read back from the agent's store, whatever the store gives, and a failure on the way fails the caller": {
+   "returned": {
+    "aPromise": true,
+    "theVeryBytesTheStoreGave": true,
+    "calls": [
+     {
+      "call": "sourceMap.getOrCreate",
+      "given": [
+       "agent-a"
+      ]
+     },
+     {
+      "call": "provider.forStore",
+      "given": [
+       "source-of-agent-a"
+      ]
+     },
+     {
+      "call": "store(source-of-agent-a).get",
+      "given": [
+       "state/store.db"
+      ]
+     }
+    ],
+    "whenTheStoreHasNone": null,
+    "failures": {
+     "the map of stores fails": {
+      "failed": {
+       "class": "Error",
+       "code": {
+        "$": "undefined"
+       },
+       "message": "the map failed"
+      },
+      "calls": "sourceMap.getOrCreate"
+     },
+     "the store cannot be found": {
+      "failed": {
+       "class": "Error",
+       "code": {
+        "$": "undefined"
+       },
+       "message": "no such store"
+      },
+      "calls": "sourceMap.getOrCreate, provider.forStore"
+     },
+     "the store cannot be read": {
+      "failed": {
+       "class": "Error",
+       "code": {
+        "$": "undefined"
+       },
+       "message": "the store is away"
+      },
+      "calls": "sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).get"
+     }
+    },
+    "afterTheBackstopIsDisposedOf": true
+   }
+  },
+  "a snapshot is scheduled through one debounced trigger for each agent, made the first time and pulled every time": {
+   "returned": {
+    "gave": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "scheduling": [
+     {
+      "call": "debounce.wrap",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "trigger 1 is pulled",
+      "given": []
+     },
+     {
+      "call": "trigger 1 is pulled",
+      "given": []
+     },
+     {
+      "call": "debounce.wrap",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "trigger 2 is pulled",
+      "given": []
+     },
+     {
+      "call": "trigger 1 is pulled",
+      "given": []
+     }
+    ],
+    "whatFiringGives": {
+     "$": "undefined"
+    },
+    "afterTheSecondTriggerFires": [
+     {
+      "call": "readDbBytes",
+      "given": [
+       "/stand-in/agents/agent-b/store.db"
+      ]
+     },
+     {
+      "call": "sourceMap.getOrCreate",
+      "given": [
+       "agent-b"
+      ]
+     },
+     {
+      "call": "provider.forStore",
+      "given": [
+       "source-of-agent-b"
+      ]
+     },
+     {
+      "call": "store(source-of-agent-b).put",
+      "given": [
+       "state/store.db",
+       "the very bytes that were read"
+      ]
+     },
+     {
+      "call": "log",
+      "given": [
+       "uploaded agent-b (5B)"
+      ],
+      "calledOnTheBackstop": true
+     }
+    ],
+    "afterTheFirstFiresTwice": [
+     "readDbBytes",
+     "sourceMap.getOrCreate",
+     "readDbBytes",
+     "sourceMap.getOrCreate",
+     "provider.forStore",
+     "store(source-of-agent-a).put",
+     "provider.forStore",
+     "store(source-of-agent-a).put",
+     "log",
+     "log"
+    ]
+   }
+  },
+  "disposing of a backstop disposes of every trigger once and stops all scheduling; a snapshot asked for outright still runs": {
+   "returned": {
+    "aPromise": true,
+    "gave": {
+     "$": "undefined"
+    },
+    "disposing": [
+     {
+      "call": "trigger 1 is disposed of",
+      "given": []
+     },
+     {
+      "call": "trigger 2 is disposed of",
+      "given": []
+     }
+    ],
+    "schedulingAndDisposingAfterwards": [],
+    "outright": {
+     "status": "uploaded",
+     "bytes": 5
+    },
+    "aTriggerFiredAfterwardsStillSnapshots": [
+     "readDbBytes",
+     "sourceMap.getOrCreate",
+     "provider.forStore",
+     "store(source-of-agent-a).put",
+     "log"
+    ]
+   }
+  },
+  "a scheduled snapshot that fails even in its telling is told once more, as rejected": {
+   "returned": {
+    "outright": {
+     "failed": {
+      "class": "Error",
+      "code": {
+       "$": "undefined"
+      },
+      "message": "the log failed on: snapshot agent-a failed: the log failed on: uploaded agent-a (5B)"
+     }
+    },
+    "loggedOutright": [
+     "uploaded agent-a (5B)",
+     "snapshot agent-a failed: the log failed on: uploaded agent-a (5B)"
+    ],
+    "loggedWhenScheduled": [
+     "uploaded agent-a (5B)",
+     "snapshot agent-a failed: the log failed on: uploaded agent-a (5B)",
+     "snapshot rejected for agent-a: the log failed on: snapshot agent-a failed: the log failed on: uploaded agent-a (5B)"
+    ],
+    "calls": "readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put, debounce.wrap, trigger 1 is pulled, readDbBytes, sourceMap.getOrCreate, provider.forStore, store(source-of-agent-a).put"
+   }
+  },
+  "the extension is made for a folder of agents and a reader of state files, under the id state-backstop, and needs the store sync and the map of stores": {
+   "returned": {
+    "parameters": 1,
+    "keys": [
+     "kind",
+     "id",
+     "dependencies",
+     "start"
+    ],
+    "kind": "host-extension",
+    "id": "state-backstop",
+    "dependencies": [
+     "box-store-sync",
+     "source-map"
+    ],
+    "frozen": [
+     true,
+     true
+    ],
+    "start": {
+     "kind": "function",
+     "parameters": 1
+    },
+    "aNewOneEachTime": true
+   }
+  },
+  "switched off, a start asks nothing of anyone and hands back four ways that do nothing": {
+   "returned": {
+    "no setting": {
+     "aPromise": false,
+     "ways": [
+      [
+       "isEnabled",
+       false
+      ],
+      [
+       "scheduleSnapshot",
+       "function",
+       0
+      ],
+      [
+       "snapshotNow",
+       "function",
+       0
+      ],
+      [
+       "readSnapshot",
+       "function",
+       0
+      ]
+     ],
+     "scheduleSnapshot": {
+      "$": "undefined"
+     },
+     "snapshotNow": {
+      "aPromise": true,
+      "gave": {
+       "status": "skipped",
+       "reason": "backstop disabled"
+      },
+      "aNewAnswerEachTime": true
+     },
+     "readSnapshot": {
+      "aPromise": true,
+      "gave": null
+     },
+     "calls": [],
+     "leftToUndo": 0,
+     "aNewSetOfWaysEachStart": true
+    },
+    "set to 0": {
+     "aPromise": false,
+     "ways": [
+      [
+       "isEnabled",
+       false
+      ],
+      [
+       "scheduleSnapshot",
+       "function",
+       0
+      ],
+      [
+       "snapshotNow",
+       "function",
+       0
+      ],
+      [
+       "readSnapshot",
+       "function",
+       0
+      ]
+     ],
+     "scheduleSnapshot": {
+      "$": "undefined"
+     },
+     "snapshotNow": {
+      "aPromise": true,
+      "gave": {
+       "status": "skipped",
+       "reason": "backstop disabled"
+      },
+      "aNewAnswerEachTime": true
+     },
+     "readSnapshot": {
+      "aPromise": true,
+      "gave": null
+     },
+     "calls": [],
+     "leftToUndo": 0,
+     "aNewSetOfWaysEachStart": true
+    },
+    "set to on": {
+     "aPromise": false,
+     "ways": [
+      [
+       "isEnabled",
+       false
+      ],
+      [
+       "scheduleSnapshot",
+       "function",
+       0
+      ],
+      [
+       "snapshotNow",
+       "function",
+       0
+      ],
+      [
+       "readSnapshot",
+       "function",
+       0
+      ]
+     ],
+     "scheduleSnapshot": {
+      "$": "undefined"
+     },
+     "snapshotNow": {
+      "aPromise": true,
+      "gave": {
+       "status": "skipped",
+       "reason": "backstop disabled"
+      },
+      "aNewAnswerEachTime": true
+     },
+     "readSnapshot": {
+      "aPromise": true,
+      "gave": null
+     },
+     "calls": [],
+     "leftToUndo": 0,
+     "aNewSetOfWaysEachStart": true
+    }
+   }
+  },
+  "switched on, a start leaves one thing to undo, says so in the host's log, and hands back four ways into a backstop over its peers": {
+   "returned": {
+    "aPromise": false,
+    "ways": [
+     [
+      "isEnabled",
+      true
+     ],
+     [
+      "scheduleSnapshot",
+      "function",
+      1
+     ],
+     [
+      "snapshotNow",
+      "function",
+      1
+     ],
+     [
+      "readSnapshot",
+      "function",
+      1
+     ]
+    ],
+    "atStart": [
+     {
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "host.log",
+      "given": [
+       "SandState S3 backstop enabled"
+      ],
+      "onTheHost": true
+     }
+    ],
+    "snapshot": {
+     "status": "uploaded",
+     "bytes": 5
+    },
+    "readGaveWhatTheStoreKeeps": true,
+    "afterwards": [
+     {
+      "call": "readDbBytes",
+      "given": [
+       "/stand-in/agents/agent-a/store.db"
+      ]
+     },
+     {
+      "call": "sourceMap.getOrCreate",
+      "given": [
+       "agent-a"
+      ]
+     },
+     {
+      "call": "provider.forStore",
+      "given": [
+       "source-of-agent-a"
+      ]
+     },
+     {
+      "call": "store(source-of-agent-a).put",
+      "given": [
+       "state/store.db",
+       "the very bytes that were read"
+      ]
+     },
+     {
+      "call": "sourceMap.getOrCreate",
+      "given": [
+       "agent-a"
+      ]
+     },
+     {
+      "call": "provider.forStore",
+      "given": [
+       "source-of-agent-a"
+      ]
+     },
+     {
+      "call": "store(source-of-agent-a).get",
+      "given": [
+       "state/store.db"
+      ]
+     }
+    ],
+    "printedToTheConsole": [
+     [
+      "[sand-state-backstop] uploaded agent-a (5B)"
+     ]
+    ],
+    "stopping": [
+     "a promise"
+    ],
+    "bytesWereTheReadersOwn": 5
+   }
+  },
+  "switched on, scheduling sets a timer of five seconds for each agent, set again on every call; stopping the host clears what waits and ends all scheduling": {
+   "returned": {
+    "gave": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "scheduling": [
+     {
+      "call": "timer 1 is set",
+      "delay": 5000,
+      "moreGiven": 0
+     },
+     {
+      "call": "timer 1 is told not to keep the process running"
+     },
+     {
+      "call": "timer 2 is set",
+      "delay": 5000,
+      "moreGiven": 0
+     },
+     {
+      "call": "timer 2 is told not to keep the process running"
+     },
+     {
+      "call": "timer 1 is cleared"
+     },
+     {
+      "call": "timer 3 is set",
+      "delay": 5000,
+      "moreGiven": 0
+     },
+     {
+      "call": "timer 3 is told not to keep the process running"
+     }
+    ],
+    "afterTheLastTimerRuns": [
+     "readDbBytes",
+     "sourceMap.getOrCreate",
+     "provider.forStore",
+     "store(source-of-agent-a).put"
+    ],
+    "scheduledAgain": [
+     "timer 4 is set",
+     "timer 4 is told not to keep the process running"
+    ],
+    "stopping": [
+     "a promise"
+    ],
+    "whileStopping": [
+     "timer 4 is cleared",
+     "timer 2 is cleared"
+    ],
+    "schedulingAfterTheStop": [],
+    "timersSetInAll": 4,
+    "printedToTheConsole": [
+     [
+      "[sand-state-backstop] uploaded agent-a (5B)"
+     ]
+    ]
+   }
+  },
+  "left to itself the extension reads the process's own setting, at each start and not when it is made": {
+   "returned": {
+    "off": false,
+    "on": true,
+    "offAgain": false,
+    "hostLog": 1,
+    "withSettingsOfItsOwn": {
+     "before": false,
+     "after": true
+    }
+   }
+  },
+  "what the extension is made with overrules what the peers give: its own log, limit, store provider, map of stores and debounce are used when it brings them": {
+   "returned": {
+    "under": {
+     "status": "uploaded",
+     "bytes": 50
+    },
+    "over": {
+     "status": "skipped",
+     "reason": "store.db 101B over 100B cap"
+    },
+    "callsOnItsOwn": [
+     [
+      "readDbBytes",
+      "/its/own/agents/agent-a/store.db"
+     ],
+     "sourceMap.getOrCreate",
+     "provider.forStore",
+     "store(source-of-agent-a).put",
+     [
+      "log",
+      "uploaded agent-a (50B)"
+     ],
+     [
+      "readDbBytes",
+      "/its/own/agents/agent-a/store.db"
+     ],
+     [
+      "log",
+      "skip agent-a: store.db 101B over 100B cap"
+     ],
+     "debounce.wrap",
+     "trigger 1 is pulled"
+    ],
+    "callsOnThePeersAndTheHost": [
+     "onStop",
+     "host.log"
+    ]
+   }
+  },
+  "switched on without a peer: no store sync fails the start, no map of stores fails each snapshot": {
+   "returned": {
+    "withoutTheStoreSync": {
+     "started": {
+      "failed": {
+       "class": "TypeError",
+       "code": {
+        "$": "undefined"
+       },
+       "message": "(the runtime's own words)"
+      }
+     },
+     "calls": [],
+     "leftToUndo": 0
+    },
+    "withoutTheMapOfStores": {
+     "isEnabled": true,
+     "snapshot": "error",
+     "read": {
+      "failed": {
+       "class": "TypeError",
+       "code": {
+        "$": "undefined"
+       },
+       "message": "(the runtime's own words)"
+      }
+     },
+     "calls": [
+      "onStop",
+      "host.log",
+      "readDbBytes"
+     ],
+     "printed": 1
+    }
+   }
+  }
+ }
+}

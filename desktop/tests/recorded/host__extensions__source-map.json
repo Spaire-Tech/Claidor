@@ -1,0 +1,1357 @@
+{
+ "part": "host/extensions/source-map",
+ "surface": {
+  "service": {
+   "BOX_STORE_SOURCE_KEY": "string",
+   "SandSourceMap": "class",
+   "getSourceMapPath": "function"
+  },
+  "extension": {
+   "sourceMapExtension": "object"
+  }
+ },
+ "scenarios": {
+  "the store of the computer itself is kept under the key box-store": {
+   "returned": "box-store"
+  },
+  "the map's file is source-map.json in the data folder, wherever the settings put that folder": {
+   "returned": {
+    "nothing set": "<home>/.simeon/sand-dev/source-map.json",
+    "a packaged app": "<home>/.simeon/source-map.json",
+    "a packaged lab build": "<home>/.simeon/sand-lab/source-map.json",
+    "a lab build that is not packaged": "<home>/.simeon/sand-dev/source-map.json",
+    "a data root": "<tmp>/root/source-map.json",
+    "a data root with blanks around it": "<tmp>/root/source-map.json",
+    "a data root that is not a full path": "<home>/.simeon/sand-dev/source-map.json",
+    "an empty data root": "<home>/.simeon/sand-dev/source-map.json",
+    "a user data folder": "<tmp>/user-data/sand-data/source-map.json",
+    "a data root and a user data folder": "<tmp>/root/source-map.json",
+    "a user data folder in a packaged app": "<tmp>/user-data/sand-data/source-map.json"
+   }
+  },
+  "a new agent gets an id of its own and is kept as local; the file is written whole, two spaces deep, with no line end": {
+   "returned": {
+    "first": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "afterFirst": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}",
+    "second": {
+     "sourceId": "id-2",
+     "mode": "local"
+    },
+    "afterSecond": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-2\",\n    \"mode\": \"local\"\n  }\n}",
+    "idsAskedFor": [
+     "id-1",
+     "id-2"
+    ],
+    "inTheFolder": [
+     "source-map.json"
+    ]
+   }
+  },
+  "the folders above the file are made when they are missing": {
+   "returned": {
+    "entry": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "text": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}",
+    "inTheFolder": [
+     "source-map.json"
+    ]
+   }
+  },
+  "an agent the file already holds keeps its entry: no id is asked for and the file is left as it was": {
+   "returned": {
+    "entries": [
+     {
+      "sourceId": "kept",
+      "mode": "agent-store"
+     },
+     {
+      "sourceId": "other",
+      "mode": "local"
+     },
+     {
+      "sourceId": "kept",
+      "mode": "agent-store"
+     }
+    ],
+    "idsAskedFor": [],
+    "fileLeftAsItWas": true
+   }
+  },
+  "the entry handed back is the one the map keeps: asked twice it is the same object, and a change made to it stays": {
+   "returned": {
+    "sameObject": true,
+    "afterTheChange": {
+     "sourceId": "id-1",
+     "mode": "changed by the caller"
+    },
+    "sameObjectStill": true,
+    "fileAfterAnotherAgent": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"changed by the caller\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-2\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "what a map keeps of a file: only entries with an id and one of the two modes, each cut down to those two fields": {
+   "returned": {
+    "no file": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an empty file": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "not JSON": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "null": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "a list": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "a text": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "a number": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an empty object": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "a local entry": {
+     "gave": [
+      [
+       "a",
+       [
+        [
+         "sourceId",
+         "s1"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an agent-store entry": {
+     "gave": [
+      [
+       "a",
+       [
+        [
+         "sourceId",
+         "s1"
+        ],
+        [
+         "mode",
+         "agent-store"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "another mode": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "a mode in capitals": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "no mode": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "no id": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an empty id": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an id of one blank": {
+     "gave": [
+      [
+       "a",
+       [
+        [
+         "sourceId",
+         " "
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an id that is a number": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an entry that is null": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an entry that is a text": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an entry that is a list": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "more fields than the two": {
+     "gave": [
+      [
+       "a",
+       [
+        [
+         "sourceId",
+         "s1"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "good and bad entries together": {
+     "gave": [
+      [
+       "z",
+       [
+        [
+         "sourceId",
+         "s-z"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "a",
+       [
+        [
+         "sourceId",
+         "s-a"
+        ],
+        [
+         "mode",
+         "agent-store"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "keys that are numbers": {
+     "gave": [
+      [
+       "2",
+       [
+        [
+         "sourceId",
+         "s-2"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "10",
+       [
+        [
+         "sourceId",
+         "s-10"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "b",
+       [
+        [
+         "sourceId",
+         "s-b"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "an empty key": {
+     "gave": [
+      [
+       "",
+       [
+        [
+         "sourceId",
+         "s"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ],
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "probe-id"
+        ],
+        [
+         "mode",
+         "local"
+        ]
+       ]
+      ]
+     ]
+    },
+    "the probe itself": {
+     "gave": [
+      [
+       "probe",
+       [
+        [
+         "sourceId",
+         "already"
+        ],
+        [
+         "mode",
+         "agent-store"
+        ]
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  "a file that cannot be read as a file counts as empty, and the first save then fails on it": {
+   "returned": {
+    "before": null,
+    "savingFailed": true,
+    "failureCode": "EISDIR",
+    "keptAllTheSame": {
+     "gave": {
+      "sourceId": "id-1",
+      "mode": "local"
+     }
+    }
+   }
+  },
+  "an agent's mode is set: its id stays, a new entry takes the place of the old one, and the file is written every time": {
+   "returned": {
+    "created": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "set": {
+     "sourceId": "id-1",
+     "mode": "agent-store"
+    },
+    "theOldEntryIsLeftAsItWas": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "setIsANewObject": true,
+    "nowKept": true,
+    "afterSet": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"agent-store\"\n  }\n}",
+    "setAgain": {
+     "sourceId": "id-1",
+     "mode": "agent-store"
+    },
+    "setAgainIsANewObject": true,
+    "afterSetAgain": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"agent-store\"\n  }\n}",
+    "back": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "idsAskedFor": [
+     "id-1"
+    ]
+   }
+  },
+  "setting the mode of an agent the map does not hold makes its entry with that mode": {
+   "returned": {
+    "store": {
+     "sourceId": "id-1",
+     "mode": "agent-store"
+    },
+    "local": {
+     "sourceId": "id-2",
+     "mode": "local"
+    },
+    "idsAskedFor": [
+     "id-1",
+     "id-2"
+    ],
+    "text": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"agent-store\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-2\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "a mode that is neither of the two is kept and written as given, and dropped by the next map that reads the file": {
+   "returned": {
+    "odd": [
+     {
+      "sourceId": "id-1",
+      "mode": "somewhere"
+     },
+     {
+      "sourceId": "id-1",
+      "mode": {
+       "$": "undefined"
+      }
+     },
+     {
+      "sourceId": "id-1",
+      "mode": null
+     }
+    ],
+    "text": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"somewhere\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-1\"\n  },\n  \"agent-c\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": null\n  }\n}",
+    "readAgain": [
+     {
+      "sourceId": "id-1",
+      "mode": "local"
+     },
+     {
+      "sourceId": "id-2",
+      "mode": "local"
+     },
+     {
+      "sourceId": "id-3",
+      "mode": "local"
+     }
+    ],
+    "idsAskedFor": [
+     "id-1",
+     "id-2",
+     "id-3"
+    ]
+   }
+  },
+  "the computer's own store is asked for without making it, and made under its key when asked": {
+   "returned": {
+    "none": null,
+    "fileAfterAsking": "no file",
+    "aPromise": true,
+    "made": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "found": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "foundIsTheSameObject": true,
+    "sameAsByKey": true,
+    "idsAskedFor": [
+     "id-1"
+    ],
+    "text": "{\n  \"box-store\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "a map reads its file once: a change on disk is not seen, and what it saves next replaces that change": {
+   "returned": {
+    "read": {
+     "sourceId": "first",
+     "mode": "local"
+    },
+    "stillTheFirst": {
+     "sourceId": "first",
+     "mode": "local"
+    },
+    "seenByAnotherMap": {
+     "sourceId": "changed on disk",
+     "mode": "agent-store"
+    },
+    "textAfterTheFirstMapSaved": "{\n  \"agent-a\": {\n    \"sourceId\": \"first\",\n    \"mode\": \"local\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "names every object has are answered with what the object holds, not with an entry": {
+   "returned": {
+    "got": [
+     [
+      "toString",
+      {
+       "kind": "function",
+       "name": "toString",
+       "isWhatEveryObjectInherits": false
+      }
+     ],
+     [
+      "constructor",
+      {
+       "kind": "function",
+       "name": "Object",
+       "isWhatEveryObjectInherits": false
+      }
+     ],
+     [
+      "hasOwnProperty",
+      {
+       "kind": "function",
+       "name": "hasOwnProperty",
+       "isWhatEveryObjectInherits": false
+      }
+     ],
+     [
+      "__proto__",
+      {
+       "kind": "object",
+       "name": {
+        "$": "undefined"
+       },
+       "isWhatEveryObjectInherits": true
+      }
+     ]
+    ],
+    "fileAfterAsking": "no file",
+    "setOnAName": {
+     "sourceId": {
+      "$": "undefined"
+     },
+     "mode": "local"
+    },
+    "thenAsked": {
+     "sourceId": {
+      "$": "undefined"
+     },
+     "mode": "local"
+    },
+    "textAfterSetting": "{\n  \"toString\": {\n    \"mode\": \"local\"\n  }\n}",
+    "setOnProto": {
+     "sourceId": {
+      "$": "undefined"
+     },
+     "mode": "agent-store"
+    },
+    "modeAsAnAgent": "agent-store",
+    "setOnProtoEmpty": {
+     "sourceId": {
+      "$": "undefined"
+     },
+     "mode": ""
+    },
+    "emptyModeAsAnAgent": "",
+    "idsBeforeSettingIt": [],
+    "setOnTheEmptyOne": {
+     "sourceId": {
+      "$": "undefined"
+     },
+     "mode": "local"
+    },
+    "idsAfterSettingIt": [],
+    "real": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "idsAskedFor": [
+     "id-1"
+    ],
+    "text": "{\n  \"toString\": {\n    \"mode\": \"local\"\n  },\n  \"mode\": {\n    \"mode\": \"local\"\n  },\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "a file that names __proto__ gives the map that entry's fields as if they were agents": {
+   "returned": {
+    "asked": [
+     [
+      "agent-a",
+      {
+       "sourceId": "s-a",
+       "mode": "local"
+      }
+     ],
+     [
+      "sourceId",
+      "from-proto"
+     ],
+     [
+      "mode",
+      "local"
+     ],
+     [
+      "__proto__",
+      {
+       "sourceId": "from-proto",
+       "mode": "local"
+      }
+     ]
+    ],
+    "idsAskedFor": [
+     "id-1"
+    ],
+    "text": "{\n  \"agent-a\": {\n    \"sourceId\": \"s-a\",\n    \"mode\": \"local\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}"
+   }
+  },
+  "left to itself a map takes the data folder's file as it is when the map is made, and random ids": {
+   "returned": {
+    "modes": [
+     "local",
+     "local"
+    ],
+    "idsAreRandom": true,
+    "idsDiffer": true,
+    "keptInTheFirstFolder": [
+     "agent-a",
+     "agent-b"
+    ],
+    "theOtherFolderWasMade": [
+     "root"
+    ]
+   }
+  },
+  "on a stand-in disk: a first agent is read for, then written in three steps under a temporary name": {
+   "returned": {
+    "entry": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "again": {
+     "sourceId": "id-1",
+     "mode": "local"
+    },
+    "set": {
+     "sourceId": "id-1",
+     "mode": "agent-store"
+    },
+    "box": null,
+    "calls": [
+     {
+      "turn": 0,
+      "call": "readFile",
+      "given": [
+       "/stand-in/data/source-map.json",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 3,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 4,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     },
+     {
+      "turn": 10,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 11,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"agent-store\"\n  }\n}",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 12,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     }
+    ],
+    "files": {
+     "/stand-in/data/source-map.json": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"agent-store\"\n  }\n}"
+    }
+   }
+  },
+  "on a stand-in disk: a save that fails at any of its three steps fails the call, and the map keeps the entry all the same": {
+   "returned": {
+    "mkdir": {
+     "first": "failed",
+     "failedWithTheDisksOwnError": true,
+     "callsOfTheFailure": 2,
+     "second": {
+      "gave": {
+       "sourceId": "id-1",
+       "mode": "local"
+      }
+     },
+     "callsAfterAskingAgain": 3,
+     "mode": "failed",
+     "idsAskedFor": [
+      "id-1",
+      "id-2"
+     ],
+     "calls": [
+      "readFile",
+      "mkdir",
+      "mkdir"
+     ],
+     "files": {}
+    },
+    "writeFile": {
+     "first": "failed",
+     "failedWithTheDisksOwnError": true,
+     "callsOfTheFailure": 3,
+     "second": {
+      "gave": {
+       "sourceId": "id-1",
+       "mode": "local"
+      }
+     },
+     "callsAfterAskingAgain": 5,
+     "mode": "failed",
+     "idsAskedFor": [
+      "id-1",
+      "id-2"
+     ],
+     "calls": [
+      "readFile",
+      "mkdir",
+      "writeFile",
+      "mkdir",
+      "writeFile"
+     ],
+     "files": {}
+    },
+    "rename": {
+     "first": "failed",
+     "failedWithTheDisksOwnError": true,
+     "callsOfTheFailure": 4,
+     "second": {
+      "gave": {
+       "sourceId": "id-1",
+       "mode": "local"
+      }
+     },
+     "callsAfterAskingAgain": 7,
+     "mode": "failed",
+     "idsAskedFor": [
+      "id-1",
+      "id-2"
+     ],
+     "calls": [
+      "readFile",
+      "mkdir",
+      "writeFile",
+      "rename",
+      "mkdir",
+      "writeFile",
+      "rename"
+     ],
+     "files": {
+      "/stand-in/data/source-map.json.<pid>.tmp": "{\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-2\",\n    \"mode\": \"local\"\n  }\n}"
+     }
+    }
+   }
+  },
+  "on a stand-in disk: two first calls at once each read the file for themselves, and the one that saves last is what the map keeps": {
+   "returned": {
+    "both": [
+     {
+      "sourceId": "id-1",
+      "mode": "local"
+     },
+     {
+      "failed": "ENOENT"
+     }
+    ],
+    "afterBoth": [
+     "agent-0",
+     "agent-b"
+    ],
+    "asked": {
+     "agent-a": {
+      "sourceId": "id-3",
+      "mode": "local"
+     },
+     "agent-b": {
+      "sourceId": "id-2",
+      "mode": "local"
+     }
+    },
+    "calls": [
+     {
+      "turn": 0,
+      "call": "readFile",
+      "given": [
+       "/stand-in/data/source-map.json",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "readFile",
+      "given": [
+       "/stand-in/data/source-map.json",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 3,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "{\n  \"agent-0\": {\n    \"sourceId\": \"s-0\",\n    \"mode\": \"local\"\n  },\n  \"agent-a\": {\n    \"sourceId\": \"id-1\",\n    \"mode\": \"local\"\n  }\n}",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 3,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "{\n  \"agent-0\": {\n    \"sourceId\": \"s-0\",\n    \"mode\": \"local\"\n  },\n  \"agent-b\": {\n    \"sourceId\": \"id-2\",\n    \"mode\": \"local\"\n  }\n}",
+       "utf8"
+      ]
+     },
+     {
+      "turn": 4,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     },
+     {
+      "turn": 4,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     }
+    ],
+    "callsAfterwards": [
+     "mkdir",
+     "writeFile",
+     "rename"
+    ]
+   }
+  },
+  "on a stand-in disk: calls at once on a map that has read its file share it, and each step of each is taken in turn": {
+   "returned": {
+    "all": [
+     {
+      "sourceId": "id-1",
+      "mode": "local"
+     },
+     {
+      "failed": "ENOENT"
+     },
+     {
+      "failed": "ENOENT"
+     },
+     {
+      "sourceId": "id-3",
+      "mode": "local"
+     },
+     {
+      "sourceId": "id-1",
+      "mode": "local"
+     }
+    ],
+    "firstAndLastAreTheSameObject": true,
+    "calls": [
+     {
+      "turn": 0,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "mkdir",
+      "given": [
+       "/stand-in/data",
+       {
+        "recursive": true
+       }
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       [
+        "agent-a",
+        "agent-b",
+        "box-store"
+       ],
+       "utf8"
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       [
+        "agent-a",
+        "agent-b",
+        "box-store"
+       ],
+       "utf8"
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "writeFile",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       [
+        "agent-a",
+        "agent-b",
+        "box-store"
+       ],
+       "utf8"
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     },
+     {
+      "turn": 2,
+      "call": "rename",
+      "given": [
+       "/stand-in/data/source-map.json.<pid>.tmp",
+       "/stand-in/data/source-map.json"
+      ]
+     }
+    ],
+    "kept": [
+     "agent-a",
+     "agent-b",
+     "box-store"
+    ]
+   }
+  },
+  "the extension is declared under the id source-map, with no peers": {
+   "returned": {
+    "keys": [
+     "kind",
+     "id",
+     "dependencies",
+     "start"
+    ],
+    "kind": "host-extension",
+    "id": "source-map",
+    "dependencies": [],
+    "frozen": [
+     true,
+     true
+    ],
+    "start": {
+     "kind": "function",
+     "parameters": 0
+    }
+   }
+  },
+  "started, the extension hands the host a map on the data folder's file and asks nothing of the host": {
+   "returned": {
+    "aMap": true,
+    "aPromise": false,
+    "eachStartItsOwnMap": true,
+    "entryMode": "local",
+    "idIsRandom": true,
+    "keptInTheDataFolder": true,
+    "callsOnTheHost": [],
+    "leftToUndo": 0,
+    "stopping": []
+   }
+  }
+ }
+}

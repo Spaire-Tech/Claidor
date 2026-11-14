@@ -1,0 +1,7219 @@
+{
+ "part": "shared/observability",
+ "surface": {
+  "trace": {
+   "SEND_TRACE_SAMPLE_RATIO": "number",
+   "deriveChildTraceparent": "function",
+   "mintTraceparent": "function",
+   "parseTraceparent": "function",
+   "shouldSampleSend": "function"
+  },
+  "privacy": {
+   "PrivacyMode": "object",
+   "sandSentryPrivacyTierForMode": "function"
+  },
+  "events": {
+   "ACK_OBLIGATION_EVENT": "string",
+   "ACTION_AUDIT_DROP_EVENT": "string",
+   "AGENT_ERROR_DETAIL_EVENT": "string",
+   "AGENT_ERROR_EVENT": "string",
+   "AGENT_OPEN_EVENT": "string",
+   "ATTACHMENT_READ_MISS_EVENT": "string",
+   "AUTOMATION_CLOUD_SYNC_EVENT": "string",
+   "AUTOMATION_LIFECYCLE_EVENT": "string",
+   "AUTOMATION_SHADOW_PRUNE_EVENT": "string",
+   "AUTO_REVIEW_DISPLAY_RECHECK_FAILED_EVENT": "string",
+   "AUTO_REVIEW_EXPIRE_SWEEP_FAILED_EVENT": "string",
+   "BOT_BLOCK_DETAIL_EVENT": "string",
+   "BOT_BLOCK_EVENT": "string",
+   "BOX_BOOT_FAILURE_EVENT": "string",
+   "BOX_BOOT_STAGE_EVENT": "string",
+   "BOX_COPY_IN_EVENT": "string",
+   "BOX_HELP_EVENT": "string",
+   "BOX_IMAGE_CHECK_EVENT": "string",
+   "BOX_LOG_EVENT": "string",
+   "BOX_LOG_SHIP_EVENT": "string",
+   "BOX_PROCESS_CRASH_EVENT": "string",
+   "BOX_RECREATE_DECIDED_EVENT": "string",
+   "BOX_STORE_DB_CAPTURE_EVENT": "string",
+   "BOX_STORE_DIAGNOSTIC_EVENT": "string",
+   "BOX_STORE_MANIFEST_CONFLICT_EVENT": "string",
+   "BOX_STORE_SYNC_EVENT": "string",
+   "CHROME_SESSION_STAGE_EVENT": "string",
+   "CLIENT_RESOURCE_EVENT": "string",
+   "CLOSING_SEND_NUDGE_EVENT": "string",
+   "COMPUTER_USE_USAGE_EVENT": "string",
+   "CONNECTOR_AUTH_EVENT": "string",
+   "CONVERSATION_GC_EVENT": "string",
+   "COOKIE_PERSIST_EVENT": "string",
+   "DAEMON_PING_EVENT": "string",
+   "DESKTOP_HEALTH_EVENT": "string",
+   "EGRESS_TUNNEL_EVENT": "string",
+   "EXEC_DAEMON_RESTART_EVENT": "string",
+   "EXPERIMENTS_DIAGNOSTIC_EVENT": "string",
+   "GATEWAY_COMMAND_ERROR_EVENT": "string",
+   "GATEWAY_COMMAND_TIMING_EVENT": "string",
+   "HOST_BOOT_FETCH_EVENT": "string",
+   "HOST_CRASH_EVENT": "string",
+   "HOST_DIAGNOSTIC_EVENT": "string",
+   "HOST_EVENT_BUS_EVENT": "string",
+   "HOST_EVENT_LOOP_EVENT": "string",
+   "HOST_INVARIANT_VIOLATION_EVENT": "string",
+   "HOST_LIFECYCLE_EVENT": "string",
+   "HOST_LOG_EVENT": "string",
+   "HOST_STARTUP_EVENT": "string",
+   "HOST_UPGRADE_EVENT": "string",
+   "INFERENCE_CREDENTIAL_RENEWAL_EVENT": "string",
+   "JOURNAL_OUTCOME_EVENT": "string",
+   "LOCAL_EXEC_FAILED_EVENT": "string",
+   "LOCAL_EXEC_PROVIDER_EVENT": "string",
+   "LOCAL_EXEC_REFUSED_EVENT": "string",
+   "MANAGED_SETUP_LOAD_FAILED_EVENT": "string",
+   "MCP_AUTH_CLEANUP_EVENT": "string",
+   "MCP_DISCOVERY_FAILED_EVENT": "string",
+   "MCP_HOST_EDGE_FAILED_EVENT": "string",
+   "MEMORY_SYNTHESIS_EVENT": "string",
+   "PENDING_WAKE_EVENT": "string",
+   "PLUGIN_SKILLS_SYNC_EVENT": "string",
+   "QUEUE_ACCEPTED_EVENT": "string",
+   "QUEUE_DEQUEUED_EVENT": "string",
+   "QUEUE_WATCHDOG_EVENT": "string",
+   "SAND_LOG_KEY": "string",
+   "SEARCH_INDEX_HEALTH_EVENT": "string",
+   "SEND_DISPATCH_EVENT": "string",
+   "SESSION_MAINTENANCE_EVENT": "string",
+   "SESSION_MATERIALIZE_EVENT": "string",
+   "SESSION_STORE_DB_EVENT": "string",
+   "SESSION_SUMMARY_BUILD_EVENT": "string",
+   "SHELL_REVIVAL_EVENT": "string",
+   "SKILL_PUBLISH_EDGE_FAILED_EVENT": "string",
+   "SUBAGENT_REVIVAL_EVENT": "string",
+   "SUPERVISOR_RESTART_EVENT": "string",
+   "TEACH_RECORDING_CAP_STOP_FAILED_EVENT": "string",
+   "TEACH_RECORDING_START_FAILED_EVENT": "string",
+   "TELEMETRY_DROPPED_EVENT": "string",
+   "TELEMETRY_DROP_REASONS": "array",
+   "TELEMETRY_DROP_UNIT_BY_REASON": "object",
+   "TELEMETRY_SHIP_TIMEOUT_EVENT": "string",
+   "TOOL_CALL_ERROR_EVENT": "string",
+   "TOOL_CALL_STALLED_EVENT": "string",
+   "TOOL_CALL_STARTED_EVENT": "string",
+   "TTFT_EVENT": "string",
+   "TURN_AWAIT_EVENT": "string",
+   "TURN_EMPTY_DELIVERY_EVENT": "string",
+   "TURN_INTERRUPT_EVENT": "string",
+   "TURN_OUTCOME_DETAIL_EVENT": "string",
+   "TURN_OUTCOME_EVENT": "string",
+   "TURN_RETRY_EVENT": "string",
+   "TURN_START_EVENT": "string",
+   "TURN_USAGE_EVENT": "string",
+   "TURN_USAGE_SCHEMA_VERSION": "string",
+   "USER_MESSAGE_RECEIVED_EVENT": "string",
+   "WEBAUTHN_PROXY_EVENT": "string",
+   "WEBAUTHN_SIGN_ERROR_CLASSES": "array"
+  },
+  "cadence": {
+   "LOG_SHIP_FAILURE_MAX_BACKOFF_MS": "number",
+   "LOG_SHIP_INTERVAL_MS": "number",
+   "LOG_SHIP_JITTER_RATIO": "number",
+   "LOG_SHIP_MAX_BATCH_BYTES": "number",
+   "LOG_SHIP_MAX_BATCH_ENTRIES": "number",
+   "LOG_SHIP_RATE_LIMIT_MAX_BACKOFF_MS": "number",
+   "LogShipSchedule": "class",
+   "nextLogShipDelayMs": "function",
+   "takeLogShipBatch": "function"
+  },
+  "transport": {
+   "ClientLogLevel": "object",
+   "DEADLINE_EXPIRY_CODE": "string",
+   "MAX_BUFFER_SIZE": "number",
+   "STRUCTURED_LOG_REPLAY_MAX_AGE_MS": "number",
+   "STRUCTURED_LOG_SUBMIT_DEADLINE_MS": "number",
+   "StructuredLogTransport": "class",
+   "cleanStructuredLogMetadata": "function",
+   "cloneDropCounters": "function",
+   "createDropCounterId": "function",
+   "emptyDropCounters": "function",
+   "isDeadlineExpiry": "function",
+   "isValidLogShipReceipt": "function",
+   "toClientLogLevel": "function",
+   "truncateStructuredLogValue": "function"
+  },
+  "connectorAuth": {
+   "KNOWN_CONNECTOR_TAGS": "object",
+   "OTHER_CONNECTOR_TAG": "string",
+   "UNKNOWN_CONNECTOR_TAG": "string",
+   "boundedConnectorTag": "function",
+   "connectorAuthTelemetry": "function"
+  }
+ },
+ "scenarios": {
+  "a trace header is read only in its one exact shape": {
+   "returned": {
+    "sampled": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 1
+    },
+    "not sampled": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 0
+    },
+    "flags ff": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 255
+    },
+    "flags 0a": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 10
+    },
+    "spaces and a line end around it": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 1
+    },
+    "a byte-order mark before it": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 1
+    },
+    "a span id of all f": {
+     "traceId": "0af7651916cd43dd8448eb211c80319c",
+     "spanId": "ffffffffffffffff",
+     "traceFlags": 1
+    },
+    "a trace id with one bit set": {
+     "traceId": "00000000000000000000000000000001",
+     "spanId": "b7ad6b7169203331",
+     "traceFlags": 1
+    },
+    "capital letters in the trace id": {
+     "$": "undefined"
+    },
+    "capital letters in the span id": {
+     "$": "undefined"
+    },
+    "capital letters in the flags": {
+     "$": "undefined"
+    },
+    "version 01": {
+     "$": "undefined"
+    },
+    "version ff": {
+     "$": "undefined"
+    },
+    "version 0": {
+     "$": "undefined"
+    },
+    "version 000": {
+     "$": "undefined"
+    },
+    "a trace id of all zeros": {
+     "$": "undefined"
+    },
+    "a span id of all zeros": {
+     "$": "undefined"
+    },
+    "a trace id of 31": {
+     "$": "undefined"
+    },
+    "a trace id of 33": {
+     "$": "undefined"
+    },
+    "a span id of 15": {
+     "$": "undefined"
+    },
+    "a span id of 17": {
+     "$": "undefined"
+    },
+    "flags of one digit": {
+     "$": "undefined"
+    },
+    "flags of three digits": {
+     "$": "undefined"
+    },
+    "a letter past f": {
+     "$": "undefined"
+    },
+    "a space inside": {
+     "$": "undefined"
+    },
+    "a line end inside the flags": {
+     "$": "undefined"
+    },
+    "three pieces": {
+     "$": "undefined"
+    },
+    "five pieces": {
+     "$": "undefined"
+    },
+    "an empty fifth piece": {
+     "$": "undefined"
+    },
+    "nothing but dashes": {
+     "$": "undefined"
+    },
+    "empty": {
+     "$": "undefined"
+    },
+    "only spaces": {
+     "$": "undefined"
+    },
+    "nothing": {
+     "$": "undefined"
+    },
+    "null": {
+     "$": "undefined"
+    },
+    "a number": {
+     "$": "undefined"
+    },
+    "a list holding the header": {
+     "$": "undefined"
+    },
+    "a text object": {
+     "$": "undefined"
+    },
+    "an object": {
+     "$": "undefined"
+    }
+   }
+  },
+  "a new trace header is made of 16 random bytes, then 8, each byte as two small hex digits": {
+   "returned": {
+    "made": {
+     "nothing said": {
+      "traceparent": "00-fafbfcfdfeff00010203040506070809-0a0b0c0d0e0f1011-01",
+      "traceId": "fafbfcfdfeff00010203040506070809",
+      "spanId": "0a0b0c0d0e0f1011"
+     },
+     "true": {
+      "traceparent": "00-12131415161718191a1b1c1d1e1f2021-2223242526272829-01",
+      "traceId": "12131415161718191a1b1c1d1e1f2021",
+      "spanId": "2223242526272829"
+     },
+     "false": {
+      "traceparent": "00-2a2b2c2d2e2f30313233343536373839-3a3b3c3d3e3f4041-00",
+      "traceId": "2a2b2c2d2e2f30313233343536373839",
+      "spanId": "3a3b3c3d3e3f4041"
+     },
+     "undefined": {
+      "traceparent": "00-42434445464748494a4b4c4d4e4f5051-5253545556575859-01",
+      "traceId": "42434445464748494a4b4c4d4e4f5051",
+      "spanId": "5253545556575859"
+     },
+     "null": {
+      "traceparent": "00-5a5b5c5d5e5f60616263646566676869-6a6b6c6d6e6f7071-00",
+      "traceId": "5a5b5c5d5e5f60616263646566676869",
+      "spanId": "6a6b6c6d6e6f7071"
+     },
+     "zero": {
+      "traceparent": "00-72737475767778797a7b7c7d7e7f8081-8283848586878889-00",
+      "traceId": "72737475767778797a7b7c7d7e7f8081",
+      "spanId": "8283848586878889"
+     },
+     "a word": {
+      "traceparent": "00-8a8b8c8d8e8f90919293949596979899-9a9b9c9d9e9fa0a1-01",
+      "traceId": "8a8b8c8d8e8f90919293949596979899",
+      "spanId": "9a9b9c9d9e9fa0a1"
+     }
+    },
+    "bytesAsked": [
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8",
+     "Uint8Array of 16",
+     "Uint8Array of 8"
+    ],
+    "readBack": {
+     "traceId": "12131415161718191a1b1c1d1e1f2021",
+     "spanId": "2223242526272829",
+     "traceFlags": 1
+    },
+    "diceAsked": 0
+   }
+  },
+  "a new trace header from the machine's own random bytes has the shape that is read back, and two differ": {
+   "returned": {
+    "keys": [
+     [
+      "traceparent",
+      "traceId",
+      "spanId"
+     ],
+     [
+      "traceId",
+      "spanId",
+      "traceFlags"
+     ]
+    ],
+    "shapes": [
+     true,
+     true
+    ],
+    "sameIdsReadBack": true,
+    "flags": [
+     1,
+     0
+    ],
+    "differ": true
+   }
+  },
+  "random bytes of all zeros still make a header, one that is not read back": {
+   "returned": {
+    "made": {
+     "traceparent": "00-00000000000000000000000000000000-0000000000000000-01",
+     "traceId": "00000000000000000000000000000000",
+     "spanId": "0000000000000000"
+    },
+    "readBack": {
+     "$": "undefined"
+    },
+    "child": {
+     "traceparent": "00-0af7651916cd43dd8448eb211c80319c-0000000000000000-01",
+     "spanId": "0000000000000000"
+    },
+    "childReadBack": {
+     "$": "undefined"
+    }
+   }
+  },
+  "what the random source gives back is not used, only the bytes it was handed": {
+   "returned": [
+    {
+     "traceparent": "00-abababababababababababababababab-abababababababab-01",
+     "traceId": "abababababababababababababababab",
+     "spanId": "abababababababab"
+    },
+    {
+     "traceparent": "00-0af7651916cd43dd8448eb211c80319c-abababababababab-00",
+     "spanId": "abababababababab"
+    }
+   ]
+  },
+  "no header is made when the random source fails or is not there": {
+   "returned": {
+    "failing": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "asked": [
+     16,
+     16,
+     8
+    ],
+    "missing": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ]
+   }
+  },
+  "a child header keeps the trace id, takes a new span id of 8 bytes, and keeps only the sampled bit": {
+   "returned": {
+    "children": {
+     "flags 00": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-090a0b0c0d0e0f10-00",
+      "spanId": "090a0b0c0d0e0f10"
+     },
+     "flags 01": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-1112131415161718-01",
+      "spanId": "1112131415161718"
+     },
+     "flags 02": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-191a1b1c1d1e1f20-00",
+      "spanId": "191a1b1c1d1e1f20"
+     },
+     "flags 03": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-2122232425262728-01",
+      "spanId": "2122232425262728"
+     },
+     "flags fe": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-292a2b2c2d2e2f30-00",
+      "spanId": "292a2b2c2d2e2f30"
+     },
+     "flags ff": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-3132333435363738-01",
+      "spanId": "3132333435363738"
+     },
+     "spaces around the parent": {
+      "traceparent": "00-0af7651916cd43dd8448eb211c80319c-393a3b3c3d3e3f40-01",
+      "spanId": "393a3b3c3d3e3f40"
+     }
+    },
+    "bytesAsked": [
+     "Uint8Array of 8",
+     "Uint8Array of 8",
+     "Uint8Array of 8",
+     "Uint8Array of 8",
+     "Uint8Array of 8",
+     "Uint8Array of 8",
+     "Uint8Array of 8"
+    ],
+    "refused": {
+     "capital letters": {
+      "$": "undefined"
+     },
+     "all zeros for the span": {
+      "$": "undefined"
+     },
+     "version 01": {
+      "$": "undefined"
+     },
+     "empty": {
+      "$": "undefined"
+     },
+     "nothing": {
+      "$": "undefined"
+     },
+     "a number": {
+      "$": "undefined"
+     }
+    },
+    "bytesAskedForRefused": []
+   }
+  },
+  "a send is sampled always at 1 and above, never at 0 and below, and by the dice in between": {
+   "returned": {
+    "usualRatio": 1,
+    "withoutDice": [
+     "nothing said: true",
+     "undefined: true",
+     "1: true",
+     "1.5: true",
+     "Infinity: true",
+     "0: false",
+     "-0: false",
+     "-0.5: false",
+     "-Infinity: false",
+     "NaN: false",
+     "null: false",
+     "false: false",
+     "true: true",
+     "\"1\": true",
+     "\"0\": false",
+     "\"\": false"
+    ],
+    "withDice": [
+     "\"0.5\", dice 0.4: true, dice asked 1",
+     "\"0.5\", dice 0.6: false, dice asked 1",
+     "\"all\", dice 0: false, dice asked 0",
+     "0.5, dice 0.49999: true, dice asked 1",
+     "0.5, dice 0.5: false, dice asked 1",
+     "0.5, dice 0.50001: false, dice asked 1",
+     "0.999999, dice 0.999998: true, dice asked 1",
+     "0.999999, dice 0.999999: false, dice asked 1",
+     "5e-324, dice 0: true, dice asked 1",
+     "5e-324, dice 5e-324: false, dice asked 1",
+     "0.25, dice 0: true, dice asked 1",
+     "0.25, dice -1: true, dice asked 1",
+     "0.25, dice NaN: false, dice asked 1",
+     "0.25, dice undefined: false, dice asked 1",
+     "1, dice 0: true, dice asked 0",
+     "2, dice 0: true, dice asked 0",
+     "0, dice 0: false, dice asked 0",
+     "-1, dice -2: false, dice asked 0",
+     "NaN, dice 0: false, dice asked 0"
+    ]
+   }
+  },
+  "with no dice given, the machine's dice are the ones in place when the question is asked": {
+   "returned": {
+    "answers": [
+     [
+      0.25,
+      true,
+      true
+     ],
+     [
+      0.75,
+      false,
+      false
+     ],
+     [
+      "at 1 and at 0 the dice are left alone",
+      true,
+      false,
+      0
+     ]
+    ],
+    "diceAsked": 4
+   }
+  },
+  "the privacy modes and their numbers, by name and by number": {
+   "returned": [
+    [
+     "0",
+     "UNSPECIFIED"
+    ],
+    [
+     "1",
+     "NO_STORAGE"
+    ],
+    [
+     "2",
+     "NO_TRAINING"
+    ],
+    [
+     "3",
+     "USAGE_DATA_TRAINING_ALLOWED"
+    ],
+    [
+     "4",
+     "USAGE_CODEBASE_TRAINING_ALLOWED"
+    ],
+    [
+     "UNSPECIFIED",
+     0
+    ],
+    [
+     "NO_STORAGE",
+     1
+    ],
+    [
+     "NO_TRAINING",
+     2
+    ],
+    [
+     "USAGE_DATA_TRAINING_ALLOWED",
+     3
+    ],
+    [
+     "USAGE_CODEBASE_TRAINING_ALLOWED",
+     4
+    ]
+   ]
+  },
+  "what a crash report may hold under each privacy mode: all of it only when training is allowed, scrubbed under no-training, otherwise only the bare facts": {
+   "returned": {
+    "byName": {
+     "UNSPECIFIED": "fatal-metadata",
+     "NO_STORAGE": "fatal-metadata",
+     "NO_TRAINING": "scrubbed",
+     "USAGE_DATA_TRAINING_ALLOWED": "full",
+     "USAGE_CODEBASE_TRAINING_ALLOWED": "full"
+    },
+    "others": [
+     [
+      "no mode given",
+      "fatal-metadata"
+     ],
+     [
+      "undefined",
+      "fatal-metadata"
+     ],
+     [
+      "null",
+      "fatal-metadata"
+     ],
+     [
+      "5, a number past the last mode",
+      "fatal-metadata"
+     ],
+     [
+      "-1",
+      "fatal-metadata"
+     ],
+     [
+      "2.5",
+      "fatal-metadata"
+     ],
+     [
+      "NaN",
+      "fatal-metadata"
+     ],
+     [
+      "the text 3",
+      "fatal-metadata"
+     ],
+     [
+      "the text 2",
+      "fatal-metadata"
+     ],
+     [
+      "the name of a mode",
+      "fatal-metadata"
+     ],
+     [
+      "true",
+      "fatal-metadata"
+     ],
+     [
+      "an object",
+      "fatal-metadata"
+     ],
+     [
+      "a second argument is not looked at",
+      "fatal-metadata"
+     ]
+    ]
+   }
+  },
+  "every event name, key and list, as it goes out": {
+   "returned": {
+    "values": {
+     "ACK_OBLIGATION_EVENT": "sand.ack.obligation",
+     "ACTION_AUDIT_DROP_EVENT": "sand.action_audit.drop",
+     "AGENT_ERROR_DETAIL_EVENT": "sand.agent.error.detail",
+     "AGENT_ERROR_EVENT": "sand.agent.error",
+     "AGENT_OPEN_EVENT": "sand.agent.open",
+     "ATTACHMENT_READ_MISS_EVENT": "sand.attachment.read_miss",
+     "AUTOMATION_CLOUD_SYNC_EVENT": "sand.automation.cloud_sync",
+     "AUTOMATION_LIFECYCLE_EVENT": "sand.automation.lifecycle",
+     "AUTOMATION_SHADOW_PRUNE_EVENT": "sand.automation.shadow_prune",
+     "AUTO_REVIEW_DISPLAY_RECHECK_FAILED_EVENT": "sand.auto_review.display_recheck_failed",
+     "AUTO_REVIEW_EXPIRE_SWEEP_FAILED_EVENT": "sand.auto_review.expire_sweep_failed",
+     "BOT_BLOCK_DETAIL_EVENT": "sand.bot_block_detail",
+     "BOT_BLOCK_EVENT": "sand.bot_block",
+     "BOX_BOOT_FAILURE_EVENT": "sand.box.boot_failure",
+     "BOX_BOOT_STAGE_EVENT": "sand.box.boot_stage",
+     "BOX_COPY_IN_EVENT": "sand.box_copy_in",
+     "BOX_HELP_EVENT": "sand.box_help",
+     "BOX_IMAGE_CHECK_EVENT": "sand.box.image_check",
+     "BOX_LOG_EVENT": "sand.box.log",
+     "BOX_LOG_SHIP_EVENT": "sand.box.log_ship",
+     "BOX_PROCESS_CRASH_EVENT": "sand.box.process_crash",
+     "BOX_RECREATE_DECIDED_EVENT": "sand.box.recreate_decided",
+     "BOX_STORE_DB_CAPTURE_EVENT": "sand.box_store_db_capture",
+     "BOX_STORE_DIAGNOSTIC_EVENT": "sand.box_store.diagnostic",
+     "BOX_STORE_MANIFEST_CONFLICT_EVENT": "sand.box_store_manifest_conflict",
+     "BOX_STORE_SYNC_EVENT": "sand.box_store_sync",
+     "CHROME_SESSION_STAGE_EVENT": "sand.chrome_session_stage",
+     "CLIENT_RESOURCE_EVENT": "sand.client_resource",
+     "CLOSING_SEND_NUDGE_EVENT": "sand.turn.closing_send_nudge",
+     "COMPUTER_USE_USAGE_EVENT": "sand.computer_use.usage",
+     "CONNECTOR_AUTH_EVENT": "sand.connector_auth",
+     "CONVERSATION_GC_EVENT": "sand.conversation.gc",
+     "COOKIE_PERSIST_EVENT": "sand.box.cookie_persist",
+     "DAEMON_PING_EVENT": "sand.box.daemon_ping",
+     "DESKTOP_HEALTH_EVENT": "sand.box.desktop_health",
+     "EGRESS_TUNNEL_EVENT": "sand.box.egress_tunnel",
+     "EXEC_DAEMON_RESTART_EVENT": "sand.box.exec_daemon_restart",
+     "EXPERIMENTS_DIAGNOSTIC_EVENT": "sand.experiments.diagnostic",
+     "GATEWAY_COMMAND_ERROR_EVENT": "sand.gateway_command_error",
+     "GATEWAY_COMMAND_TIMING_EVENT": "sand.gateway_command_timing",
+     "HOST_BOOT_FETCH_EVENT": "sand.box.host_boot_fetch",
+     "HOST_CRASH_EVENT": "sand.host.crash",
+     "HOST_DIAGNOSTIC_EVENT": "sand.host.diagnostic",
+     "HOST_EVENT_BUS_EVENT": "sand.host.event_bus",
+     "HOST_EVENT_LOOP_EVENT": "sand.host.event_loop",
+     "HOST_INVARIANT_VIOLATION_EVENT": "sand.host.invariant_violation",
+     "HOST_LIFECYCLE_EVENT": "sand.host.lifecycle",
+     "HOST_LOG_EVENT": "sand.host.log",
+     "HOST_STARTUP_EVENT": "sand.host.startup",
+     "HOST_UPGRADE_EVENT": "sand.host.upgrade",
+     "INFERENCE_CREDENTIAL_RENEWAL_EVENT": "sand.inference_credential.renewal",
+     "JOURNAL_OUTCOME_EVENT": "sand.journal.outcome",
+     "LOCAL_EXEC_FAILED_EVENT": "sand.local_exec.exec_failed",
+     "LOCAL_EXEC_PROVIDER_EVENT": "sand.local_exec.provider",
+     "LOCAL_EXEC_REFUSED_EVENT": "sand.local_exec.refused",
+     "MANAGED_SETUP_LOAD_FAILED_EVENT": "sand.managed_setup.load_failed",
+     "MCP_AUTH_CLEANUP_EVENT": "sand.mcp_auth_cleanup",
+     "MCP_DISCOVERY_FAILED_EVENT": "sand.mcp.discovery_failed",
+     "MCP_HOST_EDGE_FAILED_EVENT": "sand.mcp.host_edge_failed",
+     "MEMORY_SYNTHESIS_EVENT": "sand.memory.synthesis",
+     "PENDING_WAKE_EVENT": "sand.pending_wake",
+     "PLUGIN_SKILLS_SYNC_EVENT": "sand.plugin_skills.sync",
+     "QUEUE_ACCEPTED_EVENT": "sand.queue.accepted",
+     "QUEUE_DEQUEUED_EVENT": "sand.queue.dequeued",
+     "QUEUE_WATCHDOG_EVENT": "sand.queue.watchdog",
+     "SAND_LOG_KEY": "sand",
+     "SEARCH_INDEX_HEALTH_EVENT": "sand.search_index.health",
+     "SEND_DISPATCH_EVENT": "sand.send_dispatch",
+     "SESSION_MAINTENANCE_EVENT": "sand.session.maintenance",
+     "SESSION_MATERIALIZE_EVENT": "sand.session.materialize",
+     "SESSION_STORE_DB_EVENT": "sand.session.store_db",
+     "SESSION_SUMMARY_BUILD_EVENT": "sand.session.summary_build",
+     "SHELL_REVIVAL_EVENT": "sand.shell.revival",
+     "SKILL_PUBLISH_EDGE_FAILED_EVENT": "sand.skill_publish.edge_failed",
+     "SUBAGENT_REVIVAL_EVENT": "sand.subagent.revival",
+     "SUPERVISOR_RESTART_EVENT": "sand.box.supervisor_restart",
+     "TEACH_RECORDING_CAP_STOP_FAILED_EVENT": "sand.teach.cap_stop_failed",
+     "TEACH_RECORDING_START_FAILED_EVENT": "sand.teach.recording_start_failed",
+     "TELEMETRY_DROPPED_EVENT": "sand.telemetry.dropped",
+     "TELEMETRY_DROP_REASONS": [
+      "ship_failed",
+      "overflow_evicted",
+      "replay_expired",
+      "backend_dropped",
+      "account_rotated"
+     ],
+     "TELEMETRY_DROP_UNIT_BY_REASON": {
+      "ship_failed": "attempts",
+      "overflow_evicted": "entries",
+      "replay_expired": "entries",
+      "backend_dropped": "entries",
+      "account_rotated": "entries"
+     },
+     "TELEMETRY_SHIP_TIMEOUT_EVENT": "sand.telemetry.ship_timeout",
+     "TOOL_CALL_ERROR_EVENT": "sand.tool_call.error",
+     "TOOL_CALL_STALLED_EVENT": "sand.tool_call.stalled",
+     "TOOL_CALL_STARTED_EVENT": "sand.tool_call.started",
+     "TTFT_EVENT": "sand.ttft",
+     "TURN_AWAIT_EVENT": "sand.turn.await",
+     "TURN_EMPTY_DELIVERY_EVENT": "sand.turn.empty_delivery",
+     "TURN_INTERRUPT_EVENT": "sand.turn.interrupt",
+     "TURN_OUTCOME_DETAIL_EVENT": "sand.turn.outcome_detail",
+     "TURN_OUTCOME_EVENT": "agent.turn.outcome",
+     "TURN_RETRY_EVENT": "sand.turn.retry",
+     "TURN_START_EVENT": "agent.turn.start",
+     "TURN_USAGE_EVENT": "sand.turn.usage",
+     "TURN_USAGE_SCHEMA_VERSION": "2",
+     "USER_MESSAGE_RECEIVED_EVENT": "sand.user_message.received",
+     "WEBAUTHN_PROXY_EVENT": "sand.webauthn_proxy",
+     "WEBAUTHN_SIGN_ERROR_CLASSES": [
+      "no_credentials",
+      "pin_not_set",
+      "pin_blocked",
+      "pin_other",
+      "cancelled_or_timeout",
+      "unsupported_option",
+      "hid_error",
+      "ambiguous_credential",
+      "bad_options",
+      "create_unsupported",
+      "platform_api",
+      "signer_other",
+      "helper_spawn_failed",
+      "helper_no_result"
+     ]
+    },
+    "lists": [
+     "TELEMETRY_DROP_REASONS: a list, not frozen",
+     "TELEMETRY_DROP_UNIT_BY_REASON: an object, not frozen",
+     "WEBAUTHN_SIGN_ERROR_CLASSES: a list, not frozen"
+    ],
+    "unitOfEachReason": [
+     "ship_failed: attempts",
+     "overflow_evicted: entries",
+     "replay_expired: entries",
+     "backend_dropped: entries",
+     "account_rotated: entries"
+    ],
+    "sameNameTwice": []
+   }
+  },
+  "the numbers logs are shipped by": {
+   "returned": {
+    "LOG_SHIP_INTERVAL_MS": 15000,
+    "LOG_SHIP_MAX_BATCH_ENTRIES": 128,
+    "LOG_SHIP_MAX_BATCH_BYTES": 262144,
+    "LOG_SHIP_FAILURE_MAX_BACKOFF_MS": 60000,
+    "LOG_SHIP_RATE_LIMIT_MAX_BACKOFF_MS": 300000,
+    "LOG_SHIP_JITTER_RATIO": 0.25
+   }
+  },
+  "the wait before the next shipment: 15 s after a delivery, doubling after failures up to 60 s, and after rate limits up to 5 min or the server's own wait if longer": {
+   "returned": [
+    "shipped, streak 0: 15000",
+    "shipped, streak 1: 15000",
+    "shipped, streak 2: 15000",
+    "shipped, streak 3: 15000",
+    "shipped, streak 4: 15000",
+    "shipped, streak 5: 15000",
+    "shipped, streak 6: 15000",
+    "shipped, streak 40: 15000",
+    "shipped, streak 1100: 15000",
+    "shipped, streak -1: 15000",
+    "shipped, streak -Infinity: 15000",
+    "shipped, streak Infinity: 15000",
+    "shipped, streak 0.5: 15000",
+    "shipped, streak NaN: 15000",
+    "shipped, streak undefined: 15000",
+    "shipped, streak null: 15000",
+    "shipped, streak \"2\": 15000",
+    "failed, streak 0: 15000",
+    "failed, streak 1: 30000",
+    "failed, streak 2: 60000",
+    "failed, streak 3: 60000",
+    "failed, streak 4: 60000",
+    "failed, streak 5: 60000",
+    "failed, streak 6: 60000",
+    "failed, streak 40: 60000",
+    "failed, streak 1100: 60000",
+    "failed, streak -1: 15000",
+    "failed, streak -Infinity: 15000",
+    "failed, streak Infinity: 60000",
+    "failed, streak 0.5: 21213",
+    "failed, streak NaN: NaN",
+    "failed, streak undefined: NaN",
+    "failed, streak null: 15000",
+    "failed, streak \"2\": 60000",
+    "rate_limited, streak 0: 15000",
+    "rate_limited, streak 1: 30000",
+    "rate_limited, streak 2: 60000",
+    "rate_limited, streak 3: 120000",
+    "rate_limited, streak 4: 240000",
+    "rate_limited, streak 5: 300000",
+    "rate_limited, streak 6: 300000",
+    "rate_limited, streak 40: 300000",
+    "rate_limited, streak 1100: 300000",
+    "rate_limited, streak -1: 15000",
+    "rate_limited, streak -Infinity: 15000",
+    "rate_limited, streak Infinity: 300000",
+    "rate_limited, streak 0.5: 21213",
+    "rate_limited, streak NaN: NaN",
+    "rate_limited, streak undefined: NaN",
+    "rate_limited, streak null: 15000",
+    "rate_limited, streak \"2\": 60000",
+    "rate_limited, streak 1, server says 0: 30000",
+    "rate_limited, streak 9, server says 0: 300000",
+    "rate_limited, streak 1, server says 1: 30000",
+    "rate_limited, streak 9, server says 1: 300000",
+    "rate_limited, streak 1, server says 29999: 30000",
+    "rate_limited, streak 9, server says 29999: 300000",
+    "rate_limited, streak 1, server says 30000: 30000",
+    "rate_limited, streak 9, server says 30000: 300000",
+    "rate_limited, streak 1, server says 30001: 30001",
+    "rate_limited, streak 9, server says 30001: 300000",
+    "rate_limited, streak 1, server says 299999: 299999",
+    "rate_limited, streak 9, server says 299999: 300000",
+    "rate_limited, streak 1, server says 300000: 300000",
+    "rate_limited, streak 9, server says 300000: 300000",
+    "rate_limited, streak 1, server says 300001: 300001",
+    "rate_limited, streak 9, server says 300001: 300001",
+    "rate_limited, streak 1, server says 1000000: 1000000",
+    "rate_limited, streak 9, server says 1000000: 1000000",
+    "rate_limited, streak 1, server says -5: 30000",
+    "rate_limited, streak 9, server says -5: 300000",
+    "rate_limited, streak 1, server says NaN: NaN",
+    "rate_limited, streak 9, server says NaN: NaN",
+    "rate_limited, streak 1, server says null: 30000",
+    "rate_limited, streak 9, server says null: 300000",
+    "rate_limited, streak 1, server says undefined: 30000",
+    "rate_limited, streak 9, server says undefined: 300000",
+    "rate_limited, streak 1, server says Infinity: NaN",
+    "rate_limited, streak 9, server says Infinity: NaN",
+    "rate_limited, streak 1, server says \"45000\": 45000",
+    "rate_limited, streak 9, server says \"45000\": 300000",
+    "failed, streak 1, server says 500000: 30000",
+    "shipped, streak 3, server says 500000: 15000",
+    "throttled, streak 1: 30000",
+    "undefined, streak 2, server says 70000: 70000",
+    "SHIPPED, streak 0: 15000"
+   ]
+  },
+  "up to a quarter of the wait is added by the dice, and the sum is rounded to the nearest millisecond": {
+   "returned": {
+    "dice": [
+     "0",
+     "0.000001",
+     "0.00013333333333333334",
+     "0.0002666666666666667",
+     "0.1",
+     "0.3333",
+     "0.5",
+     "0.75",
+     "0.9999",
+     "0.999999999",
+     "1",
+     "2",
+     "-1",
+     "NaN"
+    ],
+    "shipped": [
+     15000,
+     15000,
+     15001,
+     15001,
+     15375,
+     16250,
+     16875,
+     17813,
+     18750,
+     18750,
+     18750,
+     22500,
+     11250,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "failedOnce": [
+     30000,
+     30000,
+     30001,
+     30002,
+     30750,
+     32500,
+     33750,
+     35625,
+     37499,
+     37500,
+     37500,
+     45000,
+     22500,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "failedAtTheCap": [
+     60000,
+     60000,
+     60002,
+     60004,
+     61500,
+     65000,
+     67500,
+     71250,
+     74999,
+     75000,
+     75000,
+     90000,
+     45000,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "rateLimitedThrice": [
+     120000,
+     120000,
+     120004,
+     120008,
+     123000,
+     129999,
+     135000,
+     142500,
+     149997,
+     150000,
+     150000,
+     180000,
+     90000,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "serverSays100001": [
+     100001,
+     100001,
+     100004,
+     100008,
+     102501,
+     108334,
+     112501,
+     118751,
+     124999,
+     125001,
+     125001,
+     150002,
+     75001,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "halfAStreak": [
+     21213,
+     21213,
+     21214,
+     21215,
+     21744,
+     22981,
+     23865,
+     25191,
+     26516,
+     26517,
+     26517,
+     31820,
+     15910,
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ]
+   }
+  },
+  "with no dice given, or null for them, the wait is thrown with the machine's dice in place at that moment": {
+   "returned": {
+    "answers": [
+     [
+      0,
+      15000,
+      30000,
+      60000
+     ],
+     [
+      0.5,
+      16875,
+      33750,
+      67500
+     ],
+     [
+      0.8,
+      18000,
+      36000,
+      72000
+     ]
+    ],
+    "diceAsked": 9,
+    "nothing given at all": {
+     "threw": "TypeError"
+    },
+    "an empty input": {
+     "$": "number",
+     "v": "NaN"
+    }
+   }
+  },
+  "a new schedule is due at once and is not backing off": {
+   "returned": {
+    "first": {
+     "dueAtZero": true,
+     "dueBeforeZero": false,
+     "dueBeforeZeroIfPressed": true,
+     "dueAtNaN": false,
+     "dueAtNaNIfPressed": true,
+     "backingOff": false
+    },
+    "methodsAnswerNothing": true,
+    "methods": [
+     "isDue: function",
+     "shipNext: function",
+     "record: function",
+     "isBackingOff: function"
+    ]
+   }
+  },
+  "after a delivery the schedule waits 15 s; pressed, it is due at once; a failure makes it wait 30 s, then 60 s, and pressing no longer helps": {
+   "returned": {
+    "steps": [
+     {
+      "after": "a delivery",
+      "waits": 15000,
+      "backingOff": false,
+      "dueIfPressed": true
+     },
+     {
+      "after": "a delivery with a receipt",
+      "waits": 15000,
+      "backingOff": false,
+      "dueIfPressed": true
+     },
+     {
+      "after": "a failure",
+      "waits": 30000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a second failure",
+      "waits": 60000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a third failure",
+      "waits": 60000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a fourth failure",
+      "waits": 60000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a delivery",
+      "waits": 15000,
+      "backingOff": false,
+      "dueIfPressed": true
+     },
+     {
+      "after": "a failure after the delivery",
+      "waits": 30000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a failure, the dice at a half",
+      "waits": 67500,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a delivery, the dice at a half",
+      "waits": 16875,
+      "backingOff": false,
+      "dueIfPressed": true
+     }
+    ],
+    "diceAsked": 10
+   }
+  },
+  "a rate limit makes the schedule wait 30 s, then 60 s, up to 5 min, or as long as the server says when that is longer": {
+   "returned": {
+    "steps": [
+     {
+      "after": "a rate limit with no headers",
+      "waits": 30000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a second, the server saying 10 s",
+      "waits": 60000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a third, the server saying 600 s",
+      "waits": 600000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a fourth, the server saying 0.5 s",
+      "waits": 240000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a fifth, the server saying minus 3",
+      "waits": 300000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a sixth, the server naming a date 20 min ahead",
+      "waits": 1200000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a seventh, the server naming a date in the past",
+      "waits": 300000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "an eighth, the server saying words",
+      "waits": 300000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a ninth, the header empty",
+      "waits": 300000,
+      "backingOff": true,
+      "dueIfPressed": false
+     },
+     {
+      "after": "a tenth, the header missing",
+      "waits": 300000,
+      "backingOff": true,
+      "dueIfPressed": false
+     }
+    ],
+    "headersRead": [
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after",
+     "retry-after"
+    ]
+   }
+  },
+  "a failure ends a run of rate limits and a rate limit ends a run of failures; a delivery ends both": {
+   "returned": [
+    {
+     "after": "a rate limit",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a rate limit",
+     "waits": 60000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a failure",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a rate limit",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a failure",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a failure",
+     "waits": 60000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a rate limit",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a delivery",
+     "waits": 15000,
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "a rate limit",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    }
+   ]
+  },
+  "only an answer whose code is the number 8 counts as a rate limit": {
+   "returned": {
+    "an answer with nothing in it counts as a failure": {
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    "no answer at all": [
+     {
+      "threw": "TypeError"
+     },
+     {
+      "waits": "no wait set",
+      "backingOff": false,
+      "dueIfPressed": true
+     }
+    ],
+    "waits": [
+     "the number 8: 120000",
+     "an error carrying 8: 120000",
+     "the text 8: 60000",
+     "8.0000001: 60000",
+     "14, unavailable, with a header: 60000",
+     "4, deadline exceeded: 60000",
+     "a list: 60000",
+     "a function carrying 8: 60000",
+     "null: 60000",
+     "nothing: 60000",
+     "the number 8 itself: 60000"
+    ],
+    "headersRead": []
+   }
+  },
+  "a rate limit whose headers cannot be read stops the recording with that failure: the run of failures is over, the rate limit is not counted, and the wait stays as it was": {
+   "returned": [
+    {
+     "after": "a failure",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a rate limit whose headers fail when read",
+     "threw": "Error",
+     "waits": 30000,
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "a rate limit whose headers cannot be asked",
+     "threw": "TypeError",
+     "waits": 30000,
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "a rate limit",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    }
+   ]
+  },
+  "asking to ship next ends the wait after a delivery, and changes nothing while backing off": {
+   "returned": [
+    {
+     "after": "ship next on a new schedule",
+     "waits": "no wait set",
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "a delivery",
+     "waits": 15000,
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "ship next",
+     "waits": "no wait set",
+     "backingOff": false,
+     "dueIfPressed": true
+    },
+    {
+     "after": "a failure",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "ship next while backing off",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a rate limit, then ship next",
+     "waits": 30000,
+     "backingOff": true,
+     "dueIfPressed": false
+    },
+    {
+     "after": "a delivery, then ship next",
+     "waits": "no wait set",
+     "backingOff": false,
+     "dueIfPressed": true
+    }
+   ]
+  },
+  "the edges of being due: at the moment itself, not a millisecond before": {
+   "returned": {
+    "afterDelivery": [
+     "14999: false, pressed true",
+     "15000: true, pressed true",
+     "15001: true, pressed true"
+    ],
+    "afterFailure": [
+     "29999: false, pressed false",
+     "30000: true, pressed true",
+     "30001: true, pressed true"
+    ],
+    "pressedOddlyAfterDelivery": [
+     true,
+     true,
+     true,
+     0,
+     "",
+     null,
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "pressedOddlyAfterFailure": [
+     false,
+     false,
+     false,
+     0,
+     "",
+     null,
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "number",
+      "v": "NaN"
+     }
+    ],
+    "pressedOddlyWhenDue": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "with no time given, the schedule reads the clock in place at that moment": {
+   "returned": {
+    "seen": [
+     15000,
+     false,
+     false,
+     true,
+     150000,
+     80000
+    ],
+    "headersRead": [
+     "retry-after"
+    ]
+   }
+  },
+  "a batch takes entries in order until the 129th or until the next would pass 262,144 characters, and always takes the first": {
+   "returned": {
+    "127": {
+     "batch": 127,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "128": {
+     "batch": 128,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "129": {
+     "batch": 128,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "300": {
+     "batch": 128,
+     "remaining": 172,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "empty": {
+     "batch": 0,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "one": {
+     "batch": 1,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "one entry far past the size": {
+     "batch": 1,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "one entry past the size, then a small one": {
+     "batch": 1,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "two that fill the size exactly": {
+     "batch": 2,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "two that pass the size by one": {
+     "batch": 1,
+     "remaining": 2,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "a small one, then one that alone fills the size": {
+     "batch": 1,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "the size is reached exactly by the third": {
+     "batch": 3,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "keys count as well as values": {
+     "batch": 2,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "an entry with nothing in it weighs nothing": {
+     "batch": 3,
+     "remaining": 2,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "a character outside the basic plane counts as two": {
+     "batch": 2,
+     "remaining": 2,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "a value that is not text has no length, and from there the size no longer stops anything": {
+     "batch": 4,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "inherited fields are not counted": {
+     "batch": 2,
+     "remaining": 1,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    },
+    "a frozen list": {
+     "batch": 3,
+     "remaining": 0,
+     "otherKeys": [],
+     "sameEntries": true,
+     "newLists": true
+    }
+   }
+  },
+  "a batch and what remains are lists of their own, in the order the entries came": {
+   "returned": {
+    "batch": "127: event#0 to event#126",
+    "remaining": "3: event#128 to late",
+    "bufferUntouched": "130: event#0 to event#129"
+   }
+  },
+  "the connectors that may be named, and the two words for the rest": {
+   "returned": {
+    "known": {
+     "$": "set",
+     "v": [
+      "asana",
+      "atlassian",
+      "buildkite",
+      "confluence",
+      "context7",
+      "databricks",
+      "datadog",
+      "deepwiki",
+      "dock",
+      "figma",
+      "filesystem",
+      "github",
+      "gmail",
+      "google",
+      "googlecalendar",
+      "googledocs",
+      "googledrive",
+      "googlesheets",
+      "googleworkspace",
+      "huggingface",
+      "jira",
+      "linear",
+      "memory",
+      "notion",
+      "playwright",
+      "salesforce",
+      "sentry",
+      "sequentialthinking",
+      "slack",
+      "stripe",
+      "telegram",
+      "todoist",
+      "zoominfo"
+     ]
+    },
+    "other": "other",
+    "unknown": "unknown"
+   }
+  },
+  "a server's name goes out only as a known connector's, small and without signs; any other name goes out as \"other\", no name as \"unknown\"": {
+   "returned": {
+    "everyKnownNameIsItself": true,
+    "byName": {
+     "\"github\"": "github",
+     "\"GitHub\"": "github",
+     "\"GITHUB\"": "github",
+     "\" git hub \"": "github",
+     "\"git-hub\"": "github",
+     "\"git_hub\"": "github",
+     "\"g.i.t.h.u.b\"": "github",
+     "\"github!\"": "github",
+     "\"Google Calendar\"": "googlecalendar",
+     "\"google-drive\"": "googledrive",
+     "\"Google Docs\"": "googledocs",
+     "\"google_sheets\"": "googlesheets",
+     "\"Google Workspace\"": "googleworkspace",
+     "\"google\"": "google",
+     "\"hugging face\"": "huggingface",
+     "\"Sequential Thinking\"": "sequentialthinking",
+     "\"context7\"": "context7",
+     "\"Context 7\"": "context7",
+     "\"zoom-info\"": "zoominfo",
+     "\"Jira\"": "jira",
+     "\"atlassian/jira\"": "other",
+     "\"jira2\"": "other",
+     "\"github-enterprise\"": "other",
+     "\"my github\"": "other",
+     "\"githu\"": "other",
+     "\"notion.so\"": "other",
+     "\"Sentry.io\"": "other",
+     "\"acme-internal-crm\"": "other",
+     "\"ada@example.com's server\"": "other",
+     "\"https://mcp.example.com/sse\"": "other",
+     "\"/Users/ada/servers/private.js\"": "other",
+     "\"sk-live-0123456789\"": "other",
+     "\"\"": "unknown",
+     "\" \"": "unknown",
+     "\"!!!\"": "unknown",
+     "\"---\"": "unknown",
+     "\"日本語\"": "unknown",
+     "\"é\"": "unknown",
+     "\"0\"": "other",
+     "\"7\"": "other",
+     "\"GİTHUB\"": "github",
+     "\"buildKite\"": "buildkite",
+     "\"ｇｉｔｈｕｂ\"": "unknown",
+     "\"sſack\"": "other",
+     "\"constructor\"": "other",
+     "\"__proto__\"": "other",
+     "\"has\"": "other",
+     "\"size\"": "other"
+    },
+    "nothing given": "unknown",
+    "undefined": "unknown",
+    "null": {
+     "threw": "TypeError"
+    },
+    "a number": {
+     "threw": "TypeError"
+    },
+    "a list": {
+     "threw": "TypeError"
+    },
+    "an object that can be made small": {
+     "returned": "linear"
+    }
+   }
+  },
+  "the list of known connectors is read each time a name is asked about": {
+   "returned": {
+    "before": [
+     "other",
+     "github"
+    ],
+    "changed": [
+     "acme",
+     "other"
+    ]
+   }
+  },
+  "a connector's sign-in report becomes a level and labels in a fixed order; failed and timeout are warnings": {
+   "returned": {
+    "only what must be there": {
+     "level": "info",
+     "metadata": {
+      "phase": "start",
+      "connector": "unknown",
+      "outcome": "started",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "everything given": {
+     "level": "info",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "succeeded",
+      "surface": "host",
+      "server_id": "srv_01",
+      "reauth": "true"
+     }
+    },
+    "given in another order": {
+     "level": "info",
+     "metadata": {
+      "phase": "callback",
+      "connector": "linear",
+      "outcome": "succeeded",
+      "surface": "host",
+      "server_id": "srv_02",
+      "reauth": "false"
+     }
+    },
+    "failed": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "notion",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "timeout": {
+     "level": "warn",
+     "metadata": {
+      "phase": "wait",
+      "connector": "slack",
+      "outcome": "timeout",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "Failed with a capital": {
+     "level": "info",
+     "metadata": {
+      "phase": "wait",
+      "connector": "unknown",
+      "outcome": "Failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "timed_out": {
+     "level": "info",
+     "metadata": {
+      "phase": "wait",
+      "connector": "unknown",
+      "outcome": "timed_out",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "cancelled": {
+     "level": "info",
+     "metadata": {
+      "phase": "wait",
+      "connector": "unknown",
+      "outcome": "cancelled",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "an empty outcome and phase": {
+     "level": "info",
+     "metadata": {
+      "phase": "",
+      "connector": "unknown",
+      "outcome": "",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "a phase and outcome that are sentences": {
+     "level": "info",
+     "metadata": {
+      "phase": "waiting for ada@example.com to approve",
+      "connector": "unknown",
+      "outcome": "the browser at /Users/ada closed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "fields the report does not have are not sent": {
+     "level": "info",
+     "metadata": {
+      "phase": "start",
+      "connector": "unknown",
+      "outcome": "started",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    },
+    "reauth said as words": {
+     "level": "info",
+     "metadata": {
+      "phase": "start",
+      "connector": "unknown",
+      "outcome": "started",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": "yes"
+     }
+    },
+    "reauth said as 0": {
+     "level": "info",
+     "metadata": {
+      "phase": "start",
+      "connector": "unknown",
+      "outcome": "started",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": "0"
+     }
+    },
+    "reauth null": {
+     "level": "info",
+     "metadata": {
+      "phase": "start",
+      "connector": "unknown",
+      "outcome": "started",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": "null"
+     }
+    },
+    "nothing in the report": {
+     "level": "info",
+     "metadata": {
+      "phase": {
+       "$": "undefined"
+      },
+      "connector": "unknown",
+      "outcome": {
+       "$": "undefined"
+      },
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      }
+     }
+    }
+   }
+  },
+  "the surface goes out as given": {
+   "returned": [
+    "host",
+    "desktop",
+    "",
+    {
+     "$": "undefined"
+    },
+    7
+   ]
+  },
+  "a server's name never goes out of a sign-in report as written, and its id only when it has the shape of an id": {
+   "returned": {
+    "names": {
+     "\"GitHub\"": "connector github, server_id left out",
+     "\"google-drive\"": "connector googledrive, server_id left out",
+     "\"Acme internal CRM\"": "connector other, server_id left out",
+     "\"ada@example.com\"": "connector other, server_id left out",
+     "\"https://mcp.example.com/sse?token=abc\"": "connector other, server_id left out",
+     "\"/Users/ada/servers/private.js\"": "connector other, server_id left out",
+     "\"\"": "connector unknown, server_id left out",
+     "\"  \"": "connector unknown, server_id left out"
+    },
+    "ids": {
+     "\"srv_01\"": "connector unknown, server_id \"srv_01\"",
+     "\"a\"": "connector unknown, server_id \"a\"",
+     "\"A.b_c:d|e-f\"": "connector unknown, server_id \"A.b_c:d|e-f\"",
+     "\"550e8400-e29b-41d4-a716-446655440000\"": "connector unknown, server_id \"550e8400-e29b-41d4-a716-446655440000\"",
+     "x times 128": "connector unknown, server_id \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"",
+     "x times 129": "connector unknown, server_id left out",
+     "\"\"": "connector unknown, server_id left out",
+     "\" \"": "connector unknown, server_id left out",
+     "\"srv 01\"": "connector unknown, server_id left out",
+     "\" srv_01\"": "connector unknown, server_id left out",
+     "\"srv_01\\n\"": "connector unknown, server_id left out",
+     "\"srv/01\"": "connector unknown, server_id left out",
+     "\"ada@example.com\"": "connector unknown, server_id left out",
+     "\"https://mcp.example.com/sse\"": "connector unknown, server_id left out",
+     "\"/Users/ada/servers/private.js\"": "connector unknown, server_id left out",
+     "\"C:\\\\servers\\\\a\"": "connector unknown, server_id left out",
+     "\"id,with,commas\"": "connector unknown, server_id left out",
+     "\"naïve\"": "connector unknown, server_id left out",
+     "\"日本\"": "connector unknown, server_id left out",
+     "\"srv_01?x=1\"": "connector unknown, server_id left out",
+     "\"a+b\"": "connector unknown, server_id left out",
+     "\"a=b\"": "connector unknown, server_id left out"
+    },
+    "an id that is a number": {
+     "returned": "connector unknown, server_id 12345"
+    },
+    "an id that is null": {
+     "returned": "connector unknown, server_id null"
+    },
+    "a name that is null": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "a sign-in's failure goes out as its code, domain and whether a retry helps, and of what it carries only the listed fields that are short plain words or numbers": {
+   "returned": {
+    "a listed field, a plain word": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0203",
+      "error_domain": "auth",
+      "error_retryable": "false",
+      "reason": "not_connected"
+     }
+    },
+    "a listed field, a sentence": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0204",
+      "error_domain": "auth",
+      "error_retryable": "true"
+     }
+    },
+    "a listed field, a path": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0204",
+      "error_domain": "auth",
+      "error_retryable": "true"
+     }
+    },
+    "a listed field, 64 and 65 letters": [
+     "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+     {
+      "$": "undefined"
+     }
+    ],
+    "a listed field, a number, a truth, an object, nothing": [
+     "503",
+     "1.5",
+     "left out",
+     "left out",
+     "true",
+     "false",
+     "left out",
+     "left out",
+     "left out",
+     "left out",
+     "left out"
+    ],
+    "fields that are not listed": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0203",
+      "error_domain": "auth",
+      "error_retryable": "false",
+      "reason": "refused"
+     }
+    },
+    "a failure that lists nothing": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0206",
+      "error_domain": "auth",
+      "error_retryable": "true"
+     }
+    },
+    "a field named with a capital goes out small with an underscore": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0109",
+      "error_domain": "transport",
+      "error_retryable": "true",
+      "batch_entries": "12"
+     }
+    },
+    "a code that is not in the table": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0001",
+      "error_domain": "registry",
+      "error_retryable": "false"
+     }
+    },
+    "a code that is not a text": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0001",
+      "error_domain": "registry",
+      "error_retryable": "false"
+     }
+    },
+    "no code": {
+     "level": "warn",
+     "metadata": {
+      "phase": "callback",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0001",
+      "error_domain": "registry",
+      "error_retryable": "false"
+     }
+    },
+    "a failure's own phase takes the report's place, where the report's was": {
+     "level": "warn",
+     "metadata": {
+      "phase": "window",
+      "connector": "github",
+      "outcome": "failed",
+      "surface": "host",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0601",
+      "error_domain": "desktop",
+      "error_retryable": "false"
+     }
+    },
+    "a failure on a report that went well stays information": {
+     "level": "info",
+     "metadata": {
+      "phase": "callback",
+      "connector": "unknown",
+      "outcome": "succeeded",
+      "surface": "desktop",
+      "server_id": {
+       "$": "undefined"
+      },
+      "reauth": {
+       "$": "undefined"
+      },
+      "error_code": "SAND-E0206",
+      "error_domain": "auth",
+      "error_retryable": "true"
+     }
+    },
+    "an error that is undefined adds nothing": [
+     "phase",
+     "connector",
+     "outcome",
+     "surface",
+     "server_id",
+     "reauth"
+    ],
+    "an error that is null": {
+     "threw": "TypeError"
+    },
+    "an error that is a text": {
+     "returned": {
+      "level": "warn",
+      "metadata": {
+       "phase": "callback",
+       "connector": "github",
+       "outcome": "failed",
+       "surface": "host",
+       "server_id": {
+        "$": "undefined"
+       },
+       "reauth": {
+        "$": "undefined"
+       },
+       "error_code": "SAND-E0001",
+       "error_domain": "registry",
+       "error_retryable": "false"
+      }
+     }
+    }
+   }
+  },
+  "the transport's numbers, its word for a passed deadline, and the levels by name and number": {
+   "returned": {
+    "MAX_BUFFER_SIZE": 1000,
+    "STRUCTURED_LOG_SUBMIT_DEADLINE_MS": 15000,
+    "STRUCTURED_LOG_REPLAY_MAX_AGE_MS": 61200000,
+    "DEADLINE_EXPIRY_CODE": "deadline_exceeded",
+    "ClientLogLevel": [
+     [
+      "0",
+      "UNSPECIFIED"
+     ],
+     [
+      "1",
+      "INFO"
+     ],
+     [
+      "2",
+      "DEBUG"
+     ],
+     [
+      "3",
+      "WARN"
+     ],
+     [
+      "4",
+      "ERROR"
+     ],
+     [
+      "UNSPECIFIED",
+      0
+     ],
+     [
+      "INFO",
+      1
+     ],
+     [
+      "DEBUG",
+      2
+     ],
+     [
+      "WARN",
+      3
+     ],
+     [
+      "ERROR",
+      4
+     ]
+    ],
+    "levels": [
+     "debug: 2",
+     "info: 1",
+     "warn: 3",
+     "error: 4",
+     "fatal: 4",
+     "INFO: 4",
+     ": 4",
+     "undefined: 4",
+     "null: 4",
+     "1: 4"
+    ]
+   }
+  },
+  "a failure is a passed deadline only when it is an object whose code is exactly that word": {
+   "returned": [
+    "an object with the code: true",
+    "an error with the code: true",
+    "the code inherited: true",
+    "a list with the code: true",
+    "the code in capitals: false",
+    "the number 4: false",
+    "a code of undefined: false",
+    "no code: false",
+    "an error with only the name: false",
+    "a function with the code: false",
+    "the word itself: false",
+    "null: false",
+    "nothing: false",
+    "a number: false"
+   ]
+  },
+  "a drop counter id is 16 random bytes as 32 small hex digits": {
+   "returned": {
+    "ids": [
+     "f8f9fafbfcfdfeff0001020304050607",
+     "08090a0b0c0d0e0f1011121314151617",
+     "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"
+    ],
+    "bytesAsked": [
+     "Uint8Array of 16",
+     "Uint8Array of 16"
+    ],
+    "whenTheSourceFails": {
+     "threw": "Error"
+    }
+   }
+  },
+  "a drop counter id from the machine's own random bytes has that shape, and two differ": {
+   "returned": {
+    "shapes": [
+     true,
+     true
+    ],
+    "differ": true
+   }
+  },
+  "empty drop counters are five pairs of zeros, new each time": {
+   "returned": {
+    "second": {
+     "ship_failed": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "overflow_evicted": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "replay_expired": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "backend_dropped": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "account_rotated": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     }
+    },
+    "apart": true,
+    "third": {
+     "ship_failed": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "overflow_evicted": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "replay_expired": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "backend_dropped": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "account_rotated": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     }
+    }
+   }
+  },
+  "a copy of drop counters holds the five reasons in the usual order, each with all its counter held, and nothing else": {
+   "returned": {
+    "copy": {
+     "ship_failed": {
+      "observed": 7,
+      "acknowledgedThrough": 8
+     },
+     "overflow_evicted": {},
+     "replay_expired": {
+      "observed": 5
+     },
+     "backend_dropped": {
+      "observed": 3,
+      "acknowledgedThrough": 4,
+      "note": "kept"
+     },
+     "account_rotated": {
+      "acknowledgedThrough": 1,
+      "observed": 200
+     }
+    },
+    "sourceAfterTheCopyChanged": {
+     "acknowledgedThrough": 1,
+     "observed": 2
+    },
+    "ofEmpty": {
+     "ship_failed": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "overflow_evicted": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "replay_expired": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "backend_dropped": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     },
+     "account_rotated": {
+      "observed": 0,
+      "acknowledgedThrough": 0
+     }
+    },
+    "apart": true,
+    "a reason missing": {
+     "ship_failed": {
+      "observed": 1,
+      "acknowledgedThrough": 0
+     },
+     "overflow_evicted": {},
+     "replay_expired": {},
+     "backend_dropped": {},
+     "account_rotated": {}
+    },
+    "counters that are numbers and texts": {
+     "ship_failed": {},
+     "overflow_evicted": {
+      "0": "a",
+      "1": "b"
+     },
+     "replay_expired": {},
+     "backend_dropped": {
+      "0": 7
+     },
+     "account_rotated": {}
+    },
+    "nothing": {
+     "threw": "TypeError"
+    },
+    "null": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "a receipt is good when both its counts are whole, not negative, and add up to what was sent": {
+   "returned": [
+    "3 taken, 0 dropped, of 3: true",
+    "0 taken, 3 dropped, of 3: true",
+    "2 taken, 1 dropped, of 3: true",
+    "0 taken, 0 dropped, of 0: true",
+    "-0 taken, 3 dropped, of 3: true",
+    "3 taken, -0 dropped, of 3: true",
+    "2 taken, 0 dropped, of 3: false",
+    "3 taken, 1 dropped, of 3: false",
+    "4 taken, -1 dropped, of 3: false",
+    "-1 taken, 4 dropped, of 3: false",
+    "1.5 taken, 1.5 dropped, of 3: false",
+    "3 taken, 0 dropped, of 3.5: false",
+    "\"3\" taken, 0 dropped, of 3: false",
+    "3 taken, \"0\" dropped, of 3: false",
+    "3 taken, null dropped, of 3: false",
+    "3 taken, undefined dropped, of 3: false",
+    "undefined taken, 3 dropped, of 3: false",
+    "NaN taken, 3 dropped, of 3: false",
+    "3 taken, Infinity dropped, of 3: false",
+    "3n taken, 0n dropped, of 3: false",
+    "3 taken, 0 dropped, of \"3\": false",
+    "3 taken, 0 dropped, of undefined: false",
+    "9007199254740991 taken, 0 dropped, of 9007199254740991: true",
+    "9007199254740992 taken, 0 dropped, of 9007199254740992: false",
+    "9007199254740991 taken, 1 dropped, of 9007199254740992: true",
+    "other fields beside them: true",
+    "no fields: false",
+    "a receipt that is null: {\"threw\":\"TypeError\"}",
+    "a receipt that is undefined: {\"threw\":\"TypeError\"}"
+   ]
+  },
+  "labels with no value or an empty one are left out, the rest keep their order": {
+   "returned": {
+    "cleaned": [
+     [
+      "2",
+      "two"
+     ],
+     [
+      "10",
+      "ten"
+     ],
+     [
+      "b",
+      "2"
+     ],
+     [
+      "a",
+      "1"
+     ],
+     [
+      "space",
+      " "
+     ],
+     [
+      "zero",
+      "0"
+     ],
+     [
+      "word",
+      "undefined"
+     ]
+    ],
+    "aNewObject": true,
+    "givenUntouched": [
+     "2",
+     "10",
+     "b",
+     "a",
+     "gone",
+     "empty",
+     "space",
+     "zero",
+     "word"
+    ],
+    "of nothing": {},
+    "of a frozen object": {
+     "a": "1"
+    },
+    "a number, a truth and a function have no length and are left out": {
+     "kept": "x"
+    },
+    "a list or an object with a length is let through as it is": {
+     "list": [
+      "a"
+     ],
+     "sized": {
+      "length": 2
+     }
+    },
+    "inherited labels are not read": {
+     "own": "y"
+    },
+    "a label named __proto__ is lost": [
+     [
+      "a",
+      "1"
+     ],
+     [
+      "b",
+      "2"
+     ]
+    ],
+    "a label named __proto__ holding an object becomes what the result inherits from": {
+     "own": [
+      "a"
+     ],
+     "inherited": "x"
+    },
+    "a value of null": {
+     "threw": "TypeError"
+    },
+    "nothing": {
+     "threw": "TypeError"
+    },
+    "null": {
+     "threw": "TypeError"
+    },
+    "a text is read letter by letter": {
+     "0": "a",
+     "1": "b"
+    },
+    "a list is read place by place": {
+     "0": "x",
+     "3": "y"
+    }
+   }
+  },
+  "a value longer than the limit is cut to it": {
+   "returned": {
+    "cases": [
+     "\"abcdef\" at 7: \"abcdef\"",
+     "\"abcdef\" at 6: \"abcdef\"",
+     "\"abcdef\" at 5: \"abcde\"",
+     "\"abcdef\" at 1: \"a\"",
+     "\"abcdef\" at 0: \"\"",
+     "\"abcdef\" at -1: \"abcde\"",
+     "\"abcdef\" at -6: \"\"",
+     "\"abcdef\" at -7: \"\"",
+     "\"abcdef\" at 2.5: \"ab\"",
+     "\"abcdef\" at 5.999: \"abcde\"",
+     "\"abcdef\" at NaN: \"abcdef\"",
+     "\"abcdef\" at Infinity: \"abcdef\"",
+     "\"abcdef\" at -Infinity: \"\"",
+     "\"abcdef\" at undefined: \"abcdef\"",
+     "\"abcdef\" at null: \"\"",
+     "\"abcdef\" at \"3\": \"abc\"",
+     "\"\" at 0: \"\"",
+     "\"\" at 5: \"\"",
+     "\"\" at -1: \"\"",
+     "\"a😀b\" at 2: \"a\\ud83d\"",
+     "\"a😀b\" at 3: \"a😀\"",
+     "\"é\" at 1: \"e\""
+    ],
+    "long": [
+     2048,
+     2048
+    ],
+    "a list is cut the same way": [
+     1,
+     2
+    ],
+    "a number has no length and comes back": 12345,
+    "null": {
+     "threw": "TypeError"
+    },
+    "sameTextBack": true
+   }
+  },
+  "a new transport takes a counter id from 16 random bytes, starts the polling, and sends nothing by itself": {
+   "returned": {
+    "events": [
+     "polling starts"
+    ],
+    "bytesAsked": [
+     "Uint8Array of 16"
+    ],
+    "checkpoint": {
+     "counterId": "000102030405060708090a0b0c0d0e0f",
+     "counters": {
+      "ship_failed": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "overflow_evicted": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "replay_expired": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "backend_dropped": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "account_rotated": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      }
+     },
+     "records": []
+    },
+    "pending": [],
+    "methods": [
+     "captureCheckpoint",
+     "capturePending",
+     "clearPending",
+     "constructor",
+     "dispose",
+     "enqueue",
+     "enqueueAt",
+     "flushNow",
+     "recordDropped",
+     "setFlushSettledListener",
+     "setFlushTickListener",
+     "setIdentityTags",
+     "shipConfirmed"
+    ],
+    "answersNothing": true
+   }
+  },
+  "an entry waits with the platform's labels under its own, and is sent with its level as a number, its time as a big whole number, and the key": {
+   "returned": {
+    "waiting": [
+     {
+      "level": "debug",
+      "message": "first",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "platform's",
+       "b": "2",
+       "a": "1"
+      },
+      "timestamp": 1799999999995,
+      "onSettled": {
+       "$": "function",
+       "name": ""
+      }
+     },
+     {
+      "level": "info",
+      "message": "second",
+      "metadata": {
+       "client": "host",
+       "platform": "its own",
+       "n": "platform's"
+      },
+      "timestamp": 1799999999996
+     },
+     {
+      "level": "warn",
+      "message": "third",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "platform's"
+      },
+      "timestamp": 1799999999997
+     },
+     {
+      "level": "error",
+      "message": "fourth",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "4"
+      },
+      "timestamp": 1799999999998
+     },
+     {
+      "level": "fatal",
+      "message": "fifth",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "5"
+      },
+      "timestamp": 1800000000007,
+      "onSettled": {
+       "$": "function",
+       "name": ""
+      }
+     },
+     {
+      "level": "info",
+      "message": "sixth",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "platform's"
+      },
+      "timestamp": 1800000000007
+     },
+     {
+      "level": "info",
+      "message": "seventh",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "platform's"
+      },
+      "timestamp": 1800000000007,
+      "onSettled": null
+     }
+    ],
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "arguments": 2,
+      "request": [
+       "logs"
+      ],
+      "options": [
+       "signal"
+      ],
+      "signal": "live",
+      "onItsClient": true,
+      "logs": [
+       {
+        "level": 2,
+        "message": "first",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "platform's",
+         "b": "2",
+         "a": "1"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799999999995"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 1,
+        "message": "second",
+        "metadata": {
+         "client": "host",
+         "platform": "its own",
+         "n": "platform's"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799999999996"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 3,
+        "message": "third",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "platform's"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799999999997"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 4,
+        "message": "fourth",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "4"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799999999998"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 4,
+        "message": "fifth",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "5"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000007"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 1,
+        "message": "sixth",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "platform's"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000007"
+        },
+        "key": "the-key"
+       },
+       {
+        "level": 1,
+        "message": "seventh",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "platform's"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000007"
+        },
+        "key": "the-key"
+       }
+      ]
+     },
+     "first delivered",
+     "fifth delivered"
+    ],
+    "waitingAfter": [],
+    "checkpointAfter": {
+     "counterId": "000102030405060708090a0b0c0d0e0f",
+     "counters": {
+      "ship_failed": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "overflow_evicted": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "replay_expired": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "backend_dropped": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "account_rotated": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      }
+     },
+     "records": []
+    }
+   }
+  },
+  "what is read of waiting entries is a copy: changing it changes nothing in the transport": {
+   "returned": {
+    "waiting": [
+     {
+      "level": "info",
+      "message": "event",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "1"
+      },
+      "timestamp": 1800000000000
+     }
+    ],
+    "counters": {},
+    "sameCounterId": true,
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "1"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "identity labels are put first when an entry is sent, not when it is queued, and the entry's own labels win": {
+   "returned": {
+    "waiting": [
+     {
+      "level": "info",
+      "message": "queued before",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "n": "1"
+      },
+      "timestamp": 1800000000000
+     },
+     {
+      "level": "info",
+      "message": "queued after",
+      "metadata": {
+       "client": "host",
+       "platform": "stand-in",
+       "last": "its own"
+      },
+      "timestamp": 1800000000000
+     }
+    ],
+    "confirmed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "queued before",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "n": "1",
+         "last": "z",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "queued after",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "n": "identity's",
+         "last": "its own",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "confirmed",
+        "metadata": {
+         "host_bundle_version": "its own",
+         "client": "host",
+         "n": "identity's",
+         "last": "z",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "n": "identity's",
+         "last": "z",
+         "platform": "stand-in",
+         "reason": "account_rotated",
+         "unit": "entries",
+         "count": "2",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 4,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "after the labels were taken away",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "a transport that is switched off keeps no entry and sends none, and polls only while it has a tick listener; drops counted on it by hand are still reported": {
+   "returned": {
+    "waiting": [],
+    "confirmed": true,
+    "flushed": true,
+    "flushedWithDropsCounted": true,
+    "disposed": true,
+    "confirmedAfterwards": true,
+    "events": [
+     "made",
+     "with a listener dropped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "2",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "polling starts",
+     "tick",
+     "second tick listener called",
+     "polling stops",
+     "listener taken away",
+     "taken away again",
+     "polling starts",
+     "tick",
+     "third tick listener called",
+     "polling stops"
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported"
+    }
+   }
+  },
+  "a transport switched off by anything true behaves the same, and one switched off by false or nothing is on": {
+   "returned": {
+    "0": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      "send 1: 1: confirmed",
+      "send 2: 1: event",
+      "entry delivered"
+     ]
+    },
+    "1": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "entry dropped"
+     ]
+    },
+    "a word": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "entry dropped"
+     ]
+    },
+    "false": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      "send 1: 1: confirmed",
+      "send 2: 1: event",
+      "entry delivered"
+     ]
+    },
+    "undefined": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      "send 1: 1: confirmed",
+      "send 2: 1: event",
+      "entry delivered"
+     ]
+    },
+    "null": {
+     "confirmed": true,
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      "send 1: 1: confirmed",
+      "send 2: 1: event",
+      "entry delivered"
+     ]
+    }
+   }
+  },
+  "each round of the polling calls the tick listener first, then sends what is due; a listener that fails is passed over": {
+   "returned": [
+    "polling starts",
+    "tick",
+    "tick",
+    "tick listener called",
+    "tick",
+    "tick listener called",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "2: event#1 to event#2"
+    },
+    "tick",
+    "failing tick listener called",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "1: event#3"
+    },
+    "tick",
+    "slow tick listener called",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "1: event#4"
+    },
+    "slow tick listener done",
+    "listener taken away",
+    "tick",
+    {
+     "send": 4,
+     "client": 1,
+     "logs": "1: event#5"
+    }
+   ]
+  },
+  "a round of the polling sends only when the wait since the last shipment is over": {
+   "returned": [
+    "polling starts",
+    "at 0 ms",
+    "tick",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "1: event#1"
+    },
+    "at 14999 ms",
+    "tick",
+    "at 15000 ms",
+    "tick",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "1: event#2"
+    },
+    "at 29999 ms",
+    "tick",
+    "at 30000 ms",
+    "tick",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "1: event#3"
+    },
+    "at 46874 ms",
+    "tick",
+    "at 46875 ms",
+    "tick",
+    {
+     "send": 4,
+     "client": 1,
+     "logs": "1: event#4"
+    }
+   ]
+  },
+  "an entry at the error level is sent at the next round without waiting, unless the transport is backing off": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "tick",
+     "an error entry is queued",
+     "tick",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "2: event#2 to event#3"
+     },
+     "tick",
+     {
+      "send": 3,
+      "client": 1,
+      "logs": "1: event#4"
+     },
+     "the send failed; another error entry is queued",
+     "tick",
+     "tick",
+     "tick",
+     "client 2 made",
+     {
+      "send": 4,
+      "client": 2,
+      "logs": "2: event#4 to event#5"
+     },
+     {
+      "send": 5,
+      "client": 2,
+      "logs": "1: sand.telemetry.dropped"
+     }
+    ],
+    "counters": {
+     "ship_failed": "1 seen, 1 reported"
+    }
+   }
+  },
+  "holding for identity needs a hold timer": {
+   "returned": {
+    "refused": {
+     "threw": "TypeError"
+    },
+    "message": {
+     "class": "TypeError",
+     "message": "identityHoldExpiry is required when holdForIdentity is true"
+    },
+    "events": [],
+    "bytesAsked": [
+     "Uint8Array of 16",
+     "Uint8Array of 16"
+    ]
+   }
+  },
+  "while held for identity nothing queued is sent, by rounds or on demand; a confirmed shipment still goes; the labels' arrival ends the hold and sends at once": {
+   "returned": {
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "tick",
+     "flush on demand: false",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 4,
+        "message": "crash",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "confirmed: true",
+     "tick",
+     "the labels arrive",
+     "hold timer stopped",
+     "set",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "platform": "stand-in",
+         "n": "1"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "platform": "stand-in",
+         "n": "2"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "host_bundle_version": "1.2.3",
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "account_rotated",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "flush settled",
+     "the hold timer runs out afterwards",
+     "labels set again"
+    ],
+    "waiting": "1: event#3"
+   }
+  },
+  "the hold ends by itself when its timer runs out, and what waited is sent without identity labels": {
+   "returned": [
+    "hold timer armed for \"structured-log-host-identity\"",
+    "polling starts",
+    "the hold timer runs out",
+    "hold timer stopped",
+    "ran out",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": [
+      {
+       "level": 1,
+       "message": "event",
+       "metadata": {
+        "client": "host",
+        "platform": "stand-in",
+        "n": "1"
+       },
+       "timestamp": {
+        "$": "bigint",
+        "v": "1800000000000"
+       },
+       "key": "sand"
+      }
+     ]
+    },
+    "the labels arrive late",
+    "tick",
+    "tick",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": [
+      {
+       "level": 1,
+       "message": "event",
+       "metadata": {
+        "host_bundle_version": "1.2.3",
+        "client": "host",
+        "platform": "stand-in",
+        "n": "2"
+       },
+       "timestamp": {
+        "$": "bigint",
+        "v": "1800000000000"
+       },
+       "key": "sand"
+      }
+     ]
+    }
+   ]
+  },
+  "the end of a hold with nothing waiting sends nothing, and with only drops counted sends their report": {
+   "returned": {
+    "nothing waiting": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "hold timer stopped"
+    ],
+    "drops counted": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "id": "x",
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "overflow_evicted",
+         "unit": "entries",
+         "count": "2",
+         "counter_id": "101112131415161718191a1b1c1d1e1f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "only the value true holds for identity": {
+   "returned": {
+    "1": {
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      }
+     ]
+    },
+    "a word": {
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      }
+     ]
+    },
+    "false": {
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      }
+     ]
+    },
+    "undefined": {
+     "flushed": true,
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      }
+     ]
+    }
+   }
+  },
+  "closing a held transport stops the polling, then the hold timer, and sends what waits": {
+   "returned": {
+    "closed": true,
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "polling stops",
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "3: event#1 to event#3"
+     },
+     "the hold timer runs out afterwards, the labels arrive afterwards"
+    ]
+   }
+  },
+  "a transport that is switched off and held arms the hold timer and starts no polling": {
+   "returned": {
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "hold timer stopped"
+    ],
+    "closed": true
+   }
+  },
+  "the 128th waiting entry sets off a send without a round; 127 wait for the round": {
+   "returned": [
+    "polling starts",
+    "127 queued, waiting 127: event#1 to event#127",
+    "the 128th queued",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "waiting none",
+    "127 more queued, waiting 127: event#129 to event#255",
+    "tick",
+    "tick",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "127: event#129 to event#255"
+    }
+   ]
+  },
+  "a send set off by a full buffer goes on, batch after batch of 128, until nothing waits": {
+   "returned": [
+    "polling starts",
+    "300 queued",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "flush settled, waiting 172: event#129 to event#300",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "128: event#129 to event#256"
+    },
+    "flush settled, waiting 44: event#257 to event#300",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "44: event#257 to event#300"
+    },
+    "flush settled, waiting none",
+    "10 more queued, waiting 10: event#301 to event#310"
+   ]
+  },
+  "a send set off by a full buffer stops at a failure, and goes on from the first round after the back-off": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "128: event#129 to event#256"
+     },
+     "the second batch failed; waiting 172: event#129 to event#300; an error entry is queued",
+     "tick",
+     "tick",
+     "tick",
+     "client 2 made",
+     {
+      "send": 3,
+      "client": 2,
+      "logs": "128: event#129 to event#256"
+     },
+     {
+      "send": 4,
+      "client": 2,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     {
+      "send": 5,
+      "client": 2,
+      "logs": "45: event#257 to event#301"
+     }
+    ],
+    "counters": {
+     "ship_failed": "1 seen, 1 reported"
+    },
+    "waiting": "none"
+   }
+  },
+  "a full buffer sets off no send while held for identity; the end of the hold sends all of it, batch after batch": {
+   "returned": {
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "200 queued while held",
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "72: event#129 to event#200"
+     },
+     "waiting none",
+     "one more queued, waiting 1: event#201",
+     "tick",
+     "waiting 1: event#201"
+    ],
+    "heldWithExactly128": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     "tick",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: event#129"
+     }
+    ]
+   }
+  },
+  "a failed send puts its batch back before what was queued meanwhile, counts one failed attempt, makes a new client for the next, and each failure doubles the wait up to a minute": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "3: event#1 to event#with a listener"
+     },
+     "in flight, waiting 4: event#1 to event#3",
+     "flush on demand: false; waiting 4: event#1 to event#3",
+     "at 29999 ms",
+     "tick",
+     "at 30000 ms",
+     "tick",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "4: event#1 to event#3"
+     },
+     "at 89999 ms",
+     "tick",
+     "at 90000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 3,
+      "client": 3,
+      "logs": "4: event#1 to event#3"
+     },
+     "at 149999 ms",
+     "tick",
+     "at 150000 ms",
+     "tick",
+     "client 4 made",
+     {
+      "send": 4,
+      "client": 4,
+      "logs": "4: event#1 to event#3"
+     },
+     "at 209999 ms",
+     "tick",
+     "at 210000 ms",
+     "tick",
+     "client 5 made",
+     {
+      "send": 5,
+      "client": 5,
+      "logs": "4: event#1 to event#3"
+     },
+     "the entry with a listener delivered",
+     {
+      "send": 6,
+      "client": 5,
+      "logs": "1: sand.telemetry.dropped"
+     }
+    ],
+    "countersBeforeTheLastRound": {
+     "ship_failed": "4 seen, 0 reported"
+    },
+    "counters": {
+     "ship_failed": "4 seen, 4 reported"
+    },
+    "waiting": "none"
+   }
+  },
+  "a rate-limited send waits as the schedule says: 30 s, the server's own wait when longer, and back to 15 s after a delivery": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "at 0 ms",
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "at 29999 ms",
+     "tick",
+     "at 30000 ms",
+     "tick",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "1: event#1"
+     },
+     "at 149999 ms",
+     "tick",
+     "at 150000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 3,
+      "client": 3,
+      "logs": "1: event#1"
+     },
+     {
+      "send": 4,
+      "client": 3,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "at 164999 ms",
+     "tick",
+     "at 165000 ms",
+     "tick",
+     {
+      "send": 5,
+      "client": 3,
+      "logs": "1: event#2"
+     }
+    ],
+    "headersRead": [
+     "retry-after"
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported"
+    }
+   }
+  },
+  "counted drops are reported as warnings, one per reason in a fixed order, with the running total and the counter id, and are done with only when the server takes them all": {
+   "returned": {
+    "steps": [
+     {
+      "step": "everything taken",
+      "answer": true,
+      "counters": {
+       "ship_failed": "3 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "nothing left to report",
+      "answer": true,
+      "counters": {
+       "ship_failed": "3 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "one of two reports dropped by the server",
+      "answer": false,
+      "counters": {
+       "ship_failed": "5 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 0 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "the server says it took more than were sent",
+      "answer": false,
+      "counters": {
+       "ship_failed": "5 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 0 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "an answer without counts",
+      "answer": false,
+      "counters": {
+       "ship_failed": "5 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 0 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "the send fails",
+      "answer": false,
+      "counters": {
+       "ship_failed": "5 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 0 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "a round while backing off",
+      "answer": {
+       "$": "undefined"
+      },
+      "counters": {
+       "ship_failed": "5 seen, 3 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 0 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "a round after the back-off",
+      "answer": {
+       "$": "undefined"
+      },
+      "counters": {
+       "ship_failed": "5 seen, 5 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "backend_dropped": "1 seen, 1 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "a round during the wait after a shipment",
+      "answer": {
+       "$": "undefined"
+      },
+      "counters": {
+       "ship_failed": "5 seen, 5 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "replay_expired": "1 seen, 0 reported",
+       "backend_dropped": "1 seen, 1 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     },
+     {
+      "step": "a round after it",
+      "answer": {
+       "$": "undefined"
+      },
+      "counters": {
+       "ship_failed": "5 seen, 5 reported",
+       "overflow_evicted": "4 seen, 4 reported",
+       "replay_expired": "1 seen, 1 reported",
+       "backend_dropped": "1 seen, 1 reported",
+       "account_rotated": "2 seen, 2 reported"
+      }
+     }
+    ],
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "3",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "overflow_evicted",
+         "unit": "entries",
+         "count": "4",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "account_rotated",
+         "unit": "entries",
+         "count": "2",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 4,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 5,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000060000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "tick",
+     "tick",
+     "client 2 made",
+     {
+      "send": 6,
+      "client": 2,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000090000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000090000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "tick",
+     "tick",
+     {
+      "send": 7,
+      "client": 2,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "replay_expired",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000105000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "a count of drops stops at the largest whole number, and odd counts are added as they are": {
+   "returned": {
+    "counters": {
+     "ship_failed": {
+      "observed": 9007199254740991,
+      "acknowledgedThrough": 0
+     },
+     "overflow_evicted": {
+      "observed": 0.5,
+      "acknowledgedThrough": 0
+     },
+     "replay_expired": {
+      "observed": 3,
+      "acknowledgedThrough": 0
+     },
+     "backend_dropped": {
+      "observed": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "acknowledgedThrough": 0
+     },
+     "account_rotated": {
+      "observed": 9007199254740991,
+      "acknowledgedThrough": 0
+     }
+    },
+    "unknown": {
+     "threw": "TypeError"
+    },
+    "unknownZero": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "9007199254740991",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "overflow_evicted",
+         "unit": "entries",
+         "count": "0.5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "replay_expired",
+         "unit": "entries",
+         "count": "3",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "account_rotated",
+         "unit": "entries",
+         "count": "9007199254740991",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ],
+    "countersAfter": {
+     "ship_failed": {
+      "observed": 9007199254740991,
+      "acknowledgedThrough": 9007199254740991
+     },
+     "overflow_evicted": {
+      "observed": 0.5,
+      "acknowledgedThrough": 0.5
+     },
+     "replay_expired": {
+      "observed": 3,
+      "acknowledgedThrough": 3
+     },
+     "backend_dropped": {
+      "observed": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "acknowledgedThrough": 0
+     },
+     "account_rotated": {
+      "observed": 9007199254740991,
+      "acknowledgedThrough": 9007199254740991
+     }
+    }
+   }
+  },
+  "entries the server says it dropped are counted from a good receipt, every entry of the batch is told it was delivered, and the count is reported in the same pass": {
+   "returned": {
+    "steps": [
+     {
+      "step": "two of three taken, one dropped",
+      "flushed": {
+       "returned": true
+      },
+      "counters": {
+       "backend_dropped": "1 seen, 1 reported"
+      },
+      "waiting": "none"
+     },
+     {
+      "step": "none of two taken; the report of it refused twice",
+      "flushed": {
+       "returned": false
+      },
+      "counters": {
+       "backend_dropped": "3 seen, 1 reported"
+      },
+      "waiting": "none"
+     },
+     {
+      "step": "a receipt that does not add up; then the report is taken",
+      "flushed": {
+       "returned": true
+      },
+      "counters": {
+       "backend_dropped": "3 seen, 3 reported"
+      },
+      "waiting": "none"
+     },
+     {
+      "step": "no answer at all",
+      "flushed": {
+       "returned": false
+      },
+      "counters": {
+       "ship_failed": "1 seen, 0 reported",
+       "backend_dropped": "3 seen, 3 reported"
+      },
+      "waiting": "1: event#8"
+     },
+     {
+      "step": "an answer that is a text",
+      "flushed": {
+       "returned": true
+      },
+      "counters": {
+       "ship_failed": "1 seen, 1 reported",
+       "backend_dropped": "3 seen, 3 reported"
+      },
+      "waiting": "none"
+     }
+    ],
+    "events": [
+     "polling starts",
+     "two of three taken, one dropped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "3: event#1 to event#3"
+     },
+     "entry 1 delivered",
+     "entry 2 delivered",
+     "entry 3 delivered",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "none of two taken; the report of it refused twice",
+     {
+      "send": 3,
+      "client": 1,
+      "logs": "2: event#4 to event#5"
+     },
+     "entry 4 delivered",
+     "entry 5 delivered",
+     {
+      "send": 4,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     {
+      "send": 5,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "a receipt that does not add up; then the report is taken",
+     {
+      "send": 6,
+      "client": 1,
+      "logs": "2: event#6 to event#7"
+     },
+     "entry 6 delivered",
+     "entry 7 delivered",
+     {
+      "send": 7,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "no answer at all",
+     {
+      "send": 8,
+      "client": 1,
+      "logs": "1: event#8"
+     },
+     "an answer that is a text",
+     "client 2 made",
+     {
+      "send": 9,
+      "client": 2,
+      "logs": "2: event#8 to event#9"
+     },
+     "entry 8 delivered",
+     "entry 9 delivered",
+     {
+      "send": 10,
+      "client": 2,
+      "logs": "1: sand.telemetry.dropped"
+     }
+    ]
+   }
+  },
+  "entries older than 17 hours are dropped at the send, told so, counted and reported; one of exactly 17 hours is sent": {
+   "returned": {
+    "first": {
+     "flushed": true,
+     "counters": {
+      "replay_expired": "3 seen, 3 reported"
+     }
+    },
+    "second": {
+     "flushed": true,
+     "counters": {
+      "replay_expired": "5 seen, 5 reported"
+     },
+     "waiting": "none"
+    },
+    "third": {
+     "flushed": true,
+     "counters": {
+      "replay_expired": "6 seen, 6 reported"
+     }
+    },
+    "events": [
+     "polling starts",
+     "17 h and 1 ms old dropped",
+     "a day old dropped",
+     "from the year 1970 dropped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "exactly 17 h old",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799938800000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "new",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "from 17 h ahead",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800061200000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "exactly 17 h old delivered",
+     "new delivered",
+     "from 17 h ahead delivered",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "replay_expired",
+         "unit": "entries",
+         "count": "3",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "flush settled",
+     "only old entries wait",
+     "old, alone dropped",
+     "older, alone dropped",
+     {
+      "send": 3,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "replay_expired",
+         "unit": "entries",
+         "count": "5",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "flush settled",
+     "an entry grows old while it waits",
+     "young when queued dropped",
+     {
+      "send": 4,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "queued 17 h and 1 ms later",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800061200001"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "queued 17 h and 1 ms later delivered",
+     {
+      "send": 5,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "replay_expired",
+         "unit": "entries",
+         "count": "6",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800061200001"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "flush settled"
+    ]
+   }
+  },
+  "an entry whose time is not a number vanishes at the send without a word, and one whose time is not whole stops the send and stays stuck": {
+   "returned": {
+    "vanished": {
+     "flushed": true,
+     "waiting": "none",
+     "counters": {}
+    },
+    "stuck": {
+     "flushed": {
+      "threw": "RangeError"
+     },
+     "waiting": "2: half to event#1",
+     "again": {
+      "returned": false
+     },
+     "counters": {}
+    },
+    "after": {
+     "flushed": true,
+     "waiting": "none",
+     "counters": {}
+    },
+    "text": {
+     "flushed": true
+    },
+    "events": [
+     "polling starts",
+     "an entry with half a millisecond",
+     "a new entry is queued and sent; the stuck ones are gone",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#2"
+     },
+     "text for a time",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: text time"
+     },
+     "text time delivered"
+    ]
+   }
+  },
+  "the buffer holds 1,000 entries: past that, host and box log lines go first, oldest first, then the oldest of the rest, each told and counted": {
+   "returned": {
+    "seen": [
+     "after #1001: 1000 waiting, the first four event#1, event#3, sand.box.log#4, sand.host.logs#5, the last event#1001",
+     "after #1002: 1000 waiting, the first four event#1, event#3, sand.host.logs#5, event#6, the last sand.box.log#1002",
+     "after #1003: 1000 waiting, the first four event#1, event#3, sand.host.logs#5, event#6, the last event#1003",
+     "after #1004: 1000 waiting, the first four event#1, event#3, sand.host.logs#5, event#6, the last event#1004",
+     "after #1005: 1000 waiting, the first four event#3, sand.host.logs#5, event#6, event#7, the last event#1005",
+     "after #1006: 1000 waiting, the first four event#3, sand.host.logs#5, event#6, event#7, the last event#1005"
+    ],
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "polling starts",
+     "1,000 queued, counters {}",
+     "sand.host.log#2 dropped",
+     "sand.box.log#4 dropped",
+     "sand.host.log#1000 dropped",
+     "sand.box.log#1002 dropped",
+     "event#1 dropped",
+     "sand.host.log#1006 dropped"
+    ],
+    "counters": {
+     "overflow_evicted": "6 seen, 0 reported"
+    }
+   }
+  },
+  "a batch that failed is put back and the buffer cut to 1,000 again, the failed batch's oldest entries going after the log lines": {
+   "returned": {
+    "flushed": false,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "100: event#1 to event#100"
+     },
+     "in flight, 1098 held in all",
+     "box log#549 dropped",
+     "host log#1098 dropped",
+     "event#1 dropped",
+     "event#2 dropped",
+     "event#3 dropped",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "128: event#97 to event#224"
+     }
+    ],
+    "waiting": "1000: event#97, event#98, event#99 to event#1097",
+    "counters": {
+     "ship_failed": "2 seen, 0 reported",
+     "overflow_evicted": "98 seen, 0 reported"
+    }
+   }
+  },
+  "a transport started from a checkpoint takes its counter id, its counts and its last 1,000 entries, as copies, and reports and sends them": {
+   "returned": {
+    "taken": {
+     "counterId": "kept-id",
+     "counters": {
+      "ship_failed": {
+       "observed": 4,
+       "acknowledgedThrough": 1
+      },
+      "overflow_evicted": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "replay_expired": {
+       "observed": 2,
+       "acknowledgedThrough": 2
+      },
+      "backend_dropped": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "account_rotated": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      }
+     },
+     "records": [
+      {
+       "level": "warn",
+       "message": "restored",
+       "metadata": {
+        "n": "1",
+        "client": "the checkpoint's"
+       },
+       "timestamp": 1799996400000,
+       "onSettled": {
+        "$": "function",
+        "name": ""
+       }
+      },
+      {
+       "level": "info",
+       "message": "restored",
+       "metadata": {
+        "n": "2"
+       },
+       "timestamp": 1799992800000,
+       "extra": "kept beside"
+      }
+     ]
+    },
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "restored",
+        "metadata": {
+         "n": "1",
+         "client": "the checkpoint's"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799996400000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "restored",
+        "metadata": {
+         "n": "2"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1799992800000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "restored#1 delivered",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "4",
+         "counter_id": "kept-id"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ],
+    "bytesAsked": [],
+    "after": {
+     "counterId": "kept-id",
+     "counters": {
+      "ship_failed": {
+       "observed": 4,
+       "acknowledgedThrough": 4
+      },
+      "overflow_evicted": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "replay_expired": {
+       "observed": 2,
+       "acknowledgedThrough": 2
+      },
+      "backend_dropped": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "account_rotated": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      }
+     },
+     "records": []
+    }
+   }
+  },
+  "of a checkpoint with more than 1,000 entries the oldest are left behind without a word, and an empty or missing counter id is handled as given": {
+   "returned": {
+    "first": {
+     "waiting": "1000: restored#4 to restored#1003",
+     "counterId": "",
+     "counters": {}
+    },
+    "flushed": true,
+    "events": [
+     "nothing was sent by itself",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: restored#4 to restored#131"
+     },
+     "restored#4 delivered",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "128: restored#132 to restored#259"
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": "128: restored#260 to restored#387"
+     },
+     {
+      "send": 4,
+      "client": 1,
+      "logs": "128: restored#388 to restored#515"
+     },
+     {
+      "send": 5,
+      "client": 1,
+      "logs": "128: restored#516 to restored#643"
+     },
+     {
+      "send": 6,
+      "client": 1,
+      "logs": "128: restored#644 to restored#771"
+     },
+     {
+      "send": 7,
+      "client": 1,
+      "logs": "128: restored#772 to restored#899"
+     },
+     {
+      "send": 8,
+      "client": 1,
+      "logs": "104: restored#900 to restored#1003"
+     }
+    ],
+    "ids": {
+     "0": 0,
+     "null": "000102030405060708090a0b0c0d0e0f",
+     "undefined": "101112131415161718191a1b1c1d1e1f"
+    },
+    "bytesAsked": [
+     "Uint8Array of 16",
+     "Uint8Array of 16",
+     "Uint8Array of 16"
+    ],
+    "a checkpoint with nothing in it": {
+     "threw": "TypeError"
+    },
+    "a checkpoint with no entries and no counts": {
+     "counterId": "x",
+     "counters": {
+      "ship_failed": {},
+      "overflow_evicted": {},
+      "replay_expired": {},
+      "backend_dropped": {},
+      "account_rotated": {}
+     },
+     "records": []
+    }
+   }
+  },
+  "a confirmed shipment goes at once and alone, past the buffer and the schedule, and says whether it was delivered": {
+   "returned": {
+    "answers": [
+     true,
+     false,
+     true,
+     false,
+     false
+    ],
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 4,
+        "message": "crash",
+        "metadata": {
+         "client": "host",
+         "platform": "its own",
+         "reason": "first"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "waiting 1: event#1; counters {}",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "confirmed",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "2"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "counters {\"ship_failed\":\"1 seen, 0 reported\"}",
+     "client 2 made",
+     {
+      "send": 3,
+      "client": 2,
+      "logs": [
+       {
+        "level": 3,
+        "message": "confirmed",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "3"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "counters {\"ship_failed\":\"1 seen, 0 reported\",\"backend_dropped\":\"1 seen, 0 reported\"}",
+     {
+      "send": 4,
+      "client": 2,
+      "logs": [
+       {
+        "level": 2,
+        "message": "confirmed",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "4"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "client 3 made",
+     {
+      "send": 5,
+      "client": 3,
+      "logs": [
+       {
+        "level": 1,
+        "message": "confirmed",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "5"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "counters {\"ship_failed\":\"3 seen, 0 reported\",\"backend_dropped\":\"1 seen, 0 reported\"}; the queued entry still goes at the next round",
+     "tick",
+     "client 4 made",
+     {
+      "send": 6,
+      "client": 4,
+      "logs": [
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "1"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     {
+      "send": 7,
+      "client": 4,
+      "logs": [
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "ship_failed",
+         "unit": "attempts",
+         "count": "3",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 3,
+        "message": "sand.telemetry.dropped",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "reason": "backend_dropped",
+         "unit": "entries",
+         "count": "1",
+         "counter_id": "000102030405060708090a0b0c0d0e0f"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000003"
+        },
+        "key": "sand"
+       }
+      ]
+     }
+    ],
+    "counters": {
+     "ship_failed": "3 seen, 3 reported",
+     "backend_dropped": "1 seen, 1 reported"
+    }
+   }
+  },
+  "a confirmed shipment whose labels cannot be read fails as a promise, not at the call": {
+   "returned": {
+    "atTheCall": {
+     "returned": true
+    },
+    "later": {
+     "threw": "TypeError"
+    },
+    "events": [
+     "polling starts"
+    ],
+    "counters": {}
+   }
+  },
+  "clearing what is pending stops the send in flight, tells every entry it was dropped, forgets the counts, takes a new counter id and a new client, and ends when the flight has landed": {
+   "returned": {
+    "before": {
+     "counterId": "000102030405060708090a0b0c0d0e0f",
+     "records": "3: event#1 to event#3",
+     "counters": {
+      "observed": 3,
+      "acknowledgedThrough": 0
+     }
+    },
+    "after": {
+     "counterId": "101112131415161718191a1b1c1d1e1f",
+     "counters": {
+      "ship_failed": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "overflow_evicted": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "replay_expired": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "backend_dropped": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      },
+      "account_rotated": {
+       "observed": 0,
+       "acknowledgedThrough": 0
+      }
+     },
+     "records": []
+    },
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": [
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "1"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       },
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "2"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "clearing",
+     "send 1 told to stop: AbortError",
+     "entry 1 dropped",
+     "entry 2 dropped",
+     "entry 3 dropped",
+     "cleared; waiting none",
+     "the flight lands, every entry taken",
+     "flush settled",
+     "flush on demand: true",
+     "clearing done: undefined",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": [
+       {
+        "level": 1,
+        "message": "event",
+        "metadata": {
+         "client": "host",
+         "platform": "stand-in",
+         "n": "4"
+        },
+        "timestamp": {
+         "$": "bigint",
+         "v": "1800000000000"
+        },
+        "key": "sand"
+       }
+      ]
+     },
+     "entry 4 delivered",
+     "flush settled",
+     "flush on demand: true"
+    ],
+    "bytesAsked": [
+     "Uint8Array of 16",
+     "Uint8Array of 16"
+    ]
+   }
+  },
+  "clearing with nothing in flight answers nothing, and can be asked again and again": {
+   "returned": {
+    "answers": [
+     "undefined",
+     "undefined"
+    ],
+    "broken": "Error",
+    "ids": [
+     "202122232425262728292a2b2c2d2e2f",
+     "202122232425262728292a2b2c2d2e2f"
+    ],
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "entry 2 dropped",
+     "a listener broke the clearing; waiting 3: event#1 to event#3",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "3: event#1 to event#3"
+     },
+     "entry 2 delivered",
+     "entry 3 delivered"
+    ],
+    "bytesAsked": 3
+   }
+  },
+  "a failed flight that lands after a clearing puts nothing back and counts nothing": {
+   "returned": {
+    "answers": [
+     "true",
+     "undefined",
+     "false"
+    ],
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "2: event#1 to event#2"
+     },
+     "send 1 told to stop: AbortError",
+     "the flight fails after the clearing",
+     "waiting none; counters {}",
+     "a confirmed shipment in flight when cleared",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "1: crash"
+     },
+     "send 2 told to stop: AbortError",
+     "waiting none; counters {}"
+    ]
+   }
+  },
+  "a report of drops in flight when pending is cleared is not counted as taken or as failed, whichever way it lands": {
+   "returned": {
+    "only drops waited, the report lands well": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"account_rotated\":\"1 seen, 0 reported\"}",
+      "send 1 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    },
+    "an old entry was dropped first, the report lands well": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"replay_expired\":\"1 seen, 0 reported\"}",
+      "send 1 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    },
+    "after a delivered batch, the report lands well": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      },
+      {
+       "send": 2,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"backend_dropped\":\"1 seen, 0 reported\"}",
+      "send 2 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "tick",
+      "client 2 made",
+      {
+       "send": 3,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    },
+    "only drops waited, the report fails": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"account_rotated\":\"1 seen, 0 reported\"}",
+      "send 1 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    },
+    "an old entry was dropped first, the report fails": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"replay_expired\":\"1 seen, 0 reported\"}",
+      "send 1 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    },
+    "after a delivered batch, the report fails": {
+     "flushed": true,
+     "counters": {},
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      },
+      {
+       "send": 2,
+       "client": 1,
+       "logs": "1: sand.telemetry.dropped"
+      },
+      "counters before clearing {\"backend_dropped\":\"1 seen, 0 reported\"}",
+      "send 2 told to stop: AbortError",
+      "flush settled",
+      "tick",
+      "tick",
+      "client 2 made",
+      {
+       "send": 3,
+       "client": 2,
+       "logs": "1: event#2"
+      },
+      "flush settled"
+     ]
+    }
+   }
+  },
+  "closing sends what waits and says whether all of it went; a second closing only says how things stand": {
+   "returned": {
+    "empty": [
+     true,
+     true
+    ],
+    "threeBatches": true,
+    "afterClosing": {
+     "waiting": "none",
+     "confirmed": false,
+     "flushed": true
+    },
+    "withADropCountedAfterClosing": [
+     false,
+     false
+    ],
+    "afterClearing": [
+     true,
+     true
+    ],
+    "events": [
+     "polling starts",
+     "polling starts",
+     "polling stops",
+     "polling stops",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: restored#1 to restored#128"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "128: restored#129 to restored#256"
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": "44: restored#257 to restored#300"
+     },
+     "queued after closing dropped"
+    ]
+   }
+  },
+  "closing while the server is out of reach tells what waits that it was dropped, unless the transport was told to keep it": {
+   "returned": {
+    "nothing said": {
+     "closed": false,
+     "again": false,
+     "waiting": "none",
+     "counters": {
+      "ship_failed": "1 seen, 1 reported"
+     },
+     "flushedAfterwards": true,
+     "events": [
+      "polling starts",
+      "polling stops",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "3: event#1 to event#3"
+      },
+      "entry 1 dropped",
+      "entry 2 dropped",
+      "entry 3 dropped",
+      "closed",
+      "tick",
+      "a round 30 s later, as if it had been under way",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: sand.telemetry.dropped"
+      }
+     ]
+    },
+    "told to keep": {
+     "closed": false,
+     "again": false,
+     "waiting": "none",
+     "counters": {
+      "ship_failed": "1 seen, 1 reported"
+     },
+     "flushedAfterwards": true,
+     "events": [
+      "polling starts",
+      "polling stops",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "3: event#1 to event#3"
+      },
+      "closed",
+      "tick",
+      "a round 30 s later, as if it had been under way",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "3: event#1 to event#3"
+      },
+      "entry 1 delivered",
+      "entry 2 delivered",
+      "entry 3 delivered",
+      {
+       "send": 3,
+       "client": 2,
+       "logs": "1: sand.telemetry.dropped"
+      }
+     ]
+    },
+    "told by a word": {
+     "closed": false,
+     "again": false,
+     "waiting": "none",
+     "counters": {
+      "ship_failed": "1 seen, 1 reported"
+     },
+     "flushedAfterwards": true,
+     "events": [
+      "polling starts",
+      "polling stops",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "3: event#1 to event#3"
+      },
+      "entry 1 dropped",
+      "entry 2 dropped",
+      "entry 3 dropped",
+      "closed",
+      "tick",
+      "a round 30 s later, as if it had been under way",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: sand.telemetry.dropped"
+      }
+     ]
+    },
+    "told not to": {
+     "closed": false,
+     "again": false,
+     "waiting": "none",
+     "counters": {
+      "ship_failed": "1 seen, 1 reported"
+     },
+     "flushedAfterwards": true,
+     "events": [
+      "polling starts",
+      "polling stops",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "3: event#1 to event#3"
+      },
+      "entry 1 dropped",
+      "entry 2 dropped",
+      "entry 3 dropped",
+      "closed",
+      "tick",
+      "a round 30 s later, as if it had been under way",
+      "tick",
+      "client 2 made",
+      {
+       "send": 2,
+       "client": 2,
+       "logs": "1: sand.telemetry.dropped"
+      }
+     ]
+    }
+   }
+  },
+  "closing with a report of drops the server does not take says not all went, and keeps the count": {
+   "returned": {
+    "closed": false,
+    "again": false,
+    "counters": {
+     "overflow_evicted": "6 seen, 0 reported"
+    },
+    "events": [
+     "polling starts",
+     "polling stops",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     {
+      "send": 3,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     }
+    ]
+   }
+  },
+  "closing in the middle of a send set off by a full buffer lets the closing send the rest": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "polling stops",
+    "closing asked while the first batch is in flight",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "128: event#129 to event#256"
+    },
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "44: event#257 to event#300"
+    },
+    "closed: true"
+   ]
+  },
+  "clearing in the middle of a send set off by a full buffer ends that send; a new full buffer sets off another": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "send 1 told to stop: AbortError",
+    "cleared, waiting none",
+    "100 queued after the clearing, waiting 100: event#301 to event#400",
+    "client 2 made",
+    {
+     "send": 2,
+     "client": 2,
+     "logs": "128: event#301 to event#428"
+    },
+    "28 more, waiting none"
+   ]
+  },
+  "sends go one after another: a second flush waits for the first, and a round during a flush sends what was queued meanwhile": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "2: event#1 to event#2"
+    },
+    "tick",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "1: crash"
+    },
+    "two in flight, waiting 3: event#1 to event#3",
+    "flush settled",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "1: event#3"
+    },
+    "flush settled",
+    "flush settled",
+    "second flush on demand: true",
+    "flush settled",
+    "round done",
+    "first flush on demand: true",
+    "first landed",
+    "confirmed: true"
+   ]
+  },
+  "the settled listener is called after every pass of a flush, waited for, and not called while held; when it fails, a flush on demand fails with it and a round writes it to the console": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "settled listener called",
+     "settled listener done",
+     "flush on demand: true",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: event#2"
+     },
+     "settled listener called",
+     "settled listener done",
+     "flush on demand: false",
+     "client 2 made",
+     {
+      "send": 3,
+      "client": 2,
+      "logs": "1: event#2"
+     },
+     {
+      "send": 4,
+      "client": 2,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "settled listener called",
+     "settled listener done",
+     "flush on demand again: true",
+     "flush on demand with nothing waiting: true",
+     {
+      "send": 5,
+      "client": 2,
+      "logs": "1: event#3"
+     },
+     "failing settled listener called",
+     "flush on demand: {\"threw\":\"Error\",\"message\":\"settled listener broke\"}; waiting none",
+     "tick",
+     {
+      "send": 6,
+      "client": 2,
+      "logs": "1: event#4"
+     },
+     "failing settled listener called",
+     {
+      "console": [
+       "[structured-log-transport] flush tick failed:",
+       "Error: settled listener broke"
+      ]
+     },
+     "tick",
+     {
+      "send": 7,
+      "client": 2,
+      "logs": "1: event#5"
+     },
+     {
+      "console": [
+       "[structured-log-transport] flush tick failed:",
+       "Error: settled listener broke late"
+      ]
+     },
+     {
+      "send": 8,
+      "client": 2,
+      "logs": "1: event#6"
+     },
+     "flush on demand with no listener: true"
+    ],
+    "counters": {
+     "ship_failed": "1 seen, 1 reported"
+    }
+   }
+  },
+  "the first passed deadline of a run queues one warning about it with the size of the batch; later ones in the run do not, and a delivery or another kind of failure starts a new run": {
+   "returned": {
+    "steps": [
+     {
+      "step": "a deadline passes",
+      "answer": false,
+      "waiting": [
+       "event#1 ()",
+       "event#2 ()",
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=2)"
+      ],
+      "counters": {
+       "ship_failed": "1 seen, 0 reported"
+      }
+     },
+     {
+      "step": "a second passes",
+      "answer": false,
+      "waiting": [
+       "event#1 ()",
+       "event#2 ()",
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=2)"
+      ],
+      "counters": {
+       "ship_failed": "2 seen, 0 reported"
+      }
+     },
+     {
+      "step": "another kind of failure",
+      "answer": false,
+      "waiting": [
+       "event#1 ()",
+       "event#2 ()",
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=2)"
+      ],
+      "counters": {
+       "ship_failed": "3 seen, 0 reported"
+      }
+     },
+     {
+      "step": "a deadline passes again",
+      "answer": false,
+      "waiting": [
+       "event#1 ()",
+       "event#2 ()",
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=2)",
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=3)"
+      ],
+      "counters": {
+       "ship_failed": "4 seen, 0 reported"
+      }
+     },
+     {
+      "step": "all delivered",
+      "answer": true,
+      "waiting": [],
+      "counters": {
+       "ship_failed": "4 seen, 4 reported"
+      }
+     },
+     {
+      "step": "a confirmed shipment passes its deadline",
+      "answer": false,
+      "waiting": [
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=1)"
+      ],
+      "counters": {
+       "ship_failed": "5 seen, 4 reported"
+      }
+     },
+     {
+      "step": "a confirmed shipment fails with the bare code",
+      "answer": false,
+      "waiting": [
+       "sand.telemetry.ship_timeout (error_code=SAND-E0109 error_domain=transport error_retryable=true batch_entries=1)"
+      ],
+      "counters": {
+       "ship_failed": "6 seen, 4 reported"
+      }
+     },
+     {
+      "step": "all delivered again",
+      "answer": true,
+      "waiting": [],
+      "counters": {
+       "ship_failed": "6 seen, 6 reported"
+      }
+     }
+    ],
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "2: event#1 to event#2"
+     },
+     "send 1 told to stop: DeadlineExceededError",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "3: event#1 to sand.telemetry.ship_timeout"
+     },
+     "send 2 told to stop: DeadlineExceededError",
+     "client 3 made",
+     {
+      "send": 3,
+      "client": 3,
+      "logs": "3: event#1 to sand.telemetry.ship_timeout"
+     },
+     "client 4 made",
+     {
+      "send": 4,
+      "client": 4,
+      "logs": "3: event#1 to sand.telemetry.ship_timeout"
+     },
+     "send 4 told to stop: DeadlineExceededError",
+     "client 5 made",
+     {
+      "send": 5,
+      "client": 5,
+      "logs": "4: event#1 to sand.telemetry.ship_timeout"
+     },
+     {
+      "send": 6,
+      "client": 5,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     {
+      "send": 7,
+      "client": 5,
+      "logs": "1: crash"
+     },
+     "send 7 told to stop: DeadlineExceededError",
+     "client 6 made",
+     {
+      "send": 8,
+      "client": 6,
+      "logs": "1: crash"
+     },
+     "client 7 made",
+     {
+      "send": 9,
+      "client": 7,
+      "logs": "1: sand.telemetry.ship_timeout"
+     },
+     {
+      "send": 10,
+      "client": 7,
+      "logs": "1: sand.telemetry.dropped"
+     }
+    ]
+   }
+  },
+  "a warning about a passed deadline is not queued once the transport is closed": {
+   "returned": {
+    "closed": false,
+    "waiting": "1: event#1",
+    "counters": {
+     "ship_failed": "1 seen, 0 reported"
+    },
+    "events": [
+     "polling starts",
+     "polling stops",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "send 1 told to stop: DeadlineExceededError"
+    ]
+   }
+  },
+  "the server's client is told to stop when the deadline's signal says so, with the deadline's own reason, and when pending is cleared": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "arguments": 2,
+     "request": [
+      "logs"
+     ],
+     "options": [
+      "signal"
+     ],
+     "signal": "live",
+     "onItsClient": true,
+     "logs": "1: event#1"
+    },
+    "send 1 told to stop: DeadlineExceededError",
+    "flush on demand: false",
+    "client 2 made",
+    {
+     "send": 2,
+     "client": 2,
+     "arguments": 2,
+     "request": [
+      "logs"
+     ],
+     "options": [
+      "signal"
+     ],
+     "signal": "live",
+     "onItsClient": true,
+     "logs": "1: crash"
+    },
+    {
+     "send": 3,
+     "client": 2,
+     "arguments": 2,
+     "request": [
+      "logs"
+     ],
+     "options": [
+      "signal"
+     ],
+     "signal": "live",
+     "onItsClient": true,
+     "logs": "2: event#1 to sand.telemetry.ship_timeout"
+    },
+    "clearing with two sends in flight",
+    "send 2 told to stop: AbortError",
+    "send 3 told to stop: AbortError",
+    "confirmed: true; flush on demand: true",
+    "a send that has landed is not told to stop by a later clearing",
+    "client 3 made",
+    {
+     "send": 4,
+     "client": 3,
+     "arguments": 2,
+     "request": [
+      "logs"
+     ],
+     "options": [
+      "signal"
+     ],
+     "signal": "live",
+     "onItsClient": true,
+     "logs": "1: event#2"
+    }
+   ]
+  },
+  "the client is made at the first send, kept while sends are delivered, made anew after a failure, and a failed send of an older client leaves the newer one in place": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "1: confirmed#1"
+    },
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "1: event#2"
+    },
+    "a flight of client 1 stays in the air; a confirmed shipment fails meanwhile, and another makes client 2",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "1: event#3"
+    },
+    {
+     "send": 4,
+     "client": 1,
+     "logs": "1: confirmed#4"
+    },
+    "client 2 made",
+    {
+     "send": 5,
+     "client": 2,
+     "logs": "1: confirmed#5"
+    },
+    "the flight of client 1 fails",
+    {
+     "send": 6,
+     "client": 2,
+     "logs": "1: confirmed#6"
+    },
+    {
+     "send": 7,
+     "client": 2,
+     "logs": "1: event#3"
+    },
+    {
+     "send": 8,
+     "client": 2,
+     "logs": "1: sand.telemetry.dropped"
+    }
+   ]
+  },
+  "when no client can be made the flush fails with that failure and its batch is left stuck: it waits forever, and is lost without a word when the next batch is taken": {
+   "returned": {
+    "steps": [
+     {
+      "step": "a flush on demand",
+      "answer": {
+       "threw": "Error",
+       "message": "no client"
+      },
+      "waiting": "2: event#1 to event#2",
+      "counters": {}
+     },
+     {
+      "step": "a confirmed shipment",
+      "answer": {
+       "threw": "Error",
+       "message": "still no client"
+      },
+      "waiting": "2: event#1 to event#2",
+      "counters": {}
+     },
+     {
+      "step": "a flush on demand, a client can be made now",
+      "answer": {
+       "returned": false
+      },
+      "waiting": "2: event#1 to event#2",
+      "counters": {}
+     },
+     {
+      "step": "a round",
+      "answer": {
+       "returned": {
+        "$": "undefined"
+       }
+      },
+      "waiting": "2: event#1 to event#2",
+      "counters": {}
+     },
+     {
+      "step": "a new entry, then a flush on demand",
+      "answer": {
+       "returned": true
+      },
+      "waiting": "none",
+      "counters": {}
+     }
+    ],
+    "events": [
+     "polling starts",
+     "client 1 made",
+     "client 2 made",
+     "tick",
+     "client 3 made",
+     {
+      "send": 1,
+      "client": 3,
+      "logs": "1: event#3"
+     },
+     "entry 3 delivered"
+    ]
+   }
+  },
+  "a listener that fails when told its entry was delivered stops the pass there: later entries of the batch are not told, and the schedule does not hear of the delivery": {
+   "returned": {
+    "flushed": {
+     "threw": "Error",
+     "message": "listener broke"
+    },
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "3: event#1 to event#3"
+     },
+     "entry 1 delivered",
+     "entry 2's listener fails",
+     "waiting none; counters {}",
+     "tick",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: event#4"
+     }
+    ]
+   }
+  },
+  "a listener that fails when told its entry was dropped fails the call that dropped it": {
+   "returned": {
+    "whenOff": {
+     "threw": "Error"
+    },
+    "atOverflow": {
+     "threw": "Error"
+    },
+    "afterOverflow": "1000 waiting from event#1; counters {\"overflow_evicted\":\"1 seen, 0 reported\"}",
+    "atExpiry": {
+     "threw": "Error",
+     "message": "listener broke"
+    },
+    "afterExpiry": "waiting none; counters {\"replay_expired\":\"2 seen, 0 reported\"}",
+    "atClosing": {
+     "threw": "Error",
+     "message": "listener broke"
+    },
+    "waitingAfterClosing": "none",
+    "events": [
+     "hold timer armed for \"structured-log-host-identity\"",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#c"
+     }
+    ]
+   }
+  },
+  "clearing after a flush that failed still ends, answering nothing, and the next flush goes as usual": {
+   "returned": {
+    "failed": {
+     "threw": "Error",
+     "message": "settled listener broke"
+    },
+    "cleared": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "flushed": true,
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "1: event#2"
+     }
+    ]
+   }
+  },
+  "an error entry ends the wait only after it is queued and the overflow dealt with: when a listener fails there, the wait goes on": {
+   "returned": {
+    "the overflow's listener fails": {
+     "queued": {
+      "threw": "Error"
+     },
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      },
+      {
+       "send": 2,
+       "client": 1,
+       "logs": "1: event#2"
+      },
+      "the oldest entry dropped",
+      "send 2 told to stop: AbortError",
+      "tick"
+     ]
+    },
+    "the overflow's listener is sound": {
+     "queued": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "events": [
+      "polling starts",
+      "client 1 made",
+      {
+       "send": 1,
+       "client": 1,
+       "logs": "1: event#1"
+      },
+      {
+       "send": 2,
+       "client": 1,
+       "logs": "1: event#2"
+      },
+      "the oldest entry dropped",
+      "send 2 told to stop: AbortError",
+      "tick",
+      "client 2 made",
+      {
+       "send": 3,
+       "client": 2,
+       "logs": "1: event#1002"
+      }
+     ]
+    }
+   }
+  },
+  "a closing asked during a send set off by a full buffer ends that send's own run: the passes that follow are the closing's, one for each batch left": {
+   "returned": [
+    "polling starts",
+    "client 1 made",
+    {
+     "send": 1,
+     "client": 1,
+     "logs": "128: event#1 to event#128"
+    },
+    "polling stops",
+    "closing asked while the first batch is in flight",
+    "flush settled, waiting 172: event#129 to event#300",
+    {
+     "send": 2,
+     "client": 1,
+     "logs": "128: event#129 to event#256"
+    },
+    "flush settled, waiting 44: event#257 to event#300",
+    {
+     "send": 3,
+     "client": 1,
+     "logs": "44: event#257 to event#300"
+    },
+    "flush settled, waiting none",
+    "closed: true"
+   ]
+  },
+  "a closed transport that kept what it could not send sends one batch at a round that was still under way, never batch after batch": {
+   "returned": {
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "128: event#129 to event#256"
+     },
+     "polling stops",
+     "client 2 made",
+     {
+      "send": 3,
+      "client": 2,
+      "logs": "128: event#129 to event#256"
+     },
+     "closed: false; waiting 172: event#129 to event#300",
+     "a round at 59999 ms",
+     "tick",
+     "waiting 172: event#129 to event#300",
+     "a round at 60000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 4,
+      "client": 3,
+      "logs": "128: event#129 to event#256"
+     },
+     {
+      "send": 5,
+      "client": 3,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "waiting 44: event#257 to event#300",
+     "a round at 74999 ms",
+     "tick",
+     "waiting 44: event#257 to event#300",
+     "a round at 75000 ms",
+     "tick",
+     {
+      "send": 6,
+      "client": 3,
+      "logs": "44: event#257 to event#300"
+     },
+     "waiting none"
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported"
+    }
+   }
+  },
+  "a listener that fails when a failed batch is put back into a full buffer is told while the batch is still held twice, fails the flush, and leaves the schedule not told of the failure": {
+   "returned": {
+    "flushed": {
+     "threw": "Error",
+     "message": "listener broke"
+    },
+    "events": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "2: event#0 to event#0b"
+     },
+     "in flight; 1001 held in all",
+     "entry 0 dropped, while 1002 are held in all, 2 of them entry 0b",
+     "client 2 made",
+     {
+      "send": 2,
+      "client": 2,
+      "logs": "128: event#0b to event#127"
+     },
+     "1000 held in all: event#0b, event#1, event#2, event#3; counters {\"ship_failed\":\"2 seen, 0 reported\",\"overflow_evicted\":\"1 seen, 0 reported\"}",
+     "the send that the full buffer had set off has failed too; counters {\"ship_failed\":\"2 seen, 0 reported\",\"overflow_evicted\":\"1 seen, 0 reported\"}",
+     "a round at 29999 ms",
+     "tick",
+     "a round at 30000 ms",
+     "tick",
+     "client 3 made",
+     {
+      "send": 3,
+      "client": 3,
+      "logs": "128: event#0b to event#127"
+     },
+     "entry 0b delivered",
+     {
+      "send": 4,
+      "client": 3,
+      "logs": "2: sand.telemetry.dropped to sand.telemetry.dropped"
+     },
+     {
+      "send": 5,
+      "client": 3,
+      "logs": "128: event#128 to event#255"
+     },
+     {
+      "send": 6,
+      "client": 3,
+      "logs": "128: event#256 to event#383"
+     },
+     {
+      "send": 7,
+      "client": 3,
+      "logs": "128: event#384 to event#511"
+     },
+     {
+      "send": 8,
+      "client": 3,
+      "logs": "128: event#512 to event#639"
+     },
+     {
+      "send": 9,
+      "client": 3,
+      "logs": "128: event#640 to event#767"
+     },
+     {
+      "send": 10,
+      "client": 3,
+      "logs": "128: event#768 to event#895"
+     },
+     {
+      "send": 11,
+      "client": 3,
+      "logs": "104: event#896 to event#999"
+     }
+    ],
+    "counters": {
+     "ship_failed": "2 seen, 2 reported",
+     "overflow_evicted": "1 seen, 1 reported"
+    },
+    "waiting": "none"
+   }
+  },
+  "what follows a landing comes after the same number of turns of the promise queue, for each kind of pass": {
+   "returned": {
+    "a batch asked for and taken at once": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "flush on demand: true",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch in the air that lands well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch in the air that fails": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand: false",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a batch that lands well with drops to report, then the report lands": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "the report lands",
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a report of drops alone that lands well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: true",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a report of drops alone that the server takes half of": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand: false",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "two batches, the second asked for by the first's flush": [
+     "polling starts",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: restored#1 to restored#128"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "2: restored#129 to restored#130"
+     },
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "flush settled",
+     "turn 11",
+     "turn 12",
+     "flush on demand: true"
+    ],
+    "a confirmed shipment that lands well, and one that fails": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: crash"
+     },
+     "turn 1",
+     "turn 2",
+     "confirmed: true",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     {
+      "send": 2,
+      "client": 1,
+      "logs": "1: crash"
+     },
+     "turn 1",
+     "turn 2",
+     "confirmed: false",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a round whose batch lands well": [
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "round: undefined",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a round with nothing to send": [
+     "tick",
+     "turn 1",
+     "turn 2",
+     "round: undefined",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a clearing with a batch in the air, which then lands": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand: true",
+     "clearing: undefined",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a clearing with nothing in the air": [
+     "turn 1",
+     "turn 2",
+     "clearing: undefined",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the 128th entry queued": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "128: event#1 to event#128"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the labels arriving at a held transport": [
+     "hold timer stopped",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "a flush on demand at a held transport, and at one with nothing to send": [
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "flush on demand: false",
+     "turn 6",
+     "polling starts",
+     "turn 1",
+     "flush on demand of the other: true",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "the settled listener fails after a batch that landed well": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a batch that failed": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand failed: settled listener broke",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a report of drops alone": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a batch that landed when pending had been cleared": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "flush settled",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "flush on demand failed: settled listener broke",
+     "clearing: undefined",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails after a report of drops that landed when pending had been cleared": [
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: sand.telemetry.dropped"
+     },
+     "send 1 told to stop: AbortError",
+     "turn 1",
+     "turn 2",
+     "flush settled",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "flush on demand failed: settled listener broke",
+     "clearing: undefined",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12"
+    ],
+    "the settled listener fails at a round": [
+     "tick",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "console: [structured-log-transport] flush tick failed: settled listener broke",
+     "turn 9",
+     "turn 10",
+     "round: undefined",
+     "turn 11",
+     "turn 12"
+    ],
+    "a closing with a batch to send, and a second closing": [
+     "polling stops",
+     "client 1 made",
+     {
+      "send": 1,
+      "client": 1,
+      "logs": "1: event#1"
+     },
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "flush settled",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "closing: true",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "second closing: true",
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "turn 4"
+    ]
+   }
+  },
+  "a transport cannot be made without its platform labels, and reads its polling, deadline and client only when it needs them": {
+   "returned": {
+    "noLabels": {
+     "threw": "TypeError"
+    },
+    "noPolling": {
+     "threw": "TypeError"
+    },
+    "noOptions": {
+     "threw": "TypeError"
+    },
+    "bareClosed": true,
+    "noClient": {
+     "threw": "TypeError"
+    },
+    "lazyWaiting": [
+     {
+      "level": "info",
+      "message": "event",
+      "metadata": {
+       "a": "1"
+      },
+      "timestamp": 1800000000000
+     }
+    ],
+    "events": [
+     "polling starts"
+    ],
+    "bytesAsked": 3
+   }
+  }
+ }
+}

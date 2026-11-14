@@ -1,10 +1,26 @@
+/**
+ * Recording the screen: the request says whether to start a recording, save
+ * it or discard it.
+ *
+ * The resource holds both ends of that trip. Asked from afar, the request
+ * goes out in an exec message as `recordScreenArgs` and the answer is
+ * read from the first message that comes back with `recordScreenResult`.
+ * Served here, a request under that name is handed to the implementation,
+ * and what it answers goes back under the answer's name.
+ */
+import type { RecordScreenArgs, RecordScreenResult } from "../proto/generated/agent/v1/record_screen_exec_pb.js";
 import { SimpleControlledExecHandler } from "./controlled.js";
 import { ExecutorResource, type Executor, type RemoteExecManager } from "./remote.js";
 import { createResource, type ControlledExecManager } from "./resource-provider.js";
 import { createClientDeserializer, createClientSerializer, createServerDeserializer, createServerSerializer } from "./serialization.js";
-import type { RecordScreenArgs, RecordScreenResult } from "../proto/generated/agent/v1/record_screen_exec_pb.js";
 
-export const recordScreenExecutorResource = createResource<Executor<RecordScreenArgs, RecordScreenResult>, RemoteExecManager, ControlledExecManager>(
-  (execManager) => new ExecutorResource(execManager, createServerSerializer("recordScreenArgs"), createClientDeserializer("recordScreenResult")),
-  (implementation, controlledExecManager) => controlledExecManager.register(new SimpleControlledExecHandler(implementation, createServerDeserializer("recordScreenArgs"), createClientSerializer("recordScreenResult"))),
+/** The names the request and its answer travel under. */
+const REQUEST = "recordScreenArgs";
+const ANSWER = "recordScreenResult";
+
+type RecordScreenExecutor = Executor<RecordScreenArgs, RecordScreenResult>;
+
+export const recordScreenExecutorResource = createResource<RecordScreenExecutor, RemoteExecManager, ControlledExecManager>(
+  (remote) => new ExecutorResource(remote, createServerSerializer(REQUEST), createClientDeserializer(ANSWER)),
+  (implementation, served) => served.register(new SimpleControlledExecHandler(implementation, createServerDeserializer(REQUEST), createClientSerializer(ANSWER))),
 );

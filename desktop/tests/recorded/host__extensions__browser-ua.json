@@ -1,0 +1,1230 @@
+{
+ "part": "host/extensions/browser-ua",
+ "surface": {
+  "stamp": {
+   "UA_OWNER_STAMP_LENGTH": "number",
+   "UA_OWNER_STAMP_PATH": "string",
+   "createUaOwnerStampWriter": "function",
+   "uaOwnerStampForAccessToken": "function"
+  },
+  "killSwitch": {
+   "UA_TOKEN_DISABLED_MARKER_PATH": "string",
+   "createUaTokenKillSwitchReconciler": "function"
+  },
+  "extension": {
+   "browserUaExtension": "object"
+  }
+ },
+ "scenarios": {
+  "the stamp is kept at a fixed place and is sixteen characters long": {
+   "returned": {
+    "path": "/tmp/sand-ua-user",
+    "length": 16
+   }
+  },
+  "a token's stamp is made from who it is for, and from nothing else in it": {
+   "returned": {
+    "user-one": "06c4b9e8dd523c96",
+    "user-one, renewed": "06c4b9e8dd523c96",
+    "user-one, other claims": "06c4b9e8dd523c96",
+    "user-two": "aeeebbe779a34a23",
+    "a name with accents": "81d29c0e80b7ac5e",
+    "a very long name": "c59d3c0480cc2d71",
+    "one blank": "36a9e7f1c95b82ff",
+    "two parts only": "06c4b9e8dd523c96",
+    "five parts": "06c4b9e8dd523c96",
+    "claims in plain base64": "b9ca3d20d437c327",
+    "lengths": [
+     16,
+     16
+    ]
+   }
+  },
+  "a token that does not say who it is for has no stamp": {
+   "returned": {
+    "no sub": null,
+    "an empty sub": null,
+    "a sub that is a number": null,
+    "a sub that is null": null,
+    "an email that is not a text": null,
+    "an expiry that is not a number": null,
+    "claims that are a list": null,
+    "claims that are a text": null,
+    "claims that are null": null,
+    "claims that are not JSON": null,
+    "claims that are not base64": null,
+    "no claims between the dots": null,
+    "one part": null,
+    "an empty text": null,
+    "a dot": null,
+    "undefined": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)"
+    },
+    "null": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)"
+    },
+    "a number": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)"
+    },
+    "an object": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)"
+    }
+   }
+  },
+  "the stamp is written with a line end, under a temporary name first, and only when it changes": {
+   "returned": {
+    "steps": [
+     {
+      "name": "no token",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "inTheFolder": []
+     },
+     {
+      "name": "an undefined token",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "inTheFolder": []
+     },
+     {
+      "name": "a token that names no one",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "inTheFolder": []
+     },
+     {
+      "name": "user-one",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "06c4b9e8dd523c96\n",
+      "inTheFolder": [
+       "ua-user"
+      ]
+     },
+     {
+      "name": "user-one again, the file taken away in between",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "inTheFolder": []
+     },
+     {
+      "name": "user-one renewed, the file still away",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "inTheFolder": []
+     },
+     {
+      "name": "user-two",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "aeeebbe779a34a23\n",
+      "inTheFolder": [
+       "ua-user"
+      ]
+     },
+     {
+      "name": "user-one once more",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "06c4b9e8dd523c96\n",
+      "inTheFolder": [
+       "ua-user"
+      ]
+     }
+    ],
+    "logged": []
+   }
+  },
+  "a stamp that cannot be written is told to the log and tried again the next time": {
+   "returned": {
+    "afterFailure": {
+     "gave": {
+      "$": "undefined"
+     },
+     "file": "no file",
+     "logged": 1
+    },
+    "again": {
+     "$": "undefined"
+    },
+    "file": "06c4b9e8dd523c96\n",
+    "inTheFolder": [
+     "ua-user"
+    ],
+    "aPathSetLaterIsNotUsed": "no file",
+    "logged": [
+     {
+      "given": [
+       "ua-owner stamp write failed: Error: ENOENT: no such file or directory, open '<tmp>/missing/ua-user.tmp'"
+      ],
+      "calledOnTheOptions": true
+     }
+    ]
+   }
+  },
+  "on a stand-in disk: left to itself the stamp goes to its fixed place, in two steps": {
+   "returned": {
+    "calls": [
+     {
+      "turn": 0,
+      "call": "disk.writeFile",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "06c4b9e8dd523c96\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "disk.rename",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "/tmp/sand-ua-user"
+      ]
+     },
+     {
+      "turn": 4,
+      "call": "disk.writeFile",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "aeeebbe779a34a23\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 5,
+      "call": "disk.rename",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "/tmp/sand-ua-user"
+      ]
+     }
+    ],
+    "files": {
+     "/tmp/sand-ua-user": "aeeebbe779a34a23\n"
+    },
+    "logged": []
+   }
+  },
+  "on a stand-in disk: a failure at either step is told to the log, and the same stamp is then written again from the first step": {
+   "returned": {
+    "writeFile": {
+     "gave": {
+      "$": "undefined"
+     },
+     "callsOfTheFailure": [
+      "disk.writeFile"
+     ],
+     "logged": [
+      "ua-owner stamp write failed: Error: the stand-in disk refuses writeFile"
+     ],
+     "callsInAll": [
+      "disk.writeFile",
+      "disk.writeFile",
+      "disk.rename"
+     ],
+     "files": {
+      "/stand-in/ua-user": "06c4b9e8dd523c96\n"
+     }
+    },
+    "rename": {
+     "gave": {
+      "$": "undefined"
+     },
+     "callsOfTheFailure": [
+      "disk.writeFile",
+      "disk.rename"
+     ],
+     "logged": [
+      "ua-owner stamp write failed: Error: the stand-in disk refuses rename"
+     ],
+     "callsInAll": [
+      "disk.writeFile",
+      "disk.rename",
+      "disk.writeFile",
+      "disk.rename"
+     ],
+     "files": {
+      "/stand-in/ua-user": "06c4b9e8dd523c96\n"
+     }
+    }
+   }
+  },
+  "on a stand-in disk: two writes at once of one stamp both go to the disk, and the second finds its temporary file gone": {
+   "returned": {
+    "both": [
+     "fulfilled",
+     "fulfilled"
+    ],
+    "calls": [
+     {
+      "turn": 0,
+      "call": "disk.writeFile",
+      "given": [
+       "/stand-in/ua-user.tmp",
+       "06c4b9e8dd523c96\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "disk.writeFile",
+      "given": [
+       "/stand-in/ua-user.tmp",
+       "06c4b9e8dd523c96\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "disk.rename",
+      "given": [
+       "/stand-in/ua-user.tmp",
+       "/stand-in/ua-user"
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "disk.rename",
+      "given": [
+       "/stand-in/ua-user.tmp",
+       "/stand-in/ua-user"
+      ]
+     }
+    ],
+    "logged": [
+     "ua-owner stamp write failed: Error: no such file, rename '/stand-in/ua-user.tmp'"
+    ],
+    "callsAfterwards": 0,
+    "files": {
+     "/stand-in/ua-user": "06c4b9e8dd523c96\n"
+    }
+   }
+  },
+  "the marker that switches the token off is kept at a fixed place": {
+   "returned": "/tmp/sand-ua-token-disabled"
+  },
+  "the marker is written when the switch is on and taken away when it is off, and left alone while the switch stays as it was": {
+   "returned": {
+    "steps": [
+     {
+      "name": "off, and no marker to take away",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "asked": 1
+     },
+     {
+      "name": "on",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "1\n",
+      "asked": 2
+     },
+     {
+      "name": "still on, the marker taken away by hand",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "asked": 3
+     },
+     {
+      "name": "off again, a marker put back by hand",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "no file",
+      "asked": 4
+     },
+     {
+      "name": "still off, a marker put back by hand",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "by hand",
+      "asked": 5
+     },
+     {
+      "name": "on again",
+      "aPromise": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "file": "1\n",
+      "asked": 6
+     }
+    ],
+    "logged": [],
+    "inTheFolder": [
+     "ua-token-disabled"
+    ]
+   }
+  },
+  "a marker that cannot be written is told to the log and tried again the next time": {
+   "returned": {
+    "afterFailure": {
+     "gave": {
+      "$": "undefined"
+     },
+     "file": "no file",
+     "logged": 1
+    },
+    "file": "1\n",
+    "aPathSetLaterIsNotUsed": "no file",
+    "logged": [
+     {
+      "given": [
+       "ua-token kill-switch marker update failed: Error: ENOENT: no such file or directory, open '<tmp>/missing/ua-token-disabled'"
+      ],
+      "calledOnTheOptions": true
+     }
+    ]
+   }
+  },
+  "on a stand-in disk: left to itself the marker goes to its fixed place; calls made at once are taken one after another, each asking the switch when its turn comes": {
+   "returned": {
+    "askedBeforeAnyCallHadItsTurn": 0,
+    "allDifferent": true,
+    "gave": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "calls": [
+     {
+      "turn": 1,
+      "call": "the switch is asked and says true"
+     },
+     {
+      "turn": 1,
+      "call": "disk.writeFile",
+      "given": [
+       "/tmp/sand-ua-token-disabled",
+       "1\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 4,
+      "call": "the switch is asked and says true"
+     },
+     {
+      "turn": 7,
+      "call": "the switch is asked and says false"
+     },
+     {
+      "turn": 7,
+      "call": "disk.rm",
+      "given": [
+       "/tmp/sand-ua-token-disabled",
+       {
+        "force": true
+       }
+      ]
+     },
+     {
+      "turn": 10,
+      "call": "the switch is asked and says true"
+     },
+     {
+      "turn": 10,
+      "call": "disk.writeFile",
+      "given": [
+       "/tmp/sand-ua-token-disabled",
+       "1\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 13,
+      "call": "the switch is asked and says false"
+     },
+     {
+      "turn": 13,
+      "call": "disk.rm",
+      "given": [
+       "/tmp/sand-ua-token-disabled",
+       {
+        "force": true
+       }
+      ]
+     },
+     {
+      "turn": 16,
+      "call": "the switch is asked and says false"
+     }
+    ],
+    "files": {},
+    "logged": []
+   }
+  },
+  "on a stand-in disk: a failure to write or to take away is told to the log, and the next call does the same work again": {
+   "returned": {
+    "writeFile": {
+     "gave": {
+      "$": "undefined"
+     },
+     "logged": [
+      "ua-token kill-switch marker update failed: Error: the stand-in disk refuses writeFile",
+      "ua-token kill-switch marker update failed: Error: the stand-in disk refuses writeFile"
+     ],
+     "calls": [
+      {
+       "call": "disk.writeFile",
+       "given": [
+        "/stand-in/marker",
+        "1\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ]
+      },
+      {
+       "call": "disk.writeFile",
+       "given": [
+        "/stand-in/marker",
+        "1\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ]
+      },
+      {
+       "call": "disk.writeFile",
+       "given": [
+        "/stand-in/marker",
+        "1\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ]
+      }
+     ]
+    },
+    "rm": {
+     "gave": {
+      "$": "undefined"
+     },
+     "logged": [
+      "ua-token kill-switch marker update failed: Error: the stand-in disk refuses rm",
+      "ua-token kill-switch marker update failed: Error: the stand-in disk refuses rm"
+     ],
+     "calls": [
+      {
+       "call": "disk.rm",
+       "given": [
+        "/stand-in/marker",
+        {
+         "force": true
+        }
+       ]
+      },
+      {
+       "call": "disk.rm",
+       "given": [
+        "/stand-in/marker",
+        {
+         "force": true
+        }
+       ]
+      },
+      {
+       "call": "disk.rm",
+       "given": [
+        "/stand-in/marker",
+        {
+         "force": true
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "on a stand-in disk: what the switch may say besides yes and no": {
+   "returned": {
+    "null": {
+     "first": [],
+     "second": []
+    },
+    "undefined": {
+     "first": [
+      "disk.rm"
+     ],
+     "second": []
+    },
+    "one": {
+     "first": [
+      "disk.writeFile"
+     ],
+     "second": []
+    },
+    "zero": {
+     "first": [
+      "disk.rm"
+     ],
+     "second": []
+    },
+    "a text": {
+     "first": [
+      "disk.writeFile"
+     ],
+     "second": []
+    },
+    "an empty text": {
+     "first": [
+      "disk.rm"
+     ],
+     "second": []
+    },
+    "not a number": {
+     "first": [
+      "disk.rm"
+     ],
+     "second": [
+      "disk.rm"
+     ]
+    }
+   }
+  },
+  "on a stand-in disk: a switch that throws when asked breaks the reconciler for good: every call from then on fails the same way and the switch is not asked again": {
+   "returned": {
+    "failed": "the switch's own error",
+    "later": [
+     "the switch's own error",
+     "the switch's own error",
+     "the switch's own error"
+    ],
+    "asked": 2,
+    "logged": [],
+    "calls": [
+     "disk.writeFile"
+    ]
+   }
+  },
+  "the extension is declared under the id browser-ua and needs the sign-in and the experiments": {
+   "returned": {
+    "keys": [
+     "kind",
+     "id",
+     "dependencies",
+     "start"
+    ],
+    "kind": "host-extension",
+    "id": "browser-ua",
+    "dependencies": [
+     "auth",
+     "experiments"
+    ],
+    "frozen": [
+     true,
+     true
+    ],
+    "start": {
+     "kind": "function",
+     "parameters": 1
+    }
+   }
+  },
+  "started with someone signed in and the switch off: everything it asks of its peers, the host and the disk, in order and turn by turn": {
+   "returned": {
+    "handedBack": {},
+    "aPromise": false,
+    "callsInsideStart": 7,
+    "calls": [
+     {
+      "turn": 0,
+      "call": "auth.subscribeToRenewal",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "auth.peekAccessToken",
+      "given": []
+     },
+     {
+      "turn": 0,
+      "call": "auth.peekAccessToken",
+      "given": []
+     },
+     {
+      "turn": 0,
+      "call": "disk.writeFile",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "06c4b9e8dd523c96\n",
+       {
+        "encoding": "utf8",
+        "mode": 420
+       }
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "experiments.subscribe",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "turn": 0,
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "disk.rename",
+      "given": [
+       "/tmp/sand-ua-user.tmp",
+       "/tmp/sand-ua-user"
+      ]
+     },
+     {
+      "turn": 1,
+      "call": "experiments.isUaTokenKillSwitchEnabled",
+      "given": []
+     },
+     {
+      "turn": 1,
+      "call": "disk.rm",
+      "given": [
+       "/tmp/sand-ua-token-disabled",
+       {
+        "force": true
+       }
+      ]
+     }
+    ],
+    "files": {
+     "/tmp/sand-ua-user": "06c4b9e8dd523c96\n"
+    },
+    "leftToUndo": [
+     "auth's own way to stop listening",
+     "the experiments' own way to stop listening"
+    ]
+   }
+  },
+  "what a start does for each kind of sign-in and each answer of the switch": {
+   "returned": {
+    "no one signed in, switch off": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "experiments.subscribe",
+      "onStop",
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.rm",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {}
+    },
+    "no one signed in, switch on": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "experiments.subscribe",
+      "onStop",
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.writeFile",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {
+      "/tmp/sand-ua-token-disabled": "1\n"
+     }
+    },
+    "signed in, switch on": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "auth.peekAccessToken",
+      [
+       "disk.writeFile",
+       "/tmp/sand-ua-user.tmp"
+      ],
+      "experiments.subscribe",
+      "onStop",
+      [
+       "disk.rename",
+       "/tmp/sand-ua-user.tmp"
+      ],
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.writeFile",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {
+      "/tmp/sand-ua-user": "06c4b9e8dd523c96\n",
+      "/tmp/sand-ua-token-disabled": "1\n"
+     }
+    },
+    "a token that is undefined": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "auth.peekAccessToken",
+      "experiments.subscribe",
+      "onStop",
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.rm",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {}
+    },
+    "a token that names no one": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "auth.peekAccessToken",
+      "experiments.subscribe",
+      "onStop",
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.rm",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {}
+    },
+    "an empty token": {
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "auth.peekAccessToken",
+      "experiments.subscribe",
+      "onStop",
+      "experiments.isUaTokenKillSwitchEnabled",
+      [
+       "disk.rm",
+       "/tmp/sand-ua-token-disabled"
+      ]
+     ],
+     "files": {}
+    }
+   }
+  },
+  "after a start: a renewed sign-in stamps the computer again when it is for someone else, and nothing else does": {
+   "returned": {
+    "listeners": 1,
+    "steps": [
+     {
+      "name": "renewed, the same person",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [
+       "auth.peekAccessToken"
+      ],
+      "stamp": "06c4b9e8dd523c96\n"
+     },
+     {
+      "name": "renewed, another person",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [
+       "auth.peekAccessToken",
+       [
+        "disk.writeFile",
+        "/tmp/sand-ua-user.tmp",
+        "aeeebbe779a34a23\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ],
+       [
+        "disk.rename",
+        "/tmp/sand-ua-user.tmp",
+        "/tmp/sand-ua-user"
+       ]
+      ],
+      "stamp": "aeeebbe779a34a23\n"
+     },
+     {
+      "name": "renewed, no one any more",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [
+       "auth.peekAccessToken"
+      ],
+      "stamp": "aeeebbe779a34a23\n"
+     },
+     {
+      "name": "renewed, the first person back",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [
+       "auth.peekAccessToken",
+       [
+        "disk.writeFile",
+        "/tmp/sand-ua-user.tmp",
+        "06c4b9e8dd523c96\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ],
+       [
+        "disk.rename",
+        "/tmp/sand-ua-user.tmp",
+        "/tmp/sand-ua-user"
+       ]
+      ],
+      "stamp": "06c4b9e8dd523c96\n"
+     },
+     {
+      "name": "a renewal that failed",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [],
+      "stamp": "06c4b9e8dd523c96\n"
+     },
+     {
+      "name": "an outcome in capitals",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [],
+      "stamp": "06c4b9e8dd523c96\n"
+     },
+     {
+      "name": "an event with no outcome",
+      "told": {
+       "gave": {
+        "$": "undefined"
+       }
+      },
+      "calls": [],
+      "stamp": "06c4b9e8dd523c96\n"
+     },
+     {
+      "name": "no event at all",
+      "told": {
+       "threw": "TypeError",
+       "message": "(the runtime's own words)"
+      },
+      "calls": [],
+      "stamp": "06c4b9e8dd523c96\n"
+     }
+    ]
+   }
+  },
+  "after a start: each word from the experiments has the marker follow the switch": {
+   "returned": {
+    "listeners": 1,
+    "steps": [
+     {
+      "name": "the switch goes on",
+      "gave": [
+       {
+        "$": "undefined"
+       }
+      ],
+      "calls": [
+       "experiments.isUaTokenKillSwitchEnabled",
+       [
+        "disk.writeFile",
+        "/tmp/sand-ua-token-disabled",
+        "1\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ]
+      ],
+      "marker": "1\n"
+     },
+     {
+      "name": "told again, the switch still on",
+      "gave": [
+       {
+        "$": "undefined"
+       }
+      ],
+      "calls": [
+       "experiments.isUaTokenKillSwitchEnabled"
+      ],
+      "marker": "1\n"
+     },
+     {
+      "name": "the switch goes off, told three times at once",
+      "gave": [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ],
+      "calls": [
+       "experiments.isUaTokenKillSwitchEnabled",
+       [
+        "disk.rm",
+        "/tmp/sand-ua-token-disabled",
+        {
+         "force": true
+        }
+       ],
+       "experiments.isUaTokenKillSwitchEnabled",
+       "experiments.isUaTokenKillSwitchEnabled"
+      ],
+      "marker": {
+       "$": "undefined"
+      }
+     },
+     {
+      "name": "the switch goes on again",
+      "gave": [
+       {
+        "$": "undefined"
+       }
+      ],
+      "calls": [
+       "experiments.isUaTokenKillSwitchEnabled",
+       [
+        "disk.writeFile",
+        "/tmp/sand-ua-token-disabled",
+        "1\n",
+        {
+         "encoding": "utf8",
+         "mode": 420
+        }
+       ]
+      ],
+      "marker": "1\n"
+     }
+    ]
+   }
+  },
+  "a disk that refuses is told to the host's log, in the host's own name, by whatever log the host has at that moment": {
+   "returned": {
+    "atStart": [
+     {
+      "call": "host.log",
+      "given": [
+       "ua-owner stamp write failed: Error: the stand-in disk refuses writeFile"
+      ],
+      "onTheHost": true
+     },
+     {
+      "call": "host.log",
+      "given": [
+       "ua-token kill-switch marker update failed: Error: the stand-in disk refuses writeFile"
+      ],
+      "onTheHost": true
+     }
+    ],
+    "toTheLogPutInPlaceLater": [
+     {
+      "given": [
+       "ua-owner stamp write failed: Error: the stand-in disk refuses writeFile"
+      ],
+      "onTheHost": true
+     },
+     {
+      "given": [
+       "ua-token kill-switch marker update failed: Error: the stand-in disk refuses rm"
+      ],
+      "onTheHost": true
+     }
+    ],
+    "diskCalls": [
+     [
+      "disk.writeFile",
+      "/tmp/sand-ua-user.tmp"
+     ],
+     [
+      "disk.writeFile",
+      "/tmp/sand-ua-token-disabled"
+     ],
+     [
+      "disk.writeFile",
+      "/tmp/sand-ua-user.tmp"
+     ],
+     [
+      "disk.rm",
+      "/tmp/sand-ua-token-disabled"
+     ]
+    ]
+   }
+  },
+  "each start keeps its own account of what it wrote, and the host stopping takes both listeners away": {
+   "returned": {
+    "eachStartHandsBackItsOwnEmptyObject": true,
+    "secondStart": [
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "auth.peekAccessToken",
+     [
+      "disk.writeFile",
+      "/tmp/sand-ua-user.tmp"
+     ],
+     "experiments.subscribe",
+     "onStop",
+     [
+      "disk.rename",
+      "/tmp/sand-ua-user.tmp"
+     ],
+     "experiments.isUaTokenKillSwitchEnabled",
+     [
+      "disk.writeFile",
+      "/tmp/sand-ua-token-disabled"
+     ]
+    ],
+    "stopping": [
+     "experiments: the listener is taken away",
+     "auth: the renewal listener is taken away"
+    ],
+    "listenersAdded": [
+     2,
+     2
+    ]
+   }
+  },
+  "a start without one of its peers fails where it first needs it": {
+   "returned": {
+    "auth": {
+     "started": {
+      "threw": "TypeError",
+      "message": "(the runtime's own words)"
+     },
+     "calls": [],
+     "leftToUndo": 0
+    },
+    "experiments": {
+     "started": {
+      "threw": "TypeError",
+      "message": "(the runtime's own words)"
+     },
+     "calls": [
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "auth.peekAccessToken",
+      [
+       "disk.writeFile",
+       "/tmp/sand-ua-user.tmp"
+      ],
+      [
+       "disk.rename",
+       "/tmp/sand-ua-user.tmp"
+      ]
+     ],
+     "leftToUndo": 1
+    }
+   }
+  }
+ }
+}

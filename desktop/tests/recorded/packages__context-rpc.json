@@ -3,10 +3,6 @@
  "surface": {
   "rpc": {
    "createContextPropagatingClient": "function"
-  },
-  "context": {
-   "createContext": "function",
-   "createKey": "function"
   }
  },
  "scenarios": {

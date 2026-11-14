@@ -17,6 +17,11 @@
  *   that the answers kept here are the earlier code's.
  * - Every export of every module a part lists must be used by a scenario, or
  *   named in the part's `skipped` with the reason.
+ * - A part may also list `borrowed` modules: files of other parts its
+ *   scenarios need at hand (a real context to hand over, a class to make an
+ *   instance of). They are built into the same file as the part and given to
+ *   the scenarios under their short names, but their exports are neither
+ *   recorded nor required to be used: they are another part's to answer for.
  * - `SIMEON_RECORD_COVERAGE=<part>` (or `all`) also says how much of the
  *   part's code the scenarios ran: for each of its files, the pieces run out
  *   of the pieces of code it holds (a piece is one mapped place in a line,
@@ -47,7 +52,9 @@
  * sets it and asks for a load of its own (`tools.fresh()`).
  *
  * Scenarios use stand-ins only: no network, no real account, nothing outside
- * a temporary folder.
+ * a temporary folder. The network is not left to care: loading this file
+ * makes every connection that would leave the machine fail
+ * (`no-network.cjs`), and a part that tries one fails its test.
  */
 import { copyFile, mkdtemp, mkdir, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -60,6 +67,12 @@ import { build } from "esbuild";
 import { SourceMapConsumer } from "source-map-js";
 
 export const desktopRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+// No scenario reaches a real service, whatever it forgets to stand in for: from here on every connection that would
+// leave this machine fails (`no-network.cjs`), and what was refused can be asked for.
+const network = createRequire(import.meta.url)("./no-network.cjs");
+export const refusedConnections = network.refused;
+export const forgetRefusedConnections = network.forget;
 export const recordedDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** What the run was asked for, read once: the surroundings a part is asked in hold none of it. */
