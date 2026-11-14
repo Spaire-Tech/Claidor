@@ -1,0 +1,4794 @@
+{
+ "part": "packages/agent-exec-contracts",
+ "surface": {
+  "adopt": {
+   "adoptExecutorResource": "object"
+  },
+  "agentStoreConflict": {
+   "agentStoreConflictExecutorResource": "object"
+  },
+  "conversationSearch": {
+   "conversationSearchExecutorResource": "object"
+  },
+  "diagnostics": {
+   "diagnosticsExecutorResource": "object"
+  },
+  "fetchPage": {
+   "fetchExecutorResource": "object"
+  },
+  "gitDiff": {
+   "gitDiffExecutorResource": "object"
+  },
+  "grep": {
+   "grepExecutorResource": "object"
+  },
+  "mcpAllowlistPrecheck": {
+   "mcpAllowlistPrecheckExecutorResource": "object"
+  },
+  "miniSweAgentBash": {
+   "miniSweAgentBashExecutorResource": "object"
+  },
+  "piBash": {
+   "piBashExecutorResource": "object"
+  },
+  "piEdit": {
+   "piEditExecutorResource": "object"
+  },
+  "piFind": {
+   "piFindExecutorResource": "object"
+  },
+  "piGrep": {
+   "piGrepExecutorResource": "object"
+  },
+  "piLs": {
+   "piLsExecutorResource": "object"
+  },
+  "piRead": {
+   "piReadExecutorResource": "object"
+  },
+  "piWrite": {
+   "piWriteExecutorResource": "object"
+  },
+  "recordScreen": {
+   "recordScreenExecutorResource": "object"
+  },
+  "shellAllowlistPrecheck": {
+   "shellAllowlistPrecheckExecutorResource": "object"
+  },
+  "shellControl": {
+   "forceBackgroundShellExecutorResource": "object"
+  },
+  "webFetchAllowlistPrecheck": {
+   "webFetchAllowlistPrecheckExecutorResource": "object"
+  },
+  "hookMetadata": {
+   "execHookConversationIdKey": "object",
+   "execHookGenerationIdKey": "object",
+   "execHookModelKey": "object",
+   "execHookWorkspaceRootsKey": "object"
+  },
+  "mcpDiskCatalog": {
+   "MCP_DISK_CATALOG_MCPS_DIR": "string",
+   "MCP_DISK_CATALOG_TOOLS_DIR": "string",
+   "parseMcpToolNameFromDiskDefinitionJson": "function"
+  },
+  "shellHookApproval": {
+   "createForcePromptHookApprovalRequirement": "function",
+   "getShellHookApprovalRequirement": "function",
+   "setShellHookApprovalRequirement": "function"
+  },
+  "wakeup": {
+   "mergeWakeup": "function"
+  },
+  "backgroundWork": {
+   "InMemoryBackgroundWorkRegistry": "class",
+   "LEGACY_LOCAL_WAKEUP_CONVERSATION_ID": "string"
+  },
+  "index": {
+   "BROWSER_MCP_PROVIDER_IDS": "object",
+   "COMPUTER_USE_SCREENSHOT_SETTLE_DELAY_MS": "number",
+   "CUSTOM_USER_TOOLS_PROVIDER_ID": "string",
+   "CombinedResourceAccessor": "class",
+   "ControlledExecDisposedError": "class",
+   "ExecutorResource": "class",
+   "InMemoryBackgroundWorkRegistry": "class",
+   "LEGACY_LOCAL_WAKEUP_CONVERSATION_ID": "string",
+   "MCP_DISK_CATALOG_MCPS_DIR": "string",
+   "MCP_DISK_CATALOG_TOOLS_DIR": "string",
+   "McpLeaseChangeReason": "object",
+   "NON_AUTHENTICATABLE_MCP_PROVIDER_IDS": "object",
+   "RUNNING_SUBAGENT_FOLLOWUP_ERROR": "string",
+   "RUNNING_SUBAGENT_INTERRUPT_RETRY_HINT": "string",
+   "RegistryResourceAccessor": "class",
+   "RemoteAgentStoreConflictNoticeStub": "class",
+   "RemoteResourceAccessor": "class",
+   "SIMEON_DYNAMIC_TOOLS_NAMESPACE": "string",
+   "SIMEON_IDE_BROWSER_PROVIDER_ID": "string",
+   "SIMEON_PLAYWRIGHT_PROVIDER_ID": "string",
+   "SIMEON_SELF_CONTROL_PROVIDER_ID": "string",
+   "SimpleControlledExecHandler": "class",
+   "SimpleControlledExecManager": "class",
+   "SimpleControlledStreamExecHandler": "class",
+   "StreamExecutorResource": "class",
+   "adoptExecutorResource": "object",
+   "agentStoreConflictExecutorResource": "object",
+   "agentStoreConflictNoticeExecutorResource": "object",
+   "backgroundShellExecutorResource": "object",
+   "buildMcpToolFileContent": "function",
+   "canvasDiagnosticsExecutorResource": "object",
+   "computerUseExecutorResource": "object",
+   "conflictNoticeAck": "function",
+   "conflictNoticeNoteDeferredEagerWrittenPaths": "function",
+   "conflictNoticePeek": "function",
+   "conflictNoticeRelease": "function",
+   "conflictNoticeSyncAndPeek": "function",
+   "conversationSearchExecutorResource": "object",
+   "createClientDeserializer": "function",
+   "createClientSerializer": "function",
+   "createForcePromptHookApprovalRequirement": "function",
+   "createReadonlyResourceAccessor": "function",
+   "createResource": "function",
+   "createServerDeserializer": "function",
+   "createServerSerializer": "function",
+   "createSubagentExecutor": "function",
+   "decodeBackgroundWorkMetadata": "function",
+   "deleteExecutorResource": "object",
+   "diagnosticsExecutorResource": "object",
+   "encodeBackgroundWorkMetadata": "function",
+   "execHookConversationIdKey": "object",
+   "execHookGenerationIdKey": "object",
+   "execHookModelKey": "object",
+   "execHookWorkspaceRootsKey": "object",
+   "fetchExecutorResource": "object",
+   "forceBackgroundShellExecutorResource": "object",
+   "forceBackgroundSubagentExecutorResource": "object",
+   "getShellHookApprovalRequirement": "function",
+   "gitDiffExecutorResource": "object",
+   "grepExecutorResource": "object",
+   "hookExecutorResource": "object",
+   "isFirstPartyToolsNamespace": "function",
+   "isFullMcpLeaseInvalidation": "function",
+   "listMcpResourcesExecutorResource": "object",
+   "lsExecutorResource": "object",
+   "mcpAllowlistPrecheckExecutorResource": "object",
+   "mcpExecutorResource": "object",
+   "mcpInputSchemaToJson": "function",
+   "mcpServerUnavailableReason": "function",
+   "mcpStateExecutorResource": "object",
+   "mergeMcpLeaseEvents": "function",
+   "mergeWakeup": "function",
+   "miniSweAgentBashExecutorResource": "object",
+   "parseMcpInputSchemaJson": "function",
+   "parseMcpToolNameFromDiskDefinitionJson": "function",
+   "piBashExecutorResource": "object",
+   "piEditExecutorResource": "object",
+   "piFindExecutorResource": "object",
+   "piGrepExecutorResource": "object",
+   "piLsExecutorResource": "object",
+   "piReadExecutorResource": "object",
+   "piWriteExecutorResource": "object",
+   "readExecutorResource": "object",
+   "readMcpResourceExecutorResource": "object",
+   "recordScreenExecutorResource": "object",
+   "redactedReadExecutorResource": "object",
+   "requestContextExecutorResource": "object",
+   "resourceEntry": "function",
+   "setShellHookApprovalRequirement": "function",
+   "shellAllowlistPrecheckExecutorResource": "object",
+   "shellExecutorResource": "object",
+   "shellStreamExecutorResource": "object",
+   "smartModeClassifierExecutorResource": "object",
+   "subagentAwaitExecutorResource": "object",
+   "subagentExecutorResource": "object",
+   "summarizeComputerUseActions": "function",
+   "supportsInteractiveMcpAuth": "function",
+   "webFetchAllowlistPrecheckExecutorResource": "object",
+   "writeBackgroundShellInputExecutorResource": "object",
+   "writeExecutorResource": "object"
+  },
+  "agentSkillMetadata": {},
+  "awaitOutcome": {},
+  "backgroundCompletionDispatch": {},
+  "common": {},
+  "execError": {},
+  "executionTiming": {},
+  "requestContextParts": {},
+  "subagentLifecycleStateMachine": {},
+  "subagentLifecycleStore": {},
+  "subagentQueue": {},
+  "context": {
+   "createContext": "function",
+   "createKey": "function"
+  }
+ },
+ "scenarios": {
+  "adopt.ts: adoptExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "adoptArgs",
+      "type": "agent.v1.AdoptArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.AdoptArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "adoptResult",
+      "type": "agent.v1.AdoptResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.AdoptResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "agentStoreConflictExecutorResource",
+     "under": "agentStoreConflictArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "agentStoreConflictResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "agent-store-conflict.ts: agentStoreConflictExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "agentStoreConflictArgs",
+      "type": "agent.v1.AgentStoreConflictArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.AgentStoreConflictArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "agentStoreConflictResult",
+      "type": "agent.v1.AgentStoreConflictResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.AgentStoreConflictResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "conversationSearchExecutorResource",
+     "under": "conversationSearchArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "conversationSearchResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "conversation-search.ts: conversationSearchExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "conversationSearchArgs",
+      "type": "agent.v1.ConversationSearchArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ConversationSearchArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "conversationSearchResult",
+      "type": "agent.v1.ConversationSearchResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ConversationSearchResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "diagnosticsExecutorResource",
+     "under": "diagnosticsArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "diagnosticsResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "diagnostics.ts: diagnosticsExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "diagnosticsArgs",
+      "type": "agent.v1.DiagnosticsArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.DiagnosticsArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "diagnosticsResult",
+      "type": "agent.v1.DiagnosticsResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.DiagnosticsResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "fetchExecutorResource",
+     "under": "fetchArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "fetchResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "fetch.ts: fetchExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "fetchArgs",
+      "type": "agent.v1.FetchArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.FetchArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "fetchResult",
+      "type": "agent.v1.FetchResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.FetchResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "gitDiffExecutorResource",
+     "under": "gitDiffRequest",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "gitDiffResponse",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "git-diff.ts: gitDiffExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "gitDiffRequest",
+      "type": "simeon.v1.GetDiffRequest",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "simeon.v1.GetDiffRequest",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "gitDiffResponse",
+      "type": "simeon.v1.GetDiffResponse",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "simeon.v1.GetDiffResponse"
+     }
+    },
+    "anothersRequest": {
+     "whose": "grepExecutorResource",
+     "under": "grepArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "grepResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "grep.ts: grepExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "grepArgs",
+      "type": "agent.v1.GrepArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.GrepArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "grepResult",
+      "type": "agent.v1.GrepResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.GrepResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "mcpAllowlistPrecheckExecutorResource",
+     "under": "mcpAllowlistPrecheckArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "mcpAllowlistPrecheckResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "mcp-allowlist-precheck.ts: mcpAllowlistPrecheckExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "mcpAllowlistPrecheckArgs",
+      "type": "agent.v1.McpAllowlistPrecheckArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.McpAllowlistPrecheckArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "mcpAllowlistPrecheckResult",
+      "type": "agent.v1.McpAllowlistPrecheckResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.McpAllowlistPrecheckResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "miniSweAgentBashExecutorResource",
+     "under": "miniSweAgentBashArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "miniSweAgentBashResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "mini-swe-agent-bash.ts: miniSweAgentBashExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "miniSweAgentBashArgs",
+      "type": "agent.v1.ShellArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ShellArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "miniSweAgentBashResult",
+      "type": "agent.v1.ShellResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ShellResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piBashExecutorResource",
+     "under": "piBashArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piBashResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-bash.ts: piBashExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piBashArgs",
+      "type": "agent.v1.PiBashExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiBashExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piBashResult",
+      "type": "agent.v1.PiBashExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiBashExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piEditExecutorResource",
+     "under": "piEditArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piEditResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-edit.ts: piEditExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piEditArgs",
+      "type": "agent.v1.PiEditExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiEditExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piEditResult",
+      "type": "agent.v1.PiEditExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiEditExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piFindExecutorResource",
+     "under": "piFindArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piFindResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-find.ts: piFindExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piFindArgs",
+      "type": "agent.v1.PiFindExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiFindExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piFindResult",
+      "type": "agent.v1.PiFindExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiFindExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piGrepExecutorResource",
+     "under": "piGrepArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piGrepResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-grep.ts: piGrepExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piGrepArgs",
+      "type": "agent.v1.PiGrepExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiGrepExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piGrepResult",
+      "type": "agent.v1.PiGrepExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiGrepExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piLsExecutorResource",
+     "under": "piLsArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piLsResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-ls.ts: piLsExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piLsArgs",
+      "type": "agent.v1.PiLsExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiLsExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piLsResult",
+      "type": "agent.v1.PiLsExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiLsExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piReadExecutorResource",
+     "under": "piReadArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piReadResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-read.ts: piReadExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piReadArgs",
+      "type": "agent.v1.PiReadExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiReadExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piReadResult",
+      "type": "agent.v1.PiReadExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiReadExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "piWriteExecutorResource",
+     "under": "piWriteArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "piWriteResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "pi-write.ts: piWriteExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "piWriteArgs",
+      "type": "agent.v1.PiWriteExecArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiWriteExecArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "piWriteResult",
+      "type": "agent.v1.PiWriteExecResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.PiWriteExecResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "recordScreenExecutorResource",
+     "under": "recordScreenArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "recordScreenResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "record-screen.ts: recordScreenExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "recordScreenArgs",
+      "type": "agent.v1.RecordScreenArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.RecordScreenArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "recordScreenResult",
+      "type": "agent.v1.RecordScreenResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.RecordScreenResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "shellAllowlistPrecheckExecutorResource",
+     "under": "shellAllowlistPrecheckArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "shellAllowlistPrecheckResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "shell-allowlist-precheck.ts: shellAllowlistPrecheckExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "shellAllowlistPrecheckArgs",
+      "type": "agent.v1.ShellAllowlistPrecheckArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ShellAllowlistPrecheckArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "shellAllowlistPrecheckResult",
+      "type": "agent.v1.ShellAllowlistPrecheckResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ShellAllowlistPrecheckResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "forceBackgroundShellExecutorResource",
+     "under": "forceBackgroundShellArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "forceBackgroundShellResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "shell-control.ts: forceBackgroundShellExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "forceBackgroundShellArgs",
+      "type": "agent.v1.ForceBackgroundShellArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ForceBackgroundShellArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "forceBackgroundShellResult",
+      "type": "agent.v1.ForceBackgroundShellResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.ForceBackgroundShellResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "webFetchAllowlistPrecheckExecutorResource",
+     "under": "webFetchAllowlistPrecheckArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "webFetchAllowlistPrecheckResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "web-fetch-allowlist-precheck.ts: webFetchAllowlistPrecheckExecutorResource carries its arguments out and its answer back, each under a name of its own": {
+   "returned": {
+    "resource": {
+     "fields": [
+      "symbol",
+      "remoteImplementation",
+      "registerControlledImplementation"
+     ],
+     "symbol": "symbol",
+     "symbolDescription": {
+      "$": "undefined"
+     },
+     "functions": [
+      {
+       "name": "",
+       "takes": 1
+      },
+      {
+       "name": "",
+       "takes": 2
+      }
+     ]
+    },
+    "askedFromAfar": {
+     "isAnExecutorResource": true,
+     "aNewExecutorEachTime": true,
+     "request": {
+      "id": 8,
+      "under": "webFetchAllowlistPrecheckArgs",
+      "type": "agent.v1.WebFetchAllowlistPrecheckArgs",
+      "isTheArgumentsGiven": true,
+      "aPlainObjectBecomes": "agent.v1.WebFetchAllowlistPrecheckArgs",
+      "execId": "exec-8"
+     },
+     "withNoAnswerAtAll": "No exec result"
+    },
+    "servedHere": {
+     "registerAnswered": "what register answered",
+     "handlers": 1,
+     "isASimpleHandler": true,
+     "implementationCalls": 1,
+     "handedTheArguments": true,
+     "handedTheContext": true,
+     "handedOptions": [
+      "execId",
+      "hookContextCollector",
+      "deliverAgentStoreConflictNotices"
+     ],
+     "handedExecId": "exec-8",
+     "answers": 1,
+     "answer": {
+      "id": 8,
+      "under": "webFetchAllowlistPrecheckResult",
+      "type": "agent.v1.WebFetchAllowlistPrecheckResult",
+      "isTheAnswerGiven": true,
+      "aPlainObjectBecomes": "agent.v1.WebFetchAllowlistPrecheckResult"
+     }
+    },
+    "anothersRequest": {
+     "whose": "adoptExecutorResource",
+     "under": "adoptArgs",
+     "taken": false,
+     "implementationCalls": 0
+    },
+    "anothersAnswer": {
+     "under": "adoptResult",
+     "thenItsOwnIsRead": true,
+     "alone": {
+      "failed": "No result value"
+     }
+    }
+   }
+  },
+  "the twenty resources are told apart by twenty symbols without a description": {
+   "returned": {
+    "resources": 20,
+    "different": 20,
+    "described": 0
+   }
+  },
+  "the folder's front door hands on the names of the files behind it, the very same things": {
+   "returned": {
+    "BROWSER_MCP_PROVIDER_IDS": "from a file that is not this part's",
+    "COMPUTER_USE_SCREENSHOT_SETTLE_DELAY_MS": "from a file that is not this part's",
+    "CUSTOM_USER_TOOLS_PROVIDER_ID": "from a file that is not this part's",
+    "CombinedResourceAccessor": "from a file that is not this part's",
+    "ControlledExecDisposedError": "from a file that is not this part's",
+    "ExecutorResource": "from a file that is not this part's",
+    "InMemoryBackgroundWorkRegistry": "background-work-registry.ts",
+    "LEGACY_LOCAL_WAKEUP_CONVERSATION_ID": "background-work-registry.ts",
+    "MCP_DISK_CATALOG_MCPS_DIR": "mcp-disk-catalog.ts",
+    "MCP_DISK_CATALOG_TOOLS_DIR": "mcp-disk-catalog.ts",
+    "McpLeaseChangeReason": "from a file that is not this part's",
+    "NON_AUTHENTICATABLE_MCP_PROVIDER_IDS": "from a file that is not this part's",
+    "RUNNING_SUBAGENT_FOLLOWUP_ERROR": "from a file that is not this part's",
+    "RUNNING_SUBAGENT_INTERRUPT_RETRY_HINT": "from a file that is not this part's",
+    "RegistryResourceAccessor": "from a file that is not this part's",
+    "RemoteAgentStoreConflictNoticeStub": "from a file that is not this part's",
+    "RemoteResourceAccessor": "from a file that is not this part's",
+    "SIMEON_DYNAMIC_TOOLS_NAMESPACE": "from a file that is not this part's",
+    "SIMEON_IDE_BROWSER_PROVIDER_ID": "from a file that is not this part's",
+    "SIMEON_PLAYWRIGHT_PROVIDER_ID": "from a file that is not this part's",
+    "SIMEON_SELF_CONTROL_PROVIDER_ID": "from a file that is not this part's",
+    "SimpleControlledExecHandler": "from a file that is not this part's",
+    "SimpleControlledExecManager": "from a file that is not this part's",
+    "SimpleControlledStreamExecHandler": "from a file that is not this part's",
+    "StreamExecutorResource": "from a file that is not this part's",
+    "adoptExecutorResource": "adopt.ts",
+    "agentStoreConflictExecutorResource": "agent-store-conflict.ts",
+    "agentStoreConflictNoticeExecutorResource": "from a file that is not this part's",
+    "backgroundShellExecutorResource": "from a file that is not this part's",
+    "buildMcpToolFileContent": "from a file that is not this part's",
+    "canvasDiagnosticsExecutorResource": "from a file that is not this part's",
+    "computerUseExecutorResource": "from a file that is not this part's",
+    "conflictNoticeAck": "from a file that is not this part's",
+    "conflictNoticeNoteDeferredEagerWrittenPaths": "from a file that is not this part's",
+    "conflictNoticePeek": "from a file that is not this part's",
+    "conflictNoticeRelease": "from a file that is not this part's",
+    "conflictNoticeSyncAndPeek": "from a file that is not this part's",
+    "conversationSearchExecutorResource": "conversation-search.ts",
+    "createClientDeserializer": "from a file that is not this part's",
+    "createClientSerializer": "from a file that is not this part's",
+    "createForcePromptHookApprovalRequirement": "shell-hook-approval.ts",
+    "createReadonlyResourceAccessor": "from a file that is not this part's",
+    "createResource": "from a file that is not this part's",
+    "createServerDeserializer": "from a file that is not this part's",
+    "createServerSerializer": "from a file that is not this part's",
+    "createSubagentExecutor": "from a file that is not this part's",
+    "decodeBackgroundWorkMetadata": "from a file that is not this part's",
+    "deleteExecutorResource": "from a file that is not this part's",
+    "diagnosticsExecutorResource": "diagnostics.ts",
+    "encodeBackgroundWorkMetadata": "from a file that is not this part's",
+    "execHookConversationIdKey": "hook-metadata.ts",
+    "execHookGenerationIdKey": "hook-metadata.ts",
+    "execHookModelKey": "hook-metadata.ts",
+    "execHookWorkspaceRootsKey": "hook-metadata.ts",
+    "fetchExecutorResource": "fetch.ts",
+    "forceBackgroundShellExecutorResource": "shell-control.ts",
+    "forceBackgroundSubagentExecutorResource": "from a file that is not this part's",
+    "getShellHookApprovalRequirement": "shell-hook-approval.ts",
+    "gitDiffExecutorResource": "git-diff.ts",
+    "grepExecutorResource": "grep.ts",
+    "hookExecutorResource": "from a file that is not this part's",
+    "isFirstPartyToolsNamespace": "from a file that is not this part's",
+    "isFullMcpLeaseInvalidation": "from a file that is not this part's",
+    "listMcpResourcesExecutorResource": "from a file that is not this part's",
+    "lsExecutorResource": "from a file that is not this part's",
+    "mcpAllowlistPrecheckExecutorResource": "mcp-allowlist-precheck.ts",
+    "mcpExecutorResource": "from a file that is not this part's",
+    "mcpInputSchemaToJson": "from a file that is not this part's",
+    "mcpServerUnavailableReason": "from a file that is not this part's",
+    "mcpStateExecutorResource": "from a file that is not this part's",
+    "mergeMcpLeaseEvents": "from a file that is not this part's",
+    "mergeWakeup": "wakeup/index.ts",
+    "miniSweAgentBashExecutorResource": "mini-swe-agent-bash.ts",
+    "parseMcpInputSchemaJson": "from a file that is not this part's",
+    "parseMcpToolNameFromDiskDefinitionJson": "mcp-disk-catalog.ts",
+    "piBashExecutorResource": "pi-bash.ts",
+    "piEditExecutorResource": "pi-edit.ts",
+    "piFindExecutorResource": "pi-find.ts",
+    "piGrepExecutorResource": "pi-grep.ts",
+    "piLsExecutorResource": "pi-ls.ts",
+    "piReadExecutorResource": "pi-read.ts",
+    "piWriteExecutorResource": "pi-write.ts",
+    "readExecutorResource": "from a file that is not this part's",
+    "readMcpResourceExecutorResource": "from a file that is not this part's",
+    "recordScreenExecutorResource": "record-screen.ts",
+    "redactedReadExecutorResource": "from a file that is not this part's",
+    "requestContextExecutorResource": "from a file that is not this part's",
+    "resourceEntry": "from a file that is not this part's",
+    "setShellHookApprovalRequirement": "shell-hook-approval.ts",
+    "shellAllowlistPrecheckExecutorResource": "shell-allowlist-precheck.ts",
+    "shellExecutorResource": "from a file that is not this part's",
+    "shellStreamExecutorResource": "from a file that is not this part's",
+    "smartModeClassifierExecutorResource": "from a file that is not this part's",
+    "subagentAwaitExecutorResource": "from a file that is not this part's",
+    "subagentExecutorResource": "from a file that is not this part's",
+    "summarizeComputerUseActions": "from a file that is not this part's",
+    "supportsInteractiveMcpAuth": "from a file that is not this part's",
+    "webFetchAllowlistPrecheckExecutorResource": "web-fetch-allowlist-precheck.ts",
+    "writeBackgroundShellInputExecutorResource": "from a file that is not this part's",
+    "writeExecutorResource": "from a file that is not this part's"
+   }
+  },
+  "ten files hold nothing at run time": {
+   "returned": {
+    "agent-skill-metadata.ts": [],
+    "await-outcome.ts": [],
+    "background-completion-dispatch.ts": [],
+    "common.ts": [],
+    "exec-error.ts": [],
+    "execution-timing.ts": [],
+    "request-context-parts.ts": [],
+    "subagent-lifecycle-state-machine.ts": [],
+    "subagent-lifecycle-store.ts": [],
+    "subagent-queue.ts": []
+   }
+  },
+  "the four keys an exec hook reads are each a named symbol with nothing as the value read where none was set": {
+   "returned": {
+    "execHookConversationIdKey": {
+     "symbol": {
+      "$": "symbol",
+      "v": "execHookConversationId"
+     },
+     "defaultValue": {
+      "$": "undefined"
+     }
+    },
+    "execHookGenerationIdKey": {
+     "symbol": {
+      "$": "symbol",
+      "v": "execHookGenerationId"
+     },
+     "defaultValue": {
+      "$": "undefined"
+     }
+    },
+    "execHookModelKey": {
+     "symbol": {
+      "$": "symbol",
+      "v": "execHookModel"
+     },
+     "defaultValue": {
+      "$": "undefined"
+     }
+    },
+    "execHookWorkspaceRootsKey": {
+     "symbol": {
+      "$": "symbol",
+      "v": "execHookWorkspaceRoots"
+     },
+     "defaultValue": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "a context keeps a value under each of the four keys, apart from the others and from a key of the same name": {
+   "returned": {
+    "differentSymbols": 4,
+    "nothingSet": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "onlyTheModelSet": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     "a-model",
+     {
+      "$": "undefined"
+     }
+    ],
+    "allSet": [
+     "conversation-1",
+     "generation-1",
+     "a-model",
+     [
+      "/work/one",
+      "/work/two"
+     ]
+    ],
+    "theRootsAreTheListGiven": true,
+    "aKeyOfTheSameName": "the namesake's own default"
+   }
+  },
+  "the MCP catalogue on disk is a folder of servers with a folder of tools in each": {
+   "returned": {
+    "MCP_DISK_CATALOG_MCPS_DIR": "mcps",
+    "MCP_DISK_CATALOG_TOOLS_DIR": "tools"
+   }
+  },
+  "a tool's name is read from its definition: `name` when it is a text that is not empty, else `toolName` the same way, else nothing": {
+   "returned": [
+    [
+     "{\"name\":\"search\"}",
+     "search"
+    ],
+    [
+     "{\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":\"search\",\"toolName\":\"lookup\"}",
+     "search"
+    ],
+    [
+     "{\"toolName\":\"lookup\",\"name\":\"search\"}",
+     "search"
+    ],
+    [
+     "{\"name\":\"\",\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":\"\",\"toolName\":\"\"}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"name\":\"\"}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"toolName\":\"\"}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"name\":\" \"}",
+     " "
+    ],
+    [
+     "{\"name\":\"  padded  \",\"toolName\":\"lookup\"}",
+     "  padded  "
+    ],
+    [
+     "{\"name\":5,\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":null,\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":[\"search\"],\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":{\"name\":\"inner\"},\"toolName\":\"lookup\"}",
+     "lookup"
+    ],
+    [
+     "{\"name\":true}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"name\":\"search\",\"toolName\":7}",
+     "search"
+    ],
+    [
+     "{\"toolName\":7}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"toolName\":null}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"Name\":\"search\",\"tool_name\":\"lookup\"}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"description\":\"no name at all\"}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "  {\"name\":\"spaced out\"}\n",
+     "spaced out"
+    ],
+    [
+     "{\"name\":\"search\",\"name\":\"the later one\"}",
+     "the later one"
+    ],
+    [
+     "{\"name\":\"\\u00e9t\\u00e9 \\ud83d\\ude00\"}",
+     "été 😀"
+    ],
+    [
+     "{\"tool\":{\"name\":\"nested\"}}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"__proto__\":{\"name\":\"inherited\"}}",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "{\"__proto__\":{\"name\":\"inherited\"},\"toolName\":\"lookup\"}",
+     "lookup"
+    ]
+   ]
+  },
+  "a definition that is no JSON object gives nothing, whatever it is": {
+   "returned": {
+    "texts": [
+     [
+      "",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      " ",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "null",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "true",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "false",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "0",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "12",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "\"search\"",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "\"{\\\"name\\\":\\\"search\\\"}\"",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "[]",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "[\"search\"]",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "[{\"name\":\"search\"}]",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{\"name\":\"search\"",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{name:'search'}",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{'name':'search'}",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{\"name\":\"search\"},",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "{\"name\":\"search\"} trailing",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "undefined",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "NaN",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "﻿{\"name\":\"search\"}",
+      {
+       "$": "undefined"
+      }
+     ]
+    ],
+    "notTexts": {
+     "nothing": {
+      "$": "undefined"
+     },
+     "null": {
+      "$": "undefined"
+     },
+     "aNumber": {
+      "$": "undefined"
+     },
+     "anObject": {
+      "$": "undefined"
+     },
+     "bytesOfADefinition": "from bytes",
+     "anObjectThatTurnsIntoADefinition": "from toString",
+     "anObjectThatFailsToTurnIntoText": {
+      "$": "undefined"
+     },
+     "aSymbol": {
+      "$": "undefined"
+     }
+    },
+    "aLongName": 5000
+   }
+  },
+  "a forced prompt is a requirement of the kind FORCE_PROMPT, with the reason when one is given": {
+   "returned": [
+    [
+     "a hook asked for it",
+     {
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 1,
+      "reason": "a hook asked for it",
+      "asJson": {
+       "kind": "KIND_FORCE_PROMPT",
+       "reason": "a hook asked for it"
+      },
+      "onTheWire": {
+       "$": "bytes",
+       "v": "080112136120686f6f6b2061736b656420666f72206974"
+      }
+     }
+    ],
+    [
+     "",
+     {
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 1,
+      "reason": "",
+      "asJson": {
+       "kind": "KIND_FORCE_PROMPT",
+       "reason": ""
+      },
+      "onTheWire": {
+       "$": "bytes",
+       "v": "08011200"
+      }
+     }
+    ],
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "fields": [
+       "kind"
+      ],
+      "kind": 1,
+      "reason": {
+       "$": "undefined"
+      },
+      "asJson": {
+       "kind": "KIND_FORCE_PROMPT"
+      },
+      "onTheWire": {
+       "$": "bytes",
+       "v": "0801"
+      }
+     }
+    ],
+    [
+     null,
+     {
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "fields": [
+       "kind"
+      ],
+      "kind": 1,
+      "reason": {
+       "$": "undefined"
+      },
+      "asJson": {
+       "kind": "KIND_FORCE_PROMPT"
+      },
+      "onTheWire": {
+       "$": "bytes",
+       "v": "0801"
+      }
+     }
+    ]
+   ]
+  },
+  "each forced prompt is a requirement of its own": {
+   "returned": {
+    "different": true,
+    "equal": true,
+    "sameType": true
+   }
+  },
+  "setting a requirement puts a new message on the arguments, made from what was given; setting none leaves the field there with nothing in it": {
+   "returned": {
+    "nothingOnEmptyArguments": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "undefined",
+     "requirement": {
+      "$": "undefined"
+     },
+     "isWhatWasGiven": true
+    },
+    "nothingOverARequirement": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement",
+      "command"
+     ],
+     "type": "undefined",
+     "requirement": {
+      "$": "undefined"
+     },
+     "isWhatWasGiven": true
+    },
+    "anEmptyObject": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind"
+      ],
+      "kind": 0,
+      "reason": {
+       "$": "undefined"
+      }
+     },
+     "isWhatWasGiven": false
+    },
+    "aKindOnly": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind"
+      ],
+      "kind": 1,
+      "reason": {
+       "$": "undefined"
+      }
+     },
+     "isWhatWasGiven": false
+    },
+    "aReasonOnly": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 0,
+      "reason": "why"
+     },
+     "isWhatWasGiven": false
+    },
+    "aKindAndAReason": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "command",
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 1,
+      "reason": "why"
+     },
+     "isWhatWasGiven": false
+    },
+    "aKindThatIsNoKind": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 7,
+      "reason": ""
+     },
+     "isWhatWasGiven": false
+    },
+    "fieldsThatAreNotARequirements": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind"
+      ],
+      "kind": 1,
+      "reason": {
+       "$": "undefined"
+      }
+     },
+     "isWhatWasGiven": false
+    },
+    "aRequirementItself": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [
+      "hookApprovalRequirement"
+     ],
+     "type": "agent.v1.ShellHookApprovalRequirement",
+     "requirement": {
+      "fields": [
+       "kind",
+       "reason"
+      ],
+      "kind": 1,
+      "reason": "forced"
+     },
+     "isWhatWasGiven": false
+    },
+    "theRequirementGivenIsLeftAsItWas": {
+     "kind": 1,
+     "reason": "forced"
+    },
+    "oneAfterAnother": [
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "fields": [
+       "command",
+       "hookApprovalRequirement"
+      ],
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "requirement": {
+       "fields": [
+        "kind",
+        "reason"
+       ],
+       "kind": 1,
+       "reason": "first"
+      },
+      "isWhatWasGiven": false
+     },
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "fields": [
+       "command",
+       "hookApprovalRequirement"
+      ],
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "requirement": {
+       "fields": [
+        "kind",
+        "reason"
+       ],
+       "kind": 0,
+       "reason": "second"
+      },
+      "isWhatWasGiven": false
+     },
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "fields": [
+       "command",
+       "hookApprovalRequirement"
+      ],
+      "type": "undefined",
+      "requirement": {
+       "$": "undefined"
+      },
+      "isWhatWasGiven": true
+     },
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "fields": [
+       "command",
+       "hookApprovalRequirement"
+      ],
+      "type": "agent.v1.ShellHookApprovalRequirement",
+      "requirement": {
+       "fields": [
+        "kind",
+        "reason"
+       ],
+       "kind": 1,
+       "reason": "forced"
+      },
+      "isWhatWasGiven": false
+     }
+    ],
+    "null": {
+     "threw": "TypeError"
+    },
+    "argumentsThatAreNothing": {
+     "threw": "TypeError"
+    },
+    "argumentsThatAreNothingAndNoRequirement": {
+     "threw": "TypeError"
+    },
+    "frozenArguments": {
+     "answered": {
+      "$": "undefined"
+     },
+     "fields": [],
+     "type": "undefined",
+     "requirement": {
+      "$": "undefined"
+     },
+     "isWhatWasGiven": false
+    }
+   }
+  },
+  "getting the requirement reads the field as it is": {
+   "returned": {
+    "noField": {
+     "$": "undefined"
+    },
+    "afterSettingNone": {
+     "$": "undefined"
+    },
+    "theVeryMessageOnTheArguments": true,
+    "notTheOneHandedToSet": false,
+    "whateverIsThere": [
+     "a text",
+     null,
+     0
+    ],
+    "aFieldFromThePrototype": true,
+    "argumentsThatAreNothing": [
+     {
+      "threw": "TypeError"
+     },
+     {
+      "threw": "TypeError"
+     }
+    ],
+    "aText": {
+     "$": "undefined"
+    }
+   }
+  },
+  "a wakeup with no group goes to the end of the queue as a copy, and the queue given is left as it was": {
+   "returned": {
+    "fields": [
+     "queue"
+    ],
+    "queue": [
+     {
+      "conversationId": "c1",
+      "id": "w1",
+      "payload": "c1/w1"
+     },
+     {
+      "conversationId": "c2",
+      "id": "w2",
+      "payload": "c2/w2",
+      "groupKey": "g"
+     },
+     {
+      "conversationId": "c1",
+      "id": "w3",
+      "payload": {
+       "nested": true
+      },
+      "source": "shell"
+     }
+    ],
+    "aNewQueue": true,
+    "theQueuedOnesThemselves": true,
+    "theIncomingIsCopied": true,
+    "itsPayloadIsNot": true,
+    "theQueueGiven": [
+     "c1/w1",
+     "c2/w2"
+    ],
+    "intoAnEmptyQueue": {
+     "queue": [
+      {
+       "conversationId": "c1",
+       "id": "w1",
+       "payload": "c1/w1"
+      }
+     ]
+    }
+   }
+  },
+  "a wakeup already queued for its conversation under its id changes nothing: a copy of the queue comes back, even where its group is queued too": {
+   "returned": {
+    "again": {
+     "fields": [
+      "queue"
+     ],
+     "queue": [
+      "c1/w1",
+      "c1/w2",
+      "c2/w3"
+     ],
+     "aNewQueue": true,
+     "theQueuedOnesThemselves": true
+    },
+    "againInAnotherGroup": {
+     "fields": [
+      "queue"
+     ],
+     "queue": [
+      "c1/w1",
+      "c1/w2",
+      "c2/w3"
+     ]
+    },
+    "theSameIdInAnotherConversation": [
+     "c1/w1",
+     "c1/w2",
+     "c2/w3",
+     "c2/w1"
+    ],
+    "anIdThatDiffersBySpaces": [
+     "c1/w1",
+     "c1/w2",
+     "c2/w3",
+     "c1/w1"
+    ],
+    "anIdOfAnotherKind": [
+     "c1/1",
+     "c1/1"
+    ]
+   }
+  },
+  "a wakeup of a group takes the place of the queued one of that group in its conversation, which is handed back": {
+   "returned": {
+    "fields": [
+     "queue",
+     "replaced"
+    ],
+    "queue": [
+     {
+      "conversationId": "c1",
+      "id": "w1",
+      "payload": "c1/w1"
+     },
+     {
+      "conversationId": "c1",
+      "id": "w5",
+      "payload": "c1/w5",
+      "groupKey": "g",
+      "source": "shell"
+     },
+     {
+      "conversationId": "c2",
+      "id": "w3",
+      "payload": "c2/w3",
+      "groupKey": "g"
+     },
+     {
+      "conversationId": "c1",
+      "id": "w4",
+      "payload": "c1/w4",
+      "groupKey": "g"
+     }
+    ],
+    "replaced": {
+     "conversationId": "c1",
+     "id": "w2",
+     "payload": "c1/w2",
+     "groupKey": "g"
+    },
+    "theReplacedIsTheQueuedOneItself": true,
+    "theIncomingIsCopied": true,
+    "onlyTheFirstOfTheGroupGivesWay": [
+     "c1/w1",
+     "c1/w5",
+     "c2/w3",
+     "c1/w4"
+    ],
+    "theQueueGiven": [
+     "c1/w1",
+     "c1/w2",
+     "c2/w3",
+     "c1/w4"
+    ],
+    "aGroupOfAnotherConversation": {
+     "fields": [
+      "queue"
+     ],
+     "queue": [
+      "c1/w1",
+      "c1/w2",
+      "c2/w3",
+      "c1/w4",
+      "c3/w5"
+     ]
+    },
+    "aGroupSpelledOtherwise": {
+     "fields": [
+      "queue"
+     ],
+     "queue": [
+      "c1/w1",
+      "c1/w2",
+      "c2/w3",
+      "c1/w4",
+      "c1/w5"
+     ]
+    }
+   }
+  },
+  "a group is any value but undefined: null, the empty text and zero are groups of their own": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/empty",
+       "c1/zero",
+       "c1/undefined",
+       "c1/incoming"
+      ],
+      "replaced": {
+       "$": "undefined"
+      }
+     }
+    ],
+    [
+     null,
+     {
+      "queue": [
+       "c1/none",
+       "c1/incoming",
+       "c1/empty",
+       "c1/zero",
+       "c1/undefined"
+      ],
+      "replaced": "c1/null"
+     }
+    ],
+    [
+     "",
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/incoming",
+       "c1/zero",
+       "c1/undefined"
+      ],
+      "replaced": "c1/empty"
+     }
+    ],
+    [
+     0,
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/empty",
+       "c1/incoming",
+       "c1/undefined"
+      ],
+      "replaced": "c1/zero"
+     }
+    ],
+    [
+     "0",
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/empty",
+       "c1/zero",
+       "c1/undefined",
+       "c1/incoming"
+      ],
+      "replaced": {
+       "$": "undefined"
+      }
+     }
+    ],
+    [
+     false,
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/empty",
+       "c1/zero",
+       "c1/undefined",
+       "c1/incoming"
+      ],
+      "replaced": {
+       "$": "undefined"
+      }
+     }
+    ],
+    [
+     {
+      "$": "number",
+      "v": "NaN"
+     },
+     {
+      "queue": [
+       "c1/none",
+       "c1/null",
+       "c1/empty",
+       "c1/zero",
+       "c1/undefined",
+       "c1/incoming"
+      ],
+      "replaced": {
+       "$": "undefined"
+      }
+     }
+    ]
+   ]
+  },
+  "a queued wakeup that is found and is gone when the queue is copied is not handed back": {
+   "returned": {
+    "looks": 3,
+    "fields": [
+     "queue"
+    ],
+    "queue": [
+     {
+      "conversationId": "c1",
+      "id": "w2",
+      "payload": "c1/w2",
+      "groupKey": "g"
+     }
+    ]
+   }
+  },
+  "a queue or a wakeup that is not one fails as JavaScript fails": {
+   "returned": {
+    "noQueue": {
+     "threw": "TypeError"
+    },
+    "noWakeup": {
+     "threw": "TypeError"
+    },
+    "noWakeupAndAQueue": {
+     "threw": "TypeError"
+    },
+    "aHoleInTheQueueAndNoGroup": [
+     {
+      "$": "undefined"
+     },
+     "c1/w1",
+     "c1/w2"
+    ],
+    "aHoleInTheQueueAndAGroup": {
+     "threw": "TypeError"
+    },
+    "aWakeupThatIsAText": {
+     "queue": [
+      {
+       "0": "w",
+       "1": "a",
+       "2": "k",
+       "3": "e",
+       "4": "u",
+       "5": "p"
+      }
+     ]
+    }
+   }
+  },
+  "wakeups that name no conversation of their own go to the conversation called local": {
+   "returned": "local"
+  },
+  "a new registry holds no work and no wakeups, in two fields, and has sixteen methods": {
+   "returned": {
+    "fields": [
+     "records",
+     "wakeups"
+    ],
+    "methods": [
+     "abortAllWork",
+     "abortWork",
+     "ack",
+     "clearWork",
+     "constructor",
+     "drainCompletions",
+     "enqueue",
+     "enqueueCompletion",
+     "getWakeupRevision",
+     "hasPendingCompletions",
+     "hasRunningWork",
+     "listWork",
+     "markAwaitedCompletion",
+     "nack",
+     "pull",
+     "suppress",
+     "upsertWork"
+    ],
+    "work": [],
+    "running": false,
+    "queue": {
+     "revision": 0,
+     "waiting": false,
+     "waiting in local": false
+    },
+    "drained": [],
+    "pulled": [],
+    "acknowledged": [],
+    "abortedAll": 0,
+    "anotherRegistryIsApart": {
+     "work": 0,
+     "queue": {
+      "revision": 0,
+      "waiting": false
+     }
+    }
+   }
+  },
+  "work is kept under its id: a later record takes the earlier one's place in the list, and a snapshot has six fields whatever the record had": {
+   "returned": {
+    "answered": {
+     "$": "undefined"
+    },
+    "first": [
+     {
+      "id": "a",
+      "kind": "shell",
+      "state": "running",
+      "ownerId": "o1",
+      "hasAbort": true,
+      "metadata": {
+       "note": "kept as given"
+      }
+     },
+     {
+      "id": "b",
+      "kind": "subagent",
+      "state": "queued",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": false,
+      "metadata": {
+       "$": "undefined"
+      }
+     },
+     {
+      "id": "c",
+      "kind": "shell",
+      "state": "running",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": true,
+      "metadata": 0
+     }
+    ],
+    "fields": [
+     [
+      "id",
+      "kind",
+      "state",
+      "ownerId",
+      "hasAbort",
+      "metadata"
+     ],
+     [
+      "id",
+      "kind",
+      "state",
+      "ownerId",
+      "hasAbort",
+      "metadata"
+     ],
+     [
+      "id",
+      "kind",
+      "state",
+      "ownerId",
+      "hasAbort",
+      "metadata"
+     ]
+    ],
+    "metadataIsTheObjectGiven": true,
+    "aNewListEachTime": true,
+    "afterALaterRecordForA": [
+     {
+      "id": "a",
+      "kind": "shell",
+      "state": "done",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": false,
+      "metadata": null
+     },
+     {
+      "id": "b",
+      "kind": "subagent",
+      "state": "queued",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": false,
+      "metadata": {
+       "$": "undefined"
+      }
+     },
+     {
+      "id": "c",
+      "kind": "shell",
+      "state": "running",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": true,
+      "metadata": 0
+     },
+     {
+      "id": "d",
+      "kind": "shell",
+      "state": "changed after it was handed over",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": false,
+      "metadata": {
+       "$": "undefined"
+      }
+     }
+    ]
+   }
+  },
+  "a filter keeps the work whose kind, state and owner are the ones it names; an empty name, or none, asks for nothing": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     null,
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {},
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": "shell"
+     },
+     {
+      "listed": [
+       "a",
+       "b"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": "subagent"
+     },
+     {
+      "listed": [
+       "c",
+       "d"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": "Shell"
+     },
+     {
+      "listed": [],
+      "running": false
+     }
+    ],
+    [
+     {
+      "kind": ""
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": {
+       "$": "undefined"
+      }
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "state": "running"
+     },
+     {
+      "listed": [
+       "a",
+       "c",
+       "d"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "state": "done"
+     },
+     {
+      "listed": [
+       "b"
+      ],
+      "running": false
+     }
+    ],
+    [
+     {
+      "state": ""
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "ownerId": "o1"
+     },
+     {
+      "listed": [
+       "a",
+       "c"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "ownerId": "o2"
+     },
+     {
+      "listed": [
+       "b"
+      ],
+      "running": false
+     }
+    ],
+    [
+     {
+      "ownerId": ""
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "ownerId": "nobody"
+     },
+     {
+      "listed": [],
+      "running": false
+     }
+    ],
+    [
+     {
+      "kind": "shell",
+      "state": "running"
+     },
+     {
+      "listed": [
+       "a"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": "shell",
+      "state": "done",
+      "ownerId": "o2"
+     },
+     {
+      "listed": [
+       "b"
+      ],
+      "running": false
+     }
+    ],
+    [
+     {
+      "kind": "shell",
+      "state": "done",
+      "ownerId": "o1"
+     },
+     {
+      "listed": [],
+      "running": false
+     }
+    ],
+    [
+     {
+      "kind": "subagent",
+      "ownerId": "o1"
+     },
+     {
+      "listed": [
+       "c"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "kind": "subagent",
+      "state": "running",
+      "ownerId": ""
+     },
+     {
+      "listed": [
+       "c",
+       "d"
+      ],
+      "running": true
+     }
+    ],
+    [
+     {
+      "id": "a"
+     },
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     0,
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     "",
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ],
+    [
+     "shell",
+     {
+      "listed": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "running": true
+     }
+    ]
+   ]
+  },
+  "work runs when its state is the word running, spelled so": {
+   "returned": [
+    [
+     "running",
+     {
+      "any": true,
+      "ofItsKind": true,
+      "ofAnotherKind": false,
+      "inItsOwnState": true
+     }
+    ],
+    [
+     "Running",
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ],
+    [
+     " running",
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ],
+    [
+     "run",
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ],
+    [
+     "done",
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ],
+    [
+     "",
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ],
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "any": false,
+      "ofItsKind": false,
+      "ofAnotherKind": false,
+      "inItsOwnState": false
+     }
+    ]
+   ]
+  },
+  "clearing work forgets it and says whether it was there; the id is taken as it is": {
+   "returned": {
+    "unknown": false,
+    "withSpaces": false,
+    "known": true,
+    "again": false,
+    "left": [
+     "b"
+    ],
+    "abortCalls": []
+   }
+  },
+  "aborting work calls its abort as the record's own, forgets it and says yes; work that is not there says no": {
+   "returned": {
+    "unknown": false,
+    "withAnAbort": true,
+    "again": false,
+    "withoutOne": true,
+    "withNull": true,
+    "withZero": true,
+    "calls": [
+     {
+      "onTheRecord": true,
+      "given": []
+     }
+    ],
+    "left": []
+   }
+  },
+  "work whose abort throws stays, and the failure comes out as it was thrown": {
+   "returned": {
+    "theFailureItself": true,
+    "anAbortThatIsNoFunction": {
+     "threw": "TypeError"
+    },
+    "left": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  "aborting all work aborts what the filter keeps, in the order it was first added, and counts it; the rest stays": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "count": 5,
+      "calls": [
+       "a",
+       "b",
+       "c",
+       "e"
+      ],
+      "left": [],
+      "again": 0
+     }
+    ],
+    [
+     {},
+     {
+      "count": 5,
+      "calls": [
+       "a",
+       "b",
+       "c",
+       "e"
+      ],
+      "left": [],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "kind": "subagent"
+     },
+     {
+      "count": 2,
+      "calls": [
+       "c"
+      ],
+      "left": [
+       "a",
+       "b",
+       "e"
+      ],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "state": "running"
+     },
+     {
+      "count": 3,
+      "calls": [
+       "a",
+       "c"
+      ],
+      "left": [
+       "b",
+       "e"
+      ],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "ownerId": "o1"
+     },
+     {
+      "count": 2,
+      "calls": [
+       "a",
+       "c"
+      ],
+      "left": [
+       "b",
+       "d",
+       "e"
+      ],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "kind": "shell",
+      "state": "done"
+     },
+     {
+      "count": 1,
+      "calls": [
+       "b"
+      ],
+      "left": [
+       "a",
+       "c",
+       "d",
+       "e"
+      ],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "kind": "nothing of the kind"
+     },
+     {
+      "count": 0,
+      "calls": [],
+      "left": [
+       "a",
+       "b",
+       "c",
+       "d",
+       "e"
+      ],
+      "again": 0
+     }
+    ],
+    [
+     {
+      "kind": ""
+     },
+     {
+      "count": 5,
+      "calls": [
+       "a",
+       "b",
+       "c",
+       "e"
+      ],
+      "left": [],
+      "again": 0
+     }
+    ]
+   ]
+  },
+  "an abort that throws stops the aborting of all work where it is: what came before is gone, it and what comes after stay": {
+   "returned": {
+    "theFailureItself": true,
+    "calls": [
+     "a",
+     "b"
+    ],
+    "left": [
+     "b",
+     "c"
+    ]
+   }
+  },
+  "work added or cleared by an abort while all work is aborted: what was there at the start is aborted and counted, what is added stays": {
+   "returned": {
+    "count": 3,
+    "calls": [
+     "a",
+     "b",
+     "the earlier c"
+    ],
+    "left": [
+     {
+      "id": "late",
+      "kind": "shell",
+      "state": "running",
+      "ownerId": {
+       "$": "undefined"
+      },
+      "hasAbort": true,
+      "metadata": {
+       "$": "undefined"
+      }
+     }
+    ]
+   }
+  },
+  "a wakeup is queued once for its conversation and id, the id without the spaces around it; one whose id is empty is dropped": {
+   "returned": {
+    "steps": [
+     [
+      "the first",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 1,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "the same again",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 1,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "the same with spaces",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 1,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "an empty id",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 1,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "an id of spaces",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 1,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "the same id in another conversation",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 2,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "another id",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 3,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ]
+    ],
+    "pulled": [
+     {
+      "conversationId": "c1",
+      "id": "w1",
+      "payload": "c1/w1",
+      "source": "shell",
+      "extra": {
+       "kept": true
+      }
+     },
+     {
+      "conversationId": "c1",
+      "id": "W1",
+      "payload": "c1/W1"
+     }
+    ],
+    "fields": [
+     [
+      "conversationId",
+      "id",
+      "payload",
+      "source",
+      "extra"
+     ],
+     [
+      "conversationId",
+      "id",
+      "payload"
+     ]
+    ],
+    "theGivenWakeupIsLeftAsItWas": "  w1\t",
+    "notTheGivenWakeupItself": true,
+    "itsExtraIsTheObjectGiven": true,
+    "theOtherConversations": [
+     {
+      "conversationId": "c2",
+      "id": "w1",
+      "payload": "c2/w1"
+     }
+    ]
+   }
+  },
+  "pulling hands over a conversation's wakeups in the order queued, as copies, and leaves the other conversations' waiting": {
+   "returned": {
+    "before": {
+     "revision": 5,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true,
+     "waiting in c3": true,
+     "waiting in c4": false
+    },
+    "first": [
+     "c1/a",
+     "c1/c",
+     "c1/e"
+    ],
+    "afterFirst": {
+     "revision": 6,
+     "waiting": true,
+     "waiting in c1": false,
+     "waiting in c2": true,
+     "waiting in c3": true
+    },
+    "again": [],
+    "unknown": [],
+    "afterNothingPulled": {
+     "revision": 6,
+     "waiting": true,
+     "waiting in c1": false,
+     "waiting in c2": true,
+     "waiting in c3": true
+    },
+    "theKeptOneIsNotTheCopyHandedOver": [
+     "c1/a"
+    ],
+    "then": [
+     [
+      "c3/d"
+     ],
+     [
+      "c2/b"
+     ],
+     {
+      "revision": 8,
+      "waiting": false,
+      "waiting in c1": false,
+      "waiting in c2": false,
+      "waiting in c3": false
+     }
+    ]
+   }
+  },
+  "a wakeup that was pulled cannot be queued again until it is acknowledged; acknowledging hands back what was pulled and changes no count": {
+   "returned": {
+    "pulled": [
+     {
+      "conversationId": "c1",
+      "id": "a",
+      "payload": "c1/a"
+     }
+    ],
+    "afterPull": {
+     "revision": 2,
+     "waiting": false,
+     "waiting in c1": false
+    },
+    "refused": {
+     "revision": 2,
+     "waiting": false,
+     "waiting in c1": false
+    },
+    "acknowledged": [
+     {
+      "conversationId": "c1",
+      "id": "a",
+      "payload": "c1/a"
+     }
+    ],
+    "afterAck": {
+     "revision": 2,
+     "waiting": false,
+     "waiting in c1": false
+    },
+    "queuedAgain": {
+     "revision": 3,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "pulledAgain": [
+     "after the acknowledgement"
+    ],
+    "acknowledgedTwice": [
+     [
+      "after the acknowledgement"
+     ],
+     []
+    ]
+   }
+  },
+  "acknowledging takes ids without the spaces around them, in the order asked, and passes over unknown ids, repeats and wakeups still waiting": {
+   "returned": {
+    "first": [
+     "c1/c",
+     "c1/a"
+    ],
+    "fields": [
+     [
+      "conversationId",
+      "id",
+      "payload"
+     ],
+     [
+      "conversationId",
+      "id",
+      "payload"
+     ]
+    ],
+    "none": [],
+    "rest": [
+     "c1/d",
+     "c1/b"
+    ],
+    "nothingLeft": [],
+    "queue": {
+     "revision": 6,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "stillWaiting": [
+     "c1/waiting"
+    ],
+    "idsThatAreNoTexts": {
+     "threw": "TypeError"
+    },
+    "afterThat": [],
+    "noList": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "refusing pulled wakeups without putting them back forgets them: they can be queued again, and no count changes": {
+   "returned": {
+    "answered": {
+     "$": "undefined"
+    },
+    "before": {
+     "revision": 4,
+     "waiting": false,
+     "waiting in c1": false
+    },
+    "after": {
+     "revision": 4,
+     "waiting": false,
+     "waiting in c1": false
+    },
+    "acknowledgingThemFindsNothing": [],
+    "queuedAgain": {
+     "revision": 5,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "pulled": [
+     "a, queued again"
+    ],
+    "theOneLeftPulled": [
+     "c1/c"
+    ],
+    "aFalsyAnswerCountsAsNo": {
+     "queue": {
+      "revision": 8,
+      "waiting": false,
+      "waiting in c1": false
+     },
+     "acknowledged": []
+    }
+   }
+  },
+  "refusing pulled wakeups and putting them back sets them in front of what was queued since, in the order they were pulled": {
+   "returned": {
+    "answered": {
+     "$": "undefined"
+    },
+    "before": {
+     "revision": 8,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true
+    },
+    "after": {
+     "revision": 9,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true
+    },
+    "stillOnce": {
+     "revision": 9,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true
+    },
+    "unknownOnly": {
+     "$": "undefined"
+    },
+    "none": {
+     "$": "undefined"
+    },
+    "unchanged": {
+     "revision": 9,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true
+    },
+    "c1": [
+     "c1/a",
+     "c1/c",
+     "c1/d"
+    ],
+    "c2": [
+     "c2/x",
+     "c2/y"
+    ],
+    "theOneNeverRefused": [
+     "c1/b"
+    ],
+    "aTruthyAnswerCountsAsYes": [
+     "c1/a"
+    ],
+    "noAnswer": {
+     "threw": "TypeError"
+    },
+    "idsThatAreNoTexts": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "a wakeup of a group takes the place of the one of that group waiting in its conversation, whose id can then be queued again": {
+   "returned": {
+    "steps": [
+     [
+      "a, of the group g",
+      1
+     ],
+     [
+      "b, between",
+      2
+     ],
+     [
+      "c, of the group g in another conversation",
+      3
+     ],
+     [
+      "d, of the group g: a gives way",
+      4
+     ],
+     [
+      "a again, with no group",
+      5
+     ],
+     [
+      "d again: refused, it waits",
+      5
+     ],
+     [
+      "e, of the group h",
+      6
+     ]
+    ],
+    "c1": [
+     {
+      "conversationId": "c1",
+      "id": "d",
+      "payload": "c1/d",
+      "groupKey": "g"
+     },
+     {
+      "conversationId": "c1",
+      "id": "b",
+      "payload": "c1/b"
+     },
+     {
+      "conversationId": "c1",
+      "id": "a",
+      "payload": "a, with no group"
+     },
+     {
+      "conversationId": "c1",
+      "id": "e",
+      "payload": "c1/e",
+      "groupKey": "h"
+     }
+    ],
+    "c2": [
+     "c2/c"
+    ]
+   }
+  },
+  "a group is taken only from what waits: a pulled wakeup keeps its place until it is put back, and then gives way to the newer one of its group": {
+   "returned": {
+    "before": {
+     "revision": 5,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "after": {
+     "revision": 6,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "freed": {
+     "revision": 7,
+     "waiting": true,
+     "waiting in c1": true
+    },
+    "pulled": [
+     "c1/c",
+     "c1/b",
+     "c1/d",
+     "a, free again"
+    ]
+   }
+  },
+  "suppressing an id drops it from what waits and from what was pulled, in its conversation only, and keeps it out": {
+   "returned": {
+    "steps": [
+     [
+      "three queued",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 3,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "a suppressed in c1, with spaces",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 4,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "a suppressed in c1 again",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 4,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "a queued in c1: refused",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 4,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "an unknown id suppressed",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 4,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "that id queued: refused",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 4,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "that id queued in c2",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 5,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "an empty id suppressed",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 5,
+       "waiting": true,
+       "waiting in c1": true,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "c1 pulled",
+      {
+       "answered": [
+        "c1/b"
+       ],
+       "revision": 6,
+       "waiting": true,
+       "waiting in c1": false,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "b suppressed while pulled",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 7,
+       "waiting": true,
+       "waiting in c1": false,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "b acknowledged: no longer pulled",
+      {
+       "answered": [],
+       "revision": 7,
+       "waiting": true,
+       "waiting in c1": false,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "b put back: nothing to put back",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 7,
+       "waiting": true,
+       "waiting in c1": false,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "b queued: refused",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 7,
+       "waiting": true,
+       "waiting in c1": false,
+       "waiting in c2": true
+      }
+     ],
+     [
+      "c2 pulled",
+      {
+       "answered": [
+        "c2/a",
+        "c2/never seen"
+       ],
+       "revision": 8,
+       "waiting": false,
+       "waiting in c1": false,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "a suppressed in c1 while c2's is pulled",
+      {
+       "answered": {
+        "$": "undefined"
+       },
+       "revision": 8,
+       "waiting": false,
+       "waiting in c1": false,
+       "waiting in c2": false
+      }
+     ],
+     [
+      "c2's a acknowledged",
+      {
+       "answered": [
+        "c2/a"
+       ],
+       "revision": 8,
+       "waiting": false,
+       "waiting in c1": false,
+       "waiting in c2": false
+      }
+     ]
+    ],
+    "noId": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "clearing or aborting work lets its id be queued again in every conversation; aborting work that is not there does not": {
+   "returned": {
+    "steps": [
+     [
+      "suppressed in both",
+      [
+       "refused",
+       "refused"
+      ]
+     ],
+     [
+      "aborted, not there",
+      false,
+      [
+       "refused",
+       "refused"
+      ]
+     ],
+     [
+      "cleared, not there",
+      false,
+      [
+       "queued",
+       "queued"
+      ]
+     ],
+     [
+      "cleared with spaces around the id, not there",
+      false,
+      [
+       "queued",
+       "queued"
+      ]
+     ],
+     [
+      "aborted, there",
+      true,
+      [
+       "queued",
+       "queued"
+      ]
+     ],
+     [
+      "all aborted but t",
+      0,
+      [
+       "refused",
+       "refused"
+      ]
+     ],
+     [
+      "all aborted",
+      2,
+      [
+       "queued",
+       "queued"
+      ]
+     ],
+     [
+      "suppressed in c1 only, another id cleared",
+      false,
+      [
+       "refused",
+       "queued"
+      ]
+     ]
+    ],
+    "revision": 18
+   }
+  },
+  "what was pulled is kept under its id alone: of two conversations' wakeups with one id, the later pull hides the earlier, which can never be queued again": {
+   "returned": {
+    "pulled": [
+     [
+      "c1/same"
+     ],
+     [
+      "c2/same"
+     ]
+    ],
+    "acknowledged": [
+     "c2/same"
+    ],
+    "again": [],
+    "c2Queued": 1,
+    "c1Queued": 0,
+    "c1QueuedAfterEverything": 0,
+    "waiting": [
+     "c2/same"
+    ],
+    "c1": []
+   }
+  },
+  "putting back two pulled wakeups keeps the place each first took among the pulled": {
+   "returned": {
+    "all": [
+     "c2/b",
+     "c1/a",
+     "c1/c"
+    ]
+   }
+  },
+  "a later pull of an id takes the earlier one's place among the pulled": {
+   "returned": {
+    "waiting": [
+     true,
+     true
+    ],
+    "all": [
+     "c2/same",
+     "c1/y"
+    ]
+   }
+  },
+  "whether anything waits is asked of every conversation when none is named, else of the one named, whatever it is": {
+   "returned": {
+    "empty": [
+     [
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "c1",
+      false
+     ],
+     [
+      "c2",
+      false
+     ],
+     [
+      "",
+      false
+     ],
+     [
+      null,
+      false
+     ],
+     [
+      "C1",
+      false
+     ],
+     [
+      " c1",
+      false
+     ]
+    ],
+    "queued": [
+     [
+      {
+       "$": "undefined"
+      },
+      true
+     ],
+     [
+      "c1",
+      true
+     ],
+     [
+      "c2",
+      false
+     ],
+     [
+      "",
+      false
+     ],
+     [
+      null,
+      false
+     ],
+     [
+      "C1",
+      false
+     ],
+     [
+      " c1",
+      false
+     ]
+    ],
+    "pulled": [
+     [
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "c1",
+      false
+     ],
+     [
+      "c2",
+      false
+     ],
+     [
+      "",
+      false
+     ],
+     [
+      null,
+      false
+     ],
+     [
+      "C1",
+      false
+     ],
+     [
+      " c1",
+      false
+     ]
+    ]
+   }
+  },
+  "a conversation and an id are remembered as one text: two pairs that make the same text count as one wakeup": {
+   "returned": {
+    "first": 1,
+    "second": 1,
+    "third": 2,
+    "waiting": [
+     true,
+     true
+    ]
+   }
+  },
+  "a wakeup that is not one fails as JavaScript fails, and leaves the queue as it was": {
+   "returned": {
+    "noWakeup": {
+     "threw": "TypeError"
+    },
+    "noId": {
+     "threw": "TypeError"
+    },
+    "anIdThatIsANumber": {
+     "threw": "TypeError"
+    },
+    "noConversation": {
+     "$": "undefined"
+    },
+    "queue": {
+     "revision": 2,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in undefined": false
+    },
+    "theOneWithNoConversation": [
+     {
+      "id": "b",
+      "payload": "no conversation"
+     }
+    ],
+    "c1": [
+     "c1/a"
+    ]
+   }
+  },
+  "a completion is a wakeup of the conversation local, under its task's id, with the completion itself as payload and its kind as source": {
+   "returned": {
+    "answered": {
+     "$": "undefined"
+    },
+    "queue": {
+     "revision": 2,
+     "waiting": true,
+     "waiting in local": true,
+     "waiting in t1": false
+    },
+    "pulled": [
+     {
+      "conversationId": "local",
+      "id": "t1",
+      "payload": {
+       "taskId": " t1 ",
+       "kind": "shell",
+       "exitCode": 0
+      },
+      "source": "shell"
+     },
+     {
+      "conversationId": "local",
+      "id": "t2",
+      "payload": {
+       "taskId": "t2"
+      },
+      "source": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "fields": [
+     [
+      "conversationId",
+      "id",
+      "payload",
+      "source"
+     ],
+     [
+      "conversationId",
+      "id",
+      "payload",
+      "source"
+     ]
+    ],
+    "thePayloadIsTheCompletionGiven": true,
+    "noTask": {
+     "threw": "TypeError"
+    },
+    "noCompletion": {
+     "threw": "TypeError"
+    }
+   }
+  },
+  "draining hands over the payloads of everything that waits, a conversation at a time in the order each first waits, and acknowledges it all": {
+   "returned": {
+    "before": {
+     "revision": 6,
+     "waiting": true,
+     "waiting in c1": true,
+     "waiting in c2": true,
+     "waiting in local": true
+    },
+    "drained": [
+     "c1/a",
+     "c1/c",
+     {
+      "taskId": "t1",
+      "kind": "shell"
+     },
+     {
+      "taskId": "t2",
+      "kind": "subagent"
+     },
+     "c2/b",
+     {
+      "$": "undefined"
+     }
+    ],
+    "after": {
+     "revision": 9,
+     "waiting": false,
+     "waiting in c1": false,
+     "waiting in c2": false,
+     "waiting in local": false
+    },
+    "again": [],
+    "afterNothing": {
+     "revision": 9,
+     "waiting": false
+    },
+    "nothingIsLeftPulled": 0,
+    "queuedAgain": [
+     "a, after the drain"
+    ]
+   }
+  },
+  "draining leaves what was already pulled as it was": {
+   "returned": {
+    "drained": [
+     "c1/b"
+    ],
+    "stillPulled": [
+     "c1/a"
+    ]
+   }
+  },
+  "draining two conversations' wakeups of one id acknowledges the later one only: the earlier one's id can never be queued again": {
+   "returned": {
+    "drained": [
+     "c1/same",
+     "c2/same"
+    ],
+    "c1Queued": 0,
+    "c2Queued": 1,
+    "drainedAgain": [
+     "c2/same"
+    ]
+   }
+  },
+  "a completion that is awaited is kept out of the local conversation: dropped if it waits, refused later, until its work is cleared": {
+   "returned": [
+    [
+     "t1 and t2 complete, and a wakeup of c1 has t1's id",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 3,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "t1 is awaited, with spaces",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 4,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "t1 completes again: refused",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 4,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "an empty id is awaited",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 4,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "t3 is awaited before it completes",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 4,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "t3 completes: refused",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 4,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": true
+     }
+    ],
+    [
+     "drained",
+     {
+      "answered": [
+       {
+        "taskId": "t2",
+        "kind": "shell"
+       },
+       "c1/t1"
+      ],
+      "revision": 6,
+      "waiting": false,
+      "waiting in local": false,
+      "waiting in c1": false
+     }
+    ],
+    [
+     "t1's work is cleared",
+     {
+      "answered": false,
+      "revision": 6,
+      "waiting": false,
+      "waiting in local": false,
+      "waiting in c1": false
+     }
+    ],
+    [
+     "t1 completes: queued",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 7,
+      "waiting": true,
+      "waiting in local": true,
+      "waiting in c1": false
+     }
+    ],
+    [
+     "drained",
+     {
+      "answered": [
+       {
+        "taskId": "t1",
+        "kind": "shell",
+        "again": true
+       }
+      ],
+      "revision": 8,
+      "waiting": false,
+      "waiting in local": false,
+      "waiting in c1": false
+     }
+    ]
+   ]
+  }
+ }
+}
