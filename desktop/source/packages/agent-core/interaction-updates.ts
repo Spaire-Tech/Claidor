@@ -1,3 +1,10 @@
+/**
+ * What a turn reports while it runs, in the plain form: text and thinking as
+ * they come, tool calls as they are written, start and complete, a command's
+ * output, summaries, steps, and the end of the turn with what it used. Each
+ * is the wire's own message (`InteractionUpdate`); `Updates` builds them.
+ */
+import type { PartialMessage } from "@bufbuild/protobuf";
 import {
   ActiveBranchChange,
   FeedbackRequestUpdate,
@@ -24,6 +31,7 @@ import {
   type FeedbackRequestCategoryGroup,
 } from "../proto/generated/agent/v1/agent_pb.js";
 
+/** What a turn used, in tokens. */
 export interface TurnUsage {
   readonly inputTokens: number;
   readonly outputTokens: number;
@@ -32,28 +40,50 @@ export interface TurnUsage {
   readonly reasoningTokens?: number;
 }
 
+/** The words of a request for feedback, where the person's side does not use its own. */
 export interface FeedbackRequestCopy {
   readonly title?: string;
   readonly negativeTitle?: string;
   readonly commentPlaceholder?: string;
 }
 
+/** An update of one kind. */
+function updateWith(content: NonNullable<PartialMessage<InteractionUpdate>["message"]>): InteractionUpdate {
+  return new InteractionUpdate({ message: content });
+}
+
+/**
+ * A turn's usage as the wire counts it, in whole numbers. The counts are
+ * converted in this order, so the first that is no whole number is the one
+ * that fails. Thinking tokens left out count as none.
+ */
+function countsOf(usage: TurnUsage): PartialMessage<TurnEndedUpdate> {
+  return {
+    inputTokens: BigInt(usage.inputTokens),
+    outputTokens: BigInt(usage.outputTokens),
+    cacheReadTokens: BigInt(usage.cacheReadTokens),
+    cacheWriteTokens: BigInt(usage.cacheWriteTokens),
+    reasoningTokens: BigInt(usage.reasoningTokens ?? 0),
+  };
+}
+
+/**
+ * The builders. What a caller leaves out stays out of the message, which
+ * then holds the wire's own default for it. A message handed in (a tool
+ * call, a person's message) is carried as it is.
+ */
 export const Updates = {
   textDelta(text: string): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "textDelta", value: new TextDeltaUpdate({ text }) },
-    });
+    return updateWith({ case: "textDelta", value: new TextDeltaUpdate({ text }) });
   },
   toolCallStarted(
     callId: string,
     toolCall: ToolCallStartedUpdate["toolCall"],
     modelCallId: string,
   ): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "toolCallStarted",
-        value: new ToolCallStartedUpdate({ callId, toolCall: toolCall!, modelCallId }),
-      },
+    return updateWith({
+      case: "toolCallStarted",
+      value: new ToolCallStartedUpdate({ callId, toolCall: toolCall!, modelCallId }),
     });
   },
   toolCallCompleted(
@@ -61,11 +91,9 @@ export const Updates = {
     toolCall: ToolCallCompletedUpdate["toolCall"],
     modelCallId: string,
   ): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "toolCallCompleted",
-        value: new ToolCallCompletedUpdate({ callId, toolCall: toolCall!, modelCallId }),
-      },
+    return updateWith({
+      case: "toolCallCompleted",
+      value: new ToolCallCompletedUpdate({ callId, toolCall: toolCall!, modelCallId }),
     });
   },
   toolCallDelta(
@@ -73,131 +101,78 @@ export const Updates = {
     toolCallDelta: ToolCallDeltaUpdate["toolCallDelta"],
     modelCallId: string,
   ): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "toolCallDelta",
-        value: new ToolCallDeltaUpdate({ callId, toolCallDelta: toolCallDelta!, modelCallId }),
-      },
+    return updateWith({
+      case: "toolCallDelta",
+      value: new ToolCallDeltaUpdate({ callId, toolCallDelta: toolCallDelta!, modelCallId }),
     });
   },
   thinkingDelta(text: string, thinkingStyle: ThinkingDeltaUpdate["thinkingStyle"]): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "thinkingDelta",
-        value: new ThinkingDeltaUpdate({ text, thinkingStyle: thinkingStyle! }),
-      },
+    return updateWith({
+      case: "thinkingDelta",
+      value: new ThinkingDeltaUpdate({ text, thinkingStyle: thinkingStyle! }),
     });
   },
   thinkingCompleted(thinkingDurationMs: number): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "thinkingCompleted",
-        value: new ThinkingCompletedUpdate({ thinkingDurationMs }),
-      },
-    });
+    return updateWith({ case: "thinkingCompleted", value: new ThinkingCompletedUpdate({ thinkingDurationMs }) });
   },
   userMessageAppended(userMessage: UserMessageAppendedUpdate["userMessage"]): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "userMessageAppended",
-        value: new UserMessageAppendedUpdate({ userMessage: userMessage! }),
-      },
+    return updateWith({
+      case: "userMessageAppended",
+      value: new UserMessageAppendedUpdate({ userMessage: userMessage! }),
     });
   },
+  /** A tool call still being written. The piece of its arguments that just came is not given here. */
   partialToolCall(
     callId: string,
     toolCall: PartialToolCallUpdate["toolCall"],
     modelCallId: string,
   ): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "partialToolCall",
-        value: new PartialToolCallUpdate({ callId, toolCall: toolCall!, modelCallId }),
-      },
+    return updateWith({
+      case: "partialToolCall",
+      value: new PartialToolCallUpdate({ callId, toolCall: toolCall!, modelCallId }),
     });
   },
   tokenDelta(tokens: number): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "tokenDelta", value: new TokenDeltaUpdate({ tokens }) },
-    });
+    return updateWith({ case: "tokenDelta", value: new TokenDeltaUpdate({ tokens }) });
   },
   summary(summary: string): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "summary", value: new SummaryUpdate({ summary }) },
-    });
+    return updateWith({ case: "summary", value: new SummaryUpdate({ summary }) });
   },
   summaryStarted(): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "summaryStarted", value: new SummaryStartedUpdate() },
-    });
+    return updateWith({ case: "summaryStarted", value: new SummaryStartedUpdate() });
   },
   heartbeat(): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "heartbeat", value: new HeartbeatUpdate() },
-    });
+    return updateWith({ case: "heartbeat", value: new HeartbeatUpdate() });
   },
   summaryCompleted(hookMessage: SummaryCompletedUpdate["hookMessage"]): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "summaryCompleted",
-        value: new SummaryCompletedUpdate({ hookMessage: hookMessage! }),
-      },
+    return updateWith({
+      case: "summaryCompleted",
+      value: new SummaryCompletedUpdate({ hookMessage: hookMessage! }),
     });
   },
   shellOutputDelta(event: ShellOutputDeltaUpdate["event"]): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "shellOutputDelta",
-        value: new ShellOutputDeltaUpdate({ event }),
-      },
-    });
+    return updateWith({ case: "shellOutputDelta", value: new ShellOutputDeltaUpdate({ event }) });
   },
+  /** The end of the turn. With no usage (or anything else that counts as none) it carries no counts at all. */
   turnEnded(usage?: TurnUsage): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "turnEnded",
-        value: new TurnEndedUpdate(usage ? {
-          inputTokens: BigInt(usage.inputTokens),
-          outputTokens: BigInt(usage.outputTokens),
-          cacheReadTokens: BigInt(usage.cacheReadTokens),
-          cacheWriteTokens: BigInt(usage.cacheWriteTokens),
-          reasoningTokens: BigInt(usage.reasoningTokens ?? 0),
-        } : {}),
-      },
-    });
+    return updateWith({ case: "turnEnded", value: new TurnEndedUpdate(usage ? countsOf(usage) : {}) });
   },
   stepStarted(stepId: number): InteractionUpdate {
-    return new InteractionUpdate({
-      message: { case: "stepStarted", value: new StepStartedUpdate({ stepId: BigInt(stepId) }) },
-    });
+    return updateWith({ case: "stepStarted", value: new StepStartedUpdate({ stepId: BigInt(stepId) }) });
   },
   stepCompleted(stepId: number, stepDurationMs: number): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "stepCompleted",
-        value: new StepCompletedUpdate({
-          stepId: BigInt(stepId),
-          stepDurationMs: BigInt(stepDurationMs),
-        }),
-      },
+    return updateWith({
+      case: "stepCompleted",
+      value: new StepCompletedUpdate({ stepId: BigInt(stepId), stepDurationMs: BigInt(stepDurationMs) }),
     });
   },
   promptSuggestion(suggestion: string): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "promptSuggestion",
-        value: new PromptSuggestionUpdate({ suggestion }),
-      },
-    });
+    return updateWith({ case: "promptSuggestion", value: new PromptSuggestionUpdate({ suggestion }) });
   },
   activeBranchChange(path: string, branchName: string): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "activeBranchChange",
-        value: new ActiveBranchChange({ path, branchName }),
-      },
-    });
+    return updateWith({ case: "activeBranchChange", value: new ActiveBranchChange({ path, branchName }) });
   },
+  /** The categories and the groups are put in lists of the message's own. */
   feedbackRequest(
     requestId: string,
     canonicalModelName: string | undefined,
@@ -205,19 +180,17 @@ export const Updates = {
     categoryGroups: readonly FeedbackRequestCategoryGroup[] = [],
     copy: FeedbackRequestCopy = {},
   ): InteractionUpdate {
-    return new InteractionUpdate({
-      message: {
-        case: "feedbackRequest",
-        value: new FeedbackRequestUpdate({
-          requestId,
-          canonicalModelName: canonicalModelName!,
-          categories: [...categories],
-          categoryGroups: [...categoryGroups],
-          title: copy.title!,
-          negativeTitle: copy.negativeTitle!,
-          commentPlaceholder: copy.commentPlaceholder!,
-        }),
-      },
+    return updateWith({
+      case: "feedbackRequest",
+      value: new FeedbackRequestUpdate({
+        requestId,
+        canonicalModelName: canonicalModelName!,
+        categories: [...categories],
+        categoryGroups: [...categoryGroups],
+        title: copy.title!,
+        negativeTitle: copy.negativeTitle!,
+        commentPlaceholder: copy.commentPlaceholder!,
+      }),
     });
   },
 };
