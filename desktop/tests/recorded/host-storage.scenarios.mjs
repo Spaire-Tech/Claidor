@@ -961,6 +961,28 @@ export const scenarios = [
       return out;
     },
   },
+  {
+    name: "folding a database's log back: a database that will not close is heard of, whatever the answer would have been",
+    run: async ({ storeDb }, tools) => {
+      const dir = await tools.tmp();
+      notesDb(path.join(dir, "sound.db")).close();
+      const logged = notesDb(path.join(dir, "logged.db"), { wal: true });
+      seed(dir, { "words.db": "only words, ".repeat(400), "folder.db": {} });
+      const out = {};
+      for (const name of ["sound.db", "logged.db", "words.db", "folder.db", "missing.db"]) {
+        let closes = 0;
+        // Closing is stood in for: the handle is really closed, and the close then fails.
+        const result = standingIn(DatabaseSync.prototype, "close", (real) => function close() {
+          closes += 1;
+          real.call(this);
+          throw new Error("closing failed");
+        }, () => outcome(() => storeDb.checkpointSandAgentDb(path.join(dir, name), 2), dir));
+        out[name] = { ...result, closesThatFailed: closes };
+      }
+      logged.close();
+      return out;
+    },
+  },
 
   // ----- sqlite-recovery.ts
   {

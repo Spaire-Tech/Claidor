@@ -1791,6 +1791,39 @@
     }
    }
   },
+  "folding a database's log back: a database that will not close is heard of, whatever the answer would have been": {
+   "returned": {
+    "sound.db": {
+     "threw": {
+      "class": "Error",
+      "message": "closing failed"
+     },
+     "closesThatFailed": 1
+    },
+    "logged.db": {
+     "threw": {
+      "class": "Error",
+      "message": "closing failed"
+     },
+     "closesThatFailed": 1
+    },
+    "words.db": {
+     "threw": {
+      "class": "Error",
+      "message": "closing failed"
+     },
+     "closesThatFailed": 1
+    },
+    "folder.db": {
+     "returned": false,
+     "closesThatFailed": 0
+    },
+    "missing.db": {
+     "returned": true,
+     "closesThatFailed": 0
+    }
+   }
+  },
   "the three files beside a database are removed, folders among them, and the database is left": {
    "returned": {
     "first": {
