@@ -1,21 +1,37 @@
+/**
+ * What the coordinator can be asked. The table at the end names every method
+ * it serves, with what the method takes and the shape of what it answers; a
+ * method that is not in the table is refused. Above it are the two transcript
+ * calls, a window of an agent's transcript and one thread of it, with the
+ * checks both ends make of what is asked and what is answered.
+ */
+
+/** One entry of a transcript: which one it is and of what kind. What else it holds is its kind's own. */
 export interface CoordinatorTranscriptEntry {
   readonly id: string;
   readonly kind: string;
   readonly [key: string]: unknown;
 }
 
+/** Asks for a window of the transcript of agent `id`: `limit` entries, those before the place `beforeSeq` when it is given. */
 export interface CoordinatorTranscriptWindowRequest {
   readonly id: string;
   readonly beforeSeq?: number;
   readonly limit?: number;
 }
 
+/**
+ * A window: its entries, the place to ask before for the entries earlier
+ * than these (when there are any), and a count for each thread in it, under
+ * the thread's root.
+ */
 export interface CoordinatorTranscriptWindowResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
   readonly nextBeforeSeq?: number;
   readonly threadCounts: Readonly<Record<string, number>>;
 }
 
+/** Asks for the thread under entry `rootId` in the transcript of agent `id`. */
 export interface CoordinatorAgentThreadRequest {
   readonly id: string;
   readonly rootId: string;
@@ -25,70 +41,118 @@ export interface CoordinatorAgentThreadResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
 }
 
+/** Something with fields: an object that is not a list. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry {
-  return isRecord(value) && typeof value.id === "string" && value.id.length > 0 && typeof value.kind === "string" && value.kind.length > 0;
 }
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
-  if (!isRecord(value) || !Array.isArray(value.entries) || !value.entries.every(isTranscriptEntry) || !isRecord(value.threadCounts)) return null;
-  const threadCounts: Record<string, number> = {};
-  for (const [rootId, count] of Object.entries(value.threadCounts)) {
-    if (rootId.length === 0 || !isFiniteNumber(count)) return null;
-    threadCounts[rootId] = count;
-  }
-  if (value.nextBeforeSeq !== undefined && !isFiniteNumber(value.nextBeforeSeq)) return null;
-  return {
-    entries: value.entries,
-    ...(value.nextBeforeSeq === undefined ? {} : { nextBeforeSeq: value.nextBeforeSeq }),
-    threadCounts,
-  };
+function isWholeNumber(value: unknown): value is number {
+  return Number.isInteger(value);
 }
 
+function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry {
+  return isRecord(value)
+    && typeof value.id === "string"
+    && value.id !== ""
+    && typeof value.kind === "string"
+    && value.kind !== "";
+}
+
+/** Whether a record's `entries` is a list of transcript entries. A gap in the list is not looked at. */
+function holdsEntries(value: Record<string, unknown>): value is Record<string, unknown> & { entries: CoordinatorTranscriptEntry[] } {
+  return Array.isArray(value.entries) && value.entries.every(isTranscriptEntry);
+}
+
+/**
+ * The counts of a window, copied into an object of our own. Null when a
+ * count is not a number or stands under no name.
+ */
+function countsOf(given: Record<string, unknown>): Record<string, number> | null {
+  const counts: Record<string, number> = {};
+  for (const [rootId, count] of Object.entries(given)) {
+    if (rootId === "" || !isFiniteNumber(count)) return null;
+    counts[rootId] = count;
+  }
+  return counts;
+}
+
+/**
+ * A window as it was answered, or null when it is not one. The entries are
+ * handed back as the list they came in; what the answer held besides its
+ * three fields is dropped.
+ */
+export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
+  if (!isRecord(value) || !holdsEntries(value) || !isRecord(value.threadCounts)) return null;
+  const threadCounts = countsOf(value.threadCounts);
+  if (threadCounts === null) return null;
+  if (value.nextBeforeSeq !== undefined && !isFiniteNumber(value.nextBeforeSeq)) return null;
+  const entries = value.entries;
+  if (value.nextBeforeSeq === undefined) return { entries, threadCounts };
+  return { entries, nextBeforeSeq: value.nextBeforeSeq, threadCounts };
+}
+
+/**
+ * A request for a window, or null when it is not one: it needs an id, the
+ * place to read before must be a whole number, and the limit a number.
+ */
 export function parseCoordinatorTranscriptWindowRequest(value: unknown): CoordinatorTranscriptWindowRequest | null {
   if (!isRecord(value)) return null;
-  const id = value.id;
-  const beforeSeq = value.beforeSeq;
-  const limit = value.limit;
-  if (typeof id !== "string" || id.length === 0) return null;
-  if (beforeSeq !== undefined && (!isFiniteNumber(beforeSeq) || !Number.isInteger(beforeSeq))) return null;
+  const { id, beforeSeq, limit } = value;
+  if (typeof id !== "string" || id === "") return null;
+  if (beforeSeq !== undefined && !isWholeNumber(beforeSeq)) return null;
   if (limit !== undefined && !isFiniteNumber(limit)) return null;
-  return {
-    id,
-    ...(beforeSeq === undefined ? {} : { beforeSeq }),
-    ...(limit === undefined ? {} : { limit }),
-  };
+  const request: { id: string; beforeSeq?: number; limit?: number } = { id };
+  if (beforeSeq !== undefined) request.beforeSeq = beforeSeq;
+  if (limit !== undefined) request.limit = limit;
+  return request;
 }
 
+/** A thread as it was answered, or null when it is not one. The entries are handed back as the list they came in. */
 export function parseCoordinatorAgentThreadResponse(value: unknown): CoordinatorAgentThreadResponse | null {
-  return isRecord(value) && Array.isArray(value.entries) && value.entries.every(isTranscriptEntry)
-    ? { entries: value.entries }
-    : null;
+  if (!isRecord(value) || !holdsEntries(value)) return null;
+  return { entries: value.entries };
 }
 
+/** A request for a thread, or null when it is not one: it needs an id and a root. */
 export function parseCoordinatorAgentThreadRequest(value: unknown): CoordinatorAgentThreadRequest | null {
-  return isRecord(value) && typeof value.id === "string" && value.id.length > 0 && typeof value.rootId === "string" && value.rootId.length > 0
-    ? { id: value.id, rootId: value.rootId }
-    : null;
+  if (!isRecord(value)) return null;
+  if (typeof value.id !== "string" || value.id === "") return null;
+  if (typeof value.rootId !== "string" || value.rootId === "") return null;
+  return { id: value.id, rootId: value.rootId };
 }
 
+/** The replies that are read through before they are handed on: what reads each, and what is said when it cannot. */
+const CHECKED_REPLIES = new Map<string, { readonly read: (value: unknown) => unknown; readonly refusal: string }>([
+  ["getAgentTranscriptWindow", {
+    read: parseCoordinatorTranscriptWindowResponse,
+    refusal: "getAgentTranscriptWindow returned a malformed transcript window",
+  }],
+  ["getAgentThread", {
+    read: parseCoordinatorAgentThreadResponse,
+    refusal: "getAgentThread returned a malformed agent thread",
+  }],
+]);
+
+/**
+ * A method's reply, as it came, once it has been read through. Only the two
+ * transcript calls are checked; any other method's reply passes as it is.
+ */
 export function validateCoordinatorReply(method: string, value: unknown): unknown {
-  if (method === "getAgentTranscriptWindow" && parseCoordinatorTranscriptWindowResponse(value) == null) {
-    throw new Error("getAgentTranscriptWindow returned a malformed transcript window");
-  }
-  if (method === "getAgentThread" && parseCoordinatorAgentThreadResponse(value) == null) {
-    throw new Error("getAgentThread returned a malformed agent thread");
-  }
+  const check = CHECKED_REPLIES.get(method);
+  if (check !== undefined && check.read(value) === null) throw new Error(check.refusal);
   return value;
 }
 
+/**
+ * Every method the coordinator serves. `args` says whether the method takes
+ * an object or nothing; `reply` names the shape of its answer. The order of
+ * the rows is the order the methods are listed in wherever the table is
+ * walked.
+ */
 export const COORDINATOR_METHOD_TABLE = {
   getAgentTranscriptWindow: { args: "object", reply: "transcript-window" },
   getAgentThread: { args: "object", reply: "agent-thread" },
@@ -104,25 +168,26 @@ export const COORDINATOR_METHOD_TABLE = {
   reactToMessage: { args: "object", reply: "void" },
   sendDraft: { args: "object", reply: "record-or-null" },
   discardDraft: { args: "object", reply: "record-or-null" },
-  // The checkout card's Allow and Deny (13 October 2026, `purchase-cards.ts`).
+  // Allow and Deny on the checkout card (`purchase-cards.ts`, 13 October 2026).
   answerPurchase: { args: "object", reply: "record-or-null" },
-  // Buy on the products card (14 October 2026, `purchase-cards.ts`).
+  // Buy on the products card (`purchase-cards.ts`, 14 October 2026).
   buyProduct: { args: "object", reply: "record-or-null" },
-  // Booking a flight (13 October 2026, `flight-bookings.ts`): `{ ok, entryId }` or `{ ok: false, message }`.
+  // A flight booking (`flight-bookings.ts`, 13 October 2026). Answers `{ ok, entryId }`, or `{ ok: false, message }`.
   startFlightBooking: { args: "object", reply: "record" },
   submitFlightPassengers: { args: "object", reply: "record" },
-  // The in-chat form (28 October 2026, `user-forms.ts`): `{ ok }` or `{ ok: false, message, field? }`; `{ accepted }`.
+  // The form in the chat (`user-forms.ts`, 28 October 2026). Submitting answers `{ ok }`, or
+  // `{ ok: false, message, field? }`; dismissing answers `{ accepted }`.
   submitUserForm: { args: "object", reply: "record" },
   dismissUserForm: { args: "object", reply: "record" },
-  // The 1Password cards (28 October 2026, `onepassword-cards.ts`).
+  // The 1Password cards (`onepassword-cards.ts`, 28 October 2026).
   answerCredentialRequest: { args: "object", reply: "record" },
   connectOnePassword: { args: "object", reply: "record" },
   dismissOnePasswordConnect: { args: "object", reply: "record" },
-  // The Credentials Store's card (9 November 2026, `store-cards.ts`): `{ accepted }`.
+  // The card of the Credentials Store (`store-cards.ts`, 9 November 2026). Answers `{ accepted }`.
   answerStoreEntry: { args: "object", reply: "record" },
   appendConnectorCard: { args: "object", reply: "void" },
   appendSendMessage: { args: "object", reply: "record" },
-  // The voice channel (1 October 2026): a call opens, relays to, reads and ends here.
+  // The voice channel (1 October 2026): this one method opens a call, relays to it, reads it and ends it.
   voiceCall: { args: "object", reply: "record" },
   searchPlugins: { args: "object", reply: "string" },
   getPlugin: { args: "object", reply: "string" },
@@ -138,13 +203,14 @@ export const COORDINATOR_METHOD_TABLE = {
   deleteAgents: { args: "object", reply: "record" },
   duplicateAgent: { args: "object", reply: "record" },
   kickstartAgent: { args: "object", reply: "record-or-null" },
-  // The name the person gave, read again from the server (`{ name }`; 29 October 2026, the first run).
+  // Reads the person's name again from the server, for the first run (29 October 2026). Answers `{ name }`.
   refreshUserName: { args: "none", reply: "record" },
   requestDiskSaverAudit: { args: "object", reply: "record-or-null" },
   broadcastToAgents: { args: "object", reply: "record" },
   getCloudAgentInfo: { args: "object", reply: "record-or-null" },
   getCloudAgentConversation: { args: "object", reply: "record-or-null" },
-  // The chat's Connect GitHub card: the sign-in on the computer (11 November 2026, `cloud-agents/coding-github.ts`).
+  // The sign-in on the computer behind the chat's Connect GitHub card (`cloud-agents/coding-github.ts`,
+  // 11 November 2026).
   getGitHubSignIn: { args: "none", reply: "record" },
   getCursorSignIn: { args: "none", reply: "record" },
   startCursorSignIn: { args: "none", reply: "record" },
@@ -194,9 +260,8 @@ export const COORDINATOR_METHOD_TABLE = {
   refreshChannel: { args: "object", reply: "channels-view" },
   getBoxSecretsStatus: { args: "none", reply: "box-secrets" },
   getAgentAutomations: { args: "object", reply: "array" },
-  // The host's memory commands, reachable from the Mac since 25 September
-  // 2026 (design-audit-ledger.md F-064); the pinned renderer's use of them
-  // is not measured.
+  // The host's memory commands. The Mac has reached them since 25 September 2026 (design-audit-ledger.md,
+  // F-064); whether the pinned window calls them was never measured.
   getAgentMemories: { args: "object", reply: "array" },
   deleteAgentMemory: { args: "object", reply: "boolean" },
   clearAgentMemories: { args: "object", reply: "void" },
@@ -218,7 +283,7 @@ export const COORDINATOR_METHOD_TABLE = {
   createAgentAutomation: { args: "object", reply: "array" },
   updateAgentAutomation: { args: "object", reply: "array" },
   deleteAgentAutomation: { args: "object", reply: "array" },
-  runAgentAutomationNow: { args: "object", reply: "void" }
+  runAgentAutomationNow: { args: "object", reply: "void" },
 } as const;
 
 export type CoordinatorMethod = keyof typeof COORDINATOR_METHOD_TABLE;
