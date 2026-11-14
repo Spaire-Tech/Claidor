@@ -74,8 +74,8 @@ SOLUTION_GROUPS = (
     ("Your role", ("founders", "freelancers", "creators", "sales", "recruiters", "life")),
 )
 # Each team's icon in the Solutions menu (the founder, 14 November 2026, two of another site's for reference: "can we
-# use something else. kinda like stripe"): flat overlapping shapes in three colours, drawn on a 24-point square.
-B, P, T = "#3b4cf0", "#9a6dff", "#3fdcd4"   # blue, purple, teal
+# use something else. kinda like stripe"): flat overlapping shapes, drawn on a 24-point square, in three light blues.
+B, P, T = "#4a9dff", "#8cc4ff", "#c4e2ff"   # light blues: the body, the second shape, the highlight (the founder: "make it light blue")
 SOLUTION_ICONS = {
     "coffee-shop": f'<rect x="3.5" y="9" width="12.5" height="12" rx="2.6" fill="{B}"/><path d="M16 11.2h1.6a3 3 0 0 1 0 6H16" fill="none" stroke="{P}" stroke-width="2.3"/><rect x="6.6" y="2.5" width="2.2" height="5" rx="1.1" fill="{T}"/><rect x="10.8" y="2.5" width="2.2" height="5" rx="1.1" fill="{T}"/>',
     "online-stores": f'<path d="M4.5 8h15l-1.1 12.2A2 2 0 0 1 16.4 22H7.6a2 2 0 0 1-2-1.8z" fill="{B}"/><path d="M8.8 9.5V7a3.2 3.2 0 0 1 6.4 0v2.5" fill="none" stroke="{T}" stroke-width="2.1" stroke-linecap="round"/><circle cx="12" cy="15.2" r="2.7" fill="{P}"/>',
