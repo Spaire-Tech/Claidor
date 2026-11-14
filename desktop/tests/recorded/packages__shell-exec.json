@@ -17177,22 +17177,22 @@
    "returned": {
     "nothing set": {
      "readsWith": [
-      "parser-beside-the-built-part language-beside-the-built-part probe"
+      "parser-near-the-part language-near-the-part probe"
      ]
     },
     "the packages' folder set to blanks": {
      "readsWith": [
-      "parser-beside-the-built-part language-beside-the-built-part probe"
+      "parser-near-the-part language-near-the-part probe"
      ]
     },
     "packaged set to something other than 1": {
      "readsWith": [
-      "parser-beside-the-built-part language-beside-the-built-part probe"
+      "parser-near-the-part language-near-the-part probe"
      ]
     },
     "packaged set to 0, on Electron": {
      "readsWith": [
-      "parser-beside-the-built-part language-beside-the-built-part probe"
+      "parser-near-the-part language-near-the-part probe"
      ]
     }
    }
@@ -17632,49 +17632,37 @@
   },
   "a packaged Node run with no folder set looks in node-deps beside the folder its code is in": {
    "returned": {
-    "the code's folder is known to it (as in the built engine)": {
-     "readsWith": [
-      "parser-in-node-deps language-in-node-deps probe"
-     ]
-    },
-    "the code's folder is deeper": {
+    "nothing staged there": {
      "refused": {
       "name": "Error",
-      "message": "shell-parser: cannot load tree-sitter from the node dist/node-deps runtime domain (searched <tmp>/dist/node-deps). The ABI-specific tree-sitter packages are missing or incompatible; rebuild and stage the matching runtime, and refusing cross-ABI fallback.",
+      "message": "shell-parser: cannot load tree-sitter from the node dist/node-deps runtime domain (searched <the folder above the part's own>/node-deps). The ABI-specific tree-sitter packages are missing or incompatible; rebuild and stage the matching runtime, and refusing cross-ABI fallback.",
       "fields": {
        "code": "SAND_TREE_SITTER_RUNTIME_UNAVAILABLE",
        "dependency": "tree-sitter",
        "domain": "node dist/node-deps",
        "roots": [
-        "<tmp>/dist/node-deps"
+        "<the folder above the part's own>/node-deps"
        ],
        "cause": {
         "$": "undefined"
        }
       }
      }
+    },
+    "both packages staged there": {
+     "readsWith": [
+      "parser-in-node-deps language-in-node-deps probe"
+     ]
     },
     "blanks for the folder count as not set": {
      "readsWith": [
       "parser-in-node-deps language-in-node-deps probe"
      ]
     },
-    "the code's folder is read from the file's own address": {
-     "refused": {
-      "name": "Error",
-      "message": "shell-parser: cannot load tree-sitter from the node dist/node-deps runtime domain (searched <above the built part's folder>/node-deps). The ABI-specific tree-sitter packages are missing or incompatible; rebuild and stage the matching runtime, and refusing cross-ABI fallback.",
-      "fields": {
-       "code": "SAND_TREE_SITTER_RUNTIME_UNAVAILABLE",
-       "dependency": "tree-sitter",
-       "domain": "node dist/node-deps",
-       "roots": [
-        "<above the built part's folder>/node-deps"
-       ],
-       "cause": {
-        "$": "undefined"
-       }
-      }
-     }
+    "a run that is not packaged does not look there: it reads with the real packages, found Node's way": {
+     "readsWith": [
+      "probe"
+     ]
     }
    }
   },
@@ -17797,87 +17785,6 @@
        }
       }
      }
-    }
-   }
-  },
-  "built as CommonJS, the part finds its packages from its file's own name and folder, and a missing one gives Node's own error": {
-   "returned": {
-    "with no address of its own": {
-     "developer run": {
-      "readsWith": [
-       "parser-above-the-file language-above-the-file probe"
-      ]
-     },
-     "developer run with the packages nowhere above the file": {
-      "refused": {
-       "name": "Error",
-       "message": "Cannot find module 'tree-sitter'\nRequire stack:\n- <a folder with no packages>/copy-0-plain.cjs",
-       "fields": {
-        "code": "MODULE_NOT_FOUND",
-        "requireStack": [
-         "<a folder with no packages>/copy-0-plain.cjs"
-        ]
-       }
-      }
-     },
-     "packaged Node run": {
-      "readsWith": [
-       "parser-in-node-deps language-in-node-deps probe"
-      ]
-     },
-     "packaged Node run with a folder set": {
-      "readsWith": [
-       "parser-in-the-set-folder language-in-the-set-folder probe"
-      ]
-     }
-    },
-    "with the address the engine's build gives it": {
-     "developer run": {
-      "readsWith": [
-       "parser-above-the-file language-above-the-file probe"
-      ]
-     },
-     "developer run with the packages nowhere above the file": {
-      "refused": {
-       "name": "Error",
-       "message": "Cannot find module 'tree-sitter'\nRequire stack:\n- <a folder with no packages>/copy-1-plain.cjs",
-       "fields": {
-        "code": "MODULE_NOT_FOUND",
-        "requireStack": [
-         "<a folder with no packages>/copy-1-plain.cjs"
-        ]
-       }
-      }
-     },
-     "packaged Node run": {
-      "readsWith": [
-       "parser-in-node-deps language-in-node-deps probe"
-      ]
-     },
-     "packaged Node run with a folder set": {
-      "readsWith": [
-       "parser-in-the-set-folder language-in-the-set-folder probe"
-      ]
-     }
-    }
-   }
-  },
-  "run with no file of its own, the part looks for its packages from the working folder, and a packaged Node run cannot start": {
-   "returned": {
-    "developer run": {
-     "readsWith": [
-      "parser-in-working-folder language-in-working-folder probe"
-     ]
-    },
-    "packaged Node run with a folder set": {
-     "readsWith": [
-      "parser-in-the-set-folder language-in-the-set-folder probe"
-     ]
-    },
-    "packaged Node run with no folder set": {
-     "name": "TypeError",
-     "code": "ERR_INVALID_ARG_TYPE",
-     "message": "The \"path\" argument must be of type string or an instance of URL. Received undefined"
     }
    }
   }

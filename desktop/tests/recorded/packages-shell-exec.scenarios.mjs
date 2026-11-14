@@ -11,21 +11,45 @@
  * for the parser package, written into a temporary folder: it turns a tree
  * written as JSON into nodes, so any shape of tree can be handed over.
  */
+import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
+import Module, { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { build } from "esbuild";
-import { desktopRoot, sourceRoot } from "./harness.mjs";
+import { fileURLToPath } from "node:url";
 
 export const part = "packages/shell-exec";
 export const modules = { parser: "source/packages/shell-exec/shell-parser.ts" };
 
-// The test builds the parser into a temporary folder, away from the checkout's packages. The part reads this
-// setting as "look for the parser's packages here" in a developer or test run, so the real ones are found.
-process.env.SAND_TREE_SITTER_NODE_DEPS = path.join(desktopRoot, "node_modules");
-
 const requireHere = createRequire(import.meta.url);
+/** The checkout's own packages, where the real parser is. */
+const checkoutPackages = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "node_modules");
+
+/**
+ * The real parser's two packages, made findable by the part as the test loads it.
+ *
+ * The part is loaded from a temporary folder with the machine's settings
+ * taken away. It then looks for the two packages as a developer run does,
+ * the way Node looks from the part's own file, and from a temporary folder
+ * Node finds nothing: the part could not even be loaded. So Node is given one
+ * more place to look in after all its own, for as long as the test runs: a
+ * folder that holds links to those two packages and to nothing else. Nothing
+ * but a file that asks for one of the two by name, and has none nearer, is
+ * answered differently for it.
+ *
+ * Node makes its list of such places once, when it starts, from NODE_PATH;
+ * `_initPaths` is Node's own function for making it again.
+ */
+const realPackages = mkdtempSync(path.join(os.tmpdir(), "simeon-recorded-parser-"));
+for (const name of ["tree-sitter", "tree-sitter-bash"]) symlinkSync(path.join(checkoutPackages, name), path.join(realPackages, name), "junction");
+process.once("exit", () => rmSync(realPackages, { recursive: true, force: true }));
+{
+  const given = process.env.NODE_PATH;
+  process.env.NODE_PATH = [given, realPackages].filter(Boolean).join(path.delimiter);
+  Module._initPaths();
+  if (given === undefined) delete process.env.NODE_PATH;
+  else process.env.NODE_PATH = given;
+}
 
 /**
  * `run`, with every list of children the real parser hands out while it goes
@@ -41,7 +65,7 @@ const requireHere = createRequire(import.meta.url);
  * reclaim comes in between, which is nearly always.
  */
 function nodesHeld(run) {
-  const kind = requireHere(path.join(desktopRoot, "node_modules", "tree-sitter")).SyntaxNode.prototype;
+  const kind = requireHere(path.join(checkoutPackages, "tree-sitter")).SyntaxNode.prototype;
   const own = Object.getOwnPropertyDescriptor(kind, "children");
   const held = [];
   Object.defineProperty(kind, "children", {
@@ -65,31 +89,13 @@ const reader = (parser) => (...given) => nodesHeld(() => parser.analyzeShellComm
 /** Each command line with what the part says of it. */
 const read = (parser, commands) => commands.map((command) => ({ command, ...reader(parser)(command) }));
 
-/**
- * The file the test built the part into. A module can only be loaded again by
- * its address, and the test does not hand that over: it is read from where a
- * call into the part comes from (the parser asks a command given as a
- * function for its text, and that call's trail names the file).
- */
-function builtFile(parser) {
-  let trail = "";
-  parser.analyzeShellCommand(() => {
-    trail = new Error("where from").stack ?? "";
-    return null;
-  });
-  const found = /(file:\/\/\S*\/parser\.mjs)\?/.exec(trail);
-  if (found === null) throw new Error(`the built parser is not in the trail of a call into it:\n${trail}`);
-  return fileURLToPath(found[1]);
-}
-
 /** The process dressed as one of the places the engine runs, for as long as `run` takes, then put back as it was. */
-async function dressedAs({ packaged, deps, electron, resources, dirname }, run) {
+async function dressedAs({ packaged, deps, electron, resources }, run) {
   const kept = {
     packaged: process.env.SAND_PACKAGED,
     deps: process.env.SAND_TREE_SITTER_NODE_DEPS,
     electron: Object.getOwnPropertyDescriptor(process.versions, "electron"),
     resources: Object.getOwnPropertyDescriptor(process, "resourcesPath"),
-    dirname: Object.getOwnPropertyDescriptor(globalThis, "__dirname"),
   };
   const setEnv = (name, value) => {
     if (value === undefined) delete process.env[name];
@@ -107,7 +113,6 @@ async function dressedAs({ packaged, deps, electron, resources, dirname }, run) 
   setEnv("SAND_TREE_SITTER_NODE_DEPS", deps);
   setOwn(process.versions, "electron", electron);
   setOwn(process, "resourcesPath", resources);
-  setOwn(globalThis, "__dirname", dirname);
   try {
     return await run();
   } finally {
@@ -115,16 +120,13 @@ async function dressedAs({ packaged, deps, electron, resources, dirname }, run) 
     setEnv("SAND_TREE_SITTER_NODE_DEPS", kept.deps);
     putBack(process.versions, "electron", kept.electron);
     putBack(process, "resourcesPath", kept.resources);
-    putBack(globalThis, "__dirname", kept.dirname);
   }
 }
 
-let loads = 0;
-/** The part loaded once more as a fresh copy, in the place described: what it does while loading depends on where it runs. */
-function loadedAgain(parser, where) {
-  const built = builtFile(parser);
-  loads += 1;
-  return dressedAs(where, () => import(`${pathToFileURL(built).href}?again=${Date.now()}-${loads}`));
+/** The part loaded once more by the test's own tool, in the place described: what it does while loading depends on where it runs. */
+async function loadedIn(tools, where) {
+  const fresh = await dressedAs(where, () => tools.fresh());
+  return fresh.parser;
 }
 
 /** The stand-in for the parser package (`tree-sitter`). */
@@ -257,9 +259,9 @@ async function stage(root, { parser = {}, language = {} } = {}) {
 }
 
 /** The part loaded afresh onto stand-in packages staged in a temporary folder, with what the stand-in parser saw. */
-async function onStandIn(parser, tools, settings = {}) {
+async function onStandIn(tools, settings = {}) {
   const root = await stage(await tools.tmp(), settings);
-  const again = await loadedAgain(parser, { deps: root });
+  const again = await loadedIn(tools, { deps: root });
   return { again, root, seen: requireHere(path.join(root, "tree-sitter")).seen, language: requireHere(path.join(root, "tree-sitter-bash")) };
 }
 
@@ -301,27 +303,23 @@ async function tried(load, tools, names) {
   }
 }
 
-/** The part loaded afresh in the place described. */
-const loading = (parser, tools, where, names) => tried(() => loadedAgain(parser, where), tools, names);
+/** The part loaded afresh in the place described: the copies it reads with, or the error loading it gave. */
+const loading = (tools, where, names) => tried(() => loadedIn(tools, where), tools, names);
 
 /**
- * The part built as the engine's own builds are, as CommonJS, where a file
- * knows its name and folder but has no address of the module kind unless
- * the build gives it one (`ownAddress`, as the engine's main build does).
+ * Where the test's fresh loads of the part sit on disk: each in a folder of
+ * its own, all under one folder. The part itself tells it: a packaged Node
+ * run with no folder set, and nothing staged, names `node-deps` beside the
+ * folder its code is in.
  */
-async function builtAsCommonJs({ ownAddress = false } = {}) {
-  const { outputFiles } = await build({
-    entryPoints: [path.join(sourceRoot(), modules.parser)],
-    bundle: true,
-    write: false,
-    format: "cjs",
-    platform: "node",
-    target: "node22",
-    logLevel: "silent",
-    nodePaths: [path.join(desktopRoot, "node_modules")],
-    ...(ownAddress ? { banner: { js: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;' }, define: { "import.meta.url": "__import_meta_url" } } : {}),
-  });
-  return outputFiles[0].text;
+async function folderAboveAFreshLoad(tools) {
+  try {
+    await loadedIn(tools, { packaged: "1" });
+  } catch (error) {
+    if (Array.isArray(error?.roots) && error.roots.length === 1) return path.dirname(error.roots[0]);
+    throw error;
+  }
+  throw new Error("a packaged Node run with nothing staged loaded all the same");
 }
 
 /** What `run` threw, kept as a value, or "nothing thrown". */
@@ -828,7 +826,7 @@ export const scenarios = [
   {
     name: "one parser is made on the first reading, given the language once, and asked for each command with the command alone",
     run: async ({ parser }, tools) => {
-      const { again, seen, language } = await onStandIn(parser, tools);
+      const { again, seen, language } = await onStandIn(tools);
       const before = { made: seen.made.length, languages: seen.languages.length, parsed: seen.parsed.length };
       const answers = [again.analyzeShellCommand("one"), again.analyzeShellCommand("two", "ignored"), again.analyzeShellCommand("")];
       return {
@@ -852,7 +850,7 @@ export const scenarios = [
       };
       const out = {};
       for (const [about, settings] of Object.entries(cases)) {
-        const { again, seen } = await onStandIn(parser, tools, { parser: settings });
+        const { again, seen } = await onStandIn(tools, { parser: settings });
         const first = warningsDuring(() => again.analyzeShellCommand("ls > out"));
         const second = warningsDuring(() => again.analyzeShellCommand("echo $(date)"));
         const [one, two] = [first.result, second.result];
@@ -881,7 +879,7 @@ export const scenarios = [
       };
       const out = {};
       for (const [about, settings] of Object.entries(cases)) {
-        const { again, seen } = await onStandIn(parser, tools, { parser: settings });
+        const { again, seen } = await onStandIn(tools, { parser: settings });
         const tries = warningsDuring(() => [thrownBy(() => again.analyzeShellCommand("ls")), thrownBy(() => again.analyzeShellCommand("ls"))]);
         out[about] = { thrown: tries.result, said: tries.said, made: seen.made.length, languages: seen.languages.length, parsed: seen.parsed.length };
       }
@@ -891,7 +889,7 @@ export const scenarios = [
   {
     name: "a command with no name marks the reading as failed, and the commands around it are still listed",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       return readTrees(again, [
         { about: "a command holding only an argument, then a whole one", tree: program(node("command", "orphan", [named("argument", word("orphan"))]), command("ls", "-la")) },
         { about: "a command with nothing in it", tree: program(node("command")) },
@@ -904,7 +902,7 @@ export const scenarios = [
   {
     name: "a command name outside a command, and an older grammar's simple_command, are added to the names only",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const name = (text) => node("command_name", text);
       const simple = (text, ...children) => node("simple_command", text, children);
       return readTrees(again, [
@@ -921,7 +919,7 @@ export const scenarios = [
   {
     name: "a redirection is read once, where it is first met, even in a tree that lists it twice",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const twice = { again: true };
       const toFile = redirect("> out", sign(">"), word("out"));
       const toNowhere = redirect("> /dev/null", sign(">"), word("/dev/null"));
@@ -940,7 +938,7 @@ export const scenarios = [
   {
     name: "a parser that hands out a new object for a node each time it is asked makes every redirection be read a second time, on its own",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const statement = (...children) => node("redirected_statement", "", children);
       const toNowhere = redirect("> /dev/null", sign(">"), word("/dev/null"));
       const errorToOutput = redirect("2>&1", descriptor("2"), sign(">&"), node("number", "1"));
@@ -967,7 +965,7 @@ export const scenarios = [
   {
     name: "kinds of redirection only other grammars have are counted, never safe, and their text is searched for signs",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const under = (...children) => program(node("redirected_statement", "", [named("body", command("cat")), ...children]));
       return readTrees(again, [
         { about: "heredoc", tree: under(node("heredoc", "<<EOF\nhi\nEOF")) },
@@ -984,7 +982,7 @@ export const scenarios = [
   {
     name: "which texts count as an input redirection and which as an output one",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const texts = [
         "", "abc", "<", "<<", "<<<", "<<<<", "3<", "33<<", " <", "\t<", "\n<", "\u00a0<", "a<", "a <b", "a3<b", "a 3<b", "-<", "3 <", "<3", "x<<y", "x <<y", "<&3", "<>",
         ">", ">>", ">>>", "2>", "2>>", "22>>", " >", "\t>", "\n>", "\u00a0>", "a>", "a >b", "a2>b", "a 2>b", "->", "2 >", ">2", ">|", ">&", ">&-", "2>&1", "a2>&1", "a 2>&1", "12>&34",
@@ -999,7 +997,7 @@ export const scenarios = [
   {
     name: "a tree whose top is itself a redirection is read too, from the standard descriptors",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       return readTrees(again, [
         { about: "a file redirection to /dev/null", tree: redirect("> /dev/null", sign(">"), word("/dev/null")) },
         { about: "a copy of standard output", tree: redirect("2>&1", descriptor("2"), sign(">&"), node("number", "1")) },
@@ -1013,7 +1011,7 @@ export const scenarios = [
   {
     name: "every operator of a file redirection, with and without a descriptor, and signs that are not operators",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const signs = ["<", ">", ">>", ">|", "<>", "<&", ">&", "&>", "&>>", ">&-", "<&-", "<<", "<<<", "|", "&", ">>>", "1>"];
       const one = (...children) => {
         const { redirects, hasRedirects, allRedirectsAreDevNull } = again.analyzeShellCommand(JSON.stringify(program(redirect("", ...children)))).structured;
@@ -1031,7 +1029,7 @@ export const scenarios = [
   {
     name: "a redirection's target is the first thing after the operator that is no comment, whatever it is",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const to = (...after) => program(redirect("> x", sign(">"), ...after));
       const comment = node("comment", "# c");
       return readTrees(again, [
@@ -1051,7 +1049,7 @@ export const scenarios = [
   {
     name: "a target's plain text by its kind: words, numbers, both kinds of quotes, and everything else has none",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const to = (target) => program(redirect("> x", sign(">"), target));
       const content = (text) => node("string_content", text);
       const quote = sign("\"");
@@ -1088,7 +1086,7 @@ export const scenarios = [
   {
     name: "a descriptor is read from the first file_descriptor that is all digits; anything else falls back to the operator's own",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const out = (...before) => program(redirect("", ...before, sign(">"), word("out")));
       const into = (...before) => program(redirect("", ...before, sign("<"), word("in")));
       return readTrees(again, [
@@ -1114,7 +1112,7 @@ export const scenarios = [
   {
     name: "copies between descriptors follow what each one points at, one redirection after the other",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const copy = (from, to, operator = ">&", kind = "number") => redirect("", ...(from === undefined ? [] : [descriptor(from)]), sign(operator), node(kind, to));
       const file = (from, target, operator = ">") => redirect("", ...(from === undefined ? [] : [descriptor(from)]), sign(operator), word(target));
       const under = (...redirects) => program(node("redirected_statement", "", [named("body", command("cmd")), ...redirects]));
@@ -1155,7 +1153,7 @@ export const scenarios = [
   {
     name: "a here-document is safe only under a redirected statement whose first command has a name, and outside any bare substitution",
     run: async ({ parser }, tools) => {
-      const { again } = await onStandIn(parser, tools);
+      const { again } = await onStandIn(tools);
       const doc = node("heredoc_redirect", "<<EOF\nhi\nEOF");
       const statement = (...children) => node("redirected_statement", "", children);
       const substitution = (...children) => node("command_substitution", "$(...)", children);
@@ -1179,19 +1177,17 @@ export const scenarios = [
   },
   {
     name: "in a developer run the parser's packages are looked for the way Node looks from the part's own file",
-    run: async ({ parser }, tools) => {
-      const built = builtFile(parser);
-      const beside = path.join(path.dirname(built), "node_modules");
-      const names = { [built]: "<the built part>" };
-      // Beside the built part is the first place Node looks from it. The same two stand-ins are put there each time:
-      // Node remembers what it found at a path, so anything else would answer differently the second time it is asked.
-      await stage(beside, { parser: { label: "parser-beside-the-built-part" }, language: { label: "language-beside-the-built-part" } });
+    run: async (_modules, tools) => {
+      // The folder above a fresh load's own is the nearest place Node looks from it that can be filled before it is loaded.
+      const beside = path.join(await folderAboveAFreshLoad(tools), "node_modules");
+      // The same two stand-ins each time: Node remembers what it loaded from a path, so others would answer differently the second time.
+      await stage(beside, { parser: { label: "parser-near-the-part" }, language: { label: "language-near-the-part" } });
       try {
         return {
-          "nothing set": await loading(parser, tools, {}, names),
-          "the packages' folder set to blanks": await loading(parser, tools, { deps: "   " }, names),
-          "packaged set to something other than 1": await loading(parser, tools, { packaged: "true" }, names),
-          "packaged set to 0, on Electron": await loading(parser, tools, { packaged: "0", electron: "42.1.0", resources: path.join(await tools.tmp(), "resources") }, names),
+          "nothing set": await loading(tools, {}, {}),
+          "the packages' folder set to blanks": await loading(tools, { deps: "   " }, {}),
+          "packaged set to something other than 1": await loading(tools, { packaged: "true" }, {}),
+          "packaged set to 0, on Electron": await loading(tools, { packaged: "0", electron: "42.1.0", resources: path.join(await tools.tmp(), "resources") }, {}),
         };
       } finally {
         await rm(beside, { recursive: true, force: true });
@@ -1213,17 +1209,17 @@ export const scenarios = [
       const out = {};
       for (const [place, packaged] of [["developer", undefined], ["packaged Node", "1"]]) {
         out[place] = {
-          "both packages there": await loading(parser, tools, { packaged, deps: whole }, names),
-          "blanks around the folder's name": await loading(parser, tools, { packaged, deps: `  ${whole}\t` }, names),
-          "a folder that is not there": await loading(parser, tools, { packaged, deps: path.join(tmp, "absent") }, names),
-          "an empty folder": await loading(parser, tools, { packaged, deps: empty }, names),
-          "the language package missing": await loading(parser, tools, { packaged, deps: noLanguage }, names),
-          "the parser package missing": await loading(parser, tools, { packaged, deps: noParser }, names),
-          "the parser package's folder there without its package.json": await loading(parser, tools, { packaged, deps: noDescription }, names),
-          "a name that is not a whole path is read from the working folder": await loading(parser, tools, { packaged, deps: "no-such-folder/deps" }, names),
+          "both packages there": await loading(tools, { packaged, deps: whole }, names),
+          "blanks around the folder's name": await loading(tools, { packaged, deps: `  ${whole}\t` }, names),
+          "a folder that is not there": await loading(tools, { packaged, deps: path.join(tmp, "absent") }, names),
+          "an empty folder": await loading(tools, { packaged, deps: empty }, names),
+          "the language package missing": await loading(tools, { packaged, deps: noLanguage }, names),
+          "the parser package missing": await loading(tools, { packaged, deps: noParser }, names),
+          "the parser package's folder there without its package.json": await loading(tools, { packaged, deps: noDescription }, names),
+          "a name that is not a whole path is read from the working folder": await loading(tools, { packaged, deps: "no-such-folder/deps" }, names),
         };
       }
-      out["developer, on Electron"] = await loading(parser, tools, { electron: "42.1.0", resources: path.join(tmp, "resources"), deps: whole }, names);
+      out["developer, on Electron"] = await loading(tools, { electron: "42.1.0", resources: path.join(tmp, "resources"), deps: whole }, names);
       return out;
     },
   },
@@ -1244,8 +1240,8 @@ export const scenarios = [
       for (const [about, settings] of Object.entries(cases)) {
         const root = await stage(path.join(tmp, `case-${Object.keys(out).length + 1}`), settings);
         out[about] = {
-          developer: await loading(parser, tools, { deps: root }, names),
-          "packaged Node": await loading(parser, tools, { packaged: "1", deps: root }, names),
+          developer: await loading(tools, { deps: root }, names),
+          "packaged Node": await loading(tools, { packaged: "1", deps: root }, names),
         };
       }
       return out;
@@ -1253,17 +1249,23 @@ export const scenarios = [
   },
   {
     name: "a packaged Node run with no folder set looks in node-deps beside the folder its code is in",
-    run: async ({ parser }, tools) => {
-      const tmp = await tools.tmp();
-      const built = builtFile(parser);
-      const names = { [tmp]: "<tmp>", [path.dirname(path.dirname(built))]: "<above the built part's folder>" };
-      await stage(path.join(tmp, "node-deps"), { parser: { label: "parser-in-node-deps" }, language: { label: "language-in-node-deps" } });
-      return {
-        "the code's folder is known to it (as in the built engine)": await loading(parser, tools, { packaged: "1", dirname: path.join(tmp, "dist") }, names),
-        "the code's folder is deeper": await loading(parser, tools, { packaged: "1", dirname: path.join(tmp, "dist", "inner") }, names),
-        "blanks for the folder count as not set": await loading(parser, tools, { packaged: "1", deps: " ", dirname: path.join(tmp, "dist") }, names),
-        "the code's folder is read from the file's own address": await loading(parser, tools, { packaged: "1" }, names),
-      };
+    run: async (_modules, tools) => {
+      const above = await folderAboveAFreshLoad(tools);
+      const names = { [above]: "<the folder above the part's own>" };
+      const nodeDeps = path.join(above, "node-deps");
+      const nothingStaged = await loading(tools, { packaged: "1" }, names);
+      // The same two stand-ins each time, for the reason given in the developer run above.
+      await stage(nodeDeps, { parser: { label: "parser-in-node-deps" }, language: { label: "language-in-node-deps" } });
+      try {
+        return {
+          "nothing staged there": nothingStaged,
+          "both packages staged there": await loading(tools, { packaged: "1" }, names),
+          "blanks for the folder count as not set": await loading(tools, { packaged: "1", deps: " " }, names),
+          "a run that is not packaged does not look there: it reads with the real packages, found Node's way": await loading(tools, {}, names),
+        };
+      } finally {
+        await rm(nodeDeps, { recursive: true, force: true });
+      }
     },
   },
   {
@@ -1283,75 +1285,15 @@ export const scenarios = [
       const labelled = (where) => ({ parser: { label: `parser-${where}` }, language: { label: `language-${where}` } });
       const failing = { parser: { onLoad: { kind: "error", message: "wrong ABI", fields: { code: "ERR_DLOPEN_FAILED" } } } };
       return {
-        "both folders hold both packages: the unpacked one is read": await loading(parser, tools, { packaged: "1", electron, resources: await resources("both", { unpacked: labelled("unpacked"), plain: labelled("plain") }) }, names),
-        "only the second folder holds them": await loading(parser, tools, { packaged: "1", electron, resources: await resources("second", { plain: labelled("plain") }) }, names),
-        "the parser in the first, the language in the second": await loading(parser, tools, { packaged: "1", electron, resources: await resources("split", { unpacked: { ...labelled("unpacked"), language: false }, plain: { ...labelled("plain"), parser: false } }) }, names),
-        "neither folder is there": await loading(parser, tools, { packaged: "1", electron, resources: await resources("neither", {}) }, names),
-        "the first folder's parser fails to load: the second is not tried": await loading(parser, tools, { packaged: "1", electron, resources: await resources("failing", { unpacked: failing, plain: labelled("plain") }) }, names),
-        "a packages' folder that is set is not looked in": await loading(parser, tools, { packaged: "1", electron, resources: await resources("set", {}), deps: elsewhere }, names),
-        "the app does not say where its resources are": await loading(parser, tools, { packaged: "1", electron }, names),
-        "the app does not say where its resources are, and a folder is set": await loading(parser, tools, { packaged: "1", electron, deps: elsewhere }, names),
-        "an Electron version that is an empty text is Electron still": await loading(parser, tools, { packaged: "1", electron: "", deps: elsewhere }, names),
-      };
-    },
-  },
-  {
-    name: "built as CommonJS, the part finds its packages from its file's own name and folder, and a missing one gives Node's own error",
-    run: async (_modules, tools) => {
-      const tmp = await tools.tmp();
-      const bare = await tools.tmp();
-      const names = { [tmp]: "<tmp>", [bare]: "<a folder with no packages>" };
-      const labelled = (where) => ({ parser: { label: `parser-${where}` }, language: { label: `language-${where}` } });
-      await stage(path.join(tmp, "node_modules"), labelled("above-the-file"));
-      await stage(path.join(tmp, "node-deps"), labelled("in-node-deps"));
-      await stage(path.join(tmp, "set"), labelled("in-the-set-folder"));
-      await mkdir(path.join(tmp, "dist"));
-      const copies = { "with no address of its own": await builtAsCommonJs(), "with the address the engine's build gives it": await builtAsCommonJs({ ownAddress: true }) };
-      const out = {};
-      for (const [about, text] of Object.entries(copies)) {
-        const at = Object.keys(out).length;
-        const load = async (where, folder = path.join(tmp, "dist")) => {
-          const file = path.join(folder, `copy-${at}-${Object.keys(where).join("-") || "plain"}.cjs`);
-          await writeFile(file, text);
-          return tried(() => dressedAs(where, () => requireHere(file)), tools, names);
-        };
-        out[about] = {
-          "developer run": await load({}),
-          // Nothing is staged in or above this folder: the packages must be nowhere Node looks from a temporary folder.
-          "developer run with the packages nowhere above the file": await load({}, bare),
-          "packaged Node run": await load({ packaged: "1" }),
-          "packaged Node run with a folder set": await load({ packaged: "1", deps: path.join(tmp, "set") }),
-        };
-      }
-      return out;
-    },
-  },
-  {
-    name: "run with no file of its own, the part looks for its packages from the working folder, and a packaged Node run cannot start",
-    run: async (_modules, tools) => {
-      const tmp = await tools.tmp();
-      const names = { [tmp]: "<tmp>" };
-      const work = path.join(tmp, "work");
-      await stage(path.join(work, "node_modules"), { parser: { label: "parser-in-working-folder" }, language: { label: "language-in-working-folder" } });
-      await stage(path.join(tmp, "set"), { parser: { label: "parser-in-the-set-folder" }, language: { label: "language-in-the-set-folder" } });
-      const text = await builtAsCommonJs();
-      // The built text run as a function's body: `require` is handed over, and nothing says which file or folder it is in.
-      const run = (where) => tried(() => dressedAs(where, () => {
-        const here = process.cwd();
-        const module = { exports: {} };
-        process.chdir(work);
-        try {
-          new Function("require", "module", "exports", text)(requireHere, module, module.exports);
-        } finally {
-          process.chdir(here);
-        }
-        return module.exports;
-      }), tools, names);
-      const cannotStart = (await run({ packaged: "1" })).refused;
-      return {
-        "developer run": await run({}),
-        "packaged Node run with a folder set": await run({ packaged: "1", deps: path.join(tmp, "set") }),
-        "packaged Node run with no folder set": { name: cannotStart?.name, code: cannotStart?.fields.code, message: cannotStart?.message },
+        "both folders hold both packages: the unpacked one is read": await loading(tools, { packaged: "1", electron, resources: await resources("both", { unpacked: labelled("unpacked"), plain: labelled("plain") }) }, names),
+        "only the second folder holds them": await loading(tools, { packaged: "1", electron, resources: await resources("second", { plain: labelled("plain") }) }, names),
+        "the parser in the first, the language in the second": await loading(tools, { packaged: "1", electron, resources: await resources("split", { unpacked: { ...labelled("unpacked"), language: false }, plain: { ...labelled("plain"), parser: false } }) }, names),
+        "neither folder is there": await loading(tools, { packaged: "1", electron, resources: await resources("neither", {}) }, names),
+        "the first folder's parser fails to load: the second is not tried": await loading(tools, { packaged: "1", electron, resources: await resources("failing", { unpacked: failing, plain: labelled("plain") }) }, names),
+        "a packages' folder that is set is not looked in": await loading(tools, { packaged: "1", electron, resources: await resources("set", {}), deps: elsewhere }, names),
+        "the app does not say where its resources are": await loading(tools, { packaged: "1", electron }, names),
+        "the app does not say where its resources are, and a folder is set": await loading(tools, { packaged: "1", electron, deps: elsewhere }, names),
+        "an Electron version that is an empty text is Electron still": await loading(tools, { packaged: "1", electron: "", deps: elsewhere }, names),
       };
     },
   },
