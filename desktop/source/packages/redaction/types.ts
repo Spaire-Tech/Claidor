@@ -1,6 +1,13 @@
+/**
+ * The two wrappers that keep a value together with its privacy labels: the
+ * kind of data it is, the field it sits in, and the mode or context it was
+ * made under. The value comes out through `unwrap`, which asks what it is
+ * wanted for. Written out without being unwrapped, a redacted string shows
+ * its value, or the field's placeholder when redaction is enforced.
+ */
 import {
   allowedPurpose,
-  DataClassification,
+  type DataClassification,
   type PrivacyCapability,
 } from "./classification.js";
 import {
@@ -8,293 +15,373 @@ import {
   toPrivacyContext,
   type PrivacyContext,
 } from "./privacy-context.js";
-import { type PrivacyMode as PrivacyModeValue, PrivacyMode } from "./privacy-mode.js";
+import type { PrivacyMode } from "./privacy-mode.js";
 import { formatRedacted, getRedactionAwareDisplayValue, shouldRedact } from "./shouldRedact.js";
 
-const IS_DEV =
+/**
+ * A developer's own run, decided once when this file is loaded: NODE_ENV is
+ * "development" and the run is not under VITEST. Where there is no process
+ * at all, it is not one.
+ */
+const DEVELOPERS_RUN =
   typeof process !== "undefined" &&
   process.env.NODE_ENV === "development" &&
   process.env.VITEST !== "true";
 
-function stringAtIndex(value: string, index: number): string | undefined {
-  const normalizedIndex = index < 0 ? value.length + index : index;
-  if (normalizedIndex < 0 || normalizedIndex >= value.length) return undefined;
-  return value[normalizedIndex];
-}
+/**
+ * What the console is told when an unwrap that was not allowed goes through
+ * because nothing enforces redaction. Nothing in the engine sets a logger,
+ * so this line is all such an unwrap leaves behind.
+ */
+const LET_THROUGH_LINE =
+  "[PRIVACY REDACTION] logger not initialized — call setRedactionLogger() at process startup";
 
-const REDACTION_LOG_MESSAGES = {
-  UNSPECIFIED_FIELD: "[PRIVACY REDACTION] unwrapping UNSPECIFIED field — classify this field",
-  UNSPECIFIED_PRIVACY_MODE: "[PRIVACY REDACTION] unwrapping with PrivacyMode.UNSPECIFIED — resolve privacy mode",
-  LOGGER_NOT_INITIALIZED: "[PRIVACY REDACTION] logger not initialized — call setRedactionLogger() at process startup",
-  ENFORCEMENT_SKIPPED: "[PRIVACY REDACTION] would have been redacted but enforceRedaction is false",
-  LOGGING_ERROR: "[PRIVACY REDACTION] error logging violation",
-  IMPLICIT_SERIALIZATION: "[PRIVACY REDACTION] implicit serialization of would-be-redacted field",
-  IMPLICIT_SERIALIZATION_DEV: "[PRIVACY REDACTION] ERROR: Redaction via implicit serialization caught in test, please call unwrap() explicitly",
-};
-
-interface RedactionLogger {
-  info(attributes: Record<string, unknown>, message: string): void;
-}
-
-interface RedactionInfo {
-  readonly fieldName: string;
-  readonly classification: DataClassification;
-  readonly privacyMode: PrivacyModeValue;
-}
-
-let logger: RedactionLogger | undefined;
-
-function logUnspecifiedWarnings(info: RedactionInfo): void {
-  if (info.classification === DataClassification.UNSPECIFIED) {
-    try {
-      logger?.info({
-        redaction_field_name: info.fieldName,
-        redaction_classification: info.classification,
-      }, REDACTION_LOG_MESSAGES.UNSPECIFIED_FIELD);
-    } catch (error) {
-      console.error(REDACTION_LOG_MESSAGES.LOGGING_ERROR, error);
-    }
-  }
-  if (info.privacyMode === PrivacyMode.UNSPECIFIED) {
-    try {
-      logger?.info({
-        redaction_field_name: info.fieldName,
-        redaction_classification: info.classification,
-        redaction_privacy_mode: info.privacyMode,
-      }, REDACTION_LOG_MESSAGES.UNSPECIFIED_PRIVACY_MODE);
-    } catch (error) {
-      console.error(REDACTION_LOG_MESSAGES.LOGGING_ERROR, error);
-    }
-  }
-}
-
-function logEnforcementSkipped(info: RedactionInfo): void {
-  if (logger === undefined) {
-    console.error(REDACTION_LOG_MESSAGES.LOGGER_NOT_INITIALIZED);
-  } else {
-    try {
-      logger.info({
-        redaction_field_name: info.fieldName,
-        redaction_classification: info.classification,
-        redaction_privacy_mode: info.privacyMode,
-        redaction_enforcement_skipped: true,
-      }, REDACTION_LOG_MESSAGES.ENFORCEMENT_SKIPPED);
-    } catch (error) {
-      console.error(REDACTION_LOG_MESSAGES.LOGGING_ERROR, error);
-    }
-  }
-}
+/**
+ * What a developer's run is told when text is made from a field that would
+ * be hidden. The field, its kind and the way the text was asked for follow.
+ */
+const IMPLICIT_TEXT_REFUSAL =
+  "[PRIVACY REDACTION] ERROR: Redaction via implicit serialization caught in test, please call unwrap() explicitly";
 
 export interface RedactedUnwrapOptions {
+  /** Enforce redaction for this unwrap, whatever the context says. */
   readonly enforcing?: boolean | undefined;
+  /** Where the unwrap would be refused, hand out the placeholder instead. */
   readonly redactUnallowedFieldsInsteadOfThrowing?: boolean | undefined;
+}
+
+/** The labels both wrappers carry in the open. They are read each time they are used. */
+interface Labelled {
+  readonly __classification: DataClassification;
+  readonly __fieldName: string;
+  readonly __privacyMode: PrivacyMode;
+}
+
+/** A context as callers may have it: the mode and, when one was made, the enforcement choice. */
+function copyOf(context: PrivacyContext): PrivacyContext {
+  if (context.enforceRedaction === undefined) return { privacyMode: context.privacyMode };
+  return { privacyMode: context.privacyMode, enforceRedaction: context.enforceRedaction };
+}
+
+/**
+ * Decides one unwrap. True: the real value is handed out. False: the
+ * placeholder is. A refusal is thrown when the purpose is not allowed,
+ * redaction is enforced, and the caller did not ask for the placeholder.
+ *
+ * The purpose is judged against the mode the wrapper was made under; whether
+ * redaction is enforced is asked of its context as it is now. An unwrap that
+ * is not allowed but not enforced goes through, with a line on the console
+ * outside a developer's run.
+ */
+function revealsValue(
+  held: Labelled,
+  context: PrivacyContext,
+  purpose: PrivacyCapability,
+  options: RedactedUnwrapOptions | undefined,
+): boolean {
+  if (allowedPurpose(held.__privacyMode, purpose, held.__classification)) return true;
+  const enforced = options?.enforcing || resolveEnforceRedaction(context, held.__classification);
+  if (!enforced) {
+    if (!DEVELOPERS_RUN) console.error(LET_THROUGH_LINE);
+    return true;
+  }
+  if (options?.redactUnallowedFieldsInsteadOfThrowing) return false;
+  throw new Error(
+    `Unwrap not allowed for purpose ${purpose} with classification ${held.__classification} and privacy mode ${held.__privacyMode}`,
+  );
 }
 
 export class RedactedString {
   readonly __classification: DataClassification;
   readonly __fieldName: string;
-  readonly __privacyMode: PrivacyModeValue;
+  /** The mode it was made under. It stays, even if the context changes later. */
+  readonly __privacyMode: PrivacyMode;
+  /** Whether that mode hides this kind of data, worked out once. */
   readonly __isRedacted: boolean;
   readonly #value: string;
-  readonly #privacyContext: PrivacyContext;
+  /** The very context it was given, when it was given one: what is shown and enforced follows it. */
+  readonly #context: PrivacyContext;
 
   constructor(
     value: string,
     classification: DataClassification,
     fieldName: string,
-    modeOrContext: PrivacyModeValue | PrivacyContext,
+    modeOrContext: PrivacyMode | PrivacyContext,
   ) {
     const context = toPrivacyContext(modeOrContext);
-    this.#value = value;
-    this.#privacyContext = context;
     this.__classification = classification;
     this.__fieldName = fieldName;
     this.__privacyMode = context.privacyMode;
     this.__isRedacted = shouldRedact(context.privacyMode, classification);
+    this.#value = value;
+    this.#context = context;
   }
 
-  get length(): number { return this.#value.length; }
-  get empty(): boolean { return this.#value.length === 0; }
+  get length(): number {
+    return this.#value.length;
+  }
+
+  get empty(): boolean {
+    return this.#value.length === 0;
+  }
 
   getPrivacyContext(): PrivacyContext {
-    return this.#privacyContext.enforceRedaction !== undefined ? {
-      privacyMode: this.#privacyContext.privacyMode,
-      enforceRedaction: this.#privacyContext.enforceRedaction,
-    } : { privacyMode: this.#privacyContext.privacyMode };
+    return copyOf(this.#context);
   }
 
+  /** The value for a purpose, the field's placeholder, or a refusal: `revealsValue` decides. */
   unwrap(purpose: PrivacyCapability, options?: RedactedUnwrapOptions): string {
-    const info = {
-      fieldName: this.__fieldName,
-      classification: this.__classification,
-      privacyMode: this.__privacyMode,
-    };
-    logUnspecifiedWarnings(info);
-    if (allowedPurpose(this.__privacyMode, purpose, this.__classification)) return this.#value;
-    const enforce = options?.enforcing ||
-      resolveEnforceRedaction(this.#privacyContext, this.__classification);
-    if (!enforce && !IS_DEV) logEnforcementSkipped(info);
-    if (!enforce) return this.#value;
-    if (options?.redactUnallowedFieldsInsteadOfThrowing) return formatRedacted(this.__fieldName);
-    throw new Error(
-      `Unwrap not allowed for purpose ${purpose} with classification ${this.__classification} and privacy mode ${this.__privacyMode}`,
-    );
+    return revealsValue(this, this.#context, purpose, options)
+      ? this.#value
+      : formatRedacted(this.__fieldName);
   }
 
+  /** Another value under the same labels, its field name marked as a clone's. */
   __clone(newValue: string): RedactedString {
     return new RedactedString(
       newValue,
       this.__classification,
       `${this.__fieldName}.clone`,
-      this.#privacyContext,
+      this.#context,
     );
   }
 
-  #rewrap(newValue: string): RedactedString {
-    return new RedactedString(newValue, this.__classification, this.__fieldName, this.#privacyContext);
-  }
-
+  /** Works on the real value without letting it out: the result is wrapped under the same labels. */
   safeTransform(transform: (value: string) => string): RedactedString {
-    return this.#rewrap(transform(this.#value));
+    return this.#relabel(transform(this.#value));
   }
 
-  #displayValue(): string {
+  /** Another value under exactly the same labels and the same context. */
+  #relabel(newValue: string): RedactedString {
+    return new RedactedString(newValue, this.__classification, this.__fieldName, this.#context);
+  }
+
+  /**
+   * What the string shows when it is used as text without being unwrapped:
+   * its value, or its placeholder when redaction is enforced and the mode
+   * hides it. A developer's run refuses instead of quietly showing a value
+   * that would be hidden, and names the way the text was asked for.
+   */
+  #shown(way: string): string {
+    if (this.__isRedacted && !resolveEnforceRedaction(this.#context, this.__classification) && DEVELOPERS_RUN) {
+      throw new Error(
+        `${IMPLICIT_TEXT_REFUSAL} (field=${this.__fieldName}, classification=${this.__classification}, path=${way})`,
+      );
+    }
     return getRedactionAwareDisplayValue({
-      privacyMode: this.#privacyContext.privacyMode,
+      privacyMode: this.#context.privacyMode,
       classification: this.__classification,
       fieldName: this.__fieldName,
       unredactedValue: this.#value,
-      enforceRedaction: this.#privacyContext.enforceRedaction,
+      enforceRedaction: this.#context.enforceRedaction,
     });
   }
 
-  #logImplicitSerialization(serializationPath: string): void {
-    if (!this.__isRedacted || resolveEnforceRedaction(this.#privacyContext, this.__classification)) return;
-    if (IS_DEV) {
-      throw new Error(
-        `${REDACTION_LOG_MESSAGES.IMPLICIT_SERIALIZATION_DEV} (field=${this.__fieldName}, classification=${this.__classification}, path=${serializationPath})`,
-      );
-    }
-    try {
-      logger?.info({
-        redaction_field_name: this.__fieldName,
-        redaction_classification: this.__classification,
-        redaction_privacy_mode: this.__privacyMode,
-        redaction_serialization_path: serializationPath,
-      }, REDACTION_LOG_MESSAGES.IMPLICIT_SERIALIZATION);
-    } catch {}
+  toString(): string {
+    return this.#shown("toString");
   }
 
-  toString(): string { this.#logImplicitSerialization("toString"); return this.#displayValue(); }
-  toJSON(): string { this.#logImplicitSerialization("toJSON"); return this.#displayValue(); }
-  valueOf(): string { this.#logImplicitSerialization("valueOf"); return this.#displayValue(); }
+  toJSON(): string {
+    return this.#shown("toJSON");
+  }
+
+  valueOf(): string {
+    return this.#shown("valueOf");
+  }
+
+  /** As text when text is wanted or nothing in particular is; never a number. */
   [Symbol.toPrimitive](hint: string): string | number {
-    if (hint === "string" || hint === "default") {
-      this.#logImplicitSerialization("toPrimitive");
-      return this.#displayValue();
-    }
-    return Number.NaN;
+    return hint === "string" || hint === "default" ? this.#shown("toPrimitive") : Number.NaN;
   }
-  get [Symbol.toStringTag](): string { return "RedactedString"; }
 
-  startsWith(searchString: string, position?: number): boolean { return this.#value.startsWith(searchString, position); }
-  endsWith(searchString: string, endPosition?: number): boolean { return this.#value.endsWith(searchString, endPosition); }
-  includes(searchString: string, position?: number): boolean { return this.#value.includes(searchString, position); }
-  trim(): RedactedString { return this.#rewrap(this.#value.trim()); }
-  trimStart(): RedactedString { return this.#rewrap(this.#value.trimStart()); }
-  trimLeft(): RedactedString { return this.#rewrap(this.#value.trimStart()); }
-  trimEnd(): RedactedString { return this.#rewrap(this.#value.trimEnd()); }
-  trimRight(): RedactedString { return this.#rewrap(this.#value.trimEnd()); }
-  slice(start?: number, end?: number): RedactedString { return this.#rewrap(this.#value.slice(start, end)); }
-  substring(start: number, end?: number): RedactedString { return this.#rewrap(this.#value.substring(start, end)); }
-  substr(start: number, length?: number): RedactedString { return this.#rewrap(this.#value.substr(start, length)); }
-  toLowerCase(): RedactedString { return this.#rewrap(this.#value.toLowerCase()); }
-  toUpperCase(): RedactedString { return this.#rewrap(this.#value.toUpperCase()); }
-  toLocaleLowerCase(locales?: Intl.LocalesArgument): RedactedString { return this.#rewrap(this.#value.toLocaleLowerCase(locales)); }
-  toLocaleUpperCase(locales?: Intl.LocalesArgument): RedactedString { return this.#rewrap(this.#value.toLocaleUpperCase(locales)); }
-  replace(searchValue: string | RegExp, replaceValue: string): RedactedString { return this.#rewrap(this.#value.replace(searchValue, replaceValue)); }
-  replaceAll(searchValue: string | RegExp, replaceValue: string): RedactedString { return this.#rewrap(this.#value.replaceAll(searchValue, replaceValue)); }
-  padStart(maxLength: number, fillString?: string): RedactedString { return this.#rewrap(this.#value.padStart(maxLength, fillString)); }
-  padEnd(maxLength: number, fillString?: string): RedactedString { return this.#rewrap(this.#value.padEnd(maxLength, fillString)); }
-  repeat(count: number): RedactedString { return this.#rewrap(this.#value.repeat(count)); }
-  normalize(form?: "NFC" | "NFD" | "NFKC" | "NFKD"): RedactedString { return this.#rewrap(this.#value.normalize(form)); }
-  concat(...strings: string[]): RedactedString { return this.#rewrap(this.#value.concat(...strings)); }
-  charAt(position: number): RedactedString { return this.#rewrap(this.#value.charAt(position)); }
-  at(index: number): RedactedString | undefined {
-    const char = stringAtIndex(this.#value, index);
-    return char !== undefined ? this.#rewrap(char) : undefined;
+  get [Symbol.toStringTag](): string {
+    return "RedactedString";
   }
-  split(separator: string | RegExp, limit?: number): RedactedString[] {
-    return this.#value.split(separator, limit).map((value) => this.#rewrap(value));
+
+  // Questions about the text. They are answered from the real value, as plain answers.
+
+  startsWith(searchString: string, position?: number): boolean {
+    return this.#value.startsWith(searchString, position);
   }
-  indexOf(searchString: string, position?: number): number { return this.#value.indexOf(searchString, position); }
-  lastIndexOf(searchString: string, position?: number): number { return this.#value.lastIndexOf(searchString, position); }
-  search(regexp: string | RegExp): number { return this.#value.search(regexp); }
+
+  endsWith(searchString: string, endPosition?: number): boolean {
+    return this.#value.endsWith(searchString, endPosition);
+  }
+
+  includes(searchString: string, position?: number): boolean {
+    return this.#value.includes(searchString, position);
+  }
+
+  indexOf(searchString: string, position?: number): number {
+    return this.#value.indexOf(searchString, position);
+  }
+
+  lastIndexOf(searchString: string, position?: number): number {
+    return this.#value.lastIndexOf(searchString, position);
+  }
+
+  search(regexp: string | RegExp): number {
+    return this.#value.search(regexp);
+  }
+
   localeCompare(that: string, locales?: Intl.LocalesArgument, options?: Intl.CollatorOptions): number {
     return this.#value.localeCompare(that, locales, options);
+  }
+
+  // What text can do. Each gives its result as a redacted string under the same labels.
+
+  trim(): RedactedString {
+    return this.#relabel(this.#value.trim());
+  }
+
+  trimStart(): RedactedString {
+    return this.#relabel(this.#value.trimStart());
+  }
+
+  trimLeft(): RedactedString {
+    return this.#relabel(this.#value.trimStart());
+  }
+
+  trimEnd(): RedactedString {
+    return this.#relabel(this.#value.trimEnd());
+  }
+
+  trimRight(): RedactedString {
+    return this.#relabel(this.#value.trimEnd());
+  }
+
+  slice(start?: number, end?: number): RedactedString {
+    return this.#relabel(this.#value.slice(start, end));
+  }
+
+  substring(start: number, end?: number): RedactedString {
+    return this.#relabel(this.#value.substring(start, end));
+  }
+
+  substr(start: number, length?: number): RedactedString {
+    return this.#relabel(this.#value.substr(start, length));
+  }
+
+  toLowerCase(): RedactedString {
+    return this.#relabel(this.#value.toLowerCase());
+  }
+
+  toUpperCase(): RedactedString {
+    return this.#relabel(this.#value.toUpperCase());
+  }
+
+  toLocaleLowerCase(locales?: Intl.LocalesArgument): RedactedString {
+    return this.#relabel(this.#value.toLocaleLowerCase(locales));
+  }
+
+  toLocaleUpperCase(locales?: Intl.LocalesArgument): RedactedString {
+    return this.#relabel(this.#value.toLocaleUpperCase(locales));
+  }
+
+  replace(searchValue: string | RegExp, replaceValue: string): RedactedString {
+    return this.#relabel(this.#value.replace(searchValue, replaceValue));
+  }
+
+  replaceAll(searchValue: string | RegExp, replaceValue: string): RedactedString {
+    return this.#relabel(this.#value.replaceAll(searchValue, replaceValue));
+  }
+
+  padStart(maxLength: number, fillString?: string): RedactedString {
+    return this.#relabel(this.#value.padStart(maxLength, fillString));
+  }
+
+  padEnd(maxLength: number, fillString?: string): RedactedString {
+    return this.#relabel(this.#value.padEnd(maxLength, fillString));
+  }
+
+  repeat(count: number): RedactedString {
+    return this.#relabel(this.#value.repeat(count));
+  }
+
+  normalize(form?: "NFC" | "NFD" | "NFKC" | "NFKD"): RedactedString {
+    return this.#relabel(this.#value.normalize(form));
+  }
+
+  concat(...strings: string[]): RedactedString {
+    return this.#relabel(this.#value.concat(...strings));
+  }
+
+  charAt(position: number): RedactedString {
+    return this.#relabel(this.#value.charAt(position));
+  }
+
+  /**
+   * The character at a place, counted from the end when the place is
+   * negative. Nothing when the place is outside the text or is not a whole
+   * number.
+   */
+  at(index: number): RedactedString | undefined {
+    const text = this.#value;
+    const place = index < 0 ? text.length + index : index;
+    const character = place < 0 || place >= text.length ? undefined : text[place];
+    return character === undefined ? undefined : this.#relabel(character);
+  }
+
+  split(separator: string | RegExp, limit?: number): RedactedString[] {
+    return this.#value.split(separator, limit).map((piece) => this.#relabel(piece));
   }
 }
 
 export class RedactedBytes {
   readonly __classification: DataClassification;
   readonly __fieldName: string;
-  readonly __privacyMode: PrivacyModeValue;
+  /** The mode they were made under. It stays, even if the context changes later. */
+  readonly __privacyMode: PrivacyMode;
+  /** Whether that mode hides this kind of data, worked out once. */
   readonly __isRedacted: boolean;
   readonly #value: Uint8Array;
-  readonly #privacyContext: PrivacyContext;
+  /** The very context they were given, when they were given one. */
+  readonly #context: PrivacyContext;
 
   constructor(
     value: Uint8Array,
     classification: DataClassification,
     fieldName: string,
-    modeOrContext: PrivacyModeValue | PrivacyContext,
+    modeOrContext: PrivacyMode | PrivacyContext,
   ) {
     const context = toPrivacyContext(modeOrContext);
-    this.#value = value;
-    this.#privacyContext = context;
     this.__classification = classification;
     this.__fieldName = fieldName;
     this.__privacyMode = context.privacyMode;
     this.__isRedacted = shouldRedact(context.privacyMode, classification);
+    this.#value = value;
+    this.#context = context;
+  }
+
+  get length(): number {
+    return this.#value.length;
+  }
+
+  get empty(): boolean {
+    return this.#value.length === 0;
   }
 
   getPrivacyContext(): PrivacyContext {
-    return this.#privacyContext.enforceRedaction !== undefined ? {
-      privacyMode: this.#privacyContext.privacyMode,
-      enforceRedaction: this.#privacyContext.enforceRedaction,
-    } : { privacyMode: this.#privacyContext.privacyMode };
+    return copyOf(this.#context);
   }
 
+  /** The bytes for a purpose, no bytes at all in place of hidden ones, or a refusal: `revealsValue` decides. */
   unwrap(purpose: PrivacyCapability, options?: RedactedUnwrapOptions): Uint8Array {
-    const info = {
-      fieldName: this.__fieldName,
-      classification: this.__classification,
-      privacyMode: this.__privacyMode,
-    };
-    logUnspecifiedWarnings(info);
-    if (allowedPurpose(this.__privacyMode, purpose, this.__classification)) return this.#value;
-    const enforce = options?.enforcing ||
-      resolveEnforceRedaction(this.#privacyContext, this.__classification);
-    if (!enforce && !IS_DEV) logEnforcementSkipped(info);
-    if (!enforce) return this.#value;
-    if (options?.redactUnallowedFieldsInsteadOfThrowing) return new Uint8Array(0);
-    throw new Error(
-      `Unwrap not allowed for purpose ${purpose} with classification ${this.__classification} and privacy mode ${this.__privacyMode}`,
-    );
+    return revealsValue(this, this.#context, purpose, options) ? this.#value : new Uint8Array(0);
   }
 
+  /** Other bytes under exactly the same labels: unlike a string's clone, the field name is not marked. */
   __clone(newValue: Uint8Array): RedactedBytes {
-    return new RedactedBytes(newValue, this.__classification, this.__fieldName, this.#privacyContext);
+    return this.#relabel(newValue);
   }
-  get empty(): boolean { return this.#value.length === 0; }
-  get length(): number { return this.#value.length; }
+
+  /** Works on the real bytes without letting them out: the result is wrapped under the same labels. */
   safeTransform(transform: (value: Uint8Array) => Uint8Array): RedactedBytes {
-    return new RedactedBytes(
-      transform(this.#value),
-      this.__classification,
-      this.__fieldName,
-      this.#privacyContext,
-    );
+    return this.#relabel(transform(this.#value));
+  }
+
+  #relabel(newValue: Uint8Array): RedactedBytes {
+    return new RedactedBytes(newValue, this.__classification, this.__fieldName, this.#context);
   }
 }
 

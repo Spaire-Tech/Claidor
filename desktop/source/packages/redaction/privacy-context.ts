@@ -1,41 +1,49 @@
+/**
+ * A privacy context: a person's privacy mode, and whether what the mode
+ * hides is really hidden when it is shown or handed out.
+ */
 import type { DataClassification } from "./classification.js";
-import { PrivacyMode, type PrivacyMode as PrivacyModeValue } from "./privacy-mode.js";
+import type { PrivacyMode } from "./privacy-mode.js";
 
 export interface PrivacyContext {
-  readonly privacyMode: PrivacyModeValue;
+  readonly privacyMode: PrivacyMode;
+  /** True to hide and refuse for real. Left out, nothing is enforced. */
   readonly enforceRedaction?: boolean | undefined;
 }
 
-let enforceRedactionGate: (() => boolean | undefined) | undefined;
-
-function isGlobalEnforcementEnabled(): boolean {
-  return enforceRedactionGate?.() ?? false;
-}
-
+/**
+ * Whether redaction is enforced under this context. Only a context that says
+ * true itself enforces: the engine has no setting that turns enforcement on
+ * for everyone, so a context with no choice of its own enforces nothing,
+ * whatever its mode and the kind of data.
+ */
 export function resolveEnforceRedaction(
   context: PrivacyContext,
+  // Not looked at: the answer does not depend on the kind of data.
   classification: DataClassification,
 ): boolean {
-  if (context.enforceRedaction === false) return false;
-  if (context.enforceRedaction === true) return true;
-  void classification;
-  return context.privacyMode !== PrivacyMode.UNSPECIFIED && isGlobalEnforcementEnabled();
+  return context.enforceRedaction === true;
 }
 
+/** A context for a mode. The enforcement choice is a field of it only when one is given. */
 export function privacyContextFromMode(
-  privacyMode: PrivacyModeValue,
+  privacyMode: PrivacyMode,
   enforceRedaction?: boolean,
 ): PrivacyContext {
-  return enforceRedaction !== undefined ? { privacyMode, enforceRedaction } : { privacyMode };
+  if (enforceRedaction === undefined) return { privacyMode };
+  return { privacyMode, enforceRedaction };
 }
 
+/**
+ * A context from either form callers pass. A context comes back as the very
+ * object it is, so what was made under it keeps following it; a mode gets a
+ * new context of its own.
+ */
 export function toPrivacyContext(
-  modeOrContext: PrivacyModeValue | PrivacyContext,
+  modeOrContext: PrivacyMode | PrivacyContext,
 ): PrivacyContext {
-  if (
-    typeof modeOrContext === "object" &&
-    modeOrContext !== null &&
-    "privacyMode" in modeOrContext
-  ) return modeOrContext;
-  return privacyContextFromMode(modeOrContext);
+  if (typeof modeOrContext !== "object" || modeOrContext === null) {
+    return privacyContextFromMode(modeOrContext);
+  }
+  return "privacyMode" in modeOrContext ? modeOrContext : privacyContextFromMode(modeOrContext);
 }
