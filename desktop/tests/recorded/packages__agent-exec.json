@@ -15742,6 +15742,273 @@
     },
     "leftUncaught": []
    }
+  },
+  "a subagent's session id goes into the answer as the host gave it: an empty one is still written on a run's answer, and left off a failure's": {
+   "returned": [
+    [
+     "an empty id, a success",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "success": {
+        "finalMessage": "m"
+       }
+      },
+      "bytes": "0a0312016d"
+     },
+     {
+      "agentIdAsHeld": "",
+      "released": []
+     }
+    ],
+    [
+     "an empty id, an error",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "agentId": "",
+        "error": "e"
+       }
+      },
+      "bytes": "12050a00120165"
+     },
+     {
+      "agentIdAsHeld": "",
+      "released": []
+     }
+    ],
+    [
+     "an empty id, aborted",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "agentId": "",
+        "error": "Subagent was aborted by the user"
+       }
+      },
+      "bytes": "12240a0012205375626167656e74207761732061626f72746564206279207468652075736572"
+     },
+     {
+      "agentIdAsHeld": "",
+      "released": []
+     }
+    ],
+    [
+     "an empty id, background",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "success": {
+        "finalMessage": "m"
+       }
+      },
+      "bytes": "0a0312016d"
+     },
+     {
+      "agentIdAsHeld": "",
+      "released": []
+     }
+    ],
+    [
+     "an empty id, the run fails",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "error": "blew up"
+       }
+      },
+      "bytes": "12091207626c6577207570"
+     },
+     {
+      "agentIdAsHeld": {
+       "$": "undefined"
+      },
+      "released": []
+     }
+    ],
+    [
+     "no id, a success",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "success": {
+        "finalMessage": "m"
+       }
+      },
+      "bytes": "0a0312016d"
+     },
+     {
+      "agentIdAsHeld": "",
+      "released": []
+     }
+    ],
+    [
+     "no id, an error",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "error": "e"
+       }
+      },
+      "bytes": "1203120165"
+     },
+     {
+      "agentIdAsHeld": {
+       "$": "undefined"
+      },
+      "released": []
+     }
+    ],
+    [
+     "no id, the run fails",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "error": "blew up"
+       }
+      },
+      "bytes": "12091207626c6577207570"
+     },
+     {
+      "agentIdAsHeld": {
+       "$": "undefined"
+      },
+      "released": []
+     }
+    ],
+    [
+     "no id, the run fails naming an agent",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "agentId": "agent-from-error",
+        "error": "blew up"
+       }
+      },
+      "bytes": "121b0a106167656e742d66726f6d2d6572726f721207626c6577207570"
+     },
+     {
+      "agentIdAsHeld": "agent-from-error",
+      "released": []
+     }
+    ],
+    [
+     "null for an id, an error",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "error": "e"
+       }
+      },
+      "bytes": "1203120165"
+     },
+     {
+      "agentIdAsHeld": {
+       "$": "undefined"
+      },
+      "released": []
+     }
+    ],
+    [
+     "null for an id, the run fails while resuming",
+     {
+      "type": "agent.v1.SubagentResult",
+      "json": {
+       "error": {
+        "agentId": "agent-resumed",
+        "error": "blew up"
+       }
+      },
+      "bytes": "12180a0d6167656e742d726573756d65641207626c6577207570"
+     },
+     {
+      "agentIdAsHeld": "agent-resumed",
+      "released": []
+     }
+    ]
+   ]
+  },
+  "a manager is not asked about git's words for a failure that is not an error": {
+   "returned": {
+    "outcome": {
+     "sent": [
+      "Unknown error",
+      "Unknown error",
+      "a real error"
+     ],
+     "askedFor": [
+      "object"
+     ]
+    },
+    "leftUncaught": []
+   }
+  },
+  "the message is made when the connection asks for it, from the options as they are then": {
+   "returned": [
+    {
+     "id": 1,
+     "shellArgs": {},
+     "execId": "at the start",
+     "spanContext": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0
+     },
+     "acceptHookAdditionalContexts": false
+    },
+    {
+     "id": 2,
+     "shellArgs": {},
+     "execId": "changed later",
+     "spanContext": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0
+     },
+     "acceptHookAdditionalContexts": true
+    },
+    {
+     "id": 3,
+     "shellStreamArgs": {},
+     "execId": "at the start",
+     "spanContext": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0
+     },
+     "acceptHookAdditionalContexts": false
+    },
+    {
+     "id": 4,
+     "shellStreamArgs": {},
+     "execId": "changed later",
+     "spanContext": {
+      "traceId": "00000000000000000000000000000000",
+      "spanId": "0000000000000000",
+      "traceFlags": 0
+     },
+     "acceptHookAdditionalContexts": true
+    }
+   ]
+  },
+  "notes go to the list the options hold when the answer comes": {
+   "returned": {
+    "first": [
+     "one",
+     "three"
+    ],
+    "second": [
+     "two",
+     "four"
+    ]
+   }
   }
  }
 }

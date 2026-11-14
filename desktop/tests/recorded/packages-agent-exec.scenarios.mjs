@@ -2594,3 +2594,90 @@ scenario("the kinds of stream the part hands out", async (given) => {
     };
   })));
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Cases added after the first recording
+// ---------------------------------------------------------------------------------------------------------------
+
+scenario("a subagent's session id goes into the answer as the host gave it: an empty one is still written on a run's answer, and left off a failure's", async (given) => {
+  const out = [];
+  for (const [what, id, outcome] of [
+    ["an empty id, a success", "", { status: "success", finalMessage: "m" }],
+    ["an empty id, an error", "", { status: "error", error: "e" }],
+    ["an empty id, aborted", "", { status: "aborted" }],
+    ["an empty id, background", "", { status: "background", finalMessage: "m" }],
+    ["an empty id, the run fails", "", new Error("blew up")],
+    ["no id, a success", undefined, { status: "success", finalMessage: "m" }],
+    ["no id, an error", undefined, { status: "error", error: "e" }],
+    ["no id, the run fails", undefined, new Error("blew up")],
+    ["no id, the run fails naming an agent", undefined, Object.assign(new Error("blew up"), { agentId: "agent-from-error" })],
+    ["null for an id, an error", null, { status: "error", error: "e" }],
+    ["null for an id, the run fails while resuming", null, new Error("blew up")],
+  ]) {
+    const released = [];
+    const executor = given.subagent.createSubagentExecutor({
+      createOrResumeSession: async () => id,
+      runSession: async (ctx, agentId) => { if (outcome instanceof Error) throw outcome; return outcome; },
+      releaseSession: (agentId) => { released.push(agentId); },
+    });
+    const answer = await executor.execute("the context", subagentArgs(given, what.includes("resuming") ? { resumeAgentId: "agent-resumed" } : {}));
+    out.push([what, wire(answer), { agentIdAsHeld: answer.result.value.agentId, released }]);
+  }
+  return out;
+});
+
+scenario("a manager is not asked about git's words for a failure that is not an error", async (given) =>
+  unhandled(async () => {
+    const asked = [];
+    const sent = [];
+    for (const thrown of ["words only", { message: "a look-alike", exitCode: 1, stderr: "words" }, failure("a real error")]) {
+      const manager = new given.controlled.SimpleControlledExecManager({ includeGitStderrInThrows: () => { asked.push(typeof thrown); return true; } });
+      manager.register({ handle: () => scripted([], "", [{ fails: thrown }]) });
+      const stream = manager.handle(makeDesk(given).ctx, envelopes(given).server({ id: 5, shellArgs: {} }))[Symbol.asyncIterator]();
+      sent.push((await stream.next()).value.message.value.error);
+    }
+    return { sent, askedFor: asked };
+  }));
+
+scenario("the message is made when the connection asks for it, from the options as they are then", async (given) => {
+  const desk = makeDesk(given);
+  const { remote, serialization } = given;
+  const made = [];
+  let make;
+  const lazy = { createExecInstance(ctx, createMessage) { make = createMessage; return scripted([], "", [desk.client({ shellResult: {} }), desk.client({ shellStream: { exit: {} } })]); } };
+  const options = { execId: "at the start" };
+  const unary = new remote.ExecutorResource(lazy, serialization.createServerSerializer("shellArgs"), serialization.createClientDeserializer("shellResult"));
+  await unary.execute(desk.ctx, {}, options);
+  made.push(make(1).toJson());
+  options.execId = "changed later";
+  options.hookContextCollector = [];
+  made.push(make(2).toJson());
+  const streamOptions = { execId: "at the start" };
+  const stream = new remote.StreamExecutorResource(lazy, serialization.createServerSerializer("shellStreamArgs"), serialization.createClientDeserializer("shellStream"));
+  for await (const event of stream.execute(desk.ctx, {}, streamOptions)) void event;
+  made.push(make(3).toJson());
+  streamOptions.execId = "changed later";
+  streamOptions.deliverAgentStoreConflictNotices = true;
+  made.push(make(4).toJson());
+  return made;
+});
+
+scenario("notes go to the list the options hold when the answer comes", async (given) => {
+  const desk = makeDesk(given);
+  const reply = answers(desk);
+  const later = deferred();
+  const first = [];
+  const second = [];
+  const options = { hookContextCollector: first };
+  const { executor, args } = asking(given, desk, { steps: [reply.notesOnly([["postToolUse", "one"]]), { waitsFor: later.promise }, reply.shell("r", [["postToolUse", "two"]])] });
+  const running = executor.execute(desk.ctx, args, options);
+  await settle();
+  options.hookContextCollector = second;
+  later.resolve();
+  await running;
+  const event = events(desk);
+  const streamOptions = { hookContextCollector: first };
+  const streamed = askingForAStream(given, desk, { steps: [event.stdout("a", [["stop", "three"]]), event.stdout("b", [["stop", "four"]])] });
+  for await (const value of streamed.executor.execute(desk.ctx, streamed.args, streamOptions)) { void value; streamOptions.hookContextCollector = second; }
+  return { first: first.map((note) => note.content), second: second.map((note) => note.content) };
+});
