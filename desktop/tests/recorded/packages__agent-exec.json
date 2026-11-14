@@ -16009,6 +16009,219 @@
      "four"
     ]
    }
+  },
+  "the place output was written, told for a place that is not a message: a size that is missing or no number is told in bytes as it comes": {
+   "returned": [
+    "Content written to file: /f\nSize: NaN bytes, undefined lines",
+    "Content written to file: /f\nSize: NaN bytes, NaN lines",
+    "Content written to file: /f\nSize: NaN bytes, many lines",
+    "Content written to file: /f\nSize: 2.0 KB, 3 lines",
+    "Content written to file: /f\nSize: 0 bytes, null lines",
+    "Content written to file: /f\nSize: 1 bytes, false lines",
+    "Content written to file: /f\nSize: 1023.9 bytes, 1.5 lines",
+    "Content written to file: /f\nSize: 1.0 KB, 0 lines",
+    "Content written to file: /f\nSize: -2048 bytes, -1 lines",
+    "Content written to file: /f\nSize: Infinity KB, 1 lines",
+    "Content written to file: undefined\nSize: 10 bytes, 1 lines",
+    "Content written to file: undefined\nSize: NaN bytes, undefined lines"
+   ]
+  },
+  "a read-only refusal reads a command, a folder, a path or a tool name of null as it reads a missing one, but for the tool name": {
+   "returned": [
+    [
+     "shell",
+     {
+      "type": "agent.v1.ShellResult",
+      "json": {
+       "permissionDenied": {
+        "error": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations.",
+        "isReadonly": true
+       }
+      },
+      "bytes": "3a85011a800154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e2001"
+     }
+    ],
+    [
+     "background shell",
+     {
+      "type": "agent.v1.BackgroundShellSpawnResult",
+      "json": {
+       "permissionDenied": {
+        "workingDirectory": "/w",
+        "error": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations.",
+        "isReadonly": true
+       }
+      },
+      "bytes": "22890112022f771a800154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e2001"
+     }
+    ],
+    [
+     "write",
+     {
+      "type": "agent.v1.WriteResult",
+      "json": {
+       "permissionDenied": {
+        "error": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations.",
+        "isReadonly": true
+       }
+      },
+      "bytes": "1a850122800154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e2801"
+     }
+    ],
+    [
+     "delete",
+     {
+      "type": "agent.v1.DeleteResult",
+      "json": {
+       "permissionDenied": {
+        "clientVisibleError": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations.",
+        "isReadonly": true
+       }
+      },
+      "bytes": "22850112800154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e1801"
+     }
+    ],
+    [
+     "mcp",
+     {
+      "type": "agent.v1.McpResult",
+      "json": {
+       "permissionDenied": {
+        "error": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations. Tool: null",
+        "isReadonly": true
+       }
+      },
+      "bytes": "2290010a8b0154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e20546f6f6c3a206e756c6c1001"
+     }
+    ],
+    [
+     "shell stream",
+     [
+      {
+       "type": "agent.v1.ShellStream",
+       "json": {
+        "permissionDenied": {
+         "command": "ls",
+         "error": "This operation is not allowed in readonly mode. The subagent was launched with readonly: true, which restricts write operations.",
+         "isReadonly": true
+        }
+       },
+       "bytes": "3289010a026c731a800154686973206f7065726174696f6e206973206e6f7420616c6c6f77656420696e20726561646f6e6c79206d6f64652e20546865207375626167656e7420776173206c61756e63686564207769746820726561646f6e6c793a20747275652c20776869636820726573747269637473207772697465206f7065726174696f6e732e2001"
+      }
+     ]
+    ]
+   ]
+  },
+  "a piece of an MCP answer that is not a message counts as text when it says so, whatever it holds": {
+   "returned": [
+    [
+     "text with no text in it, then text",
+     {
+      "written": [
+       "\n\nabcdef"
+      ],
+      "result": [
+       {
+        "type": "agent.v1.McpToolResultContentItem",
+        "json": {
+         "text": {
+          "outputLocation": {
+           "filePath": "/work/agent-tools/new.txt",
+           "sizeBytes": "9",
+           "lineCount": "2"
+          }
+         }
+        },
+        "bytes": "0a21121f0a192f776f726b2f6167656e742d746f6f6c732f6e65772e74787410091802"
+       }
+      ]
+     }
+    ],
+    [
+     "text that is a number",
+     {
+      "written": [
+       "123456"
+      ],
+      "result": [
+       {
+        "type": "agent.v1.McpToolResultContentItem",
+        "json": {
+         "text": {
+          "outputLocation": {
+           "filePath": "/work/agent-tools/new.txt",
+           "sizeBytes": "9",
+           "lineCount": "2"
+          }
+         }
+        },
+        "bytes": "0a21121f0a192f776f726b2f6167656e742d746f6f6c732f6e65772e74787410091802"
+       }
+      ]
+     }
+    ],
+    [
+     "a place of null is still a place",
+     {
+      "written": [
+       "ghijkl"
+      ],
+      "result": [
+       "the piece given (0)",
+       {
+        "type": "agent.v1.McpToolResultContentItem",
+        "json": {
+         "text": {
+          "outputLocation": {
+           "filePath": "/work/agent-tools/new.txt",
+           "sizeBytes": "9",
+           "lineCount": "2"
+          }
+         }
+        },
+        "bytes": "0a21121f0a192f776f726b2f6167656e742d746f6f6c732f6e65772e74787410091802"
+       }
+      ]
+     }
+    ],
+    [
+     "a piece of no kind, and an image",
+     {
+      "written": [
+       "abcdef"
+      ],
+      "result": [
+       "the piece given (0)",
+       "the piece given (1)",
+       {
+        "type": "agent.v1.McpToolResultContentItem",
+        "json": {
+         "text": {
+          "outputLocation": {
+           "filePath": "/work/agent-tools/new.txt",
+           "sizeBytes": "9",
+           "lineCount": "2"
+          }
+         }
+        },
+        "bytes": "0a21121f0a192f776f726b2f6167656e742d746f6f6c732f6e65772e74787410091802"
+       }
+      ]
+     }
+    ],
+    [
+     "a piece that is nothing",
+     {
+      "threwA": "TypeError"
+     }
+    ],
+    [
+     "a piece with nothing in it",
+     {
+      "threwA": "TypeError"
+     }
+    ]
+   ]
   }
  }
 }

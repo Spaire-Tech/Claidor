@@ -2681,3 +2681,54 @@ scenario("notes go to the list the options hold when the answer comes", async (g
   for await (const value of streamed.executor.execute(desk.ctx, streamed.args, streamOptions)) { void value; streamOptions.hookContextCollector = second; }
   return { first: first.map((note) => note.content), second: second.map((note) => note.content) };
 });
+
+scenario("the place output was written, told for a place that is not a message: a size that is missing or no number is told in bytes as it comes", ({ toolsFile }) =>
+  [
+    { filePath: "/f" },
+    { filePath: "/f", sizeBytes: Number.NaN, lineCount: Number.NaN },
+    { filePath: "/f", sizeBytes: "abc", lineCount: "many" },
+    { filePath: "/f", sizeBytes: "2048", lineCount: "3" },
+    { filePath: "/f", sizeBytes: null, lineCount: null },
+    { filePath: "/f", sizeBytes: true, lineCount: false },
+    { filePath: "/f", sizeBytes: 1023.9, lineCount: 1.5 },
+    { filePath: "/f", sizeBytes: 1024.5, lineCount: 0 },
+    { filePath: "/f", sizeBytes: -2048n, lineCount: -1n },
+    { filePath: "/f", sizeBytes: Number.POSITIVE_INFINITY, lineCount: 1 },
+    { sizeBytes: 10n, lineCount: 1n },
+    {},
+  ].map((place) => toolsFile.describeOutputLocation(place)));
+
+scenario("a read-only refusal reads a command, a folder, a path or a tool name of null as it reads a missing one, but for the tool name", async (given) => {
+  const accessor = given.readonly.createReadonlyResourceAccessor({ get: () => undefined }, true);
+  const out = [];
+  for (const [what, resource, request] of [
+    ["shell", given.shell.shellExecutorResource, { command: null, workingDirectory: null }],
+    ["background shell", given.backgroundShell.backgroundShellExecutorResource, { command: null, workingDirectory: "/w" }],
+    ["write", given.write.writeExecutorResource, { path: null }],
+    ["delete", given.del.deleteExecutorResource, { path: null }],
+    ["mcp", given.mcp.mcpExecutorResource, { name: null }],
+  ]) out.push([what, wire(await accessor.get(resource).execute(undefined, request))]);
+  const events = [];
+  for await (const event of accessor.get(given.shellStream.shellStreamExecutorResource).execute(undefined, { command: "ls", workingDirectory: null })) events.push(wire(event));
+  out.push(["shell stream", events]);
+  return out;
+});
+
+scenario("a piece of an MCP answer that is not a message counts as text when it says so, whatever it holds", async (given) => {
+  const { toolsFile } = given;
+  const where = outputLocation(given, { filePath: "/work/agent-tools/new.txt", sizeBytes: "9", lineCount: "2" });
+  const out = [];
+  for (const [what, items] of [
+    ["text with no text in it, then text", [{ content: { case: "text", value: {} } }, { content: { case: "text", value: { text: "abcdef" } } }]],
+    ["text that is a number", [{ content: { case: "text", value: { text: 123456 } } }]],
+    ["a place of null is still a place", [{ content: { case: "text", value: { text: "abcdef", outputLocation: null } } }, { content: { case: "text", value: { text: "ghijkl" } } }]],
+    ["a piece of no kind, and an image", [{ content: {} }, { content: { case: "image", value: {} } }, { content: { case: "text", value: { text: "abcdef" } } }]],
+  ]) {
+    const written = [];
+    const result = await toolsFile.materializeMcpTextOutput({ contentItems: items, thresholdBytes: 3, write: async (text) => { written.push(text); return where; } });
+    out.push([what, { written, result: result.map((item) => (items.includes(item) ? `the piece given (${items.indexOf(item)})` : wire(item))) }]);
+  }
+  out.push(["a piece that is nothing", classOnly(await outcomeOf(() => toolsFile.materializeMcpTextOutput({ contentItems: [null], thresholdBytes: 3, write: async () => where })))]);
+  out.push(["a piece with nothing in it", classOnly(await outcomeOf(() => toolsFile.materializeMcpTextOutput({ contentItems: [{}], thresholdBytes: 3, write: async () => where })))]);
+  return out;
+});
