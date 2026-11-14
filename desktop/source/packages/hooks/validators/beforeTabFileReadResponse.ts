@@ -1,18 +1,11 @@
-import { createValidationResult, isObject, type ValidationResult } from "./base.js";
-import { validateBaseHookResponse } from "./baseHookResponse.js";
+import { type ValidationResult } from "./base.js";
+import { validateBeforeReadFileResponse } from "./beforeReadFileResponse.js";
 
+/**
+ * The check of a hook's answer before a tab file read. The answer holds
+ * what an answer before any file read holds, and is checked the same way;
+ * this is a function of its own, under the step's name.
+ */
 export function validateBeforeTabFileReadResponse(value: unknown): ValidationResult {
-  const baseValidation = validateBaseHookResponse(value);
-  if (!baseValidation.isValid || !isObject(value)) return baseValidation;
-  const errors: string[] = [];
-  if (value.permission !== undefined) {
-    const validPermissions = ["allow", "deny"];
-    if (!validPermissions.includes(value.permission as string)) {
-      errors.push(`Invalid permission value. Expected one of: ${validPermissions.join(", ")}, or undefined`);
-    }
-  }
-  if (value.user_message !== undefined && typeof value.user_message !== "string") {
-    errors.push("user_message must be a string if provided");
-  }
-  return createValidationResult(errors.length === 0, errors);
+  return validateBeforeReadFileResponse(value);
 }

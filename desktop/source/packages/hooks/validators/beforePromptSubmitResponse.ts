@@ -1,9 +1,17 @@
-import { createValidationResult, isObject, isString, type ValidationResult } from "./base.js";
+import { createValidationResult, isObject, validateOptionalString, type ValidationResult } from "./base.js";
 import { validateBaseHookResponse } from "./baseHookResponse.js";
+
+/**
+ * The check of a hook's answer before a prompt is submitted: `continue` a
+ * yes or a no, and the message and the added context each a text. All three
+ * may be left out.
+ */
 export function validateBeforePromptSubmitResponse(value: unknown): ValidationResult {
-  const base = validateBaseHookResponse(value); if (!base.isValid || !isObject(value)) return base; const errors: string[] = [];
-  if (value.continue !== undefined && typeof value.continue !== "boolean") errors.push("continue must be a boolean if provided");
-  if (value.user_message !== undefined && !isString(value.user_message)) errors.push("user_message must be a string if provided");
-  if (value.additional_context !== undefined && !isString(value.additional_context)) errors.push("additional_context must be a string if provided");
+  if (!isObject(value)) return validateBaseHookResponse(value);
+  const goOn = value.continue;
+  const errors: string[] = [];
+  if (goOn !== undefined && typeof goOn !== "boolean") errors.push("continue must be a boolean if provided");
+  validateOptionalString(value.user_message, "user_message", errors);
+  validateOptionalString(value.additional_context, "additional_context", errors);
   return createValidationResult(errors.length === 0, errors);
 }

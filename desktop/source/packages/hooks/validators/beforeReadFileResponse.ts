@@ -1,11 +1,21 @@
-import { createValidationResult, isObject, type ValidationResult } from "./base.js";
+import { createValidationResult, isObject, validateOptionalString, type ValidationResult } from "./base.js";
 import { validateBaseHookResponse } from "./baseHookResponse.js";
+
+/** What a hook may decide before a file is read. "ask", which other steps take, is refused here. */
+const PERMISSIONS: readonly unknown[] = ["allow", "deny"];
+
+/**
+ * The check of a hook's answer before a file is read: a permission that is
+ * one of the two words exactly, and a message that is a text. Both may be
+ * left out.
+ */
 export function validateBeforeReadFileResponse(value: unknown): ValidationResult {
-  const base = validateBaseHookResponse(value); if (!base.isValid || !isObject(value)) return base; const errors: string[] = [];
-  if (value.permission !== undefined) {
-    const validPermissions = ["allow", "deny"];
-    if (!validPermissions.includes(value.permission as string)) errors.push(`Invalid permission value. Expected one of: ${validPermissions.join(", ")}, or undefined`);
+  if (!isObject(value)) return validateBaseHookResponse(value);
+  const { permission } = value;
+  const errors: string[] = [];
+  if (permission !== undefined && !PERMISSIONS.includes(permission)) {
+    errors.push(`Invalid permission value. Expected one of: ${PERMISSIONS.join(", ")}, or undefined`);
   }
-  if (value.user_message !== undefined && typeof value.user_message !== "string") errors.push("user_message must be a string if provided");
+  validateOptionalString(value.user_message, "user_message", errors);
   return createValidationResult(errors.length === 0, errors);
 }
