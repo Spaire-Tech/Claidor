@@ -1,0 +1,2686 @@
+{
+ "part": "packages/hooks-exec",
+ "surface": {
+  "errors": {
+   "FailClosedError": "class",
+   "HOOK_DENIAL_AGENT_NOTE": "string",
+   "HOOK_SETTINGS_HINT": "string",
+   "HookDeniedError": "class",
+   "appendAgentDenialNote": "function",
+   "createHookDenialMessage": "function",
+   "createHookFailClosedMessage": "function",
+   "withFailClosed": "function"
+  }
+ },
+ "scenarios": {
+  "the two sentences the messages are built with": {
+   "returned": {
+    "HOOK_SETTINGS_HINT": "To view or modify configured hooks, see the hooks in your settings.",
+    "HOOK_DENIAL_AGENT_NOTE": "Agent note: Do not suggest workarounds to the blocked tool."
+   }
+  },
+  "a denial says \"Hook denied:\" and its reason, whatever the reason is, and prints under its own name": {
+   "returned": [
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: not allowed here",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "not allowed here"
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: not allowed here",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"not allowed here\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: ",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": ""
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: ",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied:  ",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": " "
+      }
+     },
+     "printed": "HookDeniedError: Hook denied:  ",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\" \"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: two\nlines",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "two\nlines"
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: two\nlines",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"two\\nlines\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: Hook denied: said twice",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "Hook denied: said twice"
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: Hook denied: said twice",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"Hook denied: said twice\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: undefined",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": {
+        "$": "undefined"
+       }
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: undefined",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: null",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": null
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: null",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":null}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: 7",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": 7
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: 7",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":7}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: [object Object]",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": {
+        "a": "reason"
+       }
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: [object Object]",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":{\"a\":\"reason\"}}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: a,list",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": [
+        "a",
+        "list"
+       ]
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: a,list",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":[\"a\",\"list\"]}"
+    }
+   ]
+  },
+  "a denial made with no reason, or with more than one thing": {
+   "returned": [
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: undefined",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": {
+        "$": "undefined"
+       }
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: undefined",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: first",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "first"
+      }
+     },
+     "printed": "HookDeniedError: Hook denied: first",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason"
+     ],
+     "asJson": "{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"first\"}"
+    }
+   ]
+  },
+  "a denial is an error of its own class with three fields, each one's to write over, list and remove": {
+   "returned": {
+    "isError": true,
+    "isDenial": true,
+    "isFailClosed": false,
+    "madeDirectlyFromError": true,
+    "itsMakerIsTheClass": true,
+    "className": "HookDeniedError",
+    "parameters": 1,
+    "ofTheClass": [
+     "length",
+     "name",
+     "prototype"
+    ],
+    "ofEveryDenial": [
+     "constructor"
+    ],
+    "held": {
+     "message": {
+      "value": "Hook denied: not allowed here",
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "failureType": {
+      "value": "permission_denied",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "name": {
+      "value": "HookDeniedError",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "reason": {
+      "value": "not allowed here",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "afterWritingOver": {
+     "fields": {
+      "message": {
+       "value": "Hook denied: not allowed here",
+       "writable": true,
+       "enumerable": false,
+       "configurable": true
+      },
+      "failureType": {
+       "value": "written over",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "name": {
+       "value": "Renamed",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "reason": {
+       "value": "changed",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      }
+     },
+     "printed": "Renamed: Hook denied: not allowed here",
+     "message": "Hook denied: not allowed here"
+    },
+    "theOtherIsUntouched": {
+     "message": {
+      "value": "Hook denied: another",
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "failureType": {
+      "value": "permission_denied",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "name": {
+      "value": "HookDeniedError",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "reason": {
+      "value": "another",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "removed": [
+     true,
+     "Error: Hook denied: not allowed here",
+     true,
+     [
+      "failureType"
+     ]
+    ]
+   }
+  },
+  "a failure to run a hook says \"Hook failed (fail-closed):\" and its reason, and keeps what caused it as a field that is listed": {
+   "returned": [
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "the hook's program is missing"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "the hook's program is missing"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":{}}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "a type error"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "a type error"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":{}}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": "a text",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": "a text"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":\"a text\"}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": "",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": ""
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":\"\"}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": 0,
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": 0
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":0}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": false,
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": false
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":false}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": null,
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": null
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":null}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": {
+        "$": "undefined"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\"}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": {
+       "code": "ENOENT",
+       "path": "/hooks/check.sh"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": {
+        "code": "ENOENT",
+        "path": "/hooks/check.sh"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":{\"code\":\"ENOENT\",\"path\":\"/hooks/check.sh\"}}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": [
+       "a",
+       "list"
+      ],
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": [
+        "a",
+        "list"
+       ]
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":[\"a\",\"list\"]}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): could not run",
+      "cause": {
+       "$": "error",
+       "name": "HookDeniedError",
+       "message": "Hook denied: a denial as the cause",
+       "extra": {
+        "failureType": "permission_denied",
+        "name": "HookDeniedError",
+        "reason": "a denial as the cause"
+       }
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "could not run",
+       "cause": {
+        "$": "error",
+        "name": "HookDeniedError",
+        "message": "Hook denied: a denial as the cause",
+        "extra": {
+         "failureType": "permission_denied",
+         "name": "HookDeniedError",
+         "reason": "a denial as the cause"
+        }
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): could not run",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"could not run\",\"cause\":{\"failureType\":\"permission_denied\",\"name\":\"HookDeniedError\",\"reason\":\"a denial as the cause\"}}",
+     "sameCause": true,
+     "hasCause": true,
+     "ownsCause": true
+    }
+   ]
+  },
+  "a failure's reason may be anything, and a failure made with no cause still has the field": {
+   "returned": [
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): ",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "",
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): ",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"\",\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): two\nlines",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "two\nlines",
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): two\nlines",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"two\\nlines\",\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Hook failed (fail-closed): said twice",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Hook failed (fail-closed): said twice",
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Hook failed (fail-closed): said twice",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Hook failed (fail-closed): said twice\",\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): undefined",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": {
+        "$": "undefined"
+       },
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): undefined",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): null",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": null,
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): null",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":null,\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): 12",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": 12,
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): 12",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":12,\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): [object Object]",
+      "cause": "the cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": {
+        "a": "reason"
+       },
+       "cause": "the cause"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): [object Object]",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":{\"a\":\"reason\"},\"cause\":\"the cause\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): no cause given",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "no cause given",
+       "cause": {
+        "$": "undefined"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): no cause given",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"no cause given\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): undefined",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": {
+        "$": "undefined"
+       },
+       "cause": {
+        "$": "undefined"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): undefined",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\"}"
+    },
+    {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): first",
+      "cause": "second",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "first",
+       "cause": "second"
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): first",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"first\",\"cause\":\"second\"}"
+    }
+   ]
+  },
+  "a failure is an error of its own class with four fields, each one's to write over, list and remove": {
+   "returned": {
+    "isError": true,
+    "isFailClosed": true,
+    "isDenial": false,
+    "madeDirectlyFromError": true,
+    "itsMakerIsTheClass": true,
+    "className": "FailClosedError",
+    "parameters": 2,
+    "ofTheClass": [
+     "length",
+     "name",
+     "prototype"
+    ],
+    "ofEveryFailure": [
+     "constructor"
+    ],
+    "held": {
+     "message": {
+      "value": "Hook failed (fail-closed): could not run",
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "failureType": {
+      "value": "error",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "name": {
+      "value": "FailClosedError",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "reason": {
+      "value": "could not run",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "cause": {
+      "value": {
+       "$": "error",
+       "name": "Error",
+       "message": "underneath"
+      },
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "afterWritingOver": {
+     "fields": {
+      "message": {
+       "value": "Hook failed (fail-closed): could not run",
+       "writable": true,
+       "enumerable": false,
+       "configurable": true
+      },
+      "failureType": {
+       "value": "written over",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "name": {
+       "value": "Renamed",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "reason": {
+       "value": "changed",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "cause": {
+       "value": "another cause",
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      }
+     },
+     "printed": "Renamed: Hook failed (fail-closed): could not run",
+     "message": "Hook failed (fail-closed): could not run"
+    },
+    "theOtherIsUntouched": {
+     "message": {
+      "value": "Hook failed (fail-closed): another",
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "failureType": {
+      "value": "error",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "name": {
+      "value": "FailClosedError",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "reason": {
+      "value": "another",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "cause": {
+      "value": "its own cause",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "removed": [
+     true,
+     false,
+     true,
+     "Error: Hook failed (fail-closed): could not run",
+     [
+      "failureType",
+      "reason"
+     ]
+    ]
+   }
+  },
+  "the note to the agent is added once, after a blank line, unless the message already holds it word for word": {
+   "returned": [
+    [
+     "The command was blocked.",
+     "The command was blocked.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "",
+     "\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     " ",
+     " \n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "ends with a line break\n",
+     "ends with a line break\n\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "Agent note: Do not suggest workarounds to the blocked tool.",
+     "Agent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "Blocked.\n\nAgent note: Do not suggest workarounds to the blocked tool.",
+     "Blocked.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "Agent note: Do not suggest workarounds to the blocked tool. And more after it.",
+     "Agent note: Do not suggest workarounds to the blocked tool. And more after it."
+    ],
+    [
+     "before Agent note: Do not suggest workarounds to the blocked tool. after",
+     "before Agent note: Do not suggest workarounds to the blocked tool. after"
+    ],
+    [
+     "Agent note: Do not suggest workarounds to the blocked tool.\n\nAgent note: Do not suggest workarounds to the blocked tool.",
+     "Agent note: Do not suggest workarounds to the blocked tool.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "agent note: do not suggest workarounds to the blocked tool.",
+     "agent note: do not suggest workarounds to the blocked tool.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "AGENT NOTE: DO NOT SUGGEST WORKAROUNDS TO THE BLOCKED TOOL.",
+     "AGENT NOTE: DO NOT SUGGEST WORKAROUNDS TO THE BLOCKED TOOL.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "Agent note: Do not suggest workarounds to the blocked tool",
+     "Agent note: Do not suggest workarounds to the blocked tool\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     "Agent note:  Do not suggest workarounds to the blocked tool.",
+     "Agent note:  Do not suggest workarounds to the blocked tool.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     " Agent note: Do not suggest workarounds to the blocked tool. ",
+     " Agent note: Do not suggest workarounds to the blocked tool. "
+    ],
+    [
+     "To view or modify configured hooks, see the hooks in your settings.",
+     "To view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ]
+   ]
+  },
+  "adding the note to a message that was given it already changes nothing": {
+   "returned": {
+    "once": "Blocked.\n\nAgent note: Do not suggest workarounds to the blocked tool.",
+    "twice": "Blocked.\n\nAgent note: Do not suggest workarounds to the blocked tool.",
+    "same": true,
+    "parameters": 1
+   }
+  },
+  "a denial's message: what was blocked, what the hook said if it said anything, where the hooks are, and the note to the agent": {
+   "returned": [
+    [
+     [
+      "Shell command",
+      "rm is not allowed in this project"
+     ],
+     "Shell command was blocked by a hook: rm is not allowed in this project\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      {
+       "$": "undefined"
+      }
+     ],
+     "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      null
+     ],
+     "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      ""
+     ],
+     "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      " "
+     ],
+     "Shell command was blocked by a hook:  \n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      "0"
+     ],
+     "Shell command was blocked by a hook: 0\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      "two\nlines"
+     ],
+     "Shell command was blocked by a hook: two\nlines\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      "ends with a stop."
+     ],
+     "Shell command was blocked by a hook: ends with a stop.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "MCP tool files:write",
+      "Read only."
+     ],
+     "MCP tool files:write was blocked by a hook: Read only.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "",
+      "said with nothing named"
+     ],
+     " was blocked by a hook: said with nothing named\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "",
+      ""
+     ],
+     " was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "two\nlines",
+      "said"
+     ],
+     "two\nlines was blocked by a hook: said\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command"
+     ],
+     "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ]
+   ]
+  },
+  "a denial's message that already holds the note to the agent, from the hook or in what was blocked, does not get it again": {
+   "returned": [
+    [
+     [
+      "Shell command",
+      "No. Agent note: Do not suggest workarounds to the blocked tool."
+     ],
+     "Shell command was blocked by a hook: No. Agent note: Do not suggest workarounds to the blocked tool.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      "Agent note: Do not suggest workarounds to the blocked tool."
+     ],
+     "Shell command was blocked by a hook: Agent note: Do not suggest workarounds to the blocked tool.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Agent note: Do not suggest workarounds to the blocked tool. Shell command",
+      "said"
+     ],
+     "Agent note: Do not suggest workarounds to the blocked tool. Shell command was blocked by a hook: said\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Agent note: Do not suggest workarounds to the blocked tool. Shell command",
+      {
+       "$": "undefined"
+      }
+     ],
+     "Agent note: Do not suggest workarounds to the blocked tool. Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      "agent note: do not suggest workarounds to the blocked tool."
+     ],
+     "Shell command was blocked by a hook: agent note: do not suggest workarounds to the blocked tool.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      "To view or modify configured hooks, see the hooks in your settings."
+     ],
+     "Shell command was blocked by a hook: To view or modify configured hooks, see the hooks in your settings.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+    ],
+    [
+     [
+      "Shell command",
+      "To view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     "Shell command was blocked by a hook: To view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ]
+   ]
+  },
+  "a denial's message is made of whatever it is given: nothing named is written as it is, and only an empty answer counts as none": {
+   "returned": {
+    "parameters": 2,
+    "given": [
+     [
+      [
+       {
+        "$": "undefined"
+       },
+       "said"
+      ],
+      "undefined was blocked by a hook: said\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       null,
+       "said"
+      ],
+      "null was blocked by a hook: said\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ],
+      "undefined was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       12,
+       "said"
+      ],
+      "12 was blocked by a hook: said\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       0
+      ],
+      "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       false
+      ],
+      "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       {
+        "$": "number",
+        "v": "NaN"
+       }
+      ],
+      "Shell command was blocked by a hook.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       5
+      ],
+      "Shell command was blocked by a hook: 5\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       true
+      ],
+      "Shell command was blocked by a hook: true\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       [
+        "a",
+        "list"
+       ]
+      ],
+      "Shell command was blocked by a hook: a,list\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       []
+      ],
+      "Shell command was blocked by a hook: \n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ],
+     [
+      [
+       "Shell command",
+       {
+        "a": 1
+       }
+      ],
+      "Shell command was blocked by a hook: [object Object]\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool."
+     ]
+    ]
+   }
+  },
+  "a failure's message: what was blocked (\"Action\" when not named), the error if there is one, why it is blocked, and where the hooks are; no note to the agent": {
+   "returned": [
+    [
+     [
+      "Shell command",
+      "spawn /hooks/check.sh ENOENT"
+     ],
+     "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      {
+       "$": "undefined"
+      }
+     ],
+     "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      null
+     ],
+     "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      ""
+     ],
+     "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      " "
+     ],
+     "Shell command was blocked because a configured hook failed to execute:  \n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      "0"
+     ],
+     "Shell command was blocked because a configured hook failed to execute: 0\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      "two\nlines"
+     ],
+     "Shell command was blocked because a configured hook failed to execute: two\nlines\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command",
+      "ends with a stop."
+     ],
+     "Shell command was blocked because a configured hook failed to execute: ends with a stop.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      {
+       "$": "undefined"
+      },
+      "timed out"
+     ],
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      null,
+      "timed out"
+     ],
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      }
+     ],
+     "Action was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      null,
+      null
+     ],
+     "Action was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "",
+      "timed out"
+     ],
+     " was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "",
+      ""
+     ],
+     " was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      " ",
+      "timed out"
+     ],
+     "  was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Action",
+      "timed out"
+     ],
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "two\nlines",
+      "timed out"
+     ],
+     "two\nlines was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [
+      "Shell command"
+     ],
+     "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     [],
+     "Action was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ]
+   ]
+  },
+  "a failure's message never carries the note to the agent unless what it is given does, and is made of whatever it is given": {
+   "returned": {
+    "holdsTheNote": false,
+    "endsWithTheHint": true,
+    "parameters": 2,
+    "given": [
+     [
+      [
+       "Shell command",
+       "Agent note: Do not suggest workarounds to the blocked tool."
+      ],
+      "Shell command was blocked because a configured hook failed to execute: Agent note: Do not suggest workarounds to the blocked tool.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Agent note: Do not suggest workarounds to the blocked tool.",
+       "timed out"
+      ],
+      "Agent note: Do not suggest workarounds to the blocked tool. was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       0,
+       "timed out"
+      ],
+      "0 was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       false,
+       "timed out"
+      ],
+      "false was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       12,
+       34
+      ],
+      "12 was blocked because a configured hook failed to execute: 34\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       0
+      ],
+      "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       false
+      ],
+      "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       {
+        "$": "number",
+        "v": "NaN"
+       }
+      ],
+      "Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       true
+      ],
+      "Shell command was blocked because a configured hook failed to execute: true\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       []
+      ],
+      "Shell command was blocked because a configured hook failed to execute: \n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       [
+        "a",
+        "list"
+       ]
+      ],
+      "Shell command was blocked because a configured hook failed to execute: a,list\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       "Shell command",
+       {
+        "a": 1
+       }
+      ],
+      "Shell command was blocked because a configured hook failed to execute: [object Object]\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ],
+     [
+      [
+       {
+        "a": 1
+       },
+       "timed out"
+      ],
+      "[object Object] was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+     ]
+    ]
+   }
+  },
+  "what is given is written out once each, in a fixed order": {
+   "returned": {
+    "notes": [
+     "denial: what was blocked",
+     "denial: what the hook said",
+     "failure: the error",
+     "failure: what was blocked",
+     "a failure's reason",
+     "a denial's reason"
+    ],
+    "denial": "Shell command was blocked by a hook: no\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nAgent note: Do not suggest workarounds to the blocked tool.",
+    "failure": "Shell command was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+    "madeMessage": "Hook failed (fail-closed): could not run",
+    "deniedMessage": "Hook denied: not allowed",
+    "reasonKeptAsGiven": "object",
+    "denialReasonKeptAsGiven": "object"
+   }
+  },
+  "work that succeeds comes back as it is, whatever it gives and whether it gives it now or later": {
+   "returned": {
+    "answers": [
+     "a value",
+     0,
+     "",
+     false,
+     null,
+     {
+      "$": "undefined"
+     },
+     {
+      "an": "object"
+     },
+     "a promise's value",
+     "an async function's value",
+     "after a short wait",
+     "something with a then",
+     {
+      "$": "error",
+      "name": "Error",
+      "message": "an error given back, not thrown"
+     },
+     "a promise in a promise"
+    ],
+    "sameObject": true,
+    "withNothingNamed": [
+     "a value",
+     "a value",
+     "a value"
+    ],
+    "parameters": 2
+   }
+  },
+  "the work is called once, at once, with nothing, and what comes back is always a promise": {
+   "returned": {
+    "events": [
+     "before asking",
+     {
+      "called": "the work",
+      "given": [],
+      "self": "undefined"
+     },
+     "after asking, before waiting",
+     "after waiting"
+    ],
+    "answer": "done",
+    "isPromise": true,
+    "aThrowAtOnceIsStillAPromise": true,
+    "failed": true
+   }
+  },
+  "an error from the work, thrown at once or later, becomes a failure that carries the failure's message as its reason and the error as its cause": {
+   "returned": [
+    {
+     "how": "thrown at once",
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "spawn /hooks/check.sh ENOENT"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "spawn /hooks/check.sh ENOENT"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}",
+     "isFailClosed": true,
+     "sameCause": true,
+     "reasonIsTheMessage": true,
+     "failureType": "error"
+    },
+    {
+     "how": "a promise that fails",
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "spawn /hooks/check.sh ENOENT"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "spawn /hooks/check.sh ENOENT"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}",
+     "isFailClosed": true,
+     "sameCause": true,
+     "reasonIsTheMessage": true,
+     "failureType": "error"
+    },
+    {
+     "how": "an async function that throws",
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "spawn /hooks/check.sh ENOENT"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "spawn /hooks/check.sh ENOENT"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}",
+     "isFailClosed": true,
+     "sameCause": true,
+     "reasonIsTheMessage": true,
+     "failureType": "error"
+    },
+    {
+     "how": "a failure after a short wait",
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "spawn /hooks/check.sh ENOENT"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "spawn /hooks/check.sh ENOENT"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}",
+     "isFailClosed": true,
+     "sameCause": true,
+     "reasonIsTheMessage": true,
+     "failureType": "error"
+    },
+    {
+     "how": "something with a then that fails",
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "Error",
+       "message": "spawn /hooks/check.sh ENOENT"
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "spawn /hooks/check.sh ENOENT"
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Shell command was blocked because a configured hook failed to execute: spawn /hooks/check.sh ENOENT\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}",
+     "isFailClosed": true,
+     "sameCause": true,
+     "reasonIsTheMessage": true,
+     "failureType": "error"
+    }
+   ]
+  },
+  "what was being done is named in the failure, \"Action\" when it is not named, and an empty name is kept empty": {
+   "returned": [
+    [
+     "Shell command",
+     "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "Shell command was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     "MCP tool files:write",
+     "Hook failed (fail-closed): MCP tool files:write was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "MCP tool files:write was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     {
+      "$": "undefined"
+     },
+     "Hook failed (fail-closed): Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     null,
+     "Hook failed (fail-closed): Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     "",
+     "Hook failed (fail-closed):  was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     " was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     " ",
+     "Hook failed (fail-closed):   was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "  was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     "two\nlines",
+     "Hook failed (fail-closed): two\nlines was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "two\nlines was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ],
+    [
+     "not given at all",
+     "Hook failed (fail-closed): Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "Action was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings."
+    ]
+   ]
+  },
+  "only a real error gives its message; anything else thrown is written out as it prints, and an empty message ends the sentence with a stop": {
+   "returned": [
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error",
+      "message": ""
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error",
+      "message": " "
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute:  \n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "a type error"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: a type error\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "OwnError",
+      "message": "an error of another class",
+      "extra": {
+       "name": "OwnError",
+       "code": "E_OWN"
+      }
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: an error of another class\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error",
+      "message": 0
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error",
+      "message": 42
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: 42\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "Error",
+      "message": {
+       "not": "a text"
+      }
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: [object Object]\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "HookDeniedError",
+      "message": "Hook denied: denied by a hook",
+      "extra": {
+       "failureType": "permission_denied",
+       "name": "HookDeniedError",
+       "reason": "denied by a hook"
+      }
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: Hook denied: denied by a hook\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): already a failure",
+      "cause": "its cause",
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "already a failure",
+       "cause": "its cause"
+      }
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: Hook failed (fail-closed): already a failure\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": "a text",
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: a text\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": "",
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": 0,
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: 0\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": 42,
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: 42\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": false,
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: false\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": true,
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: true\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": null,
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: null\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "undefined"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: undefined\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "bigint",
+      "v": "10"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: 10\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "symbol",
+      "v": "a symbol"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: Symbol(a symbol)\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "message": "an object that only looks like an error"
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: [object Object]\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "toString": {
+       "$": "function",
+       "name": "toString"
+      }
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: an object that prints as this\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": [
+      "a",
+      "list"
+     ],
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: a,list\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": [],
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    },
+    {
+     "thrown": {
+      "$": "instance",
+      "class": "Error",
+      "v": {}
+     },
+     "isFailClosed": true,
+     "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: Error: made in another realm\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "sameCause": true,
+     "reasonIsInMessage": true
+    }
+   ]
+  },
+  "a failure inside a failure: each layer says it again and keeps the one before as its cause": {
+   "returned": {
+    "outer": {
+     "kept": {
+      "$": "error",
+      "name": "FailClosedError",
+      "message": "Hook failed (fail-closed): Outer hook was blocked because a configured hook failed to execute: Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "FailClosedError",
+       "message": "Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "Error",
+        "message": "timed out"
+       },
+       "extra": {
+        "failureType": "error",
+        "name": "FailClosedError",
+        "reason": "Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+        "cause": {
+         "$": "error",
+         "name": "Error",
+         "message": "timed out"
+        }
+       }
+      },
+      "extra": {
+       "failureType": "error",
+       "name": "FailClosedError",
+       "reason": "Outer hook was blocked because a configured hook failed to execute: Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+       "cause": {
+        "$": "error",
+        "name": "FailClosedError",
+        "message": "Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+        "cause": {
+         "$": "error",
+         "name": "Error",
+         "message": "timed out"
+        },
+        "extra": {
+         "failureType": "error",
+         "name": "FailClosedError",
+         "reason": "Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+         "cause": {
+          "$": "error",
+          "name": "Error",
+          "message": "timed out"
+         }
+        }
+       }
+      }
+     },
+     "printed": "FailClosedError: Hook failed (fail-closed): Outer hook was blocked because a configured hook failed to execute: Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+     "ownNames": [
+      "message",
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "listed": [
+      "failureType",
+      "name",
+      "reason",
+      "cause"
+     ],
+     "asJson": "{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Outer hook was blocked because a configured hook failed to execute: Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{\"failureType\":\"error\",\"name\":\"FailClosedError\",\"reason\":\"Inner hook was blocked because a configured hook failed to execute: timed out\\n\\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\\n\\nTo view or modify configured hooks, see the hooks in your settings.\",\"cause\":{}}}"
+    },
+    "causeIsTheInner": true,
+    "innerCauseMessage": "timed out",
+    "throughBoth": "Hook failed (fail-closed): Outer hook was blocked because a configured hook failed to execute: Hook failed (fail-closed): Inner hook was blocked because a configured hook failed to execute: timed out\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+    "throughBothIsTheSame": true
+   }
+  },
+  "work that is not something to call fails closed like any other; a thing thrown that cannot be written out comes out as that trouble itself": {
+   "returned": {
+    "notCallable": [
+     {
+      "given": {
+       "$": "undefined"
+      },
+      "isFailClosed": true,
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: fn is not a function\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "fn is not a function"
+      }
+     },
+     {
+      "given": null,
+      "isFailClosed": true,
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: fn is not a function\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "fn is not a function"
+      }
+     },
+     {
+      "given": "a text",
+      "isFailClosed": true,
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: fn is not a function\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "fn is not a function"
+      }
+     },
+     {
+      "given": 12,
+      "isFailClosed": true,
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: fn is not a function\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "fn is not a function"
+      }
+     },
+     {
+      "given": {},
+      "isFailClosed": true,
+      "message": "Hook failed (fail-closed): Shell command was blocked because a configured hook failed to execute: fn is not a function\n\nThis is a safety measure (fail-closed) - when hooks cannot be evaluated, the action is blocked to prevent potentially unsafe operations.\n\nTo view or modify configured hooks, see the hooks in your settings.",
+      "cause": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "fn is not a function"
+      }
+     }
+    ],
+    "bare": {
+     "kept": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert object to primitive value"
+     },
+     "isFailClosed": false
+    },
+    "stubborn": {
+     "kept": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "will not be written out"
+     },
+     "isFailClosed": false
+    }
+   }
+  },
+  "how soon an answer comes back: a throw before anything else that waits, a value or a promise one turn later, something with a then two turns later": {
+   "returned": {
+    "aValue": [
+     "turn 1",
+     "answered",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "aPromise": [
+     "turn 1",
+     "answered",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "anAsyncFunction": [
+     "turn 1",
+     "answered",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "aThrow": [
+     "failed",
+     "turn 1",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "aFailedPromise": [
+     "turn 1",
+     "failed",
+     "turn 2",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ],
+    "somethingWithAThen": [
+     "turn 1",
+     "turn 2",
+     "answered",
+     "turn 3",
+     "turn 4",
+     "turn 5",
+     "turn 6"
+    ]
+   }
+  }
+ }
+}
