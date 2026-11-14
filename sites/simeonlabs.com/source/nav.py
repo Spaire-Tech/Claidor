@@ -39,7 +39,7 @@ ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l
 # design on the right. Same for ressources"): each item's name over a line of what it is, and on the right the
 # picture of the item the pointer is on, the first item's until then (img/menu/<picture>.webp, made 14 November
 # 2026: Product's, a screenshot of the app on an agent's colour beside two of the cards' photos, but Teammates' the
-# app's "just joined your team" card (Ravi, clay-13, in his face's colour) on a softer ground of that colour; the Newsroom's the
+# app's "just joined your team" card (Maya, clay-23, in her face's colour) on a softer ground of that colour; the Newsroom's the
 # SimeonLabs pond painting, the App Store's header; Docs' the docs' own overview page; AI Models' twelve model
 # makers' logos on Rosa's colour).
 # Each: key (a page passes it as `current`), address, name, the line under it, picture.
