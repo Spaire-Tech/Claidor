@@ -1,3 +1,13 @@
+/**
+ * The front door of the agent's executors: every name the files of this
+ * folder export, in one place.
+ *
+ * The lines are in the files' alphabetical order, which is also the order
+ * the files load in. Ten files define nothing; they are imported for their
+ * place in that order only. One file is handed on name by name, because its
+ * own `Executor` type would otherwise meet the one of `remote.ts` under the
+ * same name.
+ */
 export * from "./adopt.js";
 import "./agent-skill-metadata.js";
 export * from "./agent-store-conflict.js";
