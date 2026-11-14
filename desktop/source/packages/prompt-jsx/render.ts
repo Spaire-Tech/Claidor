@@ -1,460 +1,333 @@
+/**
+ * Turns a prompt tree into the text a model reads.
+ *
+ * A text or a number alone is written as it is. A list of nodes is written
+ * as paragraphs: each block (p, a heading, a list, a section, an x tag,
+ * pre) is one, the texts between blocks are gathered into paragraphs of
+ * their own, and an empty line sets one paragraph apart from the next.
+ * Fragments and components are replaced by what they hold or return before
+ * anything of the list is written.
+ *
+ * System, User, Assistant, Tool and Conversation belong to a conversation.
+ * There each message and each bare text is a line, and blocks say nothing.
+ */
 import { builtinComponents } from "./components.js";
 import type { PromptElement, PromptNode, PromptProps } from "./jsx-runtime.js";
 
-interface PromptMessage {
-  readonly role: string;
-  readonly content: string;
-  readonly name?: unknown;
-  readonly toolCallId?: unknown;
-}
+type Component = (props: PromptProps) => PromptNode;
 
 interface RenderOptions {
-  readonly components?: Readonly<Record<string, (props: PromptProps) => PromptNode>> | undefined;
+  /** Components of the caller's own, found by the name an element has as its type. */
+  readonly components?: Readonly<Record<string, Component>> | undefined;
 }
 
-interface RenderParagraph {
-  readonly content: string;
-  readonly isSection: boolean;
+/** The elements that are a paragraph of their own in a list of nodes, the headings aside. */
+const BLOCKS: ReadonlySet<string> = new Set(["p", "section", "ul", "ol", "x", "pre"]);
+const HEADING = /^h[1-6]$/;
+/** The elements whose content is one message of a conversation. */
+const SPEAKERS: ReadonlySet<string> = new Set(["System", "User", "Assistant", "Tool"]);
+/** The elements that say nothing in a conversation. */
+const SILENT: ReadonlySet<string> = new Set(["p", "section", "ul", "ol", "li", "h1", "h2", "h3", "h4", "h5", "h6", "x", "pre", "br"]);
+
+/** Whether a node is an element: an object that has a type, its own or inherited. */
+function isElement(node: PromptNode): node is PromptElement {
+  return typeof node === "object" && node !== null && !Array.isArray(node) && "type" in node;
 }
 
-function isElement(value: PromptNode): value is PromptElement {
-  return value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    "type" in value;
+/**
+ * Whether an element of this type is a paragraph of its own in a list of
+ * nodes. A component never is: it is replaced by what it returns before
+ * this is asked.
+ */
+function isBlock(type: PromptElement["type"]): boolean {
+  return typeof type !== "function" && (BLOCKS.has(type) || HEADING.test(type));
 }
 
-class RenderContext {
-  readonly metadata: Record<string, unknown> = {};
-  private readonly components: Readonly<Record<string, (props: PromptProps) => PromptNode>>;
+/**
+ * A list of nodes as it stands once its inner lists are opened, its
+ * nothings dropped, and every Fragment and component replaced by what it
+ * holds or returns, however deep. The components of the list are all called
+ * here, in order, before any of it is written.
+ *
+ * What an inner list, a Fragment or a component gives is handed over in one
+ * call, so there is a most it can hold (about 125,000 nodes where this was
+ * measured): beyond it the JavaScript engine refuses the call with a
+ * RangeError. A list given flat has no such limit.
+ */
+function settled(nodes: PromptNode[]): PromptNode[] {
+  const flat: PromptNode[] = [];
+  for (const node of nodes) {
+    if (node == null || typeof node === "boolean") continue;
+    if (Array.isArray(node)) {
+      flat.push(...settled(node));
+      continue;
+    }
+    if (!isElement(node) || (node.type !== "Fragment" && typeof node.type !== "function")) {
+      flat.push(node);
+      continue;
+    }
+    // A Fragment gives what it holds, a component what it returns: that stands in its place.
+    const inPlace = typeof node.type === "function" ? node.type(node.props) : node.props.children;
+    if (inPlace != null) flat.push(...settled(Array.isArray(inPlace) ? inPlace : [inPlace]));
+  }
+  return flat;
+}
+
+/**
+ * The children of a list or of an item as one flat list: inner lists are
+ * opened, everything else is kept, nothings too. An inner list is handed
+ * over in one call, with the same limit as above.
+ */
+function opened(children: PromptNode): PromptNode[] {
+  if (!Array.isArray(children)) return [children];
+  const flat: PromptNode[] = [];
+  for (const child of children) {
+    if (Array.isArray(child)) flat.push(...opened(child));
+    else flat.push(child);
+  }
+  return flat;
+}
+
+/** A paragraph of text tidied: runs of spaces become one space, the ends are trimmed, and the newlines it ended with are put back. */
+function tidied(text: string): string {
+  const ending = /\n+$/.exec(text)?.[0] ?? "";
+  return text.replace(/ +/g, " ").trim() + ending;
+}
+
+/**
+ * Paragraphs put together. An empty line stands between two of them, unless
+ * the second is blank (it is then only the spaces and newlines it holds) or
+ * the first is a text that already ends its line. Newlines at the very
+ * start and the very end are cut.
+ */
+function joined(paragraphs: readonly string[]): string {
+  let text = "";
+  let previous: string | undefined;
+  for (const paragraph of paragraphs) {
+    if (previous === undefined) {
+      text = paragraph;
+    } else {
+      const follows = !paragraph.trim() || (previous.trim() !== "" && previous.endsWith("\n"));
+      text += follows ? paragraph : `\n\n${paragraph}`;
+    }
+    previous = paragraph;
+  }
+  return text.replace(/^\n+/, "").replace(/\n+$/, "");
+}
+
+/** A heading: as many hashes as the level in its name ("h3" has three), then its text. A heading without text is nothing. */
+function heading(type: string, content: string): string {
+  const title = content.trim();
+  if (!title) return "";
+  const level = Number.parseInt(type.slice(1), 10);
+  return `${"#".repeat(level)} ${title}`;
+}
+
+/**
+ * What a tag carries after its name, with a space before it, or nothing.
+ * A value that is true is written as the bare name; false, null and
+ * undefined are not written; anything else is written in quotes.
+ */
+function attributesOf(attributes: Readonly<Record<string, unknown>>): string {
+  const written: string[] = [];
+  for (const name of Object.keys(attributes)) {
+    const value = attributes[name];
+    if (value == null) continue;
+    const one = typeof value === "boolean" ? (value ? name : "") : `${name}="${String(value).replace(/"/g, "&quot;")}"`;
+    if (one) written.push(one);
+  }
+  return written.length > 0 ? ` ${written.join(" ")}` : "";
+}
+
+/** A tag around its content, `gap` between the two on each side, or a tag closed at once when the content is blank. */
+function tagged(name: string, carried: string, content: string, gap: string): string {
+  if (!content.trim()) return `<${name}${carried} />`;
+  return `<${name}${carried}>${gap}${content}${gap}</${name}>`;
+}
+
+/**
+ * A numbered item that has no text of its own, only lists: the first line
+ * of the lists stands beside the number, and every other line is lined up
+ * under it, whatever its own indentation was.
+ */
+function besideNumber(mark: string, lists: readonly string[], indent: number): string {
+  const [first = "", ...others] = lists.join("\n").split("\n");
+  const pad = " ".repeat(indent);
+  return [`${mark} ${first.trimStart()}`, ...others.map((line) => pad + line.trimStart())].join("\n");
+}
+
+/**
+ * What stands in pre, letter for letter: texts and numbers as they are, a
+ * line break as a newline, and of any other element only what it holds.
+ */
+function verbatim(node: PromptNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(verbatim).join("");
+  if (typeof node.type === "function") return verbatim(node.type(node.props));
+  if (node.type === "br") return "\n";
+  return verbatim(node.props.children);
+}
+
+/** One call to `renderContent`: the names it can resolve, and the writing itself. */
+class Rendering {
+  private readonly components: Readonly<Record<string, Component>>;
 
   constructor(options: RenderOptions) {
+    // The part's own names first, then the caller's, which win.
     this.components = Object.assign({}, builtinComponents, options.components);
   }
 
-  renderToMessages(node: PromptNode): PromptMessage[] {
-    if (node == null || typeof node === "boolean") return [];
-    if (typeof node === "string" || typeof node === "number") {
-      return [{ role: "user", content: String(node) }];
-    }
-    if (Array.isArray(node)) return node.flatMap(child => this.renderToMessages(child));
-    return this.renderElement(node);
-  }
-
-  private renderElement(element: PromptElement): PromptMessage[] {
-    if (typeof element.type === "function") {
-      return this.renderToMessages(element.type(element.props));
-    }
-    if (typeof element.type === "string") {
-      return this.renderIntrinsicElement(element.type, element.props);
-    }
-    throw new Error(`Unknown element type: ${String(element.type)}`);
-  }
-
-  private renderIntrinsicElement(type: string, props: PromptProps): PromptMessage[] {
-    switch (type) {
-      case "System":
-        return [Object.assign(
-          { role: "system", content: this.renderContent(props.children) },
-          props.name && { name: props.name },
-        )];
-      case "User":
-        return [Object.assign(
-          { role: "user", content: this.renderContent(props.children) },
-          props.name && { name: props.name },
-        )];
-      case "Assistant":
-        return [Object.assign(
-          { role: "assistant", content: this.renderContent(props.children) },
-          props.name && { name: props.name },
-        )];
-      case "Tool":
-        return [Object.assign(
-          {
-            role: "tool",
-            content: this.renderContent(props.children),
-            toolCallId: props.tool_call_id,
-          },
-          props.name && { name: props.name },
-        )];
-      case "Fragment": return this.renderToMessages(props.children);
-      case "p":
-      case "section":
-      case "ul":
-      case "ol":
-      case "li":
-      case "h1":
-      case "h2":
-      case "h3":
-      case "h4":
-      case "h5":
-      case "h6":
-      case "x":
-      case "pre":
-      case "br":
-        return [];
-      default: {
-        const component = this.components[type];
-        if (component !== undefined) return this.renderToMessages(component(props));
-        throw new Error(`Unknown component type: ${type}`);
-      }
-    }
-  }
-
-  renderContent(children: PromptNode): string {
-    if (children == null || typeof children === "boolean") return "";
-    if (typeof children === "string" || typeof children === "number") return String(children);
-    if (Array.isArray(children)) return this.renderParagraphAwareContent(children);
-    return this.renderContentNode(children);
-  }
-
-  private renderContentNode(node: PromptNode): string {
+  /** The text of any node. */
+  content(node: PromptNode): string {
     if (node == null || typeof node === "boolean") return "";
     if (typeof node === "string" || typeof node === "number") return String(node);
-    if (Array.isArray(node)) {
-      const flattened: PromptNode[] = [];
-      for (const item of node) {
-        if (Array.isArray(item)) flattened.push(...item);
-        else flattened.push(item);
-      }
-      return this.renderParagraphAwareContent(flattened);
-    }
-    const element = node;
-    if (typeof element.type === "function") {
-      return this.renderContent(element.type(element.props));
-    }
-    if (element.type === "p") return this.renderContent(element.props.children);
-    if (element.type === "Fragment") return this.renderContent(element.props.children);
-    if (/^h[1-6]$/.test(element.type)) {
-      return this.formatHeading(element.type, this.renderContent(element.props.children));
-    }
-    if (element.type === "x") return this.renderXElement(element.props);
-    if (element.type === "section") return this.renderSection(element.props);
-    if (element.type === "br") return "\n";
-    if (element.type === "pre") return this.renderPreContent(element.props.children);
-    if (element.type === "ul") return this.renderUnorderedList(element.props.children);
-    if (element.type === "ol") return this.renderOrderedList(element.props.children);
-    if (element.type === "li") return `- ${this.renderContent(element.props.children)}`;
-    return this.renderToMessages(element).map(message => message.content).join("\n");
+    if (Array.isArray(node)) return this.paragraphs(node);
+    return this.element(node);
   }
 
-  private renderParagraphAwareContent(nodes: PromptNode[]): string {
-    const flattenedNodes = this.flattenNodes(nodes);
-    const paragraphs: RenderParagraph[] = [];
-    let currentParagraph: string[] = [];
-    const flushCurrentParagraph = (): void => {
-      if (currentParagraph.length > 0) {
-        const content = currentParagraph.join("");
-        if (content.trim()) {
-          paragraphs.push({ content: this.normalizeWhitespace(content), isSection: false });
-        } else if (content.includes("\n")) {
-          paragraphs.push({ content, isSection: false });
-        }
-        currentParagraph = [];
-      }
+  /** The text of one element, as it is written when it stands alone. */
+  private element(element: PromptElement): string {
+    if (typeof element.type === "function") return this.content(element.type(element.props));
+    switch (element.type) {
+      case "p":
+      case "Fragment":
+        return this.content(element.props.children);
+      case "br":
+        return "\n";
+      case "x":
+        return this.xTag(element.props);
+      case "section":
+        return this.section(element.props);
+      case "pre":
+        return verbatim(element.props.children);
+      case "ul":
+        return this.list(element.props.children, false, 0);
+      case "ol":
+        return this.list(element.props.children, true, 0);
+      case "li":
+        return `- ${this.content(element.props.children)}`;
+    }
+    if (HEADING.test(element.type)) return heading(element.type, this.content(element.props.children));
+    // Everything else belongs to a conversation, or is a name to look up.
+    return this.lines(element).join("\n");
+  }
+
+  /** A list of nodes, written as paragraphs. */
+  private paragraphs(nodes: PromptNode[]): string {
+    const paragraphs: string[] = [];
+    // The text gathered since the last block. It becomes a paragraph when a block or the end closes it.
+    let text = "";
+    const closeText = (): void => {
+      if (text.trim()) paragraphs.push(tidied(text));
+      // A text of spaces is dropped, but one that holds a newline is kept as it is: a line break between two blocks counts.
+      else if (text.includes("\n")) paragraphs.push(text);
+      text = "";
     };
-    for (const node of flattenedNodes) {
-      if (isElement(node)) {
-        const element = node;
-        if (typeof element.type === "function") {
-          const resolvedNode = element.type(element.props);
-          if (this.isBlockElement(resolvedNode)) {
-            flushCurrentParagraph();
-            const content = this.renderContentNode(resolvedNode);
-            if (content.trim()) {
-              paragraphs.push({ content: content.trim(), isSection: this.isSectionElement(resolvedNode) });
-            }
-          } else {
-            const resolvedNodes = this.flattenNodes(
-              Array.isArray(resolvedNode) ? resolvedNode : [resolvedNode],
-            );
-            for (const resolvedChild of resolvedNodes) {
-              const rendered = this.renderContentNode(resolvedChild);
-              if (rendered) currentParagraph.push(rendered);
-            }
-          }
-        } else if (
-          element.type === "p" || element.type === "section" ||
-          element.type === "ul" || element.type === "ol" ||
-          /^h[1-6]$/.test(element.type) || element.type === "x" || element.type === "pre"
-        ) {
-          flushCurrentParagraph();
-          const content = this.renderContentNode(element);
-          const isPre = element.type === "pre";
-          const finalContent = isPre ? content : content.trim();
-          if (finalContent || isPre) {
-            paragraphs.push({ content: finalContent, isSection: element.type === "section" });
-          }
-        } else {
-          const rendered = this.renderContentNode(node);
-          if (rendered !== null && rendered !== undefined) currentParagraph.push(rendered);
-        }
-      } else {
-        const rendered = this.renderContentNode(node);
-        if (rendered) currentParagraph.push(rendered);
+    for (const node of settled(nodes)) {
+      if (!isElement(node) || !isBlock(node.type)) {
+        text += this.content(node);
+        continue;
       }
+      closeText();
+      const block = this.element(node);
+      // Pre is kept to the letter, and counts as a paragraph even when empty.
+      if (node.type === "pre") paragraphs.push(block);
+      else if (block.trim()) paragraphs.push(block.trim());
     }
-    flushCurrentParagraph();
-    if (paragraphs.length === 0) return "";
-    let result = paragraphs[0]!.content;
-    for (let index = 1; index < paragraphs.length; index++) {
-      const previous = paragraphs[index - 1]!;
-      const current = paragraphs[index]!;
-      const currentIsOnlyNewlines = !current.content.trim();
-      const previousHasContentAndEndsWithNewline =
-        previous.content.trim() && previous.content.endsWith("\n");
-      if (currentIsOnlyNewlines) result += current.content;
-      else if (previousHasContentAndEndsWithNewline) result += current.content;
-      else result += `\n\n${current.content}`;
-    }
-    return result.replace(/^\n+/, "").replace(/\n+$/, "");
+    closeText();
+    return joined(paragraphs);
   }
 
-  private flattenNodes(nodes: PromptNode[]): PromptNode[] {
-    const result: PromptNode[] = [];
-    for (const node of nodes) {
-      if (node == null || typeof node === "boolean") continue;
-      if (Array.isArray(node)) {
-        result.push(...this.flattenNodes(node));
-      } else if (isElement(node)) {
-        if (node.type === "Fragment") {
-          const children = node.props.children;
-          if (children != null) {
-            result.push(...this.flattenNodes(Array.isArray(children) ? children : [children]));
-          }
-        } else if (typeof node.type === "function") {
-          const resolvedNode = node.type(node.props);
-          if (resolvedNode != null) {
-            result.push(...this.flattenNodes(Array.isArray(resolvedNode) ? resolvedNode : [resolvedNode]));
-          }
-        } else {
-          result.push(node);
-        }
-      } else {
-        result.push(node);
-      }
-    }
-    return result;
-  }
-
-  private formatHeading(type: string, content: string): string {
-    if (!content.trim()) return "";
-    const headingLevel = Number.parseInt(type.slice(1), 10);
-    return `${"#".repeat(headingLevel)} ${content.trim()}`;
-  }
-
-  private renderXElement(props: PromptProps): string {
+  /** An x element: a tag named by its `tag` prop, or "x", around its content. */
+  private xTag(props: PromptProps): string {
     const { children, key: _key, tag, ...attributes } = props;
-    const tagName = tag || "x";
-    const content = this.renderContent(children);
-    const attributeString = Object.keys(attributes)
-      .filter(attribute => attributes[attribute] != null)
-      .map(attribute => {
-        const value = attributes[attribute];
-        if (typeof value === "boolean") return value ? attribute : "";
-        return `${attribute}="${String(value).replace(/"/g, "&quot;")}"`;
-      })
-      .filter(attribute => attribute)
-      .join(" ");
-    const attributePrefix = attributeString ? ` ${attributeString}` : "";
-    return !content.trim()
-      ? `<${String(tagName)}${attributePrefix} />`
-      : `<${String(tagName)}${attributePrefix}>${content}</${String(tagName)}>`;
+    const content = this.content(children);
+    const carried = attributesOf(attributes);
+    return tagged(String(tag || "x"), carried, content, "");
   }
 
-  private renderSection(props: PromptProps): string {
+  /** A section: a tag named after its title, lower case with a dash for each run of white space, its content on lines of its own. */
+  private section(props: PromptProps): string {
     const { children, key: _key, title, ...attributes } = props;
-    const tagName = String(title).toLowerCase().replace(/\s+/g, "-");
-    const content = this.renderContent(children);
-    const attributeString = Object.keys(attributes)
-      .filter(attribute => attributes[attribute] != null)
-      .map(attribute => {
-        const value = attributes[attribute];
-        if (typeof value === "boolean") return value ? attribute : "";
-        return `${attribute}="${String(value).replace(/"/g, "&quot;")}"`;
-      })
-      .filter(attribute => attribute)
-      .join(" ");
-    const attributePrefix = attributeString ? ` ${attributeString}` : "";
-    return !content.trim()
-      ? `<${tagName}${attributePrefix} />`
-      : `<${tagName}${attributePrefix}>\n${content}\n</${tagName}>`;
+    const name = String(title).toLowerCase().replace(/\s+/g, "-");
+    const content = this.content(children);
+    return tagged(name, attributesOf(attributes), content, "\n");
   }
 
-  private renderOrderedList(children: PromptNode, indent = 0, baseIndentWidth = 0): string {
+  /**
+   * A list written out, one line to an item, `indent` spaces in. A numbered
+   * list counts from one the items that have something to show; a dash
+   * list marks each of them with a dash.
+   */
+  private list(children: PromptNode, numbered: boolean, indent: number): string {
     if (children == null) return "";
-    const items: string[] = [];
-    let itemNumber = 1;
-    const indentString = " ".repeat(baseIndentWidth);
-    const markerWidth = 3;
-    const flattenedChildren = this.flattenListChildren(
-      Array.isArray(children) ? children : [children],
-    );
-    for (const child of flattenedChildren) {
-      if (isElement(child)) {
-        if (child.type === "li") {
-          const { textContent, nestedLists } = this.extractListItemContent(
-            child.props.children,
-            indent + 1,
-            baseIndentWidth + markerWidth,
-          );
-          if (textContent.trim() || nestedLists.length > 0) {
-            if (textContent.trim()) {
-              items.push(`${indentString}${itemNumber}. ${textContent.trim()}`);
-              items.push(...nestedLists);
-            } else if (nestedLists.length > 0) {
-              const combinedNested = nestedLists.join("\n");
-              const firstNewline = combinedNested.indexOf("\n");
-              const totalIndent = baseIndentWidth + markerWidth;
-              if (firstNewline === -1) {
-                items.push(`${indentString}${itemNumber}. ${combinedNested.trimStart()}`);
-              } else {
-                const firstLine = combinedNested.substring(0, firstNewline);
-                const rest = combinedNested.substring(firstNewline + 1);
-                items.push(`${indentString}${itemNumber}. ${firstLine.trimStart()}`);
-                items.push(rest.split("\n").map(line =>
-                  " ".repeat(totalIndent) + line.trimStart()
-                ).join("\n"));
-              }
-            }
-            itemNumber++;
-          }
-        } else {
-          const rendered = this.renderContentNode(child);
-          if (rendered.trim()) items.push(indentString + rendered.trim());
-        }
+    const pad = " ".repeat(indent);
+    // A list inside an item starts under the item's text: past "- ", or past "1. ".
+    const inner = indent + (numbered ? 3 : 2);
+    const lines: string[] = [];
+    let count = 0;
+    for (const child of opened(children)) {
+      if (!isElement(child) || child.type !== "li") {
+        // Not an item: a line of its own, with no mark and no number.
+        const loose = this.content(child).trim();
+        if (loose) lines.push(pad + loose);
+        continue;
+      }
+      const { text, lists } = this.item(child.props.children, inner);
+      const own = text.trim();
+      if (!own && lists.length === 0) continue;
+      count += 1;
+      const mark = numbered ? `${pad}${count}.` : `${pad}-`;
+      if (!own && numbered) {
+        lines.push(besideNumber(mark, lists, inner));
+        continue;
+      }
+      if (own) lines.push(`${mark} ${own}`);
+      // The lists of one item are added in one call: an item cannot hold more of them than a call can be passed.
+      lines.push(...lists);
+    }
+    return lines.join("\n");
+  }
+
+  /** An item's own text, and the lists inside it, each already written `indent` spaces in. */
+  private item(children: PromptNode, indent: number): { text: string; lists: string[] } {
+    let text = "";
+    const lists: string[] = [];
+    if (children == null) return { text, lists };
+    for (const child of opened(children)) {
+      // A component standing directly in an item is asked here, so that a list it returns is the item's own list.
+      const part = isElement(child) && typeof child.type === "function" ? child.type(child.props) : child;
+      if (isElement(part) && (part.type === "ul" || part.type === "ol")) {
+        const list = this.list(part.props.children, part.type === "ol", indent);
+        if (list.trim()) lists.push(list);
       } else {
-        const rendered = this.renderContentNode(child);
-        if (rendered.trim()) items.push(indentString + rendered.trim());
+        text += this.content(part);
       }
     }
-    return items.join("\n");
+    return { text, lists };
   }
 
-  private renderUnorderedList(children: PromptNode, indent = 0, baseIndentWidth = 0): string {
-    if (children == null) return "";
-    const items: string[] = [];
-    const indentString = " ".repeat(baseIndentWidth);
-    const markerWidth = 2;
-    const flattenedChildren = this.flattenListChildren(
-      Array.isArray(children) ? children : [children],
-    );
-    for (const child of flattenedChildren) {
-      if (isElement(child)) {
-        if (child.type === "li") {
-          const { textContent, nestedLists } = this.extractListItemContent(
-            child.props.children,
-            indent + 1,
-            baseIndentWidth + markerWidth,
-          );
-          if (textContent.trim() || nestedLists.length > 0) {
-            if (textContent.trim()) items.push(`${indentString}- ${textContent.trim()}`);
-            items.push(...nestedLists);
-          }
-        } else {
-          const rendered = this.renderContentNode(child);
-          if (rendered.trim()) items.push(indentString + rendered.trim());
-        }
-      } else {
-        const rendered = this.renderContentNode(child);
-        if (rendered.trim()) items.push(indentString + rendered.trim());
-      }
-    }
-    return items.join("\n");
-  }
-
-  private flattenListChildren(children: PromptNode[]): PromptNode[] {
-    const flattened: PromptNode[] = [];
-    for (const child of children) {
-      if (Array.isArray(child)) flattened.push(...this.flattenListChildren(child));
-      else flattened.push(child);
-    }
-    return flattened;
-  }
-
-  private extractListItemContent(
-    children: PromptNode,
-    nestedIndent: number,
-    baseIndentWidth = 0,
-  ): { textContent: string; nestedLists: string[] } {
-    if (children == null) return { textContent: "", nestedLists: [] };
-    const textParts: string[] = [];
-    const nestedLists: string[] = [];
-    const flattenedChildren = this.flattenListChildren(
-      Array.isArray(children) ? children : [children],
-    );
-    for (const child of flattenedChildren) {
-      if (isElement(child)) {
-        let element = child;
-        if (typeof element.type === "function") {
-          const resolvedNode = element.type(element.props);
-          if (isElement(resolvedNode)) element = resolvedNode;
-          else {
-            const rendered = this.renderContent(resolvedNode);
-            if (rendered) textParts.push(rendered);
-            continue;
-          }
-        }
-        if (element.type === "ul") {
-          const rendered = this.renderUnorderedList(
-            element.props.children,
-            nestedIndent,
-            baseIndentWidth,
-          );
-          if (rendered.trim()) nestedLists.push(rendered);
-        } else if (element.type === "ol") {
-          const rendered = this.renderOrderedList(
-            element.props.children,
-            nestedIndent,
-            baseIndentWidth,
-          );
-          if (rendered.trim()) nestedLists.push(rendered);
-        } else {
-          const rendered = this.renderContentNode(element);
-          if (rendered) textParts.push(rendered);
-        }
-      } else {
-        const rendered = this.renderContentNode(child);
-        if (rendered) textParts.push(rendered);
-      }
-    }
-    return { textContent: textParts.join(""), nestedLists };
-  }
-
-  private renderPreContent(children: PromptNode): string {
-    if (children == null || typeof children === "boolean") return "";
-    if (typeof children === "string" || typeof children === "number") return String(children);
-    if (Array.isArray(children)) {
-      return children.map(child => this.renderPreContent(child)).join("");
-    }
-    if (typeof children.type === "function") {
-      return this.renderPreContent(children.type(children.props));
-    }
-    if (children.type === "Fragment") return this.renderPreContent(children.props.children);
-    if (children.type === "br") return "\n";
-    return this.renderPreContent(children.props.children);
-  }
-
-  private isBlockElement(node: PromptNode): boolean {
-    if (!isElement(node)) return false;
-    const type = node.type;
-    return type === "p" || type === "section" || type === "ul" || type === "ol" ||
-      typeof type === "string" && /^h[1-6]$/.test(type) || type === "x" || type === "pre";
-  }
-
-  private isSectionElement(node: PromptNode): boolean {
-    return isElement(node) && node.type === "section";
-  }
-
-  private normalizeWhitespace(text: string): string {
-    const trailingNewlineMatch = text.match(/\n+$/);
-    const trailingNewlines = trailingNewlineMatch ? trailingNewlineMatch[0] : "";
-    const normalized = text.replace(/ +/g, " ").trim();
-    return normalized + trailingNewlines;
+  /**
+   * What a node says in a conversation: a line for each message and for
+   * each bare text or number. Blocks say nothing there.
+   */
+  private lines(node: PromptNode): string[] {
+    if (node == null || typeof node === "boolean") return [];
+    if (typeof node === "string" || typeof node === "number") return [String(node)];
+    if (Array.isArray(node)) return node.flatMap((child) => this.lines(child));
+    if (typeof node.type === "function") return this.lines(node.type(node.props));
+    if (typeof node.type !== "string") throw new Error(`Unknown element type: ${String(node.type)}`);
+    const name = node.type;
+    if (SPEAKERS.has(name)) return [this.content(node.props.children)];
+    if (name === "Fragment") return this.lines(node.props.children);
+    if (SILENT.has(name)) return [];
+    const component = this.components[name];
+    if (component === undefined) throw new Error(`Unknown component type: ${name}`);
+    return this.lines(component(node.props));
   }
 }
 
 export function renderContent(element: PromptNode, options?: RenderOptions): string {
-  const context = new RenderContext(options || {});
-  return context.renderContent(element);
+  return new Rendering(options || {}).content(element);
 }

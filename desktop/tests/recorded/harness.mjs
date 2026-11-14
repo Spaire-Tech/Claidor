@@ -31,6 +31,8 @@
  * `process.env.SIMEON_BUILD`, the same entry for jsonc-parser. What a
  * scenario sees is then what the shipped engine does, not what the source
  * would do under another build. The test fails when the two builds drift.
+ * The packages left outside the build are found from the built file as Node
+ * finds them (`node_modules` in a folder above it), all but Electron.
  *
  * A part is asked twice, in two sets of surroundings (`inSurroundings`), and
  * must answer the same in both: the answers are kept on one machine and
@@ -47,7 +49,7 @@
  * Scenarios use stand-ins only: no network, no real account, nothing outside
  * a temporary folder.
  */
-import { copyFile, mkdtemp, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, mkdir, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import inspector from "node:inspector/promises";
 import { createRequire } from "node:module";
@@ -149,7 +151,18 @@ export const ENGINE_BUILD = Object.freeze({
  */
 export async function buildModules(modules, { measure = false } = {}) {
   const root = sourceRoot();
-  const out = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-")));
+  const place = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-")));
+  const out = path.join(place, "part");
+  await mkdir(out);
+  // The packages the build leaves outside are looked for when the part runs, the way Node looks from the built file.
+  // The engine has them near that file; here they are this checkout's, linked one folder above every load, so that a
+  // scenario can still put stand-ins nearer. Electron is not among them: a run outside Electron has none.
+  const outside = path.join(place, "node_modules");
+  await mkdir(outside);
+  for (const name of ENGINE_BUILD.external) {
+    const have = path.join(desktopRoot, "node_modules", name);
+    if (name !== "electron" && existsSync(have)) await symlink(have, path.join(outside, name), "junction");
+  }
   for (const key of Object.keys(modules)) {
     if (!/^[A-Za-z_$][\w$]*$/.test(key)) throw new Error(`a module's short name is a plain word, not "${key}"`);
   }
@@ -197,7 +210,7 @@ export async function buildModules(modules, { measure = false } = {}) {
         await session.post("Profiler.stopPreciseCoverage").catch(() => {});
         session.disconnect();
       }
-      await rm(out, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+      await rm(place, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
     },
   };
 }

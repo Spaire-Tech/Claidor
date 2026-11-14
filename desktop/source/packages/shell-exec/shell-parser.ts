@@ -1,3 +1,15 @@
+/**
+ * How a shell command line is read before the Shell tool runs it: the
+ * commands in it, its redirections and whether they only throw output away,
+ * and whether it holds a command or process substitution. Whoever decides
+ * if a command may run without asking reads this, so it leans to "not
+ * safe" whenever it is unsure.
+ *
+ * The reading is done on the syntax tree a bash grammar gives (the
+ * `tree-sitter` and `tree-sitter-bash` packages). Both are compiled for one
+ * runtime only, so they are looked for where that runtime's own copies are
+ * staged, and never anywhere else.
+ */
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -5,110 +17,26 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type ParserType from "tree-sitter";
 
 type ParserConstructor = typeof ParserType;
+type SyntaxNode = ParserType.SyntaxNode;
 
-const runtimeRequire = createRequire(
-  typeof import.meta.url === "string"
-    ? import.meta.url
-    : pathToFileURL(typeof __filename === "string" ? __filename : path.join(process.cwd(), "package.json")).href,
-);
-
-function runtimeDependencyRoots(): readonly string[] {
-  const roots: string[] = [];
-  const configured = process.env.SAND_TREE_SITTER_NODE_DEPS?.trim();
-  const resourcesPath = (process as NodeJS.Process & { readonly resourcesPath?: string }).resourcesPath;
-  const isElectronRuntime = process.versions.electron !== undefined;
-  const isPackagedRuntime = process.env.SAND_PACKAGED === "1";
-
-  if (isPackagedRuntime) {
-    if (isElectronRuntime) {
-      if (resourcesPath !== undefined) {
-        roots.push(
-          path.join(resourcesPath, "app.asar.unpacked", "dist", "deps"),
-          path.join(resourcesPath, "dist", "deps"),
-        );
-      }
-      return roots;
-    }
-
-    if (configured) return [path.resolve(configured)];
-    const bundleDirectory = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-    return [path.resolve(bundleDirectory, "..", "node-deps")];
-  }
-
-  // A configured root is an explicit developer/test resolution path. It is
-  // deliberately not accepted as an override for a packaged Electron load.
-  if (configured) return [path.resolve(configured)];
-
-  // Unpackaged source/developer execution resolves through the local package
-  // installation below; no packaged-domain fallback is inferred here.
-  return roots;
-}
-
-function runtimeDependencyDomain(): "electron dist/deps" | "node dist/node-deps" | "developer" {
-  if (process.env.SAND_PACKAGED === "1") {
-    return process.versions.electron !== undefined ? "electron dist/deps" : "node dist/node-deps";
-  }
-  return "developer";
-}
-
-function runtimeDependencyError(name: string, roots: readonly string[], cause?: unknown): Error {
-  const domain = runtimeDependencyDomain();
-  const rootText = roots.length === 0 ? "<no staged root>" : roots.join(", ");
-  const detail = cause instanceof Error ? ` Loader error: ${cause.message}` : "";
-  const error = new Error(
-    `shell-parser: cannot load ${name} from the ${domain} runtime domain (searched ${rootText}). `
-      + "The ABI-specific tree-sitter packages are missing or incompatible; rebuild and stage the matching runtime, "
-      + "and refusing cross-ABI fallback." + detail,
-  );
-  Object.assign(error, {
-    code: "SAND_TREE_SITTER_RUNTIME_UNAVAILABLE",
-    dependency: name,
-    domain,
-    roots: [...roots],
-    cause,
-  });
-  return error;
-}
-
-function loadDeveloperDependency<T>(name: string): T {
-  // Resolve from the module's local developer installation explicitly. This
-  // path is available only outside a packaged runtime.
-  const localPath = runtimeRequire.resolve(name);
-  return runtimeRequire(localPath) as T;
-}
-
-function loadRuntimeDependency<T>(name: string): T {
-  const roots = runtimeDependencyRoots();
-  if (process.env.SAND_PACKAGED !== "1" && roots.length === 0) return loadDeveloperDependency<T>(name);
-
-  for (const root of roots) {
-    const packageDirectory = path.join(root, name);
-    if (!existsSync(path.join(packageDirectory, "package.json"))) continue;
-    try {
-      return runtimeRequire(packageDirectory) as T;
-    } catch (cause: unknown) {
-      // A native load failure is terminal; never retry another ABI domain or
-      // the developer's root node_modules.
-      throw runtimeDependencyError(name, roots, cause);
-    }
-  }
-  throw runtimeDependencyError(name, roots);
-}
-
-const Parser = loadRuntimeDependency<ParserConstructor>("tree-sitter");
-const bashLanguage = loadRuntimeDependency<unknown>("tree-sitter-bash");
-
+/** One argument of a command: the grammar's name for its kind, and its text as written. */
 export interface ShellCommandArgument {
   readonly type: string;
   readonly value: string;
 }
 
+/** One command: its name, its arguments, and both joined by single spaces. */
 export interface ShellExecutableCommand {
   readonly name: string;
   readonly args: readonly ShellCommandArgument[];
   readonly fullText: string;
 }
 
+/**
+ * One redirection: its operator, the descriptors it changes, the kind of
+ * thing it points at and, when that is written out plainly, its text. One
+ * that could not be read has an empty operator and no descriptors.
+ */
 export interface ShellRedirect {
   readonly operator: string;
   readonly destinationFds: readonly number[];
@@ -121,10 +49,12 @@ export interface ShellCommandParsingResult {
   readonly executableCommands: readonly ShellExecutableCommand[];
   readonly hasRedirects: boolean;
   readonly hasCommandSubstitution: boolean;
+  /** Only there when the command has a redirection: whether every one of them is harmless. */
   readonly allRedirectsAreDevNull?: boolean;
   readonly redirects: readonly ShellRedirect[];
 }
 
+/** The earlier, shorter answer, still sent beside the fuller one. */
 export interface LegacyShellCommandAnalysis {
   readonly simpleCommands: readonly string[];
   readonly hasInputRedirect: boolean;
@@ -136,29 +66,137 @@ export interface ShellCommandAnalysis {
   readonly structured: ShellCommandParsingResult;
 }
 
+/** The code on the error a build without the parser's natives throws when a parser is made. */
 export const TREE_SITTER_STUBBED_ERROR_CODE = "SIMEON_TREE_SITTER_STUBBED";
 
-let cachedParser: ParserType | null | undefined;
+// ---------------------------------------------------------------------------
+// Finding the two packages
+// ---------------------------------------------------------------------------
 
-function isStubbedTreeSitterError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === TREE_SITTER_STUBBED_ERROR_CODE;
+/** Where the engine is running, as the error for a missing package names it. */
+type Runtime = "electron dist/deps" | "node dist/node-deps" | "developer";
+
+function runtime(): Runtime {
+  if (process.env.SAND_PACKAGED !== "1") return "developer";
+  return process.versions.electron === undefined ? "node dist/node-deps" : "electron dist/deps";
 }
 
-function getParser(): ParserType | null {
-  if (cachedParser !== undefined) return cachedParser;
+/**
+ * This file's address, for a `require` of its own: the module's address where
+ * the build keeps one, else the built file's name, else a file in the working
+ * folder.
+ */
+function ownAddress(): string {
+  if (typeof import.meta.url === "string") return import.meta.url;
+  const file = typeof __filename === "string" ? __filename : path.join(process.cwd(), "package.json");
+  return pathToFileURL(file).href;
+}
+
+const requireFromHere = createRequire(ownAddress());
+
+/** A folder named for the packages by whoever starts the engine or a test; blanks count as none. */
+function folderSet(): string | undefined {
+  const set = process.env.SAND_TREE_SITTER_NODE_DEPS?.trim();
+  return set ? path.resolve(set) : undefined;
+}
+
+/**
+ * The folders the packages may be staged in, in the order they are tried.
+ * None, in a developer run, means the packages installed beside this code.
+ */
+function stagedFolders(where: Runtime): readonly string[] {
+  if (where === "electron dist/deps") {
+    // The packaged app looks in its own resources only: a folder set from outside never replaces them.
+    const resources = (process as NodeJS.Process & { readonly resourcesPath?: string }).resourcesPath;
+    if (resources === undefined) return [];
+    return [path.join(resources, "app.asar.unpacked", "dist", "deps"), path.join(resources, "dist", "deps")];
+  }
+  const set = folderSet();
+  if (set !== undefined) return [set];
+  if (where === "developer") return [];
+  // A packaged Node run keeps them in `node-deps`, beside the folder its code is in.
+  const codeFolder = typeof __dirname === "string" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+  return [path.resolve(codeFolder, "..", "node-deps")];
+}
+
+/** The error for a package that is not staged, or that is staged and would not load. */
+function unavailable(name: string, where: Runtime, folders: readonly string[], cause?: unknown): Error {
+  const searched = folders.length === 0 ? "<no staged root>" : folders.join(", ");
+  const loaderWords = cause instanceof Error ? ` Loader error: ${cause.message}` : "";
+  const error = new Error(
+    `shell-parser: cannot load ${name} from the ${where} runtime domain (searched ${searched}). `
+      + "The ABI-specific tree-sitter packages are missing or incompatible; rebuild and stage the matching runtime, "
+      + "and refusing cross-ABI fallback."
+      + loaderWords,
+  );
+  return Object.assign(error, {
+    code: "SAND_TREE_SITTER_RUNTIME_UNAVAILABLE",
+    dependency: name,
+    domain: where,
+    roots: [...folders],
+    cause,
+  });
+}
+
+function loadPackage<T>(name: string): T {
+  const where = runtime();
+  const folders = stagedFolders(where);
+  if (where === "developer" && folders.length === 0) {
+    return requireFromHere(requireFromHere.resolve(name)) as T;
+  }
+  const staged = folders.map((folder) => path.join(folder, name)).find((folder) => existsSync(path.join(folder, "package.json")));
+  if (staged === undefined) throw unavailable(name, where, folders);
   try {
-    const parser = new Parser();
-    parser.setLanguage(bashLanguage);
-    cachedParser = parser;
-  } catch (error: unknown) {
-    if (!isStubbedTreeSitterError(error)) throw error;
-    cachedParser = null;
+    return requireFromHere(staged) as T;
+  } catch (cause: unknown) {
+    // A copy that is there and will not load ends the search: no other folder is tried, and a
+    // developer's own install never stands in for a staged one.
+    throw unavailable(name, where, folders, cause);
+  }
+}
+
+const Parser = loadPackage<ParserConstructor>("tree-sitter");
+const bashLanguage = loadPackage<unknown>("tree-sitter-bash");
+
+// ---------------------------------------------------------------------------
+// The parser
+// ---------------------------------------------------------------------------
+
+/** The one parser, made when first needed. `null`: this build has none, and has said so. */
+let bashParser: ParserType | null | undefined;
+
+function saysNativesLeftOut(failure: unknown): boolean {
+  if (typeof failure !== "object" || failure === null) return false;
+  return "code" in failure && failure.code === TREE_SITTER_STUBBED_ERROR_CODE;
+}
+
+/** A parser for bash, or `null` in a build whose natives were left out. Any other failure is the caller's. */
+function makeParser(): ParserType | null {
+  try {
+    const made = new Parser();
+    made.setLanguage(bashLanguage);
+    return made;
+  } catch (failure: unknown) {
+    if (saysNativesLeftOut(failure)) return null;
+    throw failure;
+  }
+}
+
+function parserForBash(): ParserType | null {
+  if (bashParser !== undefined) return bashParser;
+  bashParser = makeParser();
+  if (bashParser === null) {
     console.warn("shell-parser: tree-sitter natives are unavailable in this artifact; shell command analysis degrades to parsingFailed");
   }
-  return cachedParser;
+  return bashParser;
 }
 
-const redirectNodeTypes = new Set([
+// ---------------------------------------------------------------------------
+// What the tree's nodes say
+// ---------------------------------------------------------------------------
+
+/** The kinds of node that are a redirection, in this grammar and in others'. */
+const REDIRECTIONS: ReadonlySet<string> = new Set([
   "file_redirect",
   "heredoc_redirect",
   "herestring_redirect",
@@ -168,268 +206,314 @@ const redirectNodeTypes = new Set([
   "redirection",
 ]);
 
-const fileRedirectOperatorTypes = new Set([
-  "<",
-  ">",
-  ">>",
-  ">|",
-  "<>",
-  "<&",
-  ">&",
-  "&>",
-  "&>>",
-]);
+/** The operators a file redirection is read by. Closing a descriptor (`>&-`, `<&-`) is not among them. */
+const FILE_OPERATORS: ReadonlySet<string> = new Set(["<", ">", ">>", ">|", "<>", "<&", ">&", "&>", "&>>"]);
 
-function parsingFailedResult(): ShellCommandAnalysis {
-  return {
-    legacy: {
-      simpleCommands: [],
-      hasInputRedirect: false,
-      hasOutputRedirect: false,
-    },
-    structured: {
-      parsingFailed: true,
-      executableCommands: [],
-      hasRedirects: false,
-      hasCommandSubstitution: false,
-      redirects: [],
-    },
-  };
+/** A `<` that starts the text or follows a blank, digits before it or not. */
+const INPUT_SIGN = /(?:^|\s)\d*</;
+/** The same for `>`, which an `&` may come before in place of digits. */
+const OUTPUT_SIGN = /(?:^|\s)(?:\d*|&)>/;
+const ALL_DIGITS = /^\d+$/;
+
+/** The number a node spells, when it is digits and nothing else. */
+function numberWritten(node: SyntaxNode | undefined): number | undefined {
+  if (node === undefined || !ALL_DIGITS.test(node.text)) return undefined;
+  return Number.parseInt(node.text, 10);
 }
 
-export function analyzeShellCommand(cmd: string): ShellCommandAnalysis {
-  const parser = getParser();
-  if (parser === null) return parsingFailedResult();
+/** A file redirection's operator and what it points at: the first thing after the operator that is no comment. */
+function operatorAndTarget(redirection: SyntaxNode): { operator: string; target: SyntaxNode | undefined } | undefined {
+  let operator: string | undefined;
+  for (const piece of redirection.children) {
+    if (operator === undefined) {
+      if (FILE_OPERATORS.has(piece.type)) operator = piece.type;
+    } else if (piece.type !== "comment") {
+      return { operator, target: piece };
+    }
+  }
+  return operator === undefined ? undefined : { operator, target: undefined };
+}
 
-  const tree = parser.parse(cmd);
-  const processedRedirectNodes = new WeakSet<ParserType.SyntaxNode>();
-  let sawRedirect = false;
-  let allRedirectsAreAllowlistSafe = true;
-  const legacy = {
-    simpleCommands: [] as string[],
-    hasInputRedirect: false,
-    hasOutputRedirect: false,
-  };
-  const structured: {
+/** The descriptors a file redirection changes: both outputs, the one written before it, or its operator's own. */
+function descriptorsChanged(redirection: SyntaxNode, operator: string): number[] {
+  if (operator === "&>" || operator === "&>>") return [1, 2];
+  const written = numberWritten(redirection.children.find((piece) => piece.type === "file_descriptor"));
+  if (written !== undefined) return [written];
+  return [operator.startsWith("<") ? 0 : 1];
+}
+
+/** A target's text when it is written out plainly, with nothing in it the shell would work out when it runs. */
+function plainText(target: SyntaxNode | undefined): string | undefined {
+  if (target === undefined) return undefined;
+  switch (target.type) {
+    case "word":
+      return target.namedChildren.length === 0 ? target.text : undefined;
+    case "number":
+      return target.text;
+    case "raw_string":
+      // Without its two quotes.
+      return target.text.length < 2 ? undefined : target.text.slice(1, -1);
+    case "string": {
+      const pieces = target.namedChildren;
+      if (pieces.length === 0 || pieces.some((piece) => piece.type !== "string_content")) return undefined;
+      return pieces.map((piece) => piece.text).join("");
+    }
+    default:
+      return undefined;
+  }
+}
+
+/** Whether a target is `/dev/null` and nothing else: bare, in single quotes, or as the one piece of a double-quoted text. */
+function isDevNull(target: SyntaxNode | undefined): boolean {
+  if (target === undefined) return false;
+  switch (target.type) {
+    case "word":
+      return target.text === "/dev/null";
+    case "raw_string":
+      return target.text === "'/dev/null'";
+    case "string": {
+      const pieces = target.namedChildren;
+      const only = pieces[0];
+      return pieces.length === 1 && only !== undefined && only.type === "string_content" && only.text === "/dev/null";
+    }
+    default:
+      return false;
+  }
+}
+
+/** The name of the plain command a here-document feeds: the first command of the redirected statement it sits right under. */
+function commandFed(hereDocument: SyntaxNode): string | undefined {
+  const statement = hereDocument.parent;
+  if (statement?.type !== "redirected_statement") return undefined;
+  const command = statement.children.find((piece) => piece.type === "command");
+  return command?.childForFieldName("name")?.text;
+}
+
+/** Whether a node sits, at any depth, in a command substitution that is not straight inside double quotes. */
+function inBareSubstitution(node: SyntaxNode): boolean {
+  for (let above = node.parent; above; above = above.parent) {
+    if (above.type === "command_substitution" && above.parent?.type !== "string") return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Where descriptors point
+// ---------------------------------------------------------------------------
+
+/** What a descriptor is connected to, as far as harm goes. */
+type Connection = "standard input" | "standard output" | "standard error" | "/dev/null" | "somewhere else";
+
+/** For the two operators that copy a descriptor: the connections a copy may be taken from and stay harmless. */
+const HARMLESS_TO_COPY: ReadonlyMap<string, ReadonlySet<Connection>> = new Map([
+  [">&", new Set<Connection>(["standard output", "standard error", "/dev/null"])],
+  ["<&", new Set<Connection>(["/dev/null"])],
+]);
+
+/** The descriptors of one statement while its redirections are read, left to right. */
+class Descriptors {
+  private readonly connections = new Map<number, Connection>([
+    [0, "standard input"],
+    [1, "standard output"],
+    [2, "standard error"],
+  ]);
+
+  connectionOf(descriptor: number | undefined): Connection | undefined {
+    return descriptor === undefined ? undefined : this.connections.get(descriptor);
+  }
+
+  connect(descriptors: readonly number[], to: Connection): void {
+    for (const descriptor of descriptors) this.connections.set(descriptor, to);
+  }
+
+  /** What a file redirection connects its descriptors to. Anything but `/dev/null` or a harmless copy is somewhere else. */
+  connectionMadeBy(operator: string, target: SyntaxNode | undefined): Connection {
+    const harmless = HARMLESS_TO_COPY.get(operator);
+    if (harmless === undefined) return isDevNull(target) ? "/dev/null" : "somewhere else";
+    const source = this.connectionOf(numberWritten(target));
+    return source !== undefined && harmless.has(source) ? source : "somewhere else";
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Reading a command
+// ---------------------------------------------------------------------------
+
+interface Findings {
+  legacy: { simpleCommands: string[]; hasInputRedirect: boolean; hasOutputRedirect: boolean };
+  structured: {
     parsingFailed: boolean;
     executableCommands: ShellExecutableCommand[];
     hasRedirects: boolean;
     hasCommandSubstitution: boolean;
     allRedirectsAreDevNull?: boolean;
     redirects: ShellRedirect[];
-  } = {
-    parsingFailed: false,
-    executableCommands: [],
-    hasRedirects: false,
-    hasCommandSubstitution: false,
-    redirects: [],
   };
+}
 
-  const recordRedirect = (isAllowlistSafe: boolean): void => {
-    sawRedirect = true;
-    structured.hasRedirects = true;
-    allRedirectsAreAllowlistSafe = allRedirectsAreAllowlistSafe && isAllowlistSafe;
+/** An answer with nothing found in it, new each time: callers may change what they are given. */
+function nothingFound(parsingFailed: boolean): Findings {
+  return {
+    legacy: { simpleCommands: [], hasInputRedirect: false, hasOutputRedirect: false },
+    structured: { parsingFailed, executableCommands: [], hasRedirects: false, hasCommandSubstitution: false, redirects: [] },
   };
+}
 
-  const markRedirectsFromText = (txt: string): void => {
-    if (/(^|\s)[0-9]*<<?<?/.test(txt)) legacy.hasInputRedirect = true;
-    if (/(^|\s)[0-9]*>>/.test(txt) || /(^|\s)[0-9]*>(\||&)?/.test(txt) || /(^|\s)&>/.test(txt) || /(^|\s)[0-9]+>&[0-9]+/.test(txt)) {
-      legacy.hasOutputRedirect = true;
-    }
-  };
+/** A redirection that could not be read, or that is not known to be harmless. */
+function unread(redirection: SyntaxNode): ShellRedirect {
+  return { operator: "", destinationFds: [], targetNodeType: redirection.type };
+}
 
-  const getFileRedirectParts = (node: ParserType.SyntaxNode): { operator: string; target: ParserType.SyntaxNode | undefined } | undefined => {
-    const operatorIndex = node.children.findIndex(child => fileRedirectOperatorTypes.has(child.type));
-    if (operatorIndex === -1) return undefined;
-    return {
-      operator: node.children[operatorIndex]?.type ?? "",
-      target: node.children.slice(operatorIndex + 1).find(child => child.type !== "comment"),
-    };
-  };
+/** One command line being read: what has been found so far, and how the tree is gone through. */
+class Reading {
+  readonly found = nothingFound(false);
+  private everyRedirectionHarmless = true;
+  /**
+   * The redirections already read, told by the objects the parser hands out for them.
+   *
+   * Known fault, kept as it was: the parser's package keeps a node's object only while something else
+   * holds it, and nothing here does. If memory is reclaimed between the two times a node's children are
+   * asked for in `visit`, a redirection comes back as a new object, is not found here, and is read a
+   * second time on its own: it is listed twice, and judged from the standard descriptors.
+   */
+  private readonly redirectionsRead = new WeakSet<SyntaxNode>();
 
-  const parseFd = (node: ParserType.SyntaxNode | undefined): number | undefined => {
-    if (!node || !/^\d+$/.test(node.text)) return undefined;
-    return Number.parseInt(node.text, 10);
-  };
-
-  const getExplicitRedirectFd = (node: ParserType.SyntaxNode): number | undefined => parseFd(node.children.find(child => child.type === "file_descriptor"));
-
-  const createRedirectClassificationState = (): { fdTargets: Map<number, string> } => ({
-    fdTargets: new Map([
-      [0, "original-stdin"],
-      [1, "original-stdout"],
-      [2, "original-stderr"],
-    ]),
-  });
-
-  const isAllowlistSafeOutputTarget = (target: string | undefined): boolean => target === "original-stdout" || target === "original-stderr" || target === "dev-null";
-
-  const getRedirectDestinationFds = (node: ParserType.SyntaxNode, operator: string): number[] => {
-    if (operator === "&>" || operator === "&>>") return [1, 2];
-    const explicitFd = getExplicitRedirectFd(node);
-    if (explicitFd !== undefined) return [explicitFd];
-    return operator.startsWith("<") ? [0] : [1];
-  };
-
-  const markRedirectLegacyFields = (node: ParserType.SyntaxNode): void => {
-    markRedirectsFromText(node.text);
-    if (node.type === "heredoc_redirect" || node.type === "herestring_redirect") legacy.hasInputRedirect = true;
-  };
-
-  const getHeredocReceiverCommandName = (node: ParserType.SyntaxNode): string | undefined => {
-    const redirectedStatement = node.parent;
-    if (redirectedStatement?.type !== "redirected_statement") return undefined;
-    const commandNode = redirectedStatement.children.find(child => child.type === "command");
-    return commandNode?.childForFieldName("name")?.text;
-  };
-
-  const isInsideUnquotedCommandSubstitution = (node: ParserType.SyntaxNode): boolean => {
-    let current = node.parent;
-    while (current) {
-      if (current.type === "command_substitution" && current.parent?.type !== "string") return true;
-      current = current.parent;
-    }
-    return false;
-  };
-
-  const classifyHeredocRedirect = (node: ParserType.SyntaxNode): { redirect: ShellRedirect; isAllowlistSafe: boolean } => {
-    const receiverCommandName = getHeredocReceiverCommandName(node);
-    const isAllowlistSafe = receiverCommandName !== undefined && !isInsideUnquotedCommandSubstitution(node);
-    const redirect: ShellRedirect = {
-      operator: isAllowlistSafe ? "<<" : "",
-      destinationFds: isAllowlistSafe ? [0] : [],
-      targetNodeType: node.type,
-      ...(isAllowlistSafe ? { targetText: receiverCommandName } : {}),
-    };
-    return { redirect, isAllowlistSafe };
-  };
-
-  const isExactDevNullTarget = (node: ParserType.SyntaxNode | undefined): boolean => {
-    if (!node) return false;
-    if (node.type === "word") return node.text === "/dev/null";
-    if (node.type === "raw_string") return node.text === "'/dev/null'";
-    if (node.type === "string") {
-      const namedChildren = node.namedChildren;
-      return namedChildren.length === 1 && namedChildren[0]?.type === "string_content" && namedChildren[0].text === "/dev/null";
-    }
-    return false;
-  };
-
-  const getStaticRedirectTargetText = (node: ParserType.SyntaxNode | undefined): string | undefined => {
-    if (!node) return undefined;
-    if (node.type === "word") return node.namedChildren.length === 0 ? node.text : undefined;
-    if (node.type === "number") return node.text;
-    if (node.type === "raw_string") return node.text.length < 2 ? undefined : node.text.slice(1, -1);
-    if (node.type === "string") {
-      const namedChildren = node.namedChildren;
-      if (namedChildren.length === 0 || namedChildren.some(child => child.type !== "string_content")) return undefined;
-      return namedChildren.map(child => child.text).join("");
-    }
-    return undefined;
-  };
-
-  const classifyFileRedirect = (node: ParserType.SyntaxNode, state: { fdTargets: Map<number, string> }): boolean => {
-    const parts = getFileRedirectParts(node);
-    if (!parts) return false;
-    const { operator, target } = parts;
-    const destinationFds = getRedirectDestinationFds(node, operator);
-    const targetText = getStaticRedirectTargetText(target);
-    const redirect: ShellRedirect = {
-      operator,
-      destinationFds,
-      targetNodeType: target?.type ?? "",
-      ...(targetText !== undefined ? { targetText } : {}),
-    };
-    structured.redirects.push(redirect);
-    if (operator === ">&") {
-      const sourceFd = parseFd(target);
-      const sourceTarget = sourceFd === undefined ? undefined : state.fdTargets.get(sourceFd);
-      if (!isAllowlistSafeOutputTarget(sourceTarget)) {
-        for (const fd of destinationFds) state.fdTargets.set(fd, "unsafe");
-        return false;
-      }
-      for (const fd of destinationFds) state.fdTargets.set(fd, sourceTarget!);
-      return true;
-    }
-    if (operator === "<&") {
-      const sourceFd = parseFd(target);
-      const sourceTarget = sourceFd === undefined ? undefined : state.fdTargets.get(sourceFd);
-      if (sourceTarget !== "dev-null") {
-        for (const fd of destinationFds) state.fdTargets.set(fd, "unsafe");
-        return false;
-      }
-      for (const fd of destinationFds) state.fdTargets.set(fd, sourceTarget);
-      return true;
-    }
-    if (!isExactDevNullTarget(target)) {
-      for (const fd of destinationFds) state.fdTargets.set(fd, "unsafe");
-      return false;
-    }
-    for (const fd of destinationFds) state.fdTargets.set(fd, "dev-null");
-    return true;
-  };
-
-  const processRedirectNode = (node: ParserType.SyntaxNode, state: { fdTargets: Map<number, string> }): void => {
-    if (processedRedirectNodes.has(node)) return;
-    processedRedirectNodes.add(node);
-    markRedirectLegacyFields(node);
-    if (node.type === "heredoc_redirect") {
-      const { redirect, isAllowlistSafe } = classifyHeredocRedirect(node);
-      structured.redirects.push(redirect);
-      recordRedirect(isAllowlistSafe);
-      return;
-    }
-    if (node.type !== "file_redirect") {
-      structured.redirects.push({ operator: "", destinationFds: [], targetNodeType: node.type });
-      recordRedirect(false);
-      return;
-    }
-    recordRedirect(classifyFileRedirect(node, state));
-  };
-
-  const processDirectRedirectChildren = (node: ParserType.SyntaxNode): void => {
-    const state = createRedirectClassificationState();
-    for (const child of node.children) {
-      if (redirectNodeTypes.has(child.type)) processRedirectNode(child, state);
-    }
-  };
-
-  function traverse(node: ParserType.SyntaxNode): void {
-    const type = node.type;
-    processDirectRedirectChildren(node);
-    if (redirectNodeTypes.has(type) && !processedRedirectNodes.has(node)) processRedirectNode(node, createRedirectClassificationState());
-    if (type === "command") {
-      const commandName = node.childForFieldName("name");
-      if (commandName === null) {
-        structured.parsingFailed = true;
-      } else {
-        legacy.simpleCommands.push(commandName.text);
-        let commandFullText = commandName.text;
-        const commandArgs: ShellCommandArgument[] = [];
-        for (const arg of node.childrenForFieldName("argument")) {
-          commandArgs.push({ type: arg.type, value: arg.text });
-          commandFullText += ` ${arg.text}`;
-        }
-        structured.executableCommands.push({ name: commandName.text, args: commandArgs, fullText: commandFullText });
-      }
-    }
-    if (type === "command_name" || type === "simple_command") {
-      if (type === "command_name" && !legacy.simpleCommands.includes(node.text)) {
-        legacy.simpleCommands.push(node.text);
-      } else if (type === "simple_command") {
-        const firstChild = node.firstNamedChild;
-        if (firstChild && firstChild.type === "command_name") {
-          if (!legacy.simpleCommands.includes(firstChild.text)) legacy.simpleCommands.push(firstChild.text);
-        } else {
-          legacy.simpleCommands.push(node.text);
-        }
-      }
-    }
-    if (type === "command_substitution" || type === "process_substitution") structured.hasCommandSubstitution = true;
-    for (const child of node.children) traverse(child);
+  /** Reads the whole tree and gives the answer. */
+  finish(top: SyntaxNode): Findings {
+    this.visit(top);
+    const { structured } = this.found;
+    if (structured.hasRedirects) structured.allRedirectsAreDevNull = this.everyRedirectionHarmless;
+    return this.found;
   }
 
-  traverse(tree.rootNode);
-  if (sawRedirect) structured.allRedirectsAreDevNull = allRedirectsAreAllowlistSafe;
-  return { legacy, structured };
+  /** A node, then everything under it, in the order written. */
+  private visit(node: SyntaxNode): void {
+    // A node's redirections come before anything under it, so the redirections of a whole group are listed before those inside it.
+    this.redirectionsUnder(node);
+    // A redirection not read by now is the top of the tree: nothing above it could read it. It is read on its own.
+    if (REDIRECTIONS.has(node.type) && !this.redirectionsRead.has(node)) this.redirection(node, new Descriptors());
+    switch (node.type) {
+      case "command":
+        this.command(node);
+        break;
+      case "command_name":
+        this.nameOnce(node.text);
+        break;
+      case "simple_command":
+        this.simpleCommand(node);
+        break;
+      case "command_substitution":
+      case "process_substitution":
+        this.found.structured.hasCommandSubstitution = true;
+        break;
+    }
+    for (const child of node.children) this.visit(child);
+  }
+
+  /** The redirections straight under one node are read together: each may copy what the ones before it set. */
+  private redirectionsUnder(node: SyntaxNode): void {
+    const descriptors = new Descriptors();
+    for (const child of node.children) {
+      if (REDIRECTIONS.has(child.type)) this.redirection(child, descriptors);
+    }
+  }
+
+  private redirection(node: SyntaxNode, descriptors: Descriptors): void {
+    if (this.redirectionsRead.has(node)) return;
+    this.redirectionsRead.add(node);
+    this.noteSigns(node);
+    if (node.type === "file_redirect") {
+      this.count(this.fileRedirection(node, descriptors));
+    } else if (node.type === "heredoc_redirect") {
+      this.count(this.hereDocument(node));
+    } else {
+      // A here-string, or a kind only another grammar has: counted, and never known to be harmless.
+      this.list(unread(node));
+      this.count(false);
+    }
+  }
+
+  /** The shorter answer's two flags, from the redirection's own text: a here-document's whole text is searched too. */
+  private noteSigns(redirection: SyntaxNode): void {
+    const { legacy } = this.found;
+    const text = redirection.text;
+    if (INPUT_SIGN.test(text) || redirection.type === "heredoc_redirect" || redirection.type === "herestring_redirect") legacy.hasInputRedirect = true;
+    if (OUTPUT_SIGN.test(text)) legacy.hasOutputRedirect = true;
+  }
+
+  /** Lists a file redirection and says whether it is harmless. One with no operator the grammar names is not listed. */
+  private fileRedirection(node: SyntaxNode, descriptors: Descriptors): boolean {
+    const parts = operatorAndTarget(node);
+    if (parts === undefined) return false;
+    const { operator, target } = parts;
+    const changed = descriptorsChanged(node, operator);
+    const text = plainText(target);
+    this.list({
+      operator,
+      destinationFds: changed,
+      targetNodeType: target?.type ?? "",
+      ...(text === undefined ? {} : { targetText: text }),
+    });
+    const connection = descriptors.connectionMadeBy(operator, target);
+    descriptors.connect(changed, connection);
+    return connection !== "somewhere else";
+  }
+
+  /** Lists a here-document and says whether it is harmless: input for a plain command, outside any bare substitution. */
+  private hereDocument(node: SyntaxNode): boolean {
+    const fed = commandFed(node);
+    if (fed === undefined || inBareSubstitution(node)) {
+      this.list(unread(node));
+      return false;
+    }
+    this.list({ operator: "<<", destinationFds: [0], targetNodeType: node.type, targetText: fed });
+    return true;
+  }
+
+  private list(redirection: ShellRedirect): void {
+    this.found.structured.redirects.push(redirection);
+  }
+
+  private count(harmless: boolean): void {
+    this.found.structured.hasRedirects = true;
+    if (!harmless) this.everyRedirectionHarmless = false;
+  }
+
+  /** A command with no name is one the grammar could not make sense of: the whole reading is marked as failed. */
+  private command(node: SyntaxNode): void {
+    const nameNode = node.childForFieldName("name");
+    if (nameNode === null) {
+      this.found.structured.parsingFailed = true;
+      return;
+    }
+    const name = nameNode.text;
+    const args = node.childrenForFieldName("argument").map((arg): ShellCommandArgument => ({ type: arg.type, value: arg.text }));
+    // A command's name is listed every time it comes, unlike a name met on its own.
+    this.found.legacy.simpleCommands.push(name);
+    this.found.structured.executableCommands.push({
+      name,
+      args,
+      fullText: [name, ...args.map((arg) => arg.value)].join(" "),
+    });
+  }
+
+  /** A name met outside a command (the grammar gives one for input it could not place) is listed once. */
+  private nameOnce(name: string): void {
+    const names = this.found.legacy.simpleCommands;
+    if (!names.includes(name)) names.push(name);
+  }
+
+  /** Another grammar's name for a command: its name once, or its whole text when it does not start with one. */
+  private simpleCommand(node: SyntaxNode): void {
+    const first = node.firstNamedChild;
+    if (first?.type === "command_name") this.nameOnce(first.text);
+    else this.found.legacy.simpleCommands.push(node.text);
+  }
+}
+
+export function analyzeShellCommand(cmd: string): ShellCommandAnalysis {
+  const bash = parserForBash();
+  if (bash === null) return nothingFound(true);
+  const tree = bash.parse(cmd);
+  return new Reading().finish(tree.rootNode);
 }

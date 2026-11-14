@@ -1,0 +1,3515 @@
+{
+ "part": "packages/prompt-jsx",
+ "surface": {
+  "runtime": {
+   "Fragment": "function",
+   "jsx": "function",
+   "jsxs": "function"
+  },
+  "components": {
+   "Assistant": "function",
+   "Conversation": "function",
+   "System": "function",
+   "Tool": "function",
+   "User": "function",
+   "builtinComponents": "object"
+  },
+  "render": {
+   "renderContent": "function"
+  }
+ },
+ "scenarios": {
+  "what the part exports: three makers of elements, five named components and their list, one renderer": {
+   "returned": {
+    "jsx": {
+     "name": "jsx",
+     "parameters": 2,
+     "hasPrototype": true
+    },
+    "jsxs": {
+     "name": "jsxs",
+     "parameters": 2,
+     "hasPrototype": true
+    },
+    "Fragment": {
+     "name": "Fragment",
+     "parameters": 1,
+     "hasPrototype": true
+    },
+    "System": {
+     "name": "System",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "User": {
+     "name": "User",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "Assistant": {
+     "name": "Assistant",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "Tool": {
+     "name": "Tool",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "Conversation": {
+     "name": "Conversation",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "renderContent": {
+     "name": "renderContent",
+     "parameters": 2,
+     "hasPrototype": true
+    },
+    "namesInTheList": [
+     "System",
+     "User",
+     "Assistant",
+     "Tool",
+     "Conversation",
+     "Fragment"
+    ],
+    "theListHoldsTheExportsThemselves": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "theListIsAPlainOpenObject": [
+     true,
+     false
+    ]
+   }
+  },
+  "an element holds its type, its props with the children in them, and the children once more": {
+   "returned": {
+    "a text as children becomes a list of one": {
+     "type": "p",
+     "props": {
+      "children": [
+       "text"
+      ]
+     },
+     "children": [
+      "text"
+     ]
+    },
+    "a number as children becomes a list of one": {
+     "type": "p",
+     "props": {
+      "children": [
+       7
+      ]
+     },
+     "children": [
+      7
+     ]
+    },
+    "a list of children stays a list": {
+     "type": "p",
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "one element as children becomes a list of one": {
+     "type": "ul",
+     "props": {
+      "children": [
+       {
+        "type": "li",
+        "props": {
+         "children": [
+          "item"
+         ]
+        },
+        "children": [
+         "item"
+        ]
+       }
+      ]
+     },
+     "children": [
+      {
+       "type": "li",
+       "props": {
+        "children": [
+         "item"
+        ]
+       },
+       "children": [
+        "item"
+       ]
+      }
+     ]
+    },
+    "no children: the field is there, undefined": {
+     "type": "br",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "props given as null": {
+     "type": "br",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "props given as undefined": {
+     "type": "br",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "no props given": {
+     "type": "br",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "other props keep their order and the children come last": {
+     "type": "x",
+     "props": {
+      "tag": "rule",
+      "name": "/a.md",
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "children given first stay first": {
+     "type": "section",
+     "props": {
+      "children": [
+       "c"
+      ],
+      "title": "t",
+      "description": "d"
+     },
+     "children": [
+      "c"
+     ]
+    },
+    "children given in the middle stay in the middle": {
+     "type": "section",
+     "props": {
+      "title": "t",
+      "children": [
+       "c"
+      ],
+      "description": "d"
+     },
+     "children": [
+      "c"
+     ]
+    },
+    "a function as type is kept as it is": {
+     "type": {
+      "$": "function",
+      "name": "Greeting"
+     },
+     "props": {
+      "to": "Ada",
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "any value is taken as type: a number": {
+     "type": 7,
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "any value is taken as type: nothing": {
+     "type": {
+      "$": "undefined"
+     },
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "jsxs makes the same element": {
+     "type": "section",
+     "props": {
+      "title": "t",
+      "children": [
+       "a",
+       {
+        "type": "br",
+        "props": {
+         "children": {
+          "$": "undefined"
+         }
+        },
+        "children": {
+         "$": "undefined"
+        }
+       }
+      ]
+     },
+     "children": [
+      "a",
+      {
+       "type": "br",
+       "props": {
+        "children": {
+         "$": "undefined"
+        }
+       },
+       "children": {
+        "$": "undefined"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "children that are nothing are left out: null, undefined, true, false and the empty text; zero, NaN, a space and inner lists stay": {
+   "returned": {
+    "nothings between texts are left out": [
+     "a",
+     "b",
+     "c",
+     "d"
+    ],
+    "zero, minus zero, NaN, a space, an empty list and a list of nothings stay": [
+     0,
+     {
+      "$": "number",
+      "v": "-0"
+     },
+     {
+      "$": "number",
+      "v": "NaN"
+     },
+     " ",
+     [],
+     [
+      null,
+      "",
+      false
+     ]
+    ],
+    "an object that is no element stays": [
+     {},
+     {
+      "type": "br"
+     }
+    ],
+    "only nothings: no children": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "an empty list: no children": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "a lone true: no children": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "a lone space is a child": {
+     "type": "p",
+     "props": {
+      "children": [
+       " "
+      ]
+     },
+     "children": [
+      " "
+     ]
+    },
+    "a lone empty list is a child, in a list": [
+     []
+    ],
+    "a lone object is a child": [
+     {
+      "any": "thing"
+     }
+    ]
+   }
+  },
+  "children that are empty, zero, NaN, false or null give way to the arguments after the props, which jsxs never reads": {
+   "returned": {
+    "an empty text gives way to the argument after": [
+     "the-key"
+    ],
+    "zero gives way to the argument after": [
+     3
+    ],
+    "zero with nothing after: no children": {
+     "$": "undefined"
+    },
+    "NaN with nothing after: no children": {
+     "$": "undefined"
+    },
+    "false gives way, and the arguments after lose their nothings": [
+     "a",
+     "b",
+     0
+    ],
+    "null gives way": [
+     1,
+     2
+    ],
+    "no children in the props: the arguments after are the children": {
+     "type": "li",
+     "props": {
+      "title": "t",
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "no props: the arguments after are the children": {
+     "type": "li",
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "a list after the props stays one child": [
+     [
+      "inner",
+      "list"
+     ]
+    ],
+    "children that are there win over the arguments after": [
+     "kept"
+    ],
+    "an empty list of children wins too, and leaves none": {
+     "$": "undefined"
+    },
+    "a list of nothings wins too, and leaves none": {
+     "$": "undefined"
+    },
+    "jsxs with an empty text and an argument after: no children": {
+     "$": "undefined"
+    },
+    "jsxs with children and an argument after": [
+     "a"
+    ],
+    "jsxs with no props' children and arguments after: no children": {
+     "$": "undefined"
+    }
+   }
+  },
+  "the element's children and its props' children are one list, never the list given, and the props given are left as they were": {
+   "returned": {
+    "theChildrenAreThePropsChildren": true,
+    "theChildrenAreTheListGiven": [
+     false,
+     false
+    ],
+    "thePropsAreThePropsGiven": false,
+    "theListGivenAfterwards": [
+     "a",
+     null,
+     "b"
+    ],
+    "thePropsGivenAfterwards": [
+     [
+      "title",
+      "children"
+     ],
+     true
+    ],
+    "aSecondCallGivesTheSameList": false,
+    "keysOfTheElement": [
+     "type",
+     "props",
+     "children"
+    ],
+    "keysOfItsProps": [
+     "title",
+     "children"
+    ],
+    "withoutChildren": {
+     "element": [
+      "type",
+      "props",
+      "children"
+     ],
+     "props": [
+      "children"
+     ],
+     "given": []
+    },
+    "nothingIsFrozen": [
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "props are copied field by field: getters are read, once for the children and once for the copy, symbols kept, hidden and inherited fields left, a __proto__ field followed": {
+   "returned": {
+    "getters": {
+     "reads": [
+      "children",
+      "title",
+      "children",
+      "name"
+     ],
+     "props": {
+      "title": "t",
+      "children": [
+       "c"
+      ],
+      "name": "n"
+     },
+     "title": {
+      "value": "t",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "symbol": "kept",
+    "hidden": [
+     "shown",
+     "children"
+    ],
+    "inherited": {
+     "type": "p",
+     "props": {
+      "own": "y",
+      "children": [
+       "from above"
+      ]
+     },
+     "children": [
+      "from above"
+     ]
+    },
+    "protoField": {
+     "keys": [
+      "title",
+      "children"
+     ],
+     "ownField": false,
+     "reached": "through the copy",
+     "stillAPlainObject": false
+    }
+   }
+  },
+  "props that are not an object: a text is copied letter by letter, a list item by item, a number or true gives none, and what is false counts as no props": {
+   "returned": {
+    "a text": {
+     "type": "p",
+     "props": {
+      "0": "a",
+      "1": "b",
+      "2": "c",
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "a list": {
+     "type": "p",
+     "props": {
+      "0": "a",
+      "1": "b",
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "a number": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "true": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "zero": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "an empty text": {
+     "type": "p",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "false, with arguments after": {
+     "type": "p",
+     "props": {
+      "children": [
+       "a"
+      ]
+     },
+     "children": [
+      "a"
+     ]
+    }
+   }
+  },
+  "Fragment makes an element named Fragment from its props, and reads no other argument": {
+   "returned": {
+    "a list of children": {
+     "type": "Fragment",
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "one child": {
+     "type": "Fragment",
+     "props": {
+      "children": [
+       "one"
+      ]
+     },
+     "children": [
+      "one"
+     ]
+    },
+    "nothings left out": {
+     "type": "Fragment",
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "no children": {
+     "type": "Fragment",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "other props are kept": {
+     "type": "Fragment",
+     "props": {
+      "key": "k",
+      "children": [
+       "c"
+      ]
+     },
+     "children": [
+      "c"
+     ]
+    },
+    "props given as null": {
+     "type": "Fragment",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "no props": {
+     "type": "Fragment",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "an argument after the props is not read": {
+     "type": "Fragment",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "each named component makes an element of its own name from its props; Conversation makes one whose type is Fragment itself": {
+   "returned": {
+    "System": {
+     "type": "System",
+     "props": {
+      "name": "rules",
+      "children": [
+       "Be brief."
+      ]
+     },
+     "children": [
+      "Be brief."
+     ]
+    },
+    "User without children": {
+     "type": "User",
+     "props": {
+      "children": {
+       "$": "undefined"
+      }
+     },
+     "children": {
+      "$": "undefined"
+     }
+    },
+    "Assistant, its nothings left out": {
+     "type": "Assistant",
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "Tool with its call id": {
+     "type": "Tool",
+     "props": {
+      "tool_call_id": "call_1",
+      "name": "search",
+      "children": [
+       "found"
+      ]
+     },
+     "children": [
+      "found"
+     ]
+    },
+    "Conversation": {
+     "type": {
+      "$": "function",
+      "name": "Fragment"
+     },
+     "props": {
+      "children": [
+       "a",
+       "b"
+      ]
+     },
+     "children": [
+      "a",
+      "b"
+     ]
+    },
+    "Conversation's type is Fragment itself": true,
+    "props given as null": [
+     {
+      "type": "System",
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     },
+     {
+      "type": "User",
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     },
+     {
+      "type": "Assistant",
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     },
+     {
+      "type": "Tool",
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     },
+     {
+      "type": {
+       "$": "function",
+       "name": "Fragment"
+      },
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "an argument after the props is not read": [
+     {
+      "type": "System",
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     },
+     {
+      "type": {
+       "$": "function",
+       "name": "Fragment"
+      },
+      "props": {
+       "children": {
+        "$": "undefined"
+       }
+      },
+      "children": {
+       "$": "undefined"
+      }
+     }
+    ]
+   }
+  },
+  "nothing renders as nothing; a text or a number alone renders as it is, spaces and all": {
+   "returned": {
+    "null": "",
+    "undefined": "",
+    "true": "",
+    "false": "",
+    "an empty text": "",
+    "a text": "Plain text.",
+    "a text with spaces around and runs of spaces inside": "  spaced   out  ",
+    "a text of lines": "\n\nfirst\n  second\n\n",
+    "only spaces": "   ",
+    "zero": "0",
+    "minus zero": "0",
+    "a whole number": "42",
+    "a fraction": "1.5",
+    "a negative number": "-3",
+    "a very large number": "1e+21",
+    "NaN": "NaN",
+    "infinity": "Infinity"
+   }
+  },
+  "a list of texts is one paragraph: runs of spaces become one space, the ends are trimmed, tabs and inner newlines stay": {
+   "returned": {
+    "an empty list": "",
+    "an empty text": "",
+    "only spaces": "",
+    "one word": "word",
+    "texts are joined with nothing between": "abc",
+    "spaces at the joints become one": "a b",
+    "runs of spaces inside become one, the ends are trimmed": "a b c",
+    "tabs are kept": "a\t\tb",
+    "a tab at the ends is trimmed": "a",
+    "the indentation of a later line shrinks to one space": "first\n second\n third",
+    "an empty line between lines is kept": "first\n\nsecond",
+    "newlines at the start are trimmed": "word",
+    "newlines at the end are cut": "word",
+    "spaces before a last newline are trimmed": "word",
+    "spaces after a last newline are trimmed with it": "word",
+    "only a newline": "",
+    "only newlines and spaces": " \n \n ",
+    "spaces that do not break are trimmed at the ends, kept inside": "a  b",
+    "a text of several lines": "Line one.\nLine two.\nLine three.",
+    "carriage returns inside are kept": "first\r\nsecond\r\n\r\nthird",
+    "a carriage return before the last newline is trimmed": "word"
+   }
+  },
+  "in a list, nothings are passed over, inner lists are opened however deep, numbers are written out": {
+   "returned": {
+    "nothings between texts": "ab",
+    "only nothings": "",
+    "numbers": "step 1 of 2.5",
+    "zero is written": "0",
+    "zero between texts": "a0b",
+    "NaN is written": "NaN",
+    "inner lists": "abcd",
+    "inner lists of nothings": "",
+    "an empty text between texts": "ab"
+   }
+  },
+  "a gap in a list is read as nothing, wherever the list stands": {
+   "returned": {
+    "alone": "ab",
+    "in a list": "[ab]",
+    "as a paragraph's children": "ab",
+    "as pre's children": "ab",
+    "as a dash list's children": "a\nb",
+    "as a numbered list's children": "a\nb",
+    "as an item's children": "- ab",
+    "as a Conversation's children": "a\nb",
+    "as a Fragment's children": "[ab]"
+   }
+  },
+  "a great many nodes: a list given flat is written whatever its length, but a list inside a list, a Fragment's children or a component's answer that holds too many is refused": {
+   "returned": {
+    "a flat list of texts, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a flat list of texts, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a paragraph's children, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a paragraph's children, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "pre's children, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "pre's children, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Conversation's children, fifty thousand": {
+     "length": 99999,
+     "start": "a\na\na\na\na\na\n",
+     "end": "\na\na\na\na\na\na"
+    },
+    "a Conversation's children, two hundred and fifty thousand": {
+     "length": 499999,
+     "start": "a\na\na\na\na\na\n",
+     "end": "\na\na\na\na\na\na"
+    },
+    "a dash list's items, fifty thousand": {
+     "length": 199999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a dash list's items, two hundred and fifty thousand": {
+     "length": 999999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a numbered list's items, fifty thousand": {
+     "length": 438893,
+     "start": "1. a\n2. a\n3.",
+     "end": ". a\n50000. a"
+    },
+    "a numbered list's items, two hundred and fifty thousand": {
+     "length": 2388894,
+     "start": "1. a\n2. a\n3.",
+     "end": " a\n250000. a"
+    },
+    "one list of many items inside a dash item, fifty thousand": {
+     "length": 300006,
+     "start": "- text\n  - a",
+     "end": "\n  - a\n  - a"
+    },
+    "one list of many items inside a dash item, two hundred and fifty thousand": {
+     "length": 1500006,
+     "start": "- text\n  - a",
+     "end": "\n  - a\n  - a"
+    },
+    "one list of many items inside a numbered item that has no text, fifty thousand": {
+     "length": 349999,
+     "start": "1. - a\n   - ",
+     "end": "  - a\n   - a"
+    },
+    "one list of many items inside a numbered item that has no text, two hundred and fifty thousand": {
+     "length": 1749999,
+     "start": "1. - a\n   - ",
+     "end": "  - a\n   - a"
+    },
+    "a list inside a list, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a list inside a list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a list of nothings inside a list, fifty thousand": {
+     "length": 1,
+     "start": "a",
+     "end": "a"
+    },
+    "a list of nothings inside a list, two hundred and fifty thousand": {
+     "length": 1,
+     "start": "a",
+     "end": "a"
+    },
+    "a Fragment's children, by name, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Fragment's children, by name, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a Fragment's children, by function, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a Fragment's children, by function, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "what a component returns, fifty thousand": {
+     "length": 50001,
+     "start": "xaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "what a component returns, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "what a component returns, alone, fifty thousand": {
+     "length": 50000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "what a component returns, alone, two hundred and fifty thousand": {
+     "length": 250000,
+     "start": "aaaaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "a dash list's items in an inner list, fifty thousand": {
+     "length": 199999,
+     "start": "- a\n- a\n- a\n",
+     "end": "\n- a\n- a\n- a"
+    },
+    "a dash list's items in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "a numbered list's items in an inner list, fifty thousand": {
+     "length": 438893,
+     "start": "1. a\n2. a\n3.",
+     "end": ". a\n50000. a"
+    },
+    "a numbered list's items in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "an item's children in an inner list, fifty thousand": {
+     "length": 50002,
+     "start": "- aaaaaaaaaa",
+     "end": "aaaaaaaaaaaa"
+    },
+    "an item's children in an inner list, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    },
+    "many lists inside one item, fifty thousand": {
+     "length": 299999,
+     "start": "  - a\n  - a\n",
+     "end": "\n  - a\n  - a"
+    },
+    "many lists inside one item, two hundred and fifty thousand": {
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Maximum call stack size exceeded"
+     }
+    }
+   }
+  },
+  "what is not a node is refused: an object without a type, a big number, a symbol, a function, a date": {
+   "returned": {
+    "an empty object, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an empty object, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an empty object, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an empty object, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an empty object, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an empty object, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "an object with props and no type, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a big number, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a symbol, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a function, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "a date, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    }
+   }
+  },
+  "an element whose type is neither a name nor a function is refused, in the words of the place that meets it first": {
+   "returned": {
+    "a number, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: 5"
+     }
+    },
+    "null, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: null"
+     }
+    },
+    "undefined, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "true, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: true"
+     }
+    },
+    "an object, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: [object Object]"
+     }
+    },
+    "a symbol, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert a Symbol value to a string"
+     }
+    },
+    "a list holding a heading's name, alone": " text",
+    "a list holding a paragraph's name, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: p"
+     }
+    },
+    "a number, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: 5"
+     }
+    },
+    "null, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: null"
+     }
+    },
+    "undefined, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "true, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: true"
+     }
+    },
+    "an object, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: [object Object]"
+     }
+    },
+    "a symbol, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert a Symbol value to a string"
+     }
+    },
+    "a list holding a heading's name, in a list": "before\n\ntext\n\nafter",
+    "a list holding a paragraph's name, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: p"
+     }
+    },
+    "a number, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: 5"
+     }
+    },
+    "null, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: null"
+     }
+    },
+    "undefined, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "true, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: true"
+     }
+    },
+    "an object, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: [object Object]"
+     }
+    },
+    "a symbol, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert a Symbol value to a string"
+     }
+    },
+    "a list holding a heading's name, in a list of items": "text",
+    "a list holding a paragraph's name, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: p"
+     }
+    },
+    "a number, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: 5"
+     }
+    },
+    "null, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: null"
+     }
+    },
+    "undefined, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "true, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: true"
+     }
+    },
+    "an object, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: [object Object]"
+     }
+    },
+    "a symbol, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: Symbol(mark)"
+     }
+    },
+    "a list holding a heading's name, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: h2"
+     }
+    },
+    "a list holding a paragraph's name, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: p"
+     }
+    },
+    "a type that comes from the object's prototype counts, alone": "\n",
+    "a type that comes from the object's prototype counts, in a list": "a\nb"
+   }
+  },
+  "an element without props fails where its props are first read, and not where they are never read": {
+   "returned": {
+    "p, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "h2, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "x, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "section, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "ul, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ol, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "li, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "pre, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "br, alone": "\n",
+    "Fragment, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, alone": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, alone": "",
+    "Widget, alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "p, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "h2, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "x, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is null."
+     }
+    },
+    "section, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is null."
+     }
+    },
+    "ul, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "ol, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "li, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "pre, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "br, with null for props": "\n",
+    "Fragment, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "System, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "User, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "Assistant, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "Tool, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'children')"
+     }
+    },
+    "Conversation, with null for props": "",
+    "Widget, with null for props": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "p, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "h2, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "x, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "section, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "ul, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ol, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "li, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "pre, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "br, in a list": "a\nb",
+    "Fragment, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, in a list": "ab",
+    "Widget, in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "p, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "h2, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "x, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "section, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "ul, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ol, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "li, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "pre, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "br, in a list of items": "",
+    "Fragment, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, in a list of items": "",
+    "Widget, in a list of items": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "p, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "h2, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "x, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "section, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot destructure property 'children' of 'props' as it is undefined."
+     }
+    },
+    "ul, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ol, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "li, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "pre, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "br, in an item": "- a",
+    "Fragment, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, in an item": "- a",
+    "Widget, in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "p, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "h2, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "x, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "section, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ul, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "ol, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "li, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "pre, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "br, in pre": "a\nb",
+    "Fragment, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Widget, in pre": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "p, in a Conversation": "a\nb",
+    "h2, in a Conversation": "a\nb",
+    "x, in a Conversation": "a\nb",
+    "section, in a Conversation": "a\nb",
+    "ul, in a Conversation": "a\nb",
+    "ol, in a Conversation": "a\nb",
+    "li, in a Conversation": "a\nb",
+    "pre, in a Conversation": "a\nb",
+    "br, in a Conversation": "a\nb",
+    "Fragment, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "System, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "User, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Assistant, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Tool, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "Conversation, in a Conversation": "a\nb",
+    "Widget, in a Conversation": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "a function, called with the props that are not there": "given undefined"
+   }
+  },
+  "a paragraph is its children: written by hand its text is left as it is, made with jsx it is one paragraph": {
+   "returned": {
+    "by hand, a text": "  spaced   out  ",
+    "by hand, a number": "12",
+    "by hand, nothing": "",
+    "by hand, true": "",
+    "by hand, a list": "spaced out",
+    "by hand, an element": "  inner  ",
+    "with jsx, a text": "spaced out",
+    "with jsx, no children": "",
+    "with jsx, texts and numbers": "OS Version: linux 6.18",
+    "with jsx, a line break inside": "Workspace Paths:\n- /a\n- /b",
+    "a paragraph in a paragraph": "inner",
+    "paragraphs in a paragraph, then text": "one\n\ntwo\n\ntail",
+    "other props change nothing": "text",
+    "by hand: only the children in the props are read": "from the props"
+   }
+  },
+  "a heading is one to six hashes, a space and its trimmed text; h0, h7 and H1 are no headings; a heading without text is nothing": {
+   "returned": {
+    "level 1": "# Title",
+    "level 2": "## Title",
+    "level 3": "### Title",
+    "level 4": "#### Title",
+    "level 5": "##### Title",
+    "level 6": "###### Title",
+    "\"h0\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h0"
+     }
+    },
+    "\"h7\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h7"
+     }
+    },
+    "\"h10\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h10"
+     }
+    },
+    "\"h\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h"
+     }
+    },
+    "\"H1\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: H1"
+     }
+    },
+    "\"h1 \" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h1 "
+     }
+    },
+    "\"heading\" is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: heading"
+     }
+    },
+    "\"h0\" in a list is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h0"
+     }
+    },
+    "\"h7\" in a list is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: h7"
+     }
+    },
+    "\"H1\" in a list is no heading": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: H1"
+     }
+    },
+    "no text": "",
+    "only spaces, by hand": "",
+    "only spaces, with jsx": "",
+    "by hand: the ends are trimmed, the inside left": "## spaced   out",
+    "with jsx: runs of spaces inside become one": "## spaced out",
+    "by hand, a number": "# 0",
+    "texts and a number": "### Step 2: Form a plan",
+    "a line break inside": "## first\nsecond",
+    "paragraphs inside": "## first\n\nsecond",
+    "a heading in a heading": "# ## inner",
+    "between paragraphs": "before\n\n## Title\n\nafter",
+    "an empty heading between paragraphs leaves no gap": "before\n\nafter",
+    "after a text": "intro\n\n### Title"
+   }
+  },
+  "a line break is a newline wherever it stands, whatever it is given": {
+   "returned": {
+    "alone": "\n",
+    "alone, by hand without props": "\n",
+    "alone, with children": "\n",
+    "between texts": "a\nb",
+    "two between texts": "a\n\nb",
+    "spaces around it stay, one each side": "a \n b",
+    "in a paragraph": "a\nb",
+    "in a heading": "## a\nb",
+    "in an item": "- a\nb",
+    "in pre": "a\nb",
+    "as a list's only child": "",
+    "by hand with children, in pre": "a\nb"
+   }
+  },
+  "an x element is a tag: its tag or x, its attributes, its content between as it is, and no content closes it at once": {
+   "returned": {
+    "a tag with content": "<agent_skill fullPath=\"/skills/notes/SKILL.md\">Writes release notes.</agent_skill>",
+    "a tag without content": "<agent_skill fullPath=\"/skills/notes/SKILL.md\" />",
+    "no tag: x": "<x>content</x>",
+    "no tag, no content": "<x />",
+    "an empty tag: x": "<x>content</x>",
+    "zero as tag: x": "<x>content</x>",
+    "null as tag: x": "<x>content</x>",
+    "false as tag: x": "<x>content</x>",
+    "a number as tag": "<5>content</5>",
+    "true as tag": "<true>content</true>",
+    "a tag with spaces and capitals is left as it is": "<My Tag>content</My Tag>",
+    "by hand, the content is left as it is": "<t>  spaced   out  </t>",
+    "by hand, only spaces: no content": "<t />",
+    "by hand, a newline only: no content": "<t />",
+    "by hand, a number": "<t>0</t>",
+    "with jsx, the content is one paragraph": "<t>spaced out</t>",
+    "with jsx, only spaces: no content": "<t />",
+    "several texts": "<always_applied_workspace_rule name=\"/repo/.rules/style.md\">Use tabs., glob pattern(s) for applicable files: *.ts, *.tsx</always_applied_workspace_rule>",
+    "lines of content keep their newlines": "<example>git commit -m \"$(cat <<'EOF'\n Commit message here.\n\n EOF\n )\"</example>",
+    "paragraphs inside": "<t>one\n\ntwo</t>",
+    "a line break inside": "<t>a\nb</t>",
+    "a list inside": "<t>- one\n- two</t>",
+    "a tag in a tag": "<outer><inner>content</inner></outer>",
+    "an empty tag in a tag": "<outer><inner /></outer>",
+    "the key is no attribute, the title is": "<t title=\"shown\">content</t>",
+    "in a list, set apart as a block and trimmed": "before\n\n<t>  inside  </t>\n\nafter",
+    "two in a row": "<a>one</a>\n\n<b>two</b>"
+   }
+  },
+  "attributes are written in the order given: a text in quotes with its own quotes as &quot;, true as the bare name, and false, null and undefined left out": {
+   "returned": {
+    "every kind, on x with content": "<t 1=\"one\" 2=\"two\" text=\"plain\" quoted=\"say &quot;hi&quot;, then &quot;bye&quot;\" marks=\"a & b < c > d 'e'\" number=\"12\" zero=\"0\" nan=\"NaN\" emptyText=\"\" yes list=\"a,b\" emptyList=\"\" object=\"[object Object]\" ownWords=\"made &quot;by&quot; toString\" big=\"10\" mark=\"Symbol(mark)\" data-with-dash=\"dash\" with space=\"space\" =\"nameless\" lines=\"first\nsecond\" title=\"shown on x\">content</t>",
+    "every kind, on x without content": "<t 1=\"one\" 2=\"two\" text=\"plain\" quoted=\"say &quot;hi&quot;, then &quot;bye&quot;\" marks=\"a & b < c > d 'e'\" number=\"12\" zero=\"0\" nan=\"NaN\" emptyText=\"\" yes list=\"a,b\" emptyList=\"\" object=\"[object Object]\" ownWords=\"made &quot;by&quot; toString\" big=\"10\" mark=\"Symbol(mark)\" data-with-dash=\"dash\" with space=\"space\" =\"nameless\" lines=\"first\nsecond\" title=\"shown on x\" />",
+    "every kind, on a section with content": "<t 1=\"one\" 2=\"two\" text=\"plain\" quoted=\"say &quot;hi&quot;, then &quot;bye&quot;\" marks=\"a & b < c > d 'e'\" number=\"12\" zero=\"0\" nan=\"NaN\" emptyText=\"\" yes list=\"a,b\" emptyList=\"\" object=\"[object Object]\" ownWords=\"made &quot;by&quot; toString\" big=\"10\" mark=\"Symbol(mark)\" data-with-dash=\"dash\" with space=\"space\" =\"nameless\" lines=\"first\nsecond\" tag=\"shown on a section\">\ncontent\n</t>",
+    "every kind, on a section without content": "<t 1=\"one\" 2=\"two\" text=\"plain\" quoted=\"say &quot;hi&quot;, then &quot;bye&quot;\" marks=\"a & b < c > d 'e'\" number=\"12\" zero=\"0\" nan=\"NaN\" emptyText=\"\" yes list=\"a,b\" emptyList=\"\" object=\"[object Object]\" ownWords=\"made &quot;by&quot; toString\" big=\"10\" mark=\"Symbol(mark)\" data-with-dash=\"dash\" with space=\"space\" =\"nameless\" lines=\"first\nsecond\" tag=\"shown on a section\" />",
+    "only what is left out, on x": "<x />",
+    "only what is left out, on a section": "<t />",
+    "true, false, then a text: one space between what is written": "<x first third=\"3\" />",
+    "false first: no space before what follows": "<t second />",
+    "a nameless attribute that is true is not written, on x": "<x />",
+    "a nameless attribute that is true leaves no gap, on x": "<x before after=\"a\">content</x>",
+    "a nameless attribute that is true leaves no gap, on a section": "<t before after=\"a\" />",
+    "a description, as the engine gives one": "<available_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\">\ncontent\n</available_skills>"
+   }
+  },
+  "a section is a tag named after its title, lower case with a dash for each run of white space, its content on lines of its own": {
+   "returned": {
+    "title: a name with underscores": "<user_info>\ncontent\n</user_info>",
+    "title: words": "<committing-changes-with-git>\ncontent\n</committing-changes-with-git>",
+    "title: capitals": "<mixed-case>\ncontent\n</mixed-case>",
+    "title: spaces around and runs inside": "<-padded-title->\ncontent\n</-padded-title->",
+    "title: tabs and newlines": "<tabs-and-lines-here>\ncontent\n</tabs-and-lines-here>",
+    "title: a number": "<5>\ncontent\n</5>",
+    "title: an empty title": "<>\ncontent\n</>",
+    "title: null": "<null>\ncontent\n</null>",
+    "title: true": "<true>\ncontent\n</true>",
+    "title: a list": "<a-b,c>\ncontent\n</a-b,c>",
+    "title: marks are left alone": "<a<b>&\"c\">\ncontent\n</a<b>&\"c\">",
+    "title: a space that does not break is white space too": "<a-b>\ncontent\n</a-b>",
+    "no title: the tag is named undefined": "<undefined>\ncontent\n</undefined>",
+    "no title, no content": "<undefined />",
+    "no content": "<empty />",
+    "by hand, the content is left as it is between the lines": "<t>\n  spaced   out  \n</t>",
+    "by hand, only spaces: no content": "<t />",
+    "by hand, a number": "<t>\n0\n</t>",
+    "with jsx, the content is one paragraph": "<t>\nspaced out\n</t>",
+    "paragraphs inside": "<t>\none\n\ntwo\n</t>",
+    "a line break as the only content: no content": "<t />",
+    "a list inside": "<t>\n- one\n- two\n</t>",
+    "a section in a section": "<outer>\n<inner>\ncontent\n</inner>\n</outer>",
+    "an empty section in a section": "<outer>\n<inner />\n</outer>",
+    "sections in a section, with text": "<outer>\nintro\n\n<first>\none\n</first>\n\n<second>\ntwo\n</second>\n\noutro\n</outer>",
+    "the key is no attribute, the tag is": "<t tag=\"shown\">\ncontent\n</t>",
+    "in a list, set apart as a block": "before\n\n<t>\ninside\n</t>\n\nafter",
+    "two in a row": "<a>\none\n</a>\n\n<b>\ntwo\n</b>"
+   }
+  },
+  "a section reads its title, then renders its children, then writes its attributes; an x element renders its children, then writes its attributes": {
+   "returned": {
+    "section": {
+     "text": "<the-title first=\"first attribute\" second=\"second attribute\">\ncontent\n</the-title>",
+     "log": [
+      "The Title",
+      "the child is called",
+      "first attribute",
+      "second attribute"
+     ]
+    },
+    "x": {
+     "text": "<x first=\"first attribute\" title=\"The Title\" second=\"second attribute\">content</x>",
+     "log": [
+      "the child is called",
+      "first attribute",
+      "The Title",
+      "second attribute"
+     ]
+    }
+   }
+  },
+  "pre keeps its text as it is, spaces and newlines, and of the elements in it only their text": {
+   "returned": {
+    "a text, as it is": "  two  spaces\n\tand a tab  \n",
+    "by hand, a text": "  as it is  ",
+    "by hand, a number": "0",
+    "by hand, true": "",
+    "no children": "",
+    "texts, numbers, nothings and inner lists run together": "a 1 bc0",
+    "a line break is a newline": "a\n\nb",
+    "a Fragment by name": "a b \nc",
+    "a Fragment by function": "a b \nc",
+    "a Fragment without children": "ac",
+    "a component that returns a text": "  words for Ada  ",
+    "a component that returns an element": "[  from a component  ]",
+    "a component that returns nothing": "[]",
+    "a paragraph gives its text, untouched": "  para  ",
+    "a tag gives its content, without the tag": "tag text",
+    "a section gives its content, without the tag": "section text",
+    "a heading gives its text, without the hashes": "Head",
+    "items give their texts, without dashes or newlines": "onetwo",
+    "a numbered list gives its texts, without numbers": "onetwo",
+    "a message gives its content": "said",
+    "a name the part does not know gives its children, and is not looked up": "inside",
+    "pre in pre": "a  b  c",
+    "everything at once": "x = 1\n  y = 2\n  z = 3",
+    "an object without a type": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    },
+    "a big number": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'children')"
+     }
+    }
+   }
+  },
+  "pre among other nodes is a paragraph that is not trimmed, and counts as one even when empty": {
+   "returned": {
+    "after a text": "Run:\n\n  npm test\n    --watch",
+    "between texts": "a\n\n  code  \n\nb",
+    "between paragraphs": "a\n\n  code  \n\nb",
+    "ending in a newline: what follows is on the next line": "code\nb",
+    "ending in a newline, then a paragraph": "code\nb",
+    "ending in two newlines": "code\n\nb",
+    "empty, between texts": "a\n\nb",
+    "empty, first": "b",
+    "empty, last": "a",
+    "only spaces, between texts": "a  \n\nb",
+    "only spaces, first": "  \n\nb",
+    "only a newline, between texts": "a\n\n\nb",
+    "only a newline, first": "b",
+    "two newlines, between texts": "a\n\n\n\nb",
+    "two in a row": " a \n\n b ",
+    "alone in a list: its spaces stay": "  code  ",
+    "alone in a list: newlines at its ends are cut with the whole's": "  code",
+    "in a paragraph": "a\n\n  code  \n\nb"
+   }
+  },
+  "blocks in a list are paragraphs, set apart by one empty line; empty blocks and stray spaces between blocks are dropped": {
+   "returned": {
+    "two paragraphs": "one\n\ntwo",
+    "text, a paragraph, text": "before\n\ninside\n\nafter",
+    "every kind of block": "text\n\nparagraph\n\n## Heading\n\n- item\n\n1. numbered\n\n<tag>tagged</tag>\n\n<part>\ninside\n</part>\n\nas it is",
+    "the text before a block is closed as a paragraph of its own": "a b\n\nc\n\nd e",
+    "empty paragraphs are dropped": "one\n\ntwo",
+    "an empty heading and empty lists are dropped": "one\n\ntwo",
+    "an empty tag and an empty section are written": "one\n\n<x />\n\n<s />\n\ntwo",
+    "spaces between blocks are dropped": "one\n\ntwo",
+    "a tab between blocks is dropped": "one\n\ntwo",
+    "a newline text between blocks is kept as it is": "one\n\n\ntwo",
+    "a block's own ends are trimmed": "<a>one</a>\n\n<b>two</b>",
+    "one block alone": "one",
+    "only empty blocks": "",
+    "a list in a list of blocks": "one\n\ntwo\n\nthree"
+   }
+  },
+  "a text that ends in a newline takes what follows on the next line, with no empty line between": {
+   "returned": {
+    "a text, a line break, a paragraph": "label:\nvalue",
+    "a text, two line breaks, a paragraph": "label:\n\nvalue",
+    "a text ending in a newline, a paragraph": "label:\nvalue",
+    "a text, a line break, a tag": "label:\n<t>value</t>",
+    "a text, a line break, a section": "label:\n<s>\nvalue\n</s>",
+    "a text, a line break, a list": "items:\n- one\n- two",
+    "a text, a line break, a heading": "above\n## Title",
+    "a paragraph that ends in a line break is trimmed first": "label:\n\nvalue",
+    "a paragraph, a line break, a text": "one\n\ntwo",
+    "a paragraph, a line break and a text, a paragraph": "one\n\ntwo\n\nthree",
+    "a text and a line break, then a text and a line break, then a paragraph": "one\ntwo\nthree",
+    "spaces after the line break do not undo it": "label:\n\nvalue",
+    "a text ending in a carriage return and a newline, a paragraph": "label:\nvalue",
+    "an empty paragraph still closes the text before it": "a\n\nb",
+    "an empty paragraph between a text with a line break and spaces with one": "a\n \n\n\nb"
+   }
+  },
+  "line breaks between blocks add to the empty line; at the very start and the very end newlines are cut, spaces are not": {
+   "returned": {
+    "a line break between paragraphs": "one\n\n\ntwo",
+    "two line breaks between paragraphs": "one\n\n\n\ntwo",
+    "a line break with spaces around between paragraphs": "one \n \n\ntwo",
+    "a line break before the first paragraph": "one",
+    "a line break after the last paragraph": "one",
+    "line breaks before and after": "one",
+    "only a line break": "",
+    "only line breaks": "",
+    "a space, a line break, a space": " \n ",
+    "a line break, a space": " ",
+    "a space, a line break, then a paragraph": " \n\n\none",
+    "a paragraph, then a line break and a space": "one\n ",
+    "line breaks before and between two sections": "intro\n\n\n<first>\none\n</first>",
+    "each repository after a line break, a second line break from the second on": "note\n\n\nrepo one\n\nstatus one\n\nrepo two\n\nstatus two"
+   }
+  },
+  "a Fragment's children stand where the Fragment stood, by name or by function, however deep": {
+   "returned": {
+    "by function, texts between texts": "abcd",
+    "by name, texts between texts": "abcd",
+    "by function, without children": "ab",
+    "by name, without children": "ab",
+    "by hand, one child that is no list": "abc",
+    "by hand, null for children": "ac",
+    "Fragments in Fragments": "abcdef",
+    "paragraphs in a Fragment are blocks of the list around": "one\n\ntwo\n\nthree\n\nfour",
+    "a line break and a text in a Fragment join the paragraph around": "Workspace Path: /work\nYou are operating in a worktree.",
+    "alone, by function": "one\n\ntwo",
+    "alone, by name": "one\n\ntwo",
+    "alone, by function, without children": "",
+    "alone, by name, without children": "",
+    "alone, by hand, a text that is left as it is": "  spaced   out  ",
+    "in a section": "<s>\none\n\ntwo\n</s>"
+   }
+  },
+  "a component is called with its props, and what it returns stands in its place": {
+   "returned": {
+    "alone": {
+     "a text": "  some   text  ",
+     "an empty text": "",
+     "a number": "7",
+     "zero": "0",
+     "null": "",
+     "undefined": "",
+     "true": "",
+     "false": "",
+     "a list of texts": "one two",
+     "an empty list": "",
+     "a paragraph": "in a paragraph",
+     "a list of paragraphs": "one\n\ntwo",
+     "a text and a paragraph": "text\n\nparagraph",
+     "a line break": "\n",
+     "a Fragment": "in a Fragment",
+     "another component": "from the inner one",
+     "a list holding another component": "[from the inner one]"
+    },
+    "betweenTexts": {
+     "a text": "before some text after",
+     "an empty text": "before after",
+     "a number": "before 7 after",
+     "zero": "before 0 after",
+     "null": "before after",
+     "undefined": "before after",
+     "true": "before after",
+     "false": "before after",
+     "a list of texts": "before one two after",
+     "an empty list": "before after",
+     "a paragraph": "before\n\nin a paragraph\n\nafter",
+     "a list of paragraphs": "before\n\none\n\ntwo\n\nafter",
+     "a text and a paragraph": "before text\n\nparagraph\n\nafter",
+     "a line break": "before \n after",
+     "a Fragment": "before in a Fragment after",
+     "another component": "before from the inner one after",
+     "a list holding another component": "before [from the inner one] after"
+    },
+    "inAParagraph": {
+     "a text": "before some text after",
+     "an empty text": "before after",
+     "a number": "before 7 after",
+     "zero": "before 0 after",
+     "null": "before after",
+     "undefined": "before after",
+     "true": "before after",
+     "false": "before after",
+     "a list of texts": "before one two after",
+     "an empty list": "before after",
+     "a paragraph": "before\n\nin a paragraph\n\nafter",
+     "a list of paragraphs": "before\n\none\n\ntwo\n\nafter",
+     "a text and a paragraph": "before text\n\nparagraph\n\nafter",
+     "a line break": "before \n after",
+     "a Fragment": "before in a Fragment after",
+     "another component": "before from the inner one after",
+     "a list holding another component": "before [from the inner one] after"
+    },
+    "calls": 51,
+    "text": "text",
+    "itsPropsAreTheElementsOwn": true,
+    "propsOfTheLastCall": {
+     "returns": "text",
+     "other": 1,
+     "children": [
+      "a child"
+     ]
+    }
+   }
+  },
+  "components in a list are all called before the list is rendered, those inside a block when the block is, each once": {
+   "returned": {
+    "text": "1\n\n2\n\n3\n\n- 4\n\n5 6\n\n<t>7</t>\n\n<s>\n8\n\n## 9\n</s>\n\n10\n1. 11 12\n\n13\n\n1415 16",
+    "log": [
+     "first",
+     "after the paragraph",
+     "returned by the one after the paragraph",
+     "in the Fragment",
+     "in the Fragment by name",
+     "in a list in the list",
+     "last",
+     "in the paragraph",
+     "in the item",
+     "in the tag",
+     "in the section",
+     "in the section's heading",
+     "in the numbered list, no item",
+     "in the numbered item",
+     "in pre",
+     "in the message"
+    ]
+   }
+  },
+  "a component given as a function is called on its own element, with the element's props and nothing else, wherever it stands": {
+   "returned": {
+    "answers": {
+     "alone": "w",
+     "in a list": "aw",
+     "returned by a component in a list": "aw",
+     "returned by a component alone": "w",
+     "in a paragraph": "w",
+     "in a heading": "## w",
+     "in a Fragment by name": "w",
+     "in a tag": "<t>w</t>",
+     "in a section": "<s>\nw\n</s>",
+     "in a dash list, outside the items": "w",
+     "in a numbered list, outside the items": "w",
+     "in a dash item": "- w",
+     "in a numbered item": "1. w",
+     "returned by a component in an item": "- w",
+     "in an item outside a list": "- w",
+     "in pre": "w",
+     "in a message": "w",
+     "in a Conversation": "w",
+     "returned by one of the caller's components": "w",
+     "by hand without props, alone": "w",
+     "by hand without props, in a list": "aw",
+     "by hand without props, in an item": "- w",
+     "by hand without props, in pre": "w",
+     "by hand without props, in a Conversation": "w"
+    },
+    "seen": [
+     {
+      "where": "alone",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a list",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "returned by a component in a list",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "returned by a component alone",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a paragraph",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a heading",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a Fragment by name",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a tag",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a section",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a dash list, outside the items",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a numbered list, outside the items",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a dash item",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a numbered item",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "returned by a component in an item",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in an item outside a list",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in pre",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a message",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "in a Conversation",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "returned by one of the caller's components",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "by hand, without props",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "by hand, without props",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "by hand, without props",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "by hand, without props",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     },
+     {
+      "where": "by hand, without props",
+      "calledOn": "its own element, whose props it is given",
+      "arguments": 1
+     }
+    ]
+   }
+  },
+  "an item outside a list is a dash, a space and its content; several in a row run together": {
+   "returned": {
+    "alone": "- item",
+    "alone, no children": "- ",
+    "alone, by hand: its text is left as it is": "-   spaced   out  ",
+    "alone, with jsx: its text is one paragraph": "- spaced out",
+    "alone, a list inside is not indented": "- text\n\n- inner",
+    "after a text": "before - item",
+    "two in a row": "- one- two",
+    "an empty one between texts": "a- b",
+    "between paragraphs": "one\n\n- item\n\ntwo",
+    "in a paragraph": "- one- two"
+   }
+  },
+  "a list of items is a dash, a space and the trimmed text of each item, one to a line; items without text are passed over": {
+   "returned": {
+    "two items": "- one\n- two",
+    "one item, given alone": "- only",
+    "one item, by hand, no list around it": "- only",
+    "no children": "",
+    "by hand, null for children": "",
+    "by hand, an empty list": "",
+    "items without text are passed over": "- one\n- two",
+    "only items without text": "",
+    "an item's ends are trimmed": "- one\n- two",
+    "items in inner lists": "- one\n- two\n- three",
+    "nothings in inner lists are passed over": "- one\n- two",
+    "items that may be absent, as the engine writes them": "- shown\n- always",
+    "other props change nothing": "- one",
+    "after a text": "The following are supported:\n\n- one\n- two",
+    "a list alone in a list": "- one\n- two"
+   }
+  },
+  "an item's text is its children joined as they are: runs of spaces stay, blocks run together, only the ends are trimmed": {
+   "returned": {
+    "runs of spaces inside stay": "- a    b",
+    "texts and numbers": "- step 1 of 2",
+    "zero is written": "- 0",
+    "texts as the engine joins them": "- NEVER skip hooks unless the user asks (requires force push)",
+    "nothings in inner lists are passed over": "- abc",
+    "a line break": "- a\nb",
+    "a tag": "- see <code>x = 1</code> here",
+    "paragraphs run together": "- onetwo",
+    "a heading": "- a ## Title",
+    "a section": "- a <s>\ninside\n</s>",
+    "pre": "- a  as it is  b",
+    "an item in an item": "- a - inner",
+    "a message": "- a said",
+    "a Fragment by name": "- a b c",
+    "a Fragment by function": "- a b c",
+    "a Fragment by function holding a list: the list is text, not indented": "- a\n\n- inner",
+    "a name the part does not know": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    }
+   }
+  },
+  "what stands in a list without being an item gets a line of its own, trimmed; items in a Fragment or returned as a list run together": {
+   "returned": {
+    "a dash list: a text and numbers": "just text\n0\n12",
+    "a numbered list: a text and numbers": "just text\n0\n12",
+    "a dash list: a paragraph": "a paragraph\n- item",
+    "a numbered list: a paragraph": "a paragraph\n1. item",
+    "a dash list: a tag": "<t>tagged</t>\n- item",
+    "a numbered list: a tag": "<t>tagged</t>\n1. item",
+    "a dash list: a line break is passed over": "- one\n- two",
+    "a numbered list: a line break is passed over": "1. one\n2. two",
+    "a dash list: an empty text and spaces are passed over": "- one",
+    "a numbered list: an empty text and spaces are passed over": "1. one",
+    "a dash list: a list as a direct child starts at the edge": "- one\n- dash\n1. number\n- two",
+    "a numbered list: a list as a direct child starts at the edge": "1. one\n- dash\n1. number\n2. two",
+    "a dash list: items in a Fragment by function run together": "- one- two\n- three",
+    "a numbered list: items in a Fragment by function run together": "- one- two\n1. three",
+    "a dash list: items in a Fragment by name run together": "- one- two\n- three",
+    "a numbered list: items in a Fragment by name run together": "- one- two\n1. three",
+    "a dash list: a component that returns an item": "- one\n- two\n- three",
+    "a numbered list: a component that returns an item": "- one\n- two\n1. three",
+    "a dash list: a component that returns a list of items": "- one- two\n- three",
+    "a numbered list: a component that returns a list of items": "- one- two\n1. three",
+    "a dash list: a component that returns nothing": "- one",
+    "a numbered list: a component that returns nothing": "1. one",
+    "a dash list: a message": "said\n- one",
+    "a numbered list: a message": "said\n1. one",
+    "a dash list: a name the part does not know": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "a numbered list: a name the part does not know": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "a dash list by hand: a text for children": "just text",
+    "a numbered list by hand: a text for children": "just text",
+    "a dash list by hand: zero for children": "0",
+    "a numbered list by hand: false for children": ""
+   }
+  },
+  "a list inside an item is indented under it, two spaces under a dash and three under a number, level after level": {
+   "returned": {
+    "a dash list in a dash item": "- one\n  - inner one\n  - inner two\n- two",
+    "three levels of dashes": "- one\n  - two\n    - three",
+    "three levels of numbers": "1. one\n   1. two\n      1. three",
+    "dash, number, dash": "- one\n  1. two\n     - three",
+    "number, dash, number": "1. one\n   - two\n     1. three",
+    "a numbered list in a dash item, as the engine writes its conditions": "- NEVER update the config\n- ONLY amend when ALL conditions are met:\n  1. The user asked for it\n  2. The commit is yours\n  3. It was not pushed\n- Fix the issue and commit again",
+    "a dash list in a numbered item, as the engine writes its steps": "1. Run these in parallel, each using the Shell tool:\n   - git status\n   - git diff\n2. Then run:\n   - git commit\n3. Check the result",
+    "two lists in one item": "- text\n  - dash\n  1. number",
+    "the text after an inner list joins the text before it": "- before after\n  - inner",
+    "an empty inner list is passed over": "- text",
+    "a dash item with only a list: the list alone, indented": "  - inner one\n  - inner two\n- two",
+    "a dash item with spaces and a list": "  - inner",
+    "a dash item with only a list, alone at the top: its indentation stays": "  - inner",
+    "a dash item with only a list, in a list of nodes: the first line's indentation is trimmed": "- inner one\n  - inner two",
+    "what is no item in an inner list is indented like the items": "- text\n  loose text\n  a paragraph\n  - item",
+    "what is no item in an inner numbered list": "1. text\n   loose text\n   1. item",
+    "an inner item of several lines: only its first line is indented": "- text\n  - first\nsecond"
+   }
+  },
+  "a numbered list numbers from one the items that have something; what is no item is not numbered": {
+   "returned": {
+    "three items": "1. one\n2. two\n3. three",
+    "one item, given alone": "1. only",
+    "one item, by hand, no list around it": "1. only",
+    "no children": "",
+    "by hand, null for children": "",
+    "items without text take no number": "1. one\n2. two",
+    "only items without text": "",
+    "an item's ends are trimmed": "1. one\n2. two",
+    "twelve items: the numbers grow, nothing else moves": "1. item 1\n2. item 2\n3. item 3\n4. item 4\n5. item 5\n6. item 6\n7. item 7\n8. item 8\n9. item 9\n10. item 10\n11. item 11\n12. item 12",
+    "items in inner lists": "1. one\n2. two\n3. three",
+    "what is no item is not numbered and takes no number": "loose text\n1. one\na paragraph\n7\n2. two",
+    "a numbered list directly in a numbered list starts again at one": "1. one\n1. inner\n2. two",
+    "after a text": "Steps:\n\n1. one\n2. two",
+    "an inner list under the tenth item is still three spaces in": "1. item 1\n2. item 2\n3. item 3\n4. item 4\n5. item 5\n6. item 6\n7. item 7\n8. item 8\n9. item 9\n10. ten\n   1. inner"
+   }
+  },
+  "a numbered item with only a list inside puts the list's first line beside its number and the other lines under it, three spaces further in, flat": {
+   "returned": {
+    "one inner line": "1. - inner\n2. two",
+    "two inner lines": "1. - inner one\n   - inner two\n2. two",
+    "an inner numbered list": "1. 1. inner one\n   2. inner two\n2. two",
+    "deeper levels are flattened under the item": "1. - a\n   - b\n   - deep\n   - deeper\n   - c\n2. two",
+    "two inner lists": "1. - dash one\n   - dash two\n   1. number one\n   2. number two",
+    "spaces count as no text": "1. - inner one\n   - inner two",
+    "an inner item of several lines": "1. - first\n   second line, far in\n   - next",
+    "the item takes a number": "1. - inner\n2. after",
+    "one level in: lined up six spaces in": "1. outer\n   1. - inner one\n      - inner two\n   2. after",
+    "under a dash: lined up five spaces in": "- outer\n  1. - inner one\n     - inner two",
+    "two levels in, one inner line": "1. outer\n   1. 1. inner",
+    "alone in a list of nodes": "1. - inner one\n   - inner two"
+   }
+  },
+  "a component inside an item: its text joins the item's, a list it returns is indented as the item's own, a list from two components deep is not": {
+   "returned": {
+    "under a dash: a text": "- see from a component.",
+    "under a number: a text": "1. see from a component.",
+    "under a dash: a number": "- count: 0",
+    "under a number: a number": "1. count: 0",
+    "under a dash: nothing": "- ab",
+    "under a number: nothing": "1. ab",
+    "under a dash: only nothing": "",
+    "under a number: only nothing": "",
+    "under a dash: a dash list": "- text\n  - inner one\n  - inner two",
+    "under a number: a dash list": "1. text\n   - inner one\n   - inner two",
+    "under a dash: a numbered list": "- text\n  1. inner one\n  2. inner two",
+    "under a number: a numbered list": "1. text\n   1. inner one\n   2. inner two",
+    "under a dash: only a list": "  - inner one\n  - inner two",
+    "under a number: only a list": "1. - inner one\n   - inner two",
+    "under a dash: an empty list": "- text",
+    "under a number: an empty list": "1. text",
+    "under a dash: a paragraph": "- text a paragraph",
+    "under a number: a paragraph": "1. text a paragraph",
+    "under a dash: a text and a list, as a list": "- text\n\n- inner one\n- inner two",
+    "under a number: a text and a list, as a list": "1. text\n\n- inner one\n- inner two",
+    "under a dash: a component that returns a list, two deep": "- text- inner one\n- inner two",
+    "under a number: a component that returns a list, two deep": "1. text- inner one\n- inner two"
+   }
+  },
+  "System, User, Assistant and Tool render as their content; their name and tool call id are not written": {
+   "returned": {
+    "System by name": "Be brief.",
+    "User by name": "Hello.",
+    "Assistant by name": "Hi.",
+    "Tool by name": "found 3",
+    "System by function": "Be brief.",
+    "User by function": "Hello.",
+    "Assistant by function": "Hi.",
+    "Tool by function": "found 3",
+    "System with a name": "content",
+    "User with a name": "content",
+    "Assistant with a name": "content",
+    "Tool with a name": "content",
+    "System without children": "",
+    "User without children": "",
+    "Assistant without children": "",
+    "Tool without children": "",
+    "a name that is zero or an object changes nothing": "ab",
+    "the content is rendered as content: paragraphs": "one\n\ntwo",
+    "the content is rendered as content: a list": "- one\n- two",
+    "with jsx, the content is one paragraph": "spaced out",
+    "by hand, the content is left as it is": "  spaced   out  ",
+    "by hand, a number": "0",
+    "a message in a message": "inner"
+   }
+  },
+  "a Conversation by name writes each message and each bare text on a line of its own, and nothing else": {
+   "returned": {
+    "messages": "Be brief.\nHello.\nHi.\nfound 3",
+    "bare texts and numbers are lines too": "first\n2\nthird\n0",
+    "nothings in inner lists are passed over": "a\nb\nc",
+    "no children": "",
+    "by hand, one text": "  as it is  ",
+    "by hand, null for children": "",
+    "paragraphs, headings, lists, items, tags, sections, pre and line breaks are not written": "kept\nkept too",
+    "a message's content is content: blocks inside it are written": "one\n\ntwo\nafter",
+    "an empty message is an empty line": "before\n\nafter",
+    "a Fragment by name: each child a line": "a\nb\nc\nd",
+    "a Fragment by function: each child a line": "a\nb\nc\nd",
+    "a Fragment without children": "a\nb",
+    "a Conversation in a Conversation": "a\nb\nc\nd",
+    "a component that returns a text": "a\nreturned",
+    "a component that returns a list": "a\none\ntwo",
+    "a component that returns a paragraph: not written": "a",
+    "a component that returns nothing": "a\nb",
+    "a name the part does not know": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "between other nodes it is text in their paragraph": "before a\nb after"
+   }
+  },
+  "Conversation and Fragment given as the functions themselves are rendered as content: blocks are kept and texts join": {
+   "returned": {
+    "Conversation by function: paragraphs": "one\n\ntwo",
+    "Conversation by function: texts join": "ab",
+    "Conversation by function: messages run together": "Be brief.Hello.",
+    "Conversation by function, without children": "",
+    "Conversation by function in a list": "before\n\none\n\ntwoafter",
+    "Conversation by name, the same children: paragraphs lost, texts on lines": "a\nb",
+    "Fragment by function: a list": "Steps:\n\n- one\n- two"
+   }
+  },
+  "a message among other nodes is text in the paragraph it stands in": {
+   "returned": {
+    "between texts": "before said after",
+    "two in a row": "onetwo",
+    "between paragraphs": "one\n\nsaid\n\ntwo",
+    "an empty one between texts": "ab",
+    "an empty one between paragraphs": "one\n\ntwo",
+    "one with paragraphs inside, between texts": "before one\n\ntwo after",
+    "in a section": "<s>\nBe brief.\n</s>",
+    "in a paragraph": "He said: hello"
+   }
+  },
+  "a name the part does not know is refused; a name every object has is found by mistake": {
+   "returned": {
+    "alone": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "in a list": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "in a paragraph": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "in an item": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "an empty name": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: "
+     }
+    },
+    "the names are told apart by their capitals": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: system"
+     }
+    },
+    "the name of a block in capitals": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: P"
+     }
+    },
+    "span": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: span"
+     }
+    },
+    "the name \"toString\"": "[object Undefined]",
+    "the name \"toString\" in a list": "a [object Undefined] b",
+    "the name \"constructor\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown element type: undefined"
+     }
+    },
+    "the name \"valueOf\"": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert undefined or null to object"
+     }
+    },
+    "the name \"hasOwnProperty\"": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot convert undefined or null to object"
+     }
+    },
+    "the name \"__proto__\"": {
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "component is not a function"
+     }
+    }
+   }
+  },
+  "components of the caller's own are found by name and called with the props; what they return is read as messages, so blocks are lost": {
+   "returned": {
+    "cases": {
+     "alone": "Hello Ada!",
+     "between texts": "before Hello Ada! after",
+     "in a paragraph": "She said: Hello Ada!",
+     "in an item": "- She said: Hello Ada!",
+     "in a Conversation": "first\nHello Ada!",
+     "in pre: not called, its children written": "the children",
+     "one that returns two others": "Hello Bo!\nHello Bo!",
+     "one that is no function": {
+      "threw": {
+       "$": "error",
+       "name": "TypeError",
+       "message": "component is not a function"
+      }
+     },
+     "one that is not there": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unknown component type: Missing"
+      }
+     },
+     "it returns a text, left as it is": "  spaced   out  ",
+     "it returns a number": "7",
+     "it returns zero": "0",
+     "it returns null": "",
+     "it returns undefined": "",
+     "it returns false": "",
+     "it returns a list of texts: a line each": "one\ntwo\n3",
+     "it returns a paragraph: lost": "",
+     "it returns a list of paragraphs: lost": "",
+     "it returns a list of items: lost": "",
+     "it returns a message with paragraphs: written": "one\n\ntwo",
+     "it returns a Fragment by name with a paragraph and a text": "kept",
+     "it returns a Fragment by function with a paragraph and a text": "kept",
+     "it returns a component given as a function": "from a function",
+     "it returns another of the caller's components": "Hello again!",
+     "it returns an object that is no node": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unknown element type: undefined"
+      }
+     }
+    },
+    "calls": 8,
+    "firstCall": {
+     "props": {
+      "to": "Ada",
+      "children": [
+       "a child"
+      ]
+     },
+     "calledOnNothing": true
+    },
+    "itsPropsAreTheElementsOwn": true
+   }
+  },
+  "the caller's components can stand for Conversation and for no other name the part knows; they last one call and leave the part's list as it was": {
+   "returned": {
+    "Conversation": "the caller's",
+    "System": "the element's own",
+    "User": "the element's own",
+    "Assistant": "the element's own",
+    "Tool": "the element's own",
+    "Fragment": "the element's own",
+    "p": "the element's own",
+    "h2": "## the element's own",
+    "x": "<x title=\"t\">the element's own</x>",
+    "section": "<t>\nthe element's own\n</t>",
+    "ul": "the element's own",
+    "ol": "the element's own",
+    "li": "- the element's own",
+    "pre": "the element's own",
+    "br": "\n",
+    "Widget": "the caller's",
+    "a call inside a call keeps its own components": {
+     "the outer call's are still there afterwards": "[inner] outer",
+     "the inner call's are not the outer call's": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unknown component type: Inner"
+      }
+     },
+     "the outer call's are not the inner call's": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Unknown component type: Outer"
+      }
+     }
+    },
+    "Widget again, without the caller's components": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "Conversation again, without the caller's components": "a\nb",
+    "the part's list afterwards": [
+     [
+      "System",
+      "User",
+      "Assistant",
+      "Tool",
+      "Conversation",
+      "Fragment"
+     ],
+     true,
+     true
+    ]
+   }
+  },
+  "the caller's components are copied field by field into the names of one call: inherited ones are not found, hidden ones neither, a __proto__ field is followed": {
+   "returned": {
+    "inherited": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "hidden": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unknown component type: Widget"
+     }
+    },
+    "a __proto__ field": "through the copy",
+    "a __proto__ field, and a name every object has": "[object Undefined]",
+    "a __proto__ field, and the part's own Conversation": "a\nb",
+    "a list of functions: found by their place": "first of a list",
+    "a getter is read once, when the call starts": {
+     "text": "from a getter from a getter",
+     "reads": [
+      "Widget"
+     ]
+    }
+   }
+  },
+  "options that are nothing, empty or without components change nothing": {
+   "returned": {
+    "no options": "one\n\na\nb",
+    "undefined": "one\n\na\nb",
+    "null": "one\n\na\nb",
+    "an empty object": "one\n\na\nb",
+    "components undefined": "one\n\na\nb",
+    "components null": "one\n\na\nb",
+    "components empty": "one\n\na\nb",
+    "other fields": "one\n\na\nb",
+    "a text": "one\n\na\nb",
+    "zero": "one\n\na\nb"
+   }
+  },
+  "like the engine: the person's computer and workspace, lines that may be absent, a component for the stores": {
+   "returned": {
+    "oneWorkspaceInAWorktree": "<user_info>\nOS Version: darwin 25.1.0\n\nShell: zsh\n\nWorkspace Path: /Users/ada/work/app\nYou are operating in a worktree, do not edit files outside of it.\nDo not search or edit non-primary worktrees.\n\nTerminals folder: /Users/ada/.terminals\n\nToday's date: Friday Nov 13, 2026\n\nNote: Prefer using absolute paths over relative paths as tool call args when possible.\n</user_info>",
+    "severalWorkspacesAndStores": "<user_info>\nOS Version: linux 6.18\n\nShell: bash\n\nWorkspace Paths:\n- /work/app\n- /work/site\n\nIs directory a git repo: Yes, at:\n- /work/app\n- /work/site\n\nAvailable persistent agent stores:\n- /stores/me\n- /stores/team (read-only)\nUse normal file tools with these absolute paths. When the user says \"my store,\" use the first. Only use stores listed here; omitted stores are unavailable.\n\nNote: Prefer using absolute paths over relative paths as tool call args when possible.\n</user_info>",
+    "nothingKnown": "<user_info>\nOS Version:\n\nShell: bash\n\nWorkspace Path: unknown\n\nIs directory a git repo: No\n\nNote: Prefer using absolute paths over relative paths as tool call args when possible.\n</user_info>"
+   }
+  },
+  "like the engine: the git status of each repository, a line break more from the second on, the status in a fence": {
+   "returned": {
+    "noRepository": "<git_status>\nThis is the git status at the start of the conversation.\n</git_status>",
+    "oneRepository": "<git_status>\nThis is the git status at the start of the conversation.\n\n\nGit repo: /work/app\n\n```\n## main...origin/main\n M src/index.ts\n?? notes.txt\n```\n</git_status>",
+    "twoRepositories": "<git_status>\nThis is the git status at the start of the conversation.\n\nThis cloud workspace has multiple independent git repositories.\n\n\nGit repo: /work/app (remote: github.com/acme/app)\n\n```\n## main\n M a.ts\n```\n\nGit repo: /work/site (remote: github.com/acme/site)\n\n\n\nGit repo: /work/docs\n</git_status>"
+   }
+  },
+  "like the engine: the skills on offer, a section in a section, each skill a tag with its path, a note for those left out": {
+   "returned": {
+    "listed": "<agent_skills>\nWhen users ask you to perform tasks, check if any of the available skills below can help. To use a skill, read the skill file at the provided absolute path, then follow the instructions within. When a skill is relevant, read and follow it IMMEDIATELY as your first action. Only use skills listed below.\n\n\n<available_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\">\n<agent_skill fullPath=\"/skills/release-notes/SKILL.md\">Writes release notes from merged pull requests. Use when asked for a changelog.</agent_skill>\n\n<agent_skill fullPath=\"/skills/no-words/SKILL.md\" />\n\n<agent_skill fullPath=\"/skills/with &quot;quotes&quot;/SKILL.md\">Handles paths with\n quotes and lines.</agent_skill>\n</available_skills>\n</agent_skills>",
+    "listedWithANote": "<agent_skills>\nWhen users ask you to perform tasks, check if any of the available skills below can help. To use a skill, read the skill file at the provided absolute path, then follow the instructions within. When a skill is relevant, read and follow it IMMEDIATELY as your first action. Use the skills listed below. Additional skills may exist in the directories shown.\n\n\n<available_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\">\n<agent_skill fullPath=\"/skills/release-notes/SKILL.md\">Writes release notes from merged pull requests. Use when asked for a changelog.</agent_skill>\n\nAdditional skills omitted from this initial list (4). Directories containing omitted skills: /skills, /team/skills.\n</available_skills>\n</agent_skills>",
+    "noneListedWithANote": "<agent_skills>\nWhen users ask you to perform tasks, check if any of the available skills below can help. To use a skill, read the skill file at the provided absolute path, then follow the instructions within. When a skill is relevant, read and follow it IMMEDIATELY as your first action. Use the skills listed below. Additional skills may exist in the directories shown.\n\n\n<available_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\">\nAdditional skills omitted from this initial list (4). Directories containing omitted skills: /skills, /team/skills.\n</available_skills>\n</agent_skills>",
+    "noneAtAll": "<agent_skills>\nWhen users ask you to perform tasks, check if any of the available skills below can help. To use a skill, read the skill file at the provided absolute path, then follow the instructions within. When a skill is relevant, read and follow it IMMEDIATELY as your first action. Only use skills listed below.\n\n\n<available_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\" />\n</agent_skills>",
+    "raw": "<agent_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\">\n<agent_skill fullPath=\"/skills/release-notes/SKILL.md\">Writes release notes from merged pull requests. Use when asked for a changelog.</agent_skill>\n\n<agent_skill fullPath=\"/skills/no-words/SKILL.md\" />\n\n<agent_skill fullPath=\"/skills/with &quot;quotes&quot;/SKILL.md\">Handles paths with\n quotes and lines.</agent_skill>\n\nAdditional skills omitted from this initial list (4). Directories containing omitted skills: /skills, /team/skills.\n</agent_skills>",
+    "rawAndEmpty": "<agent_skills description=\"Skills the agent can use. Use the Read tool with the provided absolute path to fetch full contents.\" />",
+    "theNoteAlone": "Additional skills omitted from this initial list (4). Directories containing omitted skills: /skills, /team/skills."
+   }
+  },
+  "like the engine: rules as tags in a described section; a rule's text loses its runs of spaces, and an empty rule made with a key shows the key": {
+   "returned": {
+    "always": "<always_applied_workspace_rules description=\"These are workspace-level rules that the agent must always follow.\">\n<always_applied_workspace_rule name=\"/repo/.rules/style.md\">Indent with four spaces:\n\n if (ready) {\n start();\n }\n\nNever use tabs.\n, glob pattern(s) for applicable files: *.ts, *.tsx</always_applied_workspace_rule>\n\n<always_applied_workspace_rule name=\"/repo/.rules/empty.md\" />\n\n<always_applied_workspace_rule name=\"/repo/.rules/short.md\">Be brief.</always_applied_workspace_rule>\n</always_applied_workspace_rules>",
+    "alwaysWithoutRules": "<always_applied_workspace_rules description=\"These are workspace-level rules that the agent must always follow.\" />",
+    "userRules": "<user_rules description=\"These are rules set by the user that you should follow if appropriate.\">\n<user_rule>Answer in French.</user_rule>\n\n<user_rule>1</user_rule>\n\n<user_rule />\n\n<user_rule>Prefer small commits.</user_rule>\n\n<user_rule />\n</user_rules>",
+    "userRulesWithoutRules": "<user_rules description=\"These are rules set by the user that you should follow if appropriate.\" />"
+   }
+  },
+  "like the engine: tasks that finished, a section each inside a notification, made with a key that shows only when a task has no lines": {
+   "returned": {
+    "one": "<system_notification>\nThe following task has finished.\n\n<task>\nkind: shell\nstatus: success\ntask_id: 41\ntitle: npm test\ndetail: 12 passed, 0 failed\n (see the log)\noutput_path: /tmp/out.txt\n</task>\n</system_notification>",
+    "two": "<system_notification>\nThe following tasks finished.\n\n<task>\nkind: shell\nstatus: success\ntask_id: 41\ntitle: npm test\ndetail: 12 passed, 0 failed\n (see the log)\noutput_path: /tmp/out.txt\n</task>\n\n<task>\nkind: subagent\nstatus: error\ntask_id: 42\ntitle: Review the diff\nagent_id: a-7\n</task>\n</system_notification>",
+    "aTaskWithoutLines": "<system_notification>\nThe following tasks finished.\n\n<task>\n0\n</task>\n\n<task>\nkind: subagent\nstatus: error\ntask_id: 42\ntitle: Review the diff\nagent_id: a-7\n</task>\n\n<task>\n2\n</task>\n</system_notification>",
+    "none": "<system_notification>\nThe following tasks finished.\n</system_notification>"
+   }
+  },
+  "like the engine: the sandbox described by components that return Fragments, with paragraphs and items that may be absent": {
+   "returned": {
+    "asASection": "<sandboxing>\nBy default, your commands will run in a sandbox.\n\nThe sandbox includes network access for common package managers and version control providers.\n\nAdditionally, the sandbox includes network access for the following domains: example.com, *.example.org.\n\nFor broader network access beyond the allowed domains, you may still need to request 'full_network' permissions.\n\nThe following permissions are supported:\n\n- full_network: Grants unrestricted network access.\n- all: Disables the sandbox entirely.\n\nIf you think a command failed due to sandbox restrictions, run it again with what you need.\n</sandboxing>",
+    "asASectionReadonly": "<sandboxing>\nYour commands will run in a readonly sandbox. Network access is disallowed by default.\n\nThe required_permissions argument is used to request additional permissions:\n\n- full_network: Grants unrestricted network access.\n</sandboxing>",
+    "theBodyCalledAsAFunction": "By default, your commands will run in a sandbox.\n\nThe following permissions are supported:\n\n- full_network: Grants unrestricted network access to run a server or contact the internet.\n- all: Disables the sandbox entirely.\n\nIf you think a command failed due to sandbox restrictions, run it again with what you need.",
+    "theBodyCalledAsAFunctionWithDefaults": "By default, your commands will run in a sandbox.\n\nThe sandbox includes network access for common package managers and version control providers.\n\nFor broader network access beyond the allowed domains, you may still need to request 'full_network' permissions.\n\nThe following permissions are supported:\n\n- full_network: Grants unrestricted network access.\n- all: Disables the sandbox entirely.\n\nIf you think a command failed due to sandbox restrictions, run it again with what you need.",
+    "theBodyCalledAsAFunctionReadonly": "Your commands will run in a readonly sandbox.\n\nThe sandbox includes network access for the following domains: example.com.\n\nFor broader network access beyond the allowed domains, you may still need to request 'full_network' permissions.\n\nThe required_permissions argument is used to request additional permissions:\n\n- full_network: Grants unrestricted network access beyond the allowed domains."
+   }
+  },
+  "like the engine: the commit protocol, a numbered list in a dash list and dash lists in a numbered list, an example kept in a tag": {
+   "returned": {
+    "plain": "<committing-changes-with-git>\nOnly create commits when requested by the user. If unclear, ask first.\n\nGit Safety Protocol:\n\n- NEVER update the git config\n- NEVER skip hooks unless the user explicitly requests it\n- Avoid git commit --amend. ONLY use --amend when ALL conditions are met:\n  1. User explicitly requested amend\n  2. HEAD commit was created by you in this conversation\n  3. Commit has NOT been pushed to remote (verify: git status shows \"Your branch is ahead\")\n- CRITICAL: If you already pushed to remote, NEVER amend (requires force push)\n\n1. ALWAYS run the following shell commands in parallel, each using the Shell tool:\n   - Run a git status command to see all untracked files.\n   - Run a git diff command to see both staged and unstaged changes.\n2. Run the following commands sequentially:\n   - Add relevant untracked files to the staging area.\n   - Commit the changes with the message.\n3. If the commit fails due to pre-commit hook, fix the issue and create a NEW commit\n\nIn order to ensure good formatting, ALWAYS pass the commit message via a HEREDOC, a la this example:\n\n<example>git commit -m \"$(cat <<'EOF'\n Commit message here.\n\n EOF\n )\"</example>\n</committing-changes-with-git>",
+    "scoped": "<committing-changes-with-git>\nOnly create commits when requested by the user. If unclear, ask first.\n\nGit Safety Protocol:\n\n- NEVER update the git config\n- NEVER skip hooks unless the user explicitly requests it (unless the rule says so)\n- Avoid git commit --amend. ONLY use --amend when ALL conditions are met:\n  1. User explicitly requested amend\n  2. HEAD commit was created by you in this conversation\n  3. Commit has NOT been pushed to remote (verify: git status shows \"Your branch is ahead\")\n- CRITICAL: If you already pushed to remote, NEVER amend (unless the rule says so) (requires force push)\n\n1. ALWAYS run the following shell commands in parallel, each using the Bash tool:\n   - Run a git status command to see all untracked files.\n   - Run a git diff command to see both staged and unstaged changes.\n2. Run the following commands sequentially:\n   - Add relevant untracked files to the staging area.\n   - Commit the changes with the message.\n3. If the commit fails due to pre-commit hook, fix the issue and create a NEW commit\n\nIn order to ensure good formatting, ALWAYS pass the commit message via a HEREDOC, a la this example:\n\n<example>git commit -m \"$(cat <<'EOF'\n Commit message here.\n\n EOF\n )\"</example>\n</committing-changes-with-git>"
+   }
+  },
+  "like the engine: reminders made of paragraphs in a Fragment, headings in a section, a paragraph shown only when asked": {
+   "returned": {
+    "reminder": "The user has engaged **Multitask Mode**.\n\nDelegate with the Task tool, in the background.\n\nYou will be notified when each task finishes.",
+    "reminderQuiet": "The user has engaged **Multitask Mode**.\n\nDelegate with the Task tool, in the background.",
+    "computerUse": "<computer_use>\nYou have access to the `computer` tool which allows you to interact with the desktop.\n\n## When to Use Computer-Use\n\nHand desktop work to the computer-use subagent.\n\n### Step 2: Check the result\n\n- Take a screenshot\n</computer_use>",
+    "computerUseForASubagent": "<computer_use>\nYou have access to the `computer` tool which allows you to interact with the desktop.\n\n## When to Use Computer-Use\n\nUse the `computer` tool directly.\n\n### Step 2: Check the result\n\n- Take a screenshot\n- Report what you saw\n</computer_use>",
+    "suggestion": "<suggestion_mode>\n[SUGGESTION MODE: Suggest what user might naturally type next.]\n\nEXAMPLES:\n\n- User asked \"fix the bug and run tests\", bug is fixed → \"run the tests\"\n- After code written → \"Try it out\"\n\nReply with ONLY suggestion, no quotes or explanation.\n</suggestion_mode>",
+    "suggestionShort": "<suggestion_mode>\n[SUGGESTION MODE: Suggest what user might naturally type next.]\n\nEXAMPLES:\n\n- User asked \"fix the bug and run tests\", bug is fixed → \"run the tests\"\n- After code written → \"Try it out\"\n\nReply with ONLY suggestion, no quotes or explanation.\n\nIMPORTANT: Produce no more than 20 words of thinking tokens.\n</suggestion_mode>",
+    "aSectionFoundInAText": true
+   }
+  }
+ }
+}
