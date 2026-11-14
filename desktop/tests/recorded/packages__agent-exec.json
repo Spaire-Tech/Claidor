@@ -8528,7 +8528,7 @@
     ]
    }
   },
-  "of the notes an executor leaves during a stream only those about changed files go home, in an envelope of their own after the last event": {
+  "of the notes an executor leaves during a stream only the store's conflict notices go home, in an envelope of their own after the last event": {
    "returned": [
     [
      "notes of several kinds",
@@ -8579,7 +8579,7 @@
      ]
     ],
     [
-     "no note about changed files",
+     "no conflict notice",
      [
       {
        "type": "agent.v1.ExecClientMessage",
@@ -8673,7 +8673,7 @@
     ]
    ]
   },
-  "when an executor's stream fails the notes about changed files still go home first, then the failure": {
+  "when an executor's stream fails the store's conflict notices still go home first, then the failure": {
    "returned": {
     "steps": [
      {
@@ -8729,7 +8729,7 @@
     ]
    }
   },
-  "a reader that stops a stream handler early has the executor's stream told to stop, and is handed the notes about changed files as it leaves": {
+  "a reader that stops a stream handler early has the executor's stream told to stop, and is handed the store's conflict notices as it leaves": {
    "returned": {
     "first": {
      "type": "agent.v1.ExecClientMessage",

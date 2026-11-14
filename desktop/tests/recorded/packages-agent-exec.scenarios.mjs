@@ -555,7 +555,7 @@ scenario("why an MCP server's tools cannot be used, told for the three states th
   }));
 
 // ---------------------------------------------------------------------------------------------------------------
-// Notices that someone else changed the agent's files (agent-store-conflict-notice.ts)
+// The conflict notices of the agent's store (agent-store-conflict-notice.ts)
 // ---------------------------------------------------------------------------------------------------------------
 
 /** An executor that writes down what it is asked and answers with one promise, which the case can compare. */
@@ -1963,11 +1963,11 @@ scenario("a stream handler takes only the request it was made for, asks its exec
     return { notMine, theEventsThemselves: got.every((message, at) => message.message.value === events[at]), count: got.length };
   }));
 
-scenario("of the notes an executor leaves during a stream only those about changed files go home, in an envelope of their own after the last event", async (given) => {
+scenario("of the notes an executor leaves during a stream only the store's conflict notices go home, in an envelope of their own after the last event", async (given) => {
   const out = [];
   for (const [what, notes] of [
     ["notes of several kinds", [["postToolUse", "left out"], ["agentStoreConflict", "a.txt changed"], ["preToolUse", "left out too"], ["agentStoreConflict", "b.txt changed"]]],
-    ["no note about changed files", [["postToolUse", "left out"]]],
+    ["no conflict notice", [["postToolUse", "left out"]]],
     ["no notes", []],
     ["a kind spelled another way", [["AgentStoreConflict", "left out"], ["agentStoreConflict ", "left out"]]],
   ]) {
@@ -1983,7 +1983,7 @@ scenario("of the notes an executor leaves during a stream only those about chang
   return out;
 });
 
-scenario("when an executor's stream fails the notes about changed files still go home first, then the failure", async (given) => {
+scenario("when an executor's stream fails the store's conflict notices still go home first, then the failure", async (given) => {
   const desk = makeDesk(given);
   const event = shellEvents(desk);
   const boom = new Error("the shell died");
@@ -2003,7 +2003,7 @@ scenario("when an executor's stream fails the notes about changed files still go
   });
 });
 
-scenario("a reader that stops a stream handler early has the executor's stream told to stop, and is handed the notes about changed files as it leaves", async (given) => {
+scenario("a reader that stops a stream handler early has the executor's stream told to stop, and is handed the store's conflict notices as it leaves", async (given) => {
   const desk = makeDesk(given);
   const event = shellEvents(desk);
   return clocked(async () => {
