@@ -1,0 +1,1816 @@
+{
+ "part": "packages/hooks-carriers",
+ "surface": {
+  "collect": {
+   "appendHookAdditionalContexts": "function"
+  },
+  "limits": {
+   "HOOK_ADDITIONAL_CONTEXT_MAX_CHARS": "number"
+  },
+  "errors": {
+   "HookAdditionalContextTooLargeError": "class"
+  },
+  "factories": {
+   "createHookAdditionalContexts": "function"
+  },
+  "spec": {
+   "HOOK_STEP_CARRIER_SPECS": "object"
+  },
+  "reminder": {
+   "renderHookAdditionalContextSystemReminder": "function"
+  },
+  "render": {
+   "appendHookContextRemindersToCoreToolResult": "function",
+   "renderHookAdditionalContextContents": "function",
+   "renderHookAdditionalContextSystemReminders": "function"
+  },
+  "index": {
+   "HOOK_ADDITIONAL_CONTEXT_MAX_CHARS": "number",
+   "HOOK_STEP_CARRIER_SPECS": "object",
+   "HookAdditionalContextTooLargeError": "class",
+   "appendHookAdditionalContexts": "function",
+   "appendHookContextRemindersToCoreToolResult": "function",
+   "createHookAdditionalContexts": "function",
+   "renderHookAdditionalContextContents": "function",
+   "renderHookAdditionalContextSystemReminder": "function",
+   "renderHookAdditionalContextSystemReminders": "function"
+  }
+ },
+ "scenarios": {
+  "the most a hook may add to the context is 10,000 characters": {
+   "returned": {
+    "limit": 10000,
+    "kind": "number"
+   }
+  },
+  "the error for too long a context says the step, the length and the limit": {
+   "returned": {
+    "error": {
+     "$": "error",
+     "name": "HookAdditionalContextTooLargeError",
+     "message": "Hook additional_context for preToolUse is 10001 chars (max 10000).",
+     "extra": {
+      "hookEventName": "preToolUse",
+      "actualLength": 10001,
+      "maxLength": 10000,
+      "name": "HookAdditionalContextTooLargeError"
+     }
+    },
+    "isAnError": true,
+    "isItsOwnClass": true,
+    "fields": [
+     "hookEventName",
+     "actualLength",
+     "maxLength",
+     "name"
+    ],
+    "written": "HookAdditionalContextTooLargeError: Hook additional_context for preToolUse is 10001 chars (max 10000).",
+    "traceStarts": "HookAdditionalContextTooLargeError: Hook additional_context for preToolUse is 10001 chars (max 10000).",
+    "className": "HookAdditionalContextTooLargeError",
+    "parameters": 1
+   }
+  },
+  "the error is made from whatever it is given, checked or not": {
+   "returned": {
+    "made": {
+     "zeroes and an empty step": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for  is 0 chars (max 0).",
+       "extra": {
+        "hookEventName": "",
+        "actualLength": 0,
+        "maxLength": 0,
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     },
+     "a length below the limit": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for sessionStart is 3 chars (max 10000).",
+       "extra": {
+        "hookEventName": "sessionStart",
+        "actualLength": 3,
+        "maxLength": 10000,
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     },
+     "texts where numbers go": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for postToolUse is many chars (max few).",
+       "extra": {
+        "hookEventName": "postToolUse",
+        "actualLength": "many",
+        "maxLength": "few",
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     },
+     "nothing in it": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for undefined is undefined chars (max undefined).",
+       "extra": {
+        "hookEventName": {
+         "$": "undefined"
+        },
+        "actualLength": {
+         "$": "undefined"
+        },
+        "maxLength": {
+         "$": "undefined"
+        },
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     },
+     "more than it reads": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for stop is 1 chars (max 2).",
+       "extra": {
+        "hookEventName": "stop",
+        "actualLength": 1,
+        "maxLength": 2,
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     },
+     "a step that is no text": {
+      "returned": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for 7 is NaN chars (max Infinity).",
+       "extra": {
+        "hookEventName": 7,
+        "actualLength": {
+         "$": "number",
+         "v": "NaN"
+        },
+        "maxLength": {
+         "$": "number",
+         "v": "Infinity"
+        },
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     }
+    },
+    "given nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "given null": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "called without new": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "a carrier is made from a hook's added context, trimmed, under the step's name": {
+   "returned": {
+    "a word": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "preToolUse",
+       "content": "remember the tests",
+       "onTheWire": "0a0a707265546f6f6c557365121272656d656d62657220746865207465737473",
+       "asJson": {
+        "hookEventName": "preToolUse",
+        "content": "remember the tests"
+       }
+      }
+     ]
+    },
+    "space around it": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUse",
+       "content": "keep it short",
+       "onTheWire": "0a0b706f7374546f6f6c557365120d6b6565702069742073686f7274",
+       "asJson": {
+        "hookEventName": "postToolUse",
+        "content": "keep it short"
+       }
+      }
+     ]
+    },
+    "space inside it stays": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUseFailure",
+       "content": "first line\n\n  second line\tend",
+       "onTheWire": "0a12706f7374546f6f6c5573654661696c757265121d6669727374206c696e650a0a20207365636f6e64206c696e6509656e64",
+       "asJson": {
+        "hookEventName": "postToolUseFailure",
+        "content": "first line\n\n  second line\tend"
+       }
+      }
+     ]
+    },
+    "one character": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "sessionStart",
+       "content": "x",
+       "onTheWire": "0a0c73657373696f6e5374617274120178",
+       "asJson": {
+        "hookEventName": "sessionStart",
+        "content": "x"
+       }
+      }
+     ]
+    },
+    "every kind of space the runtime trims": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "beforeSubmitPrompt",
+       "content": "kept",
+       "onTheWire": "0a126265666f72655375626d697450726f6d707412046b657074",
+       "asJson": {
+        "hookEventName": "beforeSubmitPrompt",
+        "content": "kept"
+       }
+      }
+     ]
+    },
+    "a zero-width space is not trimmed": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "preToolUse",
+       "content": "​kept​",
+       "onTheWire": "0a0a707265546f6f6c557365120ae2808b6b657074e2808b",
+       "asJson": {
+        "hookEventName": "preToolUse",
+        "content": "​kept​"
+       }
+      }
+     ]
+    },
+    "reminder tags are left as they are": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "preToolUse",
+       "content": "<system_reminder>inside</system_reminder>",
+       "onTheWire": "0a0a707265546f6f6c55736512293c73797374656d5f72656d696e6465723e696e736964653c2f73797374656d5f72656d696e6465723e",
+       "asJson": {
+        "hookEventName": "preToolUse",
+        "content": "<system_reminder>inside</system_reminder>"
+       }
+      }
+     ]
+    },
+    "a step the engine does not know": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "notAStep",
+       "content": "kept all the same",
+       "onTheWire": "0a086e6f74415374657012116b65707420616c6c207468652073616d65",
+       "asJson": {
+        "hookEventName": "notAStep",
+        "content": "kept all the same"
+       }
+      }
+     ]
+    },
+    "an empty step name": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "",
+       "content": "kept",
+       "onTheWire": "12046b657074",
+       "asJson": {
+        "content": "kept"
+       }
+      }
+     ]
+    },
+    "no step name": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "",
+       "content": "kept",
+       "onTheWire": "12046b657074",
+       "asJson": {
+        "content": "kept"
+       }
+      }
+     ]
+    },
+    "more than it reads": {
+     "returned": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "preToolUse",
+       "content": "kept",
+       "onTheWire": "0a0a707265546f6f6c55736512046b657074",
+       "asJson": {
+        "hookEventName": "preToolUse",
+        "content": "kept"
+       }
+      }
+     ]
+    }
+   }
+  },
+  "nothing is carried when a hook added nothing": {
+   "returned": {
+    "answers": {
+     "undefined": {
+      "returned": []
+     },
+     "null": {
+      "returned": []
+     },
+     "an empty text": {
+      "returned": []
+     },
+     "a space": {
+      "returned": []
+     },
+     "only spaces and line ends": {
+      "returned": []
+     },
+     "only the other spaces the runtime trims": {
+      "returned": []
+     }
+    },
+    "no step and no context": {
+     "returned": []
+    },
+    "aListOfItsOwnEachTime": true
+   }
+  },
+  "a context is carried up to 10,000 characters after trimming, and refused from 10,001": {
+   "returned": {
+    "9,999 characters": {
+     "carried": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUse",
+       "content": {
+        "length": 9999,
+        "starts": "abcdefghijabcdefghijabcd",
+        "ends": "fghijabcdefghijabcdefghi",
+        "sha256": "c5e303eed83c3142a16bb24d46cf036160bcd753c1f4613ee6999320b3288412"
+       },
+       "onTheWire": "168a718ba2f810646e620c3fbc0b8f24676f4a6c05553b1d32a7fe3eaf9899fa",
+       "asJson": "(long)"
+      }
+     ],
+     "isTheTextTrimmed": true
+    },
+    "10,000 characters": {
+     "carried": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUse",
+       "content": {
+        "length": 10000,
+        "starts": "abcdefghijabcdefghijabcd",
+        "ends": "ghijabcdefghijabcdefghij",
+        "sha256": "dce9b45e4f753351e0334bbae236195ad216b15c9b29fa0872dadd83cd10854d"
+       },
+       "onTheWire": "b100e59ba283120206d00006cd981db2f3509232dad8145fb94b3593d195566f",
+       "asJson": "(long)"
+      }
+     ],
+     "isTheTextTrimmed": true
+    },
+    "10,001 characters": {
+     "refused": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 10001 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 10001,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     },
+     "isTheTooLargeError": true,
+     "fields": [
+      "hookEventName",
+      "actualLength",
+      "maxLength",
+      "name"
+     ]
+    },
+    "10,000 characters with space around": {
+     "carried": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUse",
+       "content": {
+        "length": 10000,
+        "starts": "abcdefghijabcdefghijabcd",
+        "ends": "ghijabcdefghijabcdefghij",
+        "sha256": "dce9b45e4f753351e0334bbae236195ad216b15c9b29fa0872dadd83cd10854d"
+       },
+       "onTheWire": "b100e59ba283120206d00006cd981db2f3509232dad8145fb94b3593d195566f",
+       "asJson": "(long)"
+      }
+     ],
+     "isTheTextTrimmed": true
+    },
+    "10,001 characters with space around": {
+     "refused": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 10001 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 10001,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     },
+     "isTheTooLargeError": true,
+     "fields": [
+      "hookEventName",
+      "actualLength",
+      "maxLength",
+      "name"
+     ]
+    },
+    "10,000 characters with a space in the middle of 10,002": {
+     "refused": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 10002 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 10002,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     },
+     "isTheTooLargeError": true,
+     "fields": [
+      "hookEventName",
+      "actualLength",
+      "maxLength",
+      "name"
+     ]
+    },
+    "5,000 characters of two units each": {
+     "carried": [
+      {
+       "class": "_HookAdditionalContext",
+       "type": "agent.v1.HookAdditionalContext",
+       "fields": [
+        "hookEventName",
+        "content"
+       ],
+       "hookEventName": "postToolUse",
+       "content": {
+        "length": 10000,
+        "starts": "😀😀😀😀😀😀😀😀😀😀😀😀",
+        "ends": "😀😀😀😀😀😀😀😀😀😀😀😀",
+        "sha256": "c54ae9b09b4f239968e7f09d773cd339415c945253e21adba733aa2aa40919a9"
+       },
+       "onTheWire": "2127906599c24280d9f487112b468c6870081384148ac1d317db352fb48f2adb",
+       "asJson": "(long)"
+      }
+     ],
+     "isTheTextTrimmed": true
+    },
+    "5,001 characters of two units each": {
+     "refused": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 10002 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 10002,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     },
+     "isTheTooLargeError": true,
+     "fields": [
+      "hookEventName",
+      "actualLength",
+      "maxLength",
+      "name"
+     ]
+    },
+    "100,000 characters": {
+     "refused": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 100000 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 100000,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     },
+     "isTheTooLargeError": true,
+     "fields": [
+      "hookEventName",
+      "actualLength",
+      "maxLength",
+      "name"
+     ]
+    }
+   }
+  },
+  "the refusal names the step it was asked for, whatever the step": {
+   "returned": {
+    "sessionStart": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for sessionStart is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "sessionStart",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "beforeSubmitPrompt": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for beforeSubmitPrompt is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "beforeSubmitPrompt",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "preToolUse": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for preToolUse is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "preToolUse",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "postToolUse": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUse is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUse",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "postToolUseFailure": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for postToolUseFailure is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "postToolUseFailure",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "stop": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for stop is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "stop",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for  is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": "",
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    },
+    "undefined": {
+     "threw": {
+      "$": "error",
+      "name": "HookAdditionalContextTooLargeError",
+      "message": "Hook additional_context for undefined is 10500 chars (max 10000).",
+      "extra": {
+       "hookEventName": {
+        "$": "undefined"
+       },
+       "actualLength": 10500,
+       "maxLength": 10000,
+       "name": "HookAdditionalContextTooLargeError"
+      }
+     }
+    }
+   }
+  },
+  "each call makes its own list and its own carrier": {
+   "returned": {
+    "howMany": [
+     1,
+     1
+    ],
+    "anotherList": true,
+    "anotherCarrier": true,
+    "theSameInside": true,
+    "whatWasAskedIsUntouched": {
+     "hookEventName": "preToolUse",
+     "additionalContext": " the same "
+    },
+    "isAList": true
+   }
+  },
+  "a context that is no text is read by its own trim, or stops the call": {
+   "returned": {
+    "answers": {
+     "a number": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "zero": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "false": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "true": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a list": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "an object": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a text object": {
+      "returned": [
+       {
+        "hookEventName": "preToolUse",
+        "content": "a text object"
+       }
+      ]
+     },
+     "an object with a trim of its own": {
+      "returned": [
+       {
+        "hookEventName": "preToolUse",
+        "content": "from its own trim"
+       }
+      ]
+     },
+     "an object whose trim gives nothing": {
+      "returned": []
+     },
+     "an object whose trim gives undefined": {
+      "returned": []
+     },
+     "an object whose trim gives a number": {
+      "returned": []
+     },
+     "an object whose trim gives a list of two": {
+      "returned": [
+       {
+        "hookEventName": "preToolUse",
+        "content": [
+         "a",
+         "b"
+        ]
+       }
+      ]
+     },
+     "an object whose trim gives something 10,001 long": {
+      "threw": {
+       "$": "error",
+       "name": "HookAdditionalContextTooLargeError",
+       "message": "Hook additional_context for preToolUse is 10001 chars (max 10000).",
+       "extra": {
+        "hookEventName": "preToolUse",
+        "actualLength": 10001,
+        "maxLength": 10000,
+        "name": "HookAdditionalContextTooLargeError"
+       }
+      }
+     }
+    },
+    "asked with nothing": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "asked with null": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "carriers are added to a collector, in order, after what it holds": {
+   "returned": {
+    "returned": {
+     "$": "undefined"
+    },
+    "before": 1,
+    "after": [
+     "one",
+     "two",
+     "three",
+     "two"
+    ],
+    "theVerySameCarriers": true,
+    "theContextsAreUntouched": [
+     "two",
+     "three",
+     "two"
+    ]
+   }
+  },
+  "the collector is handed every carrier in one call, and is not called for none": {
+   "returned": {
+    "answers": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "calls": [
+     [
+      "a"
+     ],
+     [
+      "b",
+      "c",
+      "d"
+     ]
+    ]
+   }
+  },
+  "without a collector nothing is collected, whatever the carriers": {
+   "returned": {
+    "no collector": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "no collector and no carriers": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "no collector and no list": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "no collector and null for a list": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "nothing at all": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "contexts": [
+     "a",
+     "b"
+    ]
+   }
+  },
+  "a collector or a list of another kind": {
+   "returned": {
+    "a collector that is also the list": [
+     "a",
+     "b",
+     "a",
+     "b"
+    ],
+    "null for a collector, carriers to add": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "null for a collector, none to add": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "a collector and no list": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a collector and null for a list": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a number for a collector": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a number for a collector, none to add": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "a collector that takes no more": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     [
+      "kept"
+     ]
+    ],
+    "a text for a list": [
+     {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     [
+      "a",
+      "b",
+      "c"
+     ]
+    ],
+    "a set for a list (it has no length)": [
+     {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     []
+    ],
+    "something with a length that cannot be walked": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     []
+    ],
+    "holes in the list": {
+     "length": 3,
+     "holds": [
+      "a",
+      {
+       "$": "undefined"
+      },
+      "c"
+     ],
+     "hasAHole": false
+    }
+   }
+  },
+  "each step that may add context has a carrier under its own name": {
+   "returned": {
+    "specs": {
+     "sessionStart": {
+      "hookEventName": "sessionStart"
+     },
+     "beforeSubmitPrompt": {
+      "hookEventName": "beforeSubmitPrompt"
+     },
+     "preToolUse": {
+      "hookEventName": "preToolUse"
+     },
+     "postToolUse": {
+      "hookEventName": "postToolUse"
+     },
+     "postToolUseFailure": {
+      "hookEventName": "postToolUseFailure"
+     }
+    },
+    "steps": [
+     "sessionStart",
+     "beforeSubmitPrompt",
+     "preToolUse",
+     "postToolUse",
+     "postToolUseFailure"
+    ],
+    "fieldsOfEach": [
+     [
+      "hookEventName"
+     ],
+     [
+      "hookEventName"
+     ],
+     [
+      "hookEventName"
+     ],
+     [
+      "hookEventName"
+     ],
+     [
+      "hookEventName"
+     ]
+    ],
+    "aPlainObject": true,
+    "frozen": false,
+    "eachItsOwnObject": true,
+    "valuesArePlainObjects": true
+   }
+  },
+  "a step that may add context but has no carrier stops the part as it loads": {
+   "returned": {
+    "one more step, last": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "HOOK_STEPS_SUPPORTING_ADDITIONAL_CONTEXT lists stop but HookStepAdditionalContextEventName does not include it. Extend the Extract<> union in spec.ts."
+     }
+    },
+    "one more step, first": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "HOOK_STEPS_SUPPORTING_ADDITIONAL_CONTEXT lists sessionEnd but HookStepAdditionalContextEventName does not include it. Extend the Extract<> union in spec.ts."
+     }
+    },
+    "two more steps: the first one met is named": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "HOOK_STEPS_SUPPORTING_ADDITIONAL_CONTEXT lists preCompact but HookStepAdditionalContextEventName does not include it. Extend the Extract<> union in spec.ts."
+     }
+    },
+    "a step that is no step at all": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "HOOK_STEPS_SUPPORTING_ADDITIONAL_CONTEXT lists notAStep but HookStepAdditionalContextEventName does not include it. Extend the Extract<> union in spec.ts."
+     }
+    },
+    "the five steps and no more": {
+     "loaded": [
+      "sessionStart",
+      "beforeSubmitPrompt",
+      "preToolUse",
+      "postToolUse",
+      "postToolUseFailure"
+     ]
+    },
+    "afterwards a load of its own is whole again": [
+     "sessionStart",
+     "beforeSubmitPrompt",
+     "preToolUse",
+     "postToolUse",
+     "postToolUseFailure"
+    ]
+   }
+  },
+  "one added context is written as a reminder between system_reminder tags": {
+   "returned": {
+    "a word": {
+     "returned": "<system_reminder>\nremember\n</system_reminder>"
+    },
+    "a sentence": {
+     "returned": "<system_reminder>\nRun the tests before you answer.\n</system_reminder>"
+    },
+    "space around it is cut": {
+     "returned": "<system_reminder>\nRun the tests.\n</system_reminder>"
+    },
+    "lines inside it stay": {
+     "returned": "<system_reminder>\nfirst\n\nsecond\n  third\n</system_reminder>"
+    },
+    "one character": {
+     "returned": "<system_reminder>\nx\n</system_reminder>"
+    },
+    "a zero-width space is not trimmed": {
+     "returned": "<system_reminder>\n​\n</system_reminder>"
+    },
+    "characters of two units": {
+     "returned": "<system_reminder>\n😀😀\n</system_reminder>"
+    },
+    "a reminder tag inside is made harmless": {
+     "returned": "<system_reminder>\nbefore <system_reminder_>inside</system_reminder_> after\n</system_reminder>"
+    },
+    "a tag in capitals too": {
+     "returned": "<system_reminder>\n<system_reminder_>x</system_reminder_>\n</system_reminder>"
+    },
+    "a closing tag alone": {
+     "returned": "<system_reminder>\n</system_reminder_>\n</system_reminder>"
+    },
+    "what only looks like a tag is left": {
+     "returned": "<system_reminder>\n<system_reminder > < system_reminder> <system-reminder> <system_reminder_> system_reminder\n</system_reminder>"
+    },
+    "a text object": {
+     "returned": "<system_reminder>\na text object\n</system_reminder>"
+    }
+   }
+  },
+  "no reminder is written for nothing, and the one who asked about length is not called": {
+   "returned": {
+    "answers": {
+     "undefined": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "null": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "an empty text": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "a space": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "only spaces and line ends": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "only the other spaces the runtime trims": {
+      "returned": {
+       "$": "undefined"
+      }
+     }
+    },
+    "asked with nothing": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "calls": []
+   }
+  },
+  "a reminder is written up to 10,000 characters after trimming; from 10,001 none is, and the length is told": {
+   "returned": {
+    "9,999 characters": {
+     "written": {
+      "length": 10036,
+      "starts": "<system_reminder>\nabcdef",
+      "ends": "efghi\n</system_reminder>",
+      "sha256": "f13f97fd37e94267bef7b97b16cf20ee46b2228e9c0f8ac9cdc32082a05b31cf"
+     },
+     "isTheTextBetweenTheTags": true,
+     "told": []
+    },
+    "10,000 characters": {
+     "written": {
+      "length": 10037,
+      "starts": "<system_reminder>\nabcdef",
+      "ends": "fghij\n</system_reminder>",
+      "sha256": "f4c03d0feca5d046c46993b1705f4ccacdc5c4065ace54b07fa5814f394dc7fd"
+     },
+     "isTheTextBetweenTheTags": true,
+     "told": []
+    },
+    "10,001 characters": {
+     "written": {
+      "$": "undefined"
+     },
+     "isTheTextBetweenTheTags": false,
+     "told": [
+      {
+       "given": [
+        10001,
+        10000
+       ],
+       "calledOnNothing": true
+      }
+     ]
+    },
+    "10,000 characters with space around": {
+     "written": {
+      "length": 10037,
+      "starts": "<system_reminder>\nabcdef",
+      "ends": "fghij\n</system_reminder>",
+      "sha256": "f4c03d0feca5d046c46993b1705f4ccacdc5c4065ace54b07fa5814f394dc7fd"
+     },
+     "isTheTextBetweenTheTags": true,
+     "told": []
+    },
+    "10,001 characters with space around": {
+     "written": {
+      "$": "undefined"
+     },
+     "isTheTextBetweenTheTags": false,
+     "told": [
+      {
+       "given": [
+        10001,
+        10000
+       ],
+       "calledOnNothing": true
+      }
+     ]
+    },
+    "5,000 characters of two units each": {
+     "written": {
+      "length": 10037,
+      "starts": "<system_reminder>\n😀😀😀",
+      "ends": "\ude00😀😀\n</system_reminder>",
+      "sha256": "f5bcf560221351d8e07dc98e673a96076350e62ae9727415d0f50191e7fba529"
+     },
+     "isTheTextBetweenTheTags": true,
+     "told": []
+    },
+    "5,001 characters of two units each": {
+     "written": {
+      "$": "undefined"
+     },
+     "isTheTextBetweenTheTags": false,
+     "told": [
+      {
+       "given": [
+        10002,
+        10000
+       ],
+       "calledOnNothing": true
+      }
+     ]
+    },
+    "100,000 characters": {
+     "written": {
+      "$": "undefined"
+     },
+     "isTheTextBetweenTheTags": false,
+     "told": [
+      {
+       "given": [
+        100000,
+        10000
+       ],
+       "calledOnNothing": true
+      }
+     ]
+    }
+   }
+  },
+  "the length is measured before tags inside are made harmless, so a reminder can be longer than the limit": {
+   "returned": {
+    "given": 10000,
+    "written": {
+     "length": 10625,
+     "starts": "<system_reminder>\n<syste",
+     "ends": ">abcd\n</system_reminder>",
+     "sha256": "d868e63fe3c3cf765f6c8819b4e082465c1983d5e7ae15c083b9a36e649e21c0"
+    },
+    "lengthBetweenTheTags": 10588
+   }
+  },
+  "too long a context with no one to tell, or one who cannot be told": {
+   "returned": {
+    "no one to tell": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "undefined to tell": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "null to tell": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "a number to tell": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "one who throws": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "the one asked failed"
+     }
+    },
+    "one who throws is not asked about a short text": {
+     "returned": "<system_reminder>\nshort\n</system_reminder>"
+    },
+    "a number to tell is not asked about a short text": {
+     "returned": "<system_reminder>\nshort\n</system_reminder>"
+    }
+   }
+  },
+  "a content that is no text is read by its own trim, or stops the reminder": {
+   "returned": {
+    "a number": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "zero": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "false": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "true": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "a list": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "an object": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "an object with a trim of its own": {
+     "returned": "<system_reminder>\nfrom its own trim\n</system_reminder>",
+     "told": []
+    },
+    "an object whose trim gives nothing": {
+     "returned": {
+      "$": "undefined"
+     },
+     "told": []
+    },
+    "an object whose trim gives zero": {
+     "returned": {
+      "$": "undefined"
+     },
+     "told": []
+    },
+    "an object whose trim gives undefined": {
+     "returned": {
+      "$": "undefined"
+     },
+     "told": []
+    },
+    "an object whose trim gives a number": {
+     "threw": "a TypeError of the runtime's own",
+     "told": []
+    },
+    "an object whose trim gives something 10,001 long": {
+     "returned": {
+      "$": "undefined"
+     },
+     "told": [
+      [
+       10001,
+       10000
+      ]
+     ]
+    }
+   }
+  },
+  "the contents of carriers: each trimmed, the blank ones left out, the order kept": {
+   "returned": {
+    "none": [],
+    "carriers the part made": [
+     "first",
+     "second",
+     "first"
+    ],
+    "objects that only hold a content": [
+     "one",
+     "two",
+     "one",
+     "​",
+     "<system_reminder>three</system_reminder>"
+    ],
+    "no limit on length here": [
+     {
+      "length": 10001,
+      "starts": "abcdefghijabcdefghijabcd",
+      "ends": "hijabcdefghijabcdefghija",
+      "sha256": "c2c834383ee6e2d773fff56439aba14e5798f32ddd165da17f4d892dc3f4a40a"
+     },
+     {
+      "length": 100000,
+      "starts": "abcdefghijabcdefghijabcd",
+      "ends": "ghijabcdefghijabcdefghij",
+      "sha256": "c42e56e9b1236bde39e905b351a6bb4da957f36911b24cfabb81e075fbe3e486"
+     }
+    ],
+    "only blank ones": [],
+    "aListOfItsOwn": true,
+    "theCarriersAreUntouched": [
+     "  one  ",
+     "",
+     " \n\t",
+     "two\n",
+     "  one  ",
+     "​",
+     "<system_reminder>three</system_reminder>"
+    ],
+    "text objects are read by their own trim": [
+     "a text object"
+    ]
+   }
+  },
+  "carriers written as reminders, one for each content that is not blank": {
+   "returned": {
+    "none": [],
+    "carriers the part made": [
+     "<system_reminder>\nRun the tests.\n</system_reminder>",
+     "<system_reminder>\nThen say what failed.\n</system_reminder>"
+    ],
+    "blank ones are left out": [
+     "<system_reminder>\nkept\n</system_reminder>",
+     "<system_reminder>\nkept too\n</system_reminder>"
+    ],
+    "tags inside are made harmless": [
+     "<system_reminder>\na </system_reminder_> b <system_reminder_> c\n</system_reminder>",
+     "<system_reminder>\n<system_reminder_>\nnested\n</system_reminder_>\n</system_reminder>"
+    ],
+    "the same content twice is written twice": [
+     "<system_reminder>\nagain\n</system_reminder>",
+     "<system_reminder>\nagain\n</system_reminder>"
+    ],
+    "no limit on length here": [
+     {
+      "length": 10038,
+      "starts": "<system_reminder>\nabcdef",
+      "ends": "ghija\n</system_reminder>",
+      "sha256": "79dcdb004271c91e03d7540f8394b3efde3c1c19b039990404a96337dfee7409"
+     }
+    ],
+    "the long one is the text between the tags": true
+   }
+  },
+  "reminders are added to a tool result twice over: to its text parts and to its content": {
+   "returned": {
+    "returned": {
+     "$": "undefined"
+    },
+    "textParts": [
+     "the tool's own text",
+     "<system_reminder>\nRun the tests.\n</system_reminder>",
+     "<system_reminder>\n<system_reminder_>Say what failed.</system_reminder_>\n</system_reminder>"
+    ],
+    "toolResultContent": [
+     {
+      "type": "text",
+      "text": "the tool's own text"
+     },
+     {
+      "type": "text",
+      "text": "<system_reminder>\nRun the tests.\n</system_reminder>"
+     },
+     {
+      "type": "text",
+      "text": "<system_reminder>\n<system_reminder_>Say what failed.</system_reminder_>\n</system_reminder>"
+     }
+    ],
+    "fieldsOfAnAddedPart": [
+     "type",
+     "text"
+    ],
+    "theSameTextInBoth": true,
+    "no carriers": {
+     "returned": {
+      "$": "undefined"
+     },
+     "untouchedText": [
+      "only this"
+     ],
+     "untouchedContent": [
+      {
+       "type": "text",
+       "text": "only this"
+      }
+     ]
+    },
+    "only blank carriers": {
+     "emptyText": [],
+     "emptyContent": []
+    }
+   }
+  },
+  "the two lists are filled in step: a reminder's text first, then its content part": {
+   "returned": {
+    "order": [
+     {
+      "textParts": "<system_reminder>\none\n</system_reminder>"
+     },
+     {
+      "toolResultContent": {
+       "type": "text",
+       "text": "<system_reminder>\none\n</system_reminder>"
+      }
+     },
+     {
+      "textParts": "<system_reminder>\ntwo\n</system_reminder>"
+     },
+     {
+      "toolResultContent": {
+       "type": "text",
+       "text": "<system_reminder>\ntwo\n</system_reminder>"
+      }
+     }
+    ],
+    "one list given for both": [
+     "<system_reminder>\none\n</system_reminder>",
+     {
+      "type": "text",
+      "text": "<system_reminder>\none\n</system_reminder>"
+     },
+     "<system_reminder>\ntwo\n</system_reminder>",
+     {
+      "type": "text",
+      "text": "<system_reminder>\ntwo\n</system_reminder>"
+     }
+    ]
+   }
+  },
+  "when a tool result cannot take a reminder, what was added before stays": {
+   "returned": {
+    "the content takes no more": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     {
+      "textParts": [
+       "<system_reminder>\none\n</system_reminder>"
+      ],
+      "toolResultContent": []
+     }
+    ],
+    "the text parts take no more": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     {
+      "textParts": [],
+      "toolResultContent": []
+     }
+    ],
+    "a carrier without a content among good ones: nothing is added": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     {
+      "textParts": [
+       "kept"
+      ],
+      "toolResultContent": []
+     }
+    ],
+    "no lists, carriers to add": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "no lists, none to add": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "no lists, only blank carriers": {
+     "returned": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "carriers of another kind stop the writing": {
+   "returned": {
+    "no list": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "null for a list": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a carrier without a content": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a carrier that is null": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a content that is a number": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a content that is null": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a content with a trim of its own that gives a text": {
+     "contents": {
+      "returned": [
+       "from its own trim"
+      ]
+     },
+     "reminders": {
+      "returned": [
+       "<system_reminder>\nfrom its own trim\n</system_reminder>"
+      ]
+     },
+     "added": {
+      "returned": {
+       "$": "undefined"
+      },
+      "textParts": [
+       "<system_reminder>\nfrom its own trim\n</system_reminder>"
+      ],
+      "toolResultContent": [
+       {
+        "type": "text",
+        "text": "<system_reminder>\nfrom its own trim\n</system_reminder>"
+       }
+      ]
+     }
+    },
+    "a content with a trim of its own that gives a number": {
+     "contents": {
+      "returned": []
+     },
+     "reminders": {
+      "returned": []
+     },
+     "added": {
+      "returned": {
+       "$": "undefined"
+      },
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a content with a trim of its own that gives a list": {
+     "contents": {
+      "returned": [
+       [
+        "a",
+        "b"
+       ]
+      ]
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a content with a trim of its own that gives an empty list": {
+     "contents": {
+      "returned": []
+     },
+     "reminders": {
+      "returned": []
+     },
+     "added": {
+      "returned": {
+       "$": "undefined"
+      },
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a text for a list": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    },
+    "a set for a list": {
+     "contents": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "reminders": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "added": {
+      "threw": "a TypeError of the runtime's own",
+      "textParts": [],
+      "toolResultContent": []
+     }
+    }
+   }
+  },
+  "the part's one door hands out the very things its files hold": {
+   "returned": {
+    "HOOK_ADDITIONAL_CONTEXT_MAX_CHARS": {
+     "from": [
+      "limits"
+     ],
+     "theVerySameThing": true
+    },
+    "HOOK_STEP_CARRIER_SPECS": {
+     "from": [
+      "spec"
+     ],
+     "theVerySameThing": true
+    },
+    "HookAdditionalContextTooLargeError": {
+     "from": [
+      "errors"
+     ],
+     "theVerySameThing": true
+    },
+    "appendHookAdditionalContexts": {
+     "from": [
+      "collect"
+     ],
+     "theVerySameThing": true
+    },
+    "appendHookContextRemindersToCoreToolResult": {
+     "from": [
+      "render"
+     ],
+     "theVerySameThing": true
+    },
+    "createHookAdditionalContexts": {
+     "from": [
+      "factories"
+     ],
+     "theVerySameThing": true
+    },
+    "renderHookAdditionalContextContents": {
+     "from": [
+      "render"
+     ],
+     "theVerySameThing": true
+    },
+    "renderHookAdditionalContextSystemReminder": {
+     "from": [
+      "reminder"
+     ],
+     "theVerySameThing": true
+    },
+    "renderHookAdditionalContextSystemReminders": {
+     "from": [
+      "render"
+     ],
+     "theVerySameThing": true
+    }
+   }
+  }
+ }
+}

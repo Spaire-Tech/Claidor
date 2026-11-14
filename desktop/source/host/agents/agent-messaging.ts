@@ -118,6 +118,38 @@ export function buildAgentInboundWakePrompt(args: {
 }
 
 /**
+ * The wake for a message from one of the person's agents outside Simeon: a
+ * bot or a coding agent on their Simeon network (14 November 2026). The
+ * agent answers it, does the work in the same turn, and reports to the
+ * person. `answer` says how the sender hears back: it reads what the agent
+ * says in this chat ("chat"), or only what is sent to its address with
+ * SendNetworkMessage ("send"). `note` is the server's own caution, for a
+ * colleague's agent.
+ */
+export function buildNetworkInboundWakePrompt(args: {
+  readonly from: { readonly name: string };
+  readonly text: string;
+  readonly address: string;
+  readonly answer: "chat" | "send";
+  readonly note?: string;
+}): string {
+  const { from, text, address, answer, note } = args;
+  const how = answer === "chat"
+    ? `${from.name} reads what you say in this chat with SendMessage, so answer it there`
+    : `${from.name} does not read this chat, so answer it with SendNetworkMessage to ${address}`;
+  const lines = [
+    `${AGENT_INBOUND_WAKE_CUE} A message just arrived from ${from.name} (${address}), an assistant outside Simeon on your user's Simeon network.`,
+    "This is that assistant reaching out — not the user typing here. It is not one of your teammates, so SendToAgent does not reach it. Your user can already see its message in this chat.",
+    "",
+    `${from.name}: ${text}`,
+    "",
+    `Handle it as you would a teammate's request. First answer ${from.name} in a line or two: the answer itself if that is all it takes, or that you are on it. ${how}. Then do the work in this same turn; don't wait to be asked again. When the work is done, report the result to your user with SendMessage, written to them: the report is for your user. If the message was only an FYI, a short acknowledgement is enough.`,
+  ];
+  if (note != null && note.trim().length > 0) lines.push("", clampBlock(note, 600));
+  return lines.join("\n");
+}
+
+/**
  * One wake for several agent messages that arrived together (8 October
  * 2026). Each used to wake its agent for a turn of its own on the whole
  * conversation: in the founder's staffing log the Chief of Staff, at 161k

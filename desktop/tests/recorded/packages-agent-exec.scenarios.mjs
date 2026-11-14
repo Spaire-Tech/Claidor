@@ -1854,7 +1854,9 @@ scenario("a handler asks its executor once, with the caller's context, the reque
   });
 });
 
-scenario("what a handler tells its executor about the run, message by message", async (given) => {
+// The clock stands still here as in the scenarios beside this one: the handler measures how long its executor took,
+// and on a busy machine the real clock put 7 ms where the answer kept says 0 (found 14 November 2026).
+scenario("what a handler tells its executor about the run, message by message", async (given) => clocked(async () => {
   const { controlled, serialization } = given;
   const out = [];
   for (const json of [
@@ -1875,7 +1877,7 @@ scenario("what a handler tells its executor about the run, message by message", 
   const made = await odd.handle("the context", { number: 9, payload: "the request", execId: 12, acceptHookAdditionalContexts: "true" }).next();
   out.push(["a message, an unwrapping and a wrapping of other makes", plain, made.value]);
   return out;
-});
+}));
 
 scenario("the ms a handler's answer took are whole, rounded half up, and never below zero", async (given) => {
   const { controlled, serialization } = given;
