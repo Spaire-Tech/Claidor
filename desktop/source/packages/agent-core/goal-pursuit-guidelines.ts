@@ -1,18 +1,45 @@
+/**
+ * The guidelines an agent is given when it continues toward a goal across
+ * turns: keep the whole objective, work from what is there now, keep
+ * progress visible, and audit before calling the goal complete. They are
+ * put inside the notice that tells the agent to continue.
+ *
+ * The texts reach a model, so every one of them is kept word for word, line
+ * breaks and spaces too. Two passages have a second wording that names a
+ * tool the agent has; the wording without a name is used when the agent has
+ * no such tool.
+ */
+
+/** The names of the two tools the guidelines can mention. A name left out means the agent has no such tool. */
 export interface GoalPursuitToolNames {
   readonly todoWriteToolName?: string;
   readonly updateGoalToolName?: string;
 }
 
+/** Progress visibility, when no tool shows a plan. */
+const PLAN_WITHOUT_A_TOOL =
+  "If the next work is meaningfully multi-step, keep a concise plan tied to the real objective and update it as steps complete or the next best action changes. Skip planning overhead for trivial one-step progress, and do not treat a plan update as a substitute for doing the work.";
+
+/** Progress visibility, naming the tool that shows a plan. */
+function planWith(toolName: string): string {
+  return `If ${toolName} is available and the next work is meaningfully multi-step, use it to show a concise plan tied to the real objective. Keep the plan current as steps complete or the next best action changes. Skip planning overhead for trivial one-step progress, and do not treat a plan update as a substitute for doing the work.`;
+}
+
+/** The last sentence of the completion audit, when no tool marks a goal complete. */
+const COMPLETION_WITHOUT_A_TOOL = "Do not mark a goal complete merely because you are stopping work.";
+
+/** The end of the completion audit, naming the tool that marks a goal complete and saying when to call it. */
+function completionWith(toolName: string): string {
+  return `If the objective is achieved, call ${toolName} with status "complete" so usage accounting is preserved.
+
+Do not call ${toolName} unless the goal is complete or the user paused the goal and wants to resume. Do not mark a goal complete merely because you are stopping work.`;
+}
+
+/** The guidelines as one text, for an agent that has the tools named in `toolNames`. */
 export function buildGoalPursuitGuidelines(toolNames: GoalPursuitToolNames = {}): string {
   const { todoWriteToolName, updateGoalToolName } = toolNames;
-  const progressVisibility = todoWriteToolName === undefined
-    ? "If the next work is meaningfully multi-step, keep a concise plan tied to the real objective and update it as steps complete or the next best action changes. Skip planning overhead for trivial one-step progress, and do not treat a plan update as a substitute for doing the work."
-    : `If ${todoWriteToolName} is available and the next work is meaningfully multi-step, use it to show a concise plan tied to the real objective. Keep the plan current as steps complete or the next best action changes. Skip planning overhead for trivial one-step progress, and do not treat a plan update as a substitute for doing the work.`;
-  const updateGoalGuidance = updateGoalToolName === undefined
-    ? "Do not mark a goal complete merely because you are stopping work."
-    : `If the objective is achieved, call ${updateGoalToolName} with status "complete" so usage accounting is preserved.
-
-Do not call ${updateGoalToolName} unless the goal is complete or the user paused the goal and wants to resume. Do not mark a goal complete merely because you are stopping work.`;
+  const plan = todoWriteToolName === undefined ? PLAN_WITHOUT_A_TOOL : planWith(todoWriteToolName);
+  const completion = updateGoalToolName === undefined ? COMPLETION_WITHOUT_A_TOOL : completionWith(updateGoalToolName);
   return `Continuation behavior:
 - This goal persists across turns. Ending this turn does not require shrinking the objective to what fits now.
 - Keep the full objective intact. If it cannot be finished now, make concrete progress toward the real requested end state, leave the goal active, and do not redefine success around a smaller or easier task.
@@ -22,7 +49,7 @@ Work from evidence:
 Use the current working tree and external state as authoritative. Previous conversation context can help locate relevant work, but inspect the current state before relying on it. Improve, replace, or remove existing work as needed to satisfy the actual objective.
 
 Progress visibility:
-${progressVisibility}
+${plan}
 
 Fidelity:
 - Optimize each turn for movement toward the requested end state, not for the smallest stable-looking subset or easiest passing change.
@@ -40,5 +67,5 @@ Before deciding that the goal is achieved, treat completion as unproven and veri
 - Treat uncertain or indirect evidence as not achieved; gather stronger evidence or continue the work.
 - The audit must prove completion, not merely fail to find obvious remaining work.
 
-Do not rely on intent, partial progress, memory of earlier work, or a plausible final answer as proof of completion. Marking the goal complete is a claim that the full objective has been finished and can withstand requirement-by-requirement scrutiny. Only mark the goal achieved when current evidence proves every requirement has been satisfied and no required work remains. If the evidence is incomplete, weak, indirect, merely consistent with completion, or leaves any requirement missing, incomplete, or unverified, keep working instead of marking the goal complete. ${updateGoalGuidance}`;
+Do not rely on intent, partial progress, memory of earlier work, or a plausible final answer as proof of completion. Marking the goal complete is a claim that the full objective has been finished and can withstand requirement-by-requirement scrutiny. Only mark the goal achieved when current evidence proves every requirement has been satisfied and no required work remains. If the evidence is incomplete, weak, indirect, merely consistent with completion, or leaves any requirement missing, incomplete, or unverified, keep working instead of marking the goal complete. ${completion}`;
 }
