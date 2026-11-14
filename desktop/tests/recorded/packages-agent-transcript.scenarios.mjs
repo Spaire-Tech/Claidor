@@ -24,16 +24,13 @@ export const modules = {
   stripping: "source/packages/agent-transcript/context-stripping.ts",
   index: "source/packages/agent-transcript/index.ts",
   traceFormat: "source/packages/agent-transcript/trace-format.ts",
-  // Not this part's code: the contexts the store is given are real ones, and what a context handed on to the blob
-  // store carries (its span, whether spans may be started under it) is asked of the package that made it.
+};
+// Not this part's code: the contexts the store is given are real ones, and what a context handed on to the blob
+// store carries (its span, whether spans may be started under it) is asked of the package that made it.
+export const borrowed = {
   context: "source/packages/context/core.ts",
   otel: "source/packages/context/otel.ts",
 };
-
-const NOT_THIS_PARTS = "not this part's code, and with scenarios of its own (packages/context): the module is listed only so that a context can be asked what it carries";
-export const skipped = Object.fromEntries(
-  ["INHERITABLE_SPAN_ATTRIBUTES_KEY", "getTracer", "createContextFromSpanContext", "createContextFromRemoteSpanContext", "DisposableSpan", "createSpan", "recordCompletedSpanIfParented", "reportEvent"].map((name) => [`otel.${name}`, NOT_THIS_PARTS]),
-);
 
 /** The conversation every write here is for, unless a case says otherwise. */
 const ID = "conv-1";

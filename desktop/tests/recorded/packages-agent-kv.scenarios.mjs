@@ -30,8 +30,10 @@ export const modules = {
   reference: "source/packages/agent-kv/reference.ts",
   subagents: "source/packages/agent-kv/subagent-states.ts",
   agentStore: "source/packages/agent-kv/agent-store.ts",
-  // Not a file of the part: the class a blob store must be an instance of for the agent's store to
-  // dispose of it. It is built into the same file so that a scenario can make such a store.
+};
+// Not a file of the part: the class a blob store must be an instance of for the agent's store to
+// dispose of it. It is built into the same file so that a scenario can make such a store.
+export const borrowed = {
   disposable: "source/packages/utils/disposable.ts",
 };
 

@@ -15,25 +15,6 @@
   "traceFormat": {
    "HistoryVisibilityMode": "object",
    "convertConversationMessagesToTrace": "function"
-  },
-  "context": {
-   "createContext": "function",
-   "createKey": "function"
-  },
-  "otel": {
-   "DisposableSpan": "class",
-   "INHERITABLE_SPAN_ATTRIBUTES_KEY": "object",
-   "createContextFromRemoteSpanContext": "function",
-   "createContextFromSpanContext": "function",
-   "createSpan": "function",
-   "getSpan": "function",
-   "getSpanContextData": "function",
-   "getTracer": "function",
-   "recordCompletedSpanIfParented": "function",
-   "reportEvent": "function",
-   "withInheritableAttribute": "function",
-   "withSpan": "function",
-   "withSuppressedChildSpans": "function"
   }
  },
  "scenarios": {

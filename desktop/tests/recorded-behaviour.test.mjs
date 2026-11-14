@@ -8,7 +8,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { answerOf, buildModules, inSurroundings, measuring, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
+import { answerOf, buildModules, forgetRefusedConnections, inSurroundings, measuring, readAnswers, recordedDir, recording, refusedConnections, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
 
 test("recorded: a part is built here as the engine's own build makes it", async () => {
   const { ENGINE_BUILD, desktopRoot } = await import("./recorded/harness.mjs");
@@ -34,20 +34,27 @@ const written = (value) => JSON.stringify(value, null, 1);
 for (const file of await scenarioFiles()) {
   const part = await import(pathToFileURL(path.join(recordedDir, file)).href);
   test(`recorded: ${part.part} behaves as recorded`, async (t) => {
-    const { load, coverage, dispose } = await buildModules(part.modules, { measure: measuring(part.part) });
+    // Modules of other parts that the scenarios need at hand (a real context to give, a class to make an instance of):
+    // built into the same file, so that what they define is the very thing the part uses, but not the part's to answer for.
+    const borrowed = part.borrowed ?? {};
+    for (const key of Object.keys(borrowed)) assert.ok(!(key in part.modules), `"${key}" is both the part's module and a borrowed one`);
+    const { load, coverage, dispose } = await buildModules({ ...part.modules, ...borrowed }, { measure: measuring(part.part) });
     try {
       /** The part loaded afresh and every scenario asked once, in one set of surroundings. */
       const ask = (surroundings) =>
         inSurroundings(surroundings, async () => {
           const loaded = await load();
-          const { modules, used } = tracked(loaded);
+          const own = Object.fromEntries(Object.keys(part.modules).map((key) => [key, loaded[key]]));
+          const lent = Object.fromEntries(Object.keys(borrowed).map((key) => [key, loaded[key]]));
+          const { modules, used } = tracked(own);
           const scenarios = {};
           for (const scenario of part.scenarios) {
             assert.ok(!(scenario.name in scenarios), `two scenarios are named "${scenario.name}"`);
-            scenarios[scenario.name] = await answerOf(scenario, modules, { fresh: load });
+            scenarios[scenario.name] = await answerOf(scenario, { ...modules, ...lent }, { fresh: load });
           }
-          return { surface: surfaceOf(loaded), scenarios, used };
+          return { surface: surfaceOf(own), scenarios, used };
         });
+      forgetRefusedConnections();
       const { surface, scenarios, used } = await ask({});
 
       // Nothing of the part is left out without a reason.
@@ -80,6 +87,9 @@ for (const file of await scenarioFiles()) {
           `"${name}" answers differently in other surroundings (a fresh load, the other platform's name, another home, working and temporary folder): set what the part looks at inside the scenario, or scrub it from what is returned`,
         );
       }
+
+      // Nothing tried to leave this machine: a scenario stands in for every service its part would reach.
+      assert.deepEqual(refusedConnections(), [], "the part tried to reach the network: stand in for that service in the scenario");
 
       const answers = { part: part.part, surface, scenarios };
       if (recording(part.part)) {
