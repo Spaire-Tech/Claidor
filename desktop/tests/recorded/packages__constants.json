@@ -1,0 +1,3582 @@
+{
+ "part": "packages/constants",
+ "surface": {
+  "storeIds": {
+   "AGENT_STORE_AUTOMATION_MOUNT_NAME": "string",
+   "AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX": "string",
+   "AGENT_STORE_TEAM_MOUNT_NAME": "string",
+   "AGENT_STORE_USER_MOUNT_NAME": "string",
+   "NAMED_AGENT_HOME_STORE_MOUNT_NAME": "string",
+   "SIMEON_AGENT_STORE_FILES_DIR_ENV": "string",
+   "isAgentStoreId": "function",
+   "isAgentStoreShareMountKey": "function",
+   "isAgentStoreSourceId": "function",
+   "isCloudAgentStoreId": "function",
+   "isValidBareUuid": "function",
+   "parseTeamAgentStoreSourceId": "function",
+   "parseUserAgentStoreSourceId": "function"
+  },
+  "sendMessage": {
+   "isProjectSendMessageEnabled": "function"
+  },
+  "notification": {
+   "SYSTEM_NOTIFICATION_CLOSE_TAG": "string",
+   "SYSTEM_NOTIFICATION_OPEN_TAG": "string",
+   "SYSTEM_NOTIFICATION_TAG": "string"
+  },
+  "gitDiff": {
+   "GIT_DIFF_APPROXIMATE_MAX_TOKENS": "number",
+   "GIT_DIFF_CHARS_PER_TOKEN": "number",
+   "GIT_DIFF_INTRO": "string",
+   "GIT_DIFF_TRUNCATION_NOTICE": "string",
+   "GIT_DIFF_UNCOMMITTED_INTRO": "string",
+   "MAX_GIT_DIFF_CHAR_LENGTH": "number"
+  },
+  "conversation": {
+   "isRootProjectDetails": "function"
+  },
+  "askQuestion": {
+   "ASK_QUESTION_AUTO_ANSWER_MARKER": "string",
+   "ASK_QUESTION_AUTO_ANSWER_REASON": "string",
+   "ASK_QUESTION_AUTO_ANSWER_REASON_BODY": "string",
+   "ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX": "string",
+   "createAskQuestionAutoAnswerIdentity": "function",
+   "formatAskQuestionAutoAnswerReason": "function",
+   "isAskQuestionAutoAnswerReason": "function",
+   "parseAskQuestionAutoAnswerIdentity": "function"
+  },
+  "cloudAgent": {
+   "CLOUD_AGENT_ARTIFACTS_DIR": "string",
+   "CLOUD_AGENT_SINGLE_REPO_WORKSPACE_ROOT": "string",
+   "ENV_SETUP_MANAGED_SKILL_DIRECTORY": "string",
+   "ENV_SETUP_MANAGED_SKILL_PATH": "string",
+   "ENV_SETUP_SKILL_ID": "string"
+  },
+  "classifier": {
+   "DEV_SMART_MODE_CLASSIFIER_DELAY_MS": "number",
+   "DEV_SMART_MODE_CLASSIFIER_DELAY_SECONDS": "number"
+  },
+  "box": {
+   "SAND_BOX_FORK_NOVNC_PORT": "number",
+   "SAND_BOX_IMAGE_TAG_LATEST": "string",
+   "SAND_BOX_IMAGE_TAG_PREFIX": "string",
+   "SAND_BOX_PRIMARY_NOVNC_PORT": "number",
+   "SAND_SPECIAL_TREATMENT_NOVNC_PATH": "string",
+   "SHORT_GIT_SHA_REGEX": "object",
+   "buildSandBoxNoVncUrl": "function",
+   "isSandSpecialTreatmentNoVncUrl": "function"
+  },
+  "archive": {
+   "SAND_BOX_PERSIST_ARCHIVE_EXCLUDES": "array",
+   "SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS": "array",
+   "SAND_WORKSPACE_IGNORE_FILE_NAME": "string"
+  }
+ },
+ "scenarios": {
+  "agent stores: the names of the mounts, the reserved folder and the setting that names the files folder": {
+   "returned": {
+    "AGENT_STORE_USER_MOUNT_NAME": "user",
+    "AGENT_STORE_TEAM_MOUNT_NAME": "team",
+    "AGENT_STORE_AUTOMATION_MOUNT_NAME": "automation",
+    "AGENT_STORE_RESERVED_SIMEON_PATH_PREFIX": ".simeon",
+    "NAMED_AGENT_HOME_STORE_MOUNT_NAME": "home",
+    "SIMEON_AGENT_STORE_FILES_DIR_ENV": "SIMEON_AGENT_STORE_FILES_DIR"
+   }
+  },
+  "a bare id is a UUID whose version is 1 to 5 or 7 and whose variant is 8, 9, a or b, in any capitals": {
+   "returned": {
+    "versions": [
+     [
+      "123e4567-e89b-02d3-a456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-12d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-22d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-32d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-52d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-62d3-a456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-72d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-82d3-a456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-92d3-a456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-a2d3-a456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-f2d3-a456-426614174000",
+      false
+     ]
+    ],
+    "variants": [
+     [
+      "123e4567-e89b-42d3-0456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-42d3-7456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-42d3-8456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-9456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-a456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-b456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-c456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-42d3-f456-426614174000",
+      false
+     ],
+     [
+      "123e4567-e89b-42d3-A456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-B456-426614174000",
+      true
+     ],
+     [
+      "123e4567-e89b-42d3-C456-426614174000",
+      false
+     ]
+    ],
+    "capitals": [
+     [
+      "123E4567-E89B-42D3-A456-426614174000",
+      true
+     ],
+     [
+      "123E4567-e89B-42d3-A456-426614174000",
+      true
+     ],
+     [
+      "abcdefab-cdef-4bcd-8bcd-abcdefabcdef",
+      true
+     ],
+     [
+      "ABCDEFAB-CDEF-7BCD-BBCD-ABCDEFABCDEF",
+      true
+     ]
+    ],
+    "wellKnown": [
+     [
+      "00000000-0000-0000-0000-000000000000",
+      false
+     ],
+     [
+      "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      false
+     ],
+     [
+      "00000000-0000-1000-8000-000000000000",
+      true
+     ],
+     [
+      "ffffffff-ffff-7fff-bfff-ffffffffffff",
+      true
+     ]
+    ]
+   }
+  },
+  "a bare id is nothing but the UUID: no spaces, no line break, no brackets, no other letters, no other length": {
+   "returned": [
+    [
+     "",
+     false
+    ],
+    [
+     " ",
+     false
+    ],
+    [
+     " 123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000 ",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000\n",
+     false
+    ],
+    [
+     "\n123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000\n123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "{123e4567-e89b-42d3-a456-426614174000}",
+     false
+    ],
+    [
+     "urn:uuid:123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567e89b42d3a456426614174000",
+     false
+    ],
+    [
+     "123e4567_e89b_42d3_a456_426614174000",
+     false
+    ],
+    [
+     "123e4567 e89b 42d3 a456 426614174000",
+     false
+    ],
+    [
+     "23e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-42661417400",
+     false
+    ],
+    [
+     "0123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-4266141740000",
+     false
+    ],
+    [
+     "g23e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-42661417400g",
+     false
+    ],
+    [
+     "123e4567e-89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e456-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89bb-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a45-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "u1",
+     false
+    ],
+    [
+     "not an id",
+     false
+    ]
+   ]
+  },
+  "a store's id is store- and such a UUID, the word store in any capitals too": {
+   "returned": [
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "store-123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "STORE-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "Store-123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "store-123e4567-e89b-12d3-a456-426614174000",
+     true
+    ],
+    [
+     "store-123e4567-e89b-72d3-b456-426614174000",
+     true
+    ],
+    [
+     "store-123e4567-e89b-62d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-82d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-c456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-7456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store_123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store--123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "stores-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "xstore-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     " store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000 ",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000\n",
+     false
+    ],
+    [
+     "store- 123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-42661417400",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-4266141740000",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-",
+     false
+    ],
+    [
+     "store",
+     false
+    ],
+    [
+     "",
+     false
+    ]
+   ]
+  },
+  "a cloud agent's id is bc-, then a name of small letters, digits and lines that ends with a line or no name at all, then such a UUID": {
+   "returned": [
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "BC-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "Bc-123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "bc-name-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-my-agent-2-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-a-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-0-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-007-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-a--123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-a---b-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-Name-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-NAME-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-123e4567-e89b-62d3-a456-426614174000-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-name-123e4567-e89b-12d3-8456-426614174000",
+     true
+    ],
+    [
+     "bc-name-123e4567-e89b-72d3-b456-426614174000",
+     true
+    ],
+    [
+     "bc-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-long-name-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ]
+   ]
+  },
+  "a cloud agent's id with a name that starts with a line, holds another sign, or is not followed by a line, is not one; nor is one with a UUID of another version": {
+   "returned": [
+    [
+     "bc--123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc---123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc--a-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-_a-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-a_b-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-a.b-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-a b-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-a/b-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-ñ-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name_123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name-123e4567-e89b-62d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name-123e4567-e89b-02d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name-123e4567-e89b-42d3-c456-426614174000",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-62d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000-",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000-name",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000\n",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000 ",
+     false
+    ],
+    [
+     " bc-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "xbc-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc_123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "b-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc-name-",
+     false
+    ],
+    [
+     "bc-",
+     false
+    ],
+    [
+     "bc",
+     false
+    ],
+    [
+     "",
+     false
+    ]
+   ]
+  },
+  "a source id is a cloud agent's id or a bare UUID, and nothing else": {
+   "returned": [
+    [
+     "123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "bc-name-123e4567-e89b-42d3-a456-426614174000",
+     true
+    ],
+    [
+     "BC-NAME-123E4567-E89B-42D3-A456-426614174000",
+     true
+    ],
+    [
+     "123e4567-e89b-72d3-8456-426614174000",
+     true
+    ],
+    [
+     "123e4567-e89b-62d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-c456-426614174000",
+     false
+    ],
+    [
+     "bc-123e4567-e89b-62d3-a456-426614174000",
+     false
+    ],
+    [
+     "bc--123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "u1",
+     false
+    ],
+    [
+     "t1",
+     false
+    ],
+    [
+     "t1-u1",
+     false
+    ],
+    [
+     " 123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000\n",
+     false
+    ],
+    [
+     "",
+     false
+    ]
+   ]
+  },
+  "a share's mount key is store- in small letters and exactly 24 letters, digits, lines or underlines": {
+   "returned": [
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaa",
+     true
+    ],
+    [
+     "store-ZZZZZZZZZZZZZZZZZZZZZZZZ",
+     true
+    ],
+    [
+     "store-000000000000000000000000",
+     true
+    ],
+    [
+     "store-------------------------",
+     true
+    ],
+    [
+     "store-________________________",
+     true
+    ],
+    [
+     "store-aZ09_-aZ09_-aZ09_-aZ09_-",
+     true
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "STORE-aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "Store-aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store_aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "storeaaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa+",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa/",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa=",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa.",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaa ",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaé",
+     false
+    ],
+    [
+     "store-aaaaaaaaaaaaaaaaaaaaaaaa\n",
+     false
+    ],
+    [
+     " store-aaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store-123e4567-e89b-42d3-a456-426614174000",
+     false
+    ],
+    [
+     "store-123e4567e89b42d3a4564266",
+     true
+    ],
+    [
+     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     false
+    ],
+    [
+     "store-",
+     false
+    ],
+    [
+     "",
+     false
+    ]
+   ]
+  },
+  "a person's source id is u and their number, with t, a team's number and a line before it or not; what comes back names the person first": {
+   "returned": [
+    [
+     "u1",
+     {
+      "userId": 1
+     }
+    ],
+    [
+     "u9",
+     {
+      "userId": 9
+     }
+    ],
+    [
+     "u10",
+     {
+      "userId": 10
+     }
+    ],
+    [
+     "u42",
+     {
+      "userId": 42
+     }
+    ],
+    [
+     "u1234567890",
+     {
+      "userId": 1234567890
+     }
+    ],
+    [
+     "t7-u42",
+     {
+      "userId": 42,
+      "teamId": 7
+     }
+    ],
+    [
+     "t1-u1",
+     {
+      "userId": 1,
+      "teamId": 1
+     }
+    ],
+    [
+     "t10-u20",
+     {
+      "userId": 20,
+      "teamId": 10
+     }
+    ],
+    [
+     "t42-u7",
+     {
+      "userId": 7,
+      "teamId": 42
+     }
+    ]
+   ]
+  },
+  "a person's source id with a nought first, other signs, capitals, spaces or anything around it is not one": {
+   "returned": [
+    [
+     "",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u0",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u00",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u01",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u-1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u+1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1.0",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1e3",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1_000",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u0x10",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u１",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u١",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "U1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "user1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t0-u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t01-u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-u0",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-u01",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t-u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-u",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "T1-u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-U1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1_u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1--u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-t2-u3",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1-t1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "x-u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     " u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1 ",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1\n",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "\nu1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1\nu2",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1 -u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "bc-123e4567-e89b-42d3-a456-426614174000",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000",
+     {
+      "$": "undefined"
+     }
+    ]
+   ]
+  },
+  "a number too large to be exact makes a person's or a team's source id no id at all: the last that counts is 9007199254740991": {
+   "returned": {
+    "person": [
+     [
+      "u9007199254740991",
+      {
+       "userId": 9007199254740991
+      }
+     ],
+     [
+      "u9007199254740992",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "u9007199254740993",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "u9007199254740990",
+      {
+       "userId": 9007199254740990
+      }
+     ],
+     [
+      "u10000000000000000",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "u999999999999999999999999999999",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "u9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9007199254740991-u9007199254740991",
+      {
+       "userId": 9007199254740991,
+       "teamId": 9007199254740991
+      }
+     ],
+     [
+      "t9007199254740992-u1",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t1-u9007199254740992",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9007199254740992-u9007199254740992",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999-u1",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9007199254740991-u1",
+      {
+       "userId": 1,
+       "teamId": 9007199254740991
+      }
+     ],
+     [
+      "t1-u9007199254740991",
+      {
+       "userId": 9007199254740991,
+       "teamId": 1
+      }
+     ]
+    ],
+    "team": [
+     [
+      "t9007199254740991",
+      {
+       "teamId": 9007199254740991
+      }
+     ],
+     [
+      "t9007199254740992",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9007199254740993",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9007199254740990",
+      {
+       "teamId": 9007199254740990
+      }
+     ],
+     [
+      "t10000000000000000",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t999999999999999999999999999999",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "t9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+      {
+       "$": "undefined"
+      }
+     ]
+    ]
+   }
+  },
+  "a team's source id is t and its number, and nothing else": {
+   "returned": [
+    [
+     "t1",
+     {
+      "teamId": 1
+     }
+    ],
+    [
+     "t9",
+     {
+      "teamId": 9
+     }
+    ],
+    [
+     "t10",
+     {
+      "teamId": 10
+     }
+    ],
+    [
+     "t42",
+     {
+      "teamId": 42
+     }
+    ],
+    [
+     "t1234567890",
+     {
+      "teamId": 1234567890
+     }
+    ],
+    [
+     "",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t0",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t00",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t01",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t-1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t+1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1.0",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1e3",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t１",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "T1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "team1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "u1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-u2",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1-",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "tt1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     " t1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1 ",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1\n",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "\nt1",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "t1\nt2",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "123e4567-e89b-42d3-a456-426614174000",
+     {
+      "$": "undefined"
+     }
+    ]
+   ]
+  },
+  "the id checks answer the same however often they are asked, give a new answer each time, and read what is not a text as it is written out": {
+   "returned": {
+    "timesWrittenOut": {
+     "isValidBareUuid": [
+      true,
+      1
+     ],
+     "isAgentStoreId": [
+      true,
+      1
+     ],
+     "isCloudAgentStoreId": [
+      true,
+      1
+     ],
+     "isAgentStoreShareMountKey": [
+      true,
+      1
+     ],
+     "aSourceIdThatIsACloudAgents": [
+      true,
+      1
+     ],
+     "aSourceIdThatIsABareId": [
+      true,
+      2
+     ],
+     "aSourceIdThatIsNeither": [
+      false,
+      2
+     ],
+     "parseUserAgentStoreSourceId": [
+      {
+       "userId": 9,
+       "teamId": 3
+      },
+      1
+     ],
+     "parseTeamAgentStoreSourceId": [
+      {
+       "teamId": 3
+      },
+      1
+     ]
+    },
+    "repeated": {
+     "isValidBareUuid": [
+      [
+       true,
+       true,
+       true
+      ],
+      [
+       false,
+       false,
+       false
+      ]
+     ],
+     "isAgentStoreId": [
+      [
+       true,
+       true,
+       true
+      ],
+      [
+       false,
+       false,
+       false
+      ]
+     ],
+     "isCloudAgentStoreId": [
+      [
+       true,
+       true,
+       true
+      ],
+      [
+       false,
+       false,
+       false
+      ]
+     ],
+     "isAgentStoreSourceId": [
+      [
+       true,
+       true,
+       true
+      ],
+      [
+       false,
+       false,
+       false
+      ]
+     ],
+     "isAgentStoreShareMountKey": [
+      [
+       true,
+       true,
+       true
+      ],
+      [
+       false,
+       false,
+       false
+      ]
+     ],
+     "parseUserAgentStoreSourceId": [
+      [
+       {
+        "userId": 5
+       },
+       {
+        "userId": 5
+       },
+       {
+        "userId": 5
+       }
+      ],
+      [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ]
+     ],
+     "parseTeamAgentStoreSourceId": [
+      [
+       {
+        "teamId": 5
+       },
+       {
+        "teamId": 5
+       },
+       {
+        "teamId": 5
+       }
+      ],
+      [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ]
+     ]
+    },
+    "newEachTime": true,
+    "fields": {
+     "withTeam": [
+      "userId",
+      "teamId"
+     ],
+     "withoutTeam": [
+      "userId"
+     ],
+     "team": [
+      "teamId"
+     ]
+    },
+    "writtenOut": {
+     "answer": {
+      "userId": 9,
+      "teamId": 3
+     },
+     "notes": [
+      "written out"
+     ]
+    },
+    "notTexts": {
+     "isValidBareUuid": [
+      [
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      [
+       null,
+       false
+      ],
+      [
+       12,
+       false
+      ],
+      [
+       [
+        "123e4567-e89b-42d3-a456-426614174000"
+       ],
+       true
+      ],
+      [
+       {
+        "toString": {
+         "$": "function",
+         "name": "toString"
+        }
+       },
+       true
+      ]
+     ],
+     "isAgentStoreId": [
+      [
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      [
+       null,
+       false
+      ],
+      [
+       [
+        "store-123e4567-e89b-42d3-a456-426614174000"
+       ],
+       true
+      ]
+     ],
+     "isCloudAgentStoreId": [
+      [
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      [
+       null,
+       false
+      ],
+      [
+       [
+        "bc-123e4567-e89b-42d3-a456-426614174000"
+       ],
+       true
+      ]
+     ],
+     "isAgentStoreSourceId": [
+      [
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      [
+       null,
+       false
+      ],
+      [
+       [
+        "123e4567-e89b-42d3-a456-426614174000"
+       ],
+       true
+      ],
+      [
+       [
+        "bc-123e4567-e89b-42d3-a456-426614174000"
+       ],
+       true
+      ]
+     ],
+     "isAgentStoreShareMountKey": [
+      [
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      [
+       null,
+       false
+      ],
+      [
+       [
+        "store-aaaaaaaaaaaaaaaaaaaaaaaa"
+       ],
+       true
+      ]
+     ],
+     "parseUserAgentStoreSourceId": [
+      [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       null,
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       1,
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       [
+        "u7"
+       ],
+       {
+        "userId": 7
+       }
+      ],
+      [
+       [
+        "t2-u7"
+       ],
+       {
+        "userId": 7,
+        "teamId": 2
+       }
+      ],
+      [
+       [
+        "u7",
+        "u8"
+       ],
+       {
+        "$": "undefined"
+       }
+      ]
+     ],
+     "parseTeamAgentStoreSourceId": [
+      [
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       null,
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       1,
+       {
+        "$": "undefined"
+       }
+      ],
+      [
+       [
+        "t7"
+       ],
+       {
+        "teamId": 7
+       }
+      ]
+     ]
+    }
+   }
+  },
+  "a project may send messages only when its state says, with the value true itself, that it is the root conversation": {
+   "returned": {
+    "answers": [
+     [
+      {
+       "isRootProjectConversation": true
+      },
+      true
+     ],
+     [
+      {
+       "isRootProjectConversation": false
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": {
+        "$": "undefined"
+       }
+      },
+      false
+     ],
+     [
+      {},
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": null
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": "true"
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": 1
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": {}
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": {
+        "$": "instance",
+        "class": "Boolean",
+        "v": {}
+       }
+      },
+      false
+     ],
+     [
+      {
+       "isrootprojectconversation": true
+      },
+      false
+     ],
+     [
+      {
+       "isRootProjectConversation": true,
+       "other": "not read"
+      },
+      true
+     ],
+     [
+      {
+       "$": "instance",
+       "class": "Object",
+       "v": {}
+      },
+      true
+     ],
+     [
+      [],
+      false
+     ],
+     [
+      "a text",
+      false
+     ],
+     [
+      0,
+      false
+     ],
+     [
+      {
+       "$": "function",
+       "name": ""
+      },
+      false
+     ]
+    ],
+    "fromAClass": true,
+    "reads": [
+     "read"
+    ],
+    "withNothing": [
+     {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of null (reading 'isRootProjectConversation')"
+     },
+     {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'isRootProjectConversation')"
+     },
+     {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'isRootProjectConversation')"
+     }
+    ],
+    "kind": {
+     "name": "isProjectSendMessageEnabled",
+     "parameters": 1,
+     "hasPrototype": true
+    }
+   }
+  },
+  "a system notification's tag, and the tag opened and closed": {
+   "returned": {
+    "SYSTEM_NOTIFICATION_TAG": "system_notification",
+    "SYSTEM_NOTIFICATION_OPEN_TAG": "<system_notification>",
+    "SYSTEM_NOTIFICATION_CLOSE_TAG": "</system_notification>"
+   }
+  },
+  "a diff shown to the model: how long it may be and the words before and after it": {
+   "returned": {
+    "GIT_DIFF_APPROXIMATE_MAX_TOKENS": 10000,
+    "GIT_DIFF_CHARS_PER_TOKEN": 4,
+    "MAX_GIT_DIFF_CHAR_LENGTH": 40000,
+    "GIT_DIFF_INTRO": "Relevant Diff: The following is the git diff from the current branch to the main/default branch:\n\n",
+    "GIT_DIFF_UNCOMMITTED_INTRO": "Relevant Diff: The following is the git diff of uncommitted changes in the working tree:\n\n",
+    "GIT_DIFF_TRUNCATION_NOTICE": "\n\n[diff truncated due to size; run `git diff` locally for the full output]"
+   }
+  },
+  "a project's details are the root's when they are there and name neither a subagent nor a side chat; only undefined counts as not named": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     false
+    ],
+    [
+     null,
+     false
+    ],
+    [
+     {},
+     true
+    ],
+    [
+     {
+      "subagent": {
+       "$": "undefined"
+      }
+     },
+     true
+    ],
+    [
+     {
+      "sideChat": {
+       "$": "undefined"
+      }
+     },
+     true
+    ],
+    [
+     {
+      "subagent": {
+       "$": "undefined"
+      },
+      "sideChat": {
+       "$": "undefined"
+      }
+     },
+     true
+    ],
+    [
+     {
+      "other": "not read"
+     },
+     true
+    ],
+    [
+     {
+      "subagent": {}
+     },
+     false
+    ],
+    [
+     {
+      "sideChat": {}
+     },
+     false
+    ],
+    [
+     {
+      "subagent": {},
+      "sideChat": {}
+     },
+     false
+    ],
+    [
+     {
+      "subagent": null
+     },
+     false
+    ],
+    [
+     {
+      "sideChat": null
+     },
+     false
+    ],
+    [
+     {
+      "subagent": false
+     },
+     false
+    ],
+    [
+     {
+      "sideChat": false
+     },
+     false
+    ],
+    [
+     {
+      "subagent": 0
+     },
+     false
+    ],
+    [
+     {
+      "sideChat": ""
+     },
+     false
+    ],
+    [
+     {
+      "subagent": "helper"
+     },
+     false
+    ],
+    [
+     {
+      "Subagent": {},
+      "sidechat": {}
+     },
+     true
+    ],
+    [
+     {
+      "$": "instance",
+      "class": "Object",
+      "v": {}
+     },
+     false
+    ],
+    [
+     {
+      "$": "instance",
+      "class": "Object",
+      "v": {}
+     },
+     false
+    ],
+    [
+     {
+      "$": "instance",
+      "class": "Object",
+      "v": {}
+     },
+     true
+    ],
+    [
+     [],
+     true
+    ],
+    [
+     0,
+     true
+    ],
+    [
+     "",
+     true
+    ],
+    [
+     false,
+     true
+    ],
+    [
+     "a text",
+     true
+    ],
+    [
+     {
+      "$": "number",
+      "v": "NaN"
+     },
+     true
+    ]
+   ]
+  },
+  "a project's details are read subagent first, and the side chat only when no subagent is named": {
+   "returned": {
+    "answers": [
+     true,
+     false,
+     false
+    ],
+    "reads": [
+     "subagent",
+     "sideChat",
+     "subagent",
+     "subagent",
+     "sideChat"
+    ],
+    "withNothing": false,
+    "kind": {
+     "name": "isRootProjectDetails",
+     "parameters": 1,
+     "hasPrototype": true
+    }
+   }
+  },
+  "a question answered by itself: its marker, the reason given to the model, and the reason written in full": {
+   "returned": {
+    "ASK_QUESTION_AUTO_ANSWER_MARKER": "ask_question_auto_answer",
+    "ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX": "No response was received within the time limit",
+    "ASK_QUESTION_AUTO_ANSWER_REASON_BODY": "No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+    "ASK_QUESTION_AUTO_ANSWER_REASON": "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available."
+   }
+  },
+  "who answered a question by itself: the marker and a kind, timeout when none is given, any other kind kept as given": {
+   "returned": {
+    "answers": [
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "timeout"
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "timeout"
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "timeout"
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "other"
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": null
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": ""
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "something else"
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": 0
+     },
+     {
+      "marker": "ask_question_auto_answer",
+      "kind": "other"
+     }
+    ],
+    "fields": [
+     "marker",
+     "kind"
+    ],
+    "newEachTime": true,
+    "kind": {
+     "name": "createAskQuestionAutoAnswerIdentity",
+     "parameters": 0,
+     "hasPrototype": true
+    }
+   }
+  },
+  "the reason of a question answered by itself: the marker, a colon, the kind, a bar, then the words for the model": {
+   "returned": {
+    "answers": [
+     "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "ask_question_auto_answer:other|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "another_marker:another kind|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     ":|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "undefined:undefined|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "undefined:other|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "1:null|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     "m:other|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available."
+    ],
+    "sameAsTheOneKept": true,
+    "endsWithTheBody": true,
+    "writtenOut": [
+     "m:k|",
+     [
+      "marker",
+      "kind"
+     ]
+    ],
+    "read": [
+     "m:k|",
+     [
+      "marker",
+      "kind"
+     ]
+    ],
+    "withNull": {
+     "$": "error",
+     "name": "TypeError",
+     "message": "Cannot read properties of null (reading 'marker')"
+    },
+    "kind": {
+     "name": "formatAskQuestionAutoAnswerReason",
+     "parameters": 0,
+     "hasPrototype": true
+    }
+   }
+  },
+  "a reason is read back when it starts, spaces aside, with the marker, a colon, timeout or other, and a bar; whatever follows is not looked at": {
+   "returned": {
+    "answers": [
+     [
+      "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "ask_question_auto_answer:other|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "other"
+      }
+     ],
+     [
+      "ask_question_auto_answer:timeout|",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "ask_question_auto_answer:other|",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "other"
+      }
+     ],
+     [
+      "ask_question_auto_answer:timeout|anything at all",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "ask_question_auto_answer:other|ask_question_auto_answer:timeout|",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "other"
+      }
+     ],
+     [
+      "ask_question_auto_answer:timeout||",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "  ask_question_auto_answer:timeout|after spaces",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "\n\task_question_auto_answer:other|after a line break and a tab",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "other"
+      }
+     ],
+     [
+      "ask_question_auto_answer:timeout|before spaces   ",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      " ask_question_auto_answer:timeout|after a space that does not break",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "﻿ask_question_auto_answer:timeout|after a byte-order mark",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ],
+     [
+      "ask_question_auto_answer:timeout|two\nlines",
+      {
+       "marker": "ask_question_auto_answer",
+       "kind": "timeout"
+      }
+     ]
+    ],
+    "kind": {
+     "name": "parseAskQuestionAutoAnswerIdentity",
+     "parameters": 1,
+     "hasPrototype": true
+    },
+    "newEachTime": true,
+    "fields": [
+     "marker",
+     "kind"
+    ]
+   }
+  },
+  "a reason with nothing, another kind, other capitals, no bar, or the marker anywhere but first, is not read back": {
+   "returned": [
+    [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     null,
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     " ",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "\n",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:timeout",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:other",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer|timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:timeouts|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:timeout |",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer: timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer :timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:Timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:TIMEOUT|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:OTHER|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:something|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:timeout:",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask_question_auto_answer:timeout/",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ASK_QUESTION_AUTO_ANSWER:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "xask_question_auto_answer:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "\"ask_question_auto_answer:timeout|\"",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "first line\nask_question_auto_answer:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     ". ask_question_auto_answer:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask-question-auto-answer:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "ask question auto answer:timeout|",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "No response was received within the time limit",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "The person chose the first option.",
+     {
+      "$": "undefined"
+     }
+    ]
+   ]
+  },
+  "a reason is a question's own answer when it reads back, or when it starts, spaces aside, with the opening words of the reason, capitals as written": {
+   "returned": {
+    "answers": [
+     [
+      "ask_question_auto_answer:timeout|No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+      true
+     ],
+     [
+      "No response was received within the time limit. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.",
+      true
+     ],
+     [
+      "No response was received within the time limit",
+      true
+     ],
+     [
+      "No response was received within the time limit.",
+      true
+     ],
+     [
+      "No response was received within the time limit and more",
+      true
+     ],
+     [
+      "No response was received within the time limitNo response was received within the time limit",
+      true
+     ],
+     [
+      "  No response was received within the time limit",
+      true
+     ],
+     [
+      "\n\tNo response was received within the time limit. Proceed.",
+      true
+     ],
+     [
+      "No response was received within the time limit   ",
+      true
+     ],
+     [
+      "ask_question_auto_answer:timeout|",
+      true
+     ],
+     [
+      "ask_question_auto_answer:other|not the usual words",
+      true
+     ],
+     [
+      "  ask_question_auto_answer:other|",
+      true
+     ],
+     [
+      "ask_question_auto_answer:something|No response was received within the time limit",
+      false
+     ],
+     [
+      "ask_question_auto_answer:timeout",
+      false
+     ],
+     [
+      "ask_question_auto_answer",
+      false
+     ],
+     [
+      "No response was received within the time limi",
+      false
+     ],
+     [
+      "o response was received within the time limit",
+      false
+     ],
+     [
+      "no response was received within the time limit",
+      false
+     ],
+     [
+      "NO RESPONSE WAS RECEIVED WITHIN THE TIME LIMIT",
+      false
+     ],
+     [
+      "No  response was received within the time limit",
+      false
+     ],
+     [
+      "xNo response was received within the time limit",
+      false
+     ],
+     [
+      "\"No response was received within the time limit\"",
+      false
+     ],
+     [
+      ". No response was received within the time limit",
+      false
+     ],
+     [
+      "first line\nNo response was received within the time limit",
+      false
+     ],
+     [
+      "The person chose the first option.",
+      false
+     ],
+     [
+      "",
+      false
+     ],
+     [
+      " ",
+      false
+     ],
+     [
+      null,
+      false
+     ],
+     [
+      {
+       "$": "undefined"
+      },
+      false
+     ]
+    ],
+    "withNothing": false,
+    "kind": {
+     "name": "isAskQuestionAutoAnswerReason",
+     "parameters": 1,
+     "hasPrototype": true
+    }
+   }
+  },
+  "a cloud agent: the setup skill's id, folder and file, the folder of a single repository, and the folder its artifacts go to": {
+   "returned": {
+    "ENV_SETUP_SKILL_ID": "env-setup",
+    "ENV_SETUP_MANAGED_SKILL_DIRECTORY": "/.simeon/skills-simeon/env-setup/",
+    "ENV_SETUP_MANAGED_SKILL_PATH": "/.simeon/skills-simeon/env-setup/SKILL.md",
+    "CLOUD_AGENT_SINGLE_REPO_WORKSPACE_ROOT": "/workspace",
+    "CLOUD_AGENT_ARTIFACTS_DIR": "/opt/cursor/artifacts/"
+   }
+  },
+  "the wait of the classifier's stand-in, in milliseconds and in seconds": {
+   "returned": {
+    "DEV_SMART_MODE_CLASSIFIER_DELAY_MS": 10000,
+    "DEV_SMART_MODE_CLASSIFIER_DELAY_SECONDS": 10
+   }
+  },
+  "the cloud computer: its image tags, the two ports its screen is served on, and the path of the other viewer": {
+   "returned": {
+    "SAND_BOX_IMAGE_TAG_PREFIX": "sand-box-",
+    "SAND_BOX_IMAGE_TAG_LATEST": "sand-box-latest",
+    "SAND_BOX_PRIMARY_NOVNC_PORT": 6080,
+    "SAND_BOX_FORK_NOVNC_PORT": 6081,
+    "SAND_SPECIAL_TREATMENT_NOVNC_PATH": "sand-special-treatment-v1/vnc.html"
+   }
+  },
+  "a short git id is 7 to 40 small hex digits and nothing else; the pattern keeps no place between two askings": {
+   "returned": {
+    "pattern": {
+     "$": "regexp",
+     "v": "/^[0-9a-f]{7,40}$/"
+    },
+    "source": "^[0-9a-f]{7,40}$",
+    "flags": "",
+    "isPattern": true,
+    "answers": [
+     [
+      "abcdef",
+      false
+     ],
+     [
+      "abcdef0",
+      true
+     ],
+     [
+      "abcdef01",
+      true
+     ],
+     [
+      "0123456",
+      true
+     ],
+     [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      true
+     ],
+     [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      true
+     ],
+     [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      false
+     ],
+     [
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      false
+     ],
+     [
+      "ABCDEF0",
+      false
+     ],
+     [
+      "abcdefG",
+      false
+     ],
+     [
+      "abcdefg",
+      false
+     ],
+     [
+      "abcdef0 ",
+      false
+     ],
+     [
+      " abcdef0",
+      false
+     ],
+     [
+      "abcdef0\n",
+      false
+     ],
+     [
+      "abcdef0\nabcdef0",
+      false
+     ],
+     [
+      "abc-def0",
+      false
+     ],
+     [
+      "",
+      false
+     ]
+    ],
+    "placeAfter": 0,
+    "again": [
+     true,
+     true,
+     false,
+     true
+    ],
+    "sameOneEachTime": true
+   }
+  },
+  "the screen's address: the viewer under the proxy, the network token and the two wake times, then the path to the socket, written so it can sit in an address": {
+   "returned": {
+    "answers": [
+     [
+      [
+       "https://proxy.example",
+       "net-1"
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       "tok-1"
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       "tok-1",
+       false
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       "tok-1",
+       true
+      ],
+      "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       {
+        "$": "undefined"
+       },
+       true
+      ],
+      "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       {
+        "$": "undefined"
+       },
+       false
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       {
+        "$": "undefined"
+       },
+       {
+        "$": "undefined"
+       }
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "http://127.0.0.1:6080",
+       "local-token"
+      ],
+      "http://127.0.0.1:6080/vnc.html?network_token=local-token&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dlocal-token%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "http://127.0.0.1:6081/box",
+       "local-token",
+       "fork-1"
+      ],
+      "http://127.0.0.1:6081/box/vnc.html?network_token=local-token&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dfork-1%26network_token%3Dlocal-token%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example/",
+       "net-1"
+      ],
+      "https://proxy.example//vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example?x=1",
+       "net-1"
+      ],
+      "https://proxy.example?x=1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "",
+       "net-1"
+      ],
+      "/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "",
+       ""
+      ],
+      "/vnc.html?network_token=&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3D%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       "tok-1",
+       true,
+       "a fifth thing, not read"
+      ],
+      "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ]
+    ],
+    "kind": {
+     "name": "buildSandBoxNoVncUrl",
+     "parameters": 3,
+     "hasPrototype": true
+    }
+   }
+  },
+  "the screen's address: an empty token is still written, only a missing one is left out; any true thing picks the other viewer": {
+   "returned": [
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      ""
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3D%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      null
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dnull%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      0
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3D0%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      false
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dfalse%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      "yes"
+     ],
+     "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      1
+     ],
+     "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      {}
+     ],
+     "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      0
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      ""
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      null
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      {
+       "$": "number",
+       "v": "NaN"
+      }
+     ],
+     "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      "https://proxy.example"
+     ],
+     "https://proxy.example/vnc.html?network_token=undefined&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dundefined%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [],
+     "undefined/vnc.html?network_token=undefined&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dundefined%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      },
+      true
+     ],
+     "undefined/sand-special-treatment-v1/vnc.html?network_token=undefined&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dundefined%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ],
+    [
+     [
+      12,
+      34,
+      56
+     ],
+     "12/vnc.html?network_token=34&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3D56%26network_token%3D34%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+    ]
+   ]
+  },
+  "the screen's address: signs in a token are written as they are in the address itself and made safe only inside the path; a broken letter cannot be written": {
+   "returned": {
+    "answers": [
+     [
+      [
+       "https://proxy.example",
+       "a&b=c d/é?#%+"
+      ],
+      "https://proxy.example/vnc.html?network_token=a&b=c d/é?#%+&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Da%26b%3Dc%20d%2F%C3%A9%3F%23%25%2B%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net-1",
+       "t/1+2=3&x#y%z é ✓"
+      ],
+      "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dt%2F1%2B2%3D3%26x%23y%25z%20%C3%A9%20%E2%9C%93%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "a&b=c d",
+       "t&u=v w",
+       true
+      ],
+      "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=a&b=c d&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dt%26u%3Dv%20w%26network_token%3Da%26b%3Dc%20d%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "-_.!~*'()",
+       "-_.!~*'()"
+      ],
+      "https://proxy.example/vnc.html?network_token=-_.!~*'()&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3D-_.!~*'()%26network_token%3D-_.!~*'()%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "net\n1",
+       "tok\t1"
+      ],
+      "https://proxy.example/vnc.html?network_token=net\n1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok%091%26network_token%3Dnet%0A1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example",
+       "😀",
+       "😀"
+      ],
+      "https://proxy.example/vnc.html?network_token=😀&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3D%F0%9F%98%80%26network_token%3D%F0%9F%98%80%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ],
+     [
+      [
+       "https://proxy.example/a b",
+       "net-1",
+       "tok-1"
+      ],
+      "https://proxy.example/a b/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+     ]
+    ],
+    "brokenLetterInTheToken": {
+     "$": "error",
+     "name": "URIError",
+     "message": "URI malformed"
+    },
+    "brokenLetterInTheNetworkToken": {
+     "$": "error",
+     "name": "URIError",
+     "message": "URI malformed"
+    },
+    "brokenLetterInTheProxy": "https://proxy\ud800.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000"
+   }
+  },
+  "the screen's address is written from what it is given in a fixed order: the token, the network token, the proxy, the network token again": {
+   "returned": {
+    "withToken": "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Ftoken%3Dtok-1%26network_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000",
+    "first": [
+     "token",
+     "network token",
+     "proxy",
+     "network token"
+    ],
+    "withoutToken": "https://proxy.example/vnc.html?network_token=net-1&resume_lower_s=900&resume_upper_s=18000&path=websockify%3Fnetwork_token%3Dnet-1%26resume_lower_s%3D900%26resume_upper_s%3D18000",
+    "second": [
+     "network token",
+     "proxy",
+     "network token"
+    ]
+   }
+  },
+  "an address is the other viewer's when it is a whole address whose path ends with a slash and the viewer's path, whatever follows the path": {
+   "returned": [
+    [
+     "https://proxy.example/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/vnc.html?network_token=net-1",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/vnc.html#top",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/vnc.html?a=1#top",
+     true
+    ],
+    [
+     "https://proxy.example/box/7/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "http://127.0.0.1:6080/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "https://user:pass@proxy.example:8443/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "https://proxy.example/a/../sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/./vnc.html",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/x/../vnc.html",
+     true
+    ],
+    [
+     "https://proxy.example\\sand-special-treatment-v1\\vnc.html",
+     true
+    ],
+    [
+     "HTTPS://PROXY.EXAMPLE/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "  https://proxy.example/sand-special-treatment-v1/vnc.html  ",
+     true
+    ],
+    [
+     "https://proxy.example/sand-special-treatment-v1/vnc.html\n",
+     true
+    ],
+    [
+     "file:///sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "ws://proxy.example/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "other:/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     "other://host/sand-special-treatment-v1/vnc.html",
+     true
+    ],
+    [
+     {
+      "$": "instance",
+      "class": "URL",
+      "v": {}
+     },
+     true
+    ]
+   ]
+  },
+  "an address with the usual viewer, the path elsewhere than at the end, other capitals, or that is no whole address, is not the other viewer's": {
+   "returned": {
+    "answers": [
+     [
+      "https://proxy.example/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/vnc.html?path=/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/vnc.html#/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/xsand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/vnc.html/",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/vnc.html/more",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/vnc.htm",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/vnc.htmlx",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v2/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/SAND-SPECIAL-TREATMENT-V1/VNC.HTML",
+      false
+     ],
+     [
+      "https://proxy.example/Sand-Special-Treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1/vnc%2Ehtml",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1%2Fvnc.html",
+      false
+     ],
+     [
+      "https://proxy.example/sand-special-treatment-v1//vnc.html",
+      false
+     ],
+     [
+      "https://sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://proxy.example",
+      false
+     ],
+     [
+      "https://proxy.example/",
+      false
+     ],
+     [
+      "other:sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "proxy.example/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "//proxy.example/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     [
+      "https://",
+      false
+     ],
+     [
+      "not an address",
+      false
+     ],
+     [
+      "",
+      false
+     ],
+     [
+      " ",
+      false
+     ],
+     [
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      null,
+      false
+     ],
+     [
+      12,
+      false
+     ],
+     [
+      {},
+      false
+     ],
+     [
+      [],
+      false
+     ]
+    ],
+    "withNothing": false,
+    "kind": {
+     "name": "isSandSpecialTreatmentNoVncUrl",
+     "parameters": 1,
+     "hasPrototype": true
+    }
+   }
+  },
+  "addresses as they are made: the other viewer's is told as such, the usual one is not unless the proxy's own path makes it look so, and one made with no proxy is no whole address": {
+   "returned": [
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      true
+     ],
+     true
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      {
+       "$": "undefined"
+      },
+      true
+     ],
+     true
+    ],
+    [
+     [
+      "http://127.0.0.1:6081/box",
+      "a&b=c d",
+      "t&u",
+      true
+     ],
+     true
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1",
+      "tok-1",
+      false
+     ],
+     false
+    ],
+    [
+     [
+      "https://proxy.example",
+      "net-1"
+     ],
+     false
+    ],
+    [
+     [
+      "https://proxy.example",
+      "/sand-special-treatment-v1/vnc.html",
+      "/sand-special-treatment-v1/vnc.html",
+      false
+     ],
+     false
+    ],
+    [
+     [
+      "https://proxy.example/sand-special-treatment-v1",
+      "net-1"
+     ],
+     true
+    ],
+    [
+     [
+      "",
+      "net-1",
+      "tok-1",
+      true
+     ],
+     false
+    ]
+   ]
+  },
+  "what is left out when the cloud computer's files are kept, the name of a workspace's ignore file, and what a workspace ignores unless told otherwise, each in its order": {
+   "returned": {
+    "SAND_BOX_PERSIST_ARCHIVE_EXCLUDES": [
+     "home/box/chrome-profile/*/Cache",
+     "home/box/chrome-profile/*/Code Cache",
+     "home/box/chrome-profile/*/GPUCache",
+     "home/box/chrome-profile/*/Service Worker/CacheStorage"
+    ],
+    "SAND_WORKSPACE_IGNORE_FILE_NAME": ".sandignore",
+    "SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS": [
+     "node_modules/",
+     ".next/",
+     ".nuxt/",
+     ".svelte-kit/",
+     ".turbo/",
+     ".parcel-cache/",
+     ".cache/",
+     "dist/",
+     "build/",
+     "out/",
+     "coverage/",
+     "__pycache__/",
+     "*.pyc",
+     "*.pyo",
+     ".venv/",
+     "venv/",
+     ".pytest_cache/",
+     ".mypy_cache/",
+     ".ruff_cache/",
+     ".tox/",
+     ".ipynb_checkpoints/",
+     "*.egg-info/",
+     ".eggs/",
+     "target/",
+     ".gradle/",
+     "core.[0-9]*",
+     "*.core"
+    ]
+   }
+  },
+  "the two lists are plain lists that can be changed, the same ones each time they are read, with no entry twice": {
+   "returned": {
+    "SAND_BOX_PERSIST_ARCHIVE_EXCLUDES": {
+     "isList": true,
+     "isPlainList": true,
+     "length": 4,
+     "frozen": false,
+     "sealed": false,
+     "canGrow": true,
+     "ownNames": 5,
+     "allTexts": true,
+     "noneTwice": true,
+     "sameOneEachTime": true,
+     "sorted": true
+    },
+    "SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS": {
+     "isList": true,
+     "isPlainList": true,
+     "length": 27,
+     "frozen": false,
+     "sealed": false,
+     "canGrow": true,
+     "ownNames": 28,
+     "allTexts": true,
+     "noneTwice": true,
+     "sameOneEachTime": true,
+     "sorted": false
+    },
+    "notTheSameList": true
+   }
+  },
+  "what kind of function each exported function is: its name, its counted parameters, and whether it could be used with new": {
+   "returned": {
+    "parseUserAgentStoreSourceId": {
+     "name": "parseUserAgentStoreSourceId",
+     "parameters": 1,
+     "hasPrototype": true
+    },
+    "parseTeamAgentStoreSourceId": {
+     "name": "parseTeamAgentStoreSourceId",
+     "parameters": 1,
+     "hasPrototype": true
+    },
+    "isValidBareUuid": {
+     "name": "isValidBareUuid",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "isCloudAgentStoreId": {
+     "name": "isCloudAgentStoreId",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "isAgentStoreId": {
+     "name": "isAgentStoreId",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "isAgentStoreSourceId": {
+     "name": "isAgentStoreSourceId",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "isAgentStoreShareMountKey": {
+     "name": "isAgentStoreShareMountKey",
+     "parameters": 1,
+     "hasPrototype": false
+    },
+    "buildSandBoxNoVncUrl": {
+     "name": "buildSandBoxNoVncUrl",
+     "parameters": 3,
+     "hasPrototype": true
+    },
+    "isSandSpecialTreatmentNoVncUrl": {
+     "name": "isSandSpecialTreatmentNoVncUrl",
+     "parameters": 1,
+     "hasPrototype": true
+    }
+   }
+  }
+ }
+}

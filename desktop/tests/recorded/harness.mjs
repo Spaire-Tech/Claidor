@@ -25,37 +25,92 @@
  *   here proves; the part's files are the ones under `source/<part>/`, or
  *   the ones it names in `covers`.
  *
+ * A part is built here the way the engine itself is built
+ * (`scripts/build-simeon.mjs`): one CommonJS file for Node 22 and later, the
+ * same packages left outside, the same stand-ins for `import.meta.url` and
+ * `process.env.SIMEON_BUILD`, the same entry for jsonc-parser. What a
+ * scenario sees is then what the shipped engine does, not what the source
+ * would do under another build. The test fails when the two builds drift.
+ *
+ * A part is asked twice, in two sets of surroundings (`inSurroundings`), and
+ * must answer the same in both: the answers are kept on one machine and
+ * compared on others (a Mac, a Linux computer), so nothing of the machine may
+ * be in them. Both times the environment holds only a handful of settings,
+ * the home folder and the temporary folder are fresh ones, the time zone is
+ * UTC and `NODE_ENV` is not set. The second time the part is also loaded
+ * afresh from another place on disk, the working folder is another one and
+ * `process.platform` names the other of Linux and macOS. A scenario whose
+ * part looks at any of these sets it itself, once for each case, and puts
+ * it back. Where the part looks only once, when it is loaded, the scenario
+ * sets it and asks for a load of its own (`tools.fresh()`).
+ *
  * Scenarios use stand-ins only: no network, no real account, nothing outside
  * a temporary folder.
  */
-import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import inspector from "node:inspector/promises";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { SourceMapConsumer } from "source-map-js";
 
 export const desktopRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 export const recordedDir = path.dirname(fileURLToPath(import.meta.url));
 
+/** What the run was asked for, read once: the surroundings a part is asked in hold none of it. */
+const ASKED = Object.freeze({
+  record: process.env.SIMEON_RECORD?.trim(),
+  root: process.env.SIMEON_RECORD_ROOT?.trim(),
+  out: process.env.SIMEON_RECORD_OUT?.trim(),
+  coverage: process.env.SIMEON_RECORD_COVERAGE?.trim(),
+});
+
 /** Where the part's code is read from: this checkout, or another one named for a cross-check. */
 export function sourceRoot() {
-  const other = process.env.SIMEON_RECORD_ROOT?.trim();
-  return other ? path.resolve(other) : desktopRoot;
+  return ASKED.root ? path.resolve(desktopRoot, ASKED.root) : desktopRoot;
 }
 
 /** Whether this run writes the answers for the part instead of comparing them. */
 export function recording(part) {
-  const asked = process.env.SIMEON_RECORD?.trim();
-  return asked === "all" || asked === part;
+  return ASKED.record === "all" || ASKED.record === part;
 }
 
 export function answersFile(part) {
-  const out = process.env.SIMEON_RECORD_OUT?.trim();
   const name = `${part.replaceAll("/", "__")}.json`;
-  return out ? path.join(path.resolve(out), name) : path.join(recordedDir, name);
+  return ASKED.out ? path.join(path.resolve(desktopRoot, ASKED.out), name) : path.join(recordedDir, name);
+}
+
+/** The settings of the machine a part may still see; every other is taken away while it is asked. */
+const KEPT_SETTINGS = new Set(["PATH", "LANG", "LC_ALL", "LC_CTYPE", "SHELL", "TERM"]);
+
+/**
+ * One set of surroundings, put in place while `run` runs and taken away
+ * after it: a short environment, a fresh home folder and temporary folder,
+ * UTC, and (with `other`) another working folder and the other platform's
+ * name. `run` is given whether these are the other surroundings.
+ */
+export async function inSurroundings({ other = false } = {}, run) {
+  const before = { env: { ...process.env }, cwd: process.cwd(), platform: Object.getOwnPropertyDescriptor(process, "platform") };
+  const place = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-")));
+  for (const folder of ["home", "tmp", "work"]) await mkdir(path.join(place, folder));
+  for (const name of Object.keys(process.env)) if (!KEPT_SETTINGS.has(name)) delete process.env[name];
+  Object.assign(process.env, { HOME: path.join(place, "home"), TMPDIR: path.join(place, "tmp"), TZ: "UTC", USER: "recorded", LOGNAME: "recorded" });
+  if (other) {
+    process.chdir(path.join(place, "work"));
+    Object.defineProperty(process, "platform", { ...before.platform, value: before.platform.value === "darwin" ? "linux" : "darwin" });
+  }
+  try {
+    return await run(other);
+  } finally {
+    Object.defineProperty(process, "platform", before.platform);
+    process.chdir(before.cwd);
+    for (const name of Object.keys(process.env)) delete process.env[name];
+    Object.assign(process.env, before.env);
+    await rm(place, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+  }
 }
 
 /** The scenario files beside this one, by name. */
@@ -65,47 +120,77 @@ export async function scenarioFiles() {
 
 /** Whether this run also measures how much of the part's code the scenarios run. */
 export function measuring(part) {
-  const asked = process.env.SIMEON_RECORD_COVERAGE?.trim();
-  return asked === "all" || asked === part;
+  return ASKED.coverage === "all" || ASKED.coverage === part;
 }
 
 /**
- * The part's modules, built together so that what one defines is the very
- * thing another uses (a key, a class), and loaded once. With `measure`, what
- * runs from now on is counted, and `coverage()` answers it per source file.
+ * How the engine's own build makes a process's file (`bundleProcess` in
+ * `scripts/build-simeon.mjs`), kept word for word the same here.
  */
-export async function loadModules(modules, { measure = false } = {}) {
+export const ENGINE_BUILD = Object.freeze({
+  platform: "node",
+  target: "node22",
+  format: "cjs",
+  external: ["electron", "tree-sitter", "tree-sitter-bash", "web-tree-sitter", "node-gyp-build", "node-addon-api", "piscina"],
+  alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
+  banner: { js: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;' },
+  define: {
+    "process.env.SIMEON_BUILD": JSON.stringify("clean-source"),
+    "import.meta.url": "__import_meta_url",
+  },
+});
+
+/**
+ * The part's modules, built into one file so that what one defines is the
+ * very thing another uses (a key, a class). `load()` loads it, each time
+ * afresh and from another place on disk, with nothing kept from the load
+ * before. With `measure`, what the first load runs is counted, and
+ * `coverage()` answers it per source file.
+ */
+export async function buildModules(modules, { measure = false } = {}) {
   const root = sourceRoot();
-  const out = await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-"));
-  const entryPoints = Object.fromEntries(Object.entries(modules).map(([key, file]) => [key, path.join(root, file)]));
+  const out = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-")));
+  for (const key of Object.keys(modules)) {
+    if (!/^[A-Za-z_$][\w$]*$/.test(key)) throw new Error(`a module's short name is a plain word, not "${key}"`);
+  }
+  const built = path.join(out, "part.cjs");
   await build({
-    entryPoints,
-    outdir: out,
+    ...ENGINE_BUILD,
+    stdin: {
+      contents: Object.entries(modules).map(([key, file]) => `export * as ${key} from ${JSON.stringify(path.join(root, file))};`).join("\n"),
+      loader: "ts",
+      resolveDir: root,
+      sourcefile: "recorded-part.ts",
+    },
+    outfile: built,
     bundle: true,
-    splitting: true,
-    format: "esm",
-    platform: "node",
-    target: "node22",
     logLevel: "silent",
-    external: ["electron"],
     sourcemap: measure ? "external" : false,
-    outExtension: { ".js": ".mjs" },
     // Another checkout has no packages of its own: they are this checkout's.
     nodePaths: [path.join(desktopRoot, "node_modules")],
-    banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   });
   let session;
-  if (measure) {
-    session = new inspector.Session();
-    session.connect();
-    await session.post("Profiler.enable");
-    await session.post("Profiler.startPreciseCoverage", { callCount: true, detailed: true });
-  }
-  const loaded = {};
-  for (const key of Object.keys(modules)) loaded[key] = await import(`${pathToFileURL(path.join(out, `${key}.mjs`)).href}?${Date.now()}`);
+  let loads = 0;
+  const require = createRequire(import.meta.url);
   return {
-    loaded,
-    /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that never ran are. */
+    async load() {
+      loads += 1;
+      let file = built;
+      if (loads === 1 && measure) {
+        session = new inspector.Session();
+        session.connect();
+        await session.post("Profiler.enable");
+        await session.post("Profiler.startPreciseCoverage", { callCount: true, detailed: true });
+      } else if (loads > 1) {
+        const elsewhere = path.join(out, `load-${loads}`);
+        await mkdir(elsewhere);
+        file = path.join(elsewhere, "part.cjs");
+        await copyFile(built, file);
+      }
+      const whole = require(file);
+      return Object.fromEntries(Object.keys(modules).map((key) => [key, whole[key]]));
+    },
+    /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that no load ran are. */
     coverage: async () => (session ? linesRun(await session.post("Profiler.takePreciseCoverage"), out, root) : {}),
     dispose: async () => {
       if (session) {
@@ -118,15 +203,17 @@ export async function loadModules(modules, { measure = false } = {}) {
 }
 
 /**
- * V8's counts for the built files, carried back to the source files through
- * the build's maps, one count per mapped place (line and column).
+ * V8's counts for the built file, carried back to the source files through
+ * the build's map, one count per mapped place (line and column). Every load
+ * of the file counts (each is a copy of the same text), and a place ran when
+ * any load ran it.
  */
 async function linesRun({ result }, out, root) {
   const files = {};
+  const map = path.join(out, "part.cjs.map");
   for (const script of result) {
-    if (!script.url.startsWith("file:")) continue;
-    const built = fileURLToPath(script.url.split("?")[0]);
-    if (!built.startsWith(out + path.sep) || !existsSync(`${built}.map`)) continue;
+    const built = script.url.startsWith("file:") ? fileURLToPath(script.url.split("?")[0]) : script.url;
+    if (!built.startsWith(out + path.sep) || path.basename(built) !== "part.cjs" || !existsSync(map)) continue;
     const text = await readFile(built, "utf8");
     // How often each character of the built file ran: an inner range says more than the one around it.
     const ran = new Int32Array(text.length).fill(-1);
@@ -134,9 +221,9 @@ async function linesRun({ result }, out, root) {
     for (const range of ranges) ran.fill(range.count, range.startOffset, Math.min(range.endOffset, text.length));
     const lineStarts = [0];
     for (let at = text.indexOf("\n"); at !== -1; at = text.indexOf("\n", at + 1)) lineStarts.push(at + 1);
-    new SourceMapConsumer(JSON.parse(await readFile(`${built}.map`, "utf8"))).eachMapping((piece) => {
+    new SourceMapConsumer(JSON.parse(await readFile(map, "utf8"))).eachMapping((piece) => {
       if (!piece.source || piece.originalLine == null) return;
-      const source = path.relative(root, path.resolve(path.dirname(built), piece.source)).split(path.sep).join("/");
+      const source = path.relative(root, path.resolve(out, piece.source)).split(path.sep).join("/");
       if (source.startsWith("..") || source.startsWith("node_modules/")) return;
       const count = ran[lineStarts[piece.generatedLine - 1] + piece.generatedColumn];
       if (count === undefined || count < 0) return;
@@ -249,11 +336,17 @@ export function plain(value, seen = new Set()) {
 }
 
 /** What a scenario is given besides the modules. */
-function toolsFor(cleanups) {
+function toolsFor(cleanups, { fresh }) {
   return {
-    /** A fresh temporary folder, gone after the scenario; write its path as "<tmp>" in what is returned (`scrub`). */
+    /**
+     * The part loaded once more, afresh, as it is now: for what the part
+     * looks at only when it is loaded (a setting, the platform). Set it,
+     * call this, put it back. The modules come under the same short names.
+     */
+    fresh,
+    /** A fresh temporary folder, gone after the scenario, by its real path; write its path as "<tmp>" in what is returned (`scrub`). */
     async tmp() {
-      const dir = await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-run-"));
+      const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-run-")));
       cleanups.push(() => rm(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
       return dir;
     },
@@ -268,10 +361,10 @@ function toolsFor(cleanups) {
 }
 
 /** One scenario's answer: what it returned, or what it threw. */
-export async function answerOf(scenario, modules) {
+export async function answerOf(scenario, modules, { fresh } = {}) {
   const cleanups = [];
   try {
-    return { returned: plain(await scenario.run(modules, toolsFor(cleanups))) };
+    return { returned: plain(await scenario.run(modules, toolsFor(cleanups, { fresh }))) };
   } catch (error) {
     return { threw: plain(error) };
   } finally {
