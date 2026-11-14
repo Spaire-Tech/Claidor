@@ -1,0 +1,3225 @@
+{
+ "part": "packages/agent/reminders",
+ "surface": {
+  "contextBuilder": {
+   "buildReminderContext": "function"
+  },
+  "applyReminders": {
+   "applyRemindersToToolResults": "function"
+  }
+ },
+ "scenarios": {
+  "no messages give empty tallies, and the lists given are handed back as they are": {
+   "returned": {
+    "context": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     },
+     "todos": [
+      {
+       "id": "t1",
+       "content": "Write"
+      }
+     ],
+     "conversationMessages": [],
+     "responseMessages": [
+      {
+       "role": "assistant",
+       "content": "ok"
+      }
+     ]
+    },
+    "keys": [
+     "toolCallCount",
+     "toolTypeCounters",
+     "consecutiveFailures",
+     "currentToolName",
+     "currentToolError",
+     "currentToolSuccess",
+     "todos",
+     "conversationMessages",
+     "responseMessages"
+    ],
+    "sameMessages": true,
+    "sameTodos": true,
+    "sameResponse": true,
+    "countersAreMaps": [
+     true,
+     true
+    ]
+   }
+  },
+  "the response list left out or undefined is a new empty list each time; null stays null": {
+   "returned": {
+    "leftOut": [],
+    "undefinedGiven": [],
+    "nullGiven": null,
+    "aNewListEachTime": true,
+    "declaredParameters": 2
+   }
+  },
+  "the todos are never looked at: whatever is given is handed back": {
+   "returned": [
+    {
+     "given": {
+      "$": "undefined"
+     },
+     "same": true
+    },
+    {
+     "given": null,
+     "same": true
+    },
+    {
+     "given": "todo",
+     "same": true
+    },
+    {
+     "given": 7,
+     "same": true
+    },
+    {
+     "given": [
+      1,
+      2
+     ],
+     "same": true
+    },
+    {
+     "given": {
+      "a": 1
+     },
+     "same": true
+    }
+   ]
+  },
+  "only messages whose role is exactly tool and whose content is a list are counted": {
+   "returned": {
+    "a user message with a list": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "an assistant message with a list": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "role Tool with a capital": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "role tool with a space": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with text": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with no content": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with null": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with an object like a list": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with an empty list": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a tool message with one result": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Read",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "a message with no role": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a number": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "a text": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "each result counts once for its tool, in the order tools are first seen": {
+   "returned": {
+    "toolCallCount": 6,
+    "toolTypeCounters": {
+     "$": "map",
+     "v": [
+      [
+       "Read",
+       3
+      ],
+      [
+       "Shell",
+       2
+      ],
+      [
+       "Grep",
+       1
+      ]
+     ]
+    },
+    "consecutiveFailures": {
+     "$": "map",
+     "v": [
+      [
+       "Read",
+       0
+      ],
+      [
+       "Shell",
+       0
+      ],
+      [
+       "Grep",
+       0
+      ]
+     ]
+    },
+    "currentToolName": "Shell",
+    "currentToolError": {
+     "$": "undefined"
+    },
+    "currentToolSuccess": true
+   }
+  },
+  "a result without a tool name counts as unknown; an empty or odd name is kept as it is": {
+   "returned": {
+    "oneByOne": [
+     {
+      "given": {
+       "$": "undefined"
+      },
+      "currentToolName": "unknown",
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         "unknown",
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": null,
+      "currentToolName": "unknown",
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         "unknown",
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": "",
+      "currentToolName": "",
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         "",
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": "unknown",
+      "currentToolName": "unknown",
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         "unknown",
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": 0,
+      "currentToolName": 0,
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         0,
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": 5,
+      "currentToolName": 5,
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         5,
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": false,
+      "currentToolName": false,
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         false,
+         1
+        ]
+       ]
+      }
+     },
+     {
+      "given": "Read ",
+      "currentToolName": "Read ",
+      "counters": {
+       "$": "map",
+       "v": [
+        [
+         "Read ",
+         1
+        ]
+       ]
+      }
+     }
+    ],
+    "together": {
+     "toolCallCount": 8,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        3
+       ],
+       [
+        "",
+        1
+       ],
+       [
+        0,
+        1
+       ],
+       [
+        5,
+        1
+       ],
+       [
+        false,
+        1
+       ],
+       [
+        "Read ",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ],
+       [
+        "",
+        0
+       ],
+       [
+        0,
+        0
+       ],
+       [
+        5,
+        0
+       ],
+       [
+        false,
+        0
+       ],
+       [
+        "Read ",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Read ",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "noFieldAtAll": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    }
+   }
+  },
+  "a failure adds to its tool's failures in a row, and a success puts them back to zero": {
+   "returned": [
+    {
+     "after": "failed Shell",
+     "toolCallCount": 1,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "after": "failed Shell",
+     "toolCallCount": 2,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        2
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        2
+       ]
+      ]
+     }
+    },
+    {
+     "after": "failed Read",
+     "toolCallCount": 3,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        2
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        2
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "after": "worked Shell",
+     "toolCallCount": 4,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        3
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        0
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "after": "failed Shell",
+     "toolCallCount": 5,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        4
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "after": "worked Grep",
+     "toolCallCount": 6,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        4
+       ],
+       [
+        "Read",
+        1
+       ],
+       [
+        "Grep",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        1
+       ],
+       [
+        "Grep",
+        0
+       ]
+      ]
+     }
+    },
+    {
+     "after": "failed Read",
+     "toolCallCount": 7,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        4
+       ],
+       [
+        "Read",
+        2
+       ],
+       [
+        "Grep",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        2
+       ],
+       [
+        "Grep",
+        0
+       ]
+      ]
+     }
+    },
+    {
+     "after": "failed Read",
+     "toolCallCount": 8,
+     "counters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        4
+       ],
+       [
+        "Read",
+        3
+       ],
+       [
+        "Grep",
+        1
+       ]
+      ]
+     },
+     "failures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        3
+       ],
+       [
+        "Grep",
+        0
+       ]
+      ]
+     }
+    }
+   ]
+  },
+  "failures in a row carry over from one tool message to the next": {
+   "returned": {
+    "toolCallCount": 4,
+    "toolTypeCounters": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       3
+      ],
+      [
+       "Read",
+       1
+      ]
+     ]
+    },
+    "consecutiveFailures": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       3
+      ],
+      [
+       "Read",
+       0
+      ]
+     ]
+    },
+    "currentToolName": "Read",
+    "currentToolError": {
+     "$": "undefined"
+    },
+    "currentToolSuccess": true
+   }
+  },
+  "anything truthy in isError is a failure, anything else a success": {
+   "returned": [
+    {
+     "isError": true,
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": false,
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": {
+      "$": "undefined"
+     },
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": null,
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": 0,
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": 1,
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": -1,
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": "",
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": "false",
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": "no",
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "success": true,
+     "error": {
+      "$": "undefined"
+     },
+     "failures": 0
+    },
+    {
+     "isError": {},
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    },
+    {
+     "isError": [],
+     "success": false,
+     "error": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "failures": 1
+    }
+   ]
+  },
+  "the current tool's error holds the failed result as text, whatever the result is": {
+   "returned": {
+    "a text": {
+     "class": "Error",
+     "isError": true,
+     "message": "No such file",
+     "fields": []
+    },
+    "an empty text": {
+     "class": "Error",
+     "isError": true,
+     "message": "",
+     "fields": []
+    },
+    "nothing": {
+     "class": "Error",
+     "isError": true,
+     "message": "boom",
+     "fields": []
+    },
+    "null": {
+     "class": "Error",
+     "isError": true,
+     "message": "null",
+     "fields": []
+    },
+    "a number": {
+     "class": "Error",
+     "isError": true,
+     "message": "404",
+     "fields": []
+    },
+    "false": {
+     "class": "Error",
+     "isError": true,
+     "message": "false",
+     "fields": []
+    },
+    "an object": {
+     "class": "Error",
+     "isError": true,
+     "message": "[object Object]",
+     "fields": []
+    },
+    "a list": {
+     "class": "Error",
+     "isError": true,
+     "message": "a,b,c",
+     "fields": []
+    },
+    "an empty list": {
+     "class": "Error",
+     "isError": true,
+     "message": "",
+     "fields": []
+    },
+    "an error": {
+     "class": "Error",
+     "isError": true,
+     "message": "RangeError: too far",
+     "fields": []
+    },
+    "a symbol": {
+     "class": "Error",
+     "isError": true,
+     "message": "Symbol(mark)",
+     "fields": []
+    },
+    "a big number": {
+     "class": "Error",
+     "isError": true,
+     "message": "12",
+     "fields": []
+    },
+    "an object that says its own text": {
+     "class": "Error",
+     "isError": true,
+     "message": "I said this",
+     "fields": []
+    },
+    "a date": {
+     "class": "Error",
+     "isError": true,
+     "message": "Thu Jan 01 1970 00:00:00 GMT+0000 (Coordinated Universal Time)",
+     "fields": []
+    }
+   }
+  },
+  "a failed result with no result field gives an error saying undefined": {
+   "returned": {
+    "toolCallCount": 1,
+    "toolTypeCounters": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       1
+      ]
+     ]
+    },
+    "consecutiveFailures": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       1
+      ]
+     ]
+    },
+    "currentToolName": "Shell",
+    "currentToolError": {
+     "$": "error",
+     "name": "Error",
+     "message": "undefined"
+    },
+    "currentToolSuccess": false
+   }
+  },
+  "the last result read is the current tool: a success after a failure leaves no error": {
+   "returned": {
+    "failureLast": {
+     "toolCallCount": 2,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ],
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ],
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "exit 1"
+     },
+     "currentToolSuccess": false
+    },
+    "successLast": {
+     "toolCallCount": 2,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Read",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "failureThenOtherMessages": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "exit 1"
+     },
+     "currentToolSuccess": false
+    },
+    "twoFailures": {
+     "toolCallCount": 2,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ],
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "currentToolName": "Read",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "second"
+     },
+     "currentToolSuccess": false
+    }
+   }
+  },
+  "a result that is not an object counts as an unknown tool that worked; a missing one stops the count": {
+   "returned": {
+    "text": {
+     "toolCallCount": 2,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        2
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "numbersAndTruths": {
+     "toolCallCount": 4,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        4
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "aList": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "aFunction": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    },
+    "null": "TypeError",
+    "undefined": "TypeError",
+    "aGapInTheList": "TypeError"
+   }
+  },
+  "a failed result whose text cannot be made throws what making it threw": {
+   "returned": {
+    "theSameError": true,
+    "anObjectWithNoText": "TypeError",
+    "asASuccess": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    }
+   }
+  },
+  "messages that are not a list of objects": {
+   "returned": {
+    "null": "TypeError",
+    "undefined": "TypeError",
+    "aNumber": "TypeError",
+    "anObject": "TypeError",
+    "aText": {
+     "toolCallCount": 0,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": []
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": []
+     },
+     "currentToolName": {
+      "$": "undefined"
+     },
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": {
+      "$": "undefined"
+     }
+    },
+    "aSet": {
+     "toolCallCount": 2,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ],
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ],
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "boom"
+     },
+     "currentToolSuccess": false
+    },
+    "nullInTheList": "TypeError",
+    "undefinedInTheList": "TypeError",
+    "aGapInTheList": "TypeError",
+    "numbersAndTextsInTheList": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Read",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    }
+   }
+  },
+  "results added to a message while it is read are counted too": {
+   "returned": {
+    "toolCallCount": 3,
+    "toolTypeCounters": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       3
+      ]
+     ]
+    },
+    "consecutiveFailures": {
+     "$": "map",
+     "v": [
+      [
+       "Shell",
+       0
+      ]
+     ]
+    },
+    "currentToolName": "Shell",
+    "currentToolError": {
+     "$": "undefined"
+    },
+    "currentToolSuccess": true
+   }
+  },
+  "the fields of a message and of a result are read in a fixed order": {
+   "returned": {
+    "log": [
+     "user message.role",
+     "tool message with text.role",
+     "tool message with text.content",
+     "tool message.role",
+     "tool message.content",
+     "tool message.content",
+     "a result that worked.toolName",
+     "a result that worked.isError",
+     "a result that worked.isError",
+     "a result that failed.toolName",
+     "a result that failed.isError",
+     "a result that failed.isError",
+     "a result that failed.result",
+     "an empty result.toolName",
+     "an empty result.isError",
+     "an empty result.isError"
+    ],
+    "tallies": {
+     "toolCallCount": 3,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ],
+       [
+        "Shell",
+        1
+       ],
+       [
+        "unknown",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ],
+       [
+        "Shell",
+        1
+       ],
+       [
+        "unknown",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "unknown",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": true
+    }
+   }
+  },
+  "a result that changes its mind between two looks: the first look counts the failure, the second makes the error": {
+   "returned": {
+    "failedThenWorked": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "undefined"
+     },
+     "currentToolSuccess": false
+    },
+    "workedThenFailed": {
+     "toolCallCount": 1,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        1
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Shell",
+        0
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "said"
+     },
+     "currentToolSuccess": true
+    }
+   }
+  },
+  "with no reminders nothing is read and nothing changes": {
+   "returned": {
+    "aPromise": true,
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "response": [
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     }
+    ],
+    "badLists": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "zeroLength": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "declaredParameters": 4
+   }
+  },
+  "a reminder that triggers adds its text to the last result of the last tool message": {
+   "returned": {
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "response": [
+     {
+      "role": "assistant",
+      "content": [
+       {
+        "type": "tool-call",
+        "toolName": "Shell"
+       }
+      ]
+     },
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Read",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "file contents"
+         }
+        ]
+       },
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "exit 0"
+         },
+         {
+          "type": "text",
+          "text": "Remember the todos."
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "several texts are joined by an empty line, in the reminders' order": {
+   "returned": {
+    "one": [
+     {
+      "type": "text",
+      "text": "first"
+     }
+    ],
+    "two": [
+     {
+      "type": "text",
+      "text": "first\n\nsecond"
+     }
+    ],
+    "three": [
+     {
+      "type": "text",
+      "text": "first\n\nsecond\n\nthird"
+     }
+    ],
+    "one silent between two": [
+     {
+      "type": "text",
+      "text": "first\n\nthird"
+     }
+    ],
+    "only silent ones": [],
+    "texts with their own line ends": [
+     {
+      "type": "text",
+      "text": "a\n\n\n\n\nb"
+     }
+    ],
+    "the same reminder twice": [
+     {
+      "type": "text",
+      "text": "again\n\nagain"
+     }
+    ]
+   }
+  },
+  "what a reminder gives counts as a text only when it is truthy and has a length above zero": {
+   "returned": {
+    "a text": [
+     {
+      "type": "text",
+      "text": "x"
+     }
+    ],
+    "a space": [
+     {
+      "type": "text",
+      "text": " "
+     }
+    ],
+    "an empty text": [],
+    "nothing": [],
+    "null": [],
+    "zero": [],
+    "a number": [],
+    "true": [],
+    "an empty list": [],
+    "a list of texts": [
+     {
+      "type": "text",
+      "text": "a,b"
+     }
+    ],
+    "an object with a length": [
+     {
+      "type": "text",
+      "text": "an object's text"
+     }
+    ],
+    "an object with length zero": [],
+    "an object with no length": [],
+    "a text object": [
+     {
+      "type": "text",
+      "text": "boxed"
+     }
+    ],
+    "several kinds together": [
+     {
+      "type": "text",
+      "text": "a,b\n\nc\n\nd"
+     }
+    ]
+   }
+  },
+  "what shouldTrigger gives counts as yes when truthy; generate is asked only then": {
+   "returned": [
+    {
+     "answer": true,
+     "generateAsked": 1,
+     "added": 1
+    },
+    {
+     "answer": false,
+     "generateAsked": 0,
+     "added": 0
+    },
+    {
+     "answer": {
+      "$": "undefined"
+     },
+     "generateAsked": 0,
+     "added": 0
+    },
+    {
+     "answer": null,
+     "generateAsked": 0,
+     "added": 0
+    },
+    {
+     "answer": 0,
+     "generateAsked": 0,
+     "added": 0
+    },
+    {
+     "answer": 1,
+     "generateAsked": 1,
+     "added": 1
+    },
+    {
+     "answer": "",
+     "generateAsked": 0,
+     "added": 0
+    },
+    {
+     "answer": "no",
+     "generateAsked": 1,
+     "added": 1
+    },
+    {
+     "answer": {},
+     "generateAsked": 1,
+     "added": 1
+    },
+    {
+     "answer": [],
+     "generateAsked": 1,
+     "added": 1
+    },
+    {
+     "answer": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "generateAsked": 0,
+     "added": 0
+    }
+   ]
+  },
+  "where the text goes, for every shape of response": {
+   "returned": {
+    "no messages": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": []
+    },
+    "no tool message": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "assistant",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      },
+      {
+       "role": "user",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "a tool message whose content is text": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": "done"
+      }
+     ]
+    },
+    "a tool message with an empty list": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": []
+      }
+     ]
+    },
+    "a tool message whose last part is not a tool result": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        {
+         "type": "text",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "a last part with no type": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "a last part of type Tool-Result": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "Tool-Result",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "a last result with no list to add to": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        {
+         "type": "tool-result",
+         "toolName": "Shell"
+        }
+       ]
+      }
+     ]
+    },
+    "a last result whose experimental content is text": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "experimental_content": "text"
+        }
+       ]
+      }
+     ]
+    },
+    "a last result whose experimental content is null": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "experimental_content": null
+        }
+       ]
+      }
+     ]
+    },
+    "a last result whose experimental content only looks like a list": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "experimental_content": {
+          "length": 0,
+          "push": {
+           "$": "function",
+           "name": "push"
+          }
+         }
+        }
+       ]
+      }
+     ]
+    },
+    "a last part that is null": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        null
+       ]
+      }
+     ]
+    },
+    "a last part that is missing": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        {
+         "$": "undefined"
+        }
+       ]
+      }
+     ]
+    },
+    "a last part that is zero": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        0
+       ]
+      }
+     ]
+    },
+    "a last part that is a text": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        "tool-result"
+       ]
+      }
+     ]
+    },
+    "one tool message with one result": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "one tool message with three results": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        },
+        {
+         "type": "tool-result",
+         "toolName": "Grep",
+         "experimental_content": []
+        },
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "two tool messages": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        }
+       ]
+      },
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "the last tool message has no place, an earlier one has": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        }
+       ]
+      },
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "text"
+        }
+       ]
+      }
+     ]
+    },
+    "the last tool message is empty, an earlier one has a place": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": []
+        }
+       ]
+      },
+      {
+       "role": "tool",
+       "content": []
+      }
+     ]
+    },
+    "the last message of role tool holds text, an earlier one a list": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "role": "tool",
+       "content": "done"
+      }
+     ]
+    },
+    "other messages after the tool message": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "role": "assistant",
+       "content": "ok"
+      },
+      {
+       "role": "user",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "a result that already holds content": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "one"
+          },
+          {
+           "type": "image",
+           "data": "…"
+          },
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "numbers, texts and gaps among the messages": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "response": [
+      1,
+      "tool",
+      {
+       "$": "undefined"
+      },
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Read",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "Reminder text."
+          }
+         ]
+        }
+       ]
+      },
+      true
+     ]
+    },
+    "pushedToTheLookalike": []
+   }
+  },
+  "each addition is a new text entry, and a second call adds a second one": {
+   "returned": {
+    "entries": [
+     {
+      "type": "text",
+      "text": "one"
+     },
+     {
+      "type": "text",
+      "text": "two\n\nthree"
+     }
+    ],
+    "keys": [
+     [
+      "type",
+      "text"
+     ],
+     [
+      "type",
+      "text"
+     ]
+    ],
+    "theFirstIsUntouched": true,
+    "differentObjects": true
+   }
+  },
+  "a reminder is shown the tallies of the conversation, the todos and the response, the same object each time": {
+   "returned": {
+    "timesShown": 4,
+    "alwaysTheSameObject": true,
+    "keys": [
+     "toolCallCount",
+     "toolTypeCounters",
+     "consecutiveFailures",
+     "currentToolName",
+     "currentToolError",
+     "currentToolSuccess",
+     "todos",
+     "conversationMessages",
+     "responseMessages"
+    ],
+    "tallies": {
+     "toolCallCount": 3,
+     "toolTypeCounters": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        1
+       ],
+       [
+        "Shell",
+        2
+       ]
+      ]
+     },
+     "consecutiveFailures": {
+      "$": "map",
+      "v": [
+       [
+        "Read",
+        0
+       ],
+       [
+        "Shell",
+        2
+       ]
+      ]
+     },
+     "currentToolName": "Shell",
+     "currentToolError": {
+      "$": "error",
+      "name": "Error",
+      "message": "exit 3"
+     },
+     "currentToolSuccess": false
+    },
+    "sameConversation": true,
+    "sameTodos": true,
+    "sameResponse": true,
+    "response": [
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Grep",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "a: 3 calls, 2 Shell failures in a row, last was Shell (exit 3)\n\nb: 3 calls, 2 Shell failures in a row, last was Shell (exit 3)"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "reminders are asked one after the other: shouldTrigger, then generate, then the next reminder": {
+   "returned": [
+    "first: shouldTrigger",
+    "first: generate",
+    "second: shouldTrigger",
+    "third: shouldTrigger",
+    "third: generate",
+    "fourth: shouldTrigger",
+    "fourth: generate"
+   ]
+  },
+  "a reminder that throws ends the call with its error; nothing is written and later reminders are not asked": {
+   "returned": {
+    "shouldTrigger": {
+     "threwAtOnce": false,
+     "rejectedWithTheSameError": true,
+     "log": [
+      "first: shouldTrigger",
+      "first: generate",
+      "breaking: shouldTrigger"
+     ],
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    },
+    "generate": {
+     "threwAtOnce": false,
+     "rejectedWithTheSameError": true,
+     "log": [
+      "first: shouldTrigger",
+      "first: generate",
+      "breaking: shouldTrigger",
+      "breaking: generate"
+     ],
+     "response": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "a reminder may change the response while it is asked: the text goes to what is the last tool message afterwards": {
+   "returned": {
+    "response": [
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Read",
+        "experimental_content": []
+       }
+      ]
+     },
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Added",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "written late"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "emptied": [],
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "reminders added to the list while it is asked are asked too": {
+   "returned": {
+    "log": [
+     "first: shouldTrigger",
+     "added: shouldTrigger",
+     "added: generate"
+    ],
+    "response": [
+     {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "late"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "lists that are missing or of the wrong kind end the call as a rejected promise, never a throw": {
+   "returned": {
+    "no reminders list": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null for reminders": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "a number for reminders": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "reminders as an object with a length and no way through it": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "reminders as a set": {
+     "threwAtOnce": false,
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "a gap in the reminders": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null among the reminders": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "a reminder with no shouldTrigger": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "a reminder with no generate": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "a reminder with no generate that does not trigger": {
+     "threwAtOnce": false,
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "no conversation": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null for the conversation": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null in the conversation": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null for the response, a reminder triggers": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null for the response, a reminder gives nothing": {
+     "threwAtOnce": false,
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "null for the response, no reminder triggers": {
+     "threwAtOnce": false,
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "null in the response, a reminder triggers": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "null in the response, no reminder triggers": {
+     "threwAtOnce": false,
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "a response that cannot be filtered": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    },
+    "experimental content that cannot be added to": {
+     "threwAtOnce": false,
+     "rejected": "TypeError"
+    }
+   }
+  },
+  "a response with its own way of filtering is asked through it, and what it gives back is used as found": {
+   "returned": {
+    "a list with one tool message": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "through its own filter"
+         }
+        ]
+       }
+      ]
+     },
+     "given": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "through its own filter"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "an object with a length": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "through its own filter"
+         }
+        ]
+       }
+      ]
+     },
+     "given": {
+      "0": {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "through its own filter"
+          }
+         ]
+        }
+       ]
+      },
+      "length": 1
+     }
+    },
+    "an empty list": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": []
+    },
+    "an object with no length": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": {
+      "0": {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      }
+     }
+    },
+    "a length of zero and a message all the same": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": {
+      "0": {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      },
+      "length": 0
+     }
+    },
+    "a list ending in null": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      },
+      null
+     ]
+    },
+    "a list ending in a message with text": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": [
+      {
+       "role": "tool",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "Shell",
+         "experimental_content": []
+        }
+       ]
+      },
+      {
+       "role": "tool",
+       "content": "text"
+      }
+     ]
+    },
+    "a list ending in a message that is not a tool message": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "asked": [
+      "function"
+     ],
+     "found": {
+      "role": "tool",
+      "content": [
+       {
+        "type": "tool-result",
+        "toolName": "Shell",
+        "experimental_content": []
+       }
+      ]
+     },
+     "given": [
+      {
+       "role": "user",
+       "content": [
+        {
+         "type": "tool-result",
+         "toolName": "NotATool",
+         "experimental_content": [
+          {
+           "type": "text",
+           "text": "through its own filter"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "the fields of a reminder, a message and a result are read in a fixed order": {
+   "returned": {
+    "log": [
+     "conversation message.role",
+     "conversation message.content",
+     "conversation message.content",
+     "conversation result.toolName",
+     "conversation result.isError",
+     "conversation result.isError",
+     "conversation result.result",
+     "first reminder.shouldTrigger",
+     "first reminder.generate",
+     "second reminder.shouldTrigger",
+     "third reminder.shouldTrigger",
+     "third reminder.generate",
+     "assistant message.role",
+     "first tool message.role",
+     "first tool message.content",
+     "last tool message.role",
+     "last tool message.content",
+     "last tool message.content",
+     "last tool message.content",
+     "last tool message.content",
+     "last result.type",
+     "last result.experimental_content",
+     "last result.experimental_content"
+    ],
+    "untyped": [
+     "a last part that is not a result.type"
+    ],
+    "closed": [
+     "a last result with no list.type",
+     "a last result with no list.experimental_content"
+    ]
+   }
+  },
+  "a message whose content changes between looks: the list seen at each look is the one used": {
+   "returned": {
+    "a list, then text": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "looksTaken": 2,
+     "looks": [
+      [
+       {
+        "type": "tool-result",
+        "toolName": "First",
+        "experimental_content": []
+       }
+      ],
+      "text"
+     ]
+    },
+    "text, then a list": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "looksTaken": 1,
+     "looks": [
+      "text",
+      [
+       {
+        "type": "tool-result",
+        "toolName": "First",
+        "experimental_content": []
+       }
+      ]
+     ]
+    },
+    "a list, a second list, a third with three results, a fourth with two": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "looksTaken": 4,
+     "looks": [
+      [
+       {
+        "type": "tool-result",
+        "toolName": "A",
+        "experimental_content": []
+       }
+      ],
+      [
+       {
+        "type": "tool-result",
+        "toolName": "B",
+        "experimental_content": []
+       }
+      ],
+      [
+       {
+        "type": "tool-result",
+        "toolName": "C1",
+        "experimental_content": []
+       },
+       {
+        "type": "tool-result",
+        "toolName": "C2",
+        "experimental_content": [
+         {
+          "type": "text",
+          "text": "x"
+         }
+        ]
+       },
+       {
+        "type": "tool-result",
+        "toolName": "C3",
+        "experimental_content": []
+       }
+      ],
+      [
+       {
+        "type": "tool-result",
+        "toolName": "D1",
+        "experimental_content": []
+       },
+       {
+        "type": "tool-result",
+        "toolName": "D2",
+        "experimental_content": []
+       }
+      ]
+     ]
+    },
+    "a result whose experimental content changes between looks": [
+     [
+      "first look"
+     ],
+     [
+      "second look",
+      {
+       "type": "text",
+       "text": "x"
+      }
+     ]
+    ]
+   }
+  }
+ }
+}
