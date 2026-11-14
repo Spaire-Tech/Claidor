@@ -162,6 +162,13 @@ public enum ExternalAgents {
     return icon
   }
 
+  /** The mascot of an agent outside Simeon (`Party.mascot`, 14 November 2026): its kind's own (`Mascots/<icon>`), nil for a kind that has none. */
+  public static func networkMascot(_ kind: String) -> String? {
+    if kind == ModelConnectCard.cursor { return "cursor" }
+    guard let icon = icon(for: kind), mascots.contains(icon) else { return nil }
+    return icon
+  }
+
   /** A row of the page. */
   public struct Row: Identifiable, Equatable, Sendable {
     /** The server's row id for a connected bot (its kind, or `client:…`), else the known bot's kind. */

@@ -435,6 +435,14 @@ button.call-line:focus-visible,
   object-fit: contain;
 }
 
+/* An agent outside Simeon whose kind has no mascot: the first letter of its name on the tile. */
+.cloud-mark-letter {
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  opacity: 0.6;
+}
+
 /* ---------------------------------------------------------------------- */
 /* What covers the chat and its field: the ground over everything.        */
 

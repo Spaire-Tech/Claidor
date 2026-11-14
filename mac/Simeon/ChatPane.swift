@@ -1482,8 +1482,8 @@ private struct ExchangeEvent: View {
           ExchangeMenu.show(peers: peers, store: store, control: control, dark: look.dark)
         }
       }) {
-        if peers.count == 1, peers[0].cloudAgent {
-          // A cloud agent's picture is the mascot of the program that coded (13 November 2026).
+        if peers.count == 1, peers[0].marked {
+          // A cloud agent's picture is the mascot of the program that coded (13 November 2026); an agent's outside Simeon, of what it is.
           CloudAgentMark(party: peers[0], size: 16, look: look)
         } else {
           // The first three in a row, each cutting a 2-point gap round itself out of the one before (`fnt`, decision 28).

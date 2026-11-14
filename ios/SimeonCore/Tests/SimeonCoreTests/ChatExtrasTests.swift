@@ -653,6 +653,32 @@ final class CloudAgentTests: XCTestCase {
    * what it said along the way and its answers, on the page two agents'
    * messages have.
    */
+  /** An agent outside Simeon, a bot or a coding agent on the person's network (14 November 2026, the founder: "the avatar is not a simeon avatar"). */
+  func testAnAgentOutsideSimeonIsNamedByItsLineWithTheMascotOfWhatItIs() {
+    let asked = Entry(["kind": "message", "id": "n1", "role": "user", "content": "Check the Windows build", "clientNonce": "net-1", "fromAgent": ["id": "network:ana/windows-version", "name": "Dots", "kind": "network", "bot": "dots", "answer": "send"]])!
+    let answered = Entry(["kind": "message", "id": "n2", "role": "assistant", "content": "On it.", "toAgent": ["id": "network:ana/windows-version", "name": "Dots", "kind": "network", "bot": "dots"]])!
+    let dots = Party(id: "network:ana/windows-version", name: "Dots", network: true, bot: "dots")
+    XCTAssertEqual(asked.fromAgent, dots)
+    XCTAssertEqual(answered.toAgent, dots)
+    // Its picture is a mark on the tile, not a face: the mascot of what it is.
+    XCTAssertTrue(dots.marked)
+    XCTAssertEqual(dots.mascot, "dots")
+    XCTAssertEqual(ExternalAgents.networkMascot("muse"), "muse")
+    XCTAssertEqual(ExternalAgents.networkMascot("claude-code"), "claudecode")
+    XCTAssertEqual(ExternalAgents.networkMascot("cursor"), "cursor")
+    // A kind with no mascot, and a line that doesn't say what it is: the first letter of its name.
+    XCTAssertNil(ExternalAgents.networkMascot("gemini"))
+    let earlier = Entry(["kind": "message", "id": "n0", "role": "user", "content": "Hello", "fromAgent": ["id": "network:ana/dots", "name": "Dots", "kind": "network"]])!
+    XCTAssertEqual(earlier.fromAgent, Party(id: "network:ana/dots", name: "Dots", network: true))
+    XCTAssertNil(earlier.fromAgent?.mascot)
+    XCTAssertEqual(earlier.fromAgent?.marked, true)
+    XCTAssertEqual(earlier.fromAgent?.initial, "D")
+    // One of the person's agents is neither: it has its own picture.
+    let teammate = Party(id: "iris", name: "Iris")
+    XCTAssertFalse(teammate.marked)
+    XCTAssertNil(teammate.mascot)
+  }
+
   func testItsReportIsAMessageFromItAndItsConversationIsAPage() {
     // The line in the chat: a message from a cloud agent, which is not one of the person's agents.
     let report = Entry(["kind": "message", "id": "m1", "role": "user", "content": "Opened pull request #7.", "fromAgent": ["id": "bc-42", "name": "Fix the login", "kind": "cloud-agent", "coder": "claude-code"]])!
