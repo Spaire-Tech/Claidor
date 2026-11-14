@@ -41,7 +41,8 @@
  * afresh from another place on disk, the working folder is another one and
  * `process.platform` names the other of Linux and macOS. A scenario whose
  * part looks at any of these sets it itself, once for each case, and puts
- * it back.
+ * it back. Where the part looks only once, when it is loaded, the scenario
+ * sets it and asks for a load of its own (`tools.fresh()`).
  *
  * Scenarios use stand-ins only: no network, no real account, nothing outside
  * a temporary folder.
@@ -189,8 +190,8 @@ export async function buildModules(modules, { measure = false } = {}) {
       const whole = require(file);
       return Object.fromEntries(Object.keys(modules).map((key) => [key, whole[key]]));
     },
-    /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that never ran are. */
-    coverage: async () => (session ? linesRun(await session.post("Profiler.takePreciseCoverage"), built, root) : {}),
+    /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that no load ran are. */
+    coverage: async () => (session ? linesRun(await session.post("Profiler.takePreciseCoverage"), out, root) : {}),
     dispose: async () => {
       if (session) {
         await session.post("Profiler.stopPreciseCoverage").catch(() => {});
@@ -202,14 +203,17 @@ export async function buildModules(modules, { measure = false } = {}) {
 }
 
 /**
- * V8's counts for the built files, carried back to the source files through
- * the build's maps, one count per mapped place (line and column).
+ * V8's counts for the built file, carried back to the source files through
+ * the build's map, one count per mapped place (line and column). Every load
+ * of the file counts (each is a copy of the same text), and a place ran when
+ * any load ran it.
  */
-async function linesRun({ result }, measured, root) {
+async function linesRun({ result }, out, root) {
   const files = {};
+  const map = path.join(out, "part.cjs.map");
   for (const script of result) {
     const built = script.url.startsWith("file:") ? fileURLToPath(script.url.split("?")[0]) : script.url;
-    if (built !== measured || !existsSync(`${built}.map`)) continue;
+    if (!built.startsWith(out + path.sep) || path.basename(built) !== "part.cjs" || !existsSync(map)) continue;
     const text = await readFile(built, "utf8");
     // How often each character of the built file ran: an inner range says more than the one around it.
     const ran = new Int32Array(text.length).fill(-1);
@@ -217,9 +221,9 @@ async function linesRun({ result }, measured, root) {
     for (const range of ranges) ran.fill(range.count, range.startOffset, Math.min(range.endOffset, text.length));
     const lineStarts = [0];
     for (let at = text.indexOf("\n"); at !== -1; at = text.indexOf("\n", at + 1)) lineStarts.push(at + 1);
-    new SourceMapConsumer(JSON.parse(await readFile(`${built}.map`, "utf8"))).eachMapping((piece) => {
+    new SourceMapConsumer(JSON.parse(await readFile(map, "utf8"))).eachMapping((piece) => {
       if (!piece.source || piece.originalLine == null) return;
-      const source = path.relative(root, path.resolve(path.dirname(built), piece.source)).split(path.sep).join("/");
+      const source = path.relative(root, path.resolve(out, piece.source)).split(path.sep).join("/");
       if (source.startsWith("..") || source.startsWith("node_modules/")) return;
       const count = ran[lineStarts[piece.generatedLine - 1] + piece.generatedColumn];
       if (count === undefined || count < 0) return;
@@ -332,8 +336,14 @@ export function plain(value, seen = new Set()) {
 }
 
 /** What a scenario is given besides the modules. */
-function toolsFor(cleanups) {
+function toolsFor(cleanups, { fresh }) {
   return {
+    /**
+     * The part loaded once more, afresh, as it is now: for what the part
+     * looks at only when it is loaded (a setting, the platform). Set it,
+     * call this, put it back. The modules come under the same short names.
+     */
+    fresh,
     /** A fresh temporary folder, gone after the scenario, by its real path; write its path as "<tmp>" in what is returned (`scrub`). */
     async tmp() {
       const dir = await realpath(await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-run-")));
@@ -351,10 +361,10 @@ function toolsFor(cleanups) {
 }
 
 /** One scenario's answer: what it returned, or what it threw. */
-export async function answerOf(scenario, modules) {
+export async function answerOf(scenario, modules, { fresh } = {}) {
   const cleanups = [];
   try {
-    return { returned: plain(await scenario.run(modules, toolsFor(cleanups))) };
+    return { returned: plain(await scenario.run(modules, toolsFor(cleanups, { fresh }))) };
   } catch (error) {
     return { threw: plain(error) };
   } finally {

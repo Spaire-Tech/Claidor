@@ -44,7 +44,7 @@ for (const file of await scenarioFiles()) {
           const scenarios = {};
           for (const scenario of part.scenarios) {
             assert.ok(!(scenario.name in scenarios), `two scenarios are named "${scenario.name}"`);
-            scenarios[scenario.name] = await answerOf(scenario, modules);
+            scenarios[scenario.name] = await answerOf(scenario, modules, { fresh: load });
           }
           return { surface: surfaceOf(loaded), scenarios, used };
         });
