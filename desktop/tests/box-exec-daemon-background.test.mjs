@@ -205,7 +205,7 @@ test("a file an earlier runner left without a footer is closed when the runner s
       await writeFile(leftOver, "---\npid: 1\ncommand: \"npm run build\"\nstatus: running\nrunning_for_ms: 0\n---\nhalf the output\n");
       await writeFile(path.join(terminals, "1001.txt"), "---\npid: 2\n---\nall\n\n---\nexit_code: 0\nended_at: x\n---\n");
     },
-  }, async ({ shell, parse }) => {
+  }, async ({ shell, ended, parse }) => {
     const closed = parse(await readFile(leftOver, "utf8"));
     assert.equal(closed.isComplete, true);
     assert.equal(closed.isStreamFailure, true, "its end was not recorded");
@@ -213,6 +213,10 @@ test("a file an earlier runner left without a footer is closed when the runner s
     const finished = await readFile(leftOver.replace("1000", "1001"), "utf8");
     assert.equal((finished.match(/\n---\n/g) ?? []).length, 3, "a finished file is left as it was");
     const events = await shell({ command: "sleep 0.2", timeout: 0, isBackground: true });
-    assert.ok(![1000, 1001].includes(events.at(-1).value.shellId));
+    const shellId = events.at(-1).value.shellId;
+    assert.ok(![1000, 1001].includes(shellId));
+    // The command is left to end before its folder is taken away: on a busy
+    // machine it ended after that, and its footer had nowhere to be written.
+    await ended(shellId);
   });
 });
