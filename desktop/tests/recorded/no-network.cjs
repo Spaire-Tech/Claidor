@@ -5,7 +5,7 @@
  * it must never reach one, whatever a scenario or a scratch script forgets to
  * stand in for. Loading this file makes every connection that would leave
  * the machine fail: only this machine's own addresses and local sockets are
- * let through.
+ * let through, and not the local port of a proxy the machine's settings name.
  *
  * The recorded test loads it itself (`harness.mjs`). Any other run of the
  * engine's code in a check loads it first:
@@ -19,6 +19,20 @@ const net = require("node:net");
 const dgram = require("node:dgram");
 
 const refusals = [];
+
+// The machine's own way out may be a proxy on a local address, named in the usual settings. A connection to it leaves
+// the machine as surely as one to a far address, so its port is refused too. Read once, as this file loads: a check
+// may take the settings away later.
+const proxyPorts = new Set();
+for (const [name, value] of Object.entries(process.env)) {
+  if (!/proxy/i.test(name) || /no_?proxy/i.test(name) || !value) continue;
+  try {
+    const address = new URL(value.includes("://") ? value : `http://${value}`);
+    proxyPorts.add(Number(address.port || (address.protocol === "https:" ? 443 : 80)));
+  } catch {
+    // Not an address: nothing to refuse.
+  }
+}
 const isLocal = (host) => {
   const name = String(host ?? "localhost").toLowerCase().replace(/^\[|\]$/g, "");
   return name === "localhost" || name === "::1" || name === "::" || name === "0.0.0.0" || name.startsWith("127.") || name.startsWith("::ffff:127.") || name.endsWith(".localhost");
@@ -38,8 +52,9 @@ if (!net.Socket.prototype.connect.guardedByChecks) {
     const read = Array.isArray(args[0]) ? args[0] : net._normalizeArgs(args);
     const options = read[0] ?? {};
     // A path means a local socket, as Node itself reads it: only a path that is there (http hands over `path: null`).
-    if (options.path || isLocal(options.host)) return connect.apply(this, args);
-    const error = refusal("connection", options.host, options.port);
+    const throughProxy = !options.path && isLocal(options.host) && proxyPorts.has(Number(options.port));
+    if (!throughProxy && (options.path || isLocal(options.host))) return connect.apply(this, args);
+    const error = refusal(throughProxy ? "connection through this machine's proxy" : "connection", options.host ?? "localhost", options.port);
     process.nextTick(() => this.destroy(error));
     return this;
   };
