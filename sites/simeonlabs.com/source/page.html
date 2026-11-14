@@ -636,18 +636,25 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
 }
 
 /* Pricing, questions and the closing call: the same serif headline and pale panels as the trust section. */
-/* Pricing: Trial, Standard, Pro and Max on the pale panels (the founder, 4 October 2026), laid out simpler (18 October 2026): the name, the price at the display size, how it is billed, a full-width button, then what the plan includes in a few words. */
-.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4*var(--vw,1vw),80px)}
-.plan3{display:flex;flex-direction:column;padding:clamp(28px,2.4*var(--vw,1vw),44px) clamp(24px,2.1*var(--vw,1vw),40px);border-radius:28px;background:#fafafb}
-.plan3 h3{margin:0;font-size:var(--t-body);font-weight:400;letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .pr{margin-top:clamp(16px,1.4*var(--vw,1vw),26px);font-weight:var(--w-display);font-size:var(--t-display);line-height:1;letter-spacing:-.025em;color:var(--ink)}
-.plan3 .pr small{font-family:var(--font);font-weight:400;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2);margin-left:6px}
-.plan3 .billed{margin:10px 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink2)}
-.plan3 .btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:clamp(22px,2*var(--vw,1vw),36px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
-.plan3 .inc{margin:clamp(26px,2.2*var(--vw,1vw),40px) 0 0;font-size:var(--t-body);letter-spacing:-.01em;color:var(--ink)}
-.plan3 ul{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
+/* Pricing: Trial, Standard, Pro and Max (the founder, 4 October 2026; 14 November 2026, with another site's plans for
+   reference: "a new design for the pricing. something like this"): white cards with a hairline, a painted picture across
+   the top (img/plans/, made on Higgsfield), the plan's name with its price in a small tag (the blue's tint for a paid
+   plan), a line on who it is for, what it includes, and a full-width button at the foot. Each part has a row of its own
+   (subgrid), so the lists and the buttons line up across the cards. */
+.plans3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:clamp(40px,4*var(--vw,1vw),80px);--px:clamp(22px,1.8*var(--vw,1vw),32px)}
+.plan3{display:flex;flex-direction:column;border-radius:28px;overflow:hidden;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.03)}
+.plan3>:not(img){margin-left:var(--px);margin-right:var(--px)}
+.plan3>img{display:block;width:100%;height:clamp(92px,7.4*var(--vw,1vw),128px);max-width:none;object-fit:cover}
+.plan3 .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:clamp(20px,1.7*var(--vw,1vw),28px)}
+.plan3 h3{margin:0;font-size:clamp(20px,1.5*var(--vw,1vw),24px);font-weight:var(--w-title,500);letter-spacing:-.015em;color:var(--ink)}
+.plan3 .tag{flex:none;padding:4px 9px;border-radius:8px;background:#f2f2f4;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);font-size:14px;line-height:1.2;letter-spacing:-.005em;color:var(--ink2);white-space:nowrap}
+.plan3 .tag.paid{background:#eef4fb;box-shadow:inset 0 0 0 1px #dce8f5;color:var(--blue)}
+.plan3 .ds{margin-top:10px;margin-bottom:0;font-size:var(--t-body);line-height:1.45;letter-spacing:-.01em;color:var(--ink2)}
+.plan3 .inc{margin-top:clamp(22px,1.8*var(--vw,1vw),30px);margin-bottom:0;font-size:15px;font-weight:var(--w-title,500);letter-spacing:-.005em;color:var(--ink)}
+.plan3 ul{list-style:none;margin-top:14px;margin-bottom:0;padding:0;display:grid;gap:12px;align-content:start;font-size:var(--t-body);line-height:1.4;letter-spacing:-.01em;color:var(--ink2)}
 .plan3 li{display:flex;gap:12px;align-items:flex-start}
 .plan3 li::before{content:"";flex:none;width:.95em;height:.95em;margin-top:.24em;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7'/%3E%3C/svg%3E") center/contain no-repeat}
+.plan3 .btn{display:flex;align-items:center;justify-content:center;margin-top:clamp(28px,2.4*var(--vw,1vw),40px);margin-bottom:var(--px);height:var(--btn-h);padding:0 20px;font-size:var(--btn-font)}
 @supports (grid-template-rows:subgrid){.plans3{grid-template-rows:repeat(6,auto)}.plan3{display:grid;grid-template-rows:subgrid;row-gap:0;grid-row:span 6;align-content:start}}
 @media (max-width:1068px){.plans3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:734px){.plans3{grid-template-columns:1fr;gap:14px}.plan3{border-radius:24px}}
@@ -1276,7 +1283,7 @@ h1,h2,h3{font-weight:600;text-wrap:balance}
     <div class="trust-top">
       <h2>Pricing</h2>
     </div>
-    <div class="plans3"><div class="plan3"><h3>Trial</h3><div class="pr">Free<small>/ 7 days</small></div><p class="billed">Then $30 a month</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a><p class="inc">Includes:</p><ul><li>Each agent&#8217;s own computer</li><li>Signs into your tools</li><li>Routines on a schedule</li><li>Slack, Discord and voice calls</li></ul></div><div class="plan3"><h3>Standard</h3><div class="pr">$30<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a><p class="inc">Everything in the trial, plus:</p><ul><li>Weekly usage included</li><li>Extra credits when you need them</li></ul></div><div class="plan3"><h3>Pro</h3><div class="pr">$100<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a><p class="inc">Everything in Standard, plus:</p><ul><li>3.5x Standard usage</li><li>For agents busy every day</li></ul></div><div class="plan3"><h3>Max</h3><div class="pr">$200<small>/ month</small></div><p class="billed">Billed monthly</p><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a><p class="inc">Everything in Pro, plus:</p><ul><li>9x Standard usage</li><li>Earliest access to all products</li></ul></div></div>
+    <div class="plans3"><div class="plan3"><img src="/img/plans/trial.webp" alt="" loading="lazy"><div class="hd"><h3>Trial</h3><span class="tag">Free</span></div><p class="ds">Every part of Simeon for 7 days. Then $30 a month, unless you cancel.</p><p class="inc">What you get:</p><ul><li>Each agent&#8217;s own computer</li><li>Signs into your tools</li><li>Routines on a schedule</li><li>Slack, Discord and voice calls</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Try it free</a></div><div class="plan3"><img src="/img/plans/standard.webp" alt="" loading="lazy"><div class="hd"><h3>Standard</h3><span class="tag paid">$30/month</span></div><p class="ds">A team of agents for the everyday work of your business.</p><p class="inc">Everything in the trial, plus:</p><ul><li>Weekly usage included</li><li>Extra credits when you need them</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=standard">Get Standard</a></div><div class="plan3"><img src="/img/plans/pro.webp" alt="" loading="lazy"><div class="hd"><h3>Pro</h3><span class="tag paid">$100/month</span></div><p class="ds">More room for a team of agents that works all day.</p><p class="inc">Everything in Standard, plus:</p><ul><li>3.5x Standard usage</li><li>For agents busy every day</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=pro">Get Pro</a></div><div class="plan3"><img src="/img/plans/max.webp" alt="" loading="lazy"><div class="hd"><h3>Max</h3><span class="tag paid">$200/month</span></div><p class="ds">The most room, for teams whose agents never stop.</p><p class="inc">Everything in Pro, plus:</p><ul><li>9x Standard usage</li><li>Earliest access to all products</li></ul><a class="btn" href="https://app.simeonlabs.com/billing?plan=max">Get Max</a></div></div>
   </div>
 </section>
 
