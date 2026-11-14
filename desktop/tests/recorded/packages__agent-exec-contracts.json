@@ -3632,6 +3632,58 @@
     ]
    }
   },
+  "while all work is aborted the filter is asked of each record when its turn comes: one that an earlier abort changed is judged as changed": {
+   "returned": {
+    "count": 2,
+    "calls": [
+     "a",
+     "c"
+    ],
+    "left": [
+     "b"
+    ]
+   }
+  },
+  "work whose record changes its id after it was handed over is still kept under the first id": {
+   "returned": {
+    "listed": [
+     "renamed"
+    ],
+    "allAborted": 1,
+    "stillListed": [
+     "renamed"
+    ],
+    "byTheNewId": false,
+    "byTheFirstId": true,
+    "calls": [
+     "a",
+     "a"
+    ],
+    "left": 0
+   }
+  },
+  "work whose id is no text is forgotten, and then the call fails as JavaScript fails": {
+   "returned": {
+    "cleared": {
+     "threw": "TypeError"
+    },
+    "aborted": {
+     "threw": "TypeError"
+    },
+    "allAborted": {
+     "threw": "TypeError"
+    },
+    "unknownCleared": {
+     "threw": "TypeError"
+    },
+    "unknownAborted": false,
+    "calls": [
+     8,
+     9
+    ],
+    "left": []
+   }
+  },
   "a wakeup is queued once for its conversation and id, the id without the spaces around it; one whose id is empty is dropped": {
    "returned": {
     "steps": [
@@ -3990,6 +4042,10 @@
     ],
     "noAnswer": {
      "threw": "TypeError"
+    },
+    "afterNoAnswer": {
+     "acknowledged": [],
+     "queuedAgain": 0
     },
     "idsThatAreNoTexts": {
      "threw": "TypeError"
@@ -4538,6 +4594,86 @@
     ]
    }
   },
+  "a conversation that has no name is a conversation like another": {
+   "returned": [
+    [
+     "an id nobody has is suppressed in it",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 0,
+      "waiting": false
+     }
+    ],
+    [
+     "that id is queued in it: refused",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 0,
+      "waiting": false
+     }
+    ],
+    [
+     "another id is queued in it",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 1,
+      "waiting": true
+     }
+    ],
+    [
+     "and the same in the conversation named undefined: refused",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 1,
+      "waiting": true
+     }
+    ],
+    [
+     "it is pulled by the name undefined",
+     {
+      "answered": [],
+      "revision": 1,
+      "waiting": true
+     }
+    ],
+    [
+     "it is pulled",
+     {
+      "answered": [
+       "y"
+      ],
+      "revision": 2,
+      "waiting": false
+     }
+    ],
+    [
+     "y is suppressed in it while pulled",
+     {
+      "answered": {
+       "$": "undefined"
+      },
+      "revision": 3,
+      "waiting": false
+     }
+    ],
+    [
+     "y is acknowledged",
+     {
+      "answered": [],
+      "revision": 3,
+      "waiting": false
+     }
+    ]
+   ]
+  },
   "a completion is a wakeup of the conversation local, under its task's id, with the completion itself as payload and its kind as source": {
    "returned": {
     "answered": {
@@ -4658,6 +4794,83 @@
     "drainedAgain": [
      "c2/same"
     ]
+   }
+  },
+  "the registry's own methods go through one another: a completion goes in by enqueue, a drain acknowledges by ack and pulls on its own, an awaited completion goes by suppress": {
+   "returned": {
+    "aCompletion": {
+     "answered": {
+      "$": "undefined"
+     },
+     "calls": [
+      [
+       "enqueue",
+       {
+        "conversationId": "local",
+        "id": " t1 ",
+        "payload": {
+         "taskId": " t1 ",
+         "kind": "shell"
+        },
+        "source": "shell"
+       }
+      ]
+     ]
+    },
+    "awaited": {
+     "answered": {
+      "$": "undefined"
+     },
+     "calls": [
+      [
+       "suppress",
+       "local",
+       " t2 "
+      ]
+     ]
+    },
+    "drained": {
+     "answered": [
+      {
+       "taskId": " t1 ",
+       "kind": "shell"
+      }
+     ],
+     "calls": [
+      [
+       "ack",
+       [
+        "t1"
+       ]
+      ]
+     ]
+    },
+    "drainedEmpty": {
+     "answered": [],
+     "calls": [
+      [
+       "ack",
+       []
+      ]
+     ]
+    },
+    "aborted": {
+     "answered": true,
+     "calls": [
+      [
+       "abortWork",
+       "t1"
+      ]
+     ]
+    },
+    "allAborted": {
+     "answered": 1,
+     "calls": []
+    },
+    "running": {
+     "answered": false,
+     "calls": []
+    }
    }
   },
   "a completion that is awaited is kept out of the local conversation: dropped if it waits, refused later, until its work is cleared": {

@@ -802,6 +802,58 @@ export const scenarios = [
       return { count: registry.abortAllWork(), calls, left: registry.listWork() };
     },
   },
+  {
+    name: "while all work is aborted the filter is asked of each record when its turn comes: one that an earlier abort changed is judged as changed",
+    run: (loaded) => {
+      const registry = registryOf(loaded);
+      const calls = [];
+      const second = work("b", { abort: () => calls.push("b") });
+      const third = work("c", { state: "done", abort: () => calls.push("c") });
+      registry.upsertWork(
+        work("a", {
+          abort: () => {
+            calls.push("a");
+            second.state = "done";
+            third.state = "running";
+          },
+        }),
+      );
+      registry.upsertWork(second);
+      registry.upsertWork(third);
+      return { count: registry.abortAllWork({ state: "running" }), calls, left: registry.listWork().map((snapshot) => snapshot.id) };
+    },
+  },
+  {
+    name: "work whose record changes its id after it was handed over is still kept under the first id",
+    run: (loaded) => {
+      const registry = registryOf(loaded);
+      const calls = [];
+      const record = work("a", { abort: () => calls.push("a") });
+      registry.upsertWork(record);
+      record.id = "renamed";
+      const listed = registry.listWork().map((snapshot) => snapshot.id);
+      const allAborted = registry.abortAllWork();
+      const stillListed = registry.listWork().map((snapshot) => snapshot.id);
+      return { listed, allAborted, stillListed, byTheNewId: registry.abortWork("renamed"), byTheFirstId: registry.abortWork("a"), calls, left: registry.listWork().length };
+    },
+  },
+  {
+    name: "work whose id is no text is forgotten, and then the call fails as JavaScript fails",
+    run: (loaded) => {
+      const registry = registryOf(loaded);
+      const calls = [];
+      for (const id of [7, 8, 9]) registry.upsertWork(work(id, { abort: () => calls.push(id) }));
+      return {
+        cleared: attempt(() => registry.clearWork(7)),
+        aborted: attempt(() => registry.abortWork(8)),
+        allAborted: attempt(() => registry.abortAllWork()),
+        unknownCleared: attempt(() => registry.clearWork(1)),
+        unknownAborted: attempt(() => registry.abortWork(1)),
+        calls,
+        left: registry.listWork().map((snapshot) => snapshot.id),
+      };
+    },
+  },
 
   // -------------------------------------------------------------------------
   // background-work-registry.ts: the wakeups
@@ -961,6 +1013,12 @@ export const scenarios = [
           return told(registry.pull("c1"));
         })(),
         noAnswer: attempt(() => registry.nack(["a"])),
+        afterNoAnswer: (() => {
+          const acknowledged = told(registry.ack(["a"]));
+          const before = registry.getWakeupRevision();
+          registry.enqueue(wake("c1", "a", { payload: "a, after the failure" }));
+          return { acknowledged, queuedAgain: registry.getWakeupRevision() - before };
+        })(),
         idsThatAreNoTexts: attempt(() => registry.nack([7], { requeue: true })),
       };
     },
@@ -1155,6 +1213,23 @@ export const scenarios = [
       };
     },
   },
+  {
+    name: "a conversation that has no name is a conversation like another",
+    run: (loaded) => {
+      const registry = registryOf(loaded);
+      const steps = [];
+      const step = (label, act) => steps.push([label, { answered: act(), revision: registry.getWakeupRevision(), waiting: registry.hasPendingCompletions() }]);
+      step("an id nobody has is suppressed in it", () => registry.suppress(undefined, "x"));
+      step("that id is queued in it: refused", () => registry.enqueue({ id: "x", payload: "x" }));
+      step("another id is queued in it", () => registry.enqueue({ id: "y", payload: "y" }));
+      step("and the same in the conversation named undefined: refused", () => registry.enqueue({ conversationId: "undefined", id: "y", payload: "y, by name" }));
+      step("it is pulled by the name undefined", () => told(registry.pull("undefined")));
+      step("it is pulled", () => told(registry.pull(undefined)));
+      step("y is suppressed in it while pulled", () => registry.suppress(undefined, "y"));
+      step("y is acknowledged", () => told(registry.ack(["y"])));
+      return steps;
+    },
+  },
 
   // -------------------------------------------------------------------------
   // background-work-registry.ts: completions
@@ -1213,6 +1288,71 @@ export const scenarios = [
       const c1Queued = registry.getWakeupRevision() - before;
       registry.enqueue(wake("c2", "same"));
       return { drained, c1Queued, c2Queued: registry.getWakeupRevision() - before - c1Queued, drainedAgain: registry.drainCompletions() };
+    },
+  },
+  {
+    name: "the registry's own methods go through one another: a completion goes in by enqueue, a drain acknowledges by ack and pulls on its own, an awaited completion goes by suppress",
+    run: (loaded) => {
+      const calls = [];
+      class Watched extends loaded.backgroundWork.InMemoryBackgroundWorkRegistry {
+        enqueue(wakeup) {
+          calls.push(["enqueue", wakeup]);
+          return super.enqueue(wakeup);
+        }
+        pull(conversationId) {
+          calls.push(["pull", conversationId]);
+          return super.pull(conversationId);
+        }
+        ack(ids) {
+          calls.push(["ack", ids]);
+          return super.ack(ids);
+        }
+        nack(ids, opts) {
+          calls.push(["nack", ids, opts]);
+          return super.nack(ids, opts);
+        }
+        suppress(conversationId, id) {
+          calls.push(["suppress", conversationId, id]);
+          return super.suppress(conversationId, id);
+        }
+        hasPendingCompletions(conversationId) {
+          calls.push(["hasPendingCompletions", conversationId]);
+          return super.hasPendingCompletions(conversationId);
+        }
+        getWakeupRevision() {
+          calls.push(["getWakeupRevision"]);
+          return super.getWakeupRevision();
+        }
+        clearWork(id) {
+          calls.push(["clearWork", id]);
+          return super.clearWork(id);
+        }
+        abortWork(id) {
+          calls.push(["abortWork", id]);
+          return super.abortWork(id);
+        }
+        listWork(filter) {
+          calls.push(["listWork", filter]);
+          return super.listWork(filter);
+        }
+      }
+      const registry = new Watched();
+      const during = (act) => {
+        calls.length = 0;
+        const answered = act();
+        return { answered, calls: calls.slice() };
+      };
+      registry.upsertWork(work("t1"));
+      registry.upsertWork(work("t2"));
+      return {
+        aCompletion: during(() => registry.enqueueCompletion({ taskId: " t1 ", kind: "shell" })),
+        awaited: during(() => registry.markAwaitedCompletion(" t2 ")),
+        drained: during(() => registry.drainCompletions()),
+        drainedEmpty: during(() => registry.drainCompletions()),
+        aborted: during(() => registry.abortWork("t1")),
+        allAborted: during(() => registry.abortAllWork()),
+        running: during(() => registry.hasRunningWork()),
+      };
     },
   },
   {
