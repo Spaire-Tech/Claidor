@@ -207,13 +207,21 @@ async function withTimers(log, run, { handles = "objects" } = {}) {
 /**
  * A signal that notes what is asked of it, and aborts when told. A
  * listener asked for once is forgotten when it has been called, as a real
- * signal forgets it.
+ * signal forgets it. With `reads`, each look at whether it has aborted and
+ * at its reason is noted too.
  */
-function notingSignal(log, { aborted = false, reason } = {}) {
+function notingSignal(log, { aborted = false, reason, reads = false } = {}) {
   const listeners = [];
+  const state = { aborted, reason };
   const signal = {
-    aborted,
-    reason,
+    get aborted() {
+      if (reads) log.push(`signal: asked whether it has aborted (${state.aborted ? "yes" : "no"})`);
+      return state.aborted;
+    },
+    get reason() {
+      if (reads) log.push("signal: asked its reason");
+      return state.reason;
+    },
     addEventListener(...asked) {
       const [type, listener, options] = asked;
       const number = listeners.push({ listener, live: true, once: options?.once === true });
@@ -229,8 +237,8 @@ function notingSignal(log, { aborted = false, reason } = {}) {
   return {
     signal,
     abort(why) {
-      signal.aborted = true;
-      signal.reason = why;
+      state.aborted = true;
+      state.reason = why;
       log.push("signal: aborts");
       listeners.forEach((entry, at) => {
         if (!entry.live) return;
@@ -3173,6 +3181,215 @@ export const scenarios = [
         return "the answer";
       }, controller.signal));
       return { log, plainAnswer, withSignalAnswer, lateAnswer, stillListeningToTheNotedSignal: noted.live(), run, leftListeningToTheRealSignalAfterTheRun: listening(controller.signal) };
+    },
+  },
+  {
+    name: "what each policy reads of its options, and when: while it is made, the name, then each number twice (once if it is no number, and polling's a third time), then the name again; while it works, each number again at the moment it is needed",
+    run: async ({ scheduling }) => {
+      const out = {};
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createDebouncePolicy(time.clock, notingReads(log, "options", { name: "save", delayMs: 250 }));
+        log.push("— made; a function is wrapped and called twice —");
+        const save = policy.wrap(() => {});
+        save();
+        save();
+        log.push("— disposed —");
+        save.dispose();
+        out.debounce = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createIdleWatchdogPolicy(time.clock, notingReads(log, "options", { name: "stream", idleMs: 500 }));
+        log.push("— made; armed, kicked, left to bark, kicked again —");
+        const watch = policy.arm(() => {});
+        watch.kick();
+        time.run(2);
+        watch.kick();
+        watch.dispose();
+        out.watchdog = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createExpiryPolicy(time.clock, notingReads(log, "options", { name: "typing", ttlMs: 4_000 }));
+        log.push("— made; a key armed twice, another once —");
+        policy.arm("ada", () => {});
+        policy.arm("ada", () => {});
+        policy.arm("bo", () => {});
+        out.expiry = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createPollingPolicy(time.clock, notingReads(log, "options", { name: "inbox", intervalMs: 5_000 }));
+        log.push("— made; started —");
+        const polling = policy.start(async () => { log.push("a tick runs"); });
+        await drained();
+        time.run(1);
+        await drained();
+        polling.dispose();
+        out.polling = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createRetryPolicy(time.clock, notingReads(log, "options", { name: "fetch", maxAttempts: 3, initialDelayMs: 100, maxDelayMs: 1_000, backoffFactor: 2, shouldRetry: () => true }));
+        log.push("— made; one wait asked for and dropped —");
+        policy.schedule(2).dispose();
+        log.push("— work that fails twice, then answers —");
+        const answer = outcomeOf(() => policy.runWithRetry(async (attempt) => { log.push(`try ${attempt}`); if (attempt < 3) throw new Error(`failure ${attempt}`); return "the answer"; }));
+        await drained();
+        time.run(2);
+        await drained();
+        time.run(3);
+        await answer;
+        log.push("— work that fails every time —");
+        const failing = outcomeOf(() => policy.runWithRetry(async (attempt) => { log.push(`try ${attempt}`); throw new Error(`failure ${attempt}`); }));
+        await drained();
+        time.run(4);
+        await drained();
+        time.run(5);
+        await failing;
+        out.retry = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createDeadlinePolicy(time.clock, notingReads(log, "options", { name: "connect", timeoutMs: 8_000 }));
+        log.push("— made; work that answers in time —");
+        await policy.run(async () => "the answer");
+        log.push("— work that outlasts its deadline —");
+        const late = outcomeOf(() => policy.run(() => new Promise(() => {})));
+        await drained();
+        time.run(2);
+        await late;
+        out.deadline = log;
+      }
+      const refused = {};
+      for (const [kind, { make, number }] of Object.entries(makers(scheduling))) {
+        refused[kind] = {};
+        for (const [label, changed] of [["a name that is refused", { name: "" }], ["a number that is no number", { [number]: Number.NaN }], ["a number below zero", { [number]: -1 }]]) {
+          const log = [];
+          const made = tried(() => make(manualClock([]).clock, notingReads(log, "options", { ...RIGHT[kind], ...changed })));
+          refused[kind][label] = { read: log.map((line) => line.replace("options.", "").replace(" read", "")), refused: made.threw === undefined ? "no" : made.threw.message };
+        }
+      }
+      refused.pollingAtZero = (() => {
+        const log = [];
+        tried(() => scheduling.createPollingPolicy(manualClock([]).clock, notingReads(log, "options", { name: "inbox", intervalMs: 0 })));
+        return log.map((line) => line.replace("options.", "").replace(" read", ""));
+      })();
+      refused.retryInItsOrder = [{ maxAttempts: 0 }, { maxAttempts: 1.5 }, { maxDelayMs: Number.NaN }, { initialDelayMs: 200 }, { backoffFactor: 0 }].map((changed) => {
+        const log = [];
+        const made = tried(() => scheduling.createRetryPolicy(manualClock([]).clock, notingReads(log, "options", { name: "fetch", maxAttempts: 3, initialDelayMs: 10, maxDelayMs: 100, backoffFactor: 2, shouldRetry: null, ...changed })));
+        return { changed, read: log.map((line) => line.replace("options.", "").replace(" read", "")), refused: made.threw === undefined ? "no" : made.threw.message };
+      });
+      return { ...out, refused };
+    },
+  },
+  {
+    name: "what each policy asks of its signal, and when: whether it has aborted, its reason only when it has, one listener added and that same one removed",
+    run: async ({ scheduling }) => {
+      const out = {};
+      const signals = (log) => ({
+        quiet: () => notingSignal(log, { reads: true }),
+        abortedBefore: () => notingSignal(log, { reads: true, aborted: true, reason: "an earlier reason" }),
+        abortedBeforeWithNoReason: () => notingSignal(log, { reads: true, aborted: true }),
+      });
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createRetryPolicy(time.clock, { name: "fetch", maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 });
+        const make = signals(log);
+        log.push("— a wait that runs its course —");
+        policy.schedule(1, make.quiet().signal);
+        time.run(1);
+        log.push("— a wait cut short by its signal —");
+        const cut = make.quiet();
+        const cutWait = policy.schedule(1, cut.signal);
+        cut.abort("the reason");
+        log.push("— a wait whose signal had aborted already —");
+        const late = policy.schedule(1, make.abortedBefore().signal);
+        log.push("— and one whose signal had aborted and kept no reason —");
+        const bare = policy.schedule(1, make.abortedBeforeWithNoReason().signal);
+        out.wait = { log, cut: await outcomeOf(() => cutWait.elapsed), late: await outcomeOf(() => late.elapsed), bare: await outcomeOf(() => bare.elapsed) };
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createRetryPolicy(time.clock, { name: "fetch", maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 });
+        const make = signals(log);
+        log.push("— work that answers at the first try —");
+        await outcomeOf(() => policy.runWithRetry(async () => "the answer", make.quiet().signal));
+        log.push("— work that fails twice —");
+        const failing = outcomeOf(() => policy.runWithRetry(async (attempt) => { log.push(`try ${attempt}`); throw new Error(`failure ${attempt}`); }, make.quiet().signal));
+        await drained();
+        time.run(1);
+        await failing;
+        log.push("— a signal that aborts while the work is at it —");
+        const during = make.quiet();
+        const cut = outcomeOf(() => policy.runWithRetry(() => { log.push("try 1"); return new Promise(() => {}); }, during.signal));
+        await drained();
+        during.abort("the reason");
+        const cutAnswer = await cut;
+        log.push("— a signal that aborts during the wait —");
+        const waiting = make.quiet();
+        const cutWaiting = outcomeOf(() => policy.runWithRetry(async () => { log.push("try 1"); throw new Error("failure 1"); }, waiting.signal));
+        await drained();
+        waiting.abort("the reason");
+        const cutWaitingAnswer = await cutWaiting;
+        log.push("— a signal that had aborted already —");
+        const before = await outcomeOf(() => policy.runWithRetry(async () => { log.push("the work is asked"); }, make.abortedBefore().signal));
+        out.tryingAgain = { log, cut: cutAnswer, cutWaiting: cutWaitingAnswer, before };
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createPollingPolicy(time.clock, { name: "inbox", intervalMs: 5 });
+        const make = signals(log);
+        log.push("— polling that ticks twice, then is disposed —");
+        const polling = policy.start(async () => { log.push("a tick runs"); }, make.quiet().signal);
+        await drained();
+        time.run(1);
+        await drained();
+        polling.dispose();
+        log.push("— polling whose signal aborts —");
+        const during = make.quiet();
+        policy.start(async () => { log.push("a tick runs"); }, during.signal);
+        await drained();
+        during.abort("the reason is never asked for");
+        log.push("— polling whose signal had aborted already —");
+        policy.start(async () => { log.push("a tick runs"); }, make.abortedBefore().signal);
+        out.polling = log;
+      }
+      {
+        const log = [];
+        const time = manualClock(log);
+        const policy = scheduling.createDeadlinePolicy(time.clock, { name: "connect", timeoutMs: 8_000 });
+        const make = signals(log);
+        log.push("— work that answers in time —");
+        await outcomeOf(() => policy.run(async () => "the answer", make.quiet().signal));
+        log.push("— work that outlasts its deadline —");
+        const late = outcomeOf(() => policy.run(() => new Promise(() => {}), make.quiet().signal));
+        await drained();
+        time.run(2);
+        await late;
+        log.push("— a caller who gives up while the work is at it —");
+        const during = make.quiet();
+        const cut = outcomeOf(() => policy.run(() => new Promise(() => {}), during.signal));
+        await drained();
+        during.abort("the reason");
+        const cutAnswer = await cut;
+        log.push("— a caller who had given up already —");
+        const before = await outcomeOf(() => policy.run(async () => { log.push("the work is asked"); }, make.abortedBefore().signal));
+        log.push("— and one who had given up and kept no reason —");
+        const bare = await outcomeOf(() => policy.run(async () => { log.push("the work is asked"); }, make.abortedBeforeWithNoReason().signal));
+        out.deadline = { log, cut: cutAnswer, before, bare };
+      }
+      return out;
     },
   },
   {

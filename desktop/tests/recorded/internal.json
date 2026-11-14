@@ -10781,6 +10781,535 @@
     "leftListeningToTheRealSignalAfterTheRun": 2
    }
   },
+  "what each policy reads of its options, and when: while it is made, the name, then each number twice (once if it is no number, and polling's a third time), then the name again; while it works, each number again at the moment it is needed": {
+   "returned": {
+    "debounce": [
+     "options.name read",
+     "options.delayMs read",
+     "options.delayMs read",
+     "options.name read",
+     "— made; a function is wrapped and called twice —",
+     "options.delayMs read",
+     "clock: timer 1 set for 250",
+     "clock: timer 1 dropped",
+     "options.delayMs read",
+     "clock: timer 2 set for 250",
+     "— disposed —",
+     "clock: timer 2 dropped"
+    ],
+    "watchdog": [
+     "options.name read",
+     "options.idleMs read",
+     "options.idleMs read",
+     "options.name read",
+     "— made; armed, kicked, left to bark, kicked again —",
+     "options.idleMs read",
+     "clock: timer 1 set for 500",
+     "clock: timer 1 dropped",
+     "options.idleMs read",
+     "clock: timer 2 set for 500",
+     "clock: timer 2 runs",
+     "options.idleMs read",
+     "clock: timer 3 set for 500",
+     "clock: timer 3 dropped"
+    ],
+    "expiry": [
+     "options.name read",
+     "options.ttlMs read",
+     "options.ttlMs read",
+     "options.name read",
+     "— made; a key armed twice, another once —",
+     "options.ttlMs read",
+     "clock: timer 1 set for 4000",
+     "clock: timer 1 dropped",
+     "options.ttlMs read",
+     "clock: timer 2 set for 4000",
+     "options.ttlMs read",
+     "clock: timer 3 set for 4000"
+    ],
+    "polling": [
+     "options.name read",
+     "options.intervalMs read",
+     "options.intervalMs read",
+     "options.intervalMs read",
+     "options.name read",
+     "— made; started —",
+     "a tick runs",
+     "options.intervalMs read",
+     "clock: timer 1 set for 5000",
+     "clock: timer 1 runs",
+     "a tick runs",
+     "options.intervalMs read",
+     "clock: timer 2 set for 5000",
+     "clock: timer 2 dropped"
+    ],
+    "retry": [
+     "options.name read",
+     "options.maxAttempts read",
+     "options.maxAttempts read",
+     "options.initialDelayMs read",
+     "options.initialDelayMs read",
+     "options.maxDelayMs read",
+     "options.maxDelayMs read",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "options.backoffFactor read",
+     "options.shouldRetry read",
+     "options.name read",
+     "— made; one wait asked for and dropped —",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "clock: timer 1 set for 200",
+     "clock: timer 1 dropped",
+     "— work that fails twice, then answers —",
+     "try 1",
+     "options.maxAttempts read",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "clock: timer 2 set for 100",
+     "clock: timer 2 runs",
+     "try 2",
+     "options.maxAttempts read",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "clock: timer 3 set for 200",
+     "clock: timer 3 runs",
+     "try 3",
+     "— work that fails every time —",
+     "try 1",
+     "options.maxAttempts read",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "clock: timer 4 set for 100",
+     "clock: timer 4 runs",
+     "try 2",
+     "options.maxAttempts read",
+     "options.maxDelayMs read",
+     "options.initialDelayMs read",
+     "clock: timer 5 set for 200",
+     "clock: timer 5 runs",
+     "try 3",
+     "options.maxAttempts read"
+    ],
+    "deadline": [
+     "options.name read",
+     "options.timeoutMs read",
+     "options.timeoutMs read",
+     "options.name read",
+     "— made; work that answers in time —",
+     "options.timeoutMs read",
+     "clock: timer 1 set for 8000",
+     "clock: timer 1 dropped",
+     "— work that outlasts its deadline —",
+     "options.timeoutMs read",
+     "clock: timer 2 set for 8000",
+     "clock: timer 2 runs",
+     "options.name read",
+     "clock: timer 2 dropped (though it had run)"
+    ],
+    "refused": {
+     "debounce": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must not be empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "delayMs"
+       ],
+       "refused": "delayMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "delayMs",
+        "delayMs"
+       ],
+       "refused": "delayMs must be a finite non-negative number"
+      }
+     },
+     "retry": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must not be empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts",
+        "initialDelayMs"
+       ],
+       "refused": "initialDelayMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts",
+        "initialDelayMs",
+        "initialDelayMs"
+       ],
+       "refused": "initialDelayMs must be a finite non-negative number"
+      }
+     },
+     "watchdog": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must not be empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "idleMs"
+       ],
+       "refused": "idleMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "idleMs",
+        "idleMs"
+       ],
+       "refused": "idleMs must be a finite non-negative number"
+      }
+     },
+     "polling": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must not be empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "intervalMs"
+       ],
+       "refused": "intervalMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "intervalMs",
+        "intervalMs"
+       ],
+       "refused": "intervalMs must be a finite non-negative number"
+      }
+     },
+     "expiry": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must not be empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "ttlMs"
+       ],
+       "refused": "ttlMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "ttlMs",
+        "ttlMs"
+       ],
+       "refused": "ttlMs must be a finite non-negative number"
+      }
+     },
+     "deadline": {
+      "a name that is refused": {
+       "read": [
+        "name"
+       ],
+       "refused": "name must be non-empty"
+      },
+      "a number that is no number": {
+       "read": [
+        "name",
+        "timeoutMs"
+       ],
+       "refused": "timeoutMs must be a finite non-negative number"
+      },
+      "a number below zero": {
+       "read": [
+        "name",
+        "timeoutMs",
+        "timeoutMs"
+       ],
+       "refused": "timeoutMs must be a finite non-negative number"
+      }
+     },
+     "pollingAtZero": [
+      "name",
+      "intervalMs",
+      "intervalMs",
+      "intervalMs"
+     ],
+     "retryInItsOrder": [
+      {
+       "changed": {
+        "maxAttempts": 0
+       },
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts"
+       ],
+       "refused": "maxAttempts must be a positive integer"
+      },
+      {
+       "changed": {
+        "maxAttempts": 1.5
+       },
+       "read": [
+        "name",
+        "maxAttempts"
+       ],
+       "refused": "maxAttempts must be a positive integer"
+      },
+      {
+       "changed": {
+        "maxDelayMs": {
+         "$": "number",
+         "v": "NaN"
+        }
+       },
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts",
+        "initialDelayMs",
+        "initialDelayMs",
+        "maxDelayMs"
+       ],
+       "refused": "maxDelayMs must be a finite non-negative number"
+      },
+      {
+       "changed": {
+        "initialDelayMs": 200
+       },
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts",
+        "initialDelayMs",
+        "initialDelayMs",
+        "maxDelayMs",
+        "maxDelayMs",
+        "maxDelayMs",
+        "initialDelayMs"
+       ],
+       "refused": "maxDelayMs must be at least initialDelayMs"
+      },
+      {
+       "changed": {
+        "backoffFactor": 0
+       },
+       "read": [
+        "name",
+        "maxAttempts",
+        "maxAttempts",
+        "initialDelayMs",
+        "initialDelayMs",
+        "maxDelayMs",
+        "maxDelayMs",
+        "maxDelayMs",
+        "initialDelayMs",
+        "backoffFactor"
+       ],
+       "refused": "backoffFactor must be a finite number at least 1"
+      }
+     ]
+    }
+   }
+  },
+  "what each policy asks of its signal, and when: whether it has aborted, its reason only when it has, one listener added and that same one removed": {
+   "returned": {
+    "wait": {
+     "log": [
+      "— a wait that runs its course —",
+      "clock: timer 1 set for 1",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "clock: timer 1 runs",
+      "signal: listener 1 removed for \"abort\"",
+      "— a wait cut short by its signal —",
+      "clock: timer 2 set for 1",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: aborts",
+      "signal: listener 1 is told",
+      "signal: asked its reason",
+      "clock: timer 2 dropped",
+      "signal: listener 1 removed for \"abort\" (it was gone already)",
+      "— a wait whose signal had aborted already —",
+      "clock: timer 3 set for 1",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason",
+      "clock: timer 3 dropped",
+      "— and one whose signal had aborted and kept no reason —",
+      "clock: timer 4 set for 1",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason",
+      "clock: timer 4 dropped"
+     ],
+     "cut": {
+      "broken": "the reason"
+     },
+     "late": {
+      "broken": "an earlier reason"
+     },
+     "bare": {
+      "broken": {
+       "$": "error",
+       "name": "AbortError",
+       "message": "This operation was aborted"
+      }
+     }
+    },
+    "tryingAgain": {
+     "log": [
+      "— work that answers at the first try —",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 removed for \"abort\"",
+      "— work that fails twice —",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: asked whether it has aborted (no)",
+      "try 1",
+      "signal: asked whether it has aborted (no)",
+      "clock: timer 1 set for 1",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 2 added for \"abort\" with {\"once\":true}",
+      "clock: timer 1 runs",
+      "signal: listener 2 removed for \"abort\"",
+      "signal: asked whether it has aborted (no)",
+      "try 2",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 removed for \"abort\"",
+      "— a signal that aborts while the work is at it —",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: asked whether it has aborted (no)",
+      "try 1",
+      "signal: aborts",
+      "signal: listener 1 is told",
+      "signal: asked its reason",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason",
+      "signal: listener 1 removed for \"abort\" (it was gone already)",
+      "— a signal that aborts during the wait —",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: asked whether it has aborted (no)",
+      "try 1",
+      "signal: asked whether it has aborted (no)",
+      "clock: timer 2 set for 1",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 2 added for \"abort\" with {\"once\":true}",
+      "signal: aborts",
+      "signal: listener 1 is told",
+      "signal: asked its reason",
+      "signal: listener 2 is told",
+      "signal: asked its reason",
+      "clock: timer 2 dropped",
+      "signal: listener 2 removed for \"abort\" (it was gone already)",
+      "signal: listener 1 removed for \"abort\" (it was gone already)",
+      "— a signal that had aborted already —",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason",
+      "signal: listener 1 removed for \"abort\""
+     ],
+     "cut": {
+      "broken": "the reason"
+     },
+     "cutWaiting": {
+      "broken": "the reason"
+     },
+     "before": {
+      "broken": "an earlier reason"
+     }
+    },
+    "polling": [
+     "— polling that ticks twice, then is disposed —",
+     "signal: asked whether it has aborted (no)",
+     "signal: listener 1 added for \"abort\" with {\"once\":true}",
+     "a tick runs",
+     "clock: timer 1 set for 5",
+     "clock: timer 1 runs",
+     "a tick runs",
+     "clock: timer 2 set for 5",
+     "clock: timer 2 dropped",
+     "signal: listener 1 removed for \"abort\"",
+     "— polling whose signal aborts —",
+     "signal: asked whether it has aborted (no)",
+     "signal: listener 1 added for \"abort\" with {\"once\":true}",
+     "a tick runs",
+     "clock: timer 3 set for 5",
+     "signal: aborts",
+     "signal: listener 1 is told",
+     "clock: timer 3 dropped",
+     "signal: listener 1 removed for \"abort\" (it was gone already)",
+     "— polling whose signal had aborted already —",
+     "signal: asked whether it has aborted (yes)"
+    ],
+    "deadline": {
+     "log": [
+      "— work that answers in time —",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "clock: timer 1 set for 8000",
+      "clock: timer 1 dropped",
+      "signal: listener 1 removed for \"abort\"",
+      "— work that outlasts its deadline —",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "clock: timer 2 set for 8000",
+      "clock: timer 2 runs",
+      "clock: timer 2 dropped (though it had run)",
+      "signal: listener 1 removed for \"abort\"",
+      "— a caller who gives up while the work is at it —",
+      "signal: asked whether it has aborted (no)",
+      "signal: listener 1 added for \"abort\" with {\"once\":true}",
+      "clock: timer 3 set for 8000",
+      "signal: aborts",
+      "signal: listener 1 is told",
+      "signal: asked its reason",
+      "clock: timer 3 dropped",
+      "signal: listener 1 removed for \"abort\" (it was gone already)",
+      "— a caller who had given up already —",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason",
+      "— and one who had given up and kept no reason —",
+      "signal: asked whether it has aborted (yes)",
+      "signal: asked its reason"
+     ],
+     "cut": {
+      "broken": "the reason"
+     },
+     "before": {
+      "broken": "an earlier reason"
+     },
+     "bare": {
+      "broken": {
+       "$": "error",
+       "name": "AbortError",
+       "message": "This operation was aborted"
+      }
+     }
+    }
+   }
+  },
   "the policies over the machine's clock ask that clock for their timers as it is at the time, so a schedule put on it later is the one they use": {
    "returned": {
     "log": [
