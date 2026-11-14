@@ -4,10 +4,11 @@ The bar (the founder, 30 October 2026, with another site's for reference: "this
 style for the nav bar"; its menus 14 November 2026): the wordmark, then Product,
 Solutions, Connectors, Resources and Pricing beside it; Contact Sales and
 Download on the right (Download fetches the Mac app, and on a Windows PC opens
-the Microsoft Store's listing: `OS_MARK`). Product opens four pages of the
-documentation; Solutions the Marketplace's teams in three groups, each with a
+the Microsoft Store's listing: `OS_MARK`). Product opens five pages of the
+documentation (Teammates, Cloud computer, Voice calls, Routines, Approvals),
+each over a line of what it is, with a picture on the right; Solutions the Marketplace's teams in three groups, each with a
 drawn icon; Connectors six groups of well-known apps, each with its icon,
-and every connector; Resources Docs, the Newsroom and AI Models. Each opens on a
+and every connector; Resources Docs, the Newsroom and AI Models, as Product. Each opens on a
 hover or a tap, with no script. On a phone a menu button takes their place and
 drops them over the whole page, the two buttons under them; each menu opens
 under its name there. The menu is a <details>, so it opens and closes with no
@@ -33,19 +34,24 @@ LOG_IN = "https://app.simeonlabs.com/login"
 # A small arrow after a menu's name, drawn in the words' colour.
 ARROW = '<svg class="arrow" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 
-# Product: what an agent is and has, each a page of the documentation.
+# Product and Resources (the founder, 14 November 2026, with another site's Products menu for reference: "we need
+# better names for the things in products. and include voice call. also i want it to be design like this. with a
+# design on the right. Same for ressources"): each item's name over a line of what it is, and on the right the
+# picture of the item the pointer is on (img/menu/<picture>.webp: a screenshot of the app on an agent's colour
+# beside two of the cards' photos, made 14 November 2026), the first item's until then.
+# Each: key (a page passes it as `current`), address, name, the line under it, picture.
 PRODUCT = (
-    ("", "/docs/agents", "Agents"),
-    ("", "/docs/computer", "The agent’s computer"),
-    ("", "/docs/routines", "Routines"),
-    ("", "/docs/approvals", "Approvals"),
+    ("", "/docs/agents", "Teammates", "Hire agents for any job, each with a name, a face and a chat of its own.", "teammates"),
+    ("", "/docs/computer", "Cloud computer", "Every agent works on a desktop of its own, with a browser and your apps.", "computer"),
+    ("", "/docs/messaging#call-an-agent", "Voice calls", "Call an agent and talk the work through, like with a colleague.", "calls"),
+    ("", "/docs/routines", "Routines", "Work that runs on a schedule, or when something happens.", "routines"),
+    ("", "/docs/approvals", "Approvals", "Nothing important goes out until you say yes.", "approvals"),
 )
 
-# Resources' pages: their key (a page passes it as `current`), address and name.
 RESOURCES = (
-    ("docs", "/docs", "Docs"),
-    ("newsroom", "/newsroom", "Newsroom"),
-    ("models", "/models", "AI Models"),
+    ("docs", "/docs", "Docs", "Guides to every part of Simeon, with pictures.", "docs"),
+    ("newsroom", "/newsroom", "Newsroom", "Launches, updates and stories from the team.", "newsroom"),
+    ("models", "/models", "AI Models", "Run your agents on your ChatGPT or Claude plan, or a key of your own.", "models"),
 )
 
 # The pages after the menus.
@@ -165,6 +171,16 @@ def _solutions_menu(current):
     return groups, more
 
 
+def _picture_menu(items, current):
+    """Product's and Resources' panel: the items on the left, each name over its line, the pictures on the right."""
+    links = "".join(
+        f'<a class="pm-i" href="{href}"{_mark(key, current)}><b>{name}</b><span>{line}</span></a>'
+        for key, href, name, line, _ in items
+    )
+    pictures = "".join(f'<i style="background-image:url(/img/menu/{picture}.webp)"></i>' for *_, picture in items)
+    return f'<div class="pm"><div class="pm-list">{links}</div><div class="pm-pics" aria-hidden="true">{pictures}</div></div>'
+
+
 def _menu(name, panel, cls=""):
     """A menu on the bar: its name and arrow, its panel on a hover or a tap (no script)."""
     return f'<div class="drops"><button class="drop" type="button" aria-haspopup="true">{name}{ARROW}</button><div class="drop-panel{cls}">{panel}</div></div>'
@@ -181,10 +197,10 @@ def bar(current=""):
     solutions, solutions_more = _solutions_menu(current)
     connectors, connectors_more = _connectors_menu(current)
     menus = (
-        ("Product", _links(PRODUCT, current), ""),
+        ("Product", _picture_menu(PRODUCT, current), " mega pmenu"),
         ("Solutions", f'<div class="mg-cols">{solutions}</div>{solutions_more}', " mega"),
         ("Connectors", f'<div class="mg-cols">{connectors}</div>{connectors_more}', " mega"),
-        ("Resources", _links(RESOURCES, current), ""),
+        ("Resources", _picture_menu(RESOURCES, current), " mega pmenu"),
     )
     desk = "".join(_menu(name, panel, cls) for name, panel, cls in menus)
     phone = "".join(_phone_menu(name, panel, cls) for name, panel, cls in menus)

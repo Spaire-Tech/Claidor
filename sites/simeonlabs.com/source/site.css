@@ -70,6 +70,24 @@ body{font-family:var(--font)}
 .mg-i svg{width:20px;height:20px;flex:none}
 .drop-panel a.mg-more{align-self:flex-start;margin-top:14px;padding:8px 6px 4px;font-size:14px;color:var(--ink)}
 .drop-panel a.mg-more:hover{background:none;opacity:.6}
+/* Product and Resources (14 November 2026): the items on the left, each name over a grey line, and on the right the
+   picture of the item the pointer (or the keys) is on, the first item's until then. The pictures load only when the
+   menu opens (display:none until then). */
+.drop-panel.pmenu{padding:12px}
+.pm{display:grid;grid-template-columns:262px 440px;gap:12px}
+.pm-list{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.drop-panel a.pm-i{display:flex;flex-direction:column;gap:3px;padding:11px 14px;border-radius:12px}
+.pm-i b{font-weight:400;font-size:15px;line-height:1.25;color:var(--ink)}
+.pm-i span{font-size:13px;line-height:1.35;color:#86868b}
+.pm-pics{position:relative;width:440px;height:360px;border-radius:14px;overflow:hidden}
+.pm-pics i{position:absolute;inset:0;display:none;background:center/cover no-repeat}
+.drops:hover .pm-pics i:first-child,.drops:focus-within .pm-pics i:first-child{display:block}
+.pm:has(.pm-i:hover) .pm-pics i:first-child,.pm:has(.pm-i:focus-visible) .pm-pics i:first-child{display:none}
+.pm:has(.pm-i:nth-child(1):hover) .pm-pics i:nth-child(1),.pm:has(.pm-i:nth-child(1):focus-visible) .pm-pics i:nth-child(1){display:block}
+.pm:has(.pm-i:nth-child(2):hover) .pm-pics i:nth-child(2),.pm:has(.pm-i:nth-child(2):focus-visible) .pm-pics i:nth-child(2){display:block}
+.pm:has(.pm-i:nth-child(3):hover) .pm-pics i:nth-child(3),.pm:has(.pm-i:nth-child(3):focus-visible) .pm-pics i:nth-child(3){display:block}
+.pm:has(.pm-i:nth-child(4):hover) .pm-pics i:nth-child(4),.pm:has(.pm-i:nth-child(4):focus-visible) .pm-pics i:nth-child(4){display:block}
+.pm:has(.pm-i:nth-child(5):hover) .pm-pics i:nth-child(5),.pm:has(.pm-i:nth-child(5):focus-visible) .pm-pics i:nth-child(5){display:block}
 .bar .acts{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,.6*var(--vw),12px)}
 .bar .btn,.menu-acts .btn{display:inline-flex;align-items:center;justify-content:center;height:clamp(34px,2.5*var(--vw),44px);padding:0 clamp(14px,1.1*var(--vw),22px);border-radius:99px;background:#000;color:#fff;font-size:var(--t-nav);font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
 .bar .btn:hover,.menu-acts .btn:hover{background:#2b2b2d}
@@ -107,6 +125,12 @@ html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
   .menu-group .mg-i img{width:24px;height:24px;flex:none;border-radius:6px;object-fit:cover}
   .menu-group .mg-i svg{width:24px;height:24px;flex:none}
   .menu-group>div a.mg-more{margin-top:8px;font-size:17px;color:var(--ink)}
+  .menu-group .pm{display:block}
+  .menu-group .pm-pics{display:none}
+  .menu-group .pm-list{display:flex;flex-direction:column}
+  .menu-group>div a.pm-i{display:flex;flex-direction:column;gap:2px;padding:8px 0}
+  .menu-group .pm-i b{font-weight:400;font-size:19px;color:var(--ink)}
+  .menu-group .pm-i span{font-size:14px;line-height:1.35;color:#86868b}
   .menu-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
   .menu-acts .btn{height:48px;padding:0 24px;font-size:17px}
   .bar:has(.menu[open]){background:var(--page,#fff)} /* the open menu and the bar are one white page */
