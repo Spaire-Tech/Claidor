@@ -3,6 +3,7 @@ import { firstRunCueInLanguage } from "../../../shared/user-language.js";
 import {
   buildAgentInboundBatchWakePrompt,
   buildAgentInboundWakePrompt,
+  buildNetworkInboundWakePrompt,
   clampAgentMessage,
 } from "../../agents/agent-messaging.js";
 import { sandErrorDetail } from "../../ports/telemetry.js";
@@ -28,6 +29,20 @@ export interface AgentInboundMessage {
   // message sent from a turn a person (or a routine) started, one more for
   // each message sent from a turn another agent's message woke.
   hop?: number;
+  // From one of the person's agents outside Simeon, over their Simeon
+  // network (14 November 2026): its address there, how it hears the answer
+  // ("chat": it reads this chat; "send": only what is sent to its address),
+  // the server's caution if it has one, and the nonce the server finds the
+  // message's line by.
+  network?: { address: string; answer: "chat" | "send"; nonce: string; note?: string };
+}
+
+/** Who a message from the person's Simeon network is from, as the inbox reads it off the server's message (chat-copy/chat-inbox.ts). */
+export interface NetworkSender {
+  readonly address: string;
+  readonly name: string;
+  readonly answer: "chat" | "send";
+  readonly note?: string;
 }
 
 export function agentMessageHopRefusal(cap: number): string {
@@ -178,6 +193,54 @@ export class AgentToAgentMessaging {
       : `Sent to ${target.name}. This is asynchronous — if they reply, it'll arrive later as a new message that wakes you; don't wait on it now.`;
   }
 
+  /**
+   * A message from one of the person's agents outside Simeon, taken from
+   * the server's inbox (14 November 2026; the founder: "have the message
+   * between the two work as if agents talking to each other"). It is
+   * written in the chat as that agent's message ("Message from"), not as
+   * the person's, and the agent is woken as a teammate's message wakes it.
+   * The line carries the server's nonce: the server finds it by that and
+   * reads the agent's answer back to the sender. A message whose line is
+   * already in the chat is not written, and wakes nobody, a second time.
+   */
+  async receiveFromNetwork(
+    toAgentId: string,
+    sender: NetworkSender,
+    text: string,
+    nonce: string,
+  ): Promise<void> {
+    const message = clampAgentMessage(text);
+    if (message.length === 0) return;
+    const session = await this.tm.sessions.resolveBackgroundSession(toAgentId);
+    if (
+      this.tm.groupChat.isGroupSession(session) ||
+      this.tm.groupChat.isRemoteRoomSession(session)
+    )
+      return;
+    const isActive = session.id === this.tm.sessions.activeSession?.id;
+    const entries: readonly any[] = isActive
+      ? getTranscript()
+      : session.db.getTranscriptEntries();
+    if (entries.some((entry) => entry?.clientNonce === nonce)) return;
+    const inbound: AgentInboundMessage = {
+      from: { id: `network:${sender.address}`, name: sender.name },
+      text: message,
+      timestampMs: Date.now(),
+      hop: 1,
+      network: {
+        address: sender.address,
+        answer: sender.answer,
+        nonce,
+        ...(sender.note == null ? {} : { note: sender.note }),
+      },
+    };
+    this.appendAgentInboundEntries(session, [inbound]);
+    const queued = this.pendingAgentInbound.get(toAgentId) ?? [];
+    queued.push({ ...inbound, isDisplayed: true });
+    this.pendingAgentInbound.set(toAgentId, queued);
+    void this.reviveForAgentInbound(toAgentId);
+  }
+
   steerRecipientForPriorityPeer(agentId: string): void {
     const scheduler = this.tm.runLifecycle.runScheduler;
     if (scheduler == null || scheduler.getActiveLane(agentId) === "user")
@@ -263,9 +326,15 @@ export class AgentToAgentMessaging {
         try {
           // One turn for the messages that arrived together; a priority
           // message and a staffing brief keep a turn of their own.
+          // A message from the person's network keeps a turn of its own
+          // too: its answer goes another way than a teammate's.
           const turns = groupAgentInboundTurns(
             messages,
             session.db.getIntroductionPending?.() === true,
+          ).flatMap((turn) =>
+            turn.some((queued) => queued.network != null)
+              ? turn.map((queued) => [queued])
+              : [turn],
           );
           for (const [index, turn] of turns.entries()) {
             if (
@@ -303,7 +372,15 @@ export class AgentToAgentMessaging {
             if (isStaffing) session.db.setIntroductionPending(false);
             const prompt =
               turn.length === 1
-                ? buildAgentInboundWakePrompt(message)
+                ? message.network != null
+                  ? buildNetworkInboundWakePrompt({
+                      from: message.from,
+                      text: message.text,
+                      address: message.network.address,
+                      answer: message.network.answer,
+                      ...(message.network.note == null ? {} : { note: message.network.note }),
+                    })
+                  : buildAgentInboundWakePrompt(message)
                 : buildAgentInboundBatchWakePrompt(turn);
             const result = await runner.run(
               isStaffing
@@ -374,7 +451,8 @@ export class AgentToAgentMessaging {
     const isActive = session.id === this.tm.sessions.activeSession?.id;
     let raisesActivity = false;
     for (const message of messages) {
-      session.db.addConversationPartner(message.from.id);
+      // An agent outside Simeon is no teammate of this one: nothing here can message it by that id.
+      if (message.network == null) session.db.addConversationPartner(message.from.id);
       const entries = isActive
         ? getTranscript()
         : session.db.getTranscriptEntries();
@@ -385,7 +463,8 @@ export class AgentToAgentMessaging {
         content: message.text,
         isStreaming: false,
         timestampMs: message.timestampMs,
-        fromAgent: message.from,
+        fromAgent: message.network == null ? message.from : { ...message.from, kind: "network" },
+        ...(message.network == null ? {} : { clientNonce: message.network.nonce }),
         ...(message.images?.length ? { images: message.images } : {}),
       };
       raisesActivity ||= entryRaisesUserActivitySignal(entry);

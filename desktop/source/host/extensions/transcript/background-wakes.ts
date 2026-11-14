@@ -101,6 +101,13 @@ export class BackgroundWakes {
     return this.agentToAgent.noteCloudAgentSaid(...args);
   }
 
+  /** A message from one of the person's agents outside Simeon, written in the chat as that agent's (chat-copy/chat-inbox.ts). */
+  receiveNetworkMessage(
+    ...args: Parameters<AgentToAgentMessaging["receiveFromNetwork"]>
+  ): Promise<void> {
+    return this.agentToAgent.receiveFromNetwork(...args);
+  }
+
   deliverToChannel(
     runSession: any,
     message: unknown,

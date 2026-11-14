@@ -311,6 +311,11 @@ class TestTools:
         assert waiting.agent_id == "iris"
         assert waiting.message["prompt"] == "Dots: Book the 9am one"
         assert waiting.message["network"]["from"] == f"{handle}/dots"
+        # The person's own bot: its words alone, read back from the chat, no caution.
+        assert waiting.message["network"]["text"] == "Book the 9am one"
+        assert waiting.message["network"]["own"] is True
+        assert waiting.message["network"]["answer"] == "chat"
+        assert "note" not in waiting.message["network"]
 
         # Not taken by the computer yet: nothing to read.
         assert (await _said(client, bot, "check_inbox"))["messages"] == []

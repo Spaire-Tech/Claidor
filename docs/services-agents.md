@@ -3635,6 +3635,22 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   doing, busy), `join_network` (the invite line; marked destructive so the agent's app asks the
   person first). The first Bots release's `list_agents` and `read_messages` still answer, as
   `list_team` and `check_inbox`.
+- **A message to a Simeon agent is an agent's message** (14 November 2026, the founder: "have the
+  message between the two work as if agents talking to each other"). The server leaves it in the
+  chat inbox with the words alone and who wrote them (`network`: `text`, `from`, `fromAgent`,
+  `own`, `answer`, and `note` for a colleague's agent; `network.py`, `_to_agent`). The computer
+  writes it in the chat as that agent's message, `{kind: "message", role: "user", fromAgent: {id:
+  "network:<address>", name, kind: "network"}, clientNonce}`, which the apps draw as "Message
+  from", and wakes the agent as a teammate's message does (`chat-copy/chat-inbox.ts`,
+  `networkMessageOf`; `transcript/agent-to-agent-messaging.ts`, `receiveFromNetwork`;
+  `agents/agent-messaging.ts`, `buildNetworkInboundWakePrompt`). The agent answers the sender in
+  a line or two, does the work in the same turn, and reports to the person in the chat. The
+  sender hears back as before: a bot or coding agent reads the agent's lines after its message
+  (`check_inbox`, found by the line's `clientNonce`); a Simeon agent is answered at its address
+  with SendNetworkMessage. A computer whose engine is from before reads `prompt` and shows the
+  message as the person's, as it did. When it misbehaves: `[simeon] chat-inbox handed N
+  message(s) to their agents` says the computer took it; `chat-inbox left out a message for
+  agent=…` says why it did not.
 - **The person's own tools** (10 November 2026, the founder, after another network's bot listed
   171 tools: "ok go for all"; `server/simeon/desktop/bot_tools.py`). On the person's own agents
   only, never a colleague's: `agent_status`, `read_chat`, `create_agent`, `message_status`,

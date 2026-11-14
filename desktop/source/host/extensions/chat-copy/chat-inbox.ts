@@ -51,6 +51,48 @@ export interface ChatInboxServer {
 export interface ChatInboxTranscript {
   listAgents(): Promise<readonly unknown[]> | readonly unknown[];
   sendPrompt(prompt: string, options: Record<string, unknown>): Promise<void>;
+  /**
+   * A message from one of the person's agents outside Simeon, written as
+   * that agent's and not as the person's (14 November 2026). A transcript
+   * without it takes such a message as a prompt, as before.
+   */
+  receiveNetworkMessage?(agentId: string, sender: NetworkMessageSender, text: string, nonce: string): Promise<void>;
+}
+
+/** Who wrote a message that came over the person's Simeon network, and how it hears the answer. */
+export interface NetworkMessageSender {
+  readonly address: string;
+  readonly name: string;
+  readonly answer: "chat" | "send";
+  readonly note?: string;
+}
+
+/**
+ * A waiting message from one of the person's agents outside Simeon, as the
+ * server marks it (`network`: `from` its address, `fromAgent` what it is,
+ * `text` its words alone, `own` whether it is the person's own, `answer`
+ * how it hears back, `note` the server's caution). Null for the person's
+ * own message, and for a server that does not send the words alone yet:
+ * that one is handed over as a prompt, as before.
+ */
+export function networkMessageOf(waiting: WaitingMessage): { readonly sender: NetworkMessageSender; readonly text: string } | null {
+  const network = waiting.message.network;
+  if (typeof network !== "object" || network == null) return null;
+  const { from, fromName, fromAgent, text, own, answer, note } = network as Record<string, unknown>;
+  if (typeof from !== "string" || from.trim().length === 0) return null;
+  if (typeof text !== "string" || text.trim().length === 0) return null;
+  const what = typeof fromAgent === "string" && fromAgent.trim().length > 0 ? fromAgent.trim() : from.trim();
+  // A colleague's agent is named with its person: "Maya's Codex".
+  const name = own === false && typeof fromName === "string" && fromName.trim().length > 0 ? `${fromName.trim()}'s ${what}` : what;
+  return {
+    sender: {
+      address: from.trim(),
+      name,
+      answer: answer === "send" ? "send" : "chat",
+      ...(typeof note === "string" && note.trim().length > 0 ? { note: note.trim() } : {}),
+    },
+    text,
+  };
 }
 
 export interface ChatInboxOptions {
@@ -225,7 +267,13 @@ export class ChatInbox {
             continue;
           }
         } else {
-          await this.options.transcript.sendPrompt(message.message.prompt as string, options as Record<string, unknown>);
+          const fromNetwork = networkMessageOf(message);
+          const transcript = this.options.transcript;
+          if (fromNetwork != null && typeof transcript.receiveNetworkMessage === "function") {
+            await transcript.receiveNetworkMessage(message.agentId, fromNetwork.sender, fromNetwork.text, message.nonce);
+          } else {
+            await transcript.sendPrompt(message.message.prompt as string, options as Record<string, unknown>);
+          }
         }
       } catch (error) {
         if (isFinalRefusal(error)) {
