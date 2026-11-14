@@ -1,0 +1,3484 @@
+{
+ "part": "packages/analytics-client",
+ "surface": {
+  "eventData": {
+   "toEventData": "function"
+  },
+  "buffer": {
+   "AnalyticsBuffer": "class"
+  },
+  "deferred": {
+   "DeferredAnalyticsBuffer": "class"
+  }
+ },
+ "scenarios": {
+  "no properties give an empty record, a new one each time": {
+   "returned": {
+    "answers": [
+     {
+      "given": {
+       "$": "undefined"
+      },
+      "answer": {}
+     },
+     {
+      "given": null,
+      "answer": {}
+     },
+     {
+      "given": false,
+      "answer": {}
+     },
+     {
+      "given": 0,
+      "answer": {}
+     },
+     {
+      "given": "",
+      "answer": {}
+     },
+     {
+      "given": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "answer": {}
+     },
+     {
+      "given": {},
+      "answer": {}
+     }
+    ],
+    "aNewOneEachTime": true,
+    "aPlainObject": true,
+    "declaredParameters": 1
+   }
+  },
+  "a text, a number, a truth and a big whole number each become a value of their own kind": {
+   "returned": {
+    "out": {
+     "name": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "Simeon"
+       }
+      }
+     },
+     "seconds": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "doubleValue",
+        "value": 1.5
+       }
+      }
+     },
+     "signedIn": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "boolValue",
+        "value": true
+       }
+      }
+     },
+     "bytes": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "intValue",
+        "value": {
+         "$": "bigint",
+         "v": "7"
+        }
+       }
+      }
+     }
+    },
+    "keys": [
+     "name",
+     "seconds",
+     "signedIn",
+     "bytes"
+    ],
+    "classes": [
+     "_EventData",
+     "_EventData",
+     "_EventData",
+     "_EventData"
+    ],
+    "allOfOneClass": true,
+    "bytes": {
+     "name": "0a0653696d656f6e",
+     "seconds": "21000000000000f83f",
+     "signedIn": "1801",
+     "bytes": "1007"
+    },
+    "json": {
+     "name": {
+      "stringValue": "Simeon"
+     },
+     "seconds": {
+      "doubleValue": 1.5
+     },
+     "signedIn": {
+      "boolValue": true
+     },
+     "bytes": {
+      "intValue": "7"
+     }
+    }
+   }
+  },
+  "every other kind of value is left out": {
+   "returned": {
+    "keys": [
+     "kept",
+     "alsoKept"
+    ],
+    "out": {
+     "kept": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "yes"
+       }
+      }
+     },
+     "alsoKept": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "doubleValue",
+        "value": 0
+       }
+      }
+     }
+    }
+   }
+  },
+  "edge values are kept as they are given": {
+   "returned": {
+    "emptyText": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "stringValue",
+       "value": ""
+      }
+     }
+    },
+    "longText": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "stringValue",
+       "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      }
+     }
+    },
+    "lineEnds": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "stringValue",
+       "value": "a\nb\u0000c"
+      }
+     }
+    },
+    "zero": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 0
+      }
+     }
+    },
+    "minusZero": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": {
+        "$": "number",
+        "v": "-0"
+       }
+      }
+     }
+    },
+    "notANumber": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": {
+        "$": "number",
+        "v": "NaN"
+       }
+      }
+     }
+    },
+    "infinity": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": {
+        "$": "number",
+        "v": "Infinity"
+       }
+      }
+     }
+    },
+    "minusInfinity": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": {
+        "$": "number",
+        "v": "-Infinity"
+       }
+      }
+     }
+    },
+    "largestSafe": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 9007199254740991
+      }
+     }
+    },
+    "beyondSafe": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 9007199254740992
+      }
+     }
+    },
+    "huge": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 1e+308
+      }
+     }
+    },
+    "tiny": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 5e-324
+      }
+     }
+    },
+    "fraction": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "doubleValue",
+       "value": 0.30000000000000004
+      }
+     }
+    },
+    "no": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "boolValue",
+       "value": false
+      }
+     }
+    },
+    "bigZero": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "intValue",
+       "value": {
+        "$": "bigint",
+        "v": "0"
+       }
+      }
+     }
+    },
+    "bigMinus": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "intValue",
+       "value": {
+        "$": "bigint",
+        "v": "-1"
+       }
+      }
+     }
+    },
+    "bigBeyondSixtyFourBits": {
+     "$": "instance",
+     "class": "_EventData",
+     "v": {
+      "data": {
+       "case": "intValue",
+       "value": {
+        "$": "bigint",
+        "v": "18446744073709551616"
+       }
+      }
+     }
+    }
+   }
+  },
+  "keys come in the order of the properties: whole-number keys first, rising, then the others as written": {
+   "returned": {
+    "keys": [
+     "2",
+     "10",
+     "b",
+     "a",
+     "01",
+     "",
+     "constructor",
+     "toString",
+     "with space"
+    ],
+    "own": [
+     true,
+     true
+    ]
+   }
+  },
+  "things that are not plain records: own listable properties are read, whatever the thing is": {
+   "returned": {
+    "aText": {
+     "0": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "a"
+       }
+      }
+     },
+     "1": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "b"
+       }
+      }
+     }
+    },
+    "aList": {
+     "0": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "x"
+       }
+      }
+     },
+     "1": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "doubleValue",
+        "value": 1
+       }
+      }
+     },
+     "3": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "boolValue",
+        "value": true
+       }
+      }
+     }
+    },
+    "aNumber": {},
+    "true": {},
+    "aFunction": {
+     "note": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "on a function"
+       }
+      }
+     }
+    },
+    "aMap": {},
+    "anInstance": {
+     "x": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "doubleValue",
+        "value": 1
+       }
+      }
+     },
+     "label": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "p"
+       }
+      }
+     }
+    },
+    "inherited": {
+     "own": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "read"
+       }
+      }
+     }
+    },
+    "notListable": {
+     "shown": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "listable"
+       }
+      }
+     }
+    },
+    "symbolKeys": {
+     "plain": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "read"
+       }
+      }
+     }
+    },
+    "noPrototype": {
+     "bare": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "doubleValue",
+        "value": 1
+       }
+      }
+     }
+    },
+    "aSymbol": "nothing thrown"
+   }
+  },
+  "every property is read once, in order, before any value is made; one that throws stops it all": {
+   "returned": {
+    "log": [
+     "first read",
+     "second read",
+     "third read"
+    ],
+    "keys": [
+     "first",
+     "second"
+    ],
+    "theSameError": true,
+    "vanishing": [
+     "first",
+     "third"
+    ]
+   }
+  },
+  "a property named __proto__ is not kept as a key: its value becomes what the record inherits from": {
+   "returned": {
+    "keys": [
+     "a"
+    ],
+    "hasItAsItsOwn": false,
+    "inheritsFromAValue": true,
+    "thatValue": {
+     "case": "stringValue",
+     "value": "hidden"
+    },
+    "whenItsValueIsLeftOut": {
+     "keys": [
+      "a"
+     ],
+     "plain": true
+    }
+   }
+  },
+  "the record is made when asked: changing the properties afterwards changes nothing": {
+   "returned": {
+    "out": {
+     "a": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "one"
+       }
+      }
+     }
+    },
+    "again": {
+     "a": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "two"
+       }
+      }
+     },
+     "b": {
+      "$": "instance",
+      "class": "_EventData",
+      "v": {
+       "data": {
+        "case": "stringValue",
+        "value": "new"
+       }
+      }
+     }
+    },
+    "differentValues": true
+   }
+  },
+  "a deferred buffer keeps what it is tracked, in order, each with its name, properties and time": {
+   "returned": {
+    "empty": [],
+    "answers": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "events": [
+     {
+      "eventName": "first",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     },
+     {
+      "eventName": "second",
+      "props": {
+       "screen": "home"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     },
+     {
+      "eventName": "third",
+      "props": {
+       "n": 1
+      },
+      "timestamp": 123
+     },
+     {
+      "eventName": "fourth",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": 0
+     }
+    ],
+    "keys": [
+     [
+      "eventName",
+      "props",
+      "timestamp"
+     ],
+     [
+      "eventName",
+      "props",
+      "timestamp"
+     ],
+     [
+      "eventName",
+      "props",
+      "timestamp"
+     ],
+     [
+      "eventName",
+      "props",
+      "timestamp"
+     ]
+    ],
+    "thePropertiesAreTheOnesGiven": true,
+    "declaredParameters": {
+     "track": 3,
+     "flush": 1,
+     "getEvents": 0,
+     "clear": 0,
+     "constructor": 0
+    }
+   }
+  },
+  "a deferred buffer takes anything as a name, properties or time, and checks none of it": {
+   "returned": [
+    {
+     "eventName": {
+      "$": "undefined"
+     },
+     "props": {
+      "$": "undefined"
+     },
+     "timestamp": {
+      "$": "undefined"
+     }
+    },
+    {
+     "eventName": 5,
+     "props": "props",
+     "timestamp": "time"
+    },
+    {
+     "eventName": null,
+     "props": null,
+     "timestamp": null
+    },
+    {
+     "eventName": "",
+     "props": [],
+     "timestamp": {
+      "$": "number",
+      "v": "NaN"
+     }
+    },
+    {
+     "eventName": "extra",
+     "props": {
+      "a": 1
+     },
+     "timestamp": 1
+    }
+   ]
+  },
+  "the events list is the deferred buffer's own: the same one each time, and a change to it is a change to the buffer": {
+   "returned": {
+    "sameList": true,
+    "stillTheSame": true,
+    "events": [
+     {
+      "eventName": "pushed from outside"
+     },
+     {
+      "eventName": "second",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "length": 2
+   }
+  },
+  "clearing a deferred buffer starts a new list and leaves the earlier one as it was": {
+   "returned": {
+    "answer": {
+     "$": "undefined"
+    },
+    "before": [
+     {
+      "eventName": "first",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     },
+     {
+      "eventName": "second",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "aNewList": true,
+    "afterTheNextEvent": [
+     {
+      "eventName": "third",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "clearedTwice": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "empty": [],
+    "yetAnotherList": true
+   }
+  },
+  "flushing a deferred buffer does nothing and resolves to nothing, whatever it is given": {
+   "returned": {
+    "promises": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "aNewPromiseEachTime": true,
+    "endings": [
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "events": [
+     {
+      "eventName": "kept",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     }
+    ]
+   }
+  },
+  "two deferred buffers share nothing": {
+   "returned": {
+    "one": [
+     {
+      "eventName": "only in one",
+      "props": {
+       "$": "undefined"
+      },
+      "timestamp": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "two": [],
+    "differentLists": true
+   }
+  },
+  "a new buffer does nothing by itself, and flushing it empty asks for no token and sets no timer": {
+   "returned": {
+    "aPromise": true,
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "again": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "log": [],
+    "declaredParameters": {
+     "track": 3,
+     "flush": 1,
+     "constructor": 1
+    }
+   }
+  },
+  "the first event sets one timer for the flush interval, 3000 ms unless told; later events set no other while it waits": {
+   "returned": {
+    "answers": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref"
+    ],
+    "waiting": [
+     1
+    ]
+   }
+  },
+  "when the interval timer fires, a flush runs under its own timer, 2500 ms unless told, and the next event sets a new interval timer": {
+   "returned": {
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 1 fires",
+     "timer 2 set for 2500",
+     "timer 2 unref",
+     "token asked (1)",
+     "back from the timer",
+     "send 1: first, second",
+     "timer 2 cleared",
+     "all quiet",
+     "timer 3 set for 3000",
+     "timer 3 unref"
+    ],
+    "waiting": [
+     3
+    ]
+   }
+  },
+  "the two waits given are used in place of 3000 and 2500; null and undefined mean the usual, anything else is passed on as it is": {
+   "returned": [
+    {
+     "given": 50,
+     "log": [
+      "timer 1 set for 50",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for 50",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": 0,
+     "log": [
+      "timer 1 set for 0",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for 0",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": -1,
+     "log": [
+      "timer 1 set for -1",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for -1",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": null,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": {
+      "$": "undefined"
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "log": [
+      "timer 1 set for NaN",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for NaN",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": "10",
+     "log": [
+      "timer 1 set for \"10\"",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for \"10\"",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "given": 3000.5,
+     "log": [
+      "timer 1 set for 3000.5",
+      "timer 1 unref",
+      "timer 1 fires",
+      "timer 2 set for 3000.5",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: event",
+      "timer 2 cleared"
+     ]
+    }
+   ]
+  },
+  "what is sent: one request holding the events in order, each with its name, its properties as typed values and its time": {
+   "returned": {
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 900",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: app.opened, app.closed, ",
+     "timer 2 cleared"
+    ],
+    "timesSent": 1,
+    "request": {
+     "$": "instance",
+     "class": "_TrackEventsRequest",
+     "v": {
+      "events": [
+       {
+        "$": "instance",
+        "class": "_AnalyticsEvent",
+        "v": {
+         "eventName": "app.opened",
+         "eventData": {
+          "screen": {
+           "$": "instance",
+           "class": "_EventData",
+           "v": {
+            "data": {
+             "case": "stringValue",
+             "value": "home"
+            }
+           }
+          },
+          "count": {
+           "$": "instance",
+           "class": "_EventData",
+           "v": {
+            "data": {
+             "case": "doubleValue",
+             "value": 3
+            }
+           }
+          },
+          "first": {
+           "$": "instance",
+           "class": "_EventData",
+           "v": {
+            "data": {
+             "case": "boolValue",
+             "value": true
+            }
+           }
+          },
+          "bytes": {
+           "$": "instance",
+           "class": "_EventData",
+           "v": {
+            "data": {
+             "case": "intValue",
+             "value": {
+              "$": "bigint",
+              "v": "9"
+             }
+            }
+           }
+          }
+         },
+         "timestamp": {
+          "$": "bigint",
+          "v": "1700000000000"
+         }
+        }
+       },
+       {
+        "$": "instance",
+        "class": "_AnalyticsEvent",
+        "v": {
+         "eventName": "app.closed",
+         "eventData": {},
+         "timestamp": {
+          "$": "bigint",
+          "v": "1700000000500"
+         }
+        }
+       },
+       {
+        "$": "instance",
+        "class": "_AnalyticsEvent",
+        "v": {
+         "eventName": "",
+         "eventData": {
+          "only": {
+           "$": "instance",
+           "class": "_EventData",
+           "v": {
+            "data": {
+             "case": "stringValue",
+             "value": "name is empty"
+            }
+           }
+          }
+         },
+         "timestamp": {
+          "$": "bigint",
+          "v": "0"
+         }
+        }
+       }
+      ]
+     }
+    },
+    "requestClass": "_TrackEventsRequest",
+    "eventClasses": [
+     "_AnalyticsEvent",
+     "_AnalyticsEvent",
+     "_AnalyticsEvent"
+    ],
+    "valueClasses": [
+     "_EventData",
+     "_EventData",
+     "_EventData",
+     "_EventData"
+    ],
+    "onTheWire": "0a530a0a6170702e6f70656e656412100a0673637265656e12060a04686f6d6512120a05636f756e741209210000000000000840120b0a05666972737412021801120b0a056279746573120210091880d095ffbc310a130a0a6170702e636c6f73656418f4d395ffbc310a1912170a046f6e6c79120f0a0d6e616d6520697320656d707479",
+    "asJson": {
+     "events": [
+      {
+       "eventName": "app.opened",
+       "eventData": {
+        "screen": {
+         "stringValue": "home"
+        },
+        "count": {
+         "doubleValue": 3
+        },
+        "first": {
+         "boolValue": true
+        },
+        "bytes": {
+         "intValue": "9"
+        }
+       },
+       "timestamp": "1700000000000"
+      },
+      {
+       "eventName": "app.closed",
+       "timestamp": "1700000000500"
+      },
+      {
+       "eventData": {
+        "only": {
+         "stringValue": "name is empty"
+        }
+       }
+      }
+     ]
+    },
+    "optionKeys": [
+     "signal"
+    ],
+    "signalIsAnAbortSignal": true,
+    "signalAborted": false
+   }
+  },
+  "an event's time: a number is used as it is, anything else means now; a number that is not whole is refused and nothing is kept": {
+   "returned": {
+    "tracked": [
+     {
+      "given": 0,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": {
+       "$": "number",
+       "v": "-0"
+      },
+      "threw": "nothing thrown"
+     },
+     {
+      "given": -5,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": 123,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": 9007199254740994,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": 1e+21,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": {
+       "$": "undefined"
+      },
+      "threw": "nothing thrown"
+     },
+     {
+      "given": null,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": "123",
+      "threw": "nothing thrown"
+     },
+     {
+      "given": {
+       "$": "bigint",
+       "v": "5"
+      },
+      "threw": "nothing thrown"
+     },
+     {
+      "given": true,
+      "threw": "nothing thrown"
+     },
+     {
+      "given": {},
+      "threw": "nothing thrown"
+     },
+     {
+      "given": 1.5,
+      "threw": "RangeError"
+     },
+     {
+      "given": {
+       "$": "number",
+       "v": "NaN"
+      },
+      "threw": "RangeError"
+     },
+     {
+      "given": {
+       "$": "number",
+       "v": "Infinity"
+      },
+      "threw": "RangeError"
+     },
+     {
+      "given": {
+       "$": "number",
+       "v": "-Infinity"
+      },
+      "threw": "RangeError"
+     }
+    ],
+    "leftOut": "nothing thrown",
+    "sent": [
+     {
+      "name": "event 0",
+      "time": {
+       "$": "bigint",
+       "v": "0"
+      }
+     },
+     {
+      "name": "event 1",
+      "time": {
+       "$": "bigint",
+       "v": "0"
+      }
+     },
+     {
+      "name": "event 2",
+      "time": {
+       "$": "bigint",
+       "v": "-5"
+      }
+     },
+     {
+      "name": "event 3",
+      "time": {
+       "$": "bigint",
+       "v": "123"
+      }
+     },
+     {
+      "name": "event 4",
+      "time": {
+       "$": "bigint",
+       "v": "9007199254740994"
+      }
+     },
+     {
+      "name": "event 5",
+      "time": {
+       "$": "bigint",
+       "v": "1000000000000000000000"
+      }
+     },
+     {
+      "name": "event 6",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "event 7",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "event 8",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "event 9",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "event 10",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "event 11",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     },
+     {
+      "name": "no time given",
+      "time": {
+       "$": "bigint",
+       "v": "1700000000123"
+      }
+     }
+    ]
+   }
+  },
+  "a time that is refused is refused before the properties are read, and sets no timer": {
+   "returned": {
+    "refused": "RangeError",
+    "afterRefusal": [],
+    "theSameError": true,
+    "afterBadProperties": [],
+    "log": [
+     "properties read",
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 5",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: good",
+     "timer 2 cleared"
+    ],
+    "flushed": {
+     "resolved": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "the buffer limit is 200 unless told: the 199th event only waits, the 200th starts a flush at once, and the interval timer stays": {
+   "returned": {
+    "after199": [
+     "timer 1 set for 3000",
+     "timer 1 unref"
+    ],
+    "rightAfterThe200th": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 2500",
+     "timer 2 unref",
+     "token asked (1)"
+    ],
+    "sentCount": 200,
+    "first": "e1",
+    "last": "e200",
+    "log": [
+     "send 1: (200 names)",
+     "timer 2 cleared"
+    ],
+    "waiting": [
+     1
+    ]
+   }
+  },
+  "limits given: an event at or above the limit starts a flush at once and sets no interval timer; below it, it only waits": {
+   "returned": [
+    {
+     "bufferLimit": 1,
+     "log": [
+      "timer 1 set for 2500",
+      "timer 1 unref",
+      "token asked (1)",
+      "e1 tracked",
+      "timer 1 cleared",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (2)",
+      "e2 tracked",
+      "timer 2 cleared",
+      "timer 3 set for 2500",
+      "timer 3 unref",
+      "token asked (3)",
+      "e3 tracked",
+      "timer 3 cleared"
+     ]
+    },
+    {
+     "bufferLimit": 2,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (1)",
+      "e2 tracked",
+      "timer 2 cleared",
+      "timer 3 set for 2500",
+      "timer 3 unref",
+      "token asked (2)",
+      "e3 tracked",
+      "timer 3 cleared"
+     ]
+    },
+    {
+     "bufferLimit": 3,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (1)",
+      "e3 tracked",
+      "timer 2 cleared"
+     ]
+    },
+    {
+     "bufferLimit": 4,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "e3 tracked"
+     ]
+    },
+    {
+     "bufferLimit": 0,
+     "log": [
+      "timer 1 set for 2500",
+      "timer 1 unref",
+      "token asked (1)",
+      "e1 tracked",
+      "timer 1 cleared",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (2)",
+      "e2 tracked",
+      "timer 2 cleared",
+      "timer 3 set for 2500",
+      "timer 3 unref",
+      "token asked (3)",
+      "e3 tracked",
+      "timer 3 cleared"
+     ]
+    },
+    {
+     "bufferLimit": -1,
+     "log": [
+      "timer 1 set for 2500",
+      "timer 1 unref",
+      "token asked (1)",
+      "e1 tracked",
+      "timer 1 cleared",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (2)",
+      "e2 tracked",
+      "timer 2 cleared",
+      "timer 3 set for 2500",
+      "timer 3 unref",
+      "token asked (3)",
+      "e3 tracked",
+      "timer 3 cleared"
+     ]
+    },
+    {
+     "bufferLimit": null,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "e3 tracked"
+     ]
+    },
+    {
+     "bufferLimit": {
+      "$": "undefined"
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "e3 tracked"
+     ]
+    },
+    {
+     "bufferLimit": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "e3 tracked"
+     ]
+    },
+    {
+     "bufferLimit": "2",
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "timer 2 set for 2500",
+      "timer 2 unref",
+      "token asked (1)",
+      "e2 tracked",
+      "timer 2 cleared",
+      "timer 3 set for 2500",
+      "timer 3 unref",
+      "token asked (2)",
+      "e3 tracked",
+      "timer 3 cleared"
+     ]
+    },
+    {
+     "bufferLimit": {
+      "$": "number",
+      "v": "Infinity"
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "e1 tracked",
+      "e2 tracked",
+      "e3 tracked"
+     ]
+    }
+   ]
+  },
+  "flush sets a timer for the time it is given and clears it when it is done": {
+   "returned": [
+    {
+     "timeout": 1500,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "flush called",
+      "timer 2 set for 1500",
+      "timer 2 unref",
+      "token asked (1)",
+      "flush returned its promise",
+      "send 1: event",
+      "timer 2 cleared",
+      "flush resolved"
+     ]
+    },
+    {
+     "timeout": 0,
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "flush called",
+      "timer 2 set for 0",
+      "timer 2 unref",
+      "token asked (1)",
+      "flush returned its promise",
+      "send 1: event",
+      "timer 2 cleared",
+      "flush resolved"
+     ]
+    },
+    {
+     "timeout": {
+      "$": "undefined"
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "flush called",
+      "timer 2 set for undefined",
+      "timer 2 unref",
+      "token asked (1)",
+      "flush returned its promise",
+      "send 1: event",
+      "timer 2 cleared",
+      "flush resolved"
+     ]
+    },
+    {
+     "timeout": "soon",
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "flush called",
+      "timer 2 set for \"soon\"",
+      "timer 2 unref",
+      "token asked (1)",
+      "flush returned its promise",
+      "send 1: event",
+      "timer 2 cleared",
+      "flush resolved"
+     ]
+    }
+   ]
+  },
+  "without a token nothing is sent, the events stay, and onDebug is told why": {
+   "returned": [
+    {
+     "token": null,
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    },
+    {
+     "token": {
+      "$": "undefined"
+     },
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    },
+    {
+     "token": "",
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    },
+    {
+     "token": 0,
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    },
+    {
+     "token": false,
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    },
+    {
+     "token": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "debugKeys": [
+      [
+       "reason",
+       "count"
+      ]
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 2
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first, second",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first",
+       "second"
+      ]
+     ]
+    }
+   ]
+  },
+  "anything truthy counts as a token, and the token itself goes nowhere": {
+   "returned": [
+    {
+     "token": "t",
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    },
+    {
+     "token": " ",
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    },
+    {
+     "token": 1,
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    },
+    {
+     "token": true,
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    },
+    {
+     "token": {},
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    },
+    {
+     "token": [],
+     "timesSent": 1,
+     "givenToTheClient": [
+      [
+       [
+        "events"
+       ],
+       [
+        "signal"
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  "a token check that fails, by rejecting or by throwing, sends nothing and tells onDebug the error": {
+   "returned": {
+    "rejects": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "theSameError": true
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "token_check_failed",
+        "error": {
+         "$": "error",
+         "name": "Error",
+         "message": "sign-in is down"
+        },
+        "count": 1
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ]
+    },
+    "throws": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "theSameError": true
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "token_check_failed",
+        "error": {
+         "$": "error",
+         "name": "Error",
+         "message": "sign-in is down"
+        },
+        "count": 1
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ]
+    },
+    "rejects with nothing": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "theSameError": false
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "token_check_failed",
+        "error": {
+         "$": "undefined"
+        },
+        "count": 1
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ]
+    },
+    "gives back something that is not a promise but is falsy": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "keys": [
+        "reason",
+        "count"
+       ],
+       "theSameError": false
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      {
+       "debug": "analytics.flush.deferred",
+       "payload": {
+        "reason": "no_token",
+        "count": 1
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ]
+    },
+    "gives back a token that is not a promise": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: first",
+      "timer 2 cleared"
+     ]
+    }
+   }
+  },
+  "a token check that outlasts the flush's timer is given up: nothing is sent, and a token that comes later is not used": {
+   "returned": {
+    "the late check resolves": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 250",
+     "timer 2 unref",
+     "token asked (1)",
+     "still waiting: true",
+     "timer 2 fires",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "token_check_timed_out",
+       "count": 2
+      }
+     },
+     "timer 2 cleared",
+     "flush resolved",
+     "after the late answer",
+     "timer 3 set for 250",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 1: first, second",
+     "timer 3 cleared"
+    ],
+    "the late check rejects": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 250",
+     "timer 2 unref",
+     "token asked (1)",
+     "still waiting: true",
+     "timer 2 fires",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "token_check_timed_out",
+       "count": 2
+      }
+     },
+     "timer 2 cleared",
+     "flush resolved",
+     "after the late answer",
+     "timer 3 set for 250",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 1: first, second",
+     "timer 3 cleared"
+    ],
+    "the late check never": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 250",
+     "timer 2 unref",
+     "token asked (1)",
+     "still waiting: true",
+     "timer 2 fires",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "token_check_timed_out",
+       "count": 2
+      }
+     },
+     "timer 2 cleared",
+     "flush resolved",
+     "after the late answer",
+     "timer 3 set for 250",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 1: first, second",
+     "timer 3 cleared"
+    ]
+   }
+  },
+  "a send that fails, by rejecting or by throwing, keeps the events, tells onDebug, and flush still resolves": {
+   "returned": {
+    "rejects": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.error",
+       "keys": [
+        "error"
+       ],
+       "theSameError": true
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: first, second",
+      {
+       "debug": "analytics.flush.error",
+       "payload": {
+        "error": {
+         "$": "error",
+         "name": "Error",
+         "message": "server said no"
+        }
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 2: first, second, third",
+      "timer 3 cleared"
+     ],
+     "theSameEventsAgain": true,
+     "differentRequests": true
+    },
+    "throws": {
+     "first": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.error",
+       "keys": [
+        "error"
+       ],
+       "theSameError": true
+      }
+     ],
+     "second": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: first, second",
+      {
+       "debug": "analytics.flush.error",
+       "payload": {
+        "error": {
+         "$": "error",
+         "name": "Error",
+         "message": "server said no"
+        }
+       }
+      },
+      "timer 2 cleared",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 2: first, second, third",
+      "timer 3 cleared"
+     ],
+     "theSameEventsAgain": true,
+     "differentRequests": true
+    }
+   }
+  },
+  "after a failed send, events beyond the limit are dropped, oldest first; a flush that never sent drops nothing": {
+   "returned": [
+    {
+     "bufferLimit": 3,
+     "events": 2,
+     "tokenChecksWhilePilingUp": 0,
+     "sent": [
+      [
+       "e1",
+       "e2"
+      ],
+      [
+       "e1",
+       "e2"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": 3,
+     "events": 3,
+     "tokenChecksWhilePilingUp": 1,
+     "sent": [
+      [
+       "e1",
+       "e2",
+       "e3"
+      ],
+      [
+       "e1",
+       "e2",
+       "e3"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": 3,
+     "events": 4,
+     "tokenChecksWhilePilingUp": 2,
+     "sent": [
+      [
+       "e1",
+       "e2",
+       "e3",
+       "e4"
+      ],
+      [
+       "e2",
+       "e3",
+       "e4"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": 3,
+     "events": 7,
+     "tokenChecksWhilePilingUp": 5,
+     "sent": [
+      [
+       "e1",
+       "e2",
+       "e3",
+       "e4",
+       "e5",
+       "e6",
+       "e7"
+      ],
+      [
+       "e5",
+       "e6",
+       "e7"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": 1,
+     "events": 3,
+     "tokenChecksWhilePilingUp": 3,
+     "sent": [
+      [
+       "e1",
+       "e2",
+       "e3"
+      ],
+      [
+       "e3"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": 0,
+     "events": 2,
+     "tokenChecksWhilePilingUp": 2,
+     "sent": [
+      [
+       "e1",
+       "e2"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": -1,
+     "events": 2,
+     "tokenChecksWhilePilingUp": 2,
+     "sent": [
+      [
+       "e1",
+       "e2"
+      ]
+     ]
+    },
+    {
+     "bufferLimit": {
+      "$": "number",
+      "v": "NaN"
+     },
+     "events": 4,
+     "tokenChecksWhilePilingUp": 0,
+     "sent": [
+      [
+       "e1",
+       "e2",
+       "e3",
+       "e4"
+      ],
+      [
+       "e1",
+       "e2",
+       "e3",
+       "e4"
+      ]
+     ]
+    }
+   ]
+  },
+  "the flush's timer firing during a send aborts the signal the client holds; what the client does then decides the rest": {
+   "returned": {
+    "abortedBefore": false,
+    "abortedAfter": true,
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 400",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: first",
+     "timer 2 fires",
+     "the client hears the abort",
+     {
+      "debug": "analytics.flush.error",
+      "payload": {
+       "error": {
+        "$": "error",
+        "name": "Error",
+        "message": "aborted by the timeout"
+       }
+      }
+     },
+     "timer 2 cleared",
+     "timer 3 set for 400",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 2: first",
+     "timer 3 cleared"
+    ],
+    "aNewSignalEachSend": true,
+    "secondSignalAborted": false
+   }
+  },
+  "events tracked while a send is under way stay for the next round, and the same flush goes round again for them": {
+   "returned": {
+    "ended": {
+     "resolved": {
+      "$": "undefined"
+     }
+    },
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "flush called",
+     "timer 2 set for 700",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: first, second",
+     "timer 2 cleared",
+     "timer 3 set for 700",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 2: third, fourth",
+     "timer 3 cleared",
+     "timer 4 set for 700",
+     "timer 4 unref",
+     "token asked (3)",
+     "send 3: fifth",
+     "timer 4 cleared",
+     "flush resolved"
+    ]
+   }
+  },
+  "events tracked during a send that fails stay behind the earlier ones, and the flush does not go round again": {
+   "returned": [
+    "timer 1 set for 3000",
+    "timer 1 unref",
+    "timer 2 set for 100",
+    "timer 2 unref",
+    "token asked (1)",
+    "send 1: first, second",
+    "timer 2 cleared",
+    "first flush resolved",
+    "timer 3 set for 100",
+    "timer 3 unref",
+    "token asked (2)",
+    "send 2: first, second, third",
+    "timer 3 cleared"
+   ]
+  },
+  "a flush called while another is under way waits for it, and does nothing more when the buffer is then empty": {
+   "returned": {
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: first",
+     "the send is still under way",
+     "timer 2 cleared"
+    ],
+    "order": [
+     "first flush",
+     "second flush",
+     "third flush"
+    ],
+    "tokenChecks": 1
+   }
+  },
+  "when the first flush could not send, each waiting flush tries once more itself, one after the other": {
+   "returned": {
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "no_token",
+       "count": 1
+      }
+     },
+     "timer 2 cleared",
+     "timer 3 set for 200",
+     "timer 3 unref",
+     "token asked (2)",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "no_token",
+       "count": 1
+      }
+     },
+     "timer 3 cleared",
+     "timer 4 set for 300",
+     "timer 4 unref",
+     "token asked (3)",
+     {
+      "debug": "analytics.flush.deferred",
+      "payload": {
+       "reason": "no_token",
+       "count": 1
+      }
+     },
+     "timer 4 cleared"
+    ],
+    "order": [
+     "first flush",
+     "second flush",
+     "third flush"
+    ],
+    "tokenChecks": 3
+   }
+  },
+  "each event tracked at or above the limit while a flush is under way adds one more flush waiting its turn": {
+   "returned": {
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 2500",
+     "timer 2 unref",
+     "token asked (1)",
+     "five events tracked",
+     "timer 2 cleared",
+     "timer 3 set for 2500",
+     "timer 3 unref",
+     "token asked (2)",
+     "timer 3 cleared",
+     "timer 4 set for 2500",
+     "timer 4 unref",
+     "token asked (3)",
+     "timer 4 cleared",
+     "timer 5 set for 2500",
+     "timer 5 unref",
+     "token asked (4)",
+     "send 1: e1, e2, e3, e4, e5",
+     "timer 5 cleared"
+    ],
+    "tokenChecks": 4,
+    "sent": [
+     [
+      "e1",
+      "e2",
+      "e3",
+      "e4",
+      "e5"
+     ]
+    ]
+   }
+  },
+  "the interval timer left waiting when the limit started a flush fires later all the same, for whatever is there then": {
+   "returned": {
+    "log": [
+     "timer 1 set for 40",
+     "timer 1 unref",
+     "timer 2 set for 30",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: first, second",
+     "timer 2 cleared",
+     "the limit's flush is done; the interval timer still waits",
+     "third tracked: no new timer while the old one waits",
+     "timer 1 fires",
+     "timer 3 set for 30",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 2: third",
+     "timer 3 cleared",
+     "the old timer fired with one event",
+     "timer 4 set for 40",
+     "timer 4 unref",
+     "timer 5 set for 30",
+     "timer 5 unref",
+     "token asked (3)",
+     "send 3: fourth, fifth",
+     "timer 5 cleared",
+     "timer 4 fires",
+     "the newer timer fired with nothing left"
+    ],
+    "waiting": []
+   }
+  },
+  "a token provider that flushes again from inside its own check starts a second flush within the first; the one whose token comes late finds nothing left and sends nothing": {
+   "returned": [
+    "timer 1 set for 3000",
+    "timer 1 unref",
+    "timer 2 set for 900",
+    "timer 2 unref",
+    "token asked (1)",
+    "the provider calls flush itself",
+    "timer 3 set for 50",
+    "timer 3 unref",
+    "token asked (2)",
+    "back in the first check",
+    "send 1: first, second",
+    "timer 3 cleared",
+    "the inner flush resolved",
+    "the inner flush has sent everything; now the first check answers",
+    "timer 2 cleared",
+    "the outer flush resolved",
+    "timer 4 set for 70",
+    "timer 4 unref",
+    "token asked (3)",
+    "send 2: third",
+    "timer 4 cleared"
+   ]
+  },
+  "after such a flush within a flush, a later flush waits for the outer one, which sends what was tracked meanwhile": {
+   "returned": [
+    "timer 1 set for 3000",
+    "timer 1 unref",
+    "timer 2 set for 900",
+    "timer 2 unref",
+    "token asked (1)",
+    "timer 3 set for 50",
+    "timer 3 unref",
+    "token asked (2)",
+    "send 1: first",
+    "timer 3 cleared",
+    "the inner flush resolved",
+    "a third flush is called while the outer one still waits for its token",
+    "the first check answers",
+    "send 2: late",
+    "timer 2 cleared",
+    "the outer flush resolved",
+    "the third flush resolved"
+   ]
+  },
+  "a token provider that tracks an event while the buffer is at its limit starts a second flush within the first, and both send the same events": {
+   "returned": {
+    "log": [
+     "timer 1 set for 2500",
+     "timer 1 unref",
+     "token asked (1)",
+     "timer 2 set for 2500",
+     "timer 2 unref",
+     "token asked (2)",
+     "first tracked",
+     "send 1: first, token.asked",
+     "send 2: first, token.asked",
+     "timer 2 cleared",
+     "timer 1 cleared",
+     "timer 3 set for 2500",
+     "timer 3 unref",
+     "token asked (3)",
+     "send 3: afterwards",
+     "timer 3 cleared"
+    ],
+    "sent": [
+     [
+      "first",
+      "token.asked"
+     ],
+     [
+      "first",
+      "token.asked"
+     ],
+     [
+      "afterwards"
+     ]
+    ],
+    "theSameEventTwice": true
+   }
+  },
+  "onDebug that tracks an event when a send fails: the new event is counted when the oldest are dropped": {
+   "returned": {
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 2500",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: e1, e2",
+     "onDebug analytics.flush.error",
+     "timer 2 cleared",
+     "timer 3 set for 2500",
+     "timer 3 unref",
+     "token asked (2)",
+     "send 2: e2, e3",
+     "timer 3 cleared"
+    ],
+    "sent": [
+     [
+      "e1",
+      "e2"
+     ],
+     [
+      "e2",
+      "e3"
+     ]
+    ]
+   }
+  },
+  "onDebug that throws while a flush gives up is told again, this time that the token check failed, with what it threw": {
+   "returned": {
+    "no token": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.deferred",
+       "keys": [
+        "reason",
+        "count"
+       ],
+       "itsOwnError": false,
+       "reason": "no_token",
+       "count": 1
+      },
+      {
+       "tag": "analytics.flush.deferred",
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "itsOwnError": true,
+       "reason": "token_check_failed",
+       "count": 1
+      }
+     ],
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "timer 2 cleared"
+     ]
+    },
+    "the token check timed out": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.deferred",
+       "keys": [
+        "reason",
+        "count"
+       ],
+       "itsOwnError": false,
+       "reason": "token_check_timed_out",
+       "count": 1
+      },
+      {
+       "tag": "analytics.flush.deferred",
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "itsOwnError": true,
+       "reason": "token_check_failed",
+       "count": 1
+      }
+     ],
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "timer 2 fires",
+      "timer 2 cleared"
+     ]
+    }
+   }
+  },
+  "onDebug that throws every time makes flush reject with what it threw; a waiting flush is rejected too, and the buffer works again afterwards": {
+   "returned": {
+    "when there is no token": {
+     "rejectedWithItsError": [
+      true,
+      true
+     ],
+     "afterwards": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "onDebug analytics.flush.deferred (no_token)",
+      "onDebug analytics.flush.deferred (token_check_failed)",
+      "timer 2 cleared",
+      "both flushes ended",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first"
+      ]
+     ]
+    },
+    "when the token check fails": {
+     "rejectedWithItsError": [
+      true,
+      true
+     ],
+     "afterwards": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "onDebug analytics.flush.deferred (token_check_failed)",
+      "timer 2 cleared",
+      "both flushes ended",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 1: first",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first"
+      ]
+     ]
+    },
+    "when the send fails": {
+     "rejectedWithItsError": [
+      true,
+      true
+     ],
+     "afterwards": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "send 1: first",
+      "onDebug analytics.flush.error",
+      "timer 2 cleared",
+      "both flushes ended",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (2)",
+      "send 2: first",
+      "timer 3 cleared"
+     ],
+     "sent": [
+      [
+       "first"
+      ],
+      [
+       "first"
+      ]
+     ]
+    }
+   }
+  },
+  "without onDebug a flush that gives up or fails says nothing and still resolves": {
+   "returned": {
+    "endings": [
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     {
+      "resolved": {
+       "$": "undefined"
+      }
+     }
+    ],
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "timer 2 cleared",
+     "timer 3 set for 100",
+     "timer 3 unref",
+     "token asked (2)",
+     "timer 3 cleared",
+     "timer 4 set for 100",
+     "timer 4 unref",
+     "token asked (3)",
+     "send 1: first",
+     "timer 4 cleared",
+     "timer 5 set for 100",
+     "timer 5 unref",
+     "token asked (4)",
+     "send 2: first",
+     "timer 5 cleared",
+     "timer 6 set for 3000",
+     "timer 6 unref",
+     "timer 7 set for 100",
+     "timer 7 unref",
+     "timer 7 cleared"
+    ]
+   }
+  },
+  "the client, the token provider and onDebug are each called as the buffer holds them": {
+   "returned": {
+    "tokenProvider": {
+     "calledOnTheProvider": true,
+     "given": 0
+    },
+    "client": {
+     "calledOnTheClient": true,
+     "given": 2
+    },
+    "onDebug": {
+     "calledOnTheBuffer": true,
+     "calledOnTheOptions": false,
+     "given": 2
+    }
+   }
+  },
+  "the options are read once when the buffer is made; the client's and the provider's own methods are looked up at each call": {
+   "returned": [
+    "timer 1 set for 11",
+    "timer 1 unref",
+    "timer 2 set for 100",
+    "timer 2 unref",
+    "token asked (1)",
+    "send 1: first",
+    "timer 2 cleared",
+    "timer 3 set for 100",
+    "timer 3 unref",
+    "the replaced method gives a token",
+    "the replaced method sends 1",
+    "timer 3 cleared"
+   ]
+  },
+  "options that are missing or incomplete": {
+   "returned": {
+    "noOptions": "TypeError",
+    "nullOptions": "TypeError",
+    "empty": {
+     "tracked": "nothing thrown",
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.deferred",
+       "keys": [
+        "reason",
+        "error",
+        "count"
+       ],
+       "reason": "token_check_failed",
+       "errorClass": "TypeError",
+       "count": 1
+      }
+     ],
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "timer 2 cleared"
+     ]
+    },
+    "noClient": {
+     "ended": {
+      "resolved": {
+       "$": "undefined"
+      }
+     },
+     "told": [
+      {
+       "tag": "analytics.flush.error",
+       "keys": [
+        "error"
+       ],
+       "errorClass": "TypeError"
+      }
+     ],
+     "log": [
+      "timer 1 set for 3000",
+      "timer 1 unref",
+      "timer 2 set for 100",
+      "timer 2 unref",
+      "token asked (1)",
+      "timer 2 cleared"
+     ]
+    }
+   }
+  },
+  "timers that are numbers work as well; a timer of zero is forgotten, so every event sets another; no timer at all breaks tracking after the event is kept": {
+   "returned": {
+    "numbers": [
+     "timer 1 set for 3000",
+     "timer 1 fires",
+     "timer 2 set for 2500",
+     "token asked (1)",
+     "send 1: first, second",
+     "timer 2 cleared"
+    ],
+    "zero": [
+     "timer 1 set for 3000",
+     "timer 2 set for 3000",
+     "timer 3 set for 3000",
+     "timer 2 fires",
+     "timer 4 set for 2500",
+     "token asked (1)",
+     "send 1: first, second, third",
+     "timer 4 cleared"
+    ],
+    "nothing": {
+     "tracked": "TypeError",
+     "flushRejectedWith": "TypeError",
+     "log": [
+      "timer 1 set for 3000",
+      "timer 2 set for 100",
+      "timer 3 set for 100",
+      "timer 3 unref",
+      "token asked (1)",
+      "send 1: first",
+      "timer 3 cleared"
+     ]
+    }
+   }
+  },
+  "two buffers share nothing": {
+   "returned": {
+    "one": 1,
+    "two": 0,
+    "log": [
+     "timer 1 set for 3000",
+     "timer 1 unref",
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "send 1: only in one",
+     "timer 2 cleared"
+    ]
+   }
+  },
+  "how many turns of the microtask queue each step of a flush takes": {
+   "returned": {
+    "a flush that sends": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "send 1: first",
+     "turn 2",
+     "timer 2 cleared",
+     "turn 3",
+     "turn 4",
+     "flush resolved",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "a flush with no token": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "onDebug analytics.flush.deferred (no_token)",
+     "timer 2 cleared",
+     "turn 2",
+     "turn 3",
+     "flush resolved",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "a flush whose token check rejects": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "onDebug analytics.flush.deferred (token_check_failed)",
+     "timer 2 cleared",
+     "turn 2",
+     "turn 3",
+     "flush resolved",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "a flush whose send rejects": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "send 1: first",
+     "turn 2",
+     "onDebug analytics.flush.error",
+     "timer 2 cleared",
+     "turn 3",
+     "turn 4",
+     "flush resolved",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "a flush whose send throws": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "send 1: first",
+     "onDebug analytics.flush.error",
+     "timer 2 cleared",
+     "turn 2",
+     "turn 3",
+     "flush resolved",
+     "turn 4",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "a flush that goes round twice": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "send 1: first",
+     "turn 2",
+     "timer 2 cleared",
+     "turn 3",
+     "timer 3 set for 100",
+     "timer 3 unref",
+     "token asked (2)",
+     "turn 4",
+     "turn 5",
+     "send 2: tracked during the send",
+     "turn 6",
+     "timer 3 cleared",
+     "turn 7",
+     "turn 8",
+     "flush resolved",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "two flushes, the second waiting": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "send 1: first",
+     "turn 2",
+     "timer 2 cleared",
+     "turn 3",
+     "turn 4",
+     "flush resolved",
+     "second flush resolved",
+     "turn 5",
+     "turn 6",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ],
+    "two flushes with no token, the second trying again": [
+     "timer 2 set for 100",
+     "timer 2 unref",
+     "token asked (1)",
+     "flush called",
+     "turn 1",
+     "onDebug analytics.flush.deferred (no_token)",
+     "timer 2 cleared",
+     "turn 2",
+     "timer 3 set for 100",
+     "timer 3 unref",
+     "token asked (2)",
+     "turn 3",
+     "flush resolved",
+     "turn 4",
+     "onDebug analytics.flush.deferred (no_token)",
+     "timer 3 cleared",
+     "turn 5",
+     "turn 6",
+     "second flush resolved",
+     "turn 7",
+     "turn 8",
+     "turn 9",
+     "turn 10",
+     "turn 11",
+     "turn 12",
+     "turn 13",
+     "turn 14",
+     "turn 15",
+     "turn 16"
+    ]
+   }
+  }
+ }
+}
