@@ -11,10 +11,8 @@
  * for the parser package, written into a temporary folder: it turns a tree
  * written as JSON into nodes, so any shape of tree can be handed over.
  */
-import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import Module, { createRequire } from "node:module";
-import os from "node:os";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,32 +22,6 @@ export const modules = { parser: "source/packages/shell-exec/shell-parser.ts" };
 const requireHere = createRequire(import.meta.url);
 /** The checkout's own packages, where the real parser is. */
 const checkoutPackages = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "node_modules");
-
-/**
- * The real parser's two packages, made findable by the part as the test loads it.
- *
- * The part is loaded from a temporary folder with the machine's settings
- * taken away. It then looks for the two packages as a developer run does,
- * the way Node looks from the part's own file, and from a temporary folder
- * Node finds nothing: the part could not even be loaded. So Node is given one
- * more place to look in after all its own, for as long as the test runs: a
- * folder that holds links to those two packages and to nothing else. Nothing
- * but a file that asks for one of the two by name, and has none nearer, is
- * answered differently for it.
- *
- * Node makes its list of such places once, when it starts, from NODE_PATH;
- * `_initPaths` is Node's own function for making it again.
- */
-const realPackages = mkdtempSync(path.join(os.tmpdir(), "simeon-recorded-parser-"));
-for (const name of ["tree-sitter", "tree-sitter-bash"]) symlinkSync(path.join(checkoutPackages, name), path.join(realPackages, name), "junction");
-process.once("exit", () => rmSync(realPackages, { recursive: true, force: true }));
-{
-  const given = process.env.NODE_PATH;
-  process.env.NODE_PATH = [given, realPackages].filter(Boolean).join(path.delimiter);
-  Module._initPaths();
-  if (given === undefined) delete process.env.NODE_PATH;
-  else process.env.NODE_PATH = given;
-}
 
 /**
  * `run`, with every list of children the real parser hands out while it goes
