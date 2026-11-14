@@ -36,7 +36,9 @@ settings:
     # 0.2.20 (13 November 2026): the connect cards drawn as an app to connect is, and "Failed" on a cloud agent's card.
     # 0.2.21 (13 November 2026): cloud agents in Codex and in a third coding program, the card that offers each
     # to connect, and a saved login's site icon read again (every icon tried, a failed read not kept).
-    MARKETING_VERSION: "0.2.21"
+    # 0.2.22 (14 November 2026): a bot or coding agent on the person's network shown by what it is, with its own
+    # mascot, and every mascot the whole picture with nothing behind it (a cloud agent's too).
+    MARKETING_VERSION: "0.2.22"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
     # The Apple developer team Simeon publishes from: set it here, or in
