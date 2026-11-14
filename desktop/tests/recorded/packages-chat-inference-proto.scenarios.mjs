@@ -17,7 +17,7 @@
  * its bytes (hex) and its plain form (the JSON the engine's connection
  * sends).
  *
- * Two modules below are not this part's code: the wire's own messages
+ * Two modules are borrowed from other parts: the wire's own messages
  * (generated, a contract with the server) and the real contexts. They are
  * built into the same file so that a scenario can make a message of the
  * wire and a context as the engine does. The folder holds one more file,
@@ -30,6 +30,10 @@ export const modules = {
   client: `${folder}/client.ts`,
   converters: `${folder}/converters.ts`,
   options: `${folder}/modelProviderOptions.ts`,
+};
+
+/** Not this part's code: the messages of the wire, and the contexts the engine hands down every call. */
+export const borrowed = {
   wire: "source/packages/proto/generated/simeon/v1/inference_pb.ts",
   context: "source/packages/context/core.ts",
 };
