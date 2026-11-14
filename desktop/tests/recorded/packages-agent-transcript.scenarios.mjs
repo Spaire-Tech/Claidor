@@ -1112,6 +1112,19 @@ export const scenarios = [
         (messages) => forms(loaded, messages),
       ),
   },
+  {
+    name: "a message put away in an archive that is null, or no message at all, as each form takes it",
+    run: (loaded) =>
+      table(
+        {
+          "null": [user("kept"), utf8("null"), assistant("after")],
+          "a number, a text, a list, yes": [user("kept"), utf8("5"), utf8('"words"'), utf8("[1,2]"), utf8("true"), assistant("after")],
+          "null first": [utf8("null"), user("kept")],
+          "null after one of the person, where the second message is looked at": [user("kept"), utf8("null")],
+        },
+        (archived) => forms(loaded, { archives: [archived], messages: [] }),
+      ),
+  },
 
   // -------------------------------------------------------------------------------------------------------------
   // The store: the end of a turn, and the overview
@@ -1148,6 +1161,32 @@ export const scenarios = [
       "an ending that is null is refused": await forms(loaded, { messages: [user("hello")], write: { turnEnded: null } }),
       "options that are null are refused": await forms(loaded, { messages: [user("hello")], write: null }),
     }),
+  },
+  {
+    name: "an ending of the turn that is not what its type says: written as JavaScript turns it into text, or refused before anything is written",
+    run: (loaded) => {
+      const ask = async (turnEnded) => ({
+        whole: await forms(loaded, { messages: [user("hello")], write: { turnEnded } }),
+        "added, with a message": await laterWrite(loaded, { messages: [user("before"), assistant("new")], previous: 1, write: { turnEnded } }).then(({ answered, files, said }) => ({ answered, files, ...(said === undefined ? {} : { said }) })),
+        "added, alone": await laterWrite(loaded, { messages: [user("before")], previous: 1, write: { turnEnded } }).then(({ answered, files, said }) => ({ answered, files, ...(said === undefined ? {} : { said }) })),
+      });
+      return table(
+        {
+          "an error that is a thing": () => ({ status: "error", error: { code: 7 } }),
+          "an error that is a number": () => ({ status: "aborted", error: 404 }),
+          "an error that is a list": () => ({ status: "error", error: ["a", "b"] }),
+          "an ending nobody knows that says how it is written": () => ({ status: "paused", toString: () => "Turn paused." }),
+          "a status in capitals is an ending nobody knows": () => ({ status: "SUCCESS" }),
+          "an ending that is a text": () => "success",
+          "an ending that is a number": () => 7,
+          "an ending that is a list": () => ["success"],
+          "an ending that holds a number too large for JSON": () => ({ status: "success", tokens: 12n }),
+          "an ending that gives nothing when it is turned into JSON": () => ({ status: "success", toJSON: () => undefined }),
+          "an ending that gives a text when it is turned into JSON": () => ({ status: "success", toJSON: () => "ended\n" }),
+        },
+        (make) => ask(make()),
+      );
+    },
   },
   {
     name: "nothing to write: no file is touched and the write went well",
@@ -1681,6 +1720,68 @@ export const scenarios = [
         },
         (given) => laterWrite(loaded, { messages: [user("hello"), assistant("hi")], previous: 1, ...given }),
       );
+    },
+  },
+  {
+    name: "adding fails and the whole is written instead: all the store did on the way, in order",
+    run: async (loaded) => {
+      const desk = bench(loaded, { messages: [user("the context"), user("the question"), assistant("the answer")], append: true, store: { writeText: false, writeJsonl: true }, appendFails: () => new Error("the file is gone") });
+      const answered = await desk.run(({ store, state, ctx }) => store.writeFromStateIncremental(ctx, state, ID, 2, { turnEnded: { status: "success" } }));
+      const alone = bench(loaded, { messages: [user("the context"), user("the question")], append: true, store: { writeText: false, writeJsonl: true }, appendFails: () => new Error("the file is gone") });
+      const answeredAlone = await alone.run(({ store, state, ctx }) => store.writeFromStateIncremental(ctx, state, ID, 2, { turnEnded: { status: "success" } }));
+      return { "a message and the ending": { answered, everything: desk.log, clockReads: desk.clock.reads }, "the ending alone": { answered: answeredAlone, everything: alone.log, clockReads: alone.clock.reads } };
+    },
+  },
+  {
+    name: "a store made from the store's class with its own place for files, or its own whole write, has them used",
+    run: async (loaded) => {
+      const desk = bench(loaded, { messages: [user("the context"), user("the question"), assistant("the answer")], appendFails: () => new Error("the file is gone") });
+      const calls = [];
+      class Elsewhere extends loaded.index.TranscriptStore {
+        resolveFilePath(id, ext) {
+          calls.push(`asked where ${id}.${ext} goes`);
+          return `/its/own/${id}.${ext}`;
+        }
+      }
+      class ItsOwnWrite extends loaded.index.TranscriptStore {
+        async writeFromStateFull(ctx, state, id, options) {
+          calls.push(`asked to write ${id} whole, ${state.rootPromptMessagesJson.length} messages, with ${JSON.stringify(options)}`);
+          return this.answer;
+        }
+      }
+      const all = { writeText: true, writeJson: true, writeJsonl: true };
+      const lines = { writeText: false, writeJsonl: true, appendFile: desk.appends };
+      const out = {};
+      out["its own place, a whole write"] = await desk.run(({ state, ctx }) => new Elsewhere("/project", desk.shelf, desk.writes, all).writeFromStateFull(ctx, state, ID));
+      out["its own place, adding"] = await desk.run(({ state, ctx }) => new Elsewhere("/project", desk.shelf, desk.writes, { ...lines, fallbackToFullWriteOnIncrementalFailure: false }).writeFromStateIncremental(ctx, state, ID, 2));
+      for (const answer of [true, false, "yes", 0]) {
+        const made = new ItsOwnWrite("/project", desk.shelf, desk.writes, lines);
+        made.answer = answer;
+        out[`its own whole write that answers ${JSON.stringify(answer)}, nothing written before`] = await desk.run(({ state, ctx }) => made.writeFromStateIncremental(ctx, state, ID, 0, { turnEnded: { status: "success" } }));
+        out[`its own whole write that answers ${JSON.stringify(answer)}, adding fails`] = await desk.run(({ state, ctx }) => made.writeFromStateIncremental(ctx, state, ID, 2));
+      }
+      return { ...out, calls, files: desk.files().map((file) => file.write ?? `added to ${file.append}`), said: desk.said() };
+    },
+  },
+  {
+    name: "a list of messages that grows while the store reads it: a whole write reads what was added, adding reads what there was when it began",
+    run: async (loaded) => {
+      const ask = async (act) => {
+        const desk = bench(loaded, { messages: [user("the context"), user("one"), assistant("two")], blobs: { late: assistant("came while reading") }, append: true, store: { writeText: false, writeJsonl: true } });
+        const read = desk.shelf.getBlob;
+        let grown = false;
+        desk.shelf.getBlob = (ctx, id) => {
+          if (!grown) desk.state.rootPromptMessagesJson.push(utf8("late"));
+          grown = true;
+          return read(ctx, id);
+        };
+        const answered = await desk.run(({ store, state, ctx }) => act(store, ctx, state));
+        return { answered, ...desk.seen() };
+      };
+      return {
+        "a whole write": await ask((store, ctx, state) => store.writeFromStateFull(ctx, state, ID)),
+        adding: await ask((store, ctx, state) => store.writeFromStateIncremental(ctx, state, ID, 1)),
+      };
     },
   },
   {

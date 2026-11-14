@@ -3020,6 +3020,147 @@
     }
    }
   },
+  "a message put away in an archive that is null, or no message at all, as each form takes it": {
+   "returned": {
+    "null": {
+     "txt": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "json": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "jsonl": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     }
+    },
+    "a number, a text, a list, yes": {
+     "txt": "user:\nkept\n\nassistant:\nafter",
+     "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"kept\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"text\": \"after\"\n    }\n  ]\n}",
+     "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"kept\"}]}}\n{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"after\"}]}}\n"
+    },
+    "null first": {
+     "txt": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "json": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "jsonl": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     }
+    },
+    "null after one of the person, where the second message is looked at": {
+     "txt": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "json": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     },
+     "jsonl": {
+      "answered": false,
+      "files": [],
+      "said": [
+       [
+        "[TranscriptStore] Failed to write transcript:",
+        {
+         "$": "error",
+         "name": "TypeError",
+         "message": "Cannot read properties of null (reading 'role')"
+        }
+       ]
+      ]
+     }
+    }
+   }
+  },
   "how a turn ended is written after the conversation, in each form": {
    "returned": {
     "it went well": {
@@ -3196,6 +3337,339 @@
          "message": "Cannot read properties of null (reading 'turnEnded')"
         }
        ]
+      ]
+     }
+    }
+   }
+  },
+  "an ending of the turn that is not what its type says: written as JavaScript turns it into text, or refused before anything is written": {
+   "returned": {
+    "an error that is a thing": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn ended: error: [object Object]",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": {\n    \"status\": \"error\",\n    \"error\": {\n      \"code\": 7\n    }\n  }\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":{\"code\":7}}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":{\"code\":7}}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":{\"code\":7}}\n"
+       }
+      ]
+     }
+    },
+    "an error that is a number": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn ended: aborted: 404",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": {\n    \"status\": \"aborted\",\n    \"error\": 404\n  }\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"aborted\",\"error\":404}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"aborted\",\"error\":404}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\",\"status\":\"aborted\",\"error\":404}\n"
+       }
+      ]
+     }
+    },
+    "an error that is a list": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn ended: error: a,b",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": {\n    \"status\": \"error\",\n    \"error\": [\n      \"a\",\n      \"b\"\n    ]\n  }\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":[\"a\",\"b\"]}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":[\"a\",\"b\"]}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\",\"status\":\"error\",\"error\":[\"a\",\"b\"]}\n"
+       }
+      ]
+     }
+    },
+    "an ending nobody knows that says how it is written": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn paused.",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": {\n    \"status\": \"paused\"\n  }\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"paused\"}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"paused\"}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\",\"status\":\"paused\"}\n"
+       }
+      ]
+     }
+    },
+    "a status in capitals is an ending nobody knows": {
+     "whole": {
+      "txt": "user:\nhello\n\n[object Object]",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": {\n    \"status\": \"SUCCESS\"\n  }\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"SUCCESS\"}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"SUCCESS\"}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\",\"status\":\"SUCCESS\"}\n"
+       }
+      ]
+     }
+    },
+    "an ending that is a text": {
+     "whole": {
+      "txt": "user:\nhello\n\nsuccess",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": \"success\"\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"0\":\"s\",\"1\":\"u\",\"2\":\"c\",\"3\":\"c\",\"4\":\"e\",\"5\":\"s\",\"6\":\"s\",\"type\":\"turn_ended\"}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"0\":\"s\",\"1\":\"u\",\"2\":\"c\",\"3\":\"c\",\"4\":\"e\",\"5\":\"s\",\"6\":\"s\",\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"0\":\"s\",\"1\":\"u\",\"2\":\"c\",\"3\":\"c\",\"4\":\"e\",\"5\":\"s\",\"6\":\"s\",\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     }
+    },
+    "an ending that is a number": {
+     "whole": {
+      "txt": "user:\nhello\n\n7",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": 7\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"type\":\"turn_ended\"}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     }
+    },
+    "an ending that is a list": {
+     "whole": {
+      "txt": "user:\nhello\n\nsuccess",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": [\n    \"success\"\n  ]\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n{\"0\":\"success\",\"type\":\"turn_ended\"}\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n{\"0\":\"success\",\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"0\":\"success\",\"type\":\"turn_ended\"}\n"
+       }
+      ]
+     }
+    },
+    "an ending that holds a number too large for JSON": {
+     "whole": {
+      "txt": {
+       "answered": false,
+       "files": [],
+       "said": [
+        [
+         "[TranscriptStore] Failed to write transcript:",
+         {
+          "$": "error",
+          "name": "TypeError",
+          "message": "Do not know how to serialize a BigInt"
+         }
+        ]
+       ]
+      },
+      "json": {
+       "answered": false,
+       "files": [],
+       "said": [
+        [
+         "[TranscriptStore] Failed to write transcript:",
+         {
+          "$": "error",
+          "name": "TypeError",
+          "message": "Do not know how to serialize a BigInt"
+         }
+        ]
+       ]
+      },
+      "jsonl": {
+       "answered": false,
+       "files": [],
+       "said": [
+        [
+         "[TranscriptStore] Failed to write transcript:",
+         {
+          "$": "error",
+          "name": "TypeError",
+          "message": "Do not know how to serialize a BigInt"
+         }
+        ]
+       ]
+      }
+     },
+     "added, with a message": {
+      "answered": {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Do not know how to serialize a BigInt"
+       }
+      },
+      "files": []
+     },
+     "added, alone": {
+      "answered": {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "Do not know how to serialize a BigInt"
+       }
+      },
+      "files": []
+     }
+    },
+    "an ending that gives nothing when it is turned into JSON": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn ended: success.",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ]\n}",
+      "jsonl": {
+       "answered": false,
+       "files": [],
+       "said": [
+        [
+         "[TranscriptStore] Failed to write transcript:",
+         {
+          "$": "error",
+          "name": "TypeError",
+          "message": "Cannot read properties of undefined (reading 'length')"
+         }
+        ]
+       ]
+      }
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "\n"
+       }
+      ]
+     }
+    },
+    "an ending that gives a text when it is turned into JSON": {
+     "whole": {
+      "txt": "user:\nhello\n\nTurn ended: success.",
+      "json": "{\n  \"mode\": \"agent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"text\": \"hello\"\n    }\n  ],\n  \"turnEnded\": \"ended\\n\"\n}",
+      "jsonl": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"hello\"}]}}\n\"ended\\n\"\n"
+     },
+     "added, with a message": {
+      "answered": 2,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"new\"}]}}\n\"ended\\n\"\n"
+       }
+      ]
+     },
+     "added, alone": {
+      "answered": 1,
+      "files": [
+       {
+        "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+        "text": "\"ended\\n\"\n"
+       }
       ]
      }
     }
@@ -7628,6 +8102,463 @@
       "span 3, \"hydratePromptMessages\" under span 1, \"writeFromState\": getBlobCount=1 hydratedBlobCount=1 hydratedBlobBytes=37 largestHydratedBlobBytes=37 totalDeserializeDurationMs=3 omittedOversizeBlobCount=0 omittedOversizeBlobBytes=0 largestOmittedOversizeBlobBytes=0; ended once"
      ],
      "clockReads": 2
+    }
+   }
+  },
+  "adding fails and the whole is written instead: all the store did on the way, in order": {
+   "returned": {
+    "a message and the ending": {
+     "answered": 3,
+     "everything": [
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "started": "with no options",
+       "under": "no span"
+      },
+      {
+       "read": "m3",
+       "with": "turn > writeFromStateIncremental; span 1, \"writeFromStateIncremental\"; carries the caller's value"
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "hydratedBlobCount",
+       "to": 1
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "hydratedBlobBytes",
+       "to": 43
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "largestHydratedBlobBytes",
+       "to": 43
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "totalDeserializeDurationMs",
+       "to": 3
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "omittedOversizeBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "omittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "set": "largestOmittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"the answer\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"success\"}\n"
+      },
+      {
+       "said": [
+        "[TranscriptStore] Failed to append transcript, falling back to full write:",
+        {
+         "$": "error",
+         "name": "Error",
+         "message": "the file is gone"
+        }
+       ]
+      },
+      {
+       "span": "span 2, \"writeFromState\"",
+       "started": "with no options",
+       "under": "no span"
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "started": "with no options",
+       "under": "span 2, \"writeFromState\""
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "getBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "hydratedBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "hydratedBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "largestHydratedBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "totalDeserializeDurationMs",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "omittedOversizeBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "omittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "largestOmittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "started": "with no options",
+       "under": "span 2, \"writeFromState\""
+      },
+      {
+       "read": "m1",
+       "with": "turn > writeFromState > hydrateSummaryArchives; span 3, \"hydrateSummaryArchives\"; no span is started under it; carries the caller's value"
+      },
+      {
+       "read": "m2",
+       "with": "turn > writeFromState > hydrateSummaryArchives; span 3, \"hydrateSummaryArchives\"; no span is started under it; carries the caller's value"
+      },
+      {
+       "read": "m3",
+       "with": "turn > writeFromState > hydrateSummaryArchives; span 3, \"hydrateSummaryArchives\"; no span is started under it; carries the caller's value"
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "getBlobCount",
+       "to": 3
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "hydratedBlobCount",
+       "to": 3
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "hydratedBlobBytes",
+       "to": 122
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "largestHydratedBlobBytes",
+       "to": 43
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "totalDeserializeDurationMs",
+       "to": 9
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "omittedOversizeBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "omittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "largestOmittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "ended": "now"
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "ended": "now"
+      },
+      {
+       "write": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"the question\"}]}}\n{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"the answer\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"success\"}\n"
+      },
+      {
+       "span": "span 2, \"writeFromState\"",
+       "ended": "now"
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "ended": "now"
+      }
+     ],
+     "clockReads": 8
+    },
+    "the ending alone": {
+     "answered": 2,
+     "everything": [
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "started": "with no options",
+       "under": "no span"
+      },
+      {
+       "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"type\":\"turn_ended\",\"status\":\"success\"}\n"
+      },
+      {
+       "said": [
+        "[TranscriptStore] Failed to append transcript, falling back to full write:",
+        {
+         "$": "error",
+         "name": "Error",
+         "message": "the file is gone"
+        }
+       ]
+      },
+      {
+       "span": "span 2, \"writeFromState\"",
+       "started": "with no options",
+       "under": "no span"
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "started": "with no options",
+       "under": "span 2, \"writeFromState\""
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "getBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "hydratedBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "hydratedBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "largestHydratedBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "totalDeserializeDurationMs",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "omittedOversizeBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "omittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "set": "largestOmittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "started": "with no options",
+       "under": "span 2, \"writeFromState\""
+      },
+      {
+       "read": "m1",
+       "with": "turn > writeFromState > hydrateSummaryArchives; span 3, \"hydrateSummaryArchives\"; no span is started under it; carries the caller's value"
+      },
+      {
+       "read": "m2",
+       "with": "turn > writeFromState > hydrateSummaryArchives; span 3, \"hydrateSummaryArchives\"; no span is started under it; carries the caller's value"
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "getBlobCount",
+       "to": 2
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "hydratedBlobCount",
+       "to": 2
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "hydratedBlobBytes",
+       "to": 79
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "largestHydratedBlobBytes",
+       "to": 40
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "totalDeserializeDurationMs",
+       "to": 6
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "omittedOversizeBlobCount",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "omittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "set": "largestOmittedOversizeBlobBytes",
+       "to": 0
+      },
+      {
+       "span": "span 4, \"hydratePromptMessages\"",
+       "ended": "now"
+      },
+      {
+       "span": "span 3, \"hydrateSummaryArchives\"",
+       "ended": "now"
+      },
+      {
+       "write": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"the question\"}]}}\n{\"type\":\"turn_ended\",\"status\":\"success\"}\n"
+      },
+      {
+       "span": "span 2, \"writeFromState\"",
+       "ended": "now"
+      },
+      {
+       "span": "span 1, \"writeFromStateIncremental\"",
+       "ended": "now"
+      }
+     ],
+     "clockReads": 4
+    }
+   }
+  },
+  "a store made from the store's class with its own place for files, or its own whole write, has them used": {
+   "returned": {
+    "its own place, a whole write": true,
+    "its own place, adding": 0,
+    "its own whole write that answers true, nothing written before": 3,
+    "its own whole write that answers true, adding fails": 3,
+    "its own whole write that answers false, nothing written before": 0,
+    "its own whole write that answers false, adding fails": 0,
+    "its own whole write that answers \"yes\", nothing written before": 3,
+    "its own whole write that answers \"yes\", adding fails": 3,
+    "its own whole write that answers 0, nothing written before": 0,
+    "its own whole write that answers 0, adding fails": 0,
+    "calls": [
+     "asked where conv-1.txt goes",
+     "asked where conv-1.json goes",
+     "asked where conv-1.jsonl goes",
+     "asked where conv-1.jsonl goes",
+     "asked to write conv-1 whole, 3 messages, with {\"turnEnded\":{\"status\":\"success\"}}",
+     "asked to write conv-1 whole, 3 messages, with {}",
+     "asked to write conv-1 whole, 3 messages, with {\"turnEnded\":{\"status\":\"success\"}}",
+     "asked to write conv-1 whole, 3 messages, with {}",
+     "asked to write conv-1 whole, 3 messages, with {\"turnEnded\":{\"status\":\"success\"}}",
+     "asked to write conv-1 whole, 3 messages, with {}",
+     "asked to write conv-1 whole, 3 messages, with {\"turnEnded\":{\"status\":\"success\"}}",
+     "asked to write conv-1 whole, 3 messages, with {}"
+    ],
+    "files": [
+     "/its/own/conv-1.txt",
+     "/its/own/conv-1.json",
+     "/its/own/conv-1.jsonl",
+     "added to /its/own/conv-1.jsonl",
+     "added to /project/agent-transcripts/conv-1/conv-1.jsonl",
+     "added to /project/agent-transcripts/conv-1/conv-1.jsonl",
+     "added to /project/agent-transcripts/conv-1/conv-1.jsonl",
+     "added to /project/agent-transcripts/conv-1/conv-1.jsonl"
+    ],
+    "said": [
+     [
+      "[TranscriptStore] Failed to append transcript:",
+      {
+       "$": "error",
+       "name": "Error",
+       "message": "the file is gone"
+      }
+     ],
+     [
+      "[TranscriptStore] Failed to append transcript, falling back to full write:",
+      {
+       "$": "error",
+       "name": "Error",
+       "message": "the file is gone"
+      }
+     ],
+     [
+      "[TranscriptStore] Failed to append transcript, falling back to full write:",
+      {
+       "$": "error",
+       "name": "Error",
+       "message": "the file is gone"
+      }
+     ],
+     [
+      "[TranscriptStore] Failed to append transcript, falling back to full write:",
+      {
+       "$": "error",
+       "name": "Error",
+       "message": "the file is gone"
+      }
+     ],
+     [
+      "[TranscriptStore] Failed to append transcript, falling back to full write:",
+      {
+       "$": "error",
+       "name": "Error",
+       "message": "the file is gone"
+      }
+     ]
+    ]
+   }
+  },
+  "a list of messages that grows while the store reads it: a whole write reads what was added, adding reads what there was when it began": {
+   "returned": {
+    "a whole write": {
+     "answered": true,
+     "files": [
+      {
+       "write": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"one\"}]}}\n{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"two\"}]}}\n{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"came while reading\"}]}}\n"
+      }
+     ],
+     "read": "m1, m2, m3, late",
+     "spans": [
+      "span 1, \"writeFromState\": no attributes; ended once",
+      "span 2, \"hydrateSummaryArchives\" under span 1, \"writeFromState\": getBlobCount=0 hydratedBlobCount=0 hydratedBlobBytes=0 largestHydratedBlobBytes=0 totalDeserializeDurationMs=0 omittedOversizeBlobCount=0 omittedOversizeBlobBytes=0 largestOmittedOversizeBlobBytes=0; ended once",
+      "span 3, \"hydratePromptMessages\" under span 1, \"writeFromState\": getBlobCount=4 hydratedBlobCount=4 hydratedBlobBytes=157 largestHydratedBlobBytes=51 totalDeserializeDurationMs=12 omittedOversizeBlobCount=0 omittedOversizeBlobBytes=0 largestOmittedOversizeBlobBytes=0; ended once"
+     ],
+     "clockReads": 8
+    },
+    "adding": {
+     "answered": 3,
+     "files": [
+      {
+       "append": "/project/agent-transcripts/conv-1/conv-1.jsonl",
+       "text": "{\"role\":\"user\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"one\"}]}}\n{\"role\":\"assistant\",\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"two\"}]}}\n"
+      }
+     ],
+     "read": "m2, m3",
+     "spans": [
+      "span 1, \"writeFromStateIncremental\": hydratedBlobCount=2 hydratedBlobBytes=67 largestHydratedBlobBytes=36 totalDeserializeDurationMs=6 omittedOversizeBlobCount=0 omittedOversizeBlobBytes=0 largestOmittedOversizeBlobBytes=0; ended once"
+     ],
+     "clockReads": 4
     }
    }
   },
