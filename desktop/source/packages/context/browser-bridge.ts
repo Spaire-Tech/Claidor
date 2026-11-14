@@ -1,3 +1,5 @@
-// The retained 0.18 runtime contains an intentionally empty initializer.
-// No named runtime or erased declaration surface survived the immutable carriers.
+/**
+ * Nothing is exported from here. The file stays because the index names it,
+ * and a file with no export of its own still has to say that it is a module.
+ */
 export {};
