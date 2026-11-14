@@ -3,6 +3,12 @@
  * window. The host's events reach the coordinator as text, so the message
  * goes as the wire's own bytes written in base64; the coordinator checks
  * every envelope once and hands the window the bytes themselves.
+ *
+ * The message is the generated protobuf's own wire form, not a JSON shape of
+ * ours, because the retired window (the pinned renderer, `desktop/NOTICE.md`)
+ * reads it that way. Where it does, in the window's built file:
+ * src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=3097937
+ * src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=3102316
  */
 import {
   ClientSideToolV2Call,
