@@ -8,7 +8,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { answerOf, loadModules, measuring, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
+import { answerOf, buildModules, inSurroundings, measuring, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
 
 test("recorded: a part is built here as the engine's own build makes it", async () => {
   const { ENGINE_BUILD, desktopRoot } = await import("./recorded/harness.mjs");
@@ -34,15 +34,21 @@ const written = (value) => JSON.stringify(value, null, 1);
 for (const file of await scenarioFiles()) {
   const part = await import(pathToFileURL(path.join(recordedDir, file)).href);
   test(`recorded: ${part.part} behaves as recorded`, async (t) => {
-    const { loaded, coverage, dispose } = await loadModules(part.modules, { measure: measuring(part.part) });
+    const { load, coverage, dispose } = await buildModules(part.modules, { measure: measuring(part.part) });
     try {
-      const { modules, used } = tracked(loaded);
-      const surface = surfaceOf(loaded);
-      const scenarios = {};
-      for (const scenario of part.scenarios) {
-        assert.ok(!(scenario.name in scenarios), `two scenarios are named "${scenario.name}"`);
-        scenarios[scenario.name] = await answerOf(scenario, modules);
-      }
+      /** The part loaded afresh and every scenario asked once, in one set of surroundings. */
+      const ask = (surroundings) =>
+        inSurroundings(surroundings, async () => {
+          const loaded = await load();
+          const { modules, used } = tracked(loaded);
+          const scenarios = {};
+          for (const scenario of part.scenarios) {
+            assert.ok(!(scenario.name in scenarios), `two scenarios are named "${scenario.name}"`);
+            scenarios[scenario.name] = await answerOf(scenario, modules);
+          }
+          return { surface: surfaceOf(loaded), scenarios, used };
+        });
+      const { surface, scenarios, used } = await ask({});
 
       // Nothing of the part is left out without a reason.
       const skipped = part.skipped ?? {};
@@ -64,13 +70,19 @@ for (const file of await scenarioFiles()) {
         t.diagnostic(`${part.part}: ${pieces - never} of ${pieces} pieces ran (${pieces === 0 ? 0 : Math.floor(((pieces - never) * 100) / pieces)}%) in ${files.length} files`);
       }
 
+      // Asked again elsewhere: loaded afresh from another place, under the other platform's name, with another home and working folder.
+      const elsewhere = await ask({ other: true });
+      assert.equal(written(elsewhere.surface), written(surface), "the part exports the same wherever it is loaded");
+      for (const [name, answer] of Object.entries(scenarios)) {
+        assert.equal(
+          written(elsewhere.scenarios[name]),
+          written(answer),
+          `"${name}" answers differently in other surroundings (a fresh load, the other platform's name, another home, working and temporary folder): set what the part looks at inside the scenario, or scrub it from what is returned`,
+        );
+      }
+
       const answers = { part: part.part, surface, scenarios };
       if (recording(part.part)) {
-        // An answer that changes from one run to the next is no record: asked twice before it is kept.
-        const again = tracked(loaded).modules;
-        for (const scenario of part.scenarios) {
-          assert.equal(written(await answerOf(scenario, again)), written(scenarios[scenario.name]), `"${scenario.name}" answers differently when asked twice: fix what changes (a time, a path, an id) before recording`);
-        }
         await writeAnswers(part.part, answers);
         return;
       }
