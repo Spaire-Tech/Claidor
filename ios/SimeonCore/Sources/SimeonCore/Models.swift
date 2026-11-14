@@ -53,7 +53,7 @@ public struct Party: Hashable, Sendable {
    */
   public var mascot: String? {
     if cloudAgent { return ExternalAgents.cloudAgentMascot(coder) }
-    guard network, let bot else { return nil }
+    guard network, let bot = bot else { return nil }
     return ExternalAgents.networkMascot(bot)
   }
 
