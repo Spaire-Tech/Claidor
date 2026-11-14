@@ -1,0 +1,1708 @@
+{
+ "part": "host/extensions/experiments",
+ "surface": {
+  "extension": {
+   "experimentsExtension": "object"
+  },
+  "service": {
+   "BASE_POLL_INTERVAL_MS": "number",
+   "BOOTSTRAP_TIMEOUT_MS": "number",
+   "GATE_READY_TIMEOUT_MS": "number",
+   "MIN_POLL_INTERVAL_MS": "number",
+   "POLL_JITTER_FRACTION": "number",
+   "SandExperimentService": "class",
+   "computePollDelayMs": "function",
+   "envGateOverride": "function",
+   "jitteredSandExperimentPollIntervalMs": "function"
+  }
+ },
+ "scenarios": {
+  "the extension is declared under the id experiments and needs the sign-in and the settings": {
+   "returned": {
+    "keys": [
+     "kind",
+     "id",
+     "dependencies",
+     "start"
+    ],
+    "kind": "host-extension",
+    "id": "experiments",
+    "dependencies": [
+     "auth",
+     "settings"
+    ],
+    "frozen": [
+     true,
+     true
+    ],
+    "start": {
+     "kind": "function",
+     "parameters": 1
+    }
+   }
+  },
+  "started with no one signed in: what it does to the service, its peers and the host, in order, and the twenty-five ways in it hands back": {
+   "returned": {
+    "aPromise": false,
+    "atStart": [
+     {
+      "call": "service.start",
+      "given": []
+     },
+     {
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "auth.subscribeToRenewal",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "auth.peekAccessToken",
+      "given": []
+     },
+     {
+      "call": "settings.subscribeToFeatureFlagOverrides",
+      "given": [
+       "function"
+      ]
+     },
+     {
+      "call": "onStop",
+      "given": [
+       "function"
+      ]
+     }
+    ],
+    "ways": [
+     [
+      "checkFeatureGate",
+      "function",
+      1
+     ],
+     [
+      "getFeatureGateProperty",
+      "function",
+      1
+     ],
+     [
+      "checkGate",
+      "function",
+      2
+     ],
+     [
+      "getDynamicConfig",
+      "function",
+      1
+     ],
+     [
+      "subscribe",
+      "function",
+      1
+     ],
+     [
+      "pinGateOnAuthenticatedBootstrap",
+      "function",
+      2
+     ],
+     [
+      "hasHydratedStatsigUserId",
+      "function",
+      0
+     ],
+     [
+      "waitForHydratedStatsigUserId",
+      "function",
+      1
+     ],
+     [
+      "hasAuthenticatedStatsigBootstrap",
+      "function",
+      0
+     ],
+     [
+      "getSandModelExperimentState",
+      "function",
+      0
+     ],
+     [
+      "logSandModelExperimentExposure",
+      "function",
+      0
+     ],
+     [
+      "getConfiguredDefaultModel",
+      "function",
+      0
+     ],
+     [
+      "getConfiguredAutomationsModel",
+      "function",
+      0
+     ],
+     [
+      "getComputerUseModelOverride",
+      "function",
+      0
+     ],
+     [
+      "getBrowserUseModelOverride",
+      "function",
+      0
+     ],
+     [
+      "isAgentNetworkEnabled",
+      "function",
+      0
+     ],
+     [
+      "isMcpMultiAccountEnabled",
+      "function",
+      0
+     ],
+     [
+      "isSparsePluginClonesEnabled",
+      "function",
+      0
+     ],
+     [
+      "isMultitaskEnabled",
+      "function",
+      0
+     ],
+     [
+      "isSendMessageDeliveryOwedEnabled",
+      "function",
+      0
+     ],
+     [
+      "isDynamicToolsEnabled",
+      "function",
+      0
+     ],
+     [
+      "isBrowserUseSubagentEnabled",
+      "function",
+      0
+     ],
+     [
+      "isSpotlightEnabled",
+      "function",
+      0
+     ],
+     [
+      "isUnicodeTypingEnabled",
+      "function",
+      0
+     ],
+     [
+      "isUaTokenKillSwitchEnabled",
+      "function",
+      0
+     ]
+    ],
+    "leftToUndo": [
+     "a function of the extension's own",
+     "auth's own way to stop listening",
+     "the settings' own way to stop listening"
+    ],
+    "stopping": [
+     "undefined",
+     "undefined",
+     "a promise"
+    ],
+    "callsWhileStopping": [
+     {
+      "call": "settings: the overrides listener is taken away"
+     },
+     {
+      "call": "auth: the renewal listener is taken away"
+     },
+     {
+      "call": "service.dispose",
+      "given": []
+     }
+    ]
+   }
+  },
+  "started with someone signed in, the service is told so once, between asking for the token and listening to the settings": {
+   "returned": {
+    "a token": [
+     "service.start",
+     "onStop",
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "service.handleAuthChange",
+     "settings.subscribeToFeatureFlagOverrides",
+     "onStop"
+    ],
+    "an empty token": [
+     "service.start",
+     "onStop",
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "service.handleAuthChange",
+     "settings.subscribeToFeatureFlagOverrides",
+     "onStop"
+    ],
+    "no token (null)": [
+     "service.start",
+     "onStop",
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "settings.subscribeToFeatureFlagOverrides",
+     "onStop"
+    ],
+    "no token (undefined)": [
+     "service.start",
+     "onStop",
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "service.handleAuthChange",
+     "settings.subscribeToFeatureFlagOverrides",
+     "onStop"
+    ],
+    "a token that is zero": [
+     "service.start",
+     "onStop",
+     "auth.subscribeToRenewal",
+     "onStop",
+     "auth.peekAccessToken",
+     "service.handleAuthChange",
+     "settings.subscribeToFeatureFlagOverrides",
+     "onStop"
+    ]
+   }
+  },
+  "a renewed sign-in is passed on to the service when it is the first one, or when the service has no signed-in bootstrap yet; anything else is not": {
+   "returned": {
+    "listeners": 1,
+    "table": [
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": false
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap",
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed"
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap",
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": 1
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": ""
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap",
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": null
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap",
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "failed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "failed",
+       "isFirstCredential": false
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "Renewed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "renewed ",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {},
+      "serviceHasASignedInBootstrap": false,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": false
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed"
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": 1
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.handleAuthChange"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": ""
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "renewed",
+       "isFirstCredential": null
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": [
+       "service.hasAuthenticatedStatsigBootstrap"
+      ]
+     },
+     {
+      "event": {
+       "outcome": "failed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "failed",
+       "isFirstCredential": false
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "Renewed",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "outcome": "renewed ",
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {
+       "isFirstCredential": true
+      },
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     },
+     {
+      "event": {},
+      "serviceHasASignedInBootstrap": true,
+      "gave": {
+       "$": "undefined"
+      },
+      "asked": []
+     }
+    ],
+    "none": {
+     "threw": "TypeError",
+     "message": "(the runtime's own words)"
+    },
+    "afterNone": []
+   }
+  },
+  "the settings' word replaces the service's overrides with the very object given, and they are kept in the data folder": {
+   "returned": {
+    "listeners": 1,
+    "before": {
+     "multitask": true,
+     "mcp": false
+    },
+    "gave": {
+     "$": "undefined"
+    },
+    "asked": [
+     {
+      "call": "service.replaceFeatureFlagOverrides",
+      "given": [
+       {
+        "sand_multitask": false,
+        "mcp_multi_account": true,
+        "not_a_flag": true,
+        "sand_spotlight": "yes"
+       }
+      ]
+     }
+    ],
+    "after": {
+     "multitask": false,
+     "mcp": true,
+     "spotlight": true
+    },
+    "file": {
+     "overrides": {
+      "sand_multitask": {
+       "value": false,
+       "expiresAtMs": "about a day from now"
+      },
+      "mcp_multi_account": {
+       "value": true,
+       "expiresAtMs": "about a day from now"
+      }
+     }
+    },
+    "afterNone": {
+     "multitask": true,
+     "mcp": false
+    },
+    "writtenAgain": true,
+    "inTheFolder": [
+     "sand-feature-flag-overrides.json"
+    ]
+   }
+  },
+  "the data folder is asked for each time it is needed: overrides are read from the one named at the start and written to the one named when they change": {
+   "returned": {
+    "readAtStart": true,
+    "written": {
+     "overrides": {
+      "sand_spotlight": {
+       "value": false,
+       "expiresAtMs": "about a day from now"
+      }
+     }
+    },
+    "firstFolder": [
+     "sand-feature-flag-overrides.json"
+    ],
+    "secondFolder": [
+     "sand-feature-flag-overrides.json"
+    ]
+   }
+  },
+  "the host stopping takes both listeners away and then disposes of the service, which is waited for": {
+   "returned": {
+    "stopping": [
+     "undefined",
+     "undefined",
+     "a promise"
+    ],
+    "calls": [
+     "settings: the overrides listener is taken away",
+     "auth: the renewal listener is taken away",
+     "service.dispose"
+    ],
+    "toldBeforeStopping": 1,
+    "toldAfterStopping": 0,
+    "theWaitForAUserEndedWith": false
+   }
+  },
+  "each way in puts one question to the service, with what it was given and nothing more, and hands back the service's answer": {
+   "returned": [
+    {
+     "way": "checkFeatureGate",
+     "given": [
+      "some_gate",
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for some_gate",
+      [
+       "service.checkFeatureGate",
+       "some_gate"
+      ]
+     ]
+    },
+    {
+     "way": "checkFeatureGate",
+     "given": [
+      "sand_usage_page"
+     ],
+     "gave": true,
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_usage_page"
+     ]
+    },
+    {
+     "way": "checkFeatureGate",
+     "given": [],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for undefined",
+      [
+       "service.checkFeatureGate",
+       {
+        "$": "undefined"
+       }
+      ]
+     ]
+    },
+    {
+     "way": "getFeatureGateProperty",
+     "given": [
+      "some_gate",
+      "more"
+     ],
+     "gave": [
+      "get",
+      "set"
+     ],
+     "asked": [
+      [
+       "service.getFeatureGateProperty",
+       "some_gate"
+      ],
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for some_gate"
+     ]
+    },
+    {
+     "way": "getFeatureGateProperty",
+     "given": [
+      "sand_multiplayer"
+     ],
+     "gave": [
+      "get",
+      "set"
+     ],
+     "asked": [
+      [
+       "service.getFeatureGateProperty",
+       "sand_multiplayer"
+      ],
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_multiplayer",
+      "the property is asked its value",
+      [
+       "the property is set",
+       true
+      ]
+     ]
+    },
+    {
+     "way": "checkGate",
+     "given": [
+      "some_gate",
+      {
+       "timeoutMs": 7
+      },
+      "more"
+     ],
+     "gave": "the service's answer to checkGate",
+     "asked": [
+      [
+       "service.checkGate",
+       "some_gate",
+       {
+        "timeoutMs": 7
+       }
+      ]
+     ]
+    },
+    {
+     "way": "checkGate",
+     "given": [
+      "some_gate"
+     ],
+     "gave": "the service's answer to checkGate",
+     "asked": [
+      [
+       "service.checkGate",
+       "some_gate",
+       {
+        "$": "undefined"
+       }
+      ]
+     ]
+    },
+    {
+     "way": "getDynamicConfig",
+     "given": [
+      "some_config",
+      "more"
+     ],
+     "gave": "the service's answer to getDynamicConfig",
+     "asked": [
+      [
+       "service.getDynamicConfig",
+       "some_config"
+      ]
+     ]
+    },
+    {
+     "way": "subscribe",
+     "given": [
+      "function",
+      "more"
+     ],
+     "gave": "the service's answer to subscribe",
+     "asked": [
+      [
+       "service.subscribe",
+       "function"
+      ]
+     ]
+    },
+    {
+     "way": "pinGateOnAuthenticatedBootstrap",
+     "given": [
+      "some_gate",
+      "function",
+      "more"
+     ],
+     "gave": {
+      "$": "undefined"
+     },
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for some_gate",
+      [
+       "service.pinGateOnAuthenticatedBootstrap",
+       "some_gate",
+       "function"
+      ]
+     ]
+    },
+    {
+     "way": "pinGateOnAuthenticatedBootstrap",
+     "given": [
+      "sand_memory_dreaming",
+      "function"
+     ],
+     "gave": {
+      "$": "undefined"
+     },
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_memory_dreaming",
+      [
+       "the pin is given",
+       true
+      ]
+     ]
+    },
+    {
+     "way": "hasHydratedStatsigUserId",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to hasHydratedStatsigUserId",
+     "asked": [
+      [
+       "service.hasHydratedStatsigUserId"
+      ]
+     ]
+    },
+    {
+     "way": "waitForHydratedStatsigUserId",
+     "given": [
+      5,
+      "more"
+     ],
+     "gave": "the service's answer to waitForHydratedStatsigUserId",
+     "asked": [
+      [
+       "service.waitForHydratedStatsigUserId",
+       5
+      ]
+     ]
+    },
+    {
+     "way": "waitForHydratedStatsigUserId",
+     "given": [],
+     "gave": "the service's answer to waitForHydratedStatsigUserId",
+     "asked": [
+      [
+       "service.waitForHydratedStatsigUserId",
+       {
+        "$": "undefined"
+       }
+      ]
+     ]
+    },
+    {
+     "way": "hasAuthenticatedStatsigBootstrap",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to hasAuthenticatedStatsigBootstrap",
+     "asked": [
+      [
+       "service.hasAuthenticatedStatsigBootstrap"
+      ]
+     ]
+    },
+    {
+     "way": "getSandModelExperimentState",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to getSandModelExperimentState",
+     "asked": [
+      [
+       "service.getSandModelExperimentState"
+      ]
+     ]
+    },
+    {
+     "way": "logSandModelExperimentExposure",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to logSandModelExperimentExposure",
+     "asked": [
+      [
+       "service.logSandModelExperimentExposure"
+      ]
+     ]
+    },
+    {
+     "way": "getConfiguredDefaultModel",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to getConfiguredDefaultModel",
+     "asked": [
+      [
+       "service.getConfiguredDefaultModel"
+      ]
+     ]
+    },
+    {
+     "way": "getConfiguredAutomationsModel",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to getConfiguredAutomationsModel",
+     "asked": [
+      [
+       "service.getConfiguredAutomationsModel"
+      ]
+     ]
+    },
+    {
+     "way": "getComputerUseModelOverride",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to getComputerUseModelOverride",
+     "asked": [
+      [
+       "service.getComputerUseModelOverride"
+      ]
+     ]
+    },
+    {
+     "way": "getBrowserUseModelOverride",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to getBrowserUseModelOverride",
+     "asked": [
+      [
+       "service.getBrowserUseModelOverride"
+      ]
+     ]
+    },
+    {
+     "way": "isAgentNetworkEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": true,
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_agent_network"
+     ]
+    },
+    {
+     "way": "isMcpMultiAccountEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for mcp_multi_account",
+      [
+       "service.checkFeatureGate",
+       "mcp_multi_account"
+      ]
+     ]
+    },
+    {
+     "way": "isSparsePluginClonesEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for enable_sparse_plugin_clones",
+      [
+       "service.checkFeatureGate",
+       "enable_sparse_plugin_clones"
+      ]
+     ]
+    },
+    {
+     "way": "isMultitaskEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_multitask",
+      [
+       "service.checkFeatureGate",
+       "sand_multitask"
+      ]
+     ]
+    },
+    {
+     "way": "isSendMessageDeliveryOwedEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_send_message_delivery_owed",
+      [
+       "service.checkFeatureGate",
+       "sand_send_message_delivery_owed"
+      ]
+     ]
+    },
+    {
+     "way": "isDynamicToolsEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for simeon_dynamic_tools",
+      [
+       "service.checkFeatureGate",
+       "simeon_dynamic_tools"
+      ]
+     ]
+    },
+    {
+     "way": "isBrowserUseSubagentEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": true,
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_browser_use_subagent"
+     ]
+    },
+    {
+     "way": "isSpotlightEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_spotlight",
+      [
+       "service.checkFeatureGate",
+       "sand_spotlight"
+      ]
+     ]
+    },
+    {
+     "way": "isUnicodeTypingEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_computer_use_unicode_typing",
+      [
+       "service.checkFeatureGate",
+       "sand_computer_use_unicode_typing"
+      ]
+     ]
+    },
+    {
+     "way": "isUaTokenKillSwitchEnabled",
+     "given": [
+      "more"
+     ],
+     "gave": "the service's answer to checkFeatureGate",
+     "asked": [
+      [
+       "service.getFeatureFlagOverridesRecord"
+      ],
+      "the overrides are looked up for sand_browser_ua_token_kill_switch",
+      [
+       "service.checkFeatureGate",
+       "sand_browser_ua_token_kill_switch"
+      ]
+     ]
+    }
+   ]
+  },
+  "the two settings that overrule a feature are read each time it is asked, and the service is then not asked at all": {
+   "returned": {
+    "table": [
+     "isMultitaskEnabled with SAND_MULTITASK=(not set) and the gate true: true; the service was asked service.checkFeatureGate(sand_multitask)",
+     "isMultitaskEnabled with SAND_MULTITASK=(not set) and the gate false: false; the service was asked service.checkFeatureGate(sand_multitask)",
+     "isMultitaskEnabled with SAND_MULTITASK=\"\" and the gate true: true; the service was asked service.checkFeatureGate(sand_multitask)",
+     "isMultitaskEnabled with SAND_MULTITASK=\"\" and the gate false: false; the service was asked service.checkFeatureGate(sand_multitask)",
+     "isMultitaskEnabled with SAND_MULTITASK=\"0\" and the gate true: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"0\" and the gate false: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"false\" and the gate true: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"false\" and the gate false: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"FALSE\" and the gate true: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"FALSE\" and the gate false: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"False\" and the gate true: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"False\" and the gate false: false; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"1\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"1\" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"true\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"true\" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"no\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"no\" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"off\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"off\" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\" \" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\" \" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"00\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\"00\" and the gate false: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\" false\" and the gate true: true; the service was asked nothing",
+     "isMultitaskEnabled with SAND_MULTITASK=\" false\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=(not set) and the gate true: true; the service was asked service.checkFeatureGate(sand_spotlight)",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=(not set) and the gate false: false; the service was asked service.checkFeatureGate(sand_spotlight)",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"\" and the gate true: true; the service was asked service.checkFeatureGate(sand_spotlight)",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"\" and the gate false: false; the service was asked service.checkFeatureGate(sand_spotlight)",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"0\" and the gate true: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"0\" and the gate false: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"false\" and the gate true: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"false\" and the gate false: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"FALSE\" and the gate true: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"FALSE\" and the gate false: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"False\" and the gate true: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"False\" and the gate false: false; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"1\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"1\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"true\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"true\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"no\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"no\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"off\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"off\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\" \" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\" \" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"00\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\"00\" and the gate false: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\" false\" and the gate true: true; the service was asked nothing",
+     "isSpotlightEnabled with SAND_SPOTLIGHT=\" false\" and the gate false: true; the service was asked nothing"
+    ],
+    "theOthersDoNotReadThem": [
+     "isAgentNetworkEnabled: true",
+     "isMcpMultiAccountEnabled: true",
+     "isSparsePluginClonesEnabled: true",
+     "isMultitaskEnabled: false",
+     "isSendMessageDeliveryOwedEnabled: true",
+     "isDynamicToolsEnabled: true",
+     "isBrowserUseSubagentEnabled: true",
+     "isSpotlightEnabled: false",
+     "isUnicodeTypingEnabled: true",
+     "isUaTokenKillSwitchEnabled: true"
+    ]
+   }
+  },
+  "with the real service and nothing fetched: what every way in answers": {
+   "returned": {
+    "answers": {
+     "checkFeatureGate": {
+      "sand_usage_page": true,
+      "sand_auto_review": false,
+      "sand_multiplayer": true,
+      "sand_multitask": true,
+      "mcp_multi_account": false,
+      "sand_computer_use_playwright": true,
+      "not_a_gate": false
+     },
+     "getFeatureGateProperty": {
+      "class": "MutableGateProperty",
+      "value": false,
+      "theSameEachTime": true,
+      "aGateOfSimeonsTable": true
+     },
+     "checkGate": {
+      "aPromise": true,
+      "sand_multitask": true,
+      "sand_usage_page": false,
+      "not_a_gate": false
+     },
+     "getDynamicConfig": {
+      "sand_browser_use_model": {
+       "modelId": "claude-opus-4-8",
+       "maxMode": false,
+       "parameters": [
+        {
+         "id": "thinking",
+         "value": "false"
+        },
+        {
+         "id": "effort",
+         "value": "low"
+        }
+       ]
+      },
+      "sand_computer_use_playwright_config": {
+       "modelId": "claude-opus-4-8",
+       "maxMode": false,
+       "parameters": [
+        {
+         "id": "thinking",
+         "value": "false"
+        },
+        {
+         "id": "effort",
+         "value": "low"
+        }
+       ]
+      },
+      "not_a_config": {
+       "threw": "TypeError",
+       "message": "(the runtime's own words)"
+      }
+     },
+     "subscribe": {
+      "gives": "function",
+      "stoppingGives": [
+       true,
+       false
+      ]
+     },
+     "pinGateOnAuthenticatedBootstrap": [
+      [
+       "sand_memory_dreaming",
+       true
+      ]
+     ],
+     "hasHydratedStatsigUserId": false,
+     "waitForHydratedStatsigUserId": false,
+     "hasAuthenticatedStatsigBootstrap": false,
+     "getSandModelExperimentState": {
+      "$": "undefined"
+     },
+     "logSandModelExperimentExposure": false,
+     "getConfiguredDefaultModel": {
+      "$": "undefined"
+     },
+     "getConfiguredAutomationsModel": {
+      "$": "undefined"
+     },
+     "getComputerUseModelOverride": {
+      "modelId": "claude-opus-4-8",
+      "maxMode": false,
+      "parameters": [
+       {
+        "id": "thinking",
+        "value": "false"
+       },
+       {
+        "id": "effort",
+        "value": "low"
+       }
+      ]
+     },
+     "getBrowserUseModelOverride": {
+      "$": "undefined"
+     },
+     "features": [
+      "isAgentNetworkEnabled: true",
+      "isMcpMultiAccountEnabled: false",
+      "isSparsePluginClonesEnabled: true",
+      "isMultitaskEnabled: true",
+      "isSendMessageDeliveryOwedEnabled: false",
+      "isDynamicToolsEnabled: false",
+      "isBrowserUseSubagentEnabled: true",
+      "isSpotlightEnabled: true",
+      "isUnicodeTypingEnabled: false",
+      "isUaTokenKillSwitchEnabled: false"
+     ]
+    },
+    "withTheModelExperimentSet": {
+     "active": true,
+     "arm": "control"
+    }
+   }
+  },
+  "with the real service: each of the ten features follows its own gate and no other": {
+   "returned": {
+    "untouched": [
+     "isAgentNetworkEnabled: true",
+     "isMcpMultiAccountEnabled: false",
+     "isSparsePluginClonesEnabled: true",
+     "isMultitaskEnabled: true",
+     "isSendMessageDeliveryOwedEnabled: false",
+     "isDynamicToolsEnabled: false",
+     "isBrowserUseSubagentEnabled: true",
+     "isSpotlightEnabled: true",
+     "isUnicodeTypingEnabled: false",
+     "isUaTokenKillSwitchEnabled: false"
+    ],
+    "sand_agent_network turned off": {
+     "changed": [
+      "isAgentNetworkEnabled: false"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "mcp_multi_account turned on": {
+     "changed": [
+      "isMcpMultiAccountEnabled: true"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "enable_sparse_plugin_clones turned off": {
+     "changed": [
+      "isSparsePluginClonesEnabled: false"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_multitask turned off": {
+     "changed": [
+      "isMultitaskEnabled: false"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_send_message_delivery_owed turned on": {
+     "changed": [
+      "isSendMessageDeliveryOwedEnabled: true"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "simeon_dynamic_tools turned on": {
+     "changed": [
+      "isDynamicToolsEnabled: true"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_browser_use_subagent turned off": {
+     "changed": [
+      "isBrowserUseSubagentEnabled: false"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_spotlight turned off": {
+     "changed": [
+      "isSpotlightEnabled: false"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_computer_use_unicode_typing turned on": {
+     "changed": [
+      "isUnicodeTypingEnabled: true"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_browser_ua_token_kill_switch turned on": {
+     "changed": [
+      "isUaTokenKillSwitchEnabled: true"
+     ],
+     "computerUseModel": "set",
+     "browserUseModel": "none"
+    },
+    "sand_computer_use_playwright turned off": {
+     "changed": [],
+     "computerUseModel": "none",
+     "browserUseModel": "none"
+    }
+   }
+  },
+  "with the real service: a build is a development build unless it is packaged, or when the host is asked for error detail; only then do the environment's gate overrides and the overrides file count": {
+   "returned": {
+    "nothing set": {
+     "theOverridesFileCounts": true,
+     "theEnvironmentCounts": true,
+     "afterTheSettingsChange": true,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs",
+      "featureFlags"
+     ]
+    },
+    "packaged": {
+     "theOverridesFileCounts": false,
+     "theEnvironmentCounts": false,
+     "afterTheSettingsChange": false,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs"
+     ]
+    },
+    "packaged, with error detail": {
+     "theOverridesFileCounts": true,
+     "theEnvironmentCounts": true,
+     "afterTheSettingsChange": true,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs",
+      "featureFlags"
+     ]
+    },
+    "error detail only": {
+     "theOverridesFileCounts": true,
+     "theEnvironmentCounts": true,
+     "afterTheSettingsChange": true,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs",
+      "featureFlags"
+     ]
+    },
+    "packaged set to true": {
+     "theOverridesFileCounts": true,
+     "theEnvironmentCounts": true,
+     "afterTheSettingsChange": true,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs",
+      "featureFlags"
+     ]
+    },
+    "packaged set to 0": {
+     "theOverridesFileCounts": true,
+     "theEnvironmentCounts": true,
+     "afterTheSettingsChange": true,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs",
+      "featureFlags"
+     ]
+    },
+    "packaged, error detail set to true": {
+     "theOverridesFileCounts": false,
+     "theEnvironmentCounts": false,
+     "afterTheSettingsChange": false,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs"
+     ]
+    },
+    "packaged, error detail set to 0": {
+     "theOverridesFileCounts": false,
+     "theEnvironmentCounts": false,
+     "afterTheSettingsChange": false,
+     "aSnapshotHolds": [
+      "isInitialized",
+      "featureGates",
+      "experiments",
+      "dynamicConfigs"
+     ]
+    }
+   }
+  },
+  "where the bootstrap is served: the service asks the sign-in's own two functions, called as plain functions, once at the start and once more for someone signed in or renewed": {
+   "returned": {
+    "no one signed in": {
+     "insideStart": [
+      "onStop",
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "settings.subscribeToFeatureFlagOverrides",
+      "onStop"
+     ],
+     "afterTheStart": [
+      {
+       "call": "auth.getAccessToken",
+       "given": [
+        {
+         "backendUrl": "http://127.0.0.1:9/"
+        }
+       ],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getMachineId",
+       "given": [],
+       "calledOnTheSignIn": false
+      }
+     ],
+     "fetchedAtStart": [
+      [
+       "http://127.0.0.1:9/simeon.v1.AnalyticsService/BootstrapStatsig",
+       "POST"
+      ]
+     ],
+     "afterARenewal": [
+      {
+       "call": "auth.getAccessToken",
+       "given": [
+        {
+         "backendUrl": "http://127.0.0.1:9/"
+        }
+       ],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getMachineId",
+       "given": [],
+       "calledOnTheSignIn": false
+      }
+     ],
+     "fetchedAfterARenewal": [
+      [
+       "http://127.0.0.1:9/simeon.v1.AnalyticsService/BootstrapStatsig",
+       "POST"
+      ]
+     ],
+     "signedInBootstrap": false
+    },
+    "someone signed in": {
+     "insideStart": [
+      "onStop",
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "settings.subscribeToFeatureFlagOverrides",
+      "onStop"
+     ],
+     "afterTheStart": [
+      {
+       "call": "auth.getAccessToken",
+       "given": [
+        {
+         "backendUrl": "http://127.0.0.1:9/"
+        }
+       ],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getMachineId",
+       "given": [],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getAccessToken",
+       "given": [
+        {
+         "backendUrl": "http://127.0.0.1:9/"
+        }
+       ],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getMachineId",
+       "given": [],
+       "calledOnTheSignIn": false
+      }
+     ],
+     "fetchedAtStart": [
+      [
+       "http://127.0.0.1:9/simeon.v1.AnalyticsService/BootstrapStatsig",
+       "POST"
+      ],
+      [
+       "http://127.0.0.1:9/simeon.v1.AnalyticsService/BootstrapStatsig",
+       "POST"
+      ]
+     ],
+     "afterARenewal": [
+      {
+       "call": "auth.getAccessToken",
+       "given": [
+        {
+         "backendUrl": "http://127.0.0.1:9/"
+        }
+       ],
+       "calledOnTheSignIn": false
+      },
+      {
+       "call": "auth.getMachineId",
+       "given": [],
+       "calledOnTheSignIn": false
+      }
+     ],
+     "fetchedAfterARenewal": [
+      [
+       "http://127.0.0.1:9/simeon.v1.AnalyticsService/BootstrapStatsig",
+       "POST"
+      ]
+     ],
+     "signedInBootstrap": false
+    }
+   }
+  },
+  "a start without one of its peers fails where it first needs it, with what it had left to undo by then": {
+   "returned": {
+    "auth": {
+     "started": {
+      "threw": "TypeError",
+      "message": "(the runtime's own words)"
+     },
+     "atStart": [],
+     "stopping": []
+    },
+    "settings": {
+     "started": {
+      "threw": "TypeError",
+      "message": "(the runtime's own words)"
+     },
+     "atStart": [
+      "service.start",
+      "onStop",
+      "auth.subscribeToRenewal",
+      "onStop",
+      "auth.peekAccessToken",
+      "service.handleAuthChange"
+     ],
+     "stopping": [
+      "undefined",
+      "a promise"
+     ]
+    }
+   }
+  },
+  "each start makes a service of its own": {
+   "returned": {
+    "first": true,
+    "second": false,
+    "theirWaysInDiffer": true
+   }
+  }
+ }
+}
