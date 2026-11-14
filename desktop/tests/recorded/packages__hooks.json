@@ -2677,7 +2677,7 @@
     }
    }
   },
-  "before a command or a connector's tool runs: permission is allow, deny or ask, and the two messages are texts": {
+  "before a shell command or an MCP tool runs: permission is allow, deny or ask, and the two messages are texts": {
    "returned": {
     "permission": {
      "{permission: \"allow\"}": {
@@ -3723,7 +3723,7 @@
     }
    }
   },
-  "before a file is read, in the editor or in a tab: permission is allow or deny, never ask, and the message is a text": {
+  "before a file is read, and before a tab file read: permission is allow or deny, never ask, and the message is a text": {
    "returned": {
     "validateBeforeReadFileResponse": {
      "permission": {
@@ -6686,7 +6686,7 @@
     }
    }
   },
-  "when the agent stops, and when a helper agent does: the follow-up message is a text": {
+  "when the agent stops, and when a subagent does: the follow-up message is a text": {
    "returned": {
     "validateStopResponse": {
      "followup_message": {
@@ -7018,7 +7018,7 @@
     }
    }
   },
-  "before a helper agent starts: permission is read as it prints, so a list holding the one word is right, and the message is a text": {
+  "before a subagent starts: permission is read as it prints, so a list holding the one word is right, and the message is a text": {
    "returned": {
     "permission": {
      "{permission: \"allow\"}": {
@@ -11462,7 +11462,7 @@
     }
    }
   },
-  "the matcher of a tool, before and after its use: Claude Code's names become the names here, a connector's tool loses its server, and what is left is kept as written": {
+  "the matcher of a tool, before and after its use: Claude Code's names become the names here, an MCP tool loses its server's name, and what is left is kept as written": {
    "returned": {
     "PreToolUse": {
      "undefined": {
@@ -19252,6 +19252,58 @@
      },
      "said": [
       "Tool \"Glob\" is not supported in Simeon and will be ignored"
+     ]
+    }
+   }
+  },
+  "the warnings about a matcher's tools are given once the whole matcher is read: when the reading stops midway, nothing has been said": {
+   "returned": {
+    "Glob, then Bash": {
+     "answer": {
+      "version": 1,
+      "hooks": {
+       "preToolUse": [
+        {
+         "type": "command",
+         "command": "check",
+         "loop_limit": null,
+         "failClosed": false,
+         "matcher": "Shell"
+        }
+       ]
+      }
+     },
+     "said": [
+      [
+       "warn",
+       "Tool \"Glob\" is not supported in Simeon and will be ignored"
+      ]
+     ]
+    },
+    "Glob, then Bash, then something that is not a text": {
+     "answer": {
+      "threwA": "TypeError"
+     },
+     "said": []
+    },
+    "Glob twice and nothing more": {
+     "answer": {
+      "version": 1,
+      "hooks": {}
+     },
+     "said": [
+      [
+       "warn",
+       "Tool \"Glob\" is not supported in Simeon and will be ignored"
+      ],
+      [
+       "warn",
+       "Tool \"Glob\" is not supported in Simeon and will be ignored"
+      ],
+      [
+       "warn",
+       "All tools in matcher \"a matcher that splits itself\" are unsupported, skipping hooks"
+      ]
      ]
     }
    }

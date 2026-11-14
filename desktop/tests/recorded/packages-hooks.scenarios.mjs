@@ -488,7 +488,7 @@ export const scenarios = [
 
   // ---- The check of an answer, step by step ----
   {
-    name: "before a command or a connector's tool runs: permission is allow, deny or ask, and the two messages are texts",
+    name: "before a shell command or an MCP tool runs: permission is allow, deny or ask, and the two messages are texts",
     run: ({ beforeCommand }) => {
       const check = beforeCommand.validateBeforeCommandExecutionHookResponse;
       return {
@@ -529,7 +529,7 @@ export const scenarios = [
     },
   },
   {
-    name: "before a file is read, in the editor or in a tab: permission is allow or deny, never ask, and the message is a text",
+    name: "before a file is read, and before a tab file read: permission is allow or deny, never ask, and the message is a text",
     run: ({ beforeReadFile, beforeTabFileRead }) => {
       const asked = (check) => ({
         permission: table(withField("permission", [...PERMISSION_WORDS(), ...THINGS()]), check),
@@ -644,7 +644,7 @@ export const scenarios = [
     },
   },
   {
-    name: "when the agent stops, and when a helper agent does: the follow-up message is a text",
+    name: "when the agent stops, and when a subagent does: the follow-up message is a text",
     run: ({ stop, subagentStop }) => {
       const asked = (check) => ({
         followup_message: table(withField("followup_message", THINGS()), check),
@@ -660,7 +660,7 @@ export const scenarios = [
     },
   },
   {
-    name: "before a helper agent starts: permission is read as it prints, so a list holding the one word is right, and the message is a text",
+    name: "before a subagent starts: permission is read as it prints, so a list holding the one word is right, and the message is a text",
     run: ({ subagentStart }) => {
       const check = subagentStart.validateSubagentStartResponse;
       return {
@@ -1049,7 +1049,7 @@ export const scenarios = [
     }),
   },
   {
-    name: "the matcher of a tool, before and after its use: Claude Code's names become the names here, a connector's tool loses its server, and what is left is kept as written",
+    name: "the matcher of a tool, before and after its use: Claude Code's names become the names here, an MCP tool loses its server's name, and what is left is kept as written",
     run: ({ mapper }) => ({
       PreToolUse: table(TOOL_MATCHERS(), (matcher) => read(mapper, { PreToolUse: [{ matcher, hooks: [kept()] }] })),
       PostToolUse: table(TOOL_MATCHERS(), (matcher) => read(mapper, { PostToolUse: [{ matcher, hooks: [kept()] }] })),
@@ -1188,6 +1188,23 @@ export const scenarios = [
           ]),
         ),
         "a warn that is gone after one use, when every tool of a matcher is unsupported": afterOne(),
+      };
+    },
+  },
+  {
+    name: "the warnings about a matcher's tools are given once the whole matcher is read: when the reading stops midway, nothing has been said",
+    run: ({ mapper }) => {
+      /** A matcher that is not a text but splits itself into the given pieces. No file can hold one. */
+      const splitting = (...pieces) => ({ split: () => pieces, toString: () => "a matcher that splits itself" });
+      const asked = (matcher) => {
+        const { answer, said } = read(mapper, { PreToolUse: [{ matcher, hooks: [kept()] }] });
+        // What is thrown here names the reading's own inner words, so only its kind is kept.
+        return { answer: answer?.threw instanceof Error ? { threwA: answer.threw.name } : answer, said };
+      };
+      return {
+        "Glob, then Bash": asked(splitting("Glob", "Bash")),
+        "Glob, then Bash, then something that is not a text": asked(splitting("Glob", "Bash", 5)),
+        "Glob twice and nothing more": asked(splitting("Glob", "Glob")),
       };
     },
   },
