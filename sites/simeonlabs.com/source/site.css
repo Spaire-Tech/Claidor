@@ -111,7 +111,7 @@ html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
   .menu[open]>summary i{transform:rotate(45deg)}
   .menu[open]>summary i+i{transform:rotate(-45deg)}
   .menu[open]>summary{background:#efeff0;border-radius:50%}
-  .menu-in{position:absolute;top:100%;left:0;right:0;height:100dvh;overflow-y:auto;padding:24px var(--gutter,20px) 0;background:var(--page,#fff);animation:menu-in .25s ease both}
+  .menu-in{position:absolute;top:100%;left:0;right:0;height:calc(100dvh - 52px - env(safe-area-inset-top,0px));display:flex;flex-direction:column;overflow-y:auto;padding:24px var(--gutter,20px) 0;background:var(--page,#fff);animation:menu-in .25s ease both}
   /* The phone's menu (the founder, 14 November 2026, with another site's phone menu for reference: "smaller font and
      line"): each name at 17 on its own row, a hairline under each row, a menu's arrow at the right edge; open, its
      items indented under it, each name over a grey line, and the hairline under them all. */
@@ -136,8 +136,11 @@ html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
   .menu-group .mg-i img,.menu-group .mg-i svg{width:20px;height:20px;flex:none}
   .menu-group .mg-i img{border-radius:5px;object-fit:cover}
   .menu-group>div a.mg-more{margin-top:6px;font-size:14px;color:var(--ink2)}
-  .menu-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
-  .menu-acts .btn{height:48px;padding:0 24px;font-size:17px}
+  /* At the foot: Download across the width, then Contact, Privacy and Terms small and grey, centred. */
+  .menu-acts{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:auto;padding:32px 0 calc(20px + env(safe-area-inset-bottom,0px))}
+  .menu-acts .btn{width:100%;height:50px;padding:0 24px;font-size:17px}
+  .menu-links{display:flex;justify-content:center;align-items:center;gap:14px;margin:0;font-size:14px;color:#a1a1a6}
+  .menu-links a{color:#86868b;text-decoration:none}
   .bar:has(.menu[open]){background:var(--page,#fff)} /* the open menu and the bar are one white page */
   html:has(.menu[open]){overflow:hidden}
 }

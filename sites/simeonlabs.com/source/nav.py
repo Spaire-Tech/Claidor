@@ -218,6 +218,12 @@ def bar(current=""):
     desk = "".join(_menu(name, panel, cls) for name, panel, cls in menus)
     phone = "".join(_phone_menu(name, panel, cls) for name, panel, cls in menus)
     buttons = f'<a class="btn soft" href="/contact"{_mark("contact", current)}>Contact Sales</a><a class="btn for-mac" href="{MAC_DOWNLOAD}">Download</a><a class="btn for-win" href="{WINDOWS_STORE}">Download</a>'
+    # The phone's menu ends as the reference's does (14 November 2026, "see below for the buttons"): Download across the
+    # foot of the screen, and Contact, Privacy and Terms small and grey under it.
+    phone_acts = (f'<a class="btn for-mac" href="{MAC_DOWNLOAD}">Download</a><a class="btn for-win" href="{WINDOWS_STORE}">Download</a>'
+                  f'<p class="menu-links"><a href="/contact"{_mark("contact", current)}>Contact</a><span aria-hidden="true">·</span>'
+                  f'<a href="/privacy"{_mark("privacy", current)}>Privacy</a><span aria-hidden="true">·</span>'
+                  f'<a href="/terms"{_mark("terms", current)}>Terms</a></p>')
     return f"""{OS_MARK}
 <header class="bar">
   <div class="wrap">
@@ -226,7 +232,7 @@ def bar(current=""):
     <div class="acts">{buttons}</div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages">{phone}{_links(LINKS, current)}</nav><div class="menu-acts">{buttons}</div></div>
+      <div class="menu-in"><nav aria-label="Pages">{phone}{_links(LINKS, current)}</nav><div class="menu-acts">{phone_acts}</div></div>
     </details>
   </div>
 </header>"""
