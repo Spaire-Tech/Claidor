@@ -57,8 +57,8 @@ body{font-family:var(--font)}
 .drop-panel a{padding:9px 12px;border-radius:10px;color:var(--ink);font-size:var(--t-nav);letter-spacing:-.01em;text-decoration:none}
 .drop-panel a:hover,.drop-panel a[aria-current]{background:var(--soft,#f5f5f7)}
 /* Solutions and Connectors (14 November 2026): a wide panel under the bar's links, from their left edge, of three
-   columns of groups, each a grey name over a line, then its items with their icon (a team's agent's face, round,
-   or a connector's icon), and a last link to the whole list. */
+   columns of groups, each a grey name over a line, then its items with their icon (a team's drawing, nav.py's
+   SOLUTION_ICONS, or a connector's icon), and a last link to the whole list. */
 .bar .bar-links{position:relative}
 .drops:has(.mega){position:static}
 .drop-panel.mega{left:-20px;min-width:0;width:min(740px,calc(100vw - 2*var(--gutter,20px)));padding:22px 22px 16px}
@@ -67,7 +67,7 @@ body{font-family:var(--font)}
 .mg-h{margin:0 0 6px;padding:0 6px 9px;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;line-height:1.2;color:#6e6e73;letter-spacing:-.005em}
 .drop-panel a.mg-i{display:flex;align-items:center;gap:11px;padding:7px 6px;font-size:15px;line-height:1.25}
 .mg-i img{width:20px;height:20px;flex:none;border-radius:5px;object-fit:cover}
-.mg-i img.face{border-radius:50%}
+.mg-i svg{width:20px;height:20px;flex:none}
 .drop-panel a.mg-more{align-self:flex-start;margin-top:14px;padding:8px 6px 4px;font-size:14px;color:var(--ink)}
 .drop-panel a.mg-more:hover{background:none;opacity:.6}
 .bar .acts{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,.6*var(--vw),12px)}
@@ -105,7 +105,7 @@ html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
   .menu-group .mg-h{margin:6px 0 2px;font-size:13px;color:#6e6e73}
   .menu-group>div a.mg-i{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:18px}
   .menu-group .mg-i img{width:24px;height:24px;flex:none;border-radius:6px;object-fit:cover}
-  .menu-group .mg-i img.face{border-radius:50%}
+  .menu-group .mg-i svg{width:24px;height:24px;flex:none}
   .menu-group>div a.mg-more{margin-top:8px;font-size:17px;color:var(--ink)}
   .menu-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
   .menu-acts .btn{height:48px;padding:0 24px;font-size:17px}
