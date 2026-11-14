@@ -10,15 +10,16 @@
  * the part has for it. Anything else is written out in full, and the usual
  * words themselves are recorded whole in scenarios of their own.
  *
- * The answers were recorded with NODE_ENV not set to "development": the part
- * reads it once, when it is loaded, and the scenarios about a developer's
- * run load the part again on their own.
+ * An error JavaScript itself raises (a field read on nothing, a call of what
+ * is no function, a Symbol written as text) is worded by the runtime, and the
+ * words change from one version of Node to the next. Such an error is kept
+ * as its class and the mistake it is about, never as the runtime's sentence
+ * (`attempt`). The part's own errors are kept word for word.
+ *
+ * The part reads NODE_ENV and VITEST once, when it is loaded. The tool takes
+ * both away while it asks, so the scenarios about a developer's run set them
+ * and ask the tool for a load of their own (`tools.fresh()`).
  */
-import path from "node:path";
-import vm from "node:vm";
-import { pathToFileURL } from "node:url";
-import { build } from "esbuild";
-import { desktopRoot, sourceRoot } from "./harness.mjs";
 
 export const part = "packages/redaction";
 export const modules = {
@@ -38,16 +39,71 @@ const ODD_MODES = [["5", 5], ["-1", -1], ["2.5", 2.5], ['"2"', "2"], ["NaN", Num
 /** What the console is told when an unwrap that was not allowed goes through anyway (recorded whole further down). */
 const LOGGER_LINE = "[PRIVACY REDACTION] logger not initialized — call setRedactionLogger() at process startup";
 
-/** What a call returned, or what it threw as `{ threw: "Name: message" }`. */
+/**
+ * The mistakes the scenarios lead the part into for which JavaScript itself
+ * raises the error. Each is made here once more, on plain values, to learn
+ * what this runtime says of it: an error that says the same, word for word,
+ * is then written as its class and the mistake's name.
+ */
+const NOTHINGS = [["undefined", undefined], ["null", null]];
+const FIELDS_READ = ["enforceRedaction", "role", "map", "type", "result", "unwrap", "length", "trim", "startsWith", "split", "toString", "toolCallId"];
+const MISTAKES = [
+  ...NOTHINGS.flatMap(([word, nothing]) => FIELDS_READ.map((field) => [`reading ${field} of ${word}`, () => nothing[field]])),
+  ...NOTHINGS.map(([word, nothing]) => [`taking privacyMode out of options, which is ${word}`, () => { const take = (options) => { const { privacyMode } = options; return privacyMode; }; return take(nothing); }]),
+  ["a Symbol written as text", () => `${Symbol("s")}`],
+  ["an object with no plain value written as text", () => String({ [Symbol.toPrimitive]: () => ({}) })],
+  ["a BigInt written as JSON", () => JSON.stringify(12n)],
+  ['an object that holds itself as "self" written as JSON', () => { const circle = {}; circle.self = circle; return JSON.stringify(circle); }],
+  ['an object that holds itself as "again" written as JSON', () => { const circle = {}; circle.again = circle; return JSON.stringify(circle); }],
+  ["calling transform, which is no function", () => { const transform = undefined; return transform(); }],
+  ["calling messages.map, which is no function", () => { const messages = {}; return messages.map(); }],
+  ["calling content.map, which is no function", () => { const content = 7; return content.map(); }],
+  ["calling message.content.map, which is no function", () => { const message = { content: 7 }; return message.content.map(); }],
+  ["calling message.content.unwrap, which is no function", () => { const message = { content: 7 }; return message.content.unwrap(); }],
+  ["calling part.text.unwrap, which is no function", () => { const part = { text: 7 }; return part.text.unwrap(); }],
+  ["calling part.args.unwrap, which is no function", () => { const part = { args: 7 }; return part.args.unwrap(); }],
+  ["calling part.data.unwrap, which is no function", () => { const part = { data: 7 }; return part.data.unwrap(); }],
+  ["calling part.result.unwrap, which is no function", () => { const part = { result: 7 }; return part.result.unwrap(); }],
+  ["calling experimentalContent?.map, which is no function", () => { const experimentalContent = 7; return experimentalContent?.map(); }],
+];
+let runtimeSays;
+function mistakeIn(error) {
+  runtimeSays ??= MISTAKES.map(([mistake, make]) => {
+    try {
+      make();
+    } catch (said) {
+      return [mistake, `${said.name}: ${said.message}`];
+    }
+    return [mistake, undefined];
+  });
+  const sentence = `${error?.name}: ${error?.message}`;
+  return runtimeSays.find(([, said]) => said === sentence)?.[0];
+}
+
+/**
+ * What a call returned, or what it threw as `{ threw: … }`: "Name: message"
+ * for an error with words of its own, the class and the mistake for one of
+ * the runtime's.
+ */
 const thrown = new WeakSet();
 function attempt(run) {
   try {
     return run();
   } catch (error) {
-    const told = { threw: `${error?.name}: ${error?.message}` };
+    const mistake = mistakeIn(error);
+    const told = { threw: mistake === undefined ? `${error?.name}: ${error?.message}` : `${error.name}, the runtime's own, for ${mistake}` };
     thrown.add(told);
     return told;
   }
+}
+/** What a call threw, as the error itself; nothing when it threw nothing. */
+function failureOf(run) {
+  try {
+    run();
+  } catch (error) {
+    return error;
+  }
+  return undefined;
 }
 
 /** A value as a table's cell. */
@@ -262,21 +318,8 @@ function conversation() {
   ];
 }
 
-/** The part loaded once more, on its own, with the environment as given while it loads. */
+/** The part loaded once more by the tool, with these settings in place while it loads; they are put back after. */
 async function loadedUnder(env, tools) {
-  const out = await tools.tmp();
-  await build({
-    entryPoints: Object.fromEntries(Object.entries(modules).map(([key, file]) => [key, path.join(sourceRoot(), file)])),
-    outdir: out,
-    bundle: true,
-    splitting: true,
-    format: "esm",
-    platform: "node",
-    target: "node22",
-    logLevel: "silent",
-    outExtension: { ".js": ".mjs" },
-    nodePaths: [path.join(desktopRoot, "node_modules")],
-  });
   const set = (values) => {
     for (const [name, value] of Object.entries(values)) {
       if (value === undefined) delete process.env[name];
@@ -286,9 +329,7 @@ async function loadedUnder(env, tools) {
   const kept = Object.fromEntries(["NODE_ENV", "VITEST", ...Object.keys(env)].map((name) => [name, process.env[name]]));
   set({ NODE_ENV: undefined, VITEST: undefined, ...env });
   try {
-    const loaded = {};
-    for (const key of Object.keys(modules)) loaded[key] = await import(pathToFileURL(path.join(out, `${key}.mjs`)).href);
-    return loaded;
+    return await tools.fresh();
   } finally {
     set(kept);
   }
@@ -825,19 +866,30 @@ export const scenarios = [
   {
     name: "what a text operation refuses, a redacted string refuses with the same error",
     run: (m) => {
-      const made = m.factory.createRedactedString("abc", m.classification.DataClassification.CODE, "user_text", 1);
-      return [
-        attempt(() => made.repeat(-1)),
-        attempt(() => made.repeat(Infinity)),
-        attempt(() => made.normalize("NFX")),
-        attempt(() => made.replaceAll(/a/, "b")),
-        attempt(() => made.startsWith(/a/)),
-        attempt(() => made.endsWith(/c/)),
-        attempt(() => made.includes(/b/)),
-        attempt(() => made.toLocaleUpperCase("not a locale")),
-        attempt(() => made.localeCompare("abc", "not a locale")),
-        attempt(() => made.concat(Symbol("s"))),
-      ];
+      const text = "abc";
+      const made = m.factory.createRedactedString(text, m.classification.DataClassification.CODE, "user_text", { privacyMode: 1, enforceRedaction: true });
+      const refused = {
+        "repeat(-1)": (s) => s.repeat(-1),
+        "repeat(Infinity)": (s) => s.repeat(Infinity),
+        'normalize("NFX")': (s) => s.normalize("NFX"),
+        'replaceAll(/a/, "b")': (s) => s.replaceAll(/a/, "b"),
+        "startsWith(/a/)": (s) => s.startsWith(/a/),
+        "endsWith(/c/)": (s) => s.endsWith(/c/),
+        "includes(/b/)": (s) => s.includes(/b/),
+        'toLocaleUpperCase("not a locale")': (s) => s.toLocaleUpperCase("not a locale"),
+        'toLocaleLowerCase("not a locale")': (s) => s.toLocaleLowerCase("not a locale"),
+        'localeCompare("abc", "not a locale")': (s) => s.localeCompare("abc", "not a locale"),
+        'concat(Symbol("s"))': (s) => s.concat(Symbol("s")),
+        'padEnd(5, Symbol("s"))': (s) => s.padEnd(5, Symbol("s")),
+        "split(a separator that refuses)": (s) => s.split({ [Symbol.split]: () => { throw new RangeError("the separator's own error"); } }),
+      };
+      return Object.fromEntries(Object.entries(refused).map(([name, run]) => {
+        const fromTheString = failureOf(() => run(made));
+        const fromPlainText = failureOf(() => run(text));
+        if (fromTheString === undefined) return [name, "not refused"];
+        const same = fromPlainText !== undefined && fromTheString.constructor === fromPlainText.constructor && fromTheString.message === fromPlainText.message;
+        return [name, `${fromTheString.name}${same ? ", in the very words a plain text gets" : `: ${fromTheString.message} (a plain text: ${fromPlainText === undefined ? "not refused" : `${fromPlainText.name}: ${fromPlainText.message}`})`}`];
+      }));
     },
   },
   {
@@ -1622,6 +1674,155 @@ export const scenarios = [
     },
   },
 
+  // What someone outside the part could write on: the lists it hands out, and Object.prototype.
+  {
+    name: "the list of modes is read each time a mode is judged, so a number changed in it changes the judgement from then on; only a part made with no context is unspecified by the number 0 itself",
+    run: (m) => {
+      const see = seer(m);
+      const list = m.mode.PrivacyMode;
+      const kept = { ...list };
+      const { CODE, PATH } = m.classification.DataClassification;
+      const { STORAGE_FOR_LOGGING, STORAGE_FOR_USAGE } = m.classification.PrivacyCapability;
+      const [Image, File] = m.messages.toRedactedCoreMessage({ role: "user", content: [{ type: "image", image: "p" }, { type: "file", data: "d" }] }, 1).content.map((one) => one.constructor);
+      const numbers = named([0, 1, 2, 3, 4, 9]);
+      const ask = () => ({
+        list: Object.entries(list).map(([name, number]) => `${name}=${number}`).join(", "),
+        codeAllowedForUsage: across(numbers, (mode) => shown(attempt(() => m.classification.allowedPurpose(mode, STORAGE_FOR_USAGE, CODE)))),
+        aPathAllowedForLogging: across(numbers, (mode) => shown(attempt(() => m.classification.allowedPurpose(mode, STORAGE_FOR_LOGGING, PATH)))),
+        codeHidden: across(numbers, (mode) => shown(m.should.shouldRedact(mode, CODE))),
+        aNewStringOfCodeWouldBeHidden: across(numbers, (mode) => shown(m.factory.createRedactedString("v", CODE, "f", mode).__isRedacted)),
+        shownWhenEnforced: across(numbers, (mode) => shown(String(m.factory.createRedactedString("the value", CODE, "f", { privacyMode: mode, enforceRedaction: true })))),
+        enforcedWithNoChoice: across(numbers, (mode) => shown(m.context.resolveEnforceRedaction({ privacyMode: mode }, CODE))),
+        codeUnwrappedForUsage: across(numbers, (mode) => unwrapCell(HELD[0], m.factory.createRedactedString("the value", CODE, "f", mode), "the value", { purpose: STORAGE_FOR_USAGE, kind: CODE, mode, field: "f" })),
+        safeText: see(m.factory.safeString("s")),
+        aPartWithNoContext: [new Image("p", "m", undefined, undefined).__privacyContext, new File("d", "m", undefined, 0).__privacyContext],
+      });
+      const answers = { asItIs: ask() };
+      try {
+        list.UNSPECIFIED = 9;
+        answers.unspecifiedMovedToNine = ask();
+        Object.assign(list, kept, { NO_STORAGE: 3, USAGE_DATA_TRAINING_ALLOWED: 1 });
+        answers.noStorageAndDataTrainingSwapped = ask();
+        Object.assign(list, kept, { NO_TRAINING: 1 });
+        answers.noTrainingAlsoOne = ask();
+        Object.assign(list, kept, { USAGE_CODEBASE_TRAINING_ALLOWED: 0 });
+        answers.codebaseTrainingAlsoZero = ask();
+        Object.assign(list, kept, { NO_STORAGE: 4 });
+        answers.noStorageAlsoFour = ask();
+      } finally {
+        Object.assign(list, kept);
+      }
+      answers.putBackAnswersAsItWas = JSON.stringify(ask()) === JSON.stringify(answers.asItIs);
+      return answers;
+    },
+  },
+  {
+    name: "the kinds of data and the purposes are known by their values: a name changed in either list changes nothing the part does",
+    run: (m) => {
+      const see = seer(m);
+      const { DataClassification, PrivacyCapability, SENSITIVE_CLASSIFICATIONS, allowedPurpose } = m.classification;
+      const kept = [{ ...DataClassification }, { ...PrivacyCapability }];
+      const kinds = named(["safe", "code", "credentials", "path", "provider_info", "unspecified", "renamed"]);
+      const purposes = named(["storage_for_training", "storage_for_logging", "storage_for_usage", "unsafe_always_allowed", "renamed"]);
+      const ask = () => ({
+        allowedUnderNoTraining: table(kinds, purposes, (kind, purpose) => shown(attempt(() => allowedPurpose(2, purpose, kind)))),
+        hiddenUnderNoStorage: across(kinds, (kind) => shown(m.should.shouldRedact(1, kind))),
+        sensitive: [...SENSITIVE_CLASSIFICATIONS],
+        aWrappedMessage: see(m.messages.toRedactedCoreMessage({ role: "user", content: [{ type: "text", text: "words" }, { type: "image", image: "picture" }] }, { privacyMode: 1, enforceRedaction: true })),
+        anImageAsText: String(m.messages.toRedactedCoreMessage({ role: "user", content: [{ type: "image", image: "picture" }] }, { privacyMode: 1, enforceRedaction: true }).content[0]),
+        safeText: see(m.factory.safeString("s")),
+      });
+      const before = ask();
+      let after;
+      try {
+        Object.assign(DataClassification, { SAFE: "code", CODE: "renamed", CREDENTIALS: "safe", PATH: "credentials", PROVIDER_INFO: "unspecified", UNSPECIFIED: "path" });
+        Object.assign(PrivacyCapability, { STORAGE_FOR_TRAINING: "storage_for_usage", STORAGE_FOR_LOGGING: "renamed", STORAGE_FOR_USAGE: "unsafe_always_allowed", UNSAFE_ALWAYS_ALLOWED: "storage_for_logging" });
+        after = ask();
+      } finally {
+        Object.assign(DataClassification, kept[0]);
+        Object.assign(PrivacyCapability, kept[1]);
+      }
+      return { before, withTheNamesChanged: JSON.stringify(after) === JSON.stringify(before) ? "the same answers" : after, putBack: [Object.entries(DataClassification), Object.entries(PrivacyCapability)] };
+    },
+  },
+  {
+    name: "the memory of what was wrapped follows two settings made when the part is loaded, both on: only Object.prototype answering for them can turn one off",
+    run: async (m, tools) => {
+      const memory = (loaded) => {
+        const { toRedactedCoreMessage } = loaded.messages;
+        const message = { role: "user", content: [{ type: "text", text: "words" }] };
+        const first = toRedactedCoreMessage(message, 1);
+        const again = toRedactedCoreMessage(message, 1);
+        const assistant = { role: "assistant", content: [{ type: "text", text: "words" }] };
+        const tool = { role: "tool", content: [{ result: "r" }] };
+        const sameParts = (one) => toRedactedCoreMessage({ ...one }, 1).content === toRedactedCoreMessage({ ...one }, 1).content;
+        return `the same message: ${again === first ? "the same wrapping" : "another wrapping"} with ${again.content === first.content ? "the same parts" : "other parts"}; another message holding the same list: ${sameParts(message) ? "the same parts" : "other parts"} for a user, ${sameParts(assistant) ? "the same parts" : "other parts"} for an assistant, ${sameParts(tool) ? "the same parts" : "other parts"} for a tool`;
+      };
+      /** The part loaded while Object.prototype has these fields, made as given; the fields are taken away after unless kept for `during`. */
+      const loadedWith = async (fields, during) => {
+        for (const [name, described] of Object.entries(fields)) Object.defineProperty(Object.prototype, name, { configurable: true, ...described });
+        try {
+          const loaded = await tools.fresh();
+          return during === undefined ? loaded : during(loaded);
+        } finally {
+          for (const name of Object.keys(fields)) delete Object.prototype[name];
+        }
+      };
+      const answering = (answer) => ({ get: () => answer, set() {} });
+      const asked = [];
+      const counted = (name, answer) => ({ get() { asked.push(name); return answer; }, set() {} });
+      const answers = {
+        asLoadedByTheTool: memory(m),
+        aLoadOfItsOwn: memory(await tools.fresh()),
+        messagesSettingAnsweredForWhileLoading: memory(await loadedWith({ messageIdentity: answering(true) })),
+        partsSettingAnsweredForWhileLoading: memory(await loadedWith({ contentIdentity: answering(true) })),
+        bothAnsweredForWhileLoading: memory(await loadedWith({ messageIdentity: answering(true), contentIdentity: answering(true) })),
+        bothStillAnsweredYes: await loadedWith({ messageIdentity: answering(true), contentIdentity: answering(true) }, memory),
+        bothStillAnsweredNo: await loadedWith({ messageIdentity: answering(false), contentIdentity: answering(false) }, memory),
+        messagesStillAnsweredOne: await loadedWith({ messageIdentity: answering(1) }, memory),
+        anOrdinaryFieldOnObjectPrototypeChangesNothing: memory(await loadedWith({ messageIdentity: { value: false, writable: true }, contentIdentity: { value: false, writable: true } })),
+      };
+      // When each setting is asked for: wrapping one user message of parts, then the same message again.
+      answers.whenTheSettingsAreAskedFor = await loadedWith({ messageIdentity: counted("messages", true), contentIdentity: counted("parts", true) }, (loaded) => {
+        asked.length = 0;
+        const message = { role: "user", content: [{ type: "text", text: "words" }] };
+        loaded.messages.toRedactedCoreMessage(message, 1);
+        const first = asked.join(", ");
+        asked.length = 0;
+        loaded.messages.toRedactedCoreMessage(message, 1);
+        const again = asked.join(", ");
+        asked.length = 0;
+        loaded.messages.toRedactedCoreMessage({ role: "system", content: "s" }, 1);
+        loaded.messages.toRedactedCoreMessage({ role: "assistant", content: "plain text" }, 1);
+        loaded.messages.toRedactedCoreMessage({ role: "tool", content: [] }, 1);
+        const others = asked.join(", ");
+        asked.length = 0;
+        attempt(() => loaded.messages.toRedactedCoreMessage({ role: "developer", content: "x" }, 1));
+        attempt(() => loaded.messages.toRedactedCoreMessage({ role: "user", content: [{ type: "audio" }] }, 1));
+        return { first, again, "a system message, an assistant's plain text, a tool message": others, "a message of an unknown role, then one with a part that is refused": asked.join(", ") };
+      });
+      // A field of that name that cannot be written stops the part from loading at all.
+      const failure = await (async () => {
+        Object.defineProperty(Object.prototype, "messageIdentity", { configurable: true, value: false, writable: false });
+        try {
+          const onAPlainObject = failureOf(() => Object.assign({}, { messageIdentity: true }));
+          let onLoading;
+          try {
+            await tools.fresh();
+          } catch (error) {
+            onLoading = error;
+          }
+          return onLoading === undefined ? "the part loaded" : `${onLoading.name}${onAPlainObject !== undefined && onLoading.constructor === onAPlainObject.constructor && onLoading.message === onAPlainObject.message ? ", in the very words of writing that field on a plain object" : `: ${onLoading.message}`}`;
+        } finally {
+          delete Object.prototype.messageIdentity;
+        }
+      })();
+      answers.aFieldThatCannotBeWrittenWhileLoading = failure;
+      answers.nothingLeftOnObjectPrototype = ["messageIdentity", "contentIdentity"].map((name) => name in Object.prototype);
+      return answers;
+    },
+  },
+
   // A developer's run, and where there is no process at all.
   {
     name: "whether a run is a developer's is decided once, when the part is loaded",
@@ -1760,14 +1961,25 @@ export const scenarios = [
   },
   {
     name: "where there is no process at all, as in a browser, the part loads and does not run as a developer's",
-    run: async () => {
-      const built = await build({ entryPoints: [path.join(sourceRoot(), modules.types)], bundle: true, write: false, format: "iife", globalName: "redaction", platform: "neutral", target: "es2022", logLevel: "silent" });
-      const heard = [];
-      const sandbox = { console: { error: (...args) => { heard.push(args.map(String)); } } };
-      vm.runInNewContext(`${built.outputFiles[0].text}\nglobalThis.redaction = redaction;`, sandbox);
-      const made = new sandbox.redaction.RedactedString("the value", "code", "user_text", 1);
-      const enforced = new sandbox.redaction.RedactedString("the value", "code", "user_text", { privacyMode: 1, enforceRedaction: true });
-      return { processIsThere: vm.runInNewContext("typeof process", sandbox), text: [String(made), JSON.stringify([made]), String(enforced)], forLogging: made.unwrap("storage_for_logging"), heard };
+    run: async (m, tools) => {
+      const keptSetting = process.env.NODE_ENV;
+      const theProcess = Object.getOwnPropertyDescriptor(globalThis, "process");
+      // With a process, this setting alone would make a developer's run of the load.
+      process.env.NODE_ENV = "development";
+      Object.defineProperty(globalThis, "process", { value: undefined, configurable: true, writable: true });
+      let loaded;
+      let seenWhileLoading;
+      try {
+        seenWhileLoading = typeof process;
+        loaded = await tools.fresh();
+      } finally {
+        Object.defineProperty(globalThis, "process", theProcess);
+        if (keptSetting === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = keptSetting;
+      }
+      const made = loaded.factory.createRedactedString("the value", loaded.classification.DataClassification.CODE, "user_text", 1);
+      const enforced = loaded.factory.createRedactedString("the value", loaded.classification.DataClassification.CODE, "user_text", { privacyMode: 1, enforceRedaction: true });
+      return { processWhileLoading: seenWhileLoading, processAfter: typeof process, ...developerSigns(loaded), asJson: JSON.stringify([made, enforced]) };
     },
   },
 ];

@@ -199,7 +199,7 @@
      "threw": "Error: Unknown purpose: spelled by the object"
     },
     {
-     "threw": "TypeError: Cannot convert a Symbol value to a string"
+     "threw": "TypeError, the runtime's own, for a Symbol written as text"
     },
     {
      "threw": "Error: Unknown purpose: null"
@@ -214,13 +214,13 @@
      "threw": "Error: Unknown privacy mode: a mode of its own"
     },
     {
-     "threw": "TypeError: Cannot convert a Symbol value to a string"
+     "threw": "TypeError, the runtime's own, for a Symbol written as text"
     },
     {
      "threw": "Error: Unknown privacy mode: 1"
     },
     {
-     "threw": "TypeError: Cannot convert a Symbol value to a string"
+     "threw": "TypeError, the runtime's own, for a Symbol written as text"
     },
     true,
     true,
@@ -268,10 +268,10 @@
     ],
     "withNoContext": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'enforceRedaction')"
+      "threw": "TypeError, the runtime's own, for reading enforceRedaction of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'enforceRedaction')"
+      "threw": "TypeError, the runtime's own, for reading enforceRedaction of null"
      },
      false,
      false
@@ -465,7 +465,7 @@
     "[redacted:a,b]",
     "[redacted:undefined]",
     {
-     "threw": "TypeError: Cannot convert a Symbol value to a string"
+     "threw": "TypeError, the runtime's own, for a Symbol written as text"
     }
    ]
   },
@@ -559,10 +559,10 @@
     ],
     "noOptions": [
      {
-      "threw": "TypeError: Cannot destructure property 'privacyMode' of 'options' as it is undefined."
+      "threw": "TypeError, the runtime's own, for taking privacyMode out of options, which is undefined"
      },
      {
-      "threw": "TypeError: Cannot destructure property 'privacyMode' of 'options' as it is null."
+      "threw": "TypeError, the runtime's own, for taking privacyMode out of options, which is null"
      }
     ]
    }
@@ -2476,10 +2476,10 @@
     },
     "noTransform": [
      {
-      "threw": "TypeError: transform is not a function"
+      "threw": "TypeError, the runtime's own, for calling transform, which is no function"
      },
      {
-      "threw": "TypeError: transform is not a function"
+      "threw": "TypeError, the runtime's own, for calling transform, which is no function"
      }
     ]
    }
@@ -2738,38 +2738,21 @@
    }
   },
   "what a text operation refuses, a redacted string refuses with the same error": {
-   "returned": [
-    {
-     "threw": "RangeError: Invalid count value: -1"
-    },
-    {
-     "threw": "RangeError: Invalid count value: Infinity"
-    },
-    {
-     "threw": "RangeError: The normalization form should be one of NFC, NFD, NFKC, NFKD."
-    },
-    {
-     "threw": "TypeError: String.prototype.replaceAll called with a non-global RegExp argument"
-    },
-    {
-     "threw": "TypeError: First argument to String.prototype.startsWith must not be a regular expression"
-    },
-    {
-     "threw": "TypeError: First argument to String.prototype.endsWith must not be a regular expression"
-    },
-    {
-     "threw": "TypeError: First argument to String.prototype.includes must not be a regular expression"
-    },
-    {
-     "threw": "RangeError: Incorrect locale information provided"
-    },
-    {
-     "threw": "RangeError: Incorrect locale information provided"
-    },
-    {
-     "threw": "TypeError: Cannot convert a Symbol value to a string"
-    }
-   ]
+   "returned": {
+    "repeat(-1)": "RangeError, in the very words a plain text gets",
+    "repeat(Infinity)": "RangeError, in the very words a plain text gets",
+    "normalize(\"NFX\")": "RangeError, in the very words a plain text gets",
+    "replaceAll(/a/, \"b\")": "TypeError, in the very words a plain text gets",
+    "startsWith(/a/)": "TypeError, in the very words a plain text gets",
+    "endsWith(/c/)": "TypeError, in the very words a plain text gets",
+    "includes(/b/)": "TypeError, in the very words a plain text gets",
+    "toLocaleUpperCase(\"not a locale\")": "RangeError, in the very words a plain text gets",
+    "toLocaleLowerCase(\"not a locale\")": "RangeError, in the very words a plain text gets",
+    "localeCompare(\"abc\", \"not a locale\")": "RangeError, in the very words a plain text gets",
+    "concat(Symbol(\"s\"))": "TypeError, in the very words a plain text gets",
+    "padEnd(5, Symbol(\"s\"))": "TypeError, in the very words a plain text gets",
+    "split(a separator that refuses)": "RangeError, in the very words a plain text gets"
+   }
   },
   "a redacted string made around nothing, or around something that is not text, hands it back as it is": {
    "returned": [
@@ -2796,22 +2779,22 @@
        "[redacted:field]"
       ],
       "length": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of undefined"
       },
       "empty": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of undefined"
       },
       "trim": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'trim')"
+       "threw": "TypeError, the runtime's own, for reading trim of undefined"
       },
       "startsWith": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'startsWith')"
+       "threw": "TypeError, the runtime's own, for reading startsWith of undefined"
       },
       "at": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of undefined"
       },
       "split": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'split')"
+       "threw": "TypeError, the runtime's own, for reading split of undefined"
       }
      },
      "heard": [
@@ -2839,22 +2822,22 @@
        "[redacted:field]"
       ],
       "length": {
-       "threw": "TypeError: Cannot read properties of null (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of null"
       },
       "empty": {
-       "threw": "TypeError: Cannot read properties of null (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of null"
       },
       "trim": {
-       "threw": "TypeError: Cannot read properties of null (reading 'trim')"
+       "threw": "TypeError, the runtime's own, for reading trim of null"
       },
       "startsWith": {
-       "threw": "TypeError: Cannot read properties of null (reading 'startsWith')"
+       "threw": "TypeError, the runtime's own, for reading startsWith of null"
       },
       "at": {
-       "threw": "TypeError: Cannot read properties of null (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of null"
       },
       "split": {
-       "threw": "TypeError: Cannot read properties of null (reading 'split')"
+       "threw": "TypeError, the runtime's own, for reading split of null"
       }
      },
      "heard": [
@@ -2935,7 +2918,7 @@
        true
       ],
       "String": {
-       "threw": "TypeError: Cannot convert object to primitive value"
+       "threw": "TypeError, the runtime's own, for an object with no plain value written as text"
       },
       "json": "[{\"some\":\"object\"}]",
       "hiddenWhenEnforced": [
@@ -2969,7 +2952,7 @@
        true
       ],
       "String": {
-       "threw": "TypeError: Cannot convert object to primitive value"
+       "threw": "TypeError, the runtime's own, for an object with no plain value written as text"
       },
       "json": "[[\"a\",\"b\"]]",
       "hiddenWhenEnforced": [
@@ -3260,7 +3243,7 @@
      "threw": "RangeError: the transform's own error"
     },
     "noTransform": {
-     "threw": "TypeError: transform is not a function"
+     "threw": "TypeError, the runtime's own, for calling transform, which is no function"
     },
     "refusedWhileEnforced": [
      {
@@ -3302,10 +3285,10 @@
        "$": "undefined"
       },
       "length": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of undefined"
       },
       "empty": {
-       "threw": "TypeError: Cannot read properties of undefined (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of undefined"
       }
      },
      "heard": [
@@ -3320,10 +3303,10 @@
       },
       "forLogging": null,
       "length": {
-       "threw": "TypeError: Cannot read properties of null (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of null"
       },
       "empty": {
-       "threw": "TypeError: Cannot read properties of null (reading 'length')"
+       "threw": "TypeError, the runtime's own, for reading length of null"
       }
      },
      "heard": [
@@ -5166,31 +5149,31 @@
   "an assistant's part that cannot be written as JSON, or that is nothing at all, fails the whole message": {
    "returned": [
     {
-     "threw": "TypeError: Converting circular structure to JSON\n    --> starting at object with constructor 'Object'\n    --- property 'self' closes the circle"
+     "threw": "TypeError, the runtime's own, for an object that holds itself as \"self\" written as JSON"
     },
     {
-     "threw": "TypeError: Converting circular structure to JSON\n    --> starting at object with constructor 'Object'\n    --- property 'again' closes the circle"
+     "threw": "TypeError, the runtime's own, for an object that holds itself as \"again\" written as JSON"
     },
     {
-     "threw": "TypeError: Do not know how to serialize a BigInt"
+     "threw": "TypeError, the runtime's own, for a BigInt written as JSON"
     },
     {
-     "threw": "TypeError: Do not know how to serialize a BigInt"
+     "threw": "TypeError, the runtime's own, for a BigInt written as JSON"
     },
     {
-     "threw": "TypeError: Cannot read properties of null (reading 'type')"
+     "threw": "TypeError, the runtime's own, for reading type of null"
     },
     {
-     "threw": "TypeError: Cannot read properties of undefined (reading 'type')"
+     "threw": "TypeError, the runtime's own, for reading type of undefined"
     },
     {
-     "threw": "TypeError: Cannot read properties of null (reading 'type')"
+     "threw": "TypeError, the runtime's own, for reading type of null"
     },
     {
-     "threw": "TypeError: Cannot read properties of null (reading 'result')"
+     "threw": "TypeError, the runtime's own, for reading result of null"
     },
     {
-     "threw": "TypeError: Do not know how to serialize a BigInt"
+     "threw": "TypeError, the runtime's own, for a BigInt written as JSON"
     }
    ]
   },
@@ -6050,10 +6033,10 @@
     },
     "roleSymbol": [
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      },
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      }
     ]
    }
@@ -6062,22 +6045,22 @@
    "returned": {
     "noMessage": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'role')"
+      "threw": "TypeError, the runtime's own, for reading role of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'role')"
-     },
-     {
-      "threw": "Error: Unhandled CoreMessage role: undefined"
+      "threw": "TypeError, the runtime's own, for reading role of null"
      },
      {
       "threw": "Error: Unhandled CoreMessage role: undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'role')"
+      "threw": "Error: Unhandled CoreMessage role: undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'role')"
+      "threw": "TypeError, the runtime's own, for reading role of undefined"
+     },
+     {
+      "threw": "TypeError, the runtime's own, for reading role of null"
      },
      {
       "threw": "Error: Unhandled RedactedCoreMessage role: undefined"
@@ -6085,69 +6068,69 @@
     ],
     "aModeThatCannotBeWrittenAsTextFailsFirst": [
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      },
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      },
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      },
      {
-      "threw": "TypeError: Cannot convert a Symbol value to a string"
+      "threw": "TypeError, the runtime's own, for a Symbol written as text"
      }
     ],
     "noList": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: messages.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling messages.map, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: messages.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling messages.map, which is no function"
      }
     ],
     "wrappingNoContent": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      }
     ],
     "wrappingATextForATool": {
-     "threw": "TypeError: content.map is not a function"
+     "threw": "TypeError, the runtime's own, for calling content.map, which is no function"
     },
     "wrappingANumber": [
      {
-      "threw": "TypeError: content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling content.map, which is no function"
      },
      {
-      "threw": "TypeError: content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling content.map, which is no function"
      },
      {
-      "threw": "TypeError: content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling content.map, which is no function"
      }
     ],
     "wrappingExtraContentThatIsNoList": [
      {
-      "threw": "TypeError: experimentalContent?.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling experimentalContent?.map, which is no function"
      },
      {
       "_privacyMode": 1,
@@ -6181,88 +6164,88 @@
       ]
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'type')"
+      "threw": "TypeError, the runtime's own, for reading type of null"
      }
     ],
     "unwrappingNoContent": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'map')"
+      "threw": "TypeError, the runtime's own, for reading map of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'unwrap')"
+      "threw": "TypeError, the runtime's own, for reading unwrap of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'unwrap')"
+      "threw": "TypeError, the runtime's own, for reading unwrap of null"
      }
     ],
     "unwrappingPlainText": [
      {
-      "threw": "TypeError: message.content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling message.content.map, which is no function"
      },
      {
-      "threw": "TypeError: message.content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling message.content.map, which is no function"
      },
      {
-      "threw": "TypeError: message.content.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling message.content.map, which is no function"
      },
      {
-      "threw": "TypeError: message.content.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling message.content.unwrap, which is no function"
      }
     ],
     "unwrappingPlainParts": [
      {
-      "threw": "TypeError: part.text.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling part.text.unwrap, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'unwrap')"
+      "threw": "TypeError, the runtime's own, for reading unwrap of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'type')"
+      "threw": "TypeError, the runtime's own, for reading type of null"
      },
      {
-      "threw": "TypeError: part.text.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling part.text.unwrap, which is no function"
      },
      {
-      "threw": "TypeError: part.args.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling part.args.unwrap, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'unwrap')"
+      "threw": "TypeError, the runtime's own, for reading unwrap of undefined"
      },
      {
-      "threw": "TypeError: part.data.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling part.data.unwrap, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'type')"
+      "threw": "TypeError, the runtime's own, for reading type of undefined"
      },
      {
-      "threw": "TypeError: part.result.unwrap is not a function"
+      "threw": "TypeError, the runtime's own, for calling part.result.unwrap, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'unwrap')"
+      "threw": "TypeError, the runtime's own, for reading unwrap of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'result')"
+      "threw": "TypeError, the runtime's own, for reading result of null"
      },
      {
-      "threw": "TypeError: experimentalContent?.map is not a function"
+      "threw": "TypeError, the runtime's own, for calling experimentalContent?.map, which is no function"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'type')"
+      "threw": "TypeError, the runtime's own, for reading type of null"
      }
     ]
    }
@@ -7714,13 +7697,13 @@
     ],
     "nothingToShow": [
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'toString')"
+      "threw": "TypeError, the runtime's own, for reading toString of undefined"
      },
      {
-      "threw": "TypeError: Cannot read properties of null (reading 'toString')"
+      "threw": "TypeError, the runtime's own, for reading toString of null"
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'toString')"
+      "threw": "TypeError, the runtime's own, for reading toString of undefined"
      }
     ],
     "text": [
@@ -7787,7 +7770,7 @@
       }
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'toolCallId')"
+      "threw": "TypeError, the runtime's own, for reading toolCallId of undefined"
      }
     ],
     "unknown": [
@@ -7868,7 +7851,7 @@
       }
      },
      {
-      "threw": "TypeError: Cannot read properties of undefined (reading 'toolCallId')"
+      "threw": "TypeError, the runtime's own, for reading toolCallId of undefined"
      }
     ]
    }
@@ -8954,6 +8937,323 @@
     ]
    }
   },
+  "the list of modes is read each time a mode is judged, so a number changed in it changes the judgement from then on; only a part made with no context is unspecified by the number 0 itself": {
+   "returned": {
+    "asItIs": {
+     "list": "UNSPECIFIED=0, NO_STORAGE=1, NO_TRAINING=2, USAGE_DATA_TRAINING_ALLOWED=3, USAGE_CODEBASE_TRAINING_ALLOWED=4",
+     "codeAllowedForUsage": "0: false | 1: false | 2: true | 3: true | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "aPathAllowedForLogging": "0: false | 1: false | 2: true | 3: true | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "codeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "shownWhenEnforced": "0: \"[redacted:f]\" | 1: \"[redacted:f]\" | 2: \"[redacted:f]\" | 3: \"the value\" | 4: \"the value\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: value + line | 1: value + line | 2: value | 3: value | 4: value | 9: threw Error: Unknown privacy mode: 9",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "unspecifiedMovedToNine": {
+     "list": "UNSPECIFIED=9, NO_STORAGE=1, NO_TRAINING=2, USAGE_DATA_TRAINING_ALLOWED=3, USAGE_CODEBASE_TRAINING_ALLOWED=4",
+     "codeAllowedForUsage": "0: threw Error: Unknown privacy mode: 0 | 1: false | 2: true | 3: true | 4: true | 9: false",
+     "aPathAllowedForLogging": "0: threw Error: Unknown privacy mode: 0 | 1: false | 2: true | 3: true | 4: true | 9: false",
+     "codeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "shownWhenEnforced": "0: \"[redacted:f]\" | 1: \"[redacted:f]\" | 2: \"[redacted:f]\" | 3: \"the value\" | 4: \"the value\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: threw Error: Unknown privacy mode: 0 | 1: value + line | 2: value | 3: value | 4: value | 9: value + line",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "noStorageAndDataTrainingSwapped": {
+     "list": "UNSPECIFIED=0, NO_STORAGE=3, NO_TRAINING=2, USAGE_DATA_TRAINING_ALLOWED=1, USAGE_CODEBASE_TRAINING_ALLOWED=4",
+     "codeAllowedForUsage": "0: false | 1: true | 2: true | 3: false | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "aPathAllowedForLogging": "0: false | 1: true | 2: true | 3: false | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "codeHidden": "0: true | 1: false | 2: true | 3: true | 4: false | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: true | 1: false | 2: true | 3: true | 4: false | 9: true",
+     "shownWhenEnforced": "0: \"[redacted:f]\" | 1: \"the value\" | 2: \"[redacted:f]\" | 3: \"[redacted:f]\" | 4: \"the value\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: value + line | 1: value | 2: value | 3: value + line | 4: value | 9: threw Error: Unknown privacy mode: 9",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "noTrainingAlsoOne": {
+     "list": "UNSPECIFIED=0, NO_STORAGE=1, NO_TRAINING=1, USAGE_DATA_TRAINING_ALLOWED=3, USAGE_CODEBASE_TRAINING_ALLOWED=4",
+     "codeAllowedForUsage": "0: false | 1: false | 2: threw Error: Unknown privacy mode: 2 | 3: true | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "aPathAllowedForLogging": "0: false | 1: false | 2: threw Error: Unknown privacy mode: 2 | 3: true | 4: true | 9: threw Error: Unknown privacy mode: 9",
+     "codeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "shownWhenEnforced": "0: \"[redacted:f]\" | 1: \"[redacted:f]\" | 2: \"[redacted:f]\" | 3: \"the value\" | 4: \"the value\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: value + line | 1: value + line | 2: threw Error: Unknown privacy mode: 2 | 3: value | 4: value | 9: threw Error: Unknown privacy mode: 9",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "codebaseTrainingAlsoZero": {
+     "list": "UNSPECIFIED=0, NO_STORAGE=1, NO_TRAINING=2, USAGE_DATA_TRAINING_ALLOWED=3, USAGE_CODEBASE_TRAINING_ALLOWED=0",
+     "codeAllowedForUsage": "0: false | 1: false | 2: true | 3: true | 4: threw Error: Unknown privacy mode: 4 | 9: threw Error: Unknown privacy mode: 9",
+     "aPathAllowedForLogging": "0: false | 1: false | 2: true | 3: true | 4: threw Error: Unknown privacy mode: 4 | 9: threw Error: Unknown privacy mode: 9",
+     "codeHidden": "0: false | 1: true | 2: true | 3: false | 4: true | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: false | 1: true | 2: true | 3: false | 4: true | 9: true",
+     "shownWhenEnforced": "0: \"the value\" | 1: \"[redacted:f]\" | 2: \"[redacted:f]\" | 3: \"the value\" | 4: \"[redacted:f]\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: value + line | 1: value + line | 2: value | 3: value | 4: threw Error: Unknown privacy mode: 4 | 9: threw Error: Unknown privacy mode: 9",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=0, __isRedacted=false; context {\"privacyMode\":0}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "noStorageAlsoFour": {
+     "list": "UNSPECIFIED=0, NO_STORAGE=4, NO_TRAINING=2, USAGE_DATA_TRAINING_ALLOWED=3, USAGE_CODEBASE_TRAINING_ALLOWED=4",
+     "codeAllowedForUsage": "0: false | 1: threw Error: Unknown privacy mode: 1 | 2: true | 3: true | 4: false | 9: threw Error: Unknown privacy mode: 9",
+     "aPathAllowedForLogging": "0: false | 1: threw Error: Unknown privacy mode: 1 | 2: true | 3: true | 4: false | 9: threw Error: Unknown privacy mode: 9",
+     "codeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "aNewStringOfCodeWouldBeHidden": "0: true | 1: true | 2: true | 3: false | 4: false | 9: true",
+     "shownWhenEnforced": "0: \"[redacted:f]\" | 1: \"[redacted:f]\" | 2: \"[redacted:f]\" | 3: \"the value\" | 4: \"the value\" | 9: \"[redacted:f]\"",
+     "enforcedWithNoChoice": "0: false | 1: false | 2: false | 3: false | 4: false | 9: false",
+     "codeUnwrappedForUsage": "0: value + line | 1: threw Error: Unknown privacy mode: 1 | 2: value | 3: value | 4: value + line | 9: threw Error: Unknown privacy mode: 9",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     },
+     "aPartWithNoContext": [
+      {
+       "privacyMode": 0
+      },
+      {
+       "privacyMode": 0
+      }
+     ]
+    },
+    "putBackAnswersAsItWas": true
+   }
+  },
+  "the kinds of data and the purposes are known by their values: a name changed in either list changes nothing the part does": {
+   "returned": {
+    "before": {
+     "allowedUnderNoTraining": {
+      "safe": {
+       "storage_for_training": "true",
+       "storage_for_logging": "true",
+       "storage_for_usage": "true",
+       "unsafe_always_allowed": "true",
+       "renamed": "true"
+      },
+      "code": {
+       "storage_for_training": "false",
+       "storage_for_logging": "false",
+       "storage_for_usage": "true",
+       "unsafe_always_allowed": "true",
+       "renamed": "threw Error: Unknown purpose: renamed"
+      },
+      "credentials": {
+       "storage_for_training": "false",
+       "storage_for_logging": "false",
+       "storage_for_usage": "false",
+       "unsafe_always_allowed": "true",
+       "renamed": "false"
+      },
+      "path": {
+       "storage_for_training": "false",
+       "storage_for_logging": "true",
+       "storage_for_usage": "true",
+       "unsafe_always_allowed": "true",
+       "renamed": "threw Error: Unknown purpose: renamed"
+      },
+      "provider_info": {
+       "storage_for_training": "false",
+       "storage_for_logging": "true",
+       "storage_for_usage": "true",
+       "unsafe_always_allowed": "true",
+       "renamed": "threw Error: Unknown purpose: renamed"
+      },
+      "unspecified": {
+       "storage_for_training": "false",
+       "storage_for_logging": "false",
+       "storage_for_usage": "false",
+       "unsafe_always_allowed": "true",
+       "renamed": "false"
+      },
+      "renamed": {
+       "storage_for_training": "false",
+       "storage_for_logging": "false",
+       "storage_for_usage": "true",
+       "unsafe_always_allowed": "true",
+       "renamed": "threw Error: Unknown purpose: renamed"
+      }
+     },
+     "hiddenUnderNoStorage": "safe: false | code: true | credentials: true | path: true | provider_info: true | unspecified: true | renamed: false",
+     "sensitive": [
+      "code",
+      "credentials",
+      "path",
+      "provider_info",
+      "unspecified"
+     ],
+     "aWrappedMessage": {
+      "_privacyMode": 1,
+      "role": "user",
+      "content": [
+       {
+        "class": "RedactedTextPart",
+        "fields": {
+         "text": {
+          "redacted string": "words",
+          "labels": "__classification=\"code\", __fieldName=\"user_text\", __privacyMode=1, __isRedacted=true; context {\"privacyMode\":1,\"enforceRedaction\":true}"
+         },
+         "providerOptions": {
+          "$": "undefined"
+         },
+         "type": "text"
+        }
+       },
+       {
+        "class": "RedactedImagePart",
+        "fields": {
+         "image": "picture",
+         "mimeType": {
+          "$": "undefined"
+         },
+         "providerOptions": {
+          "$": "undefined"
+         },
+         "type": "image",
+         "__privacyContext": {
+          "privacyMode": 1,
+          "enforceRedaction": true
+         }
+        }
+       }
+      ],
+      "providerOptions": {
+       "$": "undefined"
+      }
+     },
+     "anImageAsText": "[redacted:image]",
+     "safeText": {
+      "redacted string": "s",
+      "labels": "__classification=\"safe\", __fieldName=\"safe\", __privacyMode=4, __isRedacted=false; context {\"privacyMode\":4}"
+     }
+    },
+    "withTheNamesChanged": "the same answers",
+    "putBack": [
+     [
+      [
+       "SAFE",
+       "safe"
+      ],
+      [
+       "CODE",
+       "code"
+      ],
+      [
+       "CREDENTIALS",
+       "credentials"
+      ],
+      [
+       "PATH",
+       "path"
+      ],
+      [
+       "PROVIDER_INFO",
+       "provider_info"
+      ],
+      [
+       "UNSPECIFIED",
+       "unspecified"
+      ]
+     ],
+     [
+      [
+       "STORAGE_FOR_TRAINING",
+       "storage_for_training"
+      ],
+      [
+       "STORAGE_FOR_LOGGING",
+       "storage_for_logging"
+      ],
+      [
+       "STORAGE_FOR_USAGE",
+       "storage_for_usage"
+      ],
+      [
+       "UNSAFE_ALWAYS_ALLOWED",
+       "unsafe_always_allowed"
+      ]
+     ]
+    ]
+   }
+  },
+  "the memory of what was wrapped follows two settings made when the part is loaded, both on: only Object.prototype answering for them can turn one off": {
+   "returned": {
+    "asLoadedByTheTool": "the same message: the same wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "aLoadOfItsOwn": "the same message: the same wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "messagesSettingAnsweredForWhileLoading": "the same message: another wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "partsSettingAnsweredForWhileLoading": "the same message: the same wrapping with the same parts; another message holding the same list: other parts for a user, other parts for an assistant, other parts for a tool",
+    "bothAnsweredForWhileLoading": "the same message: another wrapping with other parts; another message holding the same list: other parts for a user, other parts for an assistant, other parts for a tool",
+    "bothStillAnsweredYes": "the same message: the same wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "bothStillAnsweredNo": "the same message: another wrapping with other parts; another message holding the same list: other parts for a user, other parts for an assistant, other parts for a tool",
+    "messagesStillAnsweredOne": "the same message: the same wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "anOrdinaryFieldOnObjectPrototypeChangesNothing": "the same message: the same wrapping with the same parts; another message holding the same list: the same parts for a user, the same parts for an assistant, the same parts for a tool",
+    "whenTheSettingsAreAskedFor": {
+     "first": "messages, parts, messages",
+     "again": "messages",
+     "a system message, an assistant's plain text, a tool message": "messages, messages, messages, messages, messages, parts, messages",
+     "a message of an unknown role, then one with a part that is refused": "messages, messages, parts"
+    },
+    "aFieldThatCannotBeWrittenWhileLoading": "TypeError, in the very words of writing that field on a plain object",
+    "nothingLeftOnObjectPrototype": [
+     false,
+     false
+    ]
+   }
+  },
   "whether a run is a developer's is decided once, when the part is loaded": {
    "returned": {
     "text": "the value",
@@ -9366,18 +9666,16 @@
   },
   "where there is no process at all, as in a browser, the part loads and does not run as a developer's": {
    "returned": {
-    "processIsThere": "undefined",
-    "text": [
-     "the value",
-     "[\"the value\"]",
-     "[redacted:user_text]"
-    ],
-    "forLogging": "the value",
-    "heard": [
-     [
-      "[PRIVACY REDACTION] logger not initialized — call setRedactionLogger() at process startup"
+    "processWhileLoading": "undefined",
+    "processAfter": "object",
+    "text": "the value",
+    "unwrap": {
+     "result": "the value",
+     "heard": [
+      "the line"
      ]
-    ]
+    },
+    "asJson": "[\"the value\",\"[redacted:user_text]\"]"
    }
   }
  }
