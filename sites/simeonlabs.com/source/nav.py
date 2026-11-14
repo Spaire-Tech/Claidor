@@ -22,7 +22,7 @@ teams.py (Marketplace and a team's page, Connectors, Pricing, Contact, the
 Newsroom), legal.py and build.py (the home page's %BAR% and %FOOTER%) write both
 from here. Their styles are site.css's.
 """
-import functools, json, os
+import functools, hashlib, json, os
 
 MAC_DOWNLOAD = "https://api.simeonlabs.com/desktop/download/mac"
 # Simeon for Windows is in the Microsoft Store (13 November 2026): the Store installs and updates it, so the
@@ -176,13 +176,21 @@ def _solutions_menu(current):
     return groups, more
 
 
+@functools.lru_cache(maxsize=None)
+def _version(picture):
+    """The first eight hex digits of a menu picture's sha256: a redrawn picture is a new address, so no browser or
+    Cloudflare keeps showing the old one for the four hours the site lets them (versioning.py's rule for images)."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "img", "menu", f"{picture}.webp")
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()[:8]
+
+
 def _picture_menu(items, current):
     """Product's and Resources' panel: the items on the left, each name over its line, the pictures on the right."""
     links = "".join(
         f'<a class="pm-i" href="{href}"{_mark(key, current)}><b>{name}</b><span>{line}</span></a>'
         for key, href, name, line, _ in items
     )
-    pictures = "".join(f'<i style="background-image:url(/img/menu/{picture}.webp)"></i>' for *_, picture in items)
+    pictures = "".join(f'<i style="background-image:url(/img/menu/{picture}.webp?v={_version(picture)})"></i>' for *_, picture in items)
     return f'<div class="pm"><div class="pm-list">{links}</div><div class="pm-pics" aria-hidden="true">{pictures}</div></div>'
 
 
@@ -210,6 +218,12 @@ def bar(current=""):
     desk = "".join(_menu(name, panel, cls) for name, panel, cls in menus)
     phone = "".join(_phone_menu(name, panel, cls) for name, panel, cls in menus)
     buttons = f'<a class="btn soft" href="/contact"{_mark("contact", current)}>Contact Sales</a><a class="btn for-mac" href="{MAC_DOWNLOAD}">Download</a><a class="btn for-win" href="{WINDOWS_STORE}">Download</a>'
+    # The phone's menu ends as the reference's does (14 November 2026, "see below for the buttons"): Download across the
+    # foot of the screen, and Contact, Privacy and Terms small and grey under it.
+    phone_acts = (f'<a class="btn for-mac" href="{MAC_DOWNLOAD}">Download</a><a class="btn for-win" href="{WINDOWS_STORE}">Download</a>'
+                  f'<p class="menu-links"><a href="/contact"{_mark("contact", current)}>Contact</a><span aria-hidden="true">·</span>'
+                  f'<a href="/privacy"{_mark("privacy", current)}>Privacy</a><span aria-hidden="true">·</span>'
+                  f'<a href="/terms"{_mark("terms", current)}>Terms</a></p>')
     return f"""{OS_MARK}
 <header class="bar">
   <div class="wrap">
@@ -218,7 +232,7 @@ def bar(current=""):
     <div class="acts">{buttons}</div>
     <details class="menu">
       <summary aria-label="Menu"><i></i><i></i></summary>
-      <div class="menu-in"><nav aria-label="Pages">{phone}{_links(LINKS, current)}</nav><div class="menu-acts">{buttons}</div></div>
+      <div class="menu-in"><nav aria-label="Pages">{phone}{_links(LINKS, current)}</nav><div class="menu-acts">{phone_acts}</div></div>
     </details>
   </div>
 </header>"""
