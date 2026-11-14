@@ -1,0 +1,4787 @@
+{
+ "part": "host/ports",
+ "surface": {
+  "box": {
+   "BoxEnvironmentSyncUnsupportedError": "class",
+   "BoxMcpUnsupportedError": "class",
+   "SAND_BOX_FIRST_FORK_WINDOW_INDEX": "number",
+   "SAND_BOX_NOT_READY_MESSAGE": "string",
+   "SAND_BOX_NOT_RESPONDING_MESSAGE": "string",
+   "SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE": "string",
+   "SAND_BOX_PRIMARY_WINDOW_INDEX": "number",
+   "SandBoxDaemonUnreachableError": "class",
+   "SandBoxNoMonitorAvailableError": "class",
+   "boxNotReadyMessageForError": "function",
+   "isNoMonitorComputerUseExecutor": "function",
+   "isPrimaryWindowIndex": "function",
+   "noMonitorComputerUseExecutor": "object"
+  },
+  "telemetry": {
+   "SAND_BOX_AUTH_ID_ENV": "string",
+   "SAND_BOX_BOOT_FAILURE_REASONS": "array",
+   "SAND_BOX_BOOT_FAILURE_STAGES": "array",
+   "SAND_BOX_BOOT_ID_ENV": "string",
+   "SAND_BOX_BOOT_STAGES": "array",
+   "SAND_BOX_BOOT_STARTED_AT_MS_ENV": "string",
+   "SAND_BOX_CLUSTER_ENV": "string",
+   "SAND_BOX_STORE_ID_ENV": "string",
+   "SAND_BOX_TENANT_ID_ENV": "string",
+   "SAND_COOKIE_PERSIST_OUTCOMES": "array",
+   "SAND_COOKIE_PERSIST_PHASES": "array",
+   "SAND_EGRESS_TUNNEL_OUTCOMES": "array",
+   "SAND_EXEC_DAEMON_RESTART_CAUSES": "array",
+   "SAND_HOST_BOOT_FETCH_OUTCOMES": "array",
+   "SAND_HOST_BOOT_FETCH_REASONS": "array",
+   "SAND_HOST_LIFECYCLE_PHASES": "array",
+   "SAND_PROCESS_CRASH_BINARIES": "array",
+   "SAND_PROCESS_CRASH_SIGNALS": "array",
+   "SAND_SUPERVISOR_RESTART_CAUSES": "array",
+   "createNoopSandTelemetry": "function",
+   "resolveSandBoxIdentityTags": "function",
+   "sandErrorDetail": "function"
+  },
+  "mcpState": {
+   "createSandMcpStateExecutor": "function"
+  },
+  "analyticsTypes": {
+   "sandMessageLengthBucket": "function"
+  },
+  "productAnalytics": {
+   "createNoopSandProductAnalytics": "function"
+  },
+  "transport": {
+   "createSandTransport": "function"
+  }
+ },
+ "scenarios": {
+  "the three sentences a person reads when the computer is not ready, word for word": {
+   "returned": {
+    "SAND_BOX_NOT_READY_MESSAGE": "The computer is still starting up (downloading its image or booting). Try again in a moment.",
+    "SAND_BOX_NOT_RESPONDING_MESSAGE": "The computer isn't responding — it may be wedged. Try again in a moment, or recover it from Settings → Updates → Update Simeon's Computer.",
+    "SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE": "Every desktop monitor on the shared computer is in use right now, so this agent can't get its own screen. Wait a moment and try again — one frees up when another agent or parallel computer-use subagent finishes."
+   }
+  },
+  "the error for a computer whose daemon cannot be reached carries how the reach ended": {
+   "returned": {
+    "class": {
+     "name": "SandBoxDaemonUnreachableError",
+     "parentIsError": true,
+     "argumentsCounted": 3,
+     "ownMethods": [
+      "constructor"
+     ],
+     "ownStatics": [
+      "length",
+      "name",
+      "prototype"
+     ],
+     "cannotBeCalledWithoutNew": "TypeError"
+    },
+    "plain": {
+     "isOfItsClass": true,
+     "isAnError": true,
+     "class": "SandBoxDaemonUnreachableError",
+     "name": "SandBoxDaemonUnreachableError",
+     "message": "no answer in 5 s",
+     "asText": "SandBoxDaemonUnreachableError: no answer in 5 s",
+     "fields": [
+      "outcome",
+      "name"
+     ],
+     "everyOwnName": [
+      "message",
+      "name",
+      "outcome",
+      "stack"
+     ],
+     "nameHeld": "string, can be changed, listed",
+     "messageHeld": "string, can be changed, not listed",
+     "cause": "none",
+     "hasAStack": true,
+     "stackStartsWithItsText": true
+    },
+    "asKept": {
+     "$": "error",
+     "name": "SandBoxDaemonUnreachableError",
+     "message": "no answer in 5 s",
+     "extra": {
+      "outcome": "timeout",
+      "name": "SandBoxDaemonUnreachableError"
+     }
+    },
+    "outcomeHeld": {
+     "value": "timeout",
+     "writable": true,
+     "enumerable": true,
+     "configurable": true
+    },
+    "withACause": {
+     "isOfItsClass": true,
+     "isAnError": true,
+     "class": "SandBoxDaemonUnreachableError",
+     "name": "SandBoxDaemonUnreachableError",
+     "message": "the daemon went away",
+     "asText": "SandBoxDaemonUnreachableError: the daemon went away",
+     "fields": [
+      "outcome",
+      "name"
+     ],
+     "everyOwnName": [
+      "cause",
+      "message",
+      "name",
+      "outcome",
+      "stack"
+     ],
+     "nameHeld": "string, can be changed, listed",
+     "messageHeld": "string, can be changed, not listed",
+     "cause": {
+      "$": "error",
+      "name": "Error",
+      "message": "connection refused"
+     },
+     "hasAStack": true,
+     "stackStartsWithItsText": true,
+     "sameCause": true
+    },
+    "options that hold no cause": "none",
+    "options that are undefined": "none",
+    "a cause that is undefined": {
+     "$": "undefined"
+    },
+    "nothing given at all": {
+     "isOfItsClass": true,
+     "isAnError": true,
+     "class": "SandBoxDaemonUnreachableError",
+     "name": "SandBoxDaemonUnreachableError",
+     "message": "",
+     "asText": "SandBoxDaemonUnreachableError",
+     "fields": [
+      "outcome",
+      "name"
+     ],
+     "everyOwnName": [
+      "name",
+      "outcome",
+      "stack"
+     ],
+     "nameHeld": "string, can be changed, listed",
+     "messageHeld": "not its own",
+     "cause": "none",
+     "hasAStack": true,
+     "stackStartsWithItsText": true
+    },
+    "an outcome that is not a text": 504,
+    "a message that is not a text": "504",
+    "its outcome and name can be changed after": [
+     "timeout",
+     "Renamed",
+     "Renamed: at first"
+    ]
+   }
+  },
+  "the error for no free monitor has words of its own unless given others, and takes no cause": {
+   "returned": {
+    "class": {
+     "name": "SandBoxNoMonitorAvailableError",
+     "parentIsError": true,
+     "argumentsCounted": 0,
+     "ownMethods": [
+      "constructor"
+     ],
+     "ownStatics": [
+      "length",
+      "name",
+      "prototype"
+     ],
+     "cannotBeCalledWithoutNew": "TypeError"
+    },
+    "bare": {
+     "isOfItsClass": true,
+     "isAnError": true,
+     "class": "SandBoxNoMonitorAvailableError",
+     "name": "SandBoxNoMonitorAvailableError",
+     "message": "No private desktop monitor is available on the shared box.",
+     "asText": "SandBoxNoMonitorAvailableError: No private desktop monitor is available on the shared box.",
+     "fields": [
+      "name"
+     ],
+     "everyOwnName": [
+      "message",
+      "name",
+      "stack"
+     ],
+     "nameHeld": "string, can be changed, listed",
+     "messageHeld": "string, can be changed, not listed",
+     "cause": "none",
+     "hasAStack": true,
+     "stackStartsWithItsText": true
+    },
+    "asKept": {
+     "$": "error",
+     "name": "SandBoxNoMonitorAvailableError",
+     "message": "No private desktop monitor is available on the shared box.",
+     "extra": {
+      "name": "SandBoxNoMonitorAvailableError"
+     }
+    },
+    "undefined for the words": "No private desktop monitor is available on the shared box.",
+    "words given": {
+     "isOfItsClass": true,
+     "isAnError": true,
+     "class": "SandBoxNoMonitorAvailableError",
+     "name": "SandBoxNoMonitorAvailableError",
+     "message": "all four screens are taken",
+     "asText": "SandBoxNoMonitorAvailableError: all four screens are taken",
+     "fields": [
+      "name"
+     ],
+     "everyOwnName": [
+      "message",
+      "name",
+      "stack"
+     ],
+     "nameHeld": "string, can be changed, listed",
+     "messageHeld": "string, can be changed, not listed",
+     "cause": "none",
+     "hasAStack": true,
+     "stackStartsWithItsText": true
+    },
+    "empty words": "",
+    "null for the words": "null",
+    "a number for the words": "4",
+    "a cause given": "none"
+   }
+  },
+  "the two errors for what a computer cannot do have fixed words and take nothing": {
+   "returned": {
+    "environmentSync": {
+     "class": {
+      "name": "BoxEnvironmentSyncUnsupportedError",
+      "parentIsError": true,
+      "argumentsCounted": 0,
+      "ownMethods": [
+       "constructor"
+      ],
+      "ownStatics": [
+       "length",
+       "name",
+       "prototype"
+      ],
+      "cannotBeCalledWithoutNew": "TypeError"
+     },
+     "bare": {
+      "isOfItsClass": true,
+      "isAnError": true,
+      "class": "BoxEnvironmentSyncUnsupportedError",
+      "name": "BoxEnvironmentSyncUnsupportedError",
+      "message": "This box does not support environment sync.",
+      "asText": "BoxEnvironmentSyncUnsupportedError: This box does not support environment sync.",
+      "fields": [
+       "name"
+      ],
+      "everyOwnName": [
+       "message",
+       "name",
+       "stack"
+      ],
+      "nameHeld": "string, can be changed, listed",
+      "messageHeld": "string, can be changed, not listed",
+      "cause": "none",
+      "hasAStack": true,
+      "stackStartsWithItsText": true
+     },
+     "asKept": {
+      "$": "error",
+      "name": "BoxEnvironmentSyncUnsupportedError",
+      "message": "This box does not support environment sync.",
+      "extra": {
+       "name": "BoxEnvironmentSyncUnsupportedError"
+      }
+     },
+     "words and a cause given": {
+      "isOfItsClass": true,
+      "isAnError": true,
+      "class": "BoxEnvironmentSyncUnsupportedError",
+      "name": "BoxEnvironmentSyncUnsupportedError",
+      "message": "This box does not support environment sync.",
+      "asText": "BoxEnvironmentSyncUnsupportedError: This box does not support environment sync.",
+      "fields": [
+       "name"
+      ],
+      "everyOwnName": [
+       "message",
+       "name",
+       "stack"
+      ],
+      "nameHeld": "string, can be changed, listed",
+      "messageHeld": "string, can be changed, not listed",
+      "cause": "none",
+      "hasAStack": true,
+      "stackStartsWithItsText": true
+     }
+    },
+    "mcp": {
+     "class": {
+      "name": "BoxMcpUnsupportedError",
+      "parentIsError": true,
+      "argumentsCounted": 0,
+      "ownMethods": [
+       "constructor"
+      ],
+      "ownStatics": [
+       "length",
+       "name",
+       "prototype"
+      ],
+      "cannotBeCalledWithoutNew": "TypeError"
+     },
+     "bare": {
+      "isOfItsClass": true,
+      "isAnError": true,
+      "class": "BoxMcpUnsupportedError",
+      "name": "BoxMcpUnsupportedError",
+      "message": "This box does not support running MCP servers.",
+      "asText": "BoxMcpUnsupportedError: This box does not support running MCP servers.",
+      "fields": [
+       "name"
+      ],
+      "everyOwnName": [
+       "message",
+       "name",
+       "stack"
+      ],
+      "nameHeld": "string, can be changed, listed",
+      "messageHeld": "string, can be changed, not listed",
+      "cause": "none",
+      "hasAStack": true,
+      "stackStartsWithItsText": true
+     },
+     "asKept": {
+      "$": "error",
+      "name": "BoxMcpUnsupportedError",
+      "message": "This box does not support running MCP servers.",
+      "extra": {
+       "name": "BoxMcpUnsupportedError"
+      }
+     },
+     "words and a cause given": {
+      "isOfItsClass": true,
+      "isAnError": true,
+      "class": "BoxMcpUnsupportedError",
+      "name": "BoxMcpUnsupportedError",
+      "message": "This box does not support running MCP servers.",
+      "asText": "BoxMcpUnsupportedError: This box does not support running MCP servers.",
+      "fields": [
+       "name"
+      ],
+      "everyOwnName": [
+       "message",
+       "name",
+       "stack"
+      ],
+      "nameHeld": "string, can be changed, listed",
+      "messageHeld": "string, can be changed, not listed",
+      "cause": "none",
+      "hasAStack": true,
+      "stackStartsWithItsText": true
+     }
+    },
+    "one is not the other": [
+     false,
+     false
+    ]
+   }
+  },
+  "which of the three sentences an error gets: no monitor, not responding after a timeout or a crash, starting up for anything else": {
+   "returned": {
+    "unreachable, ended by \"timeout\"": "not responding",
+    "unreachable, ended by \"crash\"": "not responding",
+    "unreachable, ended by \"refused\"": "starting up",
+    "unreachable, ended by \"reset\"": "starting up",
+    "unreachable, ended by \"\"": "starting up",
+    "unreachable, ended by \"Timeout\"": "starting up",
+    "unreachable, ended by \"CRASH\"": "starting up",
+    "unreachable, ended by \" timeout\"": "starting up",
+    "unreachable, ended by \"timeout \"": "starting up",
+    "unreachable, ended by \"timed_out\"": "starting up",
+    "unreachable, ended by \"crashed\"": "starting up",
+    "unreachable, ended by undefined": "starting up",
+    "unreachable, ended by null": "starting up",
+    "unreachable, ended by 0": "starting up",
+    "unreachable, ended by true": "starting up",
+    "no monitor": "no monitor",
+    "no monitor, other words": "no monitor",
+    "a later kind of no monitor": "no monitor",
+    "a later kind of unreachable, timeout": "not responding",
+    "a later kind of unreachable, refused": "starting up",
+    "unreachable whose outcome was changed to crash": "not responding",
+    "an error only named like unreachable, with a timeout": "starting up",
+    "an error only named like no monitor": "starting up",
+    "a plain object with a timeout": "starting up",
+    "another of the part's errors": "starting up",
+    "any error": "starting up",
+    "an error whose cause is no monitor": "starting up",
+    "the text \"timeout\"": "starting up",
+    "null": "starting up",
+    "undefined": "starting up",
+    "nothing given": "starting up"
+   }
+  },
+  "the screen control used when no monitor is free fails every time with the no-monitor error, and is known by being itself": {
+   "returned": {
+    "asKept": {
+     "execute": {
+      "$": "function",
+      "name": "execute"
+     }
+    },
+    "fields": [
+     "execute"
+    ],
+    "frozen": false,
+    "executeCounts": 0,
+    "calls": [
+     {
+      "arguments": 0,
+      "threwAtOnce": "no",
+      "gaveAPromise": true,
+      "failedWith": {
+       "isOfItsClass": true,
+       "isAnError": true,
+       "class": "SandBoxNoMonitorAvailableError",
+       "name": "SandBoxNoMonitorAvailableError",
+       "message": "No private desktop monitor is available on the shared box.",
+       "asText": "SandBoxNoMonitorAvailableError: No private desktop monitor is available on the shared box.",
+       "fields": [
+        "name"
+       ],
+       "everyOwnName": [
+        "message",
+        "name",
+        "stack"
+       ],
+       "nameHeld": "string, can be changed, listed",
+       "messageHeld": "string, can be changed, not listed",
+       "cause": "none",
+       "hasAStack": true,
+       "stackStartsWithItsText": true
+      },
+      "sentence": true
+     },
+     {
+      "arguments": 1,
+      "threwAtOnce": "no",
+      "gaveAPromise": true,
+      "failedWith": {
+       "isOfItsClass": true,
+       "isAnError": true,
+       "class": "SandBoxNoMonitorAvailableError",
+       "name": "SandBoxNoMonitorAvailableError",
+       "message": "No private desktop monitor is available on the shared box.",
+       "asText": "SandBoxNoMonitorAvailableError: No private desktop monitor is available on the shared box.",
+       "fields": [
+        "name"
+       ],
+       "everyOwnName": [
+        "message",
+        "name",
+        "stack"
+       ],
+       "nameHeld": "string, can be changed, listed",
+       "messageHeld": "string, can be changed, not listed",
+       "cause": "none",
+       "hasAStack": true,
+       "stackStartsWithItsText": true
+      },
+      "sentence": true
+     },
+     {
+      "arguments": 3,
+      "threwAtOnce": "no",
+      "gaveAPromise": true,
+      "failedWith": {
+       "isOfItsClass": true,
+       "isAnError": true,
+       "class": "SandBoxNoMonitorAvailableError",
+       "name": "SandBoxNoMonitorAvailableError",
+       "message": "No private desktop monitor is available on the shared box.",
+       "asText": "SandBoxNoMonitorAvailableError: No private desktop monitor is available on the shared box.",
+       "fields": [
+        "name"
+       ],
+       "everyOwnName": [
+        "message",
+        "name",
+        "stack"
+       ],
+       "nameHeld": "string, can be changed, listed",
+       "messageHeld": "string, can be changed, not listed",
+       "cause": "none",
+       "hasAStack": true,
+       "stackStartsWithItsText": true
+      },
+      "sentence": true
+     }
+    ],
+    "aNewErrorEachTime": true,
+    "knownBy": {
+     "itself": true,
+     "a copy of it": false,
+     "an object made from it": false,
+     "another with the same execute": false,
+     "its execute alone": false,
+     "an empty object": false,
+     "null": false,
+     "undefined": false,
+     "nothing given": false
+    }
+   }
+  },
+  "the first window is number 1, the first other one number 2, and every number up to 1 is the first": {
+   "returned": {
+    "SAND_BOX_PRIMARY_WINDOW_INDEX": 1,
+    "SAND_BOX_FIRST_FORK_WINDOW_INDEX": 2,
+    "window 1": true,
+    "window 2": false,
+    "window 0": true,
+    "window -1": true,
+    "window 3": false,
+    "window 1.0001": false,
+    "window 0.9999": true,
+    "window 1.5": false,
+    "window -0": true,
+    "window NaN": false,
+    "window Infinity": false,
+    "window -Infinity": true,
+    "window 9007199254740991": false,
+    "window \"1\"": true,
+    "window \"2\"": false,
+    "window \"\"": true,
+    "window \"one\"": false,
+    "window null": true,
+    "window undefined": false,
+    "window true": true,
+    "window false": true,
+    "window 1n": true,
+    "window 2n": false,
+    "window []": true,
+    "window [1]": true,
+    "window [2]": false,
+    "window {}": false,
+    "no window given": false
+   }
+  },
+  "the names telemetry is reported under: stages, phases, causes, outcomes and reasons, each list in its order": {
+   "returned": {
+    "SAND_BOX_BOOT_STAGES": {
+     "list": [
+      "entrypoint_started",
+      "daemon_listening",
+      "desktop_up",
+      "ready"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_HOST_LIFECYCLE_PHASES": {
+     "list": [
+      "plugin_graph",
+      "identity",
+      "log_catchup",
+      "transcript_read",
+      "ready"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_EXEC_DAEMON_RESTART_CAUSES": {
+     "list": [
+      "daemon_exited",
+      "startup_listener_timeout",
+      "listener_lost"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_SUPERVISOR_RESTART_CAUSES": {
+     "list": [
+      "supervisor_exited",
+      "startup_status_timeout",
+      "status_stale",
+      "gave_up"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_COOKIE_PERSIST_PHASES": {
+     "list": [
+      "capture",
+      "restore"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_COOKIE_PERSIST_OUTCOMES": {
+     "list": [
+      "captured",
+      "ok",
+      "partial",
+      "failed",
+      "empty"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_EGRESS_TUNNEL_OUTCOMES": {
+     "list": [
+      "ready",
+      "restart",
+      "startup_timeout",
+      "listener_lost",
+      "stale_port"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_BOX_BOOT_FAILURE_STAGES": {
+     "list": [
+      "desktop"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_BOX_BOOT_FAILURE_REASONS": {
+     "list": [
+      "x_display_timeout"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_PROCESS_CRASH_BINARIES": {
+     "list": [
+      "simeon"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_PROCESS_CRASH_SIGNALS": {
+     "list": [
+      "sigill",
+      "sigsegv",
+      "sigabrt",
+      "sigbus",
+      "other"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_HOST_BOOT_FETCH_OUTCOMES": {
+     "list": [
+      "current",
+      "applied",
+      "fallback",
+      "restore_failed"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    },
+    "SAND_HOST_BOOT_FETCH_REASONS": {
+     "list": [
+      "current",
+      "applied",
+      "pointer_unreachable",
+      "pointer_malformed",
+      "target_vetoed",
+      "download_failed",
+      "swap_refused",
+      "swap_failed_restored",
+      "restore_failed",
+      "budget_exceeded",
+      "unexpected_error"
+     ],
+     "isAList": true,
+     "frozen": false,
+     "sameListEachRead": true
+    }
+   }
+  },
+  "the settings a computer's identity is read from, by name": {
+   "returned": {
+    "SAND_BOX_BOOT_ID_ENV": "SAND_BOX_BOOT_ID",
+    "SAND_BOX_BOOT_STARTED_AT_MS_ENV": "SAND_BOX_BOOT_STARTED_AT_MS",
+    "SAND_BOX_AUTH_ID_ENV": "SAND_BOX_AUTH_ID",
+    "SAND_BOX_TENANT_ID_ENV": "SAND_BOX_TENANT_ID",
+    "SAND_BOX_STORE_ID_ENV": "SAND_BOX_STORE_ID",
+    "SAND_BOX_CLUSTER_ENV": "SAND_BOX_CLUSTER"
+   }
+  },
+  "a computer's identity is five tags read from five settings, each with the space around it taken off, all five there even when nothing is set": {
+   "returned": {
+    "every setting": {
+     "auth_id": "auth-1",
+     "tenant_id": "tenant-1",
+     "box_store_id": "store-1",
+     "box_boot_id": "boot-1",
+     "cluster": "eu-1"
+    },
+    "the names of the tags, in order": [
+     "auth_id",
+     "tenant_id",
+     "box_store_id",
+     "box_boot_id",
+     "cluster"
+    ],
+    "nothing set": {
+     "auth_id": {
+      "$": "undefined"
+     },
+     "tenant_id": {
+      "$": "undefined"
+     },
+     "box_store_id": {
+      "$": "undefined"
+     },
+     "box_boot_id": {
+      "$": "undefined"
+     },
+     "cluster": {
+      "$": "undefined"
+     }
+    },
+    "the names of the tags when nothing is set": [
+     "auth_id",
+     "tenant_id",
+     "box_store_id",
+     "box_boot_id",
+     "cluster"
+    ],
+    "space around every one": {
+     "auth_id": "auth-1",
+     "tenant_id": "tenant-1",
+     "box_store_id": "store 1",
+     "box_boot_id": "boot-1",
+     "cluster": "eu-1"
+    },
+    "empty and only space": {
+     "auth_id": "",
+     "tenant_id": "",
+     "box_store_id": "",
+     "box_boot_id": "0",
+     "cluster": "false"
+    },
+    "only two set": {
+     "auth_id": {
+      "$": "undefined"
+     },
+     "tenant_id": "tenant-1",
+     "box_store_id": {
+      "$": "undefined"
+     },
+     "box_boot_id": {
+      "$": "undefined"
+     },
+     "cluster": "eu-1"
+    },
+    "settings that are null": {
+     "auth_id": {
+      "$": "undefined"
+     },
+     "tenant_id": {
+      "$": "undefined"
+     },
+     "box_store_id": {
+      "$": "undefined"
+     },
+     "box_boot_id": {
+      "$": "undefined"
+     },
+     "cluster": {
+      "$": "undefined"
+     }
+    },
+    "a setting that is a number": {
+     "threwA": "TypeError"
+    },
+    "null for the settings": {
+     "threwA": "TypeError"
+    },
+    "what is read of the settings, in order": [
+     "SAND_BOX_AUTH_ID",
+     "SAND_BOX_TENANT_ID",
+     "SAND_BOX_STORE_ID",
+     "SAND_BOX_BOOT_ID",
+     "SAND_BOX_CLUSTER"
+    ],
+    "from settings that are watched": {
+     "auth_id": "auth-1",
+     "tenant_id": "tenant-1",
+     "box_store_id": "store-1",
+     "box_boot_id": "boot-1",
+     "cluster": "eu-1"
+    },
+    "from the process's own settings": [
+     {
+      "auth_id": {
+       "$": "undefined"
+      },
+      "tenant_id": {
+       "$": "undefined"
+      },
+      "box_store_id": {
+       "$": "undefined"
+      },
+      "box_boot_id": {
+       "$": "undefined"
+      },
+      "cluster": {
+       "$": "undefined"
+      }
+     },
+     {
+      "auth_id": {
+       "$": "undefined"
+      },
+      "tenant_id": {
+       "$": "undefined"
+      },
+      "box_store_id": {
+       "$": "undefined"
+      },
+      "box_boot_id": {
+       "$": "undefined"
+      },
+      "cluster": {
+       "$": "undefined"
+      }
+     },
+     {
+      "auth_id": "auth-p",
+      "tenant_id": "tenant-p",
+      "box_store_id": "",
+      "box_boot_id": "boot-p",
+      "cluster": "us-2"
+     }
+    ],
+    "a new answer each time": true
+   }
+  },
+  "an error is told for telemetry by its message and, when it has one, its stack": {
+   "returned": {
+    "an error": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "the disk is full",
+     "stack": "the error's own stack"
+    },
+    "a TypeError": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "not a function",
+     "stack": "the error's own stack"
+    },
+    "an error of a class of ours": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "coded",
+     "stack": "the error's own stack"
+    },
+    "space around the message": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "spaced",
+     "stack": "the error's own stack"
+    },
+    "an empty message": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "Unknown error",
+     "stack": "the error's own stack"
+    },
+    "an empty message with a cause": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "the cause's words",
+     "stack": "the error's own stack"
+    },
+    "an empty message with a cause that is a text": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "a text for a cause",
+     "stack": "the error's own stack"
+    },
+    "a message with a cause": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "the outer words",
+     "stack": "the error's own stack"
+    },
+    "a message that is [object Object]": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "Unknown error",
+     "stack": "the error's own stack"
+    },
+    "a stack that is undefined": {
+     "fields": [
+      "message"
+     ],
+     "message": "no stack on this one",
+     "stack": "no field"
+    },
+    "a stack that was removed": {
+     "fields": [
+      "message"
+     ],
+     "message": "its stack was removed",
+     "stack": "no field"
+    },
+    "a stack of its own words": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "a stack of its own words",
+     "stack": "short"
+    },
+    "a stack that is null": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "a stack that is null",
+     "stack": null
+    },
+    "an empty stack": {
+     "fields": [
+      "message",
+      "stack"
+     ],
+     "message": "an empty stack",
+     "stack": ""
+    },
+    "a text": {
+     "fields": [
+      "message"
+     ],
+     "message": "only words",
+     "stack": "no field"
+    },
+    "an empty text": {
+     "fields": [
+      "message"
+     ],
+     "message": "Unknown error",
+     "stack": "no field"
+    },
+    "a number": {
+     "fields": [
+      "message"
+     ],
+     "message": "504",
+     "stack": "no field"
+    },
+    "null": {
+     "fields": [
+      "message"
+     ],
+     "message": "Unknown error",
+     "stack": "no field"
+    },
+    "undefined": {
+     "fields": [
+      "message"
+     ],
+     "message": "Unknown error",
+     "stack": "no field"
+    },
+    "a plain object with a message and a stack": {
+     "fields": [
+      "message"
+     ],
+     "message": "from an object",
+     "stack": "no field"
+    },
+    "a plain object without a message": {
+     "fields": [
+      "message"
+     ],
+     "message": "{\"code\":\"E_FAIL\"}",
+     "stack": "no field"
+    },
+    "a list": {
+     "fields": [
+      "message"
+     ],
+     "message": "[\"a\",\"b\"]",
+     "stack": "no field"
+    },
+    "nothing given": {
+     "fields": [
+      "message"
+     ],
+     "message": "Unknown error",
+     "stack": "no field"
+    },
+    "a new answer each time": true
+   }
+  },
+  "the telemetry that measures nothing has thirty-two verbs, each of which takes anything and gives nothing back": {
+   "returned": {
+    "asKept": {
+     "startTurn": {
+      "$": "function",
+      "name": "startTurn"
+     },
+     "reportToolCallError": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportToolCallStalled": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportToolCallStarted": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAgentError": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportBotBlock": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportDaemonPing": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportBoxBootStage": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportExecDaemonRestart": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportSupervisorRestart": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAutomationRun": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAutomationFireDropped": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAutomationLifecycle": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTurnInterrupt": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTurnAwait": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTurnRetry": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportUserMessageReceived": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportClosingSendNudge": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportSubagentRevival": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportShellRevival": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportComputerUseUsage": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTtft": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportSendDispatch": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportQueueAccepted": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportQueueDequeued": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportQueueWatchdog": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAckObligation": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportPendingWake": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTurnUsage": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportTurnEmptyDelivery": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportJournalOutcome": {
+      "$": "function",
+      "name": "noop"
+     },
+     "reportAutoReviewExpireSweepFailed": {
+      "$": "function",
+      "name": "noop"
+     }
+    },
+    "names": [
+     "startTurn",
+     "reportToolCallError",
+     "reportToolCallStalled",
+     "reportToolCallStarted",
+     "reportAgentError",
+     "reportBotBlock",
+     "reportDaemonPing",
+     "reportBoxBootStage",
+     "reportExecDaemonRestart",
+     "reportSupervisorRestart",
+     "reportAutomationRun",
+     "reportAutomationFireDropped",
+     "reportAutomationLifecycle",
+     "reportTurnInterrupt",
+     "reportTurnAwait",
+     "reportTurnRetry",
+     "reportUserMessageReceived",
+     "reportClosingSendNudge",
+     "reportSubagentRevival",
+     "reportShellRevival",
+     "reportComputerUseUsage",
+     "reportTtft",
+     "reportSendDispatch",
+     "reportQueueAccepted",
+     "reportQueueDequeued",
+     "reportQueueWatchdog",
+     "reportAckObligation",
+     "reportPendingWake",
+     "reportTurnUsage",
+     "reportTurnEmptyDelivery",
+     "reportJournalOutcome",
+     "reportAutoReviewExpireSweepFailed"
+    ],
+    "count": 32,
+    "what each verb gives back": {
+     "reportToolCallError": "nothing",
+     "reportToolCallStalled": "nothing",
+     "reportToolCallStarted": "nothing",
+     "reportAgentError": "nothing",
+     "reportBotBlock": "nothing",
+     "reportDaemonPing": "nothing",
+     "reportBoxBootStage": "nothing",
+     "reportExecDaemonRestart": "nothing",
+     "reportSupervisorRestart": "nothing",
+     "reportAutomationRun": "nothing",
+     "reportAutomationFireDropped": "nothing",
+     "reportAutomationLifecycle": "nothing",
+     "reportTurnInterrupt": "nothing",
+     "reportTurnAwait": "nothing",
+     "reportTurnRetry": "nothing",
+     "reportUserMessageReceived": "nothing",
+     "reportClosingSendNudge": "nothing",
+     "reportSubagentRevival": "nothing",
+     "reportShellRevival": "nothing",
+     "reportComputerUseUsage": "nothing",
+     "reportTtft": "nothing",
+     "reportSendDispatch": "nothing",
+     "reportQueueAccepted": "nothing",
+     "reportQueueDequeued": "nothing",
+     "reportQueueWatchdog": "nothing",
+     "reportAckObligation": "nothing",
+     "reportPendingWake": "nothing",
+     "reportTurnUsage": "nothing",
+     "reportTurnEmptyDelivery": "nothing",
+     "reportJournalOutcome": "nothing",
+     "reportAutoReviewExpireSweepFailed": "nothing"
+    },
+    "every verb but the first is one and the same function": true,
+    "and the same in another telemetry": true,
+    "how many arguments a verb counts": 0,
+    "a verb can be made with new": "TypeError",
+    "a new telemetry each time": true,
+    "changing one leaves the other": [
+     "changed on one",
+     {
+      "$": "undefined"
+     }
+    ],
+    "frozen": false,
+    "a turn": {
+     "asKept": {
+      "setModel": {
+       "$": "function",
+       "name": "noop"
+      },
+      "setRequestId": {
+       "$": "function",
+       "name": "noop"
+      },
+      "finalize": {
+       "$": "function",
+       "name": "noop"
+      }
+     },
+     "names": [
+      "setModel",
+      "setRequestId",
+      "finalize"
+     ],
+     "what each gives back": [
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      },
+      {
+       "$": "undefined"
+      }
+     ],
+     "its three verbs are the function the other verbs are": [
+      true,
+      true,
+      true
+     ],
+     "the same turn every time": true,
+     "the same turn from another telemetry": true,
+     "frozen": false,
+     "starting a turn is a function of each telemetry's own": true,
+     "how many arguments starting a turn counts": 0
+    }
+   }
+  },
+  "the connected tools are told as one server for each provider, in the order the providers first appear": {
+   "returned": {
+    "executor": {
+     "asKept": {
+      "execute": {
+       "$": "function",
+       "name": "execute"
+      }
+     },
+     "fields": [
+      "execute"
+     ],
+     "executeCounts": 1
+    },
+    "gaveAPromise": true,
+    "asked": [
+     {
+      "arguments": 1,
+      "sameContext": true,
+      "calledOnTheProvider": true
+     }
+    ],
+    "resultCase": "success",
+    "servers": [
+     {
+      "serverIdentifier": "linear",
+      "serverName": "linear",
+      "status": "connected",
+      "tools": [
+       "list_issues",
+       "create_issue"
+      ]
+     },
+     {
+      "serverIdentifier": "github",
+      "serverName": "github",
+      "status": "connected",
+      "tools": [
+       "open_pr",
+       "merge_pr"
+      ]
+     },
+     {
+      "serverIdentifier": "notion",
+      "serverName": "notion",
+      "status": "connected",
+      "tools": [
+       "search"
+      ]
+     }
+    ],
+    "fields": {
+     "$": "instance",
+     "class": "_McpStateExecResult",
+     "v": {
+      "result": {
+       "case": "success",
+       "value": {
+        "$": "instance",
+        "class": "_McpStateSuccess",
+        "v": {
+         "servers": [
+          {
+           "$": "instance",
+           "class": "_McpStateServer",
+           "v": {
+            "serverName": "linear",
+            "serverIdentifier": "linear",
+            "tools": [
+             {
+              "$": "instance",
+              "class": "_McpToolDefinition",
+              "v": {
+               "name": "list_issues",
+               "providerIdentifier": "linear",
+               "toolName": "list_issues_tool",
+               "description": "Lists the issues of a team.",
+               "inputSchema": {
+                "$": "instance",
+                "class": "_Value",
+                "v": {
+                 "kind": {
+                  "case": "structValue",
+                  "value": {
+                   "$": "instance",
+                   "class": "_Struct",
+                   "v": {
+                    "fields": {
+                     "type": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "stringValue",
+                        "value": "object"
+                       }
+                      }
+                     },
+                     "properties": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "structValue",
+                        "value": {
+                         "$": "instance",
+                         "class": "_Struct",
+                         "v": {
+                          "fields": {
+                           "team": {
+                            "$": "instance",
+                            "class": "_Value",
+                            "v": {
+                             "kind": {
+                              "case": "structValue",
+                              "value": {
+                               "$": "instance",
+                               "class": "_Struct",
+                               "v": {
+                                "fields": {
+                                 "type": {
+                                  "$": "instance",
+                                  "class": "_Value",
+                                  "v": {
+                                   "kind": {
+                                    "case": "stringValue",
+                                    "value": "string"
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     },
+                     "required": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "listValue",
+                        "value": {
+                         "$": "instance",
+                         "class": "_ListValue",
+                         "v": {
+                          "values": [
+                           {
+                            "$": "instance",
+                            "class": "_Value",
+                            "v": {
+                             "kind": {
+                              "case": "stringValue",
+                              "value": "team"
+                             }
+                            }
+                           }
+                          ]
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_McpToolDefinition",
+              "v": {
+               "name": "create_issue",
+               "providerIdentifier": "linear",
+               "toolName": "create_issue_tool",
+               "description": "Creates an issue.",
+               "inputSchema": {
+                "$": "instance",
+                "class": "_Value",
+                "v": {
+                 "kind": {
+                  "case": "structValue",
+                  "value": {
+                   "$": "instance",
+                   "class": "_Struct",
+                   "v": {
+                    "fields": {
+                     "type": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "stringValue",
+                        "value": "object"
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ],
+            "instructions": [],
+            "status": "connected"
+           }
+          },
+          {
+           "$": "instance",
+           "class": "_McpStateServer",
+           "v": {
+            "serverName": "github",
+            "serverIdentifier": "github",
+            "tools": [
+             {
+              "$": "instance",
+              "class": "_McpToolDefinition",
+              "v": {
+               "name": "open_pr",
+               "providerIdentifier": "github",
+               "toolName": "open_pr_tool",
+               "description": "Opens a pull request."
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_McpToolDefinition",
+              "v": {
+               "name": "merge_pr",
+               "providerIdentifier": "github",
+               "toolName": "merge_pr_tool",
+               "description": "",
+               "inputSchema": {
+                "$": "instance",
+                "class": "_Value",
+                "v": {
+                 "kind": {
+                  "case": "structValue",
+                  "value": {
+                   "$": "instance",
+                   "class": "_Struct",
+                   "v": {
+                    "fields": {
+                     "type": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "stringValue",
+                        "value": "object"
+                       }
+                      }
+                     },
+                     "properties": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "structValue",
+                        "value": {
+                         "$": "instance",
+                         "class": "_Struct",
+                         "v": {
+                          "fields": {}
+                         }
+                        }
+                       }
+                      }
+                     },
+                     "additionalProperties": {
+                      "$": "instance",
+                      "class": "_Value",
+                      "v": {
+                       "kind": {
+                        "case": "boolValue",
+                        "value": false
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            ],
+            "instructions": [],
+            "status": "connected"
+           }
+          },
+          {
+           "$": "instance",
+           "class": "_McpStateServer",
+           "v": {
+            "serverName": "notion",
+            "serverIdentifier": "notion",
+            "tools": [
+             {
+              "$": "instance",
+              "class": "_McpToolDefinition",
+              "v": {
+               "name": "search",
+               "providerIdentifier": "notion",
+               "toolName": "search_tool",
+               "description": ""
+              }
+             }
+            ],
+            "instructions": [],
+            "status": "connected"
+           }
+          }
+         ]
+        }
+       }
+      }
+     }
+    },
+    "json": {
+     "returned": {
+      "success": {
+       "servers": [
+        {
+         "serverName": "linear",
+         "serverIdentifier": "linear",
+         "tools": [
+          {
+           "name": "list_issues",
+           "description": "Lists the issues of a team.",
+           "inputSchema": {
+            "type": "object",
+            "properties": {
+             "team": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "team"
+            ]
+           },
+           "providerIdentifier": "linear",
+           "toolName": "list_issues_tool"
+          },
+          {
+           "name": "create_issue",
+           "description": "Creates an issue.",
+           "inputSchema": {
+            "type": "object"
+           },
+           "providerIdentifier": "linear",
+           "toolName": "create_issue_tool"
+          }
+         ],
+         "status": "connected"
+        },
+        {
+         "serverName": "github",
+         "serverIdentifier": "github",
+         "tools": [
+          {
+           "name": "open_pr",
+           "description": "Opens a pull request.",
+           "providerIdentifier": "github",
+           "toolName": "open_pr_tool"
+          },
+          {
+           "name": "merge_pr",
+           "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+           },
+           "providerIdentifier": "github",
+           "toolName": "merge_pr_tool"
+          }
+         ],
+         "status": "connected"
+        },
+        {
+         "serverName": "notion",
+         "serverIdentifier": "notion",
+         "tools": [
+          {
+           "name": "search",
+           "providerIdentifier": "notion",
+           "toolName": "search_tool"
+          }
+         ],
+         "status": "connected"
+        }
+       ]
+      }
+     }
+    },
+    "bytes": {
+     "returned": "0a90040a94020a066c696e65617212066c696e6561722aa2010a0b6c6973745f697373756573121b4c697374732074686520697373756573206f662061207465616d2e1a5c2a5a0a100a047479706512081a066f626a6563740a2e0a0a70726f7065727469657312202a1e0a1c0a047465616d12142a120a100a047479706512081a06737472696e670a160a087265717569726564120a32080a061a047465616d22066c696e6561722a106c6973745f6973737565735f746f6f6c2a520a0c6372656174655f697373756512114372656174657320616e2069737375652e1a142a120a100a047479706512081a066f626a65637422066c696e6561722a116372656174655f69737375655f746f6f6c3a09636f6e6e65637465640aba010a0667697468756212066769746875622a360a076f70656e5f707212154f70656e7320612070756c6c20726571756573742e22066769746875622a0c6f70656e5f70725f746f6f6c2a650a086d657267655f70721a422a400a100a047479706512081a066f626a6563740a100a0a70726f7065727469657312022a000a1a0a146164646974696f6e616c50726f706572746965731202200022066769746875622a0d6d657267655f70725f746f6f6c3a09636f6e6e65637465640a3a0a066e6f74696f6e12066e6f74696f6e2a1d0a0673656172636822066e6f74696f6e2a0b7365617263685f746f6f6c3a09636f6e6e6563746564"
+    }
+   }
+  },
+  "no tools is a success with no servers, and the provider is asked afresh at every call": {
+   "returned": {
+    "results": [
+     {
+      "fields": {
+       "$": "instance",
+       "class": "_McpStateExecResult",
+       "v": {
+        "result": {
+         "case": "success",
+         "value": {
+          "$": "instance",
+          "class": "_McpStateSuccess",
+          "v": {
+           "servers": []
+          }
+         }
+        }
+       }
+      },
+      "json": {
+       "returned": {
+        "success": {}
+       }
+      },
+      "bytes": {
+       "returned": "0a00"
+      }
+     },
+     {
+      "fields": {
+       "$": "instance",
+       "class": "_McpStateExecResult",
+       "v": {
+        "result": {
+         "case": "success",
+         "value": {
+          "$": "instance",
+          "class": "_McpStateSuccess",
+          "v": {
+           "servers": [
+            {
+             "$": "instance",
+             "class": "_McpStateServer",
+             "v": {
+              "serverName": "github",
+              "serverIdentifier": "github",
+              "tools": [
+               {
+                "$": "instance",
+                "class": "_McpToolDefinition",
+                "v": {
+                 "name": "open_pr",
+                 "providerIdentifier": "github",
+                 "toolName": "open_pr_tool",
+                 "description": ""
+                }
+               }
+              ],
+              "instructions": [],
+              "status": "connected"
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      },
+      "json": {
+       "returned": {
+        "success": {
+         "servers": [
+          {
+           "serverName": "github",
+           "serverIdentifier": "github",
+           "tools": [
+            {
+             "name": "open_pr",
+             "providerIdentifier": "github",
+             "toolName": "open_pr_tool"
+            }
+           ],
+           "status": "connected"
+          }
+         ]
+        }
+       }
+      },
+      "bytes": {
+       "returned": "0a3e0a3c0a0667697468756212066769746875622a1f0a076f70656e5f707222066769746875622a0c6f70656e5f70725f746f6f6c3a09636f6e6e6563746564"
+      }
+     },
+     {
+      "fields": {
+       "$": "instance",
+       "class": "_McpStateExecResult",
+       "v": {
+        "result": {
+         "case": "success",
+         "value": {
+          "$": "instance",
+          "class": "_McpStateSuccess",
+          "v": {
+           "servers": []
+          }
+         }
+        }
+       }
+      },
+      "json": {
+       "returned": {
+        "success": {}
+       }
+      },
+      "bytes": {
+       "returned": "0a00"
+      }
+     }
+    ],
+    "asked": [
+     {
+      "arguments": 1,
+      "context": {
+       "$": "undefined"
+      },
+      "calledOnTheProvider": true
+     },
+     {
+      "arguments": 1,
+      "context": null,
+      "calledOnTheProvider": true
+     },
+     {
+      "arguments": 1,
+      "context": "a text for a context",
+      "calledOnTheProvider": true
+     }
+    ],
+    "nothing given for the context": {
+     "fields": {
+      "$": "instance",
+      "class": "_McpStateExecResult",
+      "v": {
+       "result": {
+        "case": "success",
+        "value": {
+         "$": "instance",
+         "class": "_McpStateSuccess",
+         "v": {
+          "servers": []
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "success": {}
+      }
+     },
+     "bytes": {
+      "returned": "0a00"
+     }
+    },
+    "another executor each time": true
+   }
+  },
+  "providers keep the order they came in, whatever their names, and a tool told twice is told twice": {
+   "returned": {
+    "names that are numbers, largest first": [
+     "\"10\": a/a_tool/10, e/e_tool/10",
+     "\"2\": b/b_tool/2, d/d_tool/2",
+     "\"1\": c/c_tool/1"
+    ],
+    "names that differ by case or space": [
+     "\"GitHub\": a/a_tool/GitHub, d/d_tool/GitHub",
+     "\"github\": b/b_tool/github",
+     "\" github\": c/c_tool/ github"
+    ],
+    "an empty name": [
+     "\"\": a/a_tool/, c/c_tool/",
+     "\"x\": b/b_tool/x"
+    ],
+    "names an object would trip on": [
+     "\"__proto__\": a/a_tool/__proto__, d/d_tool/__proto__",
+     "\"constructor\": b/b_tool/constructor",
+     "\"toString\": c/c_tool/toString"
+    ],
+    "the same tool twice, and two tools with one name": [
+     "\"github\": open_pr/open_pr_tool/github, open_pr/open_pr_tool/github, open_pr/another/github"
+    ],
+    "one provider for many": [
+     "\"big\": t0/t0_tool/big, t1/t1_tool/big, t2/t2_tool/big, t3/t3_tool/big, t4/t4_tool/big, t5/t5_tool/big, t6/t6_tool/big, t7/t7_tool/big, t8/t8_tool/big, t9/t9_tool/big, t10/t10_tool/big, t11/t11_tool/big"
+    ],
+    "many providers of one": [
+     "\"p11\": t/t_tool/p11",
+     "\"p10\": t/t_tool/p10",
+     "\"p9\": t/t_tool/p9",
+     "\"p8\": t/t_tool/p8",
+     "\"p7\": t/t_tool/p7",
+     "\"p6\": t/t_tool/p6",
+     "\"p5\": t/t_tool/p5",
+     "\"p4\": t/t_tool/p4",
+     "\"p3\": t/t_tool/p3",
+     "\"p2\": t/t_tool/p2",
+     "\"p1\": t/t_tool/p1",
+     "\"p0\": t/t_tool/p0"
+    ]
+   }
+  },
+  "a tool's description and schema are told as given: none stays none, and a schema may be any JSON": {
+   "returned": {
+    "schema: no schema": {
+     "hasASchema": false,
+     "schemaKind": "none",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": ""
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01742201702a06745f746f6f6c"
+     }
+    },
+    "schema: an object": {
+     "hasASchema": true,
+     "schemaKind": "structValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "structValue",
+          "value": {
+           "$": "instance",
+           "class": "_Struct",
+           "v": {
+            "fields": {
+             "type": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "stringValue",
+                "value": "object"
+               }
+              }
+             },
+             "properties": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "structValue",
+                "value": {
+                 "$": "instance",
+                 "class": "_Struct",
+                 "v": {
+                  "fields": {
+                   "n": {
+                    "$": "instance",
+                    "class": "_Value",
+                    "v": {
+                     "kind": {
+                      "case": "structValue",
+                      "value": {
+                       "$": "instance",
+                       "class": "_Struct",
+                       "v": {
+                        "fields": {
+                         "type": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "stringValue",
+                            "value": "integer"
+                           }
+                          }
+                         },
+                         "minimum": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "numberValue",
+                            "value": 0
+                           }
+                          }
+                         },
+                         "maximum": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "numberValue",
+                            "value": 10
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   },
+                   "tags": {
+                    "$": "instance",
+                    "class": "_Value",
+                    "v": {
+                     "kind": {
+                      "case": "structValue",
+                      "value": {
+                       "$": "instance",
+                       "class": "_Struct",
+                       "v": {
+                        "fields": {
+                         "type": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "stringValue",
+                            "value": "array"
+                           }
+                          }
+                         },
+                         "items": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "structValue",
+                            "value": {
+                             "$": "instance",
+                             "class": "_Struct",
+                             "v": {
+                              "fields": {
+                               "type": {
+                                "$": "instance",
+                                "class": "_Value",
+                                "v": {
+                                 "kind": {
+                                  "case": "stringValue",
+                                  "value": "string"
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": {
+        "type": "object",
+        "properties": {
+         "n": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10
+         },
+         "tags": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       },
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741aae012aab010a100a047479706512081a066f626a6563740a96010a0a70726f706572746965731287012a84010a460a016e12412a3f0a110a047479706512091a07696e74656765720a140a076d696e696d756d12091100000000000000000a140a076d6178696d756d12091100000000000024400a3a0a047461677312322a300a0f0a047479706512071a0561727261790a1d0a056974656d7312142a120a100a047479706512081a06737472696e672201702a06745f746f6f6c"
+     }
+    },
+    "schema: an empty object": {
+     "hasASchema": true,
+     "schemaKind": "structValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "structValue",
+          "value": {
+           "$": "instance",
+           "class": "_Struct",
+           "v": {
+            "fields": {}
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": {},
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a022a002201702a06745f746f6f6c"
+     }
+    },
+    "schema: a list": {
+     "hasASchema": true,
+     "schemaKind": "listValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "listValue",
+          "value": {
+           "$": "instance",
+           "class": "_ListValue",
+           "v": {
+            "values": [
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "numberValue",
+                "value": 1
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "stringValue",
+                "value": "two"
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "nullValue",
+                "value": 0
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "boolValue",
+                "value": true
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "structValue",
+                "value": {
+                 "$": "instance",
+                 "class": "_Struct",
+                 "v": {
+                  "fields": {
+                   "three": {
+                    "$": "instance",
+                    "class": "_Value",
+                    "v": {
+                     "kind": {
+                      "case": "numberValue",
+                      "value": 3
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "listValue",
+                "value": {
+                 "$": "instance",
+                 "class": "_ListValue",
+                 "v": {
+                  "values": [
+                   {
+                    "$": "instance",
+                    "class": "_Value",
+                    "v": {
+                     "kind": {
+                      "case": "numberValue",
+                      "value": 4
+                     }
+                    }
+                   }
+                  ]
+                 }
+                }
+               }
+              }
+             }
+            ]
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": [
+        1,
+        "two",
+        null,
+        true,
+        {
+         "three": 3
+        },
+        [
+         4
+        ]
+       ],
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a4332410a0911000000000000f03f0a051a0374776f0a0208000a0220010a162a140a120a05746872656512091100000000000008400a0d320b0a091100000000000010402201702a06745f746f6f6c"
+     }
+    },
+    "schema: an empty list": {
+     "hasASchema": true,
+     "schemaKind": "listValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "listValue",
+          "value": {
+           "$": "instance",
+           "class": "_ListValue",
+           "v": {
+            "values": []
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": [],
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a0232002201702a06745f746f6f6c"
+     }
+    },
+    "schema: a text": {
+     "hasASchema": true,
+     "schemaKind": "stringValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "stringValue",
+          "value": "any"
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": "any",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a051a03616e792201702a06745f746f6f6c"
+     }
+    },
+    "schema: an empty text": {
+     "hasASchema": true,
+     "schemaKind": "stringValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "stringValue",
+          "value": ""
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": "",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a021a002201702a06745f746f6f6c"
+     }
+    },
+    "schema: a number": {
+     "hasASchema": true,
+     "schemaKind": "numberValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "numberValue",
+          "value": 1.5
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": 1.5,
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a0911000000000000f83f2201702a06745f746f6f6c"
+     }
+    },
+    "schema: zero": {
+     "hasASchema": true,
+     "schemaKind": "numberValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "numberValue",
+          "value": 0
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": 0,
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a091100000000000000002201702a06745f746f6f6c"
+     }
+    },
+    "schema: true": {
+     "hasASchema": true,
+     "schemaKind": "boolValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "boolValue",
+          "value": true
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": true,
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a0220012201702a06745f746f6f6c"
+     }
+    },
+    "schema: false": {
+     "hasASchema": true,
+     "schemaKind": "boolValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "boolValue",
+          "value": false
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": false,
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a0220002201702a06745f746f6f6c"
+     }
+    },
+    "schema: null": {
+     "hasASchema": true,
+     "schemaKind": "nullValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "nullValue",
+          "value": 0
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": null,
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a0208002201702a06745f746f6f6c"
+     }
+    },
+    "schema: nested deep": {
+     "hasASchema": true,
+     "schemaKind": "structValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "structValue",
+          "value": {
+           "$": "instance",
+           "class": "_Struct",
+           "v": {
+            "fields": {
+             "a": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "structValue",
+                "value": {
+                 "$": "instance",
+                 "class": "_Struct",
+                 "v": {
+                  "fields": {
+                   "b": {
+                    "$": "instance",
+                    "class": "_Value",
+                    "v": {
+                     "kind": {
+                      "case": "structValue",
+                      "value": {
+                       "$": "instance",
+                       "class": "_Struct",
+                       "v": {
+                        "fields": {
+                         "c": {
+                          "$": "instance",
+                          "class": "_Value",
+                          "v": {
+                           "kind": {
+                            "case": "structValue",
+                            "value": {
+                             "$": "instance",
+                             "class": "_Struct",
+                             "v": {
+                              "fields": {
+                               "d": {
+                                "$": "instance",
+                                "class": "_Value",
+                                "v": {
+                                 "kind": {
+                                  "case": "listValue",
+                                  "value": {
+                                   "$": "instance",
+                                   "class": "_ListValue",
+                                   "v": {
+                                    "values": [
+                                     {
+                                      "$": "instance",
+                                      "class": "_Value",
+                                      "v": {
+                                       "kind": {
+                                        "case": "structValue",
+                                        "value": {
+                                         "$": "instance",
+                                         "class": "_Struct",
+                                         "v": {
+                                          "fields": {
+                                           "e": {
+                                            "$": "instance",
+                                            "class": "_Value",
+                                            "v": {
+                                             "kind": {
+                                              "case": "nullValue",
+                                              "value": 0
+                                             }
+                                            }
+                                           }
+                                          }
+                                         }
+                                        }
+                                       }
+                                      }
+                                     }
+                                    ]
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            }
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": {
+        "a": {
+         "b": {
+          "c": {
+           "d": [
+            {
+             "e": null
+            }
+           ]
+          }
+         }
+        }
+       },
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a332a310a2f0a0161122a2a280a260a016212212a1f0a1d0a016312182a160a140a0164120f320d0a0b2a090a070a0165120208002201702a06745f746f6f6c"
+     }
+    },
+    "schema: keys out of order": {
+     "hasASchema": true,
+     "schemaKind": "structValue",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "",
+       "inputSchema": {
+        "$": "instance",
+        "class": "_Value",
+        "v": {
+         "kind": {
+          "case": "structValue",
+          "value": {
+           "$": "instance",
+           "class": "_Struct",
+           "v": {
+            "fields": {
+             "z": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "numberValue",
+                "value": 1
+               }
+              }
+             },
+             "a": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "numberValue",
+                "value": 2
+               }
+              }
+             },
+             "m": {
+              "$": "instance",
+              "class": "_Value",
+              "v": {
+               "kind": {
+                "case": "numberValue",
+                "value": 3
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "inputSchema": {
+        "z": 1,
+        "a": 2,
+        "m": 3
+       },
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01741a322a300a0e0a017a120911000000000000f03f0a0e0a016112091100000000000000400a0e0a016d12091100000000000008402201702a06745f746f6f6c"
+     }
+    },
+    "no description": {
+     "description": "",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": ""
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01742201702a06745f746f6f6c"
+     }
+    },
+    "undefined for the description": {
+     "description": "",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": ""
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01742201702a06745f746f6f6c"
+     }
+    },
+    "an empty description": {
+     "description": "",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": ""
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a01742201702a06745f746f6f6c"
+     }
+    },
+    "a description": {
+     "description": "Does a thing.\nOn two lines.",
+     "fields": {
+      "$": "instance",
+      "class": "_McpToolDefinition",
+      "v": {
+       "name": "t",
+       "providerIdentifier": "p",
+       "toolName": "t_tool",
+       "description": "Does a thing.\nOn two lines."
+      }
+     },
+     "json": {
+      "returned": {
+       "name": "t",
+       "description": "Does a thing.\nOn two lines.",
+       "providerIdentifier": "p",
+       "toolName": "t_tool"
+      }
+     },
+     "bytes": {
+      "returned": "0a0174121b446f65732061207468696e672e0a4f6e2074776f206c696e65732e2201702a06745f746f6f6c"
+     }
+    }
+   }
+  },
+  "what the provider gives is read and not changed: a frozen list, a set, a promise, and more fields than are told": {
+   "returned": {
+    "a frozen list of frozen tools": [
+     "a: one, three",
+     "b: two"
+    ],
+    "a set": [
+     "a: one, three",
+     "b: two"
+    ],
+    "a generator": [
+     "a: one",
+     "b: two"
+    ],
+    "a promise of a list": [
+     "a: one"
+    ],
+    "more fields than are told": {
+     "fields": {
+      "$": "instance",
+      "class": "_McpStateServer",
+      "v": {
+       "serverName": "a",
+       "serverIdentifier": "a",
+       "tools": [
+        {
+         "$": "instance",
+         "class": "_McpToolDefinition",
+         "v": {
+          "name": "one",
+          "providerIdentifier": "a",
+          "toolName": "one_tool",
+          "description": ""
+         }
+        }
+       ],
+       "instructions": [],
+       "status": "connected"
+      }
+     },
+     "json": {
+      "returned": {
+       "serverName": "a",
+       "serverIdentifier": "a",
+       "tools": [
+        {
+         "name": "one",
+         "providerIdentifier": "a",
+         "toolName": "one_tool"
+        }
+       ],
+       "status": "connected"
+      }
+     },
+     "bytes": {
+      "returned": "0a01611201612a120a036f6e652201612a086f6e655f746f6f6c3a09636f6e6e6563746564"
+     },
+     "toolUnchanged": true
+    },
+    "two calls at once do not mix": [
+     [
+      "first: 2"
+     ],
+     [
+      "second: 1"
+     ]
+    ]
+   }
+  },
+  "a provider that fails, or gives what is not a list of tools, fails the call": {
+   "returned": {
+    "a provider that throws": {
+     "threwAtOnce": "no",
+     "settled": "the provider's own error"
+    },
+    "a provider whose promise fails": "the provider's own error",
+    "undefined for the tools": {
+     "failedWithA": "TypeError"
+    },
+    "null for the tools": {
+     "failedWithA": "TypeError"
+    },
+    "a number for the tools": {
+     "failedWithA": "TypeError"
+    },
+    "an object for the tools": {
+     "failedWithA": "TypeError"
+    },
+    "a text for the tools": {
+     "gave": 1
+    },
+    "a tool that is null": {
+     "failedWithA": "TypeError"
+    },
+    "a tool that is undefined": {
+     "failedWithA": "TypeError"
+    },
+    "a schema that is not JSON: a function": {
+     "failedWithA": "Error"
+    },
+    "a schema that is not JSON: a big number": {
+     "failedWithA": "Error"
+    },
+    "a schema that is not JSON: a symbol": {
+     "failedWithA": "Error"
+    },
+    "a schema that holds what is not JSON": {
+     "failedWithA": "Error"
+    },
+    "a good tool after a bad schema is not told either": {
+     "failedWithA": "Error"
+    },
+    "no provider": "made all the same",
+    "no provider, asked": {
+     "failedWithA": "TypeError"
+    }
+   }
+  },
+  "a message's length falls into one of six sizes: nothing, under 20, under 100, under 500, under 2,000, and more": {
+   "returned": {
+    "a length of -1": "empty",
+    "a length of 0": "empty",
+    "a length of 1": "xs",
+    "a length of 2": "xs",
+    "a length of 19": "xs",
+    "a length of 20": "s",
+    "a length of 21": "s",
+    "a length of 99": "s",
+    "a length of 100": "m",
+    "a length of 101": "m",
+    "a length of 499": "m",
+    "a length of 500": "l",
+    "a length of 501": "l",
+    "a length of 1999": "l",
+    "a length of 2000": "xl",
+    "a length of 2001": "xl",
+    "a length of 10000": "xl",
+    "a length of 0.5": "xs",
+    "a length of 19.999": "xs",
+    "a length of 99.5": "s",
+    "a length of 499.99": "m",
+    "a length of 1999.999": "l",
+    "a length of -0.1": "empty",
+    "a length of -0": "empty",
+    "a length of 5e-324": "xs",
+    "a length of 9007199254740991": "xl",
+    "a length of NaN": "xl",
+    "a length of Infinity": "xl",
+    "a length of -Infinity": "empty",
+    "the text \"5\"": "xs",
+    "the text \"250\"": "m",
+    "an empty text": "empty",
+    "the text \"long\"": "xl",
+    "null": "empty",
+    "undefined": "xl",
+    "true": "xs",
+    "false": "empty",
+    "the big number 5": "xs",
+    "the big number 3000": "xl",
+    "an empty list": "empty",
+    "a list of 30": "s",
+    "a list of two": "xl",
+    "an object": "xl",
+    "nothing given": "xl",
+    "every length from -5 to 2,100, as runs of one size": [
+     {
+      "size": "empty",
+      "from": -5,
+      "to": 0
+     },
+     {
+      "size": "xs",
+      "from": 1,
+      "to": 19
+     },
+     {
+      "size": "s",
+      "from": 20,
+      "to": 99
+     },
+     {
+      "size": "m",
+      "from": 100,
+      "to": 499
+     },
+     {
+      "size": "l",
+      "from": 500,
+      "to": 1999
+     },
+     {
+      "size": "xl",
+      "from": 2000,
+      "to": 2100
+     }
+    ]
+   }
+  },
+  "the product analytics that track nothing take any event and give nothing back": {
+   "returned": {
+    "asKept": {
+     "trackEvent": {
+      "$": "function",
+      "name": "trackEvent"
+     }
+    },
+    "fields": [
+     "trackEvent"
+    ],
+    "gives": [
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     },
+     {
+      "$": "undefined"
+     }
+    ],
+    "propertiesUnchanged": "{\"plan\":\"pro\",\"count\":3}",
+    "argumentsCounted": 0,
+    "canBeMadeWithNew": "TypeError",
+    "aNewOneEachTime": true,
+    "withAFunctionOfItsOwn": true,
+    "frozen": false
+   }
+  },
+  "a transport starts with no sent message and no reaction, and has three verbs": {
+   "returned": {
+    "asKept": {
+     "onUpdate": {
+      "$": "function",
+      "name": "onUpdate"
+     },
+     "lastSentMessageId": {
+      "$": "function",
+      "name": "lastSentMessageId"
+     },
+     "lastReactionApplied": {
+      "$": "function",
+      "name": "lastReactionApplied"
+     }
+    },
+    "fields": [
+     "onUpdate",
+     "lastSentMessageId",
+     "lastReactionApplied"
+    ],
+    "argumentsCounted": [
+     1,
+     0,
+     0
+    ],
+    "lastSentMessageId": {
+     "$": "undefined"
+    },
+    "lastReactionApplied": false,
+    "ingestCalledByMakingIt": 0,
+    "frozen": false,
+    "withoutAnIngest": "made all the same",
+    "withoutAnIngestThenUsed": {
+     "threwA": "TypeError",
+     "lines": [
+      "[simeon] send-message not written type=text error=TypeError: <the runtime's own sentence>"
+     ]
+    }
+   }
+  },
+  "a sent message the transcript took is remembered by its id and written to the host's log": {
+   "returned": {
+    "one message": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "t1s1",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=t1s1 type=text"
+     ]
+    },
+    "three in a row, each with its id": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "t1s1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "t1s2",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "t1s3",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=t1s1 type=text",
+      "[simeon] send-message written id=t1s2 type=card",
+      "[simeon] send-message written id=t1s3 type=image"
+     ]
+    },
+    "the update is handed over as it is, alone": [
+     {
+      "arguments": 1,
+      "sameUpdate": true,
+      "calledOn": "nothing"
+     }
+    ]
+   }
+  },
+  "a sent message the transcript gave no id for is written with a dash, and the earlier id is forgotten": {
+   "returned": {
+    "an id, then none": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text",
+      "[simeon] send-message written id=- type=text"
+     ]
+    },
+    "none at first": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=- type=text"
+     ]
+    },
+    "null for an id": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": null,
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text",
+      "[simeon] send-message written id=- type=text"
+     ]
+    },
+    "an empty id": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id= type=text"
+     ]
+    },
+    "a number for an id": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": 0,
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": 42,
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=0 type=text",
+      "[simeon] send-message written id=42 type=text"
+     ]
+    },
+    "false for an id": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": false,
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=false type=text"
+     ]
+    },
+    "an object for an id": [
+     "[simeon] send-message written id=[object Object] type=text"
+    ]
+   }
+  },
+  "the kind of a sent message in the log is its message's own type when that is a text, and a question mark otherwise": {
+   "returned": {
+    "a message of type text": [
+     "[simeon] send-message written id=m1 type=text"
+    ],
+    "a type with spaces and a line break": [
+     "[simeon] send-message written id=m1 type=two words\nand a line"
+    ],
+    "an empty type": [
+     "[simeon] send-message written id=m1 type="
+    ],
+    "a type that is a number": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a type that is null": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a type that is an object": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message with no type": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message that is null": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message that is a text": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message that is a number": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message that is a list": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a list with a type on it": [
+     "[simeon] send-message written id=m1 type=listed"
+    ],
+    "a function with a type on it": [
+     "[simeon] send-message written id=m1 type=?"
+    ],
+    "a message whose type is inherited": [
+     "[simeon] send-message written id=m1 type=inherited"
+    ],
+    "a very long type": [
+     "[simeon] send-message written id=m1 type=tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+    ],
+    "no message at all": [
+     "[simeon] send-message written id=m1 type=?"
+    ]
+   }
+  },
+  "a reaction holds when the transcript gave anything back for it, and writes nothing to the log": {
+   "returned": {
+    "an id back": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "nothing back": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "null back": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "an empty text back": [
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": true
+     }
+    ],
+    "zero back": [
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": true
+     }
+    ],
+    "false back": [
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": true
+     }
+    ],
+    "held, then not, then held": [
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": true
+     },
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": false
+     },
+     {
+      "returned": {
+       "$": "undefined"
+      },
+      "lastSentMessageId": {
+       "$": "undefined"
+      },
+      "lastReactionApplied": true
+     }
+    ],
+    "a sent message between two reactions changes neither": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": true
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m2",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text",
+      "[simeon] send-message written id=m2 type=text"
+     ]
+    }
+   }
+  },
+  "any other update goes to the transcript and changes nothing the transport remembers": {
+   "returned": {
+    "other kinds between a message and a reaction": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": true
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": true
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": true
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text"
+     ]
+    },
+    "kinds that only look alike": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "an update that is not an object": {
+     "null": {
+      "threwA": "TypeError"
+     },
+     "undefined": {
+      "threwA": "TypeError"
+     },
+     "a text": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "a number": {
+      "returned": {
+       "$": "undefined"
+      }
+     },
+     "after": [
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     "lines": []
+    }
+   }
+  },
+  "a sent message the transcript refused is written to the log with the refusal, and the refusal is thrown on as it is": {
+   "returned": {
+    "an error": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "the transcript is closed"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=Error: the transcript is closed"
+     ]
+    },
+    "a TypeError": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "TypeError",
+        "message": "message.text is not a string"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=TypeError: message.text is not a string"
+     ]
+    },
+    "an error with a name of its own": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "TranscriptRefused",
+        "message": "too long for one message",
+        "extra": {
+         "name": "TranscriptRefused"
+        }
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=TranscriptRefused: too long for one message"
+     ]
+    },
+    "an error with no words": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": ""
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=Error: "
+     ]
+    },
+    "an error whose name was taken away": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "",
+        "message": "its name was taken away",
+        "extra": {
+         "name": ""
+        }
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=: its name was taken away"
+     ]
+    },
+    "an error whose name is a number": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": 7,
+        "message": "its name is a number",
+        "extra": {
+         "name": 7
+        }
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=7: its name is a number"
+     ]
+    },
+    "an error whose words are undefined": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=Error: undefined"
+     ]
+    },
+    "an error with a cause": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "outer",
+        "cause": {
+         "$": "error",
+         "name": "Error",
+         "message": "inner"
+        }
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=Error: outer"
+     ]
+    },
+    "a text": {
+     "steps": [
+      {
+       "threw": "refused, in a text",
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=refused, in a text"
+     ]
+    },
+    "an empty text": {
+     "steps": [
+      {
+       "threw": "",
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error="
+     ]
+    },
+    "a number": {
+     "steps": [
+      {
+       "threw": 409,
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=409"
+     ]
+    },
+    "null": {
+     "steps": [
+      {
+       "threw": null,
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=null"
+     ]
+    },
+    "undefined": {
+     "steps": [
+      {
+       "threw": {
+        "$": "undefined"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=undefined"
+     ]
+    },
+    "a plain object": {
+     "steps": [
+      {
+       "threw": {
+        "code": "E_REFUSED",
+        "message": "in an object"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=[object Object]"
+     ]
+    },
+    "a list": {
+     "steps": [
+      {
+       "threw": [
+        "a",
+        "b"
+       ],
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=a,b"
+     ]
+    },
+    "an object that says its own text": {
+     "steps": [
+      {
+       "threw": {
+        "toString": {
+         "$": "function",
+         "name": "toString"
+        }
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=said by toString"
+     ]
+    },
+    "a symbol": {
+     "threwA": "Symbol",
+     "lines": [
+      "[simeon] send-message not written type=text error=Symbol(refused)"
+     ]
+    },
+    "an object that cannot be made a text": {
+     "threwA": "TypeError",
+     "lines": []
+    }
+   }
+  },
+  "the refusal in the log is one line of at most 160 characters, with an ellipsis when cut": {
+   "returned": {
+    "an error of 152 letters": {
+     "refusalLength": 159,
+     "endsWith": "www"
+    },
+    "an error of 153 letters": {
+     "refusalLength": 160,
+     "endsWith": "www"
+    },
+    "an error of 154 letters": {
+     "refusalLength": 161,
+     "endsWith": "ww…"
+    },
+    "an error of 155 letters": {
+     "refusalLength": 161,
+     "endsWith": "ww…"
+    },
+    "an error of 300 letters": {
+     "refusalLength": 161,
+     "endsWith": "ww…"
+    },
+    "a text of 159 letters": {
+     "refusalLength": 159,
+     "endsWith": "ttt"
+    },
+    "a text of 160 letters": {
+     "refusalLength": 160,
+     "endsWith": "ttt"
+    },
+    "a text of 161 letters": {
+     "refusalLength": 161,
+     "endsWith": "tt…"
+    },
+    "line breaks, tabs and runs of spaces become one space each": "[simeon] send-message not written type=text error=Error: first line second line indented and spaced end",
+    "space at either end is kept as one space": "[simeon] send-message not written type=text error=Error: padded ",
+    "spaces are counted after they are made one": "Error: a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a tail-that-is-…",
+    "a long refusal with the message's kind": 211
+   }
+  },
+  "a refusal leaves what the transport remembers as it was, and only a sent message's refusal is written to the log": {
+   "returned": {
+    "a message, a refused message, a message": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "refused"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m3",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text",
+      "[simeon] send-message not written type=card error=Error: refused",
+      "[simeon] send-message written id=m3 type=text"
+     ]
+    },
+    "a reaction held, then a refused reaction": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      },
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "refused"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "a refused update of another kind": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "refused"
+       },
+       "sameAsIngestThrew": true,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "a refused message with no message in it": [
+     "[simeon] send-message not written type=? error=Error: refused"
+    ],
+    "a refused message of a kind that is not a text": [
+     "[simeon] send-message not written type=? error=Error: refused"
+    ]
+   }
+  },
+  "the update's kind is read after the transcript has had it": {
+   "returned": {
+    "another kind that the transcript turns into a sent message": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text"
+     ]
+    },
+    "a sent message that the transcript turns into another kind": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    },
+    "another kind that the transcript turns into a reaction": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    }
+   }
+  },
+  "when the log itself fails, the id is already remembered, and the log's failure is the one thrown": {
+   "returned": {
+    "a message the transcript took": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "the log is closed"
+       },
+       "sameAsIngestThrew": false,
+       "lastSentMessageId": "m1",
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message written id=m1 type=text"
+     ]
+    },
+    "a message the transcript refused": {
+     "steps": [
+      {
+       "threw": {
+        "$": "error",
+        "name": "Error",
+        "message": "the log is closed"
+       },
+       "sameAsIngestThrew": false,
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": false
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": [
+      "[simeon] send-message not written type=text error=Error: refused by the transcript"
+     ]
+    },
+    "a reaction and another kind write nothing, so nothing fails": {
+     "steps": [
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      },
+      {
+       "returned": {
+        "$": "undefined"
+       },
+       "lastSentMessageId": {
+        "$": "undefined"
+       },
+       "lastReactionApplied": true
+      }
+     ],
+     "ingestSaw": [
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      },
+      {
+       "arguments": 1,
+       "sameUpdate": true,
+       "calledOn": "nothing"
+      }
+     ],
+     "lines": []
+    }
+   }
+  },
+  "two transports remember apart, and one transport keeps what it remembers across many updates": {
+   "returned": {
+    "states": [
+     [
+      "at first",
+      {
+       "$": "undefined"
+      },
+      false,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "one sent",
+      "one-1",
+      false,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "two sent, with no id back",
+      "one-1",
+      false,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "one reacted",
+      "one-1",
+      true,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "two reacted, with nothing back",
+      "one-1",
+      true,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "one sent thirty-nine more",
+      "one-40",
+      true,
+      {
+       "$": "undefined"
+      },
+      false
+     ],
+     [
+      "one's verbs used on their own",
+      "one-41",
+      true,
+      {
+       "$": "undefined"
+      },
+      false
+     ]
+    ],
+    "detachedReads": "one-41",
+    "lines": {
+     "count": 42,
+     "firstThree": [
+      "[simeon] send-message written id=one-1 type=text",
+      "[simeon] send-message written id=- type=text",
+      "[simeon] send-message written id=one-2 type=text"
+     ],
+     "last": "[simeon] send-message written id=one-41 type=card"
+    }
+   }
+  }
+ }
+}
