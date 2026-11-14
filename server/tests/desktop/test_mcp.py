@@ -316,6 +316,9 @@ class TestTools:
         assert waiting.message["network"]["own"] is True
         assert waiting.message["network"]["answer"] == "chat"
         assert "note" not in waiting.message["network"]
+        # Its name in the chat and what it is, for its logo.
+        assert waiting.message["network"]["fromAgent"] == "Dots"
+        assert waiting.message["network"]["bot"] == "dots"
 
         # Not taken by the computer yet: nothing to read.
         assert (await _said(client, bot, "check_inbox"))["messages"] == []
@@ -385,6 +388,109 @@ class TestTools:
         )
         later = await _said(client, bot, "check_inbox")
         assert [m["text"] for m in later["messages"]] == ["Seats 3A and 3B."]
+        assert (await _said(client, bot, "check_inbox"))["messages"] == []
+
+    async def test_the_agent_answers_a_bot_at_its_address_and_the_chat_stays_the_persons(
+        self,
+        client: httpx.AsyncClient,
+        session: AsyncSession,
+        save_fixture: SaveFixture,
+        user: User,
+        published: Any,
+    ) -> None:
+        """14 November 2026, the founder: "the name is not like claude code
+        who our agent gives the name of the job to the agent" and "when
+        tessa answers it. should be in their chat. their convo". The bot is
+        shown by what it is (Dots, Muse…), or by what
+        its person calls it, never by the name it took on the network; and
+        once the engine writes its message as one it answers at its address,
+        the bot reads what the agent sends it, not the agent's chat."""
+        _, box = await _signed_in_with_box(client, session, user)
+        await _copy(client, box, agents=AGENTS)
+        bot = await _hello(
+            client, await _bot(save_fixture, user, ["agents"]), "openai-mcp"
+        )
+        handle = (await _said(client, bot, "list_team"))["you"].split("/")[0]
+        inbox = DesktopChatInboxRepository.from_session(session)
+
+        # A name of its own on the network is its address, not its name in the chat.
+        await _said(client, bot, "set_status", name="windows-version")
+        first = await _said(client, bot, "send_message", to="iris", message="Thursday?")
+        (waiting,) = await inbox.waiting(user.id, 10)
+        assert waiting.message["network"]["from"] == f"{handle}/windows-version"
+        assert waiting.message["network"]["fromAgent"] == "Dots"
+        assert waiting.message["network"]["bot"] == "dots"
+        # An engine from before reads the prompt, signed as it was.
+        assert waiting.message["prompt"] == "windows-version: Thursday?"
+
+        # What its person calls it, when it says so.
+        await _said(client, bot, "set_status", called="  Jarvis  ")
+        await _said(client, bot, "send_message", to="iris", message="Or Friday?")
+        _, second = await inbox.waiting(user.id, 10)
+        assert second.message["network"]["fromAgent"] == "Jarvis"
+        assert second.message["network"]["bot"] == "dots"
+
+        # The engine wrote the first one as a message it answers at the bot's
+        # address; what Iris then says in her chat is for the person.
+        now = int(time.time() * 1000)
+        await _copy(
+            client,
+            box,
+            lines=[
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "message",
+                        "id": "u1",
+                        "role": "user",
+                        "content": "Thursday?",
+                        "timestampMs": now,
+                        "clientNonce": waiting.nonce,
+                        "fromAgent": {
+                            "id": f"network:{handle}/windows-version",
+                            "name": "Dots",
+                            "kind": "network",
+                            "bot": "dots",
+                            "answer": "send",
+                        },
+                    },
+                },
+                {
+                    "agentId": "iris",
+                    "entry": {
+                        "kind": "send-message",
+                        "id": "a1",
+                        "message": {
+                            "type": "text",
+                            "content": "Dots asked about Thursday: done.",
+                        },
+                        "timestampMs": now + 1_000,
+                    },
+                },
+            ],
+        )
+        assert (await _said(client, bot, "check_inbox"))["messages"] == []
+
+        # What Iris sends it reaches its inbox, with its name and kind for her chat's line.
+        response = await client.post(
+            "/desktop/api/network/send",
+            json={
+                "agentId": "iris",
+                "to": f"{handle}/windows-version",
+                "message": "Thursday works.",
+                "replyTo": first["sent"][0]["id"],
+            },
+            headers=box,
+        )
+        assert response.status_code == 200, response.text
+        (reached,) = response.json()["data"]["sent"]
+        assert (reached["to"], reached["name"], reached["bot"]) == (
+            f"{handle}/windows-version",
+            "Jarvis",
+            "dots",
+        )
+        (got,) = (await _said(client, bot, "check_inbox"))["messages"]
+        assert (got["from"], got["text"]) == (f"{handle}/Iris", "Thursday works.")
         assert (await _said(client, bot, "check_inbox"))["messages"] == []
 
     async def test_the_answer_is_found_when_the_computers_clock_is_behind(

@@ -255,6 +255,7 @@ class TestBetweenPeople:
             "from": "maya/codex",
             "fromName": "Maya",
             "fromAgent": "Codex",
+            "bot": "codex",
             "messageId": sent["sent"][0]["id"],
             "text": "Which hotel for the offsite?",
             "own": False,
@@ -527,6 +528,9 @@ class TestFromSimeonAgents:
             message="Can Maya do Thursday?",
         )
         assert [s["to"] for s in sent["sent"]] == ["maya/Nora"]
+        # For the line the engine writes in Iris's chat ("Messaged Nora").
+        assert sent["sent"][0]["name"] == "Nora"
+        assert "bot" not in sent["sent"][0]
         assert published.await_args.args[1:] == (user_second.id, "chat-inbox")
         (waiting,) = await DesktopChatInboxRepository.from_session(session).waiting(
             user_second.id, 10
@@ -551,6 +555,7 @@ class TestFromSimeonAgents:
             to="maya/codex",
             message="Is the API deployed?",
         )
+        assert (asked["sent"][0]["name"], asked["sent"][0]["bot"]) == ("Codex", "codex")
         (got,) = (await _said(client, codex, "check_inbox"))["messages"]
         assert (got["from"], got["text"]) == ("ana/Iris", "Is the API deployed?")
         assert got["id"] == asked["sent"][0]["id"]

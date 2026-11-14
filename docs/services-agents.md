@@ -3632,7 +3632,7 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   day; also the caller's address, its unread count and the invite line), `send_message` (to an
   address; returns at once), `check_inbox` (what was sent to the session and the Simeon agents'
   answers, each read once; `wait_seconds` up to 25), `set_status` (name, machine, repo, branch,
-  doing, busy), `join_network` (the invite line; marked destructive so the agent's app asks the
+  doing, busy, and `called`: what its person calls it), `join_network` (the invite line; marked destructive so the agent's app asks the
   person first). The first Bots release's `list_agents` and `read_messages` still answer, as
   `list_team` and `check_inbox`.
 - **A message to a Simeon agent is an agent's message** (14 November 2026, the founder: "have the
@@ -3644,11 +3644,27 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   from", and wakes the agent as a teammate's message does (`chat-copy/chat-inbox.ts`,
   `networkMessageOf`; `transcript/agent-to-agent-messaging.ts`, `receiveFromNetwork`;
   `agents/agent-messaging.ts`, `buildNetworkInboundWakePrompt`). The agent answers the sender in
-  a line or two, does the work in the same turn, and reports to the person in the chat. The
-  sender hears back as before: a bot or coding agent reads the agent's lines after its message
-  (`check_inbox`, found by the line's `clientNonce`); a Simeon agent is answered at its address
-  with SendNetworkMessage. A computer whose engine is from before reads `prompt` and shows the
-  message as the person's, as it did. When it misbehaves: `[simeon] chat-inbox handed N
+  a line or two, does the work in the same turn, and reports to the person in the chat. A
+  computer whose engine is from before reads `prompt` and shows the message as the person's, as
+  it did.
+  **The two have a conversation of their own** (the same day's second release, the founder: "when
+  tessa answers it. should be in their chat. their convo"). The agent answers every sender at its
+  address with SendNetworkMessage (`reply_to` the message's id, `network.messageId`), and the
+  engine writes what it sent as a message to that agent, `{kind: "message", role: "assistant",
+  toAgent: {id: "network:<address>", name, kind: "network", bot}}` ("Messaged";
+  `recordNetworkSent`, from `runner/tools/network-tools.ts` once the server took it). The apps
+  keep both lines under the one id, as they do two teammates', so only the report is said to the
+  person. The sender reads the answer in its inbox (`check_inbox`). The line of a message
+  answered this way says so (`fromAgent.answer` "send"), and the server then stops reading the
+  agent's chat for it (`network.py`, `answered_at_its_address`); for a line without it (an
+  engine from the first release) it reads the agent's lines after the message, as before.
+  **Its name is what it is** (the founder: "the name is not like claude code who our agent gives
+  the name of the job to the agent, but its grok bot, chatgpt dots, muse"): `fromAgent` is the
+  name its person gave it when it said so (`set_status`, `called`; the column
+  `desktop_network_sessions.called`), else its product's name (Dots, Claude Code), never the
+  name it took on the network, which stays its address (`network.py`, `shown_name`). `bot` is
+  its kind (`dots`, `claude-code`…), for the apps to draw its logo; `network/send` answers each
+  one reached with the same `name` and `bot`. When it misbehaves: `[simeon] chat-inbox handed N
   message(s) to their agents` says the computer took it; `chat-inbox left out a message for
   agent=…` says why it did not.
 - **The person's own tools** (10 November 2026, the founder, after another network's bot listed

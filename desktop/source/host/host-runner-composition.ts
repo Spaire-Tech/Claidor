@@ -2586,6 +2586,7 @@ export function createHostRunnerComposition<Runner extends ProductionSessionBoun
                 }),
                 agentId: () => session.id,
                 requestSource: () => { const source = method(extensions.api("transcript"), "activeRequestSource")?.(session.id); return typeof source === "string" ? source : undefined; },
+                sent: (to, message) => { method(extensions.api("transcript"), "recordNetworkSent")?.(session.id, to, message); },
                 log: (line) => logHostLine(`${HOST_LOG_PREFIX} ${line}`),
               },
             }),

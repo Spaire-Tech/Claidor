@@ -46,18 +46,21 @@ test("a Simeon agent reads the network and writes to a colleague's agent as itse
   const context = await load("source/packages/context/core.ts", "context-core-network");
   try {
     const calls = [];
+    const kept = [];
     let source = "turn";
     let refuse;
+    let reached = [{ to: "maya/Nora", id: "m1" }];
     const deps = {
       call: async (pathName, request = {}) => {
         calls.push({ path: pathName, method: request.method ?? "GET", json: request.json });
         if (refuse) throw new Error(refuse);
         if (pathName.startsWith("network/team")) return TEAM;
-        if (pathName === "network/send") return { sent: [{ to: "maya/Nora", id: "m1" }] };
+        if (pathName === "network/send") return { sent: reached };
         throw new Error("unexpected");
       },
       agentId: () => "iris",
       requestSource: () => source,
+      sent: (to, message) => { kept.push([to, message]); },
       log: () => {},
     };
     const [list, send] = tools.module.createNetworkTools(deps);
@@ -78,8 +81,17 @@ test("a Simeon agent reads the network and writes to a colleague's agent as itse
     const sent = await call(send, { to: "maya/nora", message: "Can Maya do Thursday?" });
     assert.deepEqual(calls.at(-1), { path: "network/send", method: "POST", json: { agentId: "iris", to: "maya/nora", message: "Can Maya do Thursday?" } });
     assert.match(sent, /Sent to maya\/Nora\. The answer comes back to this chat as a message/);
-    await call(send, { to: "maya/claude", message: "Yes, at 14:02.", reply_to: "m9" });
+    // A server from before names nobody: the chat's line takes the last part of the address.
+    assert.deepEqual(kept, [[{ address: "maya/Nora", name: "Nora" }, "Can Maya do Thursday?"]]);
+    // An answer to one that asked: the server says its name and what it is, for the chat's line
+    // ("Messaged Dots"), and nothing tells the agent to report whom it asked.
+    reached = [{ to: "ana/windows-version", id: "m2", name: "Dots", bot: "dots" }];
+    const answered = await call(send, { to: "ana/windows-version", message: "Yes, at 14:02.", reply_to: "m9" });
     assert.equal(calls.at(-1).json.replyTo, "m9");
+    assert.deepEqual(kept.at(-1), [{ address: "ana/windows-version", name: "Dots", bot: "dots" }, "Yes, at 14:02."]);
+    assert.match(answered, /Sent to ana\/windows-version\. It is kept in your conversation with it in this chat\./);
+    assert.doesNotMatch(answered, /Tell the user/);
+    reached = [{ to: "maya/Nora", id: "m1" }];
 
     // The server's refusal, in its words.
     refuse = "Maya's agents had enough messages from yours this hour: try again later.";

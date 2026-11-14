@@ -121,7 +121,7 @@ FROM_AGENT_PER_HOUR = 30
 NETWORK_NAME_MAX = 80
 SESSION_NAME_MAX = 40
 HANDLE_MAX = 20
-FIELD_MAX = {"machine": 80, "repo": 120, "branch": 120, "doing": 200}
+FIELD_MAX = {"machine": 80, "repo": 120, "branch": 120, "doing": 200, "called": 40}
 
 
 class NetworkRefusal(Exception):
@@ -290,6 +290,18 @@ def session_label(session: DesktopNetworkSession) -> str:
     return label_of(session.kind)
 
 
+def shown_name(session: DesktopNetworkSession) -> str:
+    """The name a session has in a Simeon chat (14 November 2026, the
+    founder: "the name is not like claude code who our agent gives the name
+    of the job to the agent, but its grok bot, chatgpt dots, muse"): what
+    the person calls it, when it said so, else what it is. The name it took
+    on the network (`windows-version`) is its address, not its name; only an
+    agent of no known kind is shown by it."""
+    if session.called:
+        return session.called
+    return session.name if session.kind == "agent" else label_of(session.kind)
+
+
 # MARK: Invite links
 
 
@@ -342,6 +354,14 @@ def parse_invite(text: object) -> tuple[UUID, int] | None:
 
 def ms(moment: Any) -> int:
     return int(moment.timestamp() * 1000)
+
+
+def answered_at_its_address(entry: Any) -> bool:
+    """Whether the engine wrote a network message's line as one it answers
+    with SendNetworkMessage (`fromAgent.answer` "send", an engine from 14
+    November 2026): the sender then reads its inbox, not the agent's chat."""
+    sender = entry.get("fromAgent") if isinstance(entry, dict) else None
+    return isinstance(sender, dict) and sender.get("answer") == "send"
 
 
 def spoken(entry: Any, agent_name: str, names: dict[str, str]) -> dict[str, Any] | None:
@@ -907,7 +927,9 @@ class Network:
                 closed=False,
             )
             if target.agent is not None:
-                await self._to_agent(row, sender, label, address, text, target)
+                await self._to_agent(
+                    row, sender, label, address, text, target, session=me
+                )
             else:
                 await self.messages.create(row, flush=True)
             sent.append({"to": target.address, "id": str(row.id)})
@@ -990,7 +1012,22 @@ class Network:
                 )
             else:
                 await self.messages.create(row, flush=True)
-            sent.append({"to": target.address, "id": str(row.id)})
+            # The name and the kind are for the line the engine writes in
+            # the agent's chat ("Messaged Grok Bot").
+            sent.append(
+                {
+                    "to": target.address,
+                    "id": str(row.id),
+                    "name": shown_name(target.session)
+                    if target.session is not None
+                    else str((target.agent or {}).get("name") or ""),
+                    **(
+                        {"bot": target.session.kind}
+                        if target.session is not None
+                        else {}
+                    ),
+                }
+            )
         log.info(
             "desktop.network.sent",
             user_id=str(self.user.id),
@@ -1011,6 +1048,7 @@ class Network:
         target: Target,
         *,
         from_agent: bool = False,
+        session: DesktopNetworkSession | None = None,
     ) -> None:
         owner = target.person.user_id
         if owner != self.user.id:
@@ -1053,11 +1091,16 @@ class Network:
                 # work and report to the person; an earlier engine reads
                 # `prompt`, as the person's message. `answer` says how the
                 # sender hears back: it reads the chat, or only what is
-                # sent to its address.
+                # sent to its address. An engine from the later release of
+                # that day answers every sender at its address
+                # (SendNetworkMessage), so the two talk in a conversation
+                # of their own; `bot` is what the sender is (`grok-bot`,
+                # `dots`), for its logo.
                 "network": {
                     "from": address,
                     "fromName": sender.name,
-                    "fromAgent": label,
+                    "fromAgent": label if session is None else shown_name(session),
+                    **({} if session is None else {"bot": session.kind}),
                     "messageId": str(row.id),
                     "text": text,
                     "own": own,
@@ -1091,6 +1134,11 @@ class Network:
             )
             if question is None:
                 continue  # Not taken by the computer yet.
+            if answered_at_its_address(question.entry):
+                # The agent answers this one at its address: what it then
+                # says in the chat is for the person, not for the sender.
+                asked.closed = True
+                continue
             rows = await lines.since(
                 asked.to_user_id, asked.to_agent_id, question.at_ms, ANSWER_LINES_MAX
             )

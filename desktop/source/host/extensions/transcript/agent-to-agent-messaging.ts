@@ -34,15 +34,23 @@ export interface AgentInboundMessage {
   // ("chat": it reads this chat; "send": only what is sent to its address),
   // the server's caution if it has one, and the nonce the server finds the
   // message's line by.
-  network?: { address: string; answer: "chat" | "send"; nonce: string; note?: string };
+  network?: { address: string; nonce: string; bot?: string; messageId?: string; note?: string };
 }
 
 /** Who a message from the person's Simeon network is from, as the inbox reads it off the server's message (chat-copy/chat-inbox.ts). */
 export interface NetworkSender {
   readonly address: string;
   readonly name: string;
-  readonly answer: "chat" | "send";
+  /** What it is, as the server names it ("dots", "claude-code"…): the apps draw its logo by it. */
+  readonly bot?: string;
+  /** The message's id on the server: the answer names it. */
+  readonly messageId?: string;
   readonly note?: string;
+}
+
+/** An agent outside Simeon as a line of the chat names it: no teammate's id, its address. */
+function networkParty(to: { readonly address: string; readonly name: string; readonly bot?: string }) {
+  return { id: `network:${to.address}`, name: to.name, kind: "network", ...(to.bot == null ? {} : { bot: to.bot }) };
 }
 
 export function agentMessageHopRefusal(cap: number): string {
@@ -229,8 +237,9 @@ export class AgentToAgentMessaging {
       hop: 1,
       network: {
         address: sender.address,
-        answer: sender.answer,
         nonce,
+        ...(sender.bot == null ? {} : { bot: sender.bot }),
+        ...(sender.messageId == null ? {} : { messageId: sender.messageId }),
         ...(sender.note == null ? {} : { note: sender.note }),
       },
     };
@@ -239,6 +248,22 @@ export class AgentToAgentMessaging {
     queued.push({ ...inbound, isDisplayed: true });
     this.pendingAgentInbound.set(toAgentId, queued);
     void this.reviveForAgentInbound(toAgentId);
+  }
+
+  /**
+   * What an agent sent an agent outside Simeon (SendNetworkMessage, once
+   * the server took it), written in its chat as a message to that agent
+   * ("Messaged"): with the lines that came from it, the two have a
+   * conversation of their own there, as two teammates do.
+   */
+  recordNetworkSent(
+    fromAgentId: string,
+    to: { readonly address: string; readonly name: string; readonly bot?: string },
+    text: string,
+  ): void {
+    const message = clampAgentMessage(text);
+    if (message.length === 0 || to.address.trim().length === 0) return;
+    this.appendAgentOutboundEntry(fromAgentId, networkParty(to), message, Date.now());
   }
 
   steerRecipientForPriorityPeer(agentId: string): void {
@@ -377,7 +402,7 @@ export class AgentToAgentMessaging {
                       from: message.from,
                       text: message.text,
                       address: message.network.address,
-                      answer: message.network.answer,
+                      ...(message.network.messageId == null ? {} : { messageId: message.network.messageId }),
                       ...(message.network.note == null ? {} : { note: message.network.note }),
                     })
                   : buildAgentInboundWakePrompt(message)
@@ -463,7 +488,10 @@ export class AgentToAgentMessaging {
         content: message.text,
         isStreaming: false,
         timestampMs: message.timestampMs,
-        fromAgent: message.network == null ? message.from : { ...message.from, kind: "network" },
+        // `answer` "send": this engine answers it at its address, so the server no longer reads the answer off the chat.
+        fromAgent: message.network == null
+          ? message.from
+          : { ...networkParty({ address: message.network.address, name: message.from.name, ...(message.network.bot == null ? {} : { bot: message.network.bot }) }), answer: "send" },
         ...(message.network == null ? {} : { clientNonce: message.network.nonce }),
         ...(message.images?.length ? { images: message.images } : {}),
       };
