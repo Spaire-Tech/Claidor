@@ -1,0 +1,2368 @@
+{
+ "part": "shared/rpc",
+ "surface": {
+  "coordinator": {
+   "COORDINATOR_METHOD_TABLE": "object",
+   "isCoordinatorMethod": "function",
+   "parseCoordinatorAgentThreadRequest": "function",
+   "parseCoordinatorAgentThreadResponse": "function",
+   "parseCoordinatorTranscriptWindowRequest": "function",
+   "parseCoordinatorTranscriptWindowResponse": "function",
+   "validateCoordinatorReply": "function"
+  },
+  "transport": {
+   "CLIENT_SIDE_TOOL_V2_ACCOUNT_SLOT": "string",
+   "CLIENT_SIDE_TOOL_V2_FAMILY": "string",
+   "CLIENT_SIDE_TOOL_V2_WIRE_VERSION": "number",
+   "decodeClientSideToolV2Message": "function",
+   "encodeClientSideToolV2Message": "function",
+   "materializeClientSideToolV2RendererEvent": "function",
+   "parseClientSideToolV2TransportEvent": "function"
+  }
+ },
+ "scenarios": {
+  "the coordinator's methods, each with what it takes and what it answers, in the table's own order": {
+   "returned": {
+    "howMany": 117,
+    "rows": [
+     "getAgentTranscriptWindow: args object, reply transcript-window",
+     "getAgentThread: args object, reply agent-thread",
+     "getAgentTranscriptTail: args object, reply transcript-page",
+     "openAgentTail: args object, reply transcript-page",
+     "sendPrompt: args object, reply send-result",
+     "promptAcceptanceStatus: args object, reply acceptance-lookup",
+     "respondToWidget: args object, reply record-or-null",
+     "resolveAutoReviewApproval: args object, reply void",
+     "resolveLocalToolPermission: args object, reply void",
+     "dismissWidget: args object, reply record",
+     "submitSecret: args object, reply void",
+     "reactToMessage: args object, reply void",
+     "sendDraft: args object, reply record-or-null",
+     "discardDraft: args object, reply record-or-null",
+     "answerPurchase: args object, reply record-or-null",
+     "buyProduct: args object, reply record-or-null",
+     "startFlightBooking: args object, reply record",
+     "submitFlightPassengers: args object, reply record",
+     "submitUserForm: args object, reply record",
+     "dismissUserForm: args object, reply record",
+     "answerCredentialRequest: args object, reply record",
+     "connectOnePassword: args object, reply record",
+     "dismissOnePasswordConnect: args object, reply record",
+     "answerStoreEntry: args object, reply record",
+     "appendConnectorCard: args object, reply void",
+     "appendSendMessage: args object, reply record",
+     "voiceCall: args object, reply record",
+     "searchPlugins: args object, reply string",
+     "getPlugin: args object, reply string",
+     "installPlugin: args object, reply string",
+     "listAgents: args none, reply array",
+     "countAgents: args none, reply count",
+     "searchAgents: args object, reply array",
+     "searchMedia: args object, reply array",
+     "createAgent: args object, reply record",
+     "createGroup: args object, reply record",
+     "setGroupMembers: args object, reply record-or-null",
+     "updateAgent: args object, reply record-or-null",
+     "deleteAgents: args object, reply record",
+     "duplicateAgent: args object, reply record",
+     "kickstartAgent: args object, reply record-or-null",
+     "refreshUserName: args none, reply record",
+     "requestDiskSaverAudit: args object, reply record-or-null",
+     "broadcastToAgents: args object, reply record",
+     "getCloudAgentInfo: args object, reply record-or-null",
+     "getCloudAgentConversation: args object, reply record-or-null",
+     "getGitHubSignIn: args none, reply record",
+     "getCursorSignIn: args none, reply record",
+     "startCursorSignIn: args none, reply record",
+     "signOutCursor: args none, reply record",
+     "getListenerIntegrations: args none, reply record",
+     "getListenerConnectUrl: args object, reply connect-url",
+     "setAgentUnread: args object, reply void",
+     "setAgentHiddenFromSidebar: args object, reply void",
+     "setAgentNotificationsEnabled: args object, reply void",
+     "setAgentNotifyOnUpdates: args object, reply void",
+     "setAgentAvatarBytes: args object, reply record-or-null",
+     "getAgentAvatar: args object, reply record",
+     "getAgentWorkflows: args object, reply array",
+     "createAgentWorkflow: args object, reply array",
+     "updateAgentWorkflow: args object, reply array",
+     "setAgentWorkflowEnabled: args object, reply array",
+     "deleteAgentWorkflow: args object, reply array",
+     "runAgentWorkflowNow: args object, reply void",
+     "importAgentWorkflowText: args object, reply import-result",
+     "importAgentWorkflowUrl: args object, reply import-result",
+     "portAgentLocalSkills: args object, reply import-result",
+     "getConversationOutline: args object, reply array",
+     "skillsCatalog: args none, reply array",
+     "syncPluginSkills: args none, reply array",
+     "getPluginSyncStatus: args none, reply record",
+     "listRoutedMcpTools: args none, reply array",
+     "executeRoutedMcpTool: args object, reply record",
+     "executeRoutedAgentTool: args object, reply record",
+     "getSkillPublishTargets: args none, reply record",
+     "publishSkill: args object, reply record",
+     "resyncPublishedSkill: args object, reply record",
+     "unpublishSkill: args object, reply record",
+     "getSubagents: args object, reply array",
+     "getAsyncTasks: args object, reply array",
+     "getForeverBoxStatus: args object, reply box-status",
+     "ensureForeverBox: args object, reply box-status",
+     "handBackForeverBox: args object, reply void",
+     "startTeachRecording: args object, reply record",
+     "stopTeachRecording: args object, reply record",
+     "getTeachRecordingStatus: args none, reply record",
+     "getTrays: args none, reply array",
+     "dismissTray: args object, reply void",
+     "clearTrays: args none, reply void",
+     "getAgentChannels: args object, reply channels-view",
+     "connectChannel: args object, reply channels-view",
+     "disconnectChannel: args object, reply channels-view",
+     "refreshChannel: args object, reply channels-view",
+     "getBoxSecretsStatus: args none, reply box-secrets",
+     "getAgentAutomations: args object, reply array",
+     "getAgentMemories: args object, reply array",
+     "deleteAgentMemory: args object, reply boolean",
+     "clearAgentMemories: args object, reply void",
+     "listAllAutomations: args none, reply array",
+     "isAgentNetworkEnabled: args none, reply boolean",
+     "isGlobalSearchEnabled: args none, reply boolean",
+     "isEgressTunnelAvailable: args none, reply boolean",
+     "getSharingState: args none, reply record",
+     "createRoomFromAgent: args object, reply record",
+     "createRoomInvite: args object, reply record",
+     "joinSharedRoom: args object, reply record",
+     "respondToRoomJoinRequest: args object, reply record",
+     "createSharedRoom: args object, reply record",
+     "addOwnAgentToSharedRoom: args object, reply record",
+     "removeOwnAgentFromSharedRoom: args object, reply record",
+     "setSharedRoomTyping: args object, reply void",
+     "leaveSharedRoom: args object, reply record",
+     "setAgentAutomationEnabled: args object, reply array",
+     "createAgentAutomation: args object, reply array",
+     "updateAgentAutomation: args object, reply array",
+     "deleteAgentAutomation: args object, reply array",
+     "runAgentAutomationNow: args object, reply void"
+    ],
+    "kindsOfArguments": [
+     "object",
+     "none"
+    ],
+    "kindsOfReply": [
+     "transcript-window",
+     "agent-thread",
+     "transcript-page",
+     "send-result",
+     "acceptance-lookup",
+     "record-or-null",
+     "void",
+     "record",
+     "string",
+     "array",
+     "count",
+     "connect-url",
+     "import-result",
+     "box-status",
+     "channels-view",
+     "box-secrets",
+     "boolean"
+    ],
+    "frozen": false,
+    "aRowFrozen": false,
+    "anOrdinaryObject": true
+   }
+  },
+  "a name is a coordinator method when the table holds it as its own, and only then": {
+   "returned": {
+    "everyNameInTheTable": true,
+    "others": [
+     [
+      "a name every object has",
+      false
+     ],
+     [
+      "another",
+      false
+     ],
+     [
+      "another",
+      false
+     ],
+     [
+      "the prototype's own name",
+      false
+     ],
+     [
+      "an empty name",
+      false
+     ],
+     [
+      "a method in other letters",
+      false
+     ],
+     [
+      "a method with a space after it",
+      false
+     ],
+     [
+      "a method of main's table, not this one",
+      false
+     ],
+     [
+      "a number",
+      false
+     ],
+     [
+      "null",
+      false
+     ],
+     [
+      "nothing",
+      false
+     ],
+     [
+      "a list holding a method's name",
+      true
+     ],
+     [
+      "a thing that writes itself as a method's name",
+      true
+     ],
+     [
+      "a symbol",
+      false
+     ]
+    ]
+   }
+  },
+  "a transcript window as answered: what is taken, what is refused": {
+   "returned": [
+    [
+     "the least there can be",
+     {
+      "entries": [],
+      "threadCounts": {}
+     }
+    ],
+    [
+     "entries, a next page and counts; anything else is dropped",
+     {
+      "entries": [
+       {
+        "id": "e1",
+        "kind": "send-message",
+        "seq": 1,
+        "message": {
+         "type": "text"
+        }
+       },
+       {
+        "id": "e2",
+        "kind": "send-message"
+       }
+      ],
+      "nextBeforeSeq": 12,
+      "threadCounts": {
+       "root-2": 0,
+       "root-1": 3
+      }
+     }
+    ],
+    [
+     "a next page of zero",
+     {
+      "entries": [],
+      "nextBeforeSeq": 0,
+      "threadCounts": {}
+     }
+    ],
+    [
+     "a next page below zero or in halves is taken",
+     {
+      "entries": [],
+      "nextBeforeSeq": -1.5,
+      "threadCounts": {}
+     }
+    ],
+    [
+     "a next page said to be undefined is left out",
+     {
+      "entries": [],
+      "threadCounts": {}
+     }
+    ],
+    [
+     "a next page of null",
+     null
+    ],
+    [
+     "a next page that is no number",
+     null
+    ],
+    [
+     "a next page without end",
+     null
+    ],
+    [
+     "a next page as words",
+     null
+    ],
+    [
+     "no entries",
+     null
+    ],
+    [
+     "entries that are a record",
+     null
+    ],
+    [
+     "entries that are words",
+     null
+    ],
+    [
+     "an entry with no id",
+     null
+    ],
+    [
+     "an entry with an empty id",
+     null
+    ],
+    [
+     "an entry whose id is a number",
+     null
+    ],
+    [
+     "an entry with no kind",
+     null
+    ],
+    [
+     "an entry with an empty kind",
+     null
+    ],
+    [
+     "an entry that is null",
+     null
+    ],
+    [
+     "an entry that is a list",
+     null
+    ],
+    [
+     "an entry that is words",
+     null
+    ],
+    [
+     "entries with gaps: the gaps are not looked at",
+     {
+      "entries": [
+       {
+        "id": "e1",
+        "kind": "send-message"
+       },
+       {
+        "$": "undefined"
+       },
+       {
+        "id": "e3",
+        "kind": "send-message"
+       }
+      ],
+      "threadCounts": {}
+     }
+    ],
+    [
+     "no counts",
+     null
+    ],
+    [
+     "counts that are null",
+     null
+    ],
+    [
+     "counts that are a list",
+     null
+    ],
+    [
+     "a count that is no number",
+     null
+    ],
+    [
+     "a count without end",
+     null
+    ],
+    [
+     "a count as words",
+     null
+    ],
+    [
+     "a count of null",
+     null
+    ],
+    [
+     "a count under an empty name",
+     null
+    ],
+    [
+     "counts below zero or in halves are taken",
+     {
+      "entries": [],
+      "threadCounts": {
+       "a": -1,
+       "b": 0.5
+      }
+     }
+    ],
+    [
+     "counts under numbers come first, in rising order, as in what was given",
+     {
+      "entries": [],
+      "threadCounts": {
+       "2": 4,
+       "10": 2,
+       "b": 1,
+       "a": 3
+      }
+     }
+    ],
+    [
+     "counts held by a map: none are seen",
+     {
+      "entries": [],
+      "threadCounts": {}
+     }
+    ],
+    [
+     "counts that are only inherited: none are seen",
+     {
+      "entries": [],
+      "threadCounts": {}
+     }
+    ],
+    [
+     "entries and counts that are only inherited: taken",
+     {
+      "entries": [
+       {
+        "id": "e1",
+        "kind": "send-message"
+       }
+      ],
+      "nextBeforeSeq": 2,
+      "threadCounts": {
+       "root": 1
+      }
+     }
+    ],
+    [
+     "a thing of a class that holds entries and counts: taken",
+     {
+      "entries": [],
+      "threadCounts": {}
+     }
+    ]
+   ]
+  },
+  "a transcript window as answered, when it is no record at all": {
+   "returned": [
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "a transcript window that is taken hands back the very list of entries it was given, and counts of its own": {
+   "returned": {
+    "keys": [
+     "entries",
+     "nextBeforeSeq",
+     "threadCounts"
+    ],
+    "theSameList": true,
+    "theSameEntry": true,
+    "countsOfItsOwn": true,
+    "anOrdinaryObject": true,
+    "notFrozen": [
+     false,
+     false
+    ]
+   }
+  },
+  "counts read from text: a count under the prototype's own name is lost on the way": {
+   "returned": {
+    "givenKeys": [
+     "root",
+     "__proto__",
+     "constructor"
+    ],
+    "taken": {
+     "entries": [],
+     "threadCounts": {
+      "root": 1,
+      "constructor": 3
+     }
+    },
+    "takenKeys": [
+     "root",
+     "constructor"
+    ],
+    "stillAnOrdinaryObject": true
+   }
+  },
+  "a request for a transcript window: what is taken, what is refused": {
+   "returned": [
+    [
+     "an id alone",
+     {
+      "id": "agent-1"
+     }
+    ],
+    [
+     "an id, a place to read before and a limit, whatever order they come in; anything else is dropped",
+     {
+      "id": "agent-1",
+      "beforeSeq": 120,
+      "limit": 50
+     }
+    ],
+    [
+     "before zero",
+     {
+      "id": "a",
+      "beforeSeq": 0
+     }
+    ],
+    [
+     "before a number below zero",
+     {
+      "id": "a",
+      "beforeSeq": -3
+     }
+    ],
+    [
+     "before a whole number written with a point",
+     {
+      "id": "a",
+      "beforeSeq": 7
+     }
+    ],
+    [
+     "before a very large whole number",
+     {
+      "id": "a",
+      "beforeSeq": 1e+21
+     }
+    ],
+    [
+     "before a half",
+     null
+    ],
+    [
+     "before what is no number",
+     null
+    ],
+    [
+     "before no end",
+     null
+    ],
+    [
+     "before words",
+     null
+    ],
+    [
+     "before null",
+     null
+    ],
+    [
+     "before undefined: left out",
+     {
+      "id": "a"
+     }
+    ],
+    [
+     "a limit of zero",
+     {
+      "id": "a",
+      "limit": 0
+     }
+    ],
+    [
+     "a limit below zero",
+     {
+      "id": "a",
+      "limit": -1
+     }
+    ],
+    [
+     "a limit in halves is taken",
+     {
+      "id": "a",
+      "limit": 2.5
+     }
+    ],
+    [
+     "a limit that is no number",
+     null
+    ],
+    [
+     "a limit without end",
+     null
+    ],
+    [
+     "a limit as words",
+     null
+    ],
+    [
+     "a limit of null",
+     null
+    ],
+    [
+     "no id",
+     null
+    ],
+    [
+     "an empty id",
+     null
+    ],
+    [
+     "an id that is a number",
+     null
+    ],
+    [
+     "an id of null",
+     null
+    ],
+    [
+     "an id and a limit that are only inherited: taken",
+     {
+      "id": "agent-1",
+      "limit": 5
+     }
+    ],
+    [
+     "a thing with nothing above it",
+     {
+      "id": "agent-1",
+      "beforeSeq": 2
+     }
+    ]
+   ]
+  },
+  "a request for a transcript window, when it is no record at all": {
+   "returned": [
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "a thread as answered: what is taken, what is refused": {
+   "returned": [
+    [
+     "no entries at all",
+     {
+      "entries": []
+     }
+    ],
+    [
+     "entries; anything else is dropped",
+     {
+      "entries": [
+       {
+        "id": "e1",
+        "kind": "send-message"
+       },
+       {
+        "id": "e2",
+        "kind": "send-message",
+        "thread": "root-1"
+       }
+      ]
+     }
+    ],
+    [
+     "nothing under entries",
+     null
+    ],
+    [
+     "entries of null",
+     null
+    ],
+    [
+     "entries that are a record",
+     null
+    ],
+    [
+     "an entry with an empty id",
+     null
+    ],
+    [
+     "an entry with no kind",
+     null
+    ],
+    [
+     "an entry whose kind is a number",
+     null
+    ],
+    [
+     "an entry that is null",
+     null
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "a thread that is taken hands back the very list of entries it was given": {
+   "returned": {
+    "keys": [
+     "entries"
+    ],
+    "theSameList": true,
+    "aNewObject": true
+   }
+  },
+  "a request for a thread: what is taken, what is refused": {
+   "returned": [
+    [
+     "an id and a root",
+     {
+      "id": "agent-1",
+      "rootId": "root-1"
+     }
+    ],
+    [
+     "the two, whatever order they come in; anything else is dropped",
+     {
+      "id": "agent-1",
+      "rootId": "root-1"
+     }
+    ],
+    [
+     "no root",
+     null
+    ],
+    [
+     "no id",
+     null
+    ],
+    [
+     "an empty id",
+     null
+    ],
+    [
+     "an empty root",
+     null
+    ],
+    [
+     "an id that is a number",
+     null
+    ],
+    [
+     "a root that is null",
+     null
+    ],
+    [
+     "an id and a root that are only inherited: taken",
+     {
+      "id": "agent-1",
+      "rootId": "root-1"
+     }
+    ],
+    [
+     "a thing of a class that holds the two: taken",
+     {
+      "id": "agent-1",
+      "rootId": "root-1"
+     }
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "a reply is checked for the two transcript methods only, and what comes back is the reply itself, with all it held": {
+   "returned": {
+    "aWindowItself": true,
+    "aThreadItself": true,
+    "otherMethodsTakeAnything": [
+     [
+      "a method with a page, given a malformed page",
+      {
+       "entries": "no"
+      }
+     ],
+     [
+      "a method with a page, given nothing",
+      {
+       "$": "undefined"
+      }
+     ],
+     [
+      "a method that lists, given null",
+      null
+     ],
+     [
+      "a method not in the table",
+      5
+     ],
+     [
+      "a window's name in other letters, given a malformed window",
+      {
+       "entries": "no"
+      }
+     ],
+     [
+      "a thread's name with a space, given a malformed thread",
+      null
+     ],
+     [
+      "a name that is not words",
+      "anything"
+     ]
+    ]
+   }
+  },
+  "a malformed transcript window or thread is refused with the method's own sentence": {
+   "returned": [
+    [
+     "a window with no counts",
+     {
+      "class": "Error",
+      "name": "Error",
+      "message": "getAgentTranscriptWindow returned a malformed transcript window",
+      "fields": []
+     }
+    ],
+    [
+     "a window that is null",
+     {
+      "class": "Error",
+      "name": "Error",
+      "message": "getAgentTranscriptWindow returned a malformed transcript window",
+      "fields": []
+     }
+    ],
+    [
+     "a window that is a well formed thread",
+     {
+      "class": "Error",
+      "name": "Error",
+      "message": "getAgentTranscriptWindow returned a malformed transcript window",
+      "fields": []
+     }
+    ],
+    [
+     "a thread with a bad entry",
+     {
+      "class": "Error",
+      "name": "Error",
+      "message": "getAgentThread returned a malformed agent thread",
+      "fields": []
+     }
+    ],
+    [
+     "a thread that is nothing",
+     {
+      "class": "Error",
+      "name": "Error",
+      "message": "getAgentThread returned a malformed agent thread",
+      "fields": []
+     }
+    ],
+    [
+     "a thread that is a well formed window",
+     {
+      "passed": {
+       "entries": [],
+       "threadCounts": {}
+      }
+     }
+    ]
+   ]
+  },
+  "how often each field is read: a window and a thread as answered, a request for each, and the reply check": {
+   "returned": [
+    [
+     "a window",
+     true,
+     [
+      "window.entries",
+      "window.entries",
+      "entry.id",
+      "entry.id",
+      "entry.kind",
+      "entry.kind",
+      "window.threadCounts",
+      "window.threadCounts",
+      "keys of window.threadCounts",
+      "window.threadCounts.root",
+      "window.nextBeforeSeq",
+      "window.nextBeforeSeq",
+      "window.entries",
+      "window.nextBeforeSeq",
+      "window.nextBeforeSeq"
+     ]
+    ],
+    [
+     "a window with no next page",
+     true,
+     [
+      "window.entries",
+      "window.entries",
+      "window.threadCounts",
+      "window.threadCounts",
+      "keys of window.threadCounts",
+      "window.nextBeforeSeq",
+      "window.entries",
+      "window.nextBeforeSeq"
+     ]
+    ],
+    [
+     "a window with a bad count",
+     false,
+     [
+      "window.entries",
+      "window.entries",
+      "window.threadCounts",
+      "window.threadCounts",
+      "keys of window.threadCounts",
+      "window.threadCounts.a",
+      "window.threadCounts.b",
+      "window.threadCounts.c"
+     ]
+    ],
+    [
+     "a window with a bad entry",
+     false,
+     [
+      "entry.id",
+      "entry.id",
+      "entry.kind",
+      "entry.kind"
+     ]
+    ],
+    [
+     "a thread",
+     true,
+     [
+      "thread.entries",
+      "thread.entries",
+      "entry.id",
+      "entry.id",
+      "entry.kind",
+      "entry.kind",
+      "thread.entries"
+     ]
+    ],
+    [
+     "a request for a window",
+     true,
+     [
+      "request.id",
+      "request.beforeSeq",
+      "request.limit"
+     ]
+    ],
+    [
+     "a request for a window with an empty id",
+     false,
+     [
+      "request.id",
+      "request.beforeSeq",
+      "request.limit"
+     ]
+    ],
+    [
+     "a request for a thread",
+     true,
+     [
+      "request.id",
+      "request.id",
+      "request.rootId",
+      "request.rootId",
+      "request.id",
+      "request.rootId"
+     ]
+    ],
+    [
+     "a request for a thread with no root",
+     false,
+     [
+      "request.id",
+      "request.id",
+      "request.rootId"
+     ]
+    ],
+    [
+     "a window reply, checked",
+     true,
+     [
+      "window.entries",
+      "window.entries",
+      "entry.id",
+      "entry.id",
+      "entry.kind",
+      "entry.kind",
+      "window.threadCounts",
+      "window.threadCounts",
+      "keys of window.threadCounts",
+      "window.threadCounts.root",
+      "window.nextBeforeSeq",
+      "window.nextBeforeSeq",
+      "window.entries",
+      "window.nextBeforeSeq",
+      "window.nextBeforeSeq"
+     ]
+    ],
+    [
+     "a thread reply, checked",
+     true,
+     [
+      "thread.entries",
+      "thread.entries",
+      "entry.id",
+      "entry.id",
+      "entry.kind",
+      "entry.kind",
+      "thread.entries"
+     ]
+    ],
+    [
+     "another method's reply, checked",
+     true,
+     []
+    ]
+   ]
+  },
+  "the three fixed words of the envelope: its family, its version, the slot of the account it speaks for": {
+   "returned": [
+    "client-side-tool-v2",
+    1,
+    "host"
+   ]
+  },
+  "a call and a result are packed as the wire's own bytes in base64, under the name of their message": {
+   "returned": [
+    [
+     "a call",
+     {
+      "out": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "CAUaBmNhbGwtMUINCglub3Rlcy50eHQQAUoJcmVhZF9maWxlUhR7InBhdGgiOiJub3Rlcy50eHQifXABgAMCigMHbW9kZWwtMQ=="
+      },
+      "keys": [
+       "encoding",
+       "messageType",
+       "bytes"
+      ],
+      "theWiresOwnBytes": true,
+      "hex": "08051a0663616c6c2d31420d0a096e6f7465732e74787410014a09726561645f66696c6552147b2270617468223a226e6f7465732e747874227d70018003028a03076d6f64656c2d31"
+     }
+    ],
+    [
+     "a result",
+     {
+      "out": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Result",
+       "bytes": "CAUyBwoFaGVsbG+aAgZjYWxsLTGCAwdtb2RlbC0xiAMC"
+      },
+      "keys": [
+       "encoding",
+       "messageType",
+       "bytes"
+      ],
+      "theWiresOwnBytes": true,
+      "hex": "080532070a0568656c6c6f9a020663616c6c2d318203076d6f64656c2d31880302"
+     }
+    ],
+    [
+     "a result that is an error",
+     {
+      "out": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Result",
+       "bytes": "CA9CGQoPSXQgZGlkIG5vdCBydW4uEgZleGl0IDGaAgZjYWxsLTI="
+      },
+      "keys": [
+       "encoding",
+       "messageType",
+       "bytes"
+      ],
+      "theWiresOwnBytes": true,
+      "hex": "080f42190a0f497420646964206e6f742072756e2e12066578697420319a020663616c6c2d32"
+     }
+    ]
+   ]
+  },
+  "packing does not look at what it is given: any kind but a call is named a result, and the bytes are whatever the thing writes": {
+   "returned": [
+    [
+     "a result packed as a call",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": "mgIGY2FsbC0x"
+     }
+    ],
+    [
+     "a call packed as a result",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Result",
+      "bytes": "GgZjYWxsLTE="
+     }
+    ],
+    [
+     "a call packed as a reset",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Result",
+      "bytes": "GgZjYWxsLTE="
+     }
+    ],
+    [
+     "a call packed as no kind",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Result",
+      "bytes": "GgZjYWxsLTE="
+     }
+    ],
+    [
+     "a call packed as a kind in other letters",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Result",
+      "bytes": "GgZjYWxsLTE="
+     }
+    ],
+    [
+     "a thing that writes no bytes",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": ""
+     }
+    ],
+    [
+     "a thing that writes a plain list of numbers",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Result",
+      "bytes": "AQL/"
+     }
+    ],
+    [
+     "a thing that writes a part of a longer buffer",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": "CAcG"
+     }
+    ],
+    [
+     "a thing that writes words",
+     {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": "d29yZHM="
+     }
+    ]
+   ]
+  },
+  "packing a thing that cannot write itself is the runtime's error": {
+   "returned": [
+    [
+     "null",
+     {
+      "aRuntimeError": "TypeError"
+     }
+    ],
+    [
+     "a record with no way to write itself",
+     {
+      "aRuntimeError": "TypeError"
+     }
+    ]
+   ]
+  },
+  "unpacking a call and a result: the real messages come back, with all they held": {
+   "returned": {
+    "call": {
+     "type": "simeon.v1.ClientSideToolV2Call",
+     "toolCallId": "call-7",
+     "json": {
+      "tool": "CLIENT_SIDE_TOOL_V2_RUN_TERMINAL_COMMAND_V2",
+      "toolCallId": "call-7",
+      "timeoutMs": 1500.5,
+      "name": "run_terminal_cmd",
+      "rawArgs": "{\"command\":\"ls\"}",
+      "isLastMessage": true,
+      "internal": true
+     }
+    },
+    "aCallOfTheSameClass": true,
+    "equalToWhatWasPacked": true,
+    "result": {
+     "type": "simeon.v1.ClientSideToolV2Result",
+     "toolCallId": "call-7",
+     "json": {
+      "tool": "CLIENT_SIDE_TOOL_V2_RUN_TERMINAL_COMMAND_V2",
+      "error": {
+       "clientVisibleErrorMessage": "It did not run.",
+       "modelVisibleErrorMessage": "exit 1"
+      },
+      "toolCallId": "call-7"
+     }
+    },
+    "aResultOfTheSameClass": true,
+    "equalToWhatWasPackedToo": true
+   }
+  },
+  "unpacking: the envelope must say base64 of the wire's bytes, hold text, and name the message of its kind": {
+   "returned": [
+    [
+     "a call",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      }
+     }
+    ],
+    [
+     "a call with more fields than the three: taken",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      }
+     }
+    ],
+    [
+     "a result",
+     {
+      "type": "simeon.v1.ClientSideToolV2Result",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      }
+     }
+    ],
+    [
+     "a call offered as a result",
+     null
+    ],
+    [
+     "a result offered as a call",
+     null
+    ],
+    [
+     "a call's bytes under the result's name, offered as a result: no call id is found in them",
+     null
+    ],
+    [
+     "a result's bytes under the call's name, offered as a call",
+     null
+    ],
+    [
+     "a result offered as a reset: any kind but a call is read as a result",
+     {
+      "type": "simeon.v1.ClientSideToolV2Result",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      }
+     }
+    ],
+    [
+     "a result offered as no kind",
+     {
+      "type": "simeon.v1.ClientSideToolV2Result",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      }
+     }
+    ],
+    [
+     "a call offered as a kind in other letters",
+     null
+    ],
+    [
+     "the encoding the window is handed",
+     null
+    ],
+    [
+     "another encoding",
+     null
+    ],
+    [
+     "no encoding",
+     null
+    ],
+    [
+     "no message name",
+     null
+    ],
+    [
+     "a message name in other letters",
+     null
+    ],
+    [
+     "no bytes",
+     null
+    ],
+    [
+     "bytes that are bytes, not text",
+     null
+    ],
+    [
+     "bytes that are a number",
+     null
+    ],
+    [
+     "bytes of null",
+     null
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "unpacking: the text must be the one right base64 of bytes that are a message with a call id": {
+   "returned": [
+    [
+     "a call's bytes with no padding to them",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "c",
+      "json": {
+       "toolCallId": "c"
+      },
+      "writtenBackTheSame": true
+     }
+    ],
+    [
+     "a call's bytes with two padding signs",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "c1",
+      "json": {
+       "toolCallId": "c1"
+      },
+      "writtenBackTheSame": true
+     }
+    ],
+    [
+     "a call's bytes with one padding sign",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "c12",
+      "json": {
+       "toolCallId": "c12"
+      },
+      "writtenBackTheSame": true
+     }
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "the two padding signs left off",
+     null
+    ],
+    [
+     "the one padding sign left off",
+     null
+    ],
+    [
+     "a padding sign added to text that needs none",
+     null
+    ],
+    [
+     "four padding signs added to text that needs none",
+     null
+    ],
+    [
+     "three padding signs where there were two",
+     null
+    ],
+    [
+     "padding signs only",
+     null
+    ],
+    [
+     "a padding sign in the middle",
+     null
+    ],
+    [
+     "the web's own letters in place of + and /",
+     null
+    ],
+    [
+     "a space in place of a letter",
+     null
+    ],
+    [
+     "a line end after the text",
+     null
+    ],
+    [
+     "a line end in place of the last letter",
+     null
+    ],
+    [
+     "a line end in place of the last padding sign",
+     null
+    ],
+    [
+     "bits left over in the letter before two padding signs",
+     null
+    ],
+    [
+     "bits left over in the letter before one padding sign",
+     null
+    ],
+    [
+     "the last letter changed where there is no padding: the one right base64 of other bytes, here a call with another id",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "d",
+      "json": {
+       "toolCallId": "d"
+      },
+      "writtenBackTheSame": true
+     }
+    ],
+    [
+     "a call's id cut short",
+     null
+    ],
+    [
+     "a field of a kind the wire does not have",
+     null
+    ],
+    [
+     "a field with no number",
+     null
+    ],
+    [
+     "a call with an id of no letters",
+     null
+    ],
+    [
+     "a call with a name and no id",
+     null
+    ],
+    [
+     "a call with a field the message does not know: kept",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "call-1",
+      "json": {
+       "toolCallId": "call-1"
+      },
+      "writtenBackTheSame": true
+     }
+    ],
+    [
+     "a call whose id is written twice: the last one counts",
+     {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "second",
+      "json": {
+       "toolCallId": "second"
+      },
+      "writtenBackTheSame": false
+     }
+    ]
+   ]
+  },
+  "an event from the host: a call, a result and a reset as they are taken, key by key": {
+   "returned": [
+    [
+     "a call",
+     {
+      "taken": {
+       "version": 1,
+       "accountSlot": "host",
+       "agentId": "agent-1",
+       "epoch": "epoch-1",
+       "sequence": 1,
+       "kind": "call",
+       "message": {
+        "encoding": "protobuf-base64",
+        "messageType": "simeon.v1.ClientSideToolV2Call",
+        "bytes": "GgZjYWxsLTE="
+       }
+      },
+      "keys": [
+       "version",
+       "accountSlot",
+       "agentId",
+       "epoch",
+       "sequence",
+       "kind",
+       "message"
+      ],
+      "aNewObject": true,
+      "theVeryMessageGiven": true
+     }
+    ],
+    [
+     "a result",
+     {
+      "taken": {
+       "version": 1,
+       "accountSlot": "host",
+       "agentId": "agent-1",
+       "epoch": "epoch-1",
+       "sequence": 2,
+       "kind": "result",
+       "message": {
+        "encoding": "protobuf-base64",
+        "messageType": "simeon.v1.ClientSideToolV2Result",
+        "bytes": "mgIGY2FsbC0x"
+       }
+      },
+      "keys": [
+       "version",
+       "accountSlot",
+       "agentId",
+       "epoch",
+       "sequence",
+       "kind",
+       "message"
+      ],
+      "aNewObject": true,
+      "theVeryMessageGiven": true
+     }
+    ],
+    [
+     "a reset",
+     {
+      "taken": {
+       "version": 1,
+       "accountSlot": "host",
+       "agentId": "agent-1",
+       "epoch": "epoch-1",
+       "sequence": 3,
+       "kind": "reset"
+      },
+      "keys": [
+       "version",
+       "accountSlot",
+       "agentId",
+       "epoch",
+       "sequence",
+       "kind"
+      ],
+      "aNewObject": true,
+      "theVeryMessageGiven": "none"
+     }
+    ]
+   ]
+  },
+  "an event from the host: what else it holds is dropped, but its message is handed on as it came": {
+   "returned": [
+    {
+     "version": 1,
+     "accountSlot": "host",
+     "agentId": "agent-1",
+     "epoch": "epoch-1",
+     "sequence": 1,
+     "kind": "call",
+     "message": {
+      "encoding": "protobuf-base64",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": "GgZjYWxsLTE=",
+      "extra": "kept"
+     }
+    },
+    {
+     "version": 1,
+     "accountSlot": "host",
+     "agentId": "agent-1",
+     "epoch": "epoch-1",
+     "sequence": 1,
+     "kind": "reset"
+    }
+   ]
+  },
+  "an event from the host: what is taken and what is refused, field by field": {
+   "returned": [
+    [
+     "version 1 written with a point",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "GgZjYWxsLTE="
+      }
+     }
+    ],
+    [
+     "version 2",
+     null
+    ],
+    [
+     "version 0",
+     null
+    ],
+    [
+     "a version as words",
+     null
+    ],
+    [
+     "a version of true",
+     null
+    ],
+    [
+     "no version",
+     null
+    ],
+    [
+     "an account slot that is not the host's: taken here",
+     {
+      "version": 1,
+      "accountSlot": "other",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "GgZjYWxsLTE="
+      }
+     }
+    ],
+    [
+     "an empty account slot",
+     null
+    ],
+    [
+     "no account slot",
+     null
+    ],
+    [
+     "an account slot that is a number",
+     null
+    ],
+    [
+     "an empty agent id",
+     null
+    ],
+    [
+     "no agent id",
+     null
+    ],
+    [
+     "an agent id of null",
+     null
+    ],
+    [
+     "an empty epoch",
+     null
+    ],
+    [
+     "no epoch",
+     null
+    ],
+    [
+     "an epoch that is a number",
+     null
+    ],
+    [
+     "sequence 1",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "GgZjYWxsLTE="
+      }
+     }
+    ],
+    [
+     "the largest whole number that is safe",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 9007199254740991,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "GgZjYWxsLTE="
+      }
+     }
+    ],
+    [
+     "one more than that",
+     null
+    ],
+    [
+     "sequence 0",
+     null
+    ],
+    [
+     "a sequence below zero",
+     null
+    ],
+    [
+     "a sequence in halves",
+     null
+    ],
+    [
+     "a sequence as words",
+     null
+    ],
+    [
+     "a sequence that is no number",
+     null
+    ],
+    [
+     "a sequence without end",
+     null
+    ],
+    [
+     "a sequence of null",
+     null
+    ],
+    [
+     "no sequence",
+     null
+    ],
+    [
+     "a sequence of minus zero",
+     null
+    ],
+    [
+     "a sequence that is a big whole number of another kind",
+     null
+    ],
+    [
+     "an event whose fields are all only inherited: taken, as an object of its own fields",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "GgZjYWxsLTE="
+      }
+     }
+    ],
+    [
+     "a kind in other letters",
+     null
+    ],
+    [
+     "an empty kind",
+     null
+    ],
+    [
+     "no kind",
+     null
+    ],
+    [
+     "a kind that is a number",
+     null
+    ],
+    [
+     "a call with no message",
+     null
+    ],
+    [
+     "a call with a result's message",
+     null
+    ],
+    [
+     "a result with a call's message",
+     null
+    ],
+    [
+     "a call whose message has no call id",
+     null
+    ],
+    [
+     "a call whose message is not the one right base64",
+     null
+    ],
+    [
+     "a reset with a bad sequence",
+     null
+    ],
+    [
+     "a reset with no epoch",
+     null
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "an event for the window: the message's bytes are unpacked from base64, and the message is named plain protobuf": {
+   "returned": {
+    "made": {
+     "version": 1,
+     "accountSlot": "host",
+     "agentId": "agent-1",
+     "epoch": "epoch-1",
+     "sequence": 1,
+     "kind": "call",
+     "message": {
+      "encoding": "protobuf",
+      "messageType": "simeon.v1.ClientSideToolV2Call",
+      "bytes": {
+       "$": "bytes",
+       "v": "1a0663616c6c2d314a09726561645f66696c65"
+      }
+     }
+    },
+    "keys": [
+     "version",
+     "accountSlot",
+     "agentId",
+     "epoch",
+     "sequence",
+     "kind",
+     "message"
+    ],
+    "messageKeys": [
+     "encoding",
+     "messageType",
+     "bytes"
+    ],
+    "bytesAreANodeBuffer": true,
+    "theWiresOwnBytes": true,
+    "whatWasGivenIsUntouched": true,
+    "aMessageOfItsOwn": true
+   }
+  },
+  "an event for the window: a result is made the same way, a reset is handed on as it was taken, and what is refused stays refused": {
+   "returned": [
+    [
+     "a result",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 9,
+      "kind": "result",
+      "message": {
+       "encoding": "protobuf",
+       "messageType": "simeon.v1.ClientSideToolV2Result",
+       "bytes": {
+        "$": "bytes",
+        "v": "9a020663616c6c2d310805"
+       }
+      }
+     }
+    ],
+    [
+     "a reset",
+     {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "reset"
+     }
+    ],
+    [
+     "a call with sequence 0",
+     null
+    ],
+    [
+     "a call with a bad message",
+     null
+    ],
+    [
+     "an event already made for the window",
+     null
+    ],
+    [
+     "nothing",
+     null
+    ],
+    [
+     "null",
+     null
+    ],
+    [
+     "a list",
+     null
+    ],
+    [
+     "a list of one record",
+     null
+    ],
+    [
+     "words",
+     null
+    ],
+    [
+     "a number",
+     null
+    ],
+    [
+     "true",
+     null
+    ],
+    [
+     "a function",
+     null
+    ]
+   ]
+  },
+  "from the host to the window and read again: a call, its result, then a reset, in the order they were sent": {
+   "returned": [
+    {
+     "taken": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": "CAUaBmNhbGwtMUILCglub3Rlcy50eHRKCXJlYWRfZmlsZVIUeyJwYXRoIjoibm90ZXMudHh0In0="
+      }
+     },
+     "forTheWindow": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 1,
+      "kind": "call",
+      "message": {
+       "encoding": "protobuf",
+       "messageType": "simeon.v1.ClientSideToolV2Call",
+       "bytes": {
+        "$": "bytes",
+        "v": "08051a0663616c6c2d31420b0a096e6f7465732e7478744a09726561645f66696c6552147b2270617468223a226e6f7465732e747874227d"
+       }
+      }
+     },
+     "readAgain": {
+      "type": "simeon.v1.ClientSideToolV2Call",
+      "toolCallId": "call-1",
+      "json": {
+       "tool": "CLIENT_SIDE_TOOL_V2_READ_FILE",
+       "toolCallId": "call-1",
+       "readFileParams": {
+        "relativeWorkspacePath": "notes.txt"
+       },
+       "name": "read_file",
+       "rawArgs": "{\"path\":\"notes.txt\"}"
+      }
+     },
+     "equalToWhatWasSent": true
+    },
+    {
+     "taken": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 2,
+      "kind": "result",
+      "message": {
+       "encoding": "protobuf-base64",
+       "messageType": "simeon.v1.ClientSideToolV2Result",
+       "bytes": "CAUyBwoFaGVsbG+aAgZjYWxsLTE="
+      }
+     },
+     "forTheWindow": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 2,
+      "kind": "result",
+      "message": {
+       "encoding": "protobuf",
+       "messageType": "simeon.v1.ClientSideToolV2Result",
+       "bytes": {
+        "$": "bytes",
+        "v": "080532070a0568656c6c6f9a020663616c6c2d31"
+       }
+      }
+     },
+     "readAgain": {
+      "type": "simeon.v1.ClientSideToolV2Result",
+      "toolCallId": "call-1",
+      "json": {
+       "tool": "CLIENT_SIDE_TOOL_V2_READ_FILE",
+       "readFileResult": {
+        "contents": "hello"
+       },
+       "toolCallId": "call-1"
+      }
+     },
+     "equalToWhatWasSent": true
+    },
+    {
+     "taken": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 3,
+      "kind": "reset"
+     },
+     "forTheWindow": {
+      "version": 1,
+      "accountSlot": "host",
+      "agentId": "agent-1",
+      "epoch": "epoch-1",
+      "sequence": 3,
+      "kind": "reset"
+     }
+    }
+   ]
+  },
+  "how often each field is read: unpacking a message, taking an event, making one for the window": {
+   "returned": [
+    [
+     "unpacking a call",
+     true,
+     [
+      "message.encoding",
+      "message.bytes",
+      "message.messageType",
+      "message.bytes"
+     ]
+    ],
+    [
+     "unpacking a call offered as a result",
+     false,
+     [
+      "message.encoding",
+      "message.bytes",
+      "message.messageType"
+     ]
+    ],
+    [
+     "unpacking with the wrong encoding",
+     false,
+     [
+      "message.encoding"
+     ]
+    ],
+    [
+     "taking a call",
+     true,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.sequence",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.kind",
+      "event.kind",
+      "event.kind",
+      "event.message",
+      "event.message.encoding",
+      "event.message.bytes",
+      "event.message.messageType",
+      "event.message.bytes",
+      "event.kind",
+      "event.message"
+     ]
+    ],
+    [
+     "taking a reset",
+     true,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.sequence",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.kind"
+     ]
+    ],
+    [
+     "taking an event of an unknown kind",
+     false,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.sequence",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.kind",
+      "event.kind",
+      "event.kind"
+     ]
+    ],
+    [
+     "taking an event with an empty agent id",
+     false,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId"
+     ]
+    ],
+    [
+     "taking an event with sequence 0",
+     false,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.sequence"
+     ]
+    ],
+    [
+     "making a call for the window",
+     true,
+     [
+      "event.version",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.sequence",
+      "event.accountSlot",
+      "event.agentId",
+      "event.epoch",
+      "event.sequence",
+      "event.kind",
+      "event.kind",
+      "event.kind",
+      "event.message",
+      "event.message.encoding",
+      "event.message.bytes",
+      "event.message.messageType",
+      "event.message.bytes",
+      "event.kind",
+      "event.message",
+      "event.message.messageType",
+      "event.message.bytes"
+     ]
+    ]
+   ]
+  }
+ }
+}
