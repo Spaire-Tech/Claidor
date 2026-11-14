@@ -1,28 +1,9 @@
 /** Where the person's settings folder is, and the permissions files read from it and from a project: which commands and tools run unasked, and the instructions for what else may. */
 import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
-import { createRequire, registerHooks } from "node:module";
 import path from "node:path";
 
 export const part = "packages/simeon-config";
 
-/**
- * The part reads its files with the jsonc-parser package, whose default entry
- * asks for its own files by relative path (`require("./impl/format")`) from
- * inside a wrapper the build cannot see through. Built into the harness's
- * temporary folder, that entry looks for them beside the built file and the
- * part fails to load (MODULE_NOT_FOUND). Such a request from the harness's
- * built files is answered here with the package's own file. The engine's
- * real builds name the package's other entry for the same reason
- * (`scripts/build-simeon.mjs`); were the harness to do so, this would never
- * be asked and can go.
- */
-const jsoncParserFiles = path.dirname(createRequire(import.meta.url).resolve("jsonc-parser"));
-registerHooks({
-  resolve(specifier, context, nextResolve) {
-    const fromTheHarness = specifier.startsWith("./impl/") && /[\\/]simeon-recorded-[^\\/]+[\\/][^\\/]+\.mjs(\?.*)?$/.test(context.parentURL ?? "");
-    return nextResolve(fromTheHarness ? path.join(jsoncParserFiles, specifier) : specifier, context);
-  },
-});
 export const modules = {
   paths: "source/packages/simeon-config/paths.ts",
   project: "source/packages/simeon-config/project-permissions-file-provider.ts",

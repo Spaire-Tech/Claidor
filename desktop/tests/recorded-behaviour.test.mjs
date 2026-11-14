@@ -4,10 +4,29 @@
  * and how its answers are kept).
  */
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
 import { answerOf, loadModules, measuring, readAnswers, recordedDir, recording, scenarioFiles, surfaceOf, tracked, writeAnswers } from "./recorded/harness.mjs";
+
+test("recorded: a part is built here as the engine's own build makes it", async () => {
+  const { ENGINE_BUILD, desktopRoot } = await import("./recorded/harness.mjs");
+  const script = await readFile(path.join(desktopRoot, "scripts", "build-simeon.mjs"), "utf8");
+  const process = script.slice(script.indexOf("async function bundleProcess"), script.indexOf("/**", script.indexOf("async function bundleProcess")));
+  for (const line of [
+    `platform: "${ENGINE_BUILD.platform}",`,
+    `target: "${ENGINE_BUILD.target}",`,
+    `format: "${ENGINE_BUILD.format}",`,
+    "external: EXTERNAL,",
+    `alias: { "jsonc-parser": "${ENGINE_BUILD.alias["jsonc-parser"]}" },`,
+    `banner: { js: '${ENGINE_BUILD.banner.js}' },`,
+    `"process.env.SIMEON_BUILD": JSON.stringify("clean-source"),`,
+    `"import.meta.url": "__import_meta_url",`,
+  ]) assert.ok(process.includes(line), `scripts/build-simeon.mjs no longer says \`${line}\`: tests/recorded/harness.mjs (ENGINE_BUILD) must follow it`);
+  const listed = script.slice(script.indexOf("const EXTERNAL = ["), script.indexOf("];", script.indexOf("const EXTERNAL = [")));
+  assert.deepEqual([...listed.matchAll(/"([^"]+)"/g)].map((found) => found[1]), ENGINE_BUILD.external, "the packages left outside the build are the engine build's");
+});
 
 /** The answers as they are written to the file: what is compared, order of keys included. */
 const written = (value) => JSON.stringify(value, null, 1);

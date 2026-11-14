@@ -25,15 +25,23 @@
  *   here proves; the part's files are the ones under `source/<part>/`, or
  *   the ones it names in `covers`.
  *
+ * A part is built here the way the engine itself is built
+ * (`scripts/build-simeon.mjs`): one CommonJS file for Node 22 and later, the
+ * same packages left outside, the same stand-ins for `import.meta.url` and
+ * `process.env.SIMEON_BUILD`, the same entry for jsonc-parser. What a
+ * scenario sees is then what the shipped engine does, not what the source
+ * would do under another build. The test fails when the two builds drift.
+ *
  * Scenarios use stand-ins only: no network, no real account, nothing outside
  * a temporary folder.
  */
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import inspector from "node:inspector/promises";
+import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { SourceMapConsumer } from "source-map-js";
 
@@ -70,29 +78,49 @@ export function measuring(part) {
 }
 
 /**
- * The part's modules, built together so that what one defines is the very
- * thing another uses (a key, a class), and loaded once. With `measure`, what
- * runs from now on is counted, and `coverage()` answers it per source file.
+ * How the engine's own build makes a process's file (`bundleProcess` in
+ * `scripts/build-simeon.mjs`), kept word for word the same here.
+ */
+export const ENGINE_BUILD = Object.freeze({
+  platform: "node",
+  target: "node22",
+  format: "cjs",
+  external: ["electron", "tree-sitter", "tree-sitter-bash", "web-tree-sitter", "node-gyp-build", "node-addon-api", "piscina"],
+  alias: { "jsonc-parser": "jsonc-parser/lib/esm/main.js" },
+  banner: { js: 'const __import_meta_url = require("node:url").pathToFileURL(__filename).href;' },
+  define: {
+    "process.env.SIMEON_BUILD": JSON.stringify("clean-source"),
+    "import.meta.url": "__import_meta_url",
+  },
+});
+
+/**
+ * The part's modules, built into one file so that what one defines is the
+ * very thing another uses (a key, a class), and loaded once. With `measure`,
+ * what runs from now on is counted, and `coverage()` answers it per source
+ * file.
  */
 export async function loadModules(modules, { measure = false } = {}) {
   const root = sourceRoot();
   const out = await mkdtemp(path.join(os.tmpdir(), "simeon-recorded-"));
-  const entryPoints = Object.fromEntries(Object.entries(modules).map(([key, file]) => [key, path.join(root, file)]));
+  for (const key of Object.keys(modules)) {
+    if (!/^[A-Za-z_$][\w$]*$/.test(key)) throw new Error(`a module's short name is a plain word, not "${key}"`);
+  }
+  const built = path.join(out, "part.cjs");
   await build({
-    entryPoints,
-    outdir: out,
+    ...ENGINE_BUILD,
+    stdin: {
+      contents: Object.entries(modules).map(([key, file]) => `export * as ${key} from ${JSON.stringify(path.join(root, file))};`).join("\n"),
+      loader: "ts",
+      resolveDir: root,
+      sourcefile: "recorded-part.ts",
+    },
+    outfile: built,
     bundle: true,
-    splitting: true,
-    format: "esm",
-    platform: "node",
-    target: "node22",
     logLevel: "silent",
-    external: ["electron"],
     sourcemap: measure ? "external" : false,
-    outExtension: { ".js": ".mjs" },
     // Another checkout has no packages of its own: they are this checkout's.
     nodePaths: [path.join(desktopRoot, "node_modules")],
-    banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
   });
   let session;
   if (measure) {
@@ -101,8 +129,8 @@ export async function loadModules(modules, { measure = false } = {}) {
     await session.post("Profiler.enable");
     await session.post("Profiler.startPreciseCoverage", { callCount: true, detailed: true });
   }
-  const loaded = {};
-  for (const key of Object.keys(modules)) loaded[key] = await import(`${pathToFileURL(path.join(out, `${key}.mjs`)).href}?${Date.now()}`);
+  const whole = createRequire(import.meta.url)(built);
+  const loaded = Object.fromEntries(Object.keys(modules).map((key) => [key, whole[key]]));
   return {
     loaded,
     /** Per source file (relative to the checkout's desktop folder): how many pieces of code it holds, and where those that never ran are. */
@@ -124,8 +152,7 @@ export async function loadModules(modules, { measure = false } = {}) {
 async function linesRun({ result }, out, root) {
   const files = {};
   for (const script of result) {
-    if (!script.url.startsWith("file:")) continue;
-    const built = fileURLToPath(script.url.split("?")[0]);
+    const built = script.url.startsWith("file:") ? fileURLToPath(script.url.split("?")[0]) : script.url;
     if (!built.startsWith(out + path.sep) || !existsSync(`${built}.map`)) continue;
     const text = await readFile(built, "utf8");
     // How often each character of the built file ran: an inner range says more than the one around it.
