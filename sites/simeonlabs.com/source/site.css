@@ -36,9 +36,9 @@
 body{font-family:var(--font)}
 
 /* The bar at the top of every page (nav.py writes it), in the reference's layout (the founder, 30 October 2026):
-   the wordmark, then Products, Solutions and Resources with their arrows, Connectors and Pricing beside it, in
-   the ink; Contact Sales in the grey and Download in the black on the right. Products and Solutions open nothing
-   yet; Resources drops Marketplace and Newsroom on a hover or a tap (:focus-within), with no script. The
+   the wordmark, then Product, Solutions, Connectors and Resources with their arrows and Pricing beside them, in
+   the ink; Contact Sales in the grey and Download in the black on the right. Each menu drops on a hover or a tap
+   (:focus-within), with no script. The
    wordmark's image has 85/1585 of empty space on its left, so the letters start on the column's edge. Under
    1024 points a menu button takes the links' and buttons' place and drops them over the whole page. */
 .bar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);padding-top:env(safe-area-inset-top,0px)}
@@ -56,6 +56,20 @@ body{font-family:var(--font)}
 .drops:hover .arrow,.drops:focus-within .arrow{transform:rotate(180deg)}
 .drop-panel a{padding:9px 12px;border-radius:10px;color:var(--ink);font-size:var(--t-nav);letter-spacing:-.01em;text-decoration:none}
 .drop-panel a:hover,.drop-panel a[aria-current]{background:var(--soft,#f5f5f7)}
+/* Solutions and Connectors (14 November 2026): a wide panel under the bar's links, from their left edge, of three
+   columns of groups, each a grey name over a line, then its items with their icon (a team's drawing, nav.py's
+   SOLUTION_ICONS, or a connector's icon), and a last link to the whole list. */
+.bar .bar-links{position:relative}
+.drops:has(.mega){position:static}
+.drop-panel.mega{left:-20px;min-width:0;width:min(740px,calc(100vw - 2*var(--gutter,20px)));padding:22px 22px 16px}
+.mg-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 28px}
+.mg-g{display:flex;flex-direction:column;min-width:0}
+.mg-h{margin:0 0 6px;padding:0 6px 9px;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;line-height:1.2;color:#6e6e73;letter-spacing:-.005em}
+.drop-panel a.mg-i{display:flex;align-items:center;gap:11px;padding:7px 6px;font-size:15px;line-height:1.25}
+.mg-i img{width:20px;height:20px;flex:none;border-radius:5px;object-fit:cover}
+.mg-i svg{width:20px;height:20px;flex:none}
+.drop-panel a.mg-more{align-self:flex-start;margin-top:14px;padding:8px 6px 4px;font-size:14px;color:var(--ink)}
+.drop-panel a.mg-more:hover{background:none;opacity:.6}
 .bar .acts{margin-left:auto;display:flex;align-items:center;gap:clamp(8px,.6*var(--vw),12px)}
 .bar .btn,.menu-acts .btn{display:inline-flex;align-items:center;justify-content:center;height:clamp(34px,2.5*var(--vw),44px);padding:0 clamp(14px,1.1*var(--vw),22px);border-radius:99px;background:#000;color:#fff;font-size:var(--t-nav);font-weight:400;letter-spacing:-.01em;white-space:nowrap;text-decoration:none;transition:background .2s}
 .bar .btn:hover,.menu-acts .btn:hover{background:#2b2b2d}
@@ -86,6 +100,13 @@ html.on-windows .btn.for-mac,html.on-windows .btn.go{display:none!important}
   .menu-group[open]>summary .arrow{transform:rotate(180deg)}
   .menu-group>div{display:flex;flex-direction:column;padding:2px 0 10px 2px}
   .menu-group>div a{padding:7px 0;font-size:20px;letter-spacing:-.01em;color:var(--ink2);text-decoration:none}
+  .menu-group .mg-cols{display:flex;flex-direction:column;gap:14px}
+  .menu-group .mg-g{display:flex;flex-direction:column}
+  .menu-group .mg-h{margin:6px 0 2px;font-size:13px;color:#6e6e73}
+  .menu-group>div a.mg-i{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:18px}
+  .menu-group .mg-i img{width:24px;height:24px;flex:none;border-radius:6px;object-fit:cover}
+  .menu-group .mg-i svg{width:24px;height:24px;flex:none}
+  .menu-group>div a.mg-more{margin-top:8px;font-size:17px;color:var(--ink)}
   .menu-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
   .menu-acts .btn{height:48px;padding:0 24px;font-size:17px}
   .bar:has(.menu[open]){background:var(--page,#fff)} /* the open menu and the bar are one white page */
