@@ -91,7 +91,7 @@ export async function retrySqliteBusy<T>(
 ): Promise<T> {
   const tries = Math.max(1, options.attempts ?? DEFAULT_TRIES);
   const firstWait = options.baseDelayMs ?? DEFAULT_FIRST_WAIT_MS;
-  const wait = options.delay ?? onTheClock;
+  const sleep = options.delay ?? onTheClock;
   let lastLock: unknown;
   for (let made = 0; made < tries; made += 1) {
     try {
@@ -101,7 +101,7 @@ export async function retrySqliteBusy<T>(
       lastLock = error;
     }
     // No wait after the last try: there is nothing left to wait for.
-    if (made < tries - 1) await wait(firstWait * 2 ** made);
+    if (made < tries - 1) await sleep(firstWait * 2 ** made);
   }
   throw lastLock;
 }

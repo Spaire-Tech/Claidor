@@ -64,10 +64,11 @@ export function removeSqliteDb(options: {
   attempts?: number | undefined;
   retryDelayMs?: number | undefined;
 }): void {
-  const { dbPath, attempts, retryDelayMs } = options;
-  removePathWithRetries({ path: dbPath, attempts, retryDelayMs });
+  const dbPath = options.dbPath;
+  const tries = { attempts: options.attempts, retryDelayMs: options.retryDelayMs };
+  removePathWithRetries({ path: dbPath, ...tries });
   for (const suffix of SQLITE_DB_SIDECAR_SUFFIXES) {
-    removePathWithRetries({ path: `${dbPath}${suffix}`, attempts, retryDelayMs, recursive: true });
+    removePathWithRetries({ path: `${dbPath}${suffix}`, ...tries, recursive: true });
   }
 }
 
@@ -151,8 +152,8 @@ export function quarantineCorruptSqliteDb(options: {
   removeAttempts?: number | undefined;
   removeRetryDelayMs?: number | undefined;
 }): { quarantinePath: string | null; copied: boolean; renameErrorCode: string | null } {
-  const { dbPath } = options;
-  const asidePath = options.quarantinePath ?? `${dbPath}.corrupt-${momentForAFileName()}`;
+  const asidePath = options.quarantinePath ?? `${options.dbPath}.corrupt-${momentForAFileName()}`;
+  const dbPath = options.dbPath;
   clearPlaceFor(asidePath);
 
   const renameErrorCode = moveOrSayWhyNot(dbPath, asidePath);
@@ -207,9 +208,10 @@ function openAndAsk(dbPath: string, busyTimeoutMs: number | undefined): Database
  * there or cannot be opened at all.
  */
 export function openSqliteForSalvage(options: { dbPath: string; busyTimeoutMs?: number }): DatabaseSync | undefined {
-  const { dbPath, busyTimeoutMs } = options;
+  const dbPath = options.dbPath;
   if (!existsSync(dbPath)) return undefined;
 
+  const busyTimeoutMs = options.busyTimeoutMs;
   const asItIs = openAndAsk(dbPath, busyTimeoutMs);
   if (asItIs !== undefined) return asItIs;
 
