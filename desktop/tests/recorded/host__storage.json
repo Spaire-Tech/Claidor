@@ -1,0 +1,3730 @@
+{
+ "part": "host/storage",
+ "surface": {
+  "busy": {
+   "SQLITE_BUSY": "number",
+   "SQLITE_CANTOPEN": "number",
+   "SQLITE_CORRUPT": "number",
+   "SQLITE_IOERR": "number",
+   "SQLITE_LOCKED": "number",
+   "SQLITE_NOTADB": "number",
+   "isSqliteBusyError": "function",
+   "isSqliteCantOpenError": "function",
+   "isSqliteCorruptError": "function",
+   "isSqliteIoError": "function",
+   "retrySqliteBusy": "function"
+  },
+  "folderId": {
+   "isSafeFolderId": "function"
+  },
+  "agentPaths": {
+   "SandInvalidAgentIdError": "class",
+   "assertValidSandAgentId": "function",
+   "getSandAgentsRootDir": "function",
+   "resolveSandAgentDir": "function"
+  },
+  "storeDb": {
+   "DB_BUSY_TIMEOUT_MS": "number",
+   "SQLITE_DB_SIDECAR_SUFFIXES": "array",
+   "bumpDbWriteGeneration": "function",
+   "checkpointSandAgentDb": "function",
+   "deleteSandAgentDbWriteGeneration": "function",
+   "getSandAgentDbWriteGeneration": "function",
+   "hasLiveSandAgentDbHandle": "function",
+   "liveDbHandleCount": "function",
+   "registerLiveDbHandle": "function",
+   "releaseLiveDbHandle": "function",
+   "walFramesFullyFolded": "function"
+  },
+  "recovery": {
+   "copySalvageableSqliteRows": "function",
+   "openSqliteForSalvage": "function",
+   "quarantineCorruptSqliteDb": "function",
+   "removePathWithRetries": "function",
+   "removeSqliteDb": "function",
+   "removeSqliteSidecars": "function"
+  }
+ },
+ "scenarios": {
+  "SQLite's result codes are kept by their own numbers": {
+   "returned": {
+    "SQLITE_BUSY": 5,
+    "SQLITE_LOCKED": 6,
+    "SQLITE_IOERR": 10,
+    "SQLITE_CORRUPT": 11,
+    "SQLITE_CANTOPEN": 14,
+    "SQLITE_NOTADB": 26
+   }
+  },
+  "a locked database is told by the codes 5 and 6 exactly, or by three phrases in its words": {
+   "returned": {
+    "asked": 85,
+    "yes": [
+     "code 5",
+     "code 6",
+     "words \"database is locked\"",
+     "words \"database table is locked\"",
+     "words \"database schema is locked\"",
+     "words \"Database Is Locked\"",
+     "words \"SQLITE_BUSY: database is locked (5)\"",
+     "a TypeError with code 5",
+     "a code that does not match, with words that do: locked"
+    ]
+   }
+  },
+  "a failed read or write is told by the low byte of its code being 10, or by two phrases in its words": {
+   "returned": {
+    "asked": 85,
+    "yes": [
+     "code 10",
+     "code 266",
+     "code 5898",
+     "code 4294967306",
+     "code -246",
+     "code 10.5",
+     "words \"disk I/O error\"",
+     "words \"disk i/o error\"",
+     "words \"DISK I/O ERROR while reading\"",
+     "words \"short read\"",
+     "words \"a Short Read of 12 bytes\"",
+     "words \"short reads\"",
+     "a TypeError with code 10",
+     "a code that does not match, with words that do: read"
+    ]
+   }
+  },
+  "a file that will not open is told by the low byte of its code being 14, or by one phrase in its words": {
+   "returned": {
+    "asked": 85,
+    "yes": [
+     "code 14",
+     "code 270",
+     "code 14.5",
+     "words \"unable to open database file\"",
+     "words \"Unable To Open Database\"",
+     "a TypeError with code 14",
+     "a code that does not match, with words that do: open"
+    ]
+   }
+  },
+  "a damaged database is told by the low byte of its code being 11 or 26, or by three phrases in its words": {
+   "returned": {
+    "asked": 85,
+    "yes": [
+     "code 11",
+     "code 26",
+     "code 267",
+     "code 282",
+     "code 523",
+     "code 11.5",
+     "code 26.5",
+     "words \"database disk image is malformed\"",
+     "words \"malformed\"",
+     "words \"MALFORMED JSON at 3\"",
+     "words \"file is not a database\"",
+     "words \"this is not a database at all\"",
+     "words \"the database disk image was replaced\"",
+     "a TypeError with code 11",
+     "a code that does not match, with words that do: damaged"
+    ]
+   }
+  },
+  "an error whose words are not a text is still told by its code, but for a damaged database": {
+   "returned": {
+    "locked": {
+     "its own code, words a number": {
+      "returned": true
+     },
+     "its own code, no words at all": {
+      "returned": true
+     },
+     "another code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words null": {
+      "threwA": "TypeError"
+     }
+    },
+    "readOrWrite": {
+     "its own code, words a number": {
+      "returned": true
+     },
+     "its own code, no words at all": {
+      "returned": true
+     },
+     "another code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words null": {
+      "threwA": "TypeError"
+     }
+    },
+    "cannotOpen": {
+     "its own code, words a number": {
+      "returned": true
+     },
+     "its own code, no words at all": {
+      "returned": true
+     },
+     "another code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words null": {
+      "threwA": "TypeError"
+     }
+    },
+    "damaged": {
+     "its own code, words a number": {
+      "threwA": "TypeError"
+     },
+     "its own code, no words at all": {
+      "threwA": "TypeError"
+     },
+     "another code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words a number": {
+      "threwA": "TypeError"
+     },
+     "no code, words null": {
+      "threwA": "TypeError"
+     }
+    },
+    "sixIsLockedToo": {
+     "returned": true
+    },
+    "twentySixIsDamagedToo": {
+     "threwA": "TypeError"
+    }
+   }
+  },
+  "SQLite's own errors, from databases locked and damaged on purpose, are told apart": {
+   "returned": {
+    "a file another connection holds": {
+     "errcode": 5,
+     "words": "database is locked",
+     "locked": true,
+     "readOrWrite": false,
+     "cannotOpen": false,
+     "damaged": false
+    },
+    "a table dropped while it is read": {
+     "errcode": 6,
+     "words": "database table is locked",
+     "locked": true,
+     "readOrWrite": false,
+     "cannotOpen": false,
+     "damaged": false
+    },
+    "a file of words": {
+     "errcode": 26,
+     "words": "file is not a database",
+     "locked": false,
+     "readOrWrite": false,
+     "cannotOpen": false,
+     "damaged": true
+    },
+    "a folder": {
+     "errcode": 14,
+     "words": "unable to open database file",
+     "locked": false,
+     "readOrWrite": false,
+     "cannotOpen": true,
+     "damaged": false
+    },
+    "a database with a wiped page": {
+     "errcode": 11,
+     "words": "database disk image is malformed",
+     "locked": false,
+     "readOrWrite": false,
+     "cannotOpen": false,
+     "damaged": true
+    },
+    "a folder where the journal should be": {
+     "errcode": 266,
+     "words": "disk I/O error",
+     "locked": false,
+     "readOrWrite": true,
+     "cannotOpen": false,
+     "damaged": false
+    },
+    "a folder where the write-ahead log should be": {
+     "errcode": 14,
+     "words": "unable to open database file",
+     "locked": false,
+     "readOrWrite": false,
+     "cannotOpen": true,
+     "damaged": false
+    }
+   }
+  },
+  "work that succeeds is done once, with nothing passed to it and no wait": {
+   "returned": {
+    "no options at all": {
+     "returned": "done",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "a value that is not a promise": {
+     "returned": 0,
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "a promise": {
+     "returned": {
+      "rows": 2
+     },
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "undefined": {
+     "returned": {
+      "$": "undefined"
+     },
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    }
+   }
+  },
+  "work that finds the database locked is tried five times, waiting 100, 200, 400 and 800 ms between": {
+   "returned": {
+    "locked every time": {
+     "threw": "the error of call 5",
+     "calls": 5,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ],
+      [
+       400
+      ],
+      [
+       800
+      ]
+     ]
+    },
+    "locked by its words every time": {
+     "threw": "the error of call 5",
+     "calls": 5,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ],
+      [
+       400
+      ],
+      [
+       800
+      ]
+     ]
+    },
+    "locked twice, then done": {
+     "returned": "done",
+     "calls": 3,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ]
+     ]
+    },
+    "locked four times, then done": {
+     "returned": "done",
+     "calls": 5,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ],
+      [
+       400
+      ],
+      [
+       800
+      ]
+     ]
+    },
+    "a promise that fails as locked, then done": {
+     "returned": "done",
+     "calls": 2,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ]
+     ]
+    }
+   }
+  },
+  "any other failure is thrown at once, the first time or after waits": {
+   "returned": {
+    "another failure first": {
+     "threw": "the error of call 1",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "locked, then another failure": {
+     "threw": "the error of call 2",
+     "calls": 2,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ]
+     ]
+    },
+    "a failure that is not an error": {
+     "threw": "database is locked"
+    },
+    "a wait that fails": {
+     "threwTheWaitsOwnError": true,
+     "calls": 1
+    }
+   }
+  },
+  "the number of tries is at least one, and what is not a number of tries is taken as it comes": {
+   "returned": {
+    "attempts undefined": {
+     "threw": "the error of call 5",
+     "calls": 5,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ],
+      [
+       400
+      ],
+      [
+       800
+      ]
+     ]
+    },
+    "attempts null": {
+     "threw": "the error of call 5",
+     "calls": 5,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ],
+      [
+       400
+      ],
+      [
+       800
+      ]
+     ]
+    },
+    "attempts 1": {
+     "threw": "the error of call 1",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "attempts 0": {
+     "threw": "the error of call 1",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "attempts -1": {
+     "threw": "the error of call 1",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "attempts 2": {
+     "threw": "the error of call 2",
+     "calls": 2,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ]
+     ]
+    },
+    "attempts 3": {
+     "threw": "the error of call 3",
+     "calls": 3,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ]
+     ]
+    },
+    "attempts 2.5": {
+     "threw": "the error of call 3",
+     "calls": 3,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ]
+     ]
+    },
+    "attempts 1.5": {
+     "threw": "the error of call 2",
+     "calls": 2,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ]
+     ]
+    },
+    "attempts NaN": {
+     "threw": {
+      "notAnError": "undefined"
+     },
+     "calls": 0,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "attempts \"3\"": {
+     "threw": "the error of call 3",
+     "calls": 3,
+     "argsSeen": 0,
+     "waits": [
+      [
+       100
+      ],
+      [
+       200
+      ]
+     ]
+    },
+    "attempts -Infinity": {
+     "threw": "the error of call 1",
+     "calls": 1,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "attempts without end, done on the seventh try": {
+     "returned": "done",
+     "calls": 7,
+     "argsSeen": 0,
+     "waits": [
+      [
+       1
+      ],
+      [
+       2
+      ],
+      [
+       4
+      ],
+      [
+       8
+      ],
+      [
+       16
+      ],
+      [
+       32
+      ]
+     ]
+    }
+   }
+  },
+  "each wait is the first one doubled, whatever the first one is": {
+   "returned": {
+    "first wait undefined": [
+     100,
+     200,
+     400,
+     800
+    ],
+    "first wait null": [
+     100,
+     200,
+     400,
+     800
+    ],
+    "first wait 0": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "first wait 1": [
+     1,
+     2,
+     4,
+     8
+    ],
+    "first wait 7": [
+     7,
+     14,
+     28,
+     56
+    ],
+    "first wait 0.5": [
+     0.5,
+     1,
+     2,
+     4
+    ],
+    "first wait -1": [
+     -1,
+     -2,
+     -4,
+     -8
+    ],
+    "first wait 250": [
+     250,
+     500,
+     1000,
+     2000
+    ]
+   }
+  },
+  "without a wait of its own the work waits on the clock": {
+   "returned": {
+    "result": {
+     "returned": "done",
+     "calls": 3,
+     "argsSeen": 0,
+     "waits": []
+    },
+    "waitedAtLeastBothWaits": true,
+    "andNotASecond": true
+   }
+  },
+  "a folder's name is a text with something in it, no slash of either kind, no zero byte, and not one or two dots": {
+   "returned": {
+    "\"a\"": true,
+    "\"agent-1\"": true,
+    "\"A b\"": true,
+    "\" \"": true,
+    "\" a\"": true,
+    "\"a \"": true,
+    "\".hidden\"": true,
+    "\"...\"": true,
+    "\"a.b\"": true,
+    "\"..a\"": true,
+    "\"a..\"": true,
+    "\"é\"": true,
+    "\"名前\"": true,
+    "\"a:b\"": true,
+    "\"a*b\"": true,
+    "\"~\"": true,
+    "\"-\"": true,
+    "\"con\"": true,
+    "\"\"": false,
+    "\".\"": false,
+    "\"..\"": false,
+    "\"a/b\"": false,
+    "\"/\"": false,
+    "\"/a\"": false,
+    "\"a/\"": false,
+    "\"a\\\\b\"": false,
+    "\"\\\\\"": false,
+    "\"a\\u0000b\"": false,
+    "\"\\u0000\"": false,
+    "\"../x\"": false,
+    "\"..\\\\x\"": false,
+    "\"a\\nb\"": true,
+    "\"∕\"": true,
+    "\"＼\"": true,
+    "a very long name": true,
+    "undefined": false,
+    "null": false,
+    "zero": false,
+    "seven": false,
+    "true": false,
+    "an object": false,
+    "a list of one name": false,
+    "a String object": false,
+    "a symbol": false,
+    "a function": false,
+    "a big number": false
+   }
+  },
+  "the agents' folder is \"agents\" in the data root, wherever the settings put that root": {
+   "returned": {
+    "a home given": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents"
+    },
+    "a home given, in the app as shipped": {
+     "returned": "/Users/ada/.simeon/agents"
+    },
+    "a home given, in the lab build": {
+     "returned": "/Users/ada/.simeon/sand-lab/agents"
+    },
+    "the lab setting alone": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents"
+    },
+    "no home given: the person's own": {
+     "returned": "/Users/grace/.simeon/sand-dev/agents"
+    },
+    "undefined for the home: the person's own": {
+     "returned": "/Users/grace/.simeon/sand-dev/agents"
+    },
+    "no home given, in the app as shipped": {
+     "returned": "/Users/grace/.simeon/agents"
+    },
+    "a data root set": {
+     "returned": "/srv/simeon-data/agents"
+    },
+    "a data root set, with spaces around it": {
+     "returned": "/srv/simeon-data/agents"
+    },
+    "a data root that is not a full path is not used": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents"
+    },
+    "an empty data root is not used": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents"
+    },
+    "a user data folder set": {
+     "returned": "/profiles/one/sand-data/agents"
+    },
+    "a user data folder that is not a full path, from the working folder": {
+     "returned": "<cwd>/profiles/two/sand-data/agents"
+    },
+    "a data root and a user data folder: the data root": {
+     "returned": "/srv/simeon-data/agents"
+    },
+    "an empty home": {
+     "returned": ".simeon/sand-dev/agents"
+    },
+    "a home that is not a full path": {
+     "returned": "homes/ada/.simeon/sand-dev/agents"
+    },
+    "a home with dots and doubled slashes": {
+     "returned": "/Users/grace/.simeon/sand-dev/agents"
+    },
+    "null for the home": {
+     "threwA": "TypeError"
+    }
+   }
+  },
+  "an agent's id must be a safe folder name with no space at either end": {
+   "returned": {
+    "\"agent-1\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"a\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"A b\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"...\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\".hidden\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"a​b\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"​a\"": {
+     "returned": {
+      "$": "undefined"
+     }
+    },
+    "\"\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: "
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\".\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: ."
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"..\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: .."
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\" a\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id:  a"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a \"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a "
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\" \"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id:  "
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"\\ta\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: \ta"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a\\n\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a\n"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a\\r\\n\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a\r\n"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\" a\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id:  a"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a﻿\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a﻿"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\" a\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id:  a"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a/b\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a/b"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a\\\\b\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a\\b"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"a\\u0000\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: a\u0000"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "\"../x\"": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: ../x"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "undefined": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: undefined"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "null": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: null"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "the number 7": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: 7"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "an object": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: [object Object]"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "a list of one name": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "a String object": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "isTheParts": true,
+     "isAnError": true,
+     "class": "SandInvalidAgentIdError"
+    },
+    "a symbol": {
+     "threwA": "TypeError"
+    }
+   }
+  },
+  "the error for a bad agent id is an Error of its own class, named as any Error": {
+   "returned": {
+    "className": "SandInvalidAgentIdError",
+    "parent": true,
+    "withWords": {
+     "$": "error",
+     "name": "Error",
+     "message": "Invalid Sand agent id: x"
+    },
+    "ownFields": [
+     "message",
+     "stack"
+    ],
+    "asText": "Error: Invalid Sand agent id: x",
+    "bare": {
+     "$": "error",
+     "name": "Error",
+     "message": ""
+    },
+    "withCause": {
+     "$": "error",
+     "name": "Error",
+     "message": "with a cause",
+     "cause": "why"
+    },
+    "isError": true,
+    "ownMethods": [
+     "constructor"
+    ]
+   }
+  },
+  "an agent's folder is its id inside the agents' folder": {
+   "returned": {
+    "an id and a home": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1"
+    },
+    "an id and no home: the person's own": {
+     "returned": "/Users/grace/.simeon/sand-dev/agents/agent-1"
+    },
+    "an id, in the app as shipped": {
+     "returned": "/Users/ada/.simeon/agents/agent-1"
+    },
+    "an id, with a data root set": {
+     "returned": "/srv/simeon-data/agents/agent-1"
+    },
+    "an id, with a home that is not a full path": {
+     "returned": "homes/ada/.simeon/sand-dev/agents/agent-1"
+    },
+    "an id, with an empty home": {
+     "returned": ".simeon/sand-dev/agents/agent-1"
+    },
+    "the id \"a\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/a"
+    },
+    "the id \"A b\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/A b"
+    },
+    "the id \"...\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/..."
+    },
+    "the id \".hidden\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/.hidden"
+    },
+    "the id \"a..\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/a.."
+    },
+    "the id \"名前\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/名前"
+    },
+    "the id \"a​b\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/a​b"
+    },
+    "the bad id \"\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: "
+     }
+    },
+    "the bad id \".\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: ."
+     }
+    },
+    "the bad id \"..\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: .."
+     }
+    },
+    "the bad id \" a\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id:  a"
+     }
+    },
+    "the bad id \"a \"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: a "
+     }
+    },
+    "the bad id \"a/b\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: a/b"
+     }
+    },
+    "the bad id \"a\\\\b\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: a\\b"
+     }
+    },
+    "the bad id \"a\\u0000\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: a\u0000"
+     }
+    },
+    "the bad id \"../x\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: ../x"
+     }
+    },
+    "the bad id \"a\\n\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: a\n"
+     }
+    },
+    "the bad id undefined": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: undefined"
+     }
+    },
+    "the bad id 7": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: 7"
+     }
+    },
+    "a bad id is refused before the home is looked at": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: .."
+     }
+    },
+    "a good id with null for the home": {
+     "threwA": "TypeError"
+    }
+   }
+  },
+  "an agent's folder is refused when the way to it from the agents' folder is not one plain name": {
+   "returned": {
+    "the way \"\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"..\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"../agent-1\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"../\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"..x\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"...\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"/abs/agent-1\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"/\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"a/b\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"agent-1/\"": {
+     "threw": {
+      "class": "SandInvalidAgentIdError",
+      "message": "Invalid Sand agent id: agent-1"
+     },
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"agent-1\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \"anything else\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \".\"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    },
+    "the way \" \"": {
+     "returned": "/Users/ada/.simeon/sand-dev/agents/agent-1",
+     "asked": [
+      [
+       "/Users/ada/.simeon/sand-dev/agents",
+       "/Users/ada/.simeon/sand-dev/agents/agent-1"
+      ]
+     ]
+    }
+   }
+  },
+  "a database is given five seconds to come free, and has three files beside it": {
+   "returned": {
+    "DB_BUSY_TIMEOUT_MS": 5000,
+    "SQLITE_DB_SIDECAR_SUFFIXES": [
+     "-wal",
+     "-shm",
+     "-journal"
+    ],
+    "isAList": true,
+    "frozen": false
+   }
+  },
+  "the count of writes to a database file starts at nothing, goes up by one, and is kept by the file's full path": {
+   "returned": [
+    [
+     "at first",
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     "what a write gives back",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "after one write",
+     1,
+     1,
+     1,
+     0
+    ],
+    [
+     "after two more, by its other paths",
+     3,
+     3,
+     3,
+     0
+    ],
+    [
+     "after a write to another file",
+     3,
+     3,
+     3,
+     1
+    ],
+    [
+     "what forgetting gives back",
+     {
+      "$": "undefined"
+     }
+    ],
+    [
+     "after the first file is forgotten",
+     0,
+     0,
+     0,
+     1
+    ],
+    [
+     "forgotten twice",
+     0,
+     0,
+     0,
+     1
+    ],
+    [
+     "written to again",
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     "in another load of the part",
+     0,
+     0
+    ]
+   ]
+  },
+  "the open handles on a database file are counted up and down, never below nothing": {
+   "returned": [
+    {
+     "what": "at first",
+     "count": 0,
+     "countByAnotherWay": 0,
+     "countFromTheWorkingFolder": 0,
+     "has": false,
+     "hasByAnotherWay": false,
+     "hasFromTheWorkingFolder": false,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "whatOpeningGivesBack": {
+      "$": "undefined"
+     }
+    },
+    {
+     "what": "one handle",
+     "count": 1,
+     "countByAnotherWay": 1,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "three handles, two by its other paths",
+     "count": 3,
+     "countByAnotherWay": 3,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "whatClosingGivesBack": {
+      "$": "undefined"
+     }
+    },
+    {
+     "what": "one closed",
+     "count": 2,
+     "countByAnotherWay": 2,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "two closed",
+     "count": 1,
+     "countByAnotherWay": 1,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "all closed",
+     "count": 0,
+     "countByAnotherWay": 0,
+     "countFromTheWorkingFolder": 0,
+     "has": false,
+     "hasByAnotherWay": false,
+     "hasFromTheWorkingFolder": false,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "closed twice more than opened",
+     "count": 0,
+     "countByAnotherWay": 0,
+     "countFromTheWorkingFolder": 0,
+     "has": false,
+     "hasByAnotherWay": false,
+     "hasFromTheWorkingFolder": false,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "opened once after that",
+     "count": 1,
+     "countByAnotherWay": 1,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 0,
+     "otherHas": false
+    },
+    {
+     "what": "another file opened",
+     "count": 1,
+     "countByAnotherWay": 1,
+     "countFromTheWorkingFolder": 0,
+     "has": true,
+     "hasByAnotherWay": true,
+     "hasFromTheWorkingFolder": true,
+     "otherCount": 1,
+     "otherHas": true
+    },
+    {
+     "inAnotherLoadOfThePart": [
+      0,
+      false
+     ]
+    },
+    {
+     "what": "all closed again",
+     "count": 0,
+     "countByAnotherWay": 0,
+     "countFromTheWorkingFolder": 0,
+     "has": false,
+     "hasByAnotherWay": false,
+     "hasFromTheWorkingFolder": false,
+     "otherCount": 0,
+     "otherHas": false
+    }
+   ]
+  },
+  "a log is folded when as many frames were written back as it held, and nothing is said of a row that is not two counts": {
+   "returned": {
+    "0 of 0": true,
+    "2 of 3": false,
+    "3 of 3": true,
+    "4 of 3": true,
+    "3 of 3, though busy": true,
+    "0 of 1": false,
+    "half of one": false,
+    "not in that mode: -1 and -1": {
+     "$": "undefined"
+    },
+    "-1 of 3": {
+     "$": "undefined"
+    },
+    "3 of -1": {
+     "$": "undefined"
+    },
+    "a hair below nothing": {
+     "$": "undefined"
+    },
+    "minus zero of minus zero": true,
+    "not a number of not a number": false,
+    "3 of not a number": false,
+    "not a number of 3": false,
+    "without end of without end": true,
+    "counts as texts": {
+     "$": "undefined"
+    },
+    "one count a text": {
+     "$": "undefined"
+    },
+    "the other count a text": {
+     "$": "undefined"
+    },
+    "counts as big numbers": {
+     "$": "undefined"
+    },
+    "only the log": {
+     "$": "undefined"
+    },
+    "only what was written back": {
+     "$": "undefined"
+    },
+    "counts that are null": {
+     "$": "undefined"
+    },
+    "an empty row": {
+     "$": "undefined"
+    },
+    "a list of two counts": {
+     "$": "undefined"
+    },
+    "a list with the two counts as fields": true,
+    "a row with no prototype": true,
+    "counts inherited": true,
+    "a function with the two counts": {
+     "$": "undefined"
+    },
+    "null": {
+     "$": "undefined"
+    },
+    "undefined": {
+     "$": "undefined"
+    },
+    "a number": {
+     "$": "undefined"
+    },
+    "a text": {
+     "$": "undefined"
+    },
+    "true": {
+     "$": "undefined"
+    }
+   }
+  },
+  "folding a database's log back: a file that is not there, an empty one, and one that keeps no log": {
+   "returned": {
+    "not there": {
+     "answer": true,
+     "files": {}
+    },
+    "an empty file": {
+     "answer": true,
+     "files": {
+      "empty.db": "an empty file"
+     }
+    },
+    "a database that keeps no log": {
+     "answer": true,
+     "files": {
+      "empty.db": "an empty file",
+      "plain.db": "a database"
+     },
+     "notes": 3
+    },
+    "the same with a time to wait of nothing": {
+     "answer": true
+    },
+    "the same with undefined for the time to wait": {
+     "answer": true
+    }
+   }
+  },
+  "folding a database's log back: the log is emptied, while the database is open elsewhere or after it was left behind": {
+   "returned": {
+    "open elsewhere": {
+     "logHeldSomething": true,
+     "answer": true,
+     "logAfter": 0
+    },
+    "open elsewhere, a second time": {
+     "answer": true,
+     "logAfter": 0
+    },
+    "left behind with its log": {
+     "before": {
+      "left.db": "a database",
+      "left.db-wal": "a write-ahead log",
+      "live.db": "a database"
+     },
+     "answer": true,
+     "after": {
+      "left.db": "a database",
+      "live.db": "a database"
+     },
+     "notes": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "note 2"
+      },
+      {
+       "id": 3,
+       "body": "note 3"
+      }
+     ]
+    }
+   }
+  },
+  "folding a database's log back: a reader in the way leaves frames behind, a writer in the way does not": {
+   "returned": {
+    "a reader holds an earlier state": {
+     "answer": false,
+     "logStillHoldsSomething": true
+    },
+    "the reader is done": {
+     "answer": true,
+     "logAfter": 0
+    },
+    "a writer is in the middle of a write": {
+     "answer": true
+    },
+    "the writer is done": {
+     "answer": true,
+     "logAfter": 0
+    },
+    "files": {
+     "read.db": "a database"
+    }
+   }
+  },
+  "folding a database's log back: what cannot be opened or read says no": {
+   "returned": {
+    "a file of words": false,
+    "a folder": false,
+    "a folder where the log should be": false,
+    "an empty file with a folder where the log should be": false,
+    "files": {
+     "folder.db/": "a folder",
+     "log-folder.db": "a database",
+     "log-folder.db-wal/": "a folder",
+     "nothing.db": "an empty file",
+     "nothing.db-wal/": "a folder",
+     "words.db": "a file of 4800 bytes"
+    }
+   }
+  },
+  "folding a database's log back: the time to wait is put into the SQL as it is given": {
+   "returned": {
+    "the time to wait \"'\"": false,
+    "the time to wait \"\"": false,
+    "the time to wait \"soon\"": true,
+    "the time to wait NaN": true,
+    "the time to wait -5": true,
+    "the time to wait null": false,
+    "the time to wait 1.9": true,
+    "the time to wait \"1; CREATE TABLE made_by_the_wait (x)\"": true,
+    "tablesAfter": [
+     "made_by_the_wait",
+     "notes"
+    ]
+   }
+  },
+  "folding a database's log back: with no counts to go by, a log file that is empty or gone says yes": {
+   "returned": {
+    "a database that keeps no log, with an empty log file beside it": {
+     "logBefore": "an empty file",
+     "answer": true,
+     "logAfter": "an empty file"
+    },
+    "the same with words in the log file: SQLite takes it for a log and clears it away": {
+     "logBefore": "a file saying \"not a log at all, only some words\"",
+     "answer": true,
+     "logAfter": "nothing"
+    },
+    "the same with a link to nowhere for a log": {
+     "logBefore": "a link",
+     "answer": true,
+     "logAfter": "a link"
+    },
+    "the same with a link to itself for a log": {
+     "logBefore": "a link",
+     "answer": false,
+     "logAfter": "a link"
+    },
+    "an empty file with words in the log file: SQLite removes the log": {
+     "logBefore": "a file saying \"words\"",
+     "answer": true,
+     "logAfter": "nothing"
+    },
+    "the look says 0 bytes": {
+     "answer": true,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look says 1 byte": {
+     "answer": false,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look says 12,392 bytes": {
+     "answer": false,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look says it is not there": {
+     "answer": true,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look is not allowed": {
+     "answer": false,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look fails with no code": {
+     "answer": false,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    },
+    "the look fails with a text for an error": {
+     "answer": false,
+     "lookedAt": [
+      "plain.db-wal"
+     ]
+    }
+   }
+  },
+  "the three files beside a database are removed, folders among them, and the database is left": {
+   "returned": {
+    "first": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove store.db-wal and all in it",
+      "remove store.db-shm and all in it",
+      "remove store.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "bare.db": "a file saying \"a database with nothing beside it\"",
+      "half.db-shm": "a file saying \"a file with no database\"",
+      "store.db": "a file saying \"the database\"",
+      "store.db-other": "a file saying \"not one of the three\"",
+      "store.dbx-wal": "a file saying \"another database's log\""
+     }
+    },
+    "a second time": {
+     "$": "undefined"
+    },
+    "nothing beside it": {
+     "$": "undefined"
+    },
+    "no database": [
+     "remove half.db-wal and all in it",
+     "remove half.db-shm and all in it",
+     "remove half.db-journal and all in it"
+    ],
+    "after": {
+     "bare.db": "a file saying \"a database with nothing beside it\"",
+     "store.db": "a file saying \"the database\"",
+     "store.db-other": "a file saying \"not one of the three\"",
+     "store.dbx-wal": "a file saying \"another database's log\""
+    }
+   }
+  },
+  "a failure to remove one of the three files is passed over": {
+   "returned": {
+    "returned": {
+     "$": "undefined"
+    },
+    "asked": [
+     "remove store\u0000.db-wal and all in it",
+     "remove store\u0000.db-shm and all in it",
+     "remove store\u0000.db-journal and all in it"
+    ],
+    "waits": [],
+    "files": {
+     "store.db-journal": "a file saying \"its journal\""
+    },
+    "a path of a zero byte alone": {
+     "returned": {
+      "$": "undefined"
+     }
+    }
+   }
+  },
+  "a path is removed: a file, a link, a folder only when asked to with all in it, and nothing where nothing is": {
+   "returned": {
+    "a file": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove a-file"
+     ],
+     "waits": []
+    },
+    "a link to a folder": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove a-link"
+     ],
+     "waits": []
+    },
+    "nothing there": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove missing"
+     ],
+     "waits": []
+    },
+    "a folder, with all in it": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove a-folder and all in it"
+     ],
+     "waits": []
+    },
+    "a folder, not asked to": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/kept-folder"
+     },
+     "asked": [
+      "remove kept-folder"
+     ],
+     "waits": []
+    },
+    "a folder, told not to": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/kept-folder"
+     },
+     "asked": [
+      "remove kept-folder"
+     ],
+     "waits": []
+    },
+    "an empty folder, not asked to": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/empty-folder"
+     },
+     "asked": [
+      "remove empty-folder"
+     ],
+     "waits": []
+    },
+    "a folder, asked with a text": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/by-text"
+     },
+     "asked": [
+      "remove by-text"
+     ],
+     "waits": []
+    },
+    "a folder, asked with a one": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/by-one"
+     },
+     "asked": [
+      "remove by-one"
+     ],
+     "waits": []
+    },
+    "a path with a zero byte in it": "ERR_INVALID_ARG_VALUE",
+    "after": {
+     "by-one/": "a folder",
+     "by-text/": "a folder",
+     "empty-folder/": "a folder",
+     "kept-folder/": "a folder",
+     "kept-folder/inner": "a file saying \"x\"",
+     "target/": "a folder",
+     "target/inner": "a file saying \"kept\""
+    }
+   }
+  },
+  "a path that will not go is tried again after a wait, as many times as asked and at least once": {
+   "returned": {
+    "attempts undefined": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn"
+     ],
+     "waits": []
+    },
+    "attempts null": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn"
+     ],
+     "waits": []
+    },
+    "attempts 1": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn"
+     ],
+     "waits": []
+    },
+    "attempts 0": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn"
+     ],
+     "waits": []
+    },
+    "attempts -2": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn"
+     ],
+     "waits": []
+    },
+    "attempts 2": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "attempts 3": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      },
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "attempts 2.5": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      },
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "attempts 1.5": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "attempts NaN": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [],
+     "waits": []
+    },
+    "attempts \"2\"": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "two tries, a wait of undefined": [
+     "wait 50"
+    ],
+    "two tries, a wait of null": [
+     "wait 50"
+    ],
+    "two tries, a wait of 0": [
+     "wait 0"
+    ],
+    "two tries, a wait of 7": [
+     "wait 7"
+    ],
+    "two tries, a wait of 50": [
+     "wait 50"
+    ],
+    "two tries, a wait of 51": [
+     "wait 51"
+    ],
+    "two tries, a wait of -1": [
+     "wait -1"
+    ],
+    "still there after all of it": {
+     "stubborn/": "a folder",
+     "stubborn/inner": "a file saying \"x\""
+    }
+   }
+  },
+  "a path that goes on a later try is removed and nothing is thrown": {
+   "returned": {
+    "on the second try of five": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove stubborn",
+      "wait 4",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 4,
+       "wouldBlock": true
+      }
+     ],
+     "files": {}
+    },
+    "on the last of three tries": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove stubborn",
+      "wait 4",
+      "remove stubborn",
+      "wait 4",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 4,
+       "wouldBlock": true
+      },
+      {
+       "ms": 4,
+       "wouldBlock": true
+      }
+     ],
+     "files": {}
+    },
+    "on the second try of two, told nothing of the wait": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove stubborn",
+      "wait 50",
+      "remove stubborn"
+     ],
+     "waits": [
+      {
+       "ms": 50,
+       "wouldBlock": true
+      }
+     ],
+     "files": {}
+    }
+   }
+  },
+  "the wait between two tries is a real one, 50 ms unless told": {
+   "returned": {
+    "three tries, 30 ms": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/stubborn"
+     },
+     "waitedTwice": true,
+     "andNotLong": true
+    },
+    "two tries, not told": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/stubborn"
+     },
+     "waitedOnce": true,
+     "andNotLong": true
+    },
+    "one try does not wait": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/stubborn"
+     },
+     "didNotWait": true
+    }
+   }
+  },
+  "a database is removed with the three files beside it, and not when it is a folder": {
+   "returned": {
+    "a database and all three": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove store.db",
+      "remove store.db-wal and all in it",
+      "remove store.db-shm and all in it",
+      "remove store.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "other.db": "a file saying \"another database\"",
+      "other.db-wal": "a file saying \"its log\""
+     }
+    },
+    "nothing there": [
+     "remove store.db",
+     "remove store.db-wal and all in it",
+     "remove store.db-shm and all in it",
+     "remove store.db-journal and all in it"
+    ],
+    "only one of the three": [
+     "remove only.db",
+     "remove only.db-wal and all in it",
+     "remove only.db-shm and all in it",
+     "remove only.db-journal and all in it"
+    ],
+    "a folder for a database, tried once": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/folder.db"
+     },
+     "asked": [
+      "remove folder.db"
+     ],
+     "waits": [],
+     "files": {
+      "folder.db/": "a folder",
+      "folder.db/inner": "a file saying \"x\"",
+      "folder.db-wal": "a file saying \"its log\"",
+      "other.db": "a file saying \"another database\"",
+      "other.db-wal": "a file saying \"its log\""
+     }
+    },
+    "a folder for a database, tried three times 9 ms apart": {
+     "threw": "ERR_FS_EISDIR",
+     "asked": [
+      "remove folder.db",
+      "wait 9",
+      "remove folder.db",
+      "wait 9",
+      "remove folder.db"
+     ],
+     "waits": [
+      {
+       "ms": 9,
+       "wouldBlock": true
+      },
+      {
+       "ms": 9,
+       "wouldBlock": true
+      }
+     ]
+    },
+    "a folder that gives way during the first wait": {
+     "returned": {
+      "$": "undefined"
+     },
+     "asked": [
+      "remove folder.db",
+      "wait 2",
+      "remove folder.db",
+      "remove folder.db-wal and all in it",
+      "remove folder.db-shm and all in it",
+      "remove folder.db-journal and all in it"
+     ],
+     "waits": [
+      {
+       "ms": 2,
+       "wouldBlock": true
+      }
+     ],
+     "files": {
+      "other.db": "a file saying \"another database\"",
+      "other.db-wal": "a file saying \"its log\""
+     }
+    }
+   }
+  },
+  "a damaged database is set aside under its name, \".corrupt-\" and the moment, with the files beside it": {
+   "returned": {
+    "all four files": {
+     "returned": {
+      "quarantinePath": "<tmp>/store.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove store.db.corrupt-2026-03-04T05-06-07-089Z",
+      "remove store.db.corrupt-2026-03-04T05-06-07-089Z-wal and all in it",
+      "remove store.db.corrupt-2026-03-04T05-06-07-089Z-shm and all in it",
+      "remove store.db.corrupt-2026-03-04T05-06-07-089Z-journal and all in it",
+      "move store.db to store.db.corrupt-2026-03-04T05-06-07-089Z",
+      "move store.db-wal to store.db.corrupt-2026-03-04T05-06-07-089Z-wal",
+      "move store.db-shm to store.db.corrupt-2026-03-04T05-06-07-089Z-shm",
+      "move store.db-journal to store.db.corrupt-2026-03-04T05-06-07-089Z-journal"
+     ],
+     "waits": [],
+     "files": {
+      "other.db": "a file saying \"another database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z": "a file saying \"the database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-journal": "a file saying \"its journal\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-shm": "a file saying \"its shared memory\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-wal": "a file saying \"its log\""
+     }
+    },
+    "a database alone, at midnight on the first day of a year": {
+     "returned": {
+      "quarantinePath": "<tmp>/alone.db.corrupt-2027-01-01T00-00-00-000Z",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove alone.db.corrupt-2027-01-01T00-00-00-000Z",
+      "remove alone.db.corrupt-2027-01-01T00-00-00-000Z-wal and all in it",
+      "remove alone.db.corrupt-2027-01-01T00-00-00-000Z-shm and all in it",
+      "remove alone.db.corrupt-2027-01-01T00-00-00-000Z-journal and all in it",
+      "move alone.db to alone.db.corrupt-2027-01-01T00-00-00-000Z"
+     ],
+     "waits": [],
+     "files": {
+      "alone.db.corrupt-2027-01-01T00-00-00-000Z": "a file saying \"a database alone\"",
+      "other.db": "a file saying \"another database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z": "a file saying \"the database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-journal": "a file saying \"its journal\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-shm": "a file saying \"its shared memory\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-wal": "a file saying \"its log\""
+     }
+    },
+    "a folder for a database is moved like a file": {
+     "returned": {
+      "quarantinePath": "<tmp>/folder.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove folder.db.corrupt-2026-03-04T05-06-07-089Z",
+      "remove folder.db.corrupt-2026-03-04T05-06-07-089Z-wal and all in it",
+      "remove folder.db.corrupt-2026-03-04T05-06-07-089Z-shm and all in it",
+      "remove folder.db.corrupt-2026-03-04T05-06-07-089Z-journal and all in it",
+      "move folder.db to folder.db.corrupt-2026-03-04T05-06-07-089Z",
+      "move folder.db-shm to folder.db.corrupt-2026-03-04T05-06-07-089Z-shm"
+     ],
+     "waits": [],
+     "files": {
+      "alone.db.corrupt-2027-01-01T00-00-00-000Z": "a file saying \"a database alone\"",
+      "folder.db.corrupt-2026-03-04T05-06-07-089Z/": "a folder",
+      "folder.db.corrupt-2026-03-04T05-06-07-089Z/inner": "a file saying \"x\"",
+      "folder.db.corrupt-2026-03-04T05-06-07-089Z-shm/": "a folder",
+      "folder.db.corrupt-2026-03-04T05-06-07-089Z-shm/inner": "a file saying \"y\"",
+      "other.db": "a file saying \"another database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z": "a file saying \"the database\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-journal": "a file saying \"its journal\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-shm": "a file saying \"its shared memory\"",
+      "store.db.corrupt-2026-03-04T05-06-07-089Z-wal": "a file saying \"its log\""
+     }
+    }
+   }
+  },
+  "a damaged database is set aside where told, over what was there before": {
+   "returned": {
+    "over an earlier one": {
+     "returned": {
+      "quarantinePath": "<tmp>/aside.db",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "move store.db-wal to aside.db-wal"
+     ],
+     "waits": [],
+     "files": {
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-wal": "a file saying \"its log\""
+     }
+    },
+    "with every other option set, none of which matters when the move works": {
+     "returned": {
+      "quarantinePath": "<tmp>/aside-2.db",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove aside-2.db",
+      "remove aside-2.db-wal and all in it",
+      "remove aside-2.db-shm and all in it",
+      "remove aside-2.db-journal and all in it",
+      "move second.db to aside-2.db",
+      "move second.db-journal to aside-2.db-journal"
+     ],
+     "waits": [],
+     "files": {
+      "aside-2.db": "a file saying \"a second database\"",
+      "aside-2.db-journal": "a file saying \"its journal\"",
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-wal": "a file saying \"its log\""
+     }
+    },
+    "onto itself": {
+     "returned": {
+      "quarantinePath": null,
+      "copied": false,
+      "renameErrorCode": "ENOENT"
+     },
+     "asked": [
+      "remove third.db",
+      "remove third.db-wal and all in it",
+      "remove third.db-shm and all in it",
+      "remove third.db-journal and all in it",
+      "move third.db to third.db",
+      "copy third.db to third.db",
+      "remove third.db",
+      "remove third.db-wal and all in it",
+      "remove third.db-shm and all in it",
+      "remove third.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "aside-2.db": "a file saying \"a second database\"",
+      "aside-2.db-journal": "a file saying \"its journal\"",
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-wal": "a file saying \"its log\""
+     }
+    }
+   }
+  },
+  "a database that is not there is not set aside: what is beside it is removed, unless asked to leave it": {
+   "returned": {
+    "asked to leave it": {
+     "returned": {
+      "quarantinePath": "<tmp>/gone.db",
+      "copied": false,
+      "renameErrorCode": "ENOENT"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move gone.db to aside.db",
+      "copy gone.db to aside.db"
+     ],
+     "waits": [],
+     "files": {
+      "gone.db-shm/": "a folder",
+      "gone.db-shm/inner": "a file saying \"x\"",
+      "gone.db-wal": "a file saying \"a log with no database\""
+     }
+    },
+    "asked with a text, which is not asking": {
+     "returned": {
+      "quarantinePath": null,
+      "copied": false,
+      "renameErrorCode": "ENOENT"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move gone.db to aside.db",
+      "copy gone.db to aside.db",
+      "remove gone.db",
+      "remove gone.db-wal and all in it",
+      "remove gone.db-shm and all in it",
+      "remove gone.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {}
+    },
+    "not asked, at the moment's own name": {
+     "returned": {
+      "quarantinePath": null,
+      "copied": false,
+      "renameErrorCode": "ENOENT"
+     },
+     "asked": [
+      "remove gone.db.corrupt-2026-03-04T05-06-07-089Z",
+      "remove gone.db.corrupt-2026-03-04T05-06-07-089Z-wal and all in it",
+      "remove gone.db.corrupt-2026-03-04T05-06-07-089Z-shm and all in it",
+      "remove gone.db.corrupt-2026-03-04T05-06-07-089Z-journal and all in it",
+      "move gone.db to gone.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copy gone.db to gone.db.corrupt-2026-03-04T05-06-07-089Z",
+      "remove gone.db",
+      "remove gone.db-wal and all in it",
+      "remove gone.db-shm and all in it",
+      "remove gone.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {}
+    },
+    "told not to leave it": {
+     "quarantinePath": null,
+     "copied": false,
+     "renameErrorCode": "ENOENT"
+    }
+   }
+  },
+  "a folder in the place a database would be set aside is left with all beside it, and the database is lost or left": {
+   "returned": {
+    "asked to leave it": {
+     "returned": {
+      "quarantinePath": "<tmp>/store.db",
+      "copied": false,
+      "renameErrorCode": "EISDIR"
+     },
+     "asked": [
+      "remove aside.db",
+      "move store.db to aside.db",
+      "copy store.db to aside.db"
+     ],
+     "waits": [],
+     "files": {
+      "aside.db/": "a folder",
+      "aside.db/inner": "a file saying \"x\"",
+      "aside.db-wal": "a file saying \"an earlier log, not cleared away\"",
+      "store.db": "a file saying \"the database\"",
+      "store.db-wal": "a file saying \"its log\""
+     }
+    },
+    "not asked": {
+     "returned": {
+      "quarantinePath": null,
+      "copied": false,
+      "renameErrorCode": "EISDIR"
+     },
+     "asked": [
+      "remove aside.db",
+      "move store.db to aside.db",
+      "copy store.db to aside.db",
+      "remove store.db",
+      "remove store.db-wal and all in it",
+      "remove store.db-shm and all in it",
+      "remove store.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "aside.db/": "a folder",
+      "aside.db/inner": "a file saying \"x\"",
+      "aside.db-wal": "a file saying \"an earlier log, not cleared away\""
+     }
+    }
+   }
+  },
+  "a database that cannot be moved is copied aside with the files beside it, then removed": {
+   "returned": {
+    "a move across two disks": {
+     "returned": {
+      "quarantinePath": "<tmp>/aside.db",
+      "copied": true,
+      "renameErrorCode": "EXDEV"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "copy store.db to aside.db",
+      "copy store.db-wal to aside.db-wal",
+      "copy store.db-shm to aside.db-shm",
+      "remove store.db",
+      "remove store.db-wal and all in it",
+      "remove store.db-shm and all in it",
+      "remove store.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-wal": "a file saying \"its log\""
+     }
+    },
+    "with all three beside it, at the moment's own name": {
+     "returned": {
+      "quarantinePath": "<tmp>/all.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copied": true,
+      "renameErrorCode": "EXDEV"
+     },
+     "asked": [
+      "remove all.db.corrupt-2026-03-04T05-06-07-089Z",
+      "remove all.db.corrupt-2026-03-04T05-06-07-089Z-wal and all in it",
+      "remove all.db.corrupt-2026-03-04T05-06-07-089Z-shm and all in it",
+      "remove all.db.corrupt-2026-03-04T05-06-07-089Z-journal and all in it",
+      "move all.db to all.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copy all.db to all.db.corrupt-2026-03-04T05-06-07-089Z",
+      "copy all.db-wal to all.db.corrupt-2026-03-04T05-06-07-089Z-wal",
+      "copy all.db-shm to all.db.corrupt-2026-03-04T05-06-07-089Z-shm",
+      "copy all.db-journal to all.db.corrupt-2026-03-04T05-06-07-089Z-journal",
+      "remove all.db",
+      "remove all.db-wal and all in it",
+      "remove all.db-shm and all in it",
+      "remove all.db-journal and all in it"
+     ],
+     "waits": [],
+     "files": {
+      "all.db.corrupt-2026-03-04T05-06-07-089Z": "a file saying \"a database\"",
+      "all.db.corrupt-2026-03-04T05-06-07-089Z-journal": "a file saying \"its journal\"",
+      "all.db.corrupt-2026-03-04T05-06-07-089Z-shm": "a file saying \"its shared memory\"",
+      "all.db.corrupt-2026-03-04T05-06-07-089Z-wal": "a file saying \"its log\"",
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-wal": "a file saying \"its log\""
+     }
+    },
+    "the move fails with no code": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "error"
+    },
+    "the move fails with a code that is null": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "error"
+    },
+    "the move fails with a code that is nothing": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "0"
+    },
+    "the move fails with a code that is an empty text": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": ""
+    },
+    "the move fails with a code that is a number": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "-18"
+    },
+    "the move fails with a text for an error": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "error"
+    },
+    "the move fails with a plain object with a code": {
+     "quarantinePath": "<tmp>/coded-aside.db",
+     "copied": true,
+     "renameErrorCode": "EBUSY"
+    }
+   }
+  },
+  "a database that can be neither moved nor copied is removed, or left where it is when asked": {
+   "returned": {
+    "asked to leave it": {
+     "returned": {
+      "quarantinePath": "<tmp>/store.db",
+      "copied": false,
+      "renameErrorCode": "EXDEV"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "copy store.db to aside.db"
+     ],
+     "waits": [],
+     "files": {
+      "store.db/": "a folder",
+      "store.db/inner": "a file saying \"a folder cannot be copied\"",
+      "store.db-wal": "a file saying \"its log\""
+     }
+    },
+    "not asked, and it will not go: tried once": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/store.db"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "copy store.db to aside.db",
+      "remove store.db"
+     ],
+     "waits": [],
+     "files": {
+      "store.db/": "a folder",
+      "store.db/inner": "a file saying \"a folder cannot be copied\"",
+      "store.db-wal": "a file saying \"its log\""
+     }
+    },
+    "not asked, and it will not go: tried three times 6 ms apart": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/store.db"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "copy store.db to aside.db",
+      "remove store.db",
+      "wait 6",
+      "remove store.db",
+      "wait 6",
+      "remove store.db"
+     ],
+     "waits": [
+      {
+       "ms": 6,
+       "wouldBlock": true
+      },
+      {
+       "ms": 6,
+       "wouldBlock": true
+      }
+     ],
+     "files": {
+      "store.db/": "a folder",
+      "store.db/inner": "a file saying \"a folder cannot be copied\"",
+      "store.db-wal": "a file saying \"its log\""
+     }
+    },
+    "not asked, and it goes on the second try": {
+     "returned": {
+      "quarantinePath": null,
+      "copied": false,
+      "renameErrorCode": "EXDEV"
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "copy store.db to aside.db",
+      "remove store.db",
+      "wait 6",
+      "remove store.db",
+      "remove store.db-wal and all in it",
+      "remove store.db-shm and all in it",
+      "remove store.db-journal and all in it"
+     ],
+     "waits": [
+      {
+       "ms": 6,
+       "wouldBlock": true
+      }
+     ],
+     "files": {}
+    }
+   }
+  },
+  "a file beside the database that cannot be moved with it is removed, and one that cannot be removed stops the work": {
+   "returned": {
+    "the log will not move": {
+     "returned": {
+      "quarantinePath": "<tmp>/aside.db",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove aside.db",
+      "remove aside.db-wal and all in it",
+      "remove aside.db-shm and all in it",
+      "remove aside.db-journal and all in it",
+      "move store.db to aside.db",
+      "move store.db-wal to aside.db-wal",
+      "remove store.db-wal",
+      "move store.db-shm to aside.db-shm",
+      "move store.db-journal to aside.db-journal"
+     ],
+     "waits": [],
+     "files": {
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-journal": "a file saying \"its journal\"",
+      "aside.db-shm": "a file saying \"its shared memory\""
+     }
+    },
+    "a folder for a log will not move, and is not removed either": {
+     "threw": {
+      "class": "SystemError",
+      "code": "ERR_FS_EISDIR",
+      "message": "Path is a directory: rm returned EISDIR (is a directory) <tmp>/second.db-wal"
+     },
+     "asked": [
+      "remove aside-2.db",
+      "remove aside-2.db-wal and all in it",
+      "remove aside-2.db-shm and all in it",
+      "remove aside-2.db-journal and all in it",
+      "move second.db to aside-2.db",
+      "move second.db-wal to aside-2.db-wal",
+      "remove second.db-wal"
+     ],
+     "waits": [],
+     "files": {
+      "aside-2.db": "a file saying \"a second database\"",
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-journal": "a file saying \"its journal\"",
+      "aside.db-shm": "a file saying \"its shared memory\"",
+      "second.db-shm": "a file saying \"its shared memory\"",
+      "second.db-wal/": "a folder",
+      "second.db-wal/inner": "a file saying \"a folder for a log\""
+     }
+    },
+    "none of the three will move": {
+     "returned": {
+      "quarantinePath": "<tmp>/aside-3.db",
+      "copied": false,
+      "renameErrorCode": null
+     },
+     "asked": [
+      "remove aside-3.db",
+      "remove aside-3.db-wal and all in it",
+      "remove aside-3.db-shm and all in it",
+      "remove aside-3.db-journal and all in it",
+      "move third.db to aside-3.db",
+      "move third.db-wal to aside-3.db-wal",
+      "remove third.db-wal",
+      "move third.db-shm to aside-3.db-shm",
+      "remove third.db-shm",
+      "move third.db-journal to aside-3.db-journal",
+      "remove third.db-journal"
+     ],
+     "waits": [],
+     "files": {
+      "aside-2.db": "a file saying \"a second database\"",
+      "aside-3.db": "a file saying \"a third database\"",
+      "aside.db": "a file saying \"the database\"",
+      "aside.db-journal": "a file saying \"its journal\"",
+      "aside.db-shm": "a file saying \"its shared memory\"",
+      "second.db-shm": "a file saying \"its shared memory\"",
+      "second.db-wal/": "a folder",
+      "second.db-wal/inner": "a file saying \"a folder for a log\""
+     }
+    }
+   }
+  },
+  "a database is opened for reading what is left of it: nothing where there is no file, the database where it is sound": {
+   "returned": {
+    "no file": "nothing",
+    "no file, with a time to wait": "nothing",
+    "a sound database": {
+     "handle": "DatabaseSync",
+     "open": true,
+     "busyTimeout": {
+      "returned": 0
+     },
+     "notes": {
+      "returned": [
+       {
+        "id": 1,
+        "body": "note 1"
+       },
+       {
+        "id": 2,
+        "body": "note 2"
+       },
+       {
+        "id": 3,
+        "body": "note 3"
+       }
+      ]
+     }
+    },
+    "a sound database, time to wait undefined": {
+     "returned": 0
+    },
+    "a sound database, time to wait null": {
+     "returned": 0
+    },
+    "a sound database, time to wait 0": {
+     "returned": 0
+    },
+    "a sound database, time to wait 250": {
+     "returned": 250
+    },
+    "a sound database, time to wait 1.9": {
+     "returned": 1
+    },
+    "a sound database, time to wait -5": {
+     "returned": 0
+    },
+    "a sound database, time to wait \"75\"": {
+     "returned": 75
+    },
+    "an empty file": {
+     "handle": "DatabaseSync",
+     "open": true,
+     "busyTimeout": {
+      "returned": 0
+     },
+     "notes": {
+      "threw": {
+       "class": "Error",
+       "code": "ERR_SQLITE_ERROR",
+       "errcode": 1,
+       "message": "no such table: notes"
+      }
+     }
+    },
+    "a database open elsewhere, with its log": {
+     "handle": "DatabaseSync",
+     "open": true,
+     "busyTimeout": {
+      "returned": 1
+     },
+     "notes": {
+      "returned": [
+       {
+        "id": 1,
+        "body": "note 1"
+       },
+       {
+        "id": 2,
+        "body": "note 2"
+       },
+       {
+        "id": 3,
+        "body": "note 3"
+       }
+      ]
+     }
+    },
+    "files": {
+     "empty.db": "an empty file",
+     "logged.db": "a database",
+     "sound.db": "a database"
+    }
+   }
+  },
+  "a database that will not open is tried again without the files beside it, and handed over as it is when that fails too": {
+   "returned": {
+    "a folder where the log should be": {
+     "before": {
+      "log-folder.db": "a database",
+      "log-folder.db-wal/": "a folder",
+      "log-folder.db-wal/inner": "a file saying \"x\""
+     },
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 0
+      },
+      "notes": {
+       "returned": [
+        {
+         "id": 1,
+         "body": "note 1"
+        },
+        {
+         "id": 2,
+         "body": "note 2"
+        },
+        {
+         "id": 3,
+         "body": "note 3"
+        }
+       ]
+      }
+     },
+     "asked": [
+      "remove log-folder.db-wal and all in it",
+      "remove log-folder.db-shm and all in it",
+      "remove log-folder.db-journal and all in it"
+     ],
+     "after": {
+      "log-folder.db": "a database"
+     }
+    },
+    "a folder where the journal should be": {
+     "before": {
+      "journal-folder.db": "a database",
+      "journal-folder.db-journal/": "a folder",
+      "journal-folder.db-journal/inner": "a file saying \"x\"",
+      "journal-folder.db-shm": "a file saying \"a stray file\""
+     },
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 20
+      },
+      "notes": {
+       "returned": [
+        {
+         "id": 1,
+         "body": "note 1"
+        },
+        {
+         "id": 2,
+         "body": "note 2"
+        },
+        {
+         "id": 3,
+         "body": "note 3"
+        }
+       ]
+      }
+     },
+     "asked": [
+      "remove journal-folder.db-wal and all in it",
+      "remove journal-folder.db-shm and all in it",
+      "remove journal-folder.db-journal and all in it"
+     ],
+     "after": {
+      "journal-folder.db": "a database"
+     }
+    },
+    "a file of words": {
+     "before": {
+      "words.db": "a file of 4800 bytes",
+      "words.db-shm/": "a folder",
+      "words.db-shm/inner": "a file saying \"x\"",
+      "words.db-wal": "a file saying \"a log of words\""
+     },
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 0
+      },
+      "notes": {
+       "threw": {
+        "class": "Error",
+        "code": "ERR_SQLITE_ERROR",
+        "errcode": 26,
+        "message": "file is not a database"
+       }
+      }
+     },
+     "asked": [
+      "remove words.db-wal and all in it",
+      "remove words.db-shm and all in it",
+      "remove words.db-journal and all in it"
+     ],
+     "after": {
+      "words.db": "a file of 4800 bytes"
+     }
+    },
+    "a folder": {
+     "before": {
+      "folder.db/": "a folder",
+      "folder.db/inner": "a file saying \"x\"",
+      "folder.db-journal": "a file saying \"a journal\""
+     },
+     "opened": "nothing",
+     "asked": [
+      "remove folder.db-wal and all in it",
+      "remove folder.db-shm and all in it",
+      "remove folder.db-journal and all in it"
+     ],
+     "after": {
+      "folder.db/": "a folder",
+      "folder.db/inner": "a file saying \"x\""
+     }
+    },
+    "a sound database with a time to wait that is not SQL": {
+     "before": {
+      "sound.db": "a database",
+      "sound.db-shm": "a file saying \"a stray file\""
+     },
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 0
+      },
+      "notes": {
+       "returned": [
+        {
+         "id": 1,
+         "body": "note 1"
+        },
+        {
+         "id": 2,
+         "body": "note 2"
+        },
+        {
+         "id": 3,
+         "body": "note 3"
+        }
+       ]
+      }
+     },
+     "asked": [
+      "remove sound.db-wal and all in it",
+      "remove sound.db-shm and all in it",
+      "remove sound.db-journal and all in it"
+     ],
+     "after": {
+      "sound.db": "a database"
+     }
+    },
+    "a database with a wiped page opens, and fails when read": {
+     "before": {
+      "torn.db": "a database"
+     },
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 0
+      },
+      "notes": {
+       "threw": {
+        "class": "Error",
+        "code": "ERR_SQLITE_ERROR",
+        "errcode": 11,
+        "message": "database disk image is malformed"
+       }
+      }
+     },
+     "asked": [],
+     "after": {
+      "torn.db": "a database"
+     }
+    }
+   }
+  },
+  "a handle that will not close after a failed first look does not stop the next try": {
+   "returned": {
+    "words.db": {
+     "closesThatFailed": 2,
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 0
+      },
+      "notes": {
+       "threw": {
+        "class": "Error",
+        "code": "ERR_SQLITE_ERROR",
+        "errcode": 26,
+        "message": "file is not a database"
+       }
+      }
+     }
+    },
+    "log-folder.db": {
+     "closesThatFailed": 1,
+     "opened": {
+      "handle": "DatabaseSync",
+      "open": true,
+      "busyTimeout": {
+       "returned": 3
+      },
+      "notes": {
+       "returned": [
+        {
+         "id": 1,
+         "body": "note 1"
+        },
+        {
+         "id": 2,
+         "body": "note 2"
+        },
+        {
+         "id": 3,
+         "body": "note 3"
+        }
+       ]
+      }
+     }
+    },
+    "files": {
+     "log-folder.db": "a database",
+     "words.db": "a file of 4800 bytes"
+    }
+   }
+  },
+  "a database another connection holds is handed over all the same, and the holder's journal is removed under it": {
+   "returned": {
+    "before": [
+     "held.db",
+     "held.db-journal"
+    ],
+    "whileHeld": {
+     "handle": "DatabaseSync",
+     "open": true,
+     "notes": {
+      "threw": {
+       "class": "Error",
+       "code": "ERR_SQLITE_ERROR",
+       "errcode": 5,
+       "message": "database is locked"
+      }
+     }
+    },
+    "commit": {
+     "errcode": 5898,
+     "words": "disk I/O error",
+     "readOrWrite": true
+    },
+    "afterCommit": {
+     "returned": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "note 2"
+      },
+      {
+       "id": 3,
+       "body": "note 3"
+      },
+      {
+       "id": 4,
+       "body": "written by the holder"
+      }
+     ]
+    },
+    "asked": [
+     "remove held.db-wal and all in it",
+     "remove held.db-shm and all in it",
+     "remove held.db-journal and all in it"
+    ],
+    "after": {
+     "held.db": "a database"
+    },
+    "notesAfter": [
+     {
+      "id": 1,
+      "body": "note 1"
+     },
+     {
+      "id": 2,
+      "body": "note 2"
+     },
+     {
+      "id": 3,
+      "body": "note 3"
+     },
+     {
+      "id": 4,
+      "body": "written by the holder"
+     }
+    ]
+   }
+  },
+  "rows are copied from one database to another, one at a time, and counted": {
+   "returned": {
+    "every row that the other table takes: the one with no body is passed over": {
+     "copied": {
+      "returned": 5
+     },
+     "target": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "note 2"
+      },
+      {
+       "id": 3,
+       "body": "note 3"
+      },
+      {
+       "id": 4,
+       "body": "note 4"
+      },
+      {
+       "id": 5,
+       "body": "note 5"
+      }
+     ]
+    },
+    "rows already there are passed over": {
+     "copied": {
+      "returned": 3
+     },
+     "target": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "there before"
+      },
+      {
+       "id": 3,
+       "body": "note 3"
+      },
+      {
+       "id": 4,
+       "body": "there before"
+      },
+      {
+       "id": 5,
+       "body": "note 5"
+      }
+     ]
+    },
+    "rows already there are kept when the insert says so, and counted": {
+     "copied": {
+      "returned": 6
+     },
+     "target": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "there before"
+      },
+      {
+       "id": 3,
+       "body": "note 3"
+      },
+      {
+       "id": 4,
+       "body": "note 4"
+      },
+      {
+       "id": 5,
+       "body": "note 5"
+      }
+     ]
+    },
+    "a row whose values cannot be worked out is passed over": {
+     "copied": {
+      "returned": 5
+     },
+     "target": [
+      {
+       "id": 1,
+       "body": "note 1"
+      },
+      {
+       "id": 2,
+       "body": "note 2"
+      },
+      {
+       "id": 4,
+       "body": "note 4"
+      },
+      {
+       "id": 5,
+       "body": "note 5"
+      },
+      {
+       "id": 6,
+       "body": "filled in"
+      }
+     ]
+    },
+    "values that are not a list are passed over": {
+     "copied": {
+      "returned": 3
+     },
+     "target": [
+      {
+       "id": 1,
+       "body": "odd"
+      },
+      {
+       "id": 3,
+       "body": "odd"
+      },
+      {
+       "id": 5,
+       "body": "odd"
+      }
+     ]
+    },
+    "too many values are passed over": {
+     "copied": {
+      "returned": 5
+     },
+     "target": [
+      {
+       "id": 2,
+       "body": "kept"
+      },
+      {
+       "id": 3,
+       "body": "kept"
+      },
+      {
+       "id": 4,
+       "body": "kept"
+      },
+      {
+       "id": 5,
+       "body": "kept"
+      },
+      {
+       "id": 6,
+       "body": "kept"
+      }
+     ]
+    },
+    "a table that is not there": {
+     "copied": {
+      "returned": 0
+     },
+     "target": []
+    },
+    "a question that is not SQL": {
+     "copied": {
+      "returned": 0
+     },
+     "target": []
+    },
+    "a question with no rows": {
+     "copied": {
+      "returned": 0
+     },
+     "target": []
+    },
+    "rows in the order asked": {
+     "copied": {
+      "returned": 5
+     },
+     "target": [
+      {
+       "id": 5,
+       "body": "note 5"
+      },
+      {
+       "id": 6,
+       "body": "note 4"
+      },
+      {
+       "id": 7,
+       "body": "note 3"
+      },
+      {
+       "id": 8,
+       "body": "note 2"
+      },
+      {
+       "id": 9,
+       "body": "note 1"
+      }
+     ]
+    },
+    "a database that is closed": {
+     "returned": 0
+    }
+   }
+  },
+  "rows are read until the read fails, each is written on its own, and the read is closed whatever happens": {
+   "returned": {
+    "three rows": {
+     "returned": 3,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"note 2\")",
+      "next(0)",
+      "values(1)",
+      "run(3, \"note 3\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "no rows": {
+     "returned": 0,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "the read fails on the third row": {
+     "returned": 2,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"note 2\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "the read fails on the first row": {
+     "returned": 0,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "the second row will not be written": {
+     "returned": 2,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"note 2\")",
+      "next(0)",
+      "values(1)",
+      "run(3, \"note 3\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "no row will be written": {
+     "returned": 0,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"note 2\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "the second row's values cannot be worked out": {
+     "returned": 2,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1)",
+      "next(0)",
+      "values(1)",
+      "next(0)",
+      "values(1)",
+      "run(3)",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "a row with no value": {
+     "returned": 2,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(\"nothing\")",
+      "next(0)",
+      "values(1)",
+      "run(2)",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "the question cannot be prepared": {
+     "returned": 0,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")"
+     ]
+    },
+    "the question cannot be stepped through": {
+     "returned": 0,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)"
+     ]
+    },
+    "a read with nothing to close it": {
+     "returned": 2,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"note 2\")",
+      "next(0)"
+     ]
+    },
+    "a read that fails, with nothing to close it": {
+     "returned": 1,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)"
+     ]
+    },
+    "closing the read fails": {
+     "returned": 1,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "closing the read fails after the read failed": {
+     "returned": 1,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "an end said with a one": {
+     "returned": 1,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "an end not said at all": {
+     "returned": 3,
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"no word of an end\")",
+      "next(0)",
+      "values(1)",
+      "run(2, \"an end of nothing\")",
+      "next(0)",
+      "values(1)",
+      "run(3, \"an end of no words\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "a read that gives nothing back": {
+     "threwA": "TypeError",
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "return(0)"
+     ]
+    },
+    "a read that gives null back": {
+     "threwA": "TypeError",
+     "log": [
+      "prepare(\"SELECT id, body FROM notes\")",
+      "iterate(0)",
+      "next(0)",
+      "values(1)",
+      "run(1, \"note 1\")",
+      "next(0)",
+      "return(0)"
+     ]
+    }
+   }
+  },
+  "what can still be read of a database with a wiped page is copied, up to the page": {
+   "returned": {
+    "aside": {
+     "quarantinePath": "<tmp>/torn.db.corrupt-2026-03-04T05-06-07-089Z",
+     "copied": false,
+     "renameErrorCode": null
+    },
+    "copied": 241,
+    "readableByHand": 241,
+    "keptRows": 241,
+    "first": {
+     "id": 1,
+     "body": "note 1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "last": {
+     "id": 241,
+     "body": "note 241 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "files": {
+     "torn.db": "a database",
+     "torn.db.corrupt-2026-03-04T05-06-07-089Z": "a database"
+    }
+   }
+  }
+ }
+}
