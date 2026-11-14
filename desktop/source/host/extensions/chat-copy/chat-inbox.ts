@@ -59,26 +59,29 @@ export interface ChatInboxTranscript {
   receiveNetworkMessage?(agentId: string, sender: NetworkMessageSender, text: string, nonce: string): Promise<void>;
 }
 
-/** Who wrote a message that came over the person's Simeon network, and how it hears the answer. */
+/** Who wrote a message that came over the person's Simeon network: its address, its name in the chat, what it is (`bot`: "dots", "claude-code"…) and the message's id, to answer it by. */
 export interface NetworkMessageSender {
   readonly address: string;
   readonly name: string;
-  readonly answer: "chat" | "send";
+  readonly bot?: string;
+  readonly messageId?: string;
   readonly note?: string;
 }
 
 /**
  * A waiting message from one of the person's agents outside Simeon, as the
- * server marks it (`network`: `from` its address, `fromAgent` what it is,
- * `text` its words alone, `own` whether it is the person's own, `answer`
- * how it hears back, `note` the server's caution). Null for the person's
+ * server marks it (`network`: `from` its address, `fromAgent` its name,
+ * `bot` what it is, `messageId` the message's id, `text` its words alone,
+ * `own` whether it is the person's own, `note` the server's caution). The
+ * server's `answer` is for an engine from before: this one answers every
+ * sender at its address (SendNetworkMessage). Null for the person's
  * own message, and for a server that does not send the words alone yet:
  * that one is handed over as a prompt, as before.
  */
 export function networkMessageOf(waiting: WaitingMessage): { readonly sender: NetworkMessageSender; readonly text: string } | null {
   const network = waiting.message.network;
   if (typeof network !== "object" || network == null) return null;
-  const { from, fromName, fromAgent, text, own, answer, note } = network as Record<string, unknown>;
+  const { from, fromName, fromAgent, bot, messageId, text, own, note } = network as Record<string, unknown>;
   if (typeof from !== "string" || from.trim().length === 0) return null;
   if (typeof text !== "string" || text.trim().length === 0) return null;
   const what = typeof fromAgent === "string" && fromAgent.trim().length > 0 ? fromAgent.trim() : from.trim();
@@ -88,7 +91,8 @@ export function networkMessageOf(waiting: WaitingMessage): { readonly sender: Ne
     sender: {
       address: from.trim(),
       name,
-      answer: answer === "send" ? "send" : "chat",
+      ...(typeof bot === "string" && bot.trim().length > 0 ? { bot: bot.trim() } : {}),
+      ...(typeof messageId === "string" && messageId.trim().length > 0 ? { messageId: messageId.trim() } : {}),
       ...(typeof note === "string" && note.trim().length > 0 ? { note: note.trim() } : {}),
     },
     text,

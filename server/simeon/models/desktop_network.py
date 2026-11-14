@@ -94,6 +94,9 @@ class DesktopNetworkSession(RecordModel):
     repo: Mapped[str | None] = mapped_column(String(120), nullable=True)
     branch: Mapped[str | None] = mapped_column(String(120), nullable=True)
     doing: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #: What the person calls this agent, when it said so (`set_status`, 14
+    #: November 2026): shown in their chats in place of its product's name.
+    called: Mapped[str | None] = mapped_column(String(40), nullable=True)
     busy: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_seen_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False

@@ -601,6 +601,7 @@ const delegations: ReadonlyArray<[string, keyof TranscriptManager]> = [
   ["noteCloudAgentAsked", "backgroundWakes"],
   ["noteCloudAgentSaid", "backgroundWakes"],
   ["receiveNetworkMessage", "backgroundWakes"],
+  ["recordNetworkSent", "backgroundWakes"],
   ["broadcastToAgents", "backgroundWakes"],
   ["emitTimelineEvent", "backgroundWakes"],
   ["hasRunningBackgroundShellWork", "backgroundWakes"],

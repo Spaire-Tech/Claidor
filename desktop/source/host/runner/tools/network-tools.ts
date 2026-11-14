@@ -32,6 +32,12 @@ export interface NetworkToolDependencies {
   agentId(): string;
   /** How this turn began: "connector" for a message through a channel (Discord, Slack, Telegram…). */
   requestSource(): string | undefined;
+  /**
+   * A message the server took, for the chat to keep as a message to that
+   * agent ("Messaged", 14 November 2026): `name` as the chat shows it and
+   * `bot` what it is, when the server said.
+   */
+  sent?(to: { readonly address: string; readonly name: string; readonly bot?: string }, message: string): void;
   log?(line: string): void;
 }
 
@@ -125,9 +131,23 @@ export function createNetworkTools(deps: NetworkToolDependencies) {
       } catch (error) {
         return `Not sent: ${failure(error)}`;
       }
-      const sent = Array.isArray(answer?.sent) ? answer.sent.map(record).map((one) => text(one?.to)).filter((to) => to.length > 0) : [];
+      const reached = Array.isArray(answer?.sent) ? answer.sent.map(record).filter((one) => text(one?.to).length > 0) : [];
+      const sent = reached.map((one) => text(one?.to));
       if (sent.length === 0) return "Not sent: Simeon Labs' server answered with something unexpected.";
       log(`sent to ${sent.length} on the network`);
+      for (const one of reached) {
+        const address = text(one?.to);
+        const bot = text(one?.bot);
+        // A server from before names nobody: the last part of the address stands for it.
+        const name = text(one?.name) || (address.split("/").at(-1) ?? address);
+        try {
+          resolved.sent?.({ address, name, ...(bot.length > 0 ? { bot } : {}) }, args.message);
+        } catch (error) {
+          log(`the chat's line was not written: ${failure(error)}`);
+        }
+      }
+      // An answer to a message that asked: nothing comes back, and the person has not asked for anyone to be asked.
+      if (args.reply_to) return `Sent to ${sent.join(", ")}. It is kept in your conversation with it in this chat.`;
       return `Sent to ${sent.join(", ")}. The answer comes back to this chat as a message: don't wait for it now. Tell the user in a few words whom you asked.`;
     },
   });

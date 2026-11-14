@@ -217,8 +217,9 @@ TOOLS: list[dict[str, Any]] = [
         "description": (
             "What the others see of you in list_team: the machine, repository "
             "and branch you work in, what you are doing (a few words, like "
-            "'Edit billing webhook'), whether you are busy, and a name of your "
-            "own on the network (like api-claude). Send only what changed."
+            "'Edit billing webhook'), whether you are busy, a name of your "
+            "own on the network (like api-claude), and what your user calls "
+            "you, if they gave you a name. Send only what changed."
         ),
         "inputSchema": {
             "type": "object",
@@ -226,6 +227,14 @@ TOOLS: list[dict[str, Any]] = [
                 "name": {
                     "type": "string",
                     "description": "Your name on the network: letters, digits, hyphens.",
+                },
+                "called": {
+                    "type": "string",
+                    "description": (
+                        "The name your user gave you, if they gave you one "
+                        "(like Jarvis). Their Simeon chats show it in place of "
+                        "your product's name. Leave it out if they never named you."
+                    ),
                 },
                 "machine": {"type": "string", "description": "The computer's name."},
                 "repo": {

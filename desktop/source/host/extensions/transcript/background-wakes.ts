@@ -101,6 +101,13 @@ export class BackgroundWakes {
     return this.agentToAgent.noteCloudAgentSaid(...args);
   }
 
+  /** What an agent sent an agent outside Simeon, written in its chat as a message to it (runner/tools/network-tools.ts). */
+  recordNetworkSent(
+    ...args: Parameters<AgentToAgentMessaging["recordNetworkSent"]>
+  ): void {
+    this.agentToAgent.recordNetworkSent(...args);
+  }
+
   /** A message from one of the person's agents outside Simeon, written in the chat as that agent's (chat-copy/chat-inbox.ts). */
   receiveNetworkMessage(
     ...args: Parameters<AgentToAgentMessaging["receiveFromNetwork"]>

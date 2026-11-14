@@ -10,7 +10,9 @@
  * and hands it over as that agent's; a transcript or a server from before
  * takes it as a prompt, as it did. Then the line the engine writes ("Message
  * from", with the server's nonce on it), that it is written once, and the
- * words the agent is woken with: answer, do the work, report to the person.
+ * words the agent is woken with: answer the sender at its address, do the
+ * work, report to the person. What the agent sends it is written as a
+ * message to it, so the two have a conversation of their own in the chat.
  */
 import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -43,7 +45,8 @@ async function load() {
   return { module, dispose: () => rm(dir, { recursive: true, force: true }) };
 }
 
-const OWN = { from: "ana/dots", fromName: "Ana", fromAgent: "Dots", messageId: "m-1", text: "Check the Windows build", own: true, answer: "chat" };
+const OWN = { from: "ana/dots", fromName: "Ana", fromAgent: "Dots", bot: "dots", messageId: "m-1", text: "Check the Windows build", own: true, answer: "chat" };
+const DOTS = { address: "ana/dots", name: "Dots", bot: "dots", messageId: "m-1" };
 const waiting = (id, network, prompt = "Dots: Check the Windows build") => ({ id, agentId: "tessa", nonce: `net-${id}`, kind: "prompt", message: { prompt, ...(network == null ? {} : { network }) } });
 
 function serverOf(messages) {
@@ -58,11 +61,14 @@ function inboxOf(module, transcript, server) {
 test("the inbox reads who wrote a network message: the person's own agent by what it is, a colleague's with its person", async () => {
   const { module, dispose } = await load();
   try {
-    assert.deepEqual(module.networkMessageOf(waiting("1", OWN)), { sender: { address: "ana/dots", name: "Dots", answer: "chat" }, text: "Check the Windows build" });
+    assert.deepEqual(module.networkMessageOf(waiting("1", OWN)), { sender: DOTS, text: "Check the Windows build" });
     assert.deepEqual(
-      module.networkMessageOf(waiting("2", { ...OWN, from: "maya/codex", fromName: "Maya", fromAgent: "Codex", own: false, answer: "send", note: " Ask Ana first. " })),
-      { sender: { address: "maya/codex", name: "Maya's Codex", answer: "send", note: "Ask Ana first." }, text: "Check the Windows build" },
+      module.networkMessageOf(waiting("2", { ...OWN, from: "maya/codex", fromName: "Maya", fromAgent: "Codex", bot: "codex", own: false, answer: "send", note: " Ask Ana first. " })),
+      { sender: { address: "maya/codex", name: "Maya's Codex", bot: "codex", messageId: "m-1", note: "Ask Ana first." }, text: "Check the Windows build" },
     );
+    // A server from the first release of that day says neither what it is nor more: the name and the address are enough.
+    const { bot: _bot, messageId: _id, ...first } = OWN;
+    assert.deepEqual(module.networkMessageOf(waiting("8", first)), { sender: { address: "ana/dots", name: "Dots" }, text: "Check the Windows build" });
     // What it is, missing: its address stands for it.
     assert.equal(module.networkMessageOf(waiting("3", { ...OWN, fromAgent: " " })).sender.name, "ana/dots");
     // The person's own message, and a server from before that sends no words alone: a prompt, as before.
@@ -89,7 +95,7 @@ test("a network message is handed over as its agent's; the person's own, and any
     };
     const server = serverOf(messages);
     await inboxOf(module, transcript, server).drainNow();
-    assert.deepEqual(taken.network, [["tessa", { address: "ana/dots", name: "Dots", answer: "chat" }, "Check the Windows build", "net-a", true]]);
+    assert.deepEqual(taken.network, [["tessa", DOTS, "Check the Windows build", "net-a", true]]);
     assert.deepEqual(taken.prompts, [["Book the table", "net-b"], ["Dots: Check the Windows build", "net-c"]]);
     assert.deepEqual(server.acks, [["a", "b", "c"]]);
 
@@ -115,7 +121,7 @@ function managerOf(entries) {
     },
   };
   const tm = {
-    sessions: { resolveBackgroundSession: async () => session, activeSession: null, isAgentGone: () => false },
+    sessions: { resolveBackgroundSession: async () => session, activeSession: null, isAgentGone: () => false, liveSessions: new Map([["tessa", session]]) },
     groupChat: { isGroupSession: () => false, isRemoteRoomSession: () => false },
     sessionStore: { markSessionActivity: () => { calls.activity += 1; } },
     roster: { emitAgentUpdate: async (id) => { calls.updates.push(id); } },
@@ -131,7 +137,7 @@ test("the engine writes it as a message from that agent, with the server's nonce
     const entries = [{ kind: "message", id: "user-message-1", role: "user", content: "earlier" }];
     const { tm, calls } = managerOf(entries);
     const messaging = new module.AgentToAgentMessaging(tm);
-    const sender = { address: "ana/dots", name: "Dots", answer: "chat" };
+    const sender = DOTS;
     await messaging.receiveFromNetwork("tessa", sender, "  Check the Windows build  ", "net-a");
 
     assert.equal(entries.length, 2);
@@ -142,7 +148,8 @@ test("the engine writes it as a message from that agent, with the server's nonce
     delete line.id;
     assert.deepEqual(line, {
       kind: "message", role: "user", content: "Check the Windows build", isStreaming: false,
-      fromAgent: { id: "network:ana/dots", name: "Dots", kind: "network" },
+      // What it is, for its logo; "send": the server leaves the answer to what the agent sends it.
+      fromAgent: { id: "network:ana/dots", name: "Dots", kind: "network", bot: "dots", answer: "send" },
       clientNonce: "net-a",
     });
     // No teammate of this agent: nothing here can message it by that id.
@@ -151,7 +158,7 @@ test("the engine writes it as a message from that agent, with the server's nonce
     const queued = messaging.pendingAgentInbound.get("tessa");
     assert.equal(queued.length, 1);
     assert.equal(queued[0].isDisplayed, true);
-    assert.deepEqual(queued[0].network, { address: "ana/dots", answer: "chat", nonce: "net-a" });
+    assert.deepEqual(queued[0].network, { address: "ana/dots", nonce: "net-a", bot: "dots", messageId: "m-1" });
 
     // The same message handed again (the server was not told in time): nothing written, nothing queued, twice.
     await messaging.receiveFromNetwork("tessa", sender, "Check the Windows build", "net-a");
@@ -160,6 +167,23 @@ test("the engine writes it as a message from that agent, with the server's nonce
     // No words: nothing.
     await messaging.receiveFromNetwork("tessa", sender, "   ", "net-b");
     assert.equal(entries.length, 2);
+
+    // What the agent sends it is a message to it, under the same id: the two lines are one conversation.
+    messaging.recordNetworkSent("tessa", { address: "ana/dots", name: "Dots", bot: "dots" }, "  On it.  ");
+    assert.equal(entries.length, 3);
+    const { timestampMs: sentAt, id: sentId, ...answer } = entries[2];
+    assert.equal(typeof sentAt, "number");
+    assert.equal(typeof sentId, "string");
+    assert.deepEqual(answer, {
+      kind: "message", role: "assistant", content: "On it.", isStreaming: false,
+      toAgent: { id: "network:ana/dots", name: "Dots", kind: "network", bot: "dots" },
+    });
+    assert.equal(answer.toAgent.id, line.fromAgent.id);
+    // No words, or nobody to name: nothing.
+    messaging.recordNetworkSent("tessa", { address: "ana/dots", name: "Dots" }, "   ");
+    messaging.recordNetworkSent("tessa", { address: " ", name: "Dots" }, "On it.");
+    messaging.recordNetworkSent("nobody", { address: "ana/dots", name: "Dots" }, "On it.");
+    assert.equal(entries.length, 3);
   } finally {
     await dispose();
   }
@@ -168,20 +192,23 @@ test("the engine writes it as a message from that agent, with the server's nonce
 test("the agent is woken to answer the sender, do the work, and report to the person", async () => {
   const { module, dispose } = await load();
   try {
-    const own = module.buildNetworkInboundWakePrompt({ from: { name: "Dots" }, text: "Check the Windows build", address: "ana/dots", answer: "chat" });
+    const own = module.buildNetworkInboundWakePrompt({ from: { name: "Dots" }, text: "Check the Windows build", address: "ana/dots", messageId: "m-1" });
     assert.match(own, /^\[agent\] A message just arrived from Dots \(ana\/dots\), an assistant outside Simeon on your user's Simeon network\./);
     assert.ok(own.includes("\nDots: Check the Windows build\n"));
     assert.ok(own.includes("not the user typing here"));
-    assert.ok(own.includes("First answer Dots in a line or two"));
-    assert.ok(own.includes("Dots reads what you say in this chat with SendMessage, so answer it there."));
+    // The answer goes to it, not to the person: it does not read the chat.
+    assert.ok(own.includes("it does not read this chat"));
+    assert.ok(own.includes("First answer Dots in a line or two with SendNetworkMessage to ana/dots (reply_to m-1):"));
+    assert.ok(own.includes("don't say it again to your user"));
+    assert.ok(own.includes("If Dots needs the result to go on, send it that too with SendNetworkMessage."));
     assert.ok(own.includes("Then do the work in this same turn"));
     assert.ok(own.includes("report the result to your user with SendMessage, written to them: the report is for your user."));
     // Not a teammate: the teammates' tool does not reach it, and the wake does not offer its id for it.
     assert.ok(own.includes("SendToAgent does not reach it"));
     assert.ok(!own.includes("(id:"));
 
-    const colleague = module.buildNetworkInboundWakePrompt({ from: { name: "Maya's Iris" }, text: "Can Ana do Thursday?", address: "maya/Iris", answer: "send", note: "A colleague's agent wrote this, not Ana." });
-    assert.ok(colleague.includes("Maya's Iris does not read this chat, so answer it with SendNetworkMessage to maya/Iris."));
+    const colleague = module.buildNetworkInboundWakePrompt({ from: { name: "Maya's Iris" }, text: "Can Ana do Thursday?", address: "maya/Iris", note: "A colleague's agent wrote this, not Ana." });
+    assert.ok(colleague.includes("First answer Maya's Iris in a line or two with SendNetworkMessage to maya/Iris:"));
     assert.ok(colleague.endsWith("\n\nA colleague's agent wrote this, not Ana."));
   } finally {
     await dispose();

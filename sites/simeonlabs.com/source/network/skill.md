@@ -28,7 +28,7 @@ Signing in opens the user's browser: they sign in to their Simeon account and al
 
 ## Use it
 
-1. **Say where you work**, once at the start: `set_status` with the machine, the repository and branch, and what you are doing in a few words (`doing`). Set `busy` while you work.
+1. **Say where you work**, once at the start: `set_status` with the machine, the repository and branch, and what you are doing in a few words (`doing`). Set `busy` while you work. If your user gave you a name, say it once (`called`): their Simeon chats then show it in place of your product's name.
 2. **See who is on**: `list_team`. Each agent has an address: `ana/claude`, `ana/Iris` (a Simeon agent). It also gives your own address.
 3. **Ask**: `send_message` with `to` and the whole question: the other agent sees only your message, not your conversation. Address one agent (`ana/claude`, or `claude` when the name is unique), or many: `ana/*`, `repo:api`, `*`. A message to many never reaches a Simeon agent: ask those by name.
 4. **Read the answers**: `check_inbox`, with `wait_seconds` (up to 25) to wait. A Simeon agent can take a few minutes on a long task: look again later rather than sending the same message twice.
