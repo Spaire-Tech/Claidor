@@ -70,11 +70,14 @@ function withGlobals(standIns, run) {
   return result;
 }
 
-/** A clock that starts at `at` and moves `step` ms each time the time is read; `state.reads` counts the readings. */
-function clock(at = AT, step = 1_000) {
+/** A clock that starts at `at` and moves `step` ms each time the time is read; `state.reads` counts the readings, and `onRead` is told of each. */
+function clock(at = AT, step = 1_000, onRead = () => {}) {
   const RealDate = Date;
   const state = { reads: 0 };
-  const read = () => at + step * state.reads++;
+  const read = () => {
+    onRead();
+    return at + step * state.reads++;
+  };
   function StandInDate(...given) {
     return given.length === 0 ? new RealDate(read()) : new RealDate(...given);
   }
@@ -203,9 +206,8 @@ const markedContexts = {
   },
 };
 
-/** Tracing that only writes down what is asked of it: a provider, its tracer and the spans it starts. */
-function tracingStandIn() {
-  const asked = [];
+/** Tracing that only writes down what is asked of it (in `asked`): a provider, its tracer and the spans it starts. */
+function tracingStandIn(asked = []) {
   const spans = [];
   const about = (given) => {
     if (given === undefined) return undefined;
@@ -246,8 +248,7 @@ function tracingStandIn() {
 }
 
 /** Run with the stand-in tracing as OpenTelemetry's own (and, if asked, the marked active context), and without them afterwards. */
-function traced(run, { marked = false } = {}) {
-  const tracing = tracingStandIn();
+function traced(run, { marked = false, tracing = tracingStandIn() } = {}) {
   trace.disable();
   trace.setGlobalTracerProvider(tracing.provider);
   if (marked) activeContexts.setGlobalContextManager(markedContexts);
@@ -1204,6 +1205,105 @@ export const scenarios = [
         messages: [42, null, undefined, "", ["a", "b"], { toString: () => "printed" }, "two\nlines", " spaces kept "].map((message) => line({ level: "info", message })),
         "an error line's message that is not a text": line({ level: "error", message: 42 }),
       };
+    },
+  },
+  {
+    name: "a level that is not one of the four is found out last: the path is asked for and what was added is written out before the line is refused",
+    run: async ({ logger }, tools) => {
+      const terminal = terminalOf(await plainLoad(logger, tools));
+      const asked = [];
+      const telling = { getPath: () => (asked.push("the path is asked for"), ["turn"]) };
+      const keyed = new Map([
+        [
+          {
+            toString() {
+              asked.push("a key is asked for its text");
+              return "k";
+            },
+          },
+          1,
+        ],
+      ]);
+      const broken = {
+        get field() {
+          asked.push("a field is read");
+          throw new Error("thrown by a field");
+        },
+      };
+      const line = (fields) => {
+        asked.push(`— ${Object.keys(fields).join(", ")} —`);
+        return written(() => terminal.log(undefined, { message: "m", timestamp: new Date(AT), ...fields }));
+      };
+      return {
+        "a level unknown, a path, something added": line({ level: "trace", context: telling, metadata: { keyed } }),
+        "a level unknown, a field that throws": line({ level: "trace", context: telling, metadata: broken }),
+        "a level unknown, an error that throws": line({ level: "trace", context: telling, error: broken }),
+        "a level unknown, no date": line({ level: "trace", timestamp: new Date(Number.NaN), context: telling }),
+        "no level, a path": line({ context: telling }),
+        "a level known, a field that throws": line({ level: "info", context: telling, metadata: broken }),
+        asked,
+      };
+    },
+  },
+  {
+    name: "a message that is not a text is left as it prints; only on an error line in colour is a missing message written out as the word",
+    run: async ({ logger }, tools) => {
+      const plain = terminalOf(await plainLoad(logger, tools));
+      const coloured = terminalOf(await colouredLoad(logger, tools));
+      const messages = { "a number": 42, null: null, undefined, "an empty text": "", "a list": ["a", "b"], "a text": "text" };
+      const lines = (terminal, level) => Object.fromEntries(Object.entries(messages).map(([label, message]) => [label, written(() => terminal.log(undefined, entryOf({ level, message })))]));
+      return { "plain, info": lines(plain, "info"), "plain, error": lines(plain, "error"), "in colour, info": lines(coloured, "info"), "in colour, warn": lines(coloured, "warn"), "in colour, error": lines(coloured, "error") };
+    },
+  },
+  {
+    name: "what a thing is taken for when it could be two: a summary before anything, a date or a pattern before an error, an error before a list, a map or bytes; the error of a line is an error first",
+    run: async ({ logger }, tools) => {
+      const terminal = terminalOf(await plainLoad(logger, tools));
+      const things = () => ({
+        "a list that is also a summary": Object.assign([1], { kind: "summary", summary: "a list" }),
+        "an error that is also a summary": Object.assign(new Error("m"), { kind: "summary", summary: "an error", stack: "Error: m\n    at a place" }),
+        "a date that is also a summary": Object.assign(new Date(AT), { kind: "summary", summary: "a date" }),
+        "a date with a message": Object.assign(new Date(AT), { message: "dated" }),
+        "a pattern with a name": Object.assign(/x/, { name: "named" }),
+        "a list with a message": Object.assign([1, 2], { message: "listed" }),
+        "a map with a name": Object.assign(new Map([["k", 1]]), { name: "mapped" }),
+        "a set with a cause": Object.assign(new Set([1]), { cause: "why" }),
+        "an array buffer with a name": Object.assign(new ArrayBuffer(2), { name: "buffered" }),
+        "a function with a message": Object.assign(function named() {}, { message: "ignored" }),
+        "a boxed text with a name": Object.assign(new String("ab"), { name: "boxed" }),
+        "an object with a name and fields": { name: "Shell", args: ["ls"], cause: { code: 1 } },
+      });
+      const line = (fields) => {
+        const lines = written(() => terminal.log(undefined, entryOf(fields)));
+        return Array.isArray(lines) ? lines[0].log : lines;
+      };
+      const ways = { "among what was added": (thing) => shown(terminal, thing), "as what was added": (thing) => line({ metadata: thing }), "as the context": (thing) => line({ context: thing }), "as the error": (thing) => line({ error: thing }) };
+      return Object.fromEntries(Object.entries(ways).map(([way, write]) => [way, Object.fromEntries(Object.entries(things()).map(([label, thing]) => [label, write(thing)]))]));
+    },
+  },
+  {
+    name: "a logger's line, step by step: the time is taken, the backend is read from the context, the backend is handed the entry",
+    run: ({ core, logger }) => {
+      const steps = [];
+      const time = clock(AT, 1_000, () => steps.push("the clock is read"));
+      const backend = { log: (_context, entry) => steps.push(`the backend is handed "${entry.message}"`) };
+      const base = core.createContext().with(logger.loggerKey, backend);
+      withGlobals({ Date: time.Date }, () => {
+        const log = logger.createLogger("recorded");
+        log.info(watching(base, steps), "a line");
+        log.error(watching(base, steps), "an error", "why");
+        steps.push("— attributes are added —");
+        const withAttributes = logger.withLogAttributes(watching(base, steps), { a: 1 });
+        steps.push("— a line through them —");
+        log.warn(withAttributes, "with attributes");
+        steps.push("— no backend to be had —");
+        try {
+          log.info({ get: (key) => (steps.push(`get ${key.symbol.description}, which throws`), undefined.backend) }, "never handed");
+        } catch (error) {
+          steps.push(`thrown: ${error.constructor.name}`);
+        }
+      });
+      return steps;
     },
   },
   {
@@ -2331,6 +2431,48 @@ export const scenarios = [
           };
         }),
       );
+    },
+  },
+  {
+    name: "each span function, step by step: what it asks of the tracer, the context, the spans and the clock, in order",
+    run: ({ core, otel }) => {
+      const steps = [];
+      const time = clock(AT, 7, () => steps.push("the clock is read"));
+      return withGlobals({ Date: time.Date }, () => {
+        const tracing = tracingStandIn(steps);
+        return traced(() => {
+          const elsewhere = { traceId: "t", spanId: "s", traceFlags: 1 };
+          const root = otel.withInheritableAttribute(core.createContext().withName("turn"), "team", "blue");
+          const spanned = otel.withSpan(root);
+          const quiet = otel.withSuppressedChildSpans(spanned);
+          steps.length = 0;
+          const told = {};
+          const step = (label, run) => {
+            const outcome = attempt(run);
+            told[label] = steps.splice(0).map((entry) => (typeof entry === "string" ? entry : "startSpan" in entry ? `the tracer starts "${entry.startSpan}", given ${entry.given}` : "getTracer" in entry ? "a tracer is asked for" : `${entry.on}: ${Object.keys(entry).filter((field) => field !== "on")[0]}`));
+            if ("threw" in outcome) told[label].push(`thrown: ${typeof outcome.threw === "string" ? outcome.threw : outcome.threw.constructor.name}`);
+          };
+          step("withSpan, a first span", () => otel.withSpan(watching(root, steps)));
+          step("withSpan, under a span", () => otel.withSpan(watching(spanned.withName("tool"), steps)));
+          step("withSpan, suppressed under a span", () => otel.withSpan(watching(quiet, steps)));
+          step("withSpan, not a context", () => otel.withSpan({}));
+          step("createSpan, under a span", () => otel.createSpan(watching(spanned.withName("tool"), steps))[Symbol.dispose]());
+          step("createSpan, suppressed under a span", () => otel.createSpan(watching(quiet, steps))[Symbol.dispose]());
+          step("createSpan, not a context", () => otel.createSpan({}));
+          step("withInheritableAttribute, under a span", () => otel.withInheritableAttribute(watching(spanned, steps), "k", 1));
+          step("getSpanContextData, under a span", () => otel.getSpanContextData(watching(spanned, steps)));
+          step("recordCompletedSpanIfParented, under a span", () => otel.recordCompletedSpanIfParented(watching(spanned.withName("finished"), steps), undefined, AT));
+          step("recordCompletedSpanIfParented, not a context", () => otel.recordCompletedSpanIfParented({}));
+          step("reportEvent, under a span", () => otel.reportEvent(watching(spanned, steps), "event"));
+          step("reportEvent, no span", () => otel.reportEvent(watching(core.createContext(), steps), "event"));
+          step("reportEvent, not a context", () => otel.reportEvent({}, "event"));
+          step("createContextFromSpanContext, named, on a context", () => otel.createContextFromSpanContext(elsewhere, "remote", watching(root, steps)));
+          step("createContextFromSpanContext, on something that is no context", () => otel.createContextFromSpanContext(elsewhere, "remote", {}));
+          step("createContextFromRemoteSpanContext, named, on a context", () => otel.createContextFromRemoteSpanContext(elsewhere, "remote", watching(root, steps)));
+          step("createContextFromRemoteSpanContext, on something that is no context", () => otel.createContextFromRemoteSpanContext(elsewhere, undefined, {}));
+          return told;
+        }, { tracing });
+      });
     },
   },
   {

@@ -3035,6 +3035,319 @@
     ]
    }
   },
+  "a level that is not one of the four is found out last: the path is asked for and what was added is written out before the line is refused": {
+   "returned": {
+    "a level unknown, a path, something added": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Unhandled log level: trace"
+     }
+    },
+    "a level unknown, a field that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "a level unknown, an error that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "a level unknown, no date": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "Invalid time value"
+     }
+    },
+    "no level, a path": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'toUpperCase')"
+     }
+    },
+    "a level known, a field that throws": {
+     "lines": [],
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "thrown by a field"
+     }
+    },
+    "asked": [
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a key is asked for its text",
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a field is read",
+     "— level, context, error —",
+     "the path is asked for",
+     "a field is read",
+     "— level, timestamp, context —",
+     "— context —",
+     "— level, context, metadata —",
+     "the path is asked for",
+     "a field is read"
+    ]
+   }
+  },
+  "a message that is not a text is left as it prints; only on an error line in colour is a missing message written out as the word": {
+   "returned": {
+    "plain, info": {
+     "a number": [
+      {
+       "log": "09:08:07.065 INFO  42"
+      }
+     ],
+     "null": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "undefined": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "an empty text": [
+      {
+       "log": "09:08:07.065 INFO  "
+      }
+     ],
+     "a list": [
+      {
+       "log": "09:08:07.065 INFO  a,b"
+      }
+     ],
+     "a text": [
+      {
+       "log": "09:08:07.065 INFO  text"
+      }
+     ]
+    },
+    "plain, error": {
+     "a number": [
+      {
+       "error": "09:08:07.065 ERROR 42"
+      }
+     ],
+     "null": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "undefined": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "an empty text": [
+      {
+       "error": "09:08:07.065 ERROR "
+      }
+     ],
+     "a list": [
+      {
+       "error": "09:08:07.065 ERROR a,b"
+      }
+     ],
+     "a text": [
+      {
+       "error": "09:08:07.065 ERROR text"
+      }
+     ]
+    },
+    "in colour, info": {
+     "a number": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m 42"
+      }
+     ],
+     "null": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "undefined": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "an empty text": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m "
+      }
+     ],
+     "a list": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m a,b"
+      }
+     ],
+     "a text": [
+      {
+       "log": "\u001b[2m09:08:07.065\u001b[0m \u001b[34mINFO \u001b[0m text"
+      }
+     ]
+    },
+    "in colour, warn": {
+     "a number": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m 42"
+      }
+     ],
+     "null": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "undefined": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "an empty text": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m "
+      }
+     ],
+     "a list": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m a,b"
+      }
+     ],
+     "a text": [
+      {
+       "warn": "\u001b[2m09:08:07.065\u001b[0m \u001b[33mWARN \u001b[0m text"
+      }
+     ]
+    },
+    "in colour, error": {
+     "a number": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1m42\u001b[0m"
+      }
+     ],
+     "null": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mnull\u001b[0m"
+      }
+     ],
+     "undefined": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mundefined\u001b[0m"
+      }
+     ],
+     "an empty text": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1m\u001b[0m"
+      }
+     ],
+     "a list": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1ma,b\u001b[0m"
+      }
+     ],
+     "a text": [
+      {
+       "error": "\u001b[2m09:08:07.065\u001b[0m \u001b[1;31mERROR\u001b[0m \u001b[1mtext\u001b[0m"
+      }
+     ]
+    }
+   }
+  },
+  "what a thing is taken for when it could be two: a summary before anything, a date or a pattern before an error, an error before a list, a map or bytes; the error of a line is an error first": {
+   "returned": {
+    "among what was added": {
+     "a list that is also a summary": "{v: <a list>}",
+     "an error that is also a summary": "{v: <an error>}",
+     "a date that is also a summary": "{v: <a date>}",
+     "a date with a message": "{v: 2026-11-13T09:08:07.065Z}",
+     "a pattern with a name": "{v: /x/}",
+     "a list with a message": "{v: Error: listed}",
+     "a map with a name": "{v: mapped}",
+     "a set with a cause": "{v: Error cause=\"why\"}",
+     "an array buffer with a name": "{v: buffered}",
+     "a function with a message": "{v: [Function named]}",
+     "a boxed text with a name": "{v: boxed}",
+     "an object with a name and fields": "{v: Shell cause={code: 1}}"
+    },
+    "as what was added": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line meta=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line meta=<an error>",
+     "a date that is also a summary": "09:08:07.065 INFO  a line meta=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line meta=2026-11-13T09:08:07.065Z",
+     "a pattern with a name": "09:08:07.065 INFO  a line meta=/x/",
+     "a list with a message": "09:08:07.065 INFO  a line meta=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line meta=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line meta=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line meta=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line meta=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line meta=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line meta=Shell cause={code: 1}"
+    },
+    "as the context": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line context=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line context=<an error>",
+     "a date that is also a summary": "09:08:07.065 INFO  a line context=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line context=2026-11-13T09:08:07.065Z",
+     "a pattern with a name": "09:08:07.065 INFO  a line context=/x/",
+     "a list with a message": "09:08:07.065 INFO  a line context=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line context=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line context=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line context=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line context=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line context=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line context=Shell cause={code: 1}"
+    },
+    "as the error": {
+     "a list that is also a summary": "09:08:07.065 INFO  a line error=<a list>",
+     "an error that is also a summary": "09:08:07.065 INFO  a line error=Error: m\n  at a place",
+     "a date that is also a summary": "09:08:07.065 INFO  a line error=<a date>",
+     "a date with a message": "09:08:07.065 INFO  a line error=Error: dated",
+     "a pattern with a name": "09:08:07.065 INFO  a line error=named",
+     "a list with a message": "09:08:07.065 INFO  a line error=Error: listed",
+     "a map with a name": "09:08:07.065 INFO  a line error=mapped",
+     "a set with a cause": "09:08:07.065 INFO  a line error=Error cause=\"why\"",
+     "an array buffer with a name": "09:08:07.065 INFO  a line error=buffered",
+     "a function with a message": "09:08:07.065 INFO  a line error=[Function named]",
+     "a boxed text with a name": "09:08:07.065 INFO  a line error=boxed",
+     "an object with a name and fields": "09:08:07.065 INFO  a line error=Shell cause={code: 1}"
+    }
+   }
+  },
+  "a logger's line, step by step: the time is taken, the backend is read from the context, the backend is handed the entry": {
+   "returned": [
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"a line\"",
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"an error\"",
+    "— attributes are added —",
+    "get loggerBackend",
+    "with loggerBackend",
+    "— a line through them —",
+    "the clock is read",
+    "get loggerBackend",
+    "the backend is handed \"with attributes\"",
+    "— no backend to be had —",
+    "the clock is read",
+    "get loggerBackend, which throws",
+    "thrown: TypeError"
+   ]
+  },
   "a context in the entry that is no context is written as context=, when it holds anything; what was added is written as meta=, when it holds anything": {
    "returned": {
     "context": {
@@ -6484,6 +6797,136 @@
       }
      ]
     }
+   }
+  },
+  "each span function, step by step: what it asks of the tracer, the context, the spans and the clock, in order": {
+   "returned": {
+    "withSpan, a first span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"anonymous-context\", given 2",
+     "get otel.inheritable_span_attributes",
+     "span 2, \"anonymous-context\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "with otel.root_span",
+     "with otel.root_start_ms"
+    ],
+    "withSpan, under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"tool\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 3, \"tool\": setAttribute",
+     "the clock is read",
+     "with otel.span"
+    ],
+    "withSpan, suppressed under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans"
+    ],
+    "withSpan, not a context": [
+     "a tracer is asked for",
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "createSpan, under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"tool\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 4, \"tool\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "get otel.span",
+     "span 4, \"tool\": end"
+    ],
+    "createSpan, suppressed under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "get otel.span"
+    ],
+    "createSpan, not a context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "withInheritableAttribute, under a span": [
+     "get otel.inheritable_span_attributes",
+     "get otel.span",
+     "span 1, \"anonymous-context\": setAttribute",
+     "with otel.inheritable_span_attributes"
+    ],
+    "getSpanContextData, under a span": [
+     "get otel.span",
+     "span 1, \"anonymous-context\": spanContext",
+     "get otel.suppress_child_spans"
+    ],
+    "recordCompletedSpanIfParented, under a span": [
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "a tracer is asked for",
+     "get otel.span",
+     "get otel.suppress_child_spans",
+     "name",
+     "the tracer starts \"finished\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 5, \"finished\": setAttribute",
+     "the clock is read",
+     "with otel.span",
+     "get otel.span",
+     "span 5, \"finished\": end"
+    ],
+    "recordCompletedSpanIfParented, not a context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "reportEvent, under a span": [
+     "a tracer is asked for",
+     "get otel.span",
+     "the tracer starts \"event\", given 3",
+     "get otel.inheritable_span_attributes",
+     "span 6, \"event\": setAttribute",
+     "the clock is read",
+     "get otel.root_start_ms",
+     "get otel.root_span",
+     "span 1, \"anonymous-context\": setAttribute",
+     "span 6, \"event\": setAttribute",
+     "span 6, \"event\": end"
+    ],
+    "reportEvent, no span": [
+     "a tracer is asked for",
+     "get otel.span"
+    ],
+    "reportEvent, not a context": [
+     "a tracer is asked for"
+    ],
+    "createContextFromSpanContext, named, on a context": [
+     "a tracer is asked for",
+     "the tracer starts \"remote\", given 3",
+     "withName remote",
+     "with otel.span"
+    ],
+    "createContextFromSpanContext, on something that is no context": [
+     "a tracer is asked for",
+     "the tracer starts \"remote\", given 3",
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ],
+    "createContextFromRemoteSpanContext, named, on a context": [
+     "withName remote",
+     "with otel.span"
+    ],
+    "createContextFromRemoteSpanContext, on something that is no context": [
+     "thrown: a TypeError of the runtime's own: what was to be called is not a function"
+    ]
    }
   },
   "with no tracing set up, spans are started and ended all the same and record nothing: no trace, no id, flags of 0": {
