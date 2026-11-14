@@ -1243,6 +1243,9 @@ export const scenarios = [
   {
     name: "a list too long to be handed on in one go stops the reading, and the check of a file, with the runtime's own refusal; the length that counts is one entry's kept scripts, or one hook's mistakes",
     run: ({ mapper, hooksConfig }) => {
+      // One call carries about 126,000 things with the stack Node gives itself
+      // (measured on Node 22 and 26.5). 300,000 is well above that; under a
+      // larger --stack-size they may be carried, and the answers here change.
       const script = { command: "check" };
       const many = (count, thing) => new Array(count).fill(thing);
       const counted = (config) => ({ kept: config.hooks.stop.length, first: config.hooks.stop[0], last: config.hooks.stop.at(-1) });
