@@ -1,0 +1,6200 @@
+{
+ "part": "packages/agent-kv",
+ "surface": {
+  "serde": {
+   "ProtoSerde": "class",
+   "Utf8Serde": "class",
+   "fromHex": "function",
+   "toHex": "function",
+   "utf8Serde": "object"
+  },
+  "blobs": {
+   "InMemoryBlobStore": "class",
+   "getBlobId": "function",
+   "isBlobDurable": "function",
+   "toUint8Array": "function"
+  },
+  "notFound": {
+   "BlobNotFoundError": "class",
+   "findBlobNotFoundError": "function"
+  },
+  "typed": {
+   "BLOB_METADATA_CALLBACK_SYMBOL": "symbol",
+   "TypedBlobStore": "class",
+   "getBlobMetadataCallback": "function",
+   "setBlobReadableFromCloudMirror": "function",
+   "unwrapBlobStore": "function"
+  },
+  "reference": {
+   "EagerReference": "class",
+   "LazyReference": "class",
+   "Writeable": "class"
+  },
+  "subagents": {
+   "resolveSubagentPersistedStates": "function"
+  },
+  "agentStore": {
+   "AgentMetadataSerde": "class",
+   "AgentModes": "array",
+   "AgentStore2": "class",
+   "ApprovalModeSettings": "array",
+   "deriveConversationStateFromStructure": "function",
+   "generateBlobEncryptionKeyHex": "function",
+   "getAgentMetadataSchema": "function",
+   "getDefaultAgentMetadata": "function",
+   "isValidBlobEncryptionKeyHex": "function"
+  },
+  "disposable": {
+   "Disposable": "class"
+  }
+ },
+ "scenarios": {
+  "what the part exports: each function and class by its name, its parameters and its methods": {
+   "returned": {
+    "serde": {
+     "Utf8Serde": [
+      {
+       "name": "Utf8Serde",
+       "parameters": 0
+      },
+      [
+       "deserialize",
+       "getBlobType",
+       "serialize"
+      ]
+     ],
+     "ProtoSerde": [
+      {
+       "name": "ProtoSerde",
+       "parameters": 1
+      },
+      [
+       "deserialize",
+       "getBlobType",
+       "serialize"
+      ]
+     ],
+     "toHex": {
+      "name": "toHex",
+      "parameters": 1
+     },
+     "fromHex": {
+      "name": "fromHex",
+      "parameters": 1
+     },
+     "utf8SerdeIsAUtf8Serde": true
+    },
+    "blobs": {
+     "isBlobDurable": {
+      "name": "isBlobDurable",
+      "parameters": 2
+     },
+     "toUint8Array": {
+      "name": "toUint8Array",
+      "parameters": 1
+     },
+     "getBlobId": {
+      "name": "getBlobId",
+      "parameters": 1
+     },
+     "InMemoryBlobStore": [
+      {
+       "name": "InMemoryBlobStore",
+       "parameters": 0
+      },
+      [
+       "flush",
+       "getBlob",
+       "setBlob",
+       "setBlobLocallyOnly"
+      ]
+     ]
+    },
+    "notFound": {
+     "BlobNotFoundError": [
+      {
+       "name": "BlobNotFoundError",
+       "parameters": 2
+      },
+      [],
+      true
+     ],
+     "findBlobNotFoundError": {
+      "name": "findBlobNotFoundError",
+      "parameters": 1
+     }
+    },
+    "typed": {
+     "getBlobMetadataCallback": {
+      "name": "getBlobMetadataCallback",
+      "parameters": 1
+     },
+     "unwrapBlobStore": {
+      "name": "unwrapBlobStore",
+      "parameters": 1
+     },
+     "setBlobReadableFromCloudMirror": {
+      "name": "setBlobReadableFromCloudMirror",
+      "parameters": 1
+     },
+     "TypedBlobStore": [
+      {
+       "name": "TypedBlobStore",
+       "parameters": 2
+      },
+      [
+       "flush",
+       "getBlob",
+       "getInnerBlobStore",
+       "isBlobDurable",
+       "setBlob",
+       "setBlobLocallyOnly"
+      ]
+     ]
+    },
+    "reference": {
+     "Writeable": [
+      {
+       "name": "Writeable",
+       "parameters": 0
+      },
+      []
+     ],
+     "EagerReference": [
+      {
+       "name": "EagerReference",
+       "parameters": 3
+      },
+      [
+       "get",
+       "set",
+       "writeToBlobStore"
+      ]
+     ],
+     "LazyReference": [
+      {
+       "name": "LazyReference",
+       "parameters": 3
+      },
+      [
+       "get",
+       "set",
+       "writeToBlobStore"
+      ]
+     ]
+    },
+    "subagents": {
+     "resolveSubagentPersistedStates": {
+      "name": "resolveSubagentPersistedStates",
+      "parameters": 3
+     }
+    },
+    "agentStore": {
+     "generateBlobEncryptionKeyHex": {
+      "name": "generateBlobEncryptionKeyHex",
+      "parameters": 0
+     },
+     "isValidBlobEncryptionKeyHex": {
+      "name": "isValidBlobEncryptionKeyHex",
+      "parameters": 1
+     },
+     "getAgentMetadataSchema": {
+      "name": "getAgentMetadataSchema",
+      "parameters": 0
+     },
+     "getDefaultAgentMetadata": {
+      "name": "getDefaultAgentMetadata",
+      "parameters": 1
+     },
+     "AgentMetadataSerde": [
+      {
+       "name": "AgentMetadataSerde",
+       "parameters": 0
+      },
+      [
+       "deserialize",
+       "getBlobType",
+       "serialize"
+      ]
+     ],
+     "deriveConversationStateFromStructure": {
+      "name": "deriveConversationStateFromStructure",
+      "parameters": 3
+     },
+     "AgentStore2": [
+      {
+       "name": "AgentStore2",
+       "parameters": 2
+      },
+      [
+       "deserializeConversationStateStructure",
+       "dispose",
+       "getBlobStore",
+       "getConversationStateStructure",
+       "getFullConversation",
+       "getFullConversationWithSubagents",
+       "getId",
+       "getLastRequestIdFromConversation",
+       "getLatestCheckpoint",
+       "getMetadata",
+       "handleCheckpoint",
+       "resetFromDb",
+       "setMetadata",
+       "subscribeToMetadata",
+       "tryResetFromDb"
+      ]
+     ]
+    },
+    "disposable": {
+     "Disposable": [
+      {
+       "name": "Disposable",
+       "parameters": 0
+      },
+      []
+     ]
+    }
+   }
+  },
+  "what each thing the part makes holds: its own fields by name, in order": {
+   "returned": {
+    "utf8Serde": [],
+    "protoSerde": [
+     "proto"
+    ],
+    "inMemoryBlobStore": [
+     "blobs"
+    ],
+    "typedBlobStore": {
+     "fields": [
+      "inner"
+     ],
+     "keys": [
+      "Symbol(sand.blobMetadataCallback)"
+     ],
+     "held": {
+      "inner": {
+       "value": {
+        "the": "store inside"
+       },
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "Symbol(sand.blobMetadataCallback)": {
+       "value": {
+        "$": "function",
+        "name": "callback"
+       },
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      }
+     },
+     "holdsTheStore": true,
+     "holdsTheCallback": true
+    },
+    "typedBlobStoreWithoutCallback": {
+     "fields": [
+      "inner"
+     ],
+     "keys": [
+      "Symbol(sand.blobMetadataCallback)"
+     ],
+     "held": {
+      "inner": {
+       "value": {
+        "the": "store inside"
+       },
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      },
+      "Symbol(sand.blobMetadataCallback)": {
+       "value": {
+        "$": "undefined"
+       },
+       "writable": true,
+       "enumerable": true,
+       "configurable": true
+      }
+     }
+    },
+    "writeable": [],
+    "eagerReference": {
+     "fields": [
+      "serde",
+      "blobStore",
+      "lastWrittenValue",
+      "value"
+     ],
+     "serde": true,
+     "blobStore": true,
+     "lastWrittenValue": {
+      "$": "undefined"
+     },
+     "value": "a value"
+    },
+    "lazyReference": {
+     "fields": [
+      "serde",
+      "blobStore",
+      "blobId",
+      "valuePromise",
+      "lastWrittenValue",
+      "lastWrittenBlobData"
+     ],
+     "serde": true,
+     "blobStore": true,
+     "blobId": {
+      "$": "bytes",
+      "v": "0a"
+     },
+     "valuePromise": {
+      "$": "undefined"
+     },
+     "lastWrittenValue": {
+      "$": "undefined"
+     },
+     "lastWrittenBlobData": {
+      "$": "undefined"
+     }
+    },
+    "agentMetadataSerde": [],
+    "agentStore": [
+     "blobStore",
+     "metadataStore",
+     "serde",
+     "conversationStateStructure",
+     "fixedRootBlobId"
+    ],
+    "agentStoreWithoutOptions": [
+     "blobStore",
+     "metadataStore",
+     "serde",
+     "conversationStateStructure",
+     "fixedRootBlobId"
+    ]
+   }
+  },
+  "a text is stored as its UTF-8 bytes": {
+   "returned": {
+    "an empty text": {
+     "$": "bytes",
+     "v": ""
+    },
+    "plain letters": {
+     "$": "bytes",
+     "v": "68656c6c6f"
+    },
+    "accents, a wide letter and a face": {
+     "$": "bytes",
+     "v": "c3a974c3a920e697a520f09f9880"
+    },
+    "a text that starts with the byte order mark": {
+     "$": "bytes",
+     "v": "efbbbf61"
+    },
+    "half of a pair alone is stored as the replacement character": {
+     "$": "bytes",
+     "v": "61efbfbd62"
+    },
+    "a line break and a zero": {
+     "$": "bytes",
+     "v": "610a00"
+    },
+    "nothing at all is stored as no bytes": {
+     "$": "bytes",
+     "v": ""
+    },
+    "a number is stored as its digits": {
+     "$": "bytes",
+     "v": "3132"
+    },
+    "null is stored as the word": {
+     "$": "bytes",
+     "v": "6e756c6c"
+    },
+    "a symbol": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "stored bytes are read back as text: the mark at the start is dropped, bytes that are no UTF-8 become the replacement character": {
+   "returned": {
+    "no bytes": "",
+    "plain letters": "hello",
+    "accents, a wide letter and a face": "été 日 😀",
+    "a byte order mark, then a letter": "a",
+    "two byte order marks: only the first is dropped": "﻿a",
+    "a byte that is no UTF-8, and a letter cut short": "a��",
+    "half of a pair written as three bytes": "a���b",
+    "a view into the middle of longer memory": "hi",
+    "memory itself, not a view of it": "hi",
+    "nothing at all": "",
+    "null": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a text": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "the same serde reads one blob after another, and says its blobs are strings": {
+   "returned": {
+    "aLetterCutShortDoesNotLeakIntoTheNextRead": [
+     "a�",
+     "�b"
+    ],
+    "blobType": {
+     "kind": "string"
+    },
+    "aNewAnswerEachTime": true,
+    "anotherSerdeDoesTheSame": [
+     {
+      "$": "bytes",
+      "v": "68c3a9"
+     },
+     "hé",
+     {
+      "kind": "string"
+     }
+    ],
+    "thereAndBack": [
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "a message's serde stores what the message writes of itself, and reads through the message's type": {
+   "returned": {
+    "written": {
+     "$": "bytes",
+     "v": "0a01"
+    },
+    "read": "what the type read",
+    "blobType": {
+     "kind": "proto",
+     "typeName": "example.v1.Thing"
+    },
+    "theNameIsReadWhenAsked": {
+     "kind": "proto",
+     "typeName": "example.v1.Renamed"
+    },
+    "calls": [
+     {
+      "toBinary": [],
+      "onTheMessage": true
+     },
+     {
+      "fromBinary": [
+       {
+        "$": "bytes",
+        "v": "0a02"
+       }
+      ],
+      "onTheType": true
+     }
+    ],
+    "aMessageThatCannotWriteItself": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "aTypeThatCannotRead": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "noTypeAtAll": [
+     {
+      "threw": "a TypeError of the runtime's own"
+     },
+     {
+      "threw": "a TypeError of the runtime's own"
+     }
+    ]
+   }
+  },
+  "bytes are written as hex, two small digits each": {
+   "returned": {
+    "no bytes": "",
+    "zero": "00",
+    "the edges of one digit and two": "0001090a0f107f80ff",
+    "a view into the middle of longer memory": "0a0b",
+    "a Node buffer": "0102fe",
+    "memory itself": "010203",
+    "a list of numbers: each is taken modulo 256": "01022cff02",
+    "a text: its UTF-8 bytes": "616263",
+    "16-bit numbers: the low byte of each": "3407",
+    "something with a length and numbered fields": "01ff",
+    "a number: nothing": "",
+    "an object with nothing in it: nothing": "",
+    "a set: each member as it is written in base 16, at least two digits": "0102ff100",
+    "a map: each pair written out": "1,2",
+    "a symbol: nothing": "",
+    "nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "null": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "everyByte": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff",
+    "withoutBuffer": [
+     true,
+     "000a10ff",
+     ""
+    ]
+   }
+  },
+  "hex is read two characters at a time: what is no hex counts as zero, an odd length is refused": {
+   "returned": {
+    "an empty text": {
+     "$": "bytes",
+     "v": ""
+    },
+    "two digits": {
+     "$": "bytes",
+     "v": "0a"
+    },
+    "capitals": {
+     "$": "bytes",
+     "v": "0a1b2c3d4e5f"
+    },
+    "both kinds mixed": {
+     "$": "bytes",
+     "v": "abcd"
+    },
+    "spaces and a line break around it are dropped first": {
+     "$": "bytes",
+     "v": "0a0b"
+    },
+    "only spaces": {
+     "$": "bytes",
+     "v": ""
+    },
+    "one digit": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid hex string length"
+     }
+    },
+    "three digits": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid hex string length"
+     }
+    },
+    "an odd length once the spaces are dropped": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "Invalid hex string length"
+     }
+    },
+    "letters that are no hex": {
+     "$": "bytes",
+     "v": "00"
+    },
+    "a digit, then a letter that is no hex: the digit alone": {
+     "$": "bytes",
+     "v": "01"
+    },
+    "a letter that is no hex, then a digit: zero": {
+     "$": "bytes",
+     "v": "00"
+    },
+    "a minus sign": {
+     "$": "bytes",
+     "v": "ff"
+    },
+    "a plus sign": {
+     "$": "bytes",
+     "v": "0f"
+    },
+    "the 0x some write in front": {
+     "$": "bytes",
+     "v": "001f"
+    },
+    "spaces inside": {
+     "$": "bytes",
+     "v": "0a0b01"
+    },
+    "a capital whose small form is two characters long": {
+     "$": "bytes",
+     "v": "00"
+    },
+    "a text object": {
+     "$": "bytes",
+     "v": "0a"
+    },
+    "a number": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a list holding a text": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "everyByteThereAndBack": true,
+    "theBytesAreNew": true
+   }
+  },
+  "a blob is durable unless its store says otherwise": {
+   "returned": {
+    "a store that cannot be asked": true,
+    "a store that says yes": true,
+    "a store that says no": false,
+    "a store that says nothing": true,
+    "a store that says null: null is handed on": null,
+    "a store that says 0: 0 is handed on": 0,
+    "a store that says a word: the word is handed on": "soon",
+    "a store whose question is null": true,
+    "a store whose question is no function": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "no store at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "asked": [
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     },
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     },
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     },
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     },
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     },
+     {
+      "given": [
+       {
+        "$": "bytes",
+        "v": "0a0b"
+       }
+      ],
+      "onTheStore": true
+     }
+    ]
+   }
+  },
+  "bytes are seen as a Uint8Array over the same memory, or as a copy when the memory is shared between threads": {
+   "returned": {
+    "a Uint8Array": {
+     "bytes": {
+      "$": "bytes",
+      "v": "010203"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "no bytes": {
+     "bytes": {
+      "$": "bytes",
+      "v": ""
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "a view into the middle of longer memory": {
+     "bytes": {
+      "$": "bytes",
+      "v": "010203"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "a Node buffer": {
+     "bytes": {
+      "$": "bytes",
+      "v": "070707"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "a DataView": {
+     "bytes": {
+      "$": "bytes",
+      "v": "0102"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "16-bit numbers: their bytes, not their values": {
+     "bytes": {
+      "$": "bytes",
+      "v": "01010303"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": true,
+     "sameStart": true
+    },
+    "bytes over shared memory: a copy": {
+     "bytes": {
+      "$": "bytes",
+      "v": "0103"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": false,
+     "sameStart": false
+    },
+    "16-bit numbers over shared memory: a copy of their values, cut to a byte each": {
+     "bytes": {
+      "$": "bytes",
+      "v": "0103"
+     },
+     "aPlainUint8Array": true,
+     "anotherObject": true,
+     "sameMemory": false,
+     "sameStart": true
+    },
+    "memory itself, not a view of it: no bytes": {
+     "$": "bytes",
+     "v": ""
+    },
+    "a text: no bytes": {
+     "$": "bytes",
+     "v": ""
+    },
+    "nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "whereTheRuntimeKnowsNoSharedMemory": {
+     "bytes": {
+      "$": "bytes",
+      "v": "0103"
+     },
+     "sameMemory": true,
+     "plain": {
+      "bytes": {
+       "$": "bytes",
+       "v": "0a"
+      },
+      "aPlainUint8Array": true,
+      "anotherObject": true,
+      "sameMemory": true,
+      "sameStart": true
+     }
+    }
+   }
+  },
+  "a blob's key is the SHA-256 of its bytes": {
+   "returned": {
+    "ofAbc": {
+     "$": "bytes",
+     "v": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    },
+    "bytesWrittenOverRightAfterTheCallDoNotChangeTheKey": true,
+    "thirtyTwoNewBytes": true,
+    "theBytesGivenAreUntouched": "616263",
+    "aNewKeyEachTime": true,
+    "no bytes": {
+     "$": "bytes",
+     "v": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "one zero": {
+     "$": "bytes",
+     "v": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"
+    },
+    "the text hello": {
+     "$": "bytes",
+     "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    },
+    "a view into the middle of longer memory: only what the view shows": {
+     "$": "bytes",
+     "v": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    },
+    "a Node buffer": {
+     "$": "bytes",
+     "v": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    },
+    "bytes over shared memory": {
+     "$": "bytes",
+     "v": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    },
+    "a thousand and one bytes": {
+     "$": "bytes",
+     "v": "f483a9ed0dc65070b32463757e0cdbcfe54e14de31604d75ebeac6d5cb2ccdea"
+    },
+    "memory itself, not a view of it: the key of no bytes": {
+     "$": "bytes",
+     "v": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "a text: the key of no bytes": {
+     "$": "bytes",
+     "v": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nothingAtAll": {
+     "aPromiseAllTheSame": true,
+     "rejected": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "the store in memory keeps each blob under the hex of its key and hands back the very bytes it was given": {
+   "returned": {
+    "saysNothingOfDurability": true,
+    "beforeAnything": {
+     "$": "undefined"
+    },
+    "storingGivesAPromiseOfNothing": [
+     true,
+     {
+      "$": "undefined"
+     }
+    ],
+    "readBack": {
+     "aPromise": true,
+     "bytes": {
+      "$": "bytes",
+      "v": "aa"
+     },
+     "theVeryBytesGiven": true
+    },
+    "underTheSameKeyFromOtherMemory": true,
+    "aKeyGivenAsItsHexIsAnotherKey": {
+     "$": "undefined"
+    },
+    "storedAgainUnderTheSameKey": true,
+    "locallyOnly": {
+     "$": "undefined"
+    },
+    "locallyOnlyIsKeptTheSameWay": true,
+    "flushGivesAPromiseOfNothing": [
+     true,
+     {
+      "$": "undefined"
+     }
+    ],
+    "anEmptyKeyIsAKey": [
+     {
+      "$": "undefined"
+     },
+     true
+    ],
+    "anotherStoreHasNothing": {
+     "$": "undefined"
+    },
+    "timesTheClockWasRead": 24,
+    "told": [
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.set_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore setBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.set_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore setBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.set_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore setBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.set_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore setBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     },
+     {
+      "histogram": "agent_kv.in_memory.get_blob.duration_ms",
+      "kind": "histogram",
+      "description": "Duration of InMemoryBlobStore getBlob operations in milliseconds",
+      "labelNames": {
+       "$": "undefined"
+      },
+      "value": 0.25,
+      "labels": {
+       "$": "undefined"
+      },
+      "onTheContext": true
+     }
+    ]
+   }
+  },
+  "the store in memory fails at once, not through its promise, when a key or a context cannot be used": {
+   "returned": {
+    "readingUnderNoKey": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "writingUnderNoKey": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "theTimeIsToldAllTheSame": [
+     [
+      "agent_kv.in_memory.get_blob.duration_ms",
+      2
+     ],
+     [
+      "agent_kv.in_memory.set_blob.duration_ms",
+      2
+     ]
+    ],
+    "writingWithAContextThatCannotBeAsked": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "theBlobWasKeptBeforeItFailed": true,
+    "readingWithAContextThatCannotBeAsked": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "readingWithNoContext": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "flushingWithNoContext": {
+     "$": "undefined"
+    },
+    "aStoreBuiltOnItIsAskedThroughItsOwnSetBlob": [
+     "my setBlob 09"
+    ],
+    "timesTheClockWasRead": 14
+   }
+  },
+  "the error for missing data says how many blobs are missing and shows up to three keys, twelve characters of each": {
+   "returned": {
+    "no key": "This conversation's data is missing and can't be restored. Start a new chat to continue.",
+    "one key": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob aabbccddeeff)",
+    "a key of eleven characters": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0123456789a)",
+    "a key of twelve": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0123456789ab)",
+    "a key of thirteen": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0123456789ab)",
+    "two keys": "This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aabbccddeeff, b)",
+    "three keys": "This conversation's data is missing and can't be restored. Start a new chat to continue. (3 missing blobs: a, b, c)",
+    "four keys: the fourth is only counted": "This conversation's data is missing and can't be restored. Start a new chat to continue. (4 missing blobs: a, b, c, …)",
+    "five keys, one of them empty": "This conversation's data is missing and can't be restored. Start a new chat to continue. (5 missing blobs: 0123456789ab, 0123456789ab, , …)",
+    "one empty key": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob )",
+    "keys that are no hex are shown as they are": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob not hex at a)"
+   }
+  },
+  "the error for missing data: what it holds, how it prints, what it is an instance of": {
+   "returned": {
+    "kept": {
+     "$": "error",
+     "name": "BlobNotFoundError",
+     "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aabbccddeeff, 0102)",
+     "extra": {
+      "isUsageError": true,
+      "isBlobNotFound": true,
+      "blobIdHexes": [
+       "aabbccddeeff00112233",
+       "0102"
+      ],
+      "name": "BlobNotFoundError"
+     }
+    },
+    "printed": "BlobNotFoundError: This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aabbccddeeff, 0102)",
+    "traceBegins": "BlobNotFoundError: This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aabbccddeeff, 0102)",
+    "ownNames": [
+     "message",
+     "isUsageError",
+     "isBlobNotFound",
+     "blobIdHexes",
+     "name"
+    ],
+    "listed": [
+     "isUsageError",
+     "isBlobNotFound",
+     "blobIdHexes",
+     "name"
+    ],
+    "asJson": "{\"isUsageError\":true,\"isBlobNotFound\":true,\"blobIdHexes\":[\"aabbccddeeff00112233\",\"0102\"],\"name\":\"BlobNotFoundError\"}",
+    "held": {
+     "message": {
+      "value": "This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aabbccddeeff, 0102)",
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "isUsageError": {
+      "value": true,
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "isBlobNotFound": {
+      "value": true,
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "blobIdHexes": {
+      "value": [
+       "aabbccddeeff00112233",
+       "0102"
+      ],
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     },
+     "name": {
+      "value": "BlobNotFoundError",
+      "writable": true,
+      "enumerable": true,
+      "configurable": true
+     }
+    },
+    "anError": true,
+    "ofItsOwnClass": true,
+    "theNameIsAFieldOfEachErrorAndNotOfTheClass": true,
+    "theKeysAreACopy": [
+     "aabbccddeeff00112233",
+     "0102"
+    ],
+    "causes": {
+     "no options": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "options with nothing in them": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "a cause that is undefined is no cause": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "a cause that is null is a cause": {
+      "value": null,
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "a cause that is 0 is a cause": {
+      "value": 0,
+      "writable": true,
+      "enumerable": false,
+      "configurable": true
+     },
+     "an error as the cause": {
+      "ownNames": [
+       "message",
+       "cause",
+       "isUsageError",
+       "isBlobNotFound",
+       "blobIdHexes",
+       "name"
+      ],
+      "theVeryError": true,
+      "listed": [
+       "isUsageError",
+       "isBlobNotFound",
+       "blobIdHexes",
+       "name"
+      ],
+      "asJson": "{\"isUsageError\":true,\"isBlobNotFound\":true,\"blobIdHexes\":[\"0a\"],\"name\":\"BlobNotFoundError\"}"
+     },
+     "options that are null": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "options that are a text": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ]
+    },
+    "whatIsNoListOfTexts": {
+     "numbers": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "one number": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a text": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a set": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "something with a length of zero that cannot be gone through": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "nothing at all": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a list holding nothing": {
+      "threw": "a TypeError of the runtime's own"
+     }
+    }
+   }
+  },
+  "the error for missing data is looked for in an error and the causes under it, ten deep at most": {
+   "returned": {
+    "the error itself": "the error for missing data",
+    "as the cause of another": "the error for missing data",
+    "nine errors down: found": "the error for missing data",
+    "ten errors down: not looked at": "nothing",
+    "an error of a class built on it": true,
+    "any error that carries the flag": true,
+    "any error that carries the name": true,
+    "a flag of 1 is no flag": "nothing",
+    "a name in other letters is another name": "nothing",
+    "the first of two is the one found": true,
+    "an object that is no error, with the flag and the name: not it": "nothing",
+    "an object that is no error, with the error as its cause: its cause is followed": "the error for missing data",
+    "a cause it has only from what it was made from is followed too": "the error for missing data",
+    "an ordinary error with no cause": "nothing",
+    "causes that go round in a circle": "nothing",
+    "an error from another realm, with the flag and the name: not it": "nothing",
+    "a wrapper from another realm around the error: its cause is followed": "the error for missing data",
+    "a function with a cause: not followed": "nothing",
+    "a text": "nothing",
+    "a number": "nothing",
+    "null": "nothing",
+    "nothing at all": "nothing",
+    "a cause that is null": "nothing",
+    "aCauseIsReadOncePerLevel": [
+     "the error for missing data",
+     [
+      "cause"
+     ]
+    ]
+   }
+  },
+  "the key a store's metadata callback is kept under is one every build of the engine shares": {
+   "returned": {
+    "written": "Symbol(sand.blobMetadataCallback)",
+    "sharedByName": true,
+    "knownAs": "sand.blobMetadataCallback"
+   }
+  },
+  "a store's metadata callback is what the store has under that key, if it has the key at all": {
+   "returned": {
+    "a store without the key": {
+     "$": "undefined"
+    },
+    "a store with a callback under the key": "the callback",
+    "a store with the key and nothing under it": {
+     "$": "undefined"
+    },
+    "a store with something else under the key: handed on as it is": "not a function",
+    "a store that has the key from what it was made from": "the callback",
+    "a typed store made with a callback": "the callback",
+    "a typed store made without one": {
+     "$": "undefined"
+    },
+    "a typed store around a store with a callback: the outer one's own, which is none": {
+     "$": "undefined"
+    },
+    "a function with the key": "the callback",
+    "nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "null": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a number": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a text": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "aStoreIsAskedWhetherItHasTheKeyThenForIt": [
+     "the callback",
+     [
+      "has Symbol(sand.blobMetadataCallback)",
+      "get Symbol(sand.blobMetadataCallback)"
+     ]
+    ],
+    "aStoreThatSaysItHasNoKeyIsNotAskedForIt": [
+     {
+      "$": "undefined"
+     },
+     [
+      "has Symbol(sand.blobMetadataCallback)"
+     ]
+    ]
+   }
+  },
+  "a typed store hands every call to the store inside it and gives back the very promise it got": {
+   "returned": {
+    "calls": [
+     {
+      "getBlob": 2,
+      "onTheStoreInside": true
+     },
+     {
+      "setBlob": 3,
+      "onTheStoreInside": true
+     },
+     {
+      "setBlobLocallyOnly": 3,
+      "onTheStoreInside": true
+     },
+     {
+      "flush": 1,
+      "onTheStoreInside": true
+     }
+    ],
+    "got": {
+     "getBlob": {
+      "theVeryPromise": true,
+      "gave": "what getBlob gave",
+      "givenTheVeryThings": true
+     },
+     "setBlob": {
+      "theVeryPromise": true,
+      "gave": "what setBlob gave",
+      "givenTheVeryThings": true
+     },
+     "setBlobLocallyOnly": {
+      "theVeryPromise": true,
+      "gave": "what setBlobLocallyOnly gave",
+      "givenTheVeryThings": true
+     },
+     "flush": {
+      "theVeryPromise": true,
+      "gave": "what flush gave",
+      "givenTheVeryThings": true
+     }
+    },
+    "theStoreInside": true,
+    "aTypedStoreIsATypedStore": true,
+    "durable": {
+     "the store inside cannot be asked": true,
+     "it says yes": [
+      true,
+      [
+       {
+        "given": 1,
+        "theVeryKey": true,
+        "onTheStoreInside": true
+       }
+      ]
+     ],
+     "it says no": [
+      false,
+      [
+       {
+        "given": 1,
+        "theVeryKey": true,
+        "onTheStoreInside": true
+       }
+      ]
+     ],
+     "it says nothing": [
+      true,
+      [
+       {
+        "given": 1,
+        "theVeryKey": true,
+        "onTheStoreInside": true
+       }
+      ]
+     ],
+     "it says null: null is handed on": [
+      null,
+      [
+       {
+        "given": 1,
+        "theVeryKey": true,
+        "onTheStoreInside": true
+       }
+      ]
+     ],
+     "it says 0: 0 is handed on": [
+      0,
+      [
+       {
+        "given": 1,
+        "theVeryKey": true,
+        "onTheStoreInside": true
+       }
+      ]
+     ],
+     "its question is null": true,
+     "its question is no function": {
+      "threw": "a TypeError of the runtime's own"
+     }
+    },
+    "whatTheStoreInsideLacks": {
+     "a store inside with no getBlob": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "no store inside": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "a store inside whose setBlob fails at once: so does the typed store's": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "refused at once"
+      }
+     }
+    }
+   }
+  },
+  "unwrapping a store gives the store inside all the typed stores around it": {
+   "returned": {
+    "a store that is not typed: itself": true,
+    "one typed store around it": true,
+    "two": true,
+    "five hundred": true,
+    "a typed store around nothing": {
+     "$": "undefined"
+    },
+    "a store built on the typed store is asked for the store inside it": [
+     true,
+     [
+      "asked for the store inside"
+     ]
+    ],
+    "something that only looks like a typed store: itself": true,
+    "nothing at all": {
+     "$": "undefined"
+    },
+    "null": null,
+    "a number": 5
+   }
+  },
+  "a blob that must be readable from the mirror: the innermost store is asked to wait for its second copy, or else the store given is written and flushed": {
+   "returned": {
+    "aStoreThatCanWait": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      {
+       "setBlobAwaitingSecondary": [
+        true,
+        true,
+        true,
+        3
+       ],
+       "onTheInnermostStore": true
+      }
+     ]
+    },
+    "aStoreThatCanWaitInsideTwoTypedStores": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      {
+       "setBlobAwaitingSecondary": [
+        true,
+        true,
+        true,
+        3
+       ],
+       "onTheInnermostStore": true
+      }
+     ]
+    },
+    "aStoreThatCannot": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob 0a = 0b0c",
+      "flush"
+     ]
+    },
+    "aStoreThatCannotInsideATypedStore": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob 0a = 0b0c",
+      "flush"
+     ]
+    },
+    "aTypedStoreThatCouldWaitAroundAStoreThatCannot": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob 0a = 0b0c",
+      "flush"
+     ]
+    },
+    "aWaitThatIsNoFunction": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob 0a = 0b0c",
+      "flush"
+     ]
+    },
+    "theFlushComesOnlyOnceTheWriteIsDone": [
+     "setBlob asked",
+     "setBlob still under way",
+     "flush asked"
+    ],
+    "aWriteThatFails": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the write failed"
+      }
+     },
+     "events": [
+      "setBlob refused"
+     ]
+    },
+    "aFlushThatFails": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the flush failed"
+      }
+     },
+     "events": [
+      "setBlob 0a = 0b0c"
+     ]
+    },
+    "aWaitThatFails": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the wait failed"
+      }
+     },
+     "events": []
+    },
+    "noStore": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "noOptions": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "whatIsReadFromTheOptionsAndWhen": [
+     "read blobStore",
+     "read blobStore",
+     "read ctx",
+     "read blobId",
+     "read blobData",
+     "setBlob 0a = 0b0c",
+     "read blobStore",
+     "read ctx",
+     "flush"
+    ],
+    "andWhenTheStoreCanWait": [
+     "read blobStore",
+     "read ctx",
+     "read blobId",
+     "read blobData",
+     "setBlobAwaitingSecondary"
+    ]
+   }
+  },
+  "a value that writes itself is told from others by a class that holds nothing": {
+   "returned": {
+    "fields": [],
+    "hasAWayToWriteItself": false,
+    "aClassBuiltOnItIsOne": true,
+    "somethingThatOnlyLooksLikeOneIsNot": false
+   }
+  },
+  "an eager reference holds its value, and writes it under the hash of its bytes when asked": {
+   "returned": {
+    "getGivesAPromiseOfTheValue": [
+     true,
+     "hello"
+    ],
+    "nothingAskedYet": [],
+    "firstWrite": {
+     "key": {
+      "$": "bytes",
+      "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+     },
+     "isTheHashOfTheBytes": true,
+     "events": [
+      "serialize \"hello\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "theCallbackGotTheVeryKey": true,
+     "theCallbackGotTheVeryKindTheSerdeGave": true,
+     "theCallbackWasCalledOn": "nothing",
+     "whatTheCallbackGot": [
+      "blobId",
+      "blobType"
+     ],
+     "lastWritten": {
+      "value": "hello",
+      "blobId": {
+       "$": "bytes",
+       "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+      },
+      "blobData": {
+       "$": "bytes",
+       "v": "68656c6c6f"
+      }
+     },
+     "lastWrittenKeyIsTheVeryKey": true,
+     "lastWrittenBytesAreTheOnesStored": true
+    },
+    "writtenAgainUnchanged": {
+     "theVeryKey": true,
+     "events": []
+    },
+    "setToTheSameText": {
+     "theVeryKey": true,
+     "events": []
+    },
+    "setToAnotherText": {
+     "read": "other",
+     "key": {
+      "$": "bytes",
+      "v": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa"
+     },
+     "events": [
+      "serialize \"other\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob d9298a10d1b0735837dc4bd85dac641b0f3cef27a47e5d53a54f2f3f5b2fcffa = 6f74686572"
+     ],
+     "value": "other"
+    },
+    "everyCallGotTheContext": true
+   }
+  },
+  "an eager reference writes again what its store does not hold for good, and tells of a new blob only when there is a callback and a kind to tell": {
+   "returned": {
+    "whenTheStoreIsAskedForItsCallback": [
+     "serialize \"hello\"",
+     "the store is asked for its callback",
+     "getBlobType",
+     {
+      "callback": {
+       "blobId": {
+        "$": "bytes",
+        "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+       },
+       "blobType": {
+        "kind": "string"
+       }
+      }
+     },
+     "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+    ],
+    "a store that says nothing of how long it holds": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "a store that holds for good": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [
+      "isBlobDurable 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+     ],
+     "sameKey": true,
+     "key": true
+    },
+    "a store that does not: the same key and bytes are stored again, and nothing is told": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [
+      "isBlobDurable 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "sameKey": true,
+     "key": true
+    },
+    "a store that answers null, which is not yes": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [
+      "isBlobDurable 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "sameKey": true,
+     "key": true
+    },
+    "a serde that says nothing of its blobs: nothing is told": {
+     "first": [
+      "serialize \"hello\"",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "a serde that says undefined: nothing is told": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "a serde that says null: nothing is told": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "a store with no callback": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "a store whose callback is no function": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType"
+     ],
+     "second": [
+      "serialize \"hello\"",
+      "getBlobType"
+     ],
+     "sameKey": false,
+     "key": {
+      "rejected": "a TypeError of the runtime's own"
+     }
+    },
+    "a store whose callback is 0: nothing is told": {
+     "first": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ],
+     "second": [],
+     "sameKey": true,
+     "key": true
+    },
+    "aListChangedInPlaceIsNotWrittenAgain": [
+     "serialize [\"a\",\"list\"]",
+     "getBlobType",
+     "setBlob 7679cdea4274ac6befbd42a0408956935aff6c02d92b71b1248f76b8cbdcc11d = 612c6c697374"
+    ],
+    "anotherListOfTheSameWordsIs": [
+     "serialize [\"a\",\"list\"]",
+     "getBlobType",
+     "setBlob 7679cdea4274ac6befbd42a0408956935aff6c02d92b71b1248f76b8cbdcc11d = 612c6c697374"
+    ],
+    "aValueThatIsAPromiseIsHandedBackAsItIs": true
+   }
+  },
+  "an eager reference whose value writes itself lets it, and asks nothing of its own store or serde": {
+   "returned": {
+    "key": {
+     "$": "bytes",
+     "v": "0a0b"
+    },
+    "again": {
+     "$": "bytes",
+     "v": "0a0b"
+    },
+    "events": [
+     {
+      "theValueWasAskedToWriteItself": 1,
+      "withTheContext": true,
+      "onTheValue": true
+     },
+     {
+      "theValueWasAskedToWriteItself": 1,
+      "withTheContext": true,
+      "onTheValue": true
+     }
+    ],
+    "lastWritten": {
+     "$": "undefined"
+    },
+    "aValueThatFailsAtOnceFailsThroughThePromise": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "could not write itself"
+     }
+    },
+    "aValueOfTheClassThatCannotWrite": {
+     "rejected": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "an eager reference: a value of undefined, a write that fails, a value set while a write is under way": {
+   "returned": {
+    "undefinedNeverWritten": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "undefinedAfterAWrite": [
+     {
+      "$": "bytes",
+      "v": "eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c"
+     },
+     [
+      "serialize undefined",
+      "getBlobType",
+      "setBlob eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c = 756e646566696e6564"
+     ]
+    ],
+    "aWriteTheStoreRefuses": {
+     "firstTry": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store is full"
+      }
+     },
+     "lastWritten": {
+      "$": "undefined"
+     },
+     "events": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob refused"
+     ],
+     "secondTry": true,
+     "secondEvents": [
+      "serialize \"hello\"",
+      "getBlobType",
+      "setBlob 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 = 68656c6c6f"
+     ]
+    },
+    "aSerdeThatFails": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "cannot be written as bytes"
+     }
+    },
+    "aValueSetWhileTheWriteIsUnderWay": {
+     "events": [
+      "serialize \"first\"",
+      "getBlobType",
+      "setBlob a7937b64b8caa58f03721bb6bacf5c78cb235febe0e70b1b84cd99541461a08e = 6669727374"
+     ],
+     "lastWritten": {
+      "value": "second",
+      "blobId": {
+       "$": "bytes",
+       "v": "a7937b64b8caa58f03721bb6bacf5c78cb235febe0e70b1b84cd99541461a08e"
+      },
+      "blobData": {
+       "$": "bytes",
+       "v": "6669727374"
+      }
+     },
+     "theSecondValueCountsAsWritten": true,
+     "nothingMoreIsStored": [],
+     "read": "second"
+    }
+   }
+  },
+  "a lazy reference asks its store for the blob once, when its value is first asked for": {
+   "returned": {
+    "nothingAskedWhenMade": [],
+    "writtenBeforeItWasRead": {
+     "theVeryKeyItWasMadeWith": true,
+     "events": []
+    },
+    "eachAskingGivesItsOwnPromise": true,
+    "read": [
+     "stored text",
+     "stored text"
+    ],
+    "oneLoadForBoth": [
+     "getBlobType",
+     "getBlob 0a",
+     "deserialize 73746f7265642074657874"
+    ],
+    "readAgain": [
+     "stored text",
+     []
+    ],
+    "afterTheLoad": {
+     "lastWrittenValue": "stored text",
+     "lastWrittenBlobDataIsTheVeryBlob": true,
+     "blobId": true,
+     "valuePromiseGivesTheValue": "stored text"
+    },
+    "everyCallGotTheContext": true,
+    "aBlobOfNoBytesIsABlob": ""
+   }
+  },
+  "a lazy reference whose blob is not there fails with the error for missing data, and keeps failing with it": {
+   "returned": {
+    "first": {
+     "kept": {
+      "$": "error",
+      "name": "BlobNotFoundError",
+      "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0a0b0c0d0e0f)",
+      "extra": {
+       "isUsageError": true,
+       "isBlobNotFound": true,
+       "blobIdHexes": [
+        "0a0b0c0d0e0f1011"
+       ],
+       "name": "BlobNotFoundError"
+      }
+     },
+     "printed": "BlobNotFoundError: This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0a0b0c0d0e0f)",
+     "traceBegins": "BlobNotFoundError: This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0a0b0c0d0e0f)",
+     "ownNames": [
+      "message",
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "listed": [
+      "isUsageError",
+      "isBlobNotFound",
+      "blobIdHexes",
+      "name"
+     ],
+     "asJson": "{\"isUsageError\":true,\"isBlobNotFound\":true,\"blobIdHexes\":[\"0a0b0c0d0e0f1011\"],\"name\":\"BlobNotFoundError\"}"
+    },
+    "ofItsClass": true,
+    "afterTheBlobWasStored": {
+     "theVeryError": true
+    },
+    "writingIt": {
+     "theVeryError": true
+    },
+    "events": [
+     "getBlobType",
+     "getBlob 0a0b0c0d0e0f1011",
+     "getBlob 0a0b0c0d0e0f1011"
+    ],
+    "afterTheFailure": {
+     "lastWrittenValue": {
+      "$": "undefined"
+     },
+     "lastWrittenBlobData": {
+      "$": "undefined"
+     }
+    },
+    "aNewReferenceToTheSameKeyReadsIt": "stored now",
+    "theKeyNamedIsTheOneHeldWhenTheAnswerCame": [
+     "0b"
+    ]
+   }
+  },
+  "a lazy reference: a store, a serde or a blob that fails": {
+   "returned": {
+    "the store gives null, which is not nothing: the serde is asked to read it": {
+     "first": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "firstEvents": [
+      "deserialize null"
+     ],
+     "second": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "secondEvents": [],
+     "theVeryFailureAgain": true
+    },
+    "the store fails at once: nothing is kept, and the next asking tries again": {
+     "first": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store failed at once"
+      }
+     },
+     "firstEvents": [
+      "getBlobType",
+      "getBlob, try 1"
+     ],
+     "second": "second try",
+     "secondEvents": [
+      "getBlobType",
+      "getBlob, try 2",
+      "deserialize 7365636f6e6420747279"
+     ],
+     "theVeryFailureAgain": false
+    },
+    "the store fails through its promise: the failure is kept": {
+     "first": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store failed later"
+      }
+     },
+     "firstEvents": [
+      "getBlobType",
+      "getBlob"
+     ],
+     "second": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store failed later"
+      }
+     },
+     "secondEvents": [],
+     "theVeryFailureAgain": true
+    },
+    "the store gives no promise": {
+     "first": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "firstEvents": [
+      "getBlobType",
+      "getBlob"
+     ],
+     "second": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "secondEvents": [
+      "getBlobType",
+      "getBlob"
+     ],
+     "theVeryFailureAgain": false
+    },
+    "the serde cannot read the blob: the failure is kept": {
+     "first": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the bytes are damaged"
+      }
+     },
+     "firstEvents": [
+      "getBlob 0a"
+     ],
+     "second": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the bytes are damaged"
+      }
+     },
+     "secondEvents": [],
+     "theVeryFailureAgain": true
+    },
+    "the serde fails when asked what its blobs are: the store is not asked, and the next asking tries again": {
+     "first": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "no kind to tell"
+      }
+     },
+     "firstEvents": [
+      "getBlobType, asking 1"
+     ],
+     "second": "fine",
+     "secondEvents": [
+      "getBlobType, asking 2",
+      "getBlob 0a",
+      "deserialize 66696e65"
+     ],
+     "theVeryFailureAgain": false
+    },
+    "the serde says its blobs are null": {
+     "first": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "firstEvents": [
+      "getBlobType"
+     ],
+     "second": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "secondEvents": [
+      "getBlobType"
+     ],
+     "theVeryFailureAgain": false
+    }
+   }
+  },
+  "a lazy reference tells of a load that is large (512 KiB or more) or slow to read (100 ms or more), and of no other": {
+   "returned": {
+    "eachMeasureIsHandedLabelsOfItsOwn": 3,
+    "smallAndFast": {
+     "gave": "read",
+     "told": [],
+     "timesTheClockWasRead": 2
+    },
+    "oneByteUnderTheSize": {
+     "gave": "read",
+     "told": [],
+     "timesTheClockWasRead": 2
+    },
+    "atTheSize": {
+     "gave": "read",
+     "told": [
+      {
+       "increment": "agent_kv.lazy_reference.cache_miss",
+       "kind": "counter",
+       "description": "Number of large or slow LazyReference cache misses that require loading and deserializing a blob",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 1,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "histogram": "agent_kv.lazy_reference.deserialize_bytes",
+       "kind": "histogram",
+       "description": "Blob byte size loaded on a large or slow LazyReference deserialize cache miss",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 524288,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "histogram": "agent_kv.lazy_reference.deserialize_ms",
+       "kind": "histogram",
+       "description": "Time spent deserializing a blob on a large or slow LazyReference cache miss",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 0,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "log": {
+        "level": "warn",
+        "message": "Large lazy reference deserialize",
+        "context": "the context",
+        "metadata": {
+         "blobType": "string",
+         "blobBytes": 524288,
+         "deserializeDurationMs": 0
+        },
+        "timestamp": "a date"
+       },
+       "onTheContext": true
+      }
+     ],
+     "timesTheClockWasRead": 2
+    },
+    "oneByteOver": [
+     1,
+     524289,
+     0,
+     {
+      "blobType": "string",
+      "blobBytes": 524289,
+      "deserializeDurationMs": 0
+     }
+    ],
+    "halfAMillisecondUnderTheTime": {
+     "gave": "read",
+     "told": [],
+     "timesTheClockWasRead": 2
+    },
+    "atTheTime": {
+     "gave": "read",
+     "told": [
+      {
+       "increment": "agent_kv.lazy_reference.cache_miss",
+       "kind": "counter",
+       "description": "Number of large or slow LazyReference cache misses that require loading and deserializing a blob",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 1,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "histogram": "agent_kv.lazy_reference.deserialize_bytes",
+       "kind": "histogram",
+       "description": "Blob byte size loaded on a large or slow LazyReference deserialize cache miss",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 10,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "histogram": "agent_kv.lazy_reference.deserialize_ms",
+       "kind": "histogram",
+       "description": "Time spent deserializing a blob on a large or slow LazyReference cache miss",
+       "labelNames": [
+        "blob_type"
+       ],
+       "value": 100,
+       "labels": {
+        "blob_type": "string"
+       },
+       "onTheContext": true
+      },
+      {
+       "log": {
+        "level": "warn",
+        "message": "Large lazy reference deserialize",
+        "context": "the context",
+        "metadata": {
+         "blobType": "string",
+         "blobBytes": 10,
+         "deserializeDurationMs": 100
+        },
+        "timestamp": "a date"
+       },
+       "onTheContext": true
+      }
+     ],
+     "timesTheClockWasRead": 2
+    },
+    "halfAMillisecondOver": [
+     1,
+     10,
+     100.5,
+     {
+      "blobType": "string",
+      "blobBytes": 10,
+      "deserializeDurationMs": 100.5
+     }
+    ],
+    "largeAndSlow": [
+     1,
+     524288,
+     250,
+     {
+      "blobType": "string",
+      "blobBytes": 524288,
+      "deserializeDurationMs": 250
+     }
+    ],
+    "theKindToldForEachKindOfBlob": {
+     "a serde that cannot be asked": [
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blobType": "unknown"
+      }
+     ],
+     "a serde that says undefined": [
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blob_type": "unknown"
+      },
+      {
+       "blobType": "unknown"
+      }
+     ],
+     "a message, by its type's name": [
+      {
+       "blob_type": "agent.v1.ConversationStep"
+      },
+      {
+       "blob_type": "agent.v1.ConversationStep"
+      },
+      {
+       "blob_type": "agent.v1.ConversationStep"
+      },
+      {
+       "blobType": "agent.v1.ConversationStep"
+      }
+     ],
+     "a message with no name": [
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blobType": {
+        "$": "undefined"
+       }
+      }
+     ],
+     "JSON": [
+      {
+       "blob_type": "json"
+      },
+      {
+       "blob_type": "json"
+      },
+      {
+       "blob_type": "json"
+      },
+      {
+       "blobType": "json"
+      }
+     ],
+     "a string": [
+      {
+       "blob_type": "string"
+      },
+      {
+       "blob_type": "string"
+      },
+      {
+       "blob_type": "string"
+      },
+      {
+       "blobType": "string"
+      }
+     ],
+     "a picture, by its type": [
+      {
+       "blob_type": "image:image/png"
+      },
+      {
+       "blob_type": "image:image/png"
+      },
+      {
+       "blob_type": "image:image/png"
+      },
+      {
+       "blobType": "image:image/png"
+      }
+     ],
+     "a picture with no type": [
+      {
+       "blob_type": "image:undefined"
+      },
+      {
+       "blob_type": "image:undefined"
+      },
+      {
+       "blob_type": "image:undefined"
+      },
+      {
+       "blobType": "image:undefined"
+      }
+     ],
+     "a file, by its type": [
+      {
+       "blob_type": "file:application/pdf"
+      },
+      {
+       "blob_type": "file:application/pdf"
+      },
+      {
+       "blob_type": "file:application/pdf"
+      },
+      {
+       "blobType": "file:application/pdf"
+      }
+     ],
+     "a file with no type": [
+      {
+       "blob_type": "file"
+      },
+      {
+       "blob_type": "file"
+      },
+      {
+       "blob_type": "file"
+      },
+      {
+       "blobType": "file"
+      }
+     ],
+     "a file whose type is empty": [
+      {
+       "blob_type": "file"
+      },
+      {
+       "blob_type": "file"
+      },
+      {
+       "blob_type": "file"
+      },
+      {
+       "blobType": "file"
+      }
+     ],
+     "a kind the code does not know: the kind itself": [
+      {
+       "blob_type": "video"
+      },
+      {
+       "blob_type": "video"
+      },
+      {
+       "blob_type": "video"
+      },
+      {
+       "blobType": "video"
+      }
+     ],
+     "no kind": [
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blob_type": {
+        "$": "undefined"
+       }
+      },
+      {
+       "blobType": {
+        "$": "undefined"
+       }
+      }
+     ],
+     "a kind that is a number": [
+      {
+       "blob_type": 7
+      },
+      {
+       "blob_type": 7
+      },
+      {
+       "blob_type": 7
+      },
+      {
+       "blobType": 7
+      }
+     ]
+    }
+   }
+  },
+  "a lazy reference writes only a value that is not the one it loaded or last wrote": {
+   "returned": {
+    "loadedThenWritten": {
+     "theVeryKey": true,
+     "events": []
+    },
+    "loadedThenWrittenToAStoreThatDoesNotHoldForGood": {
+     "theVeryKey": true,
+     "events": [
+      "isBlobDurable 0a",
+      "setBlob 0a = 73746f7265642074657874"
+     ],
+     "theVeryBlobItLoaded": true
+    },
+    "loadedThenWrittenToAStoreThatHoldsForGood": {
+     "theVeryKey": true,
+     "events": [
+      "isBlobDurable 0a"
+     ]
+    },
+    "setWithoutEverLoading": {
+     "afterSet": {
+      "read": "new text",
+      "events": []
+     },
+     "key": {
+      "$": "bytes",
+      "v": "cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab"
+     },
+     "events": [
+      "serialize \"new text\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab = 6e65772074657874"
+     ],
+     "theKeyHeldIsTheNewOne": true,
+     "lastWrittenValue": "new text",
+     "lastWrittenBlobDataIsWhatWasStored": true,
+     "readAfter": "new text",
+     "writtenAgain": {
+      "theVeryKey": true,
+      "events": []
+     }
+    },
+    "setThenWrittenTwiceToAStoreThatDoesNotHoldForGood": {
+     "theVeryKey": true,
+     "events": [
+      "isBlobDurable cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab",
+      "setBlob cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab = 6e65772074657874"
+     ]
+    },
+    "setToTheVeryValueItLoaded": {
+     "theVeryKey": true,
+     "events": []
+    },
+    "loadedThenSetToAnotherText": {
+     "key": {
+      "$": "bytes",
+      "v": "5f9e7e193d9fdc7b98096ecc0c0e31a28cbfb378d2ac2c54bd82b2f0c1f7a4a2"
+     },
+     "events": [
+      "serialize \"stored text and more\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "5f9e7e193d9fdc7b98096ecc0c0e31a28cbfb378d2ac2c54bd82b2f0c1f7a4a2"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob 5f9e7e193d9fdc7b98096ecc0c0e31a28cbfb378d2ac2c54bd82b2f0c1f7a4a2 = 73746f726564207465787420616e64206d6f7265"
+     ],
+     "theKeyHeldIsTheNewOne": true
+    },
+    "setToUndefinedWithoutEverLoading": {
+     "theKeyItWasMadeWith": true,
+     "events": [],
+     "read": {
+      "$": "undefined"
+     }
+    },
+    "loadedThenSetToUndefined": {
+     "key": {
+      "$": "bytes",
+      "v": "eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c"
+     },
+     "events": [
+      "serialize undefined",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c = 756e646566696e6564"
+     ]
+    },
+    "aSerdeThatSaysNothingOfItsBlobs": [
+     "serialize \"no kind to tell\"",
+     "setBlob e02dae19b892f36ab74873e33e5591d28ca1be0b42a2b1b9a809876a75290698 = 6e6f206b696e6420746f2074656c6c"
+    ],
+    "whenTheStoreIsAskedForItsCallback": {
+     "events": [
+      "serialize \"new text\"",
+      "the store is asked for its callback",
+      "getBlobType",
+      {
+       "callback": [
+        "blobId",
+        "blobType"
+       ],
+       "theVeryKind": true
+      },
+      "setBlob"
+     ],
+     "calledOn": [
+      "nothing"
+     ],
+     "theCallbackGotTheVeryKey": true
+    },
+    "aValueThatWritesItself": {
+     "key": {
+      "$": "bytes",
+      "v": "0c0d"
+     },
+     "events": [
+      {
+       "theValueWasAskedToWriteItself": 1,
+       "withTheContext": true
+      }
+     ],
+     "theKeyHeldIsStillTheOld": "0a"
+    },
+    "aWriteTheStoreRefuses": {
+     "refused": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store is full"
+      }
+     },
+     "theKeyHeldIsStillTheOld": true,
+     "lastWrittenValue": {
+      "$": "undefined"
+     },
+     "lastWrittenBlobData": {
+      "$": "undefined"
+     },
+     "thenWrittenAgain": {
+      "$": "bytes",
+      "v": "cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab"
+     },
+     "events": [
+      "serialize \"new text\"",
+      "getBlobType",
+      {
+       "callback": {
+        "blobId": {
+         "$": "bytes",
+         "v": "cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab"
+        },
+        "blobType": {
+         "kind": "string"
+        }
+       }
+      },
+      "setBlob cb0208b0b1fa06bc59f85c8b2be1e45ff2ef6ddbf0cef02e9f276b8208ea48ab = 6e65772074657874"
+     ]
+    },
+    "setWhileTheBlobIsOnItsWay": {
+     "readMeanwhile": "set while loading",
+     "theFirstAskingStillGetsTheStoredText": "stored text",
+     "key": {
+      "$": "bytes",
+      "v": "45ff0054d7bb844d1fbcc3954ecb7e1c63b2b702f01f10c54f59f375b7e80c4c"
+     },
+     "events": [
+      "getBlobType",
+      "getBlob 0a",
+      "deserialize 73746f7265642074657874",
+      "serialize \"set while loading\"",
+      "getBlobType",
+      "setBlob 45ff0054d7bb844d1fbcc3954ecb7e1c63b2b702f01f10c54f59f375b7e80c4c = 736574207768696c65206c6f6164696e67"
+     ],
+     "lastWrittenValue": "set while loading"
+    }
+   }
+  },
+  "a write that waits on a slow store gives the key of whatever was written meanwhile": {
+   "returned": {
+    "eager": {
+     "theWriteThatWaitedGaveTheSecondKey": true,
+     "events": [
+      "isBlobDurable the first key",
+      "setBlob the first key",
+      "serialize \"second\"",
+      "getBlobType",
+      "setBlob the second key"
+     ]
+    },
+    "lazy": {
+     "theWriteThatWaitedGaveTheSecondKey": true,
+     "events": [
+      "isBlobDurable 0a",
+      "setBlob 0a",
+      "serialize \"second\"",
+      "getBlobType",
+      "setBlob the second key"
+     ]
+    }
+   }
+  },
+  "with no keys of subagents kept apart, the subagents' states are the ones written in the conversation itself": {
+   "returned": {
+    "aPromise": true,
+    "subagents": [
+     "sub-1",
+     "sub-2"
+    ],
+    "theVeryStatesOfTheConversation": [
+     true,
+     true
+    ],
+    "aListOfItsOwn": true,
+    "states": {
+     "sub-1": "10051806220222002a076d6f64656c2d61",
+     "sub-2": "1007180822022200"
+    },
+    "theStoreWasNotAsked": [],
+    "aConversationWithNoSubagents": {},
+    "aStateWithNoListOfKeys": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "aStateWithNoListOfStates": {}
+   }
+  },
+  "a subagent's state kept apart is read from its blob, and comes before the one written in the conversation": {
+   "returned": {
+    "subagentsInOrder": [
+     "only-inline",
+     "both",
+     "only-apart",
+     "a-blob-of-no-bytes"
+    ],
+    "states": {
+     "only-inline": {
+      "stored": "1001180222022200",
+      "class": "_SubagentPersistedState",
+      "model": {
+       "$": "undefined"
+      },
+      "created": {
+       "$": "bigint",
+       "v": "1"
+      }
+     },
+     "both": {
+      "stored": "10641865220222002a0d66726f6d2074686520626c6f62",
+      "class": "_SubagentPersistedState",
+      "model": "from the blob",
+      "created": {
+       "$": "bigint",
+       "v": "100"
+      }
+     },
+     "only-apart": {
+      "stored": "0a034201a110c80118c90122022200",
+      "class": "_SubagentPersistedState",
+      "model": {
+       "$": "undefined"
+      },
+      "created": {
+       "$": "bigint",
+       "v": "200"
+      }
+     },
+     "a-blob-of-no-bytes": {
+      "stored": "",
+      "class": "_SubagentPersistedState",
+      "model": {
+       "$": "undefined"
+      },
+      "created": {
+       "$": "bigint",
+       "v": "0"
+      }
+     }
+    },
+    "theOneOnlyWrittenInTheConversationIsTheVeryOne": true,
+    "theConversationItselfIsUntouched": [
+     "only-inline",
+     "both"
+    ],
+    "asked": [
+     "getBlob 0b",
+     "getBlob 0a",
+     "getBlob 0c"
+    ],
+    "everyCallGotTheContext": true,
+    "told": []
+   }
+  },
+  "a subagent's blob that is not there: the error for missing data, unless the conversation itself holds that subagent": {
+   "returned": {
+    "one missing, not in the conversation": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "BlobNotFoundError",
+       "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob aa01)",
+       "extra": {
+        "isUsageError": true,
+        "isBlobNotFound": true,
+        "blobIdHexes": [
+         "aa01"
+        ],
+        "name": "BlobNotFoundError"
+       }
+      }
+     },
+     "keysNamed": [
+      "aa01"
+     ],
+     "asked": [
+      "getBlob aa01"
+     ],
+     "told": []
+    },
+    "one missing, also written in the conversation: that one is used, and a warning says so": {
+     "gave": {
+      "kept": "1001180222022200"
+     },
+     "asked": [
+      "getBlob aa01"
+     ],
+     "told": [
+      {
+       "log": {
+        "level": "warn",
+        "message": "Subagent state ref blob not found; falling back to inline entry",
+        "context": "the context",
+        "metadata": {
+         "subagentId": "kept"
+        },
+        "timestamp": "a date"
+       },
+       "onTheContext": true
+      }
+     ]
+    },
+    "two missing and one there: both keys are named, after every blob was asked for": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "BlobNotFoundError",
+       "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (2 missing blobs: aa01, aa02)",
+       "extra": {
+        "isUsageError": true,
+        "isBlobNotFound": true,
+        "blobIdHexes": [
+         "aa01",
+         "aa02"
+        ],
+        "name": "BlobNotFoundError"
+       }
+      }
+     },
+     "keysNamed": [
+      "aa01",
+      "aa02"
+     ],
+     "asked": [
+      "getBlob aa01",
+      "getBlob 0a",
+      "getBlob aa02"
+     ],
+     "told": []
+    },
+    "four missing: three keys are shown": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "BlobNotFoundError",
+       "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (4 missing blobs: aa01, aa02, aa03, …)",
+       "extra": {
+        "isUsageError": true,
+        "isBlobNotFound": true,
+        "blobIdHexes": [
+         "aa01",
+         "aa02",
+         "aa03",
+         "aa04"
+        ],
+        "name": "BlobNotFoundError"
+       }
+      }
+     },
+     "keysNamed": [
+      "aa01",
+      "aa02",
+      "aa03",
+      "aa04"
+     ],
+     "asked": [
+      "getBlob aa01",
+      "getBlob aa02",
+      "getBlob aa03",
+      "getBlob aa04"
+     ],
+     "told": []
+    },
+    "one missing and one damaged: missing comes first": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "BlobNotFoundError",
+       "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob aa01)",
+       "extra": {
+        "isUsageError": true,
+        "isBlobNotFound": true,
+        "blobIdHexes": [
+         "aa01"
+        ],
+        "name": "BlobNotFoundError"
+       }
+      }
+     },
+     "keysNamed": [
+      "aa01"
+     ],
+     "asked": [
+      "getBlob 0b",
+      "getBlob aa01"
+     ],
+     "told": []
+    },
+    "one damaged: what the reading of it threw": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "RangeError",
+       "message": "premature EOF"
+      }
+     },
+     "asked": [
+      "getBlob 0a",
+      "getBlob 0b"
+     ],
+     "told": []
+    },
+    "two damaged: the first one's failure": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "RangeError",
+       "message": "premature EOF"
+      }
+     },
+     "asked": [
+      "getBlob 0b",
+      "getBlob 0c"
+     ],
+     "told": []
+    },
+    "one damaged, also written in the conversation: it fails all the same": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "RangeError",
+       "message": "premature EOF"
+      }
+     },
+     "asked": [
+      "getBlob 0b"
+     ],
+     "told": []
+    },
+    "a subagent called toString, missing: taken for one the conversation holds": {
+     "gave": {},
+     "asked": [
+      "getBlob aa01"
+     ],
+     "told": [
+      {
+       "log": {
+        "level": "warn",
+        "message": "Subagent state ref blob not found; falling back to inline entry",
+        "context": "the context",
+        "metadata": {
+         "subagentId": "toString"
+        },
+        "timestamp": "a date"
+       },
+       "onTheContext": true
+      }
+     ]
+    },
+    "a subagent called toString, there": {
+     "gave": {
+      "toString": "1064186522022200"
+     },
+     "asked": [
+      "getBlob 0a"
+     ],
+     "told": []
+    },
+    "a store that fails: its failure": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store failed"
+      }
+     },
+     "asked": [],
+     "told": []
+    },
+    "a store that fails at once: its failure, through the promise": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store failed"
+      }
+     },
+     "asked": [],
+     "told": []
+    },
+    "a store that gives null, which is not nothing": {
+     "gave": {
+      "rejected": "a TypeError of the runtime's own"
+     },
+     "asked": [],
+     "told": []
+    }
+   }
+  },
+  "subagents' blobs are asked for eight at a time, and the answers keep the order of the conversation": {
+   "returned": {
+    "warningsComeAsEachAnswerDoes": {
+     "afterTheSecondAnswer": [
+      "second"
+     ],
+     "atTheEnd": [
+      "second",
+      "first"
+     ],
+     "subagents": [
+      "first",
+      "second"
+     ]
+    },
+    "startedAtFirst": [
+     "aa01",
+     "aa02",
+     "aa03",
+     "aa04",
+     "aa05",
+     "aa06",
+     "aa07",
+     "aa08"
+    ],
+    "startedAfterEachAnswer": [
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     20,
+     20,
+     20,
+     20,
+     20,
+     20,
+     20,
+     20
+    ],
+    "mostAtOnce": 8,
+    "askedInTheOrderOfTheConversation": true,
+    "answersInTheOrderOfTheConversation": [
+     "sub-01",
+     "sub-02",
+     "sub-03",
+     "sub-04",
+     "sub-05",
+     "sub-06",
+     "sub-07",
+     "sub-08",
+     "sub-09",
+     "sub-10",
+     "sub-11",
+     "sub-12",
+     "sub-13",
+     "sub-14",
+     "sub-15",
+     "sub-16",
+     "sub-17",
+     "sub-18",
+     "sub-19",
+     "sub-20"
+    ],
+    "eachAnswerUnderItsOwnSubagent": true
+   }
+  },
+  "the modes an agent can be in, and the ways it can be told to ask before it acts": {
+   "returned": {
+    "AgentModes": [
+     "default",
+     "plan",
+     "debug",
+     "search"
+    ],
+    "ApprovalModeSettings": [
+     "allowlist",
+     "unrestricted",
+     "auto-review"
+    ],
+    "plainLists": [
+     true,
+     false,
+     true,
+     false
+    ]
+   }
+  },
+  "a new key for an agent's blobs is 32 random bytes written as hex": {
+   "returned": {
+    "pinned": {
+     "gave": [
+      "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+      "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+     ],
+     "asked": [
+      "random bytes for a Uint8Array of 32, all zero",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "fromTheRuntimesOwnRandomness": {
+     "sixtyFourSmallHexDigits": true,
+     "anotherEachTime": true,
+     "countsAsAKey": true
+    }
+   }
+  },
+  "what counts as a key for an agent's blobs: a text of exactly 64 small hex digits": {
+   "returned": {
+    "64 small hex digits": true,
+    "64 zeros": true,
+    "63 digits": false,
+    "65 digits": false,
+    "64 digits, one a capital": false,
+    "64 characters, one of them g": false,
+    "63 digits and a line break": false,
+    "64 digits and a line break": false,
+    "63 digits after a space": false,
+    "an empty text": false,
+    "a text object of 64 digits": false,
+    "a list of 64 digits": false,
+    "32 bytes": false,
+    "a number": false,
+    "null": false,
+    "nothing at all": false
+   }
+  },
+  "a new agent's metadata: a random id unless one is given, the time, a new key for its blobs": {
+   "returned": {
+    "withNoId": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "createdAt": 1794647287065,
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ],
+     "fields": [
+      "agentId",
+      "latestRootBlobId",
+      "name",
+      "mode",
+      "isRunEverything",
+      "approvalMode",
+      "createdAt",
+      "lastUsedModel",
+      "lastDebugServerPort",
+      "currentPlanUri",
+      "subagentInfo",
+      "blobEncryptionKey"
+     ]
+    },
+    "withAnId": {
+     "gave": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "createdAt": 1794647287065,
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "withAnEmptyId": {
+     "gave": "",
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "withNull": {
+     "gave": "00000000-0000-4000-8000-000000000001",
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "withUndefined": {
+     "gave": "00000000-0000-4000-8000-000000000001",
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "withANumber": {
+     "gave": 7,
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "twoInARow": {
+     "gave": [
+      [
+       "00000000-0000-4000-8000-000000000001",
+       "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+      ],
+      [
+       "00000000-0000-4000-8000-000000000002",
+       "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+      ]
+     ],
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero",
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "fromTheRuntimeItself": {
+     "anIdOf36Characters": true,
+     "theTimeIsNow": true,
+     "aNewEmptyRootKeyEachTime": true,
+     "passesTheSchema": true
+    }
+   }
+  },
+  "the schema of an agent's metadata: made once, and what it lets through": {
+   "returned": {
+    "theSameSchemaEachTime": true,
+    "anotherLoadOfThePartHasItsOwn": true,
+    "fieldsInOrder": [
+     "agentId",
+     "latestRootBlobId",
+     "name",
+     "createdAt",
+     "mode",
+     "isRunEverything",
+     "approvalMode",
+     "lastUsedModel",
+     "lastDebugServerPort",
+     "currentPlanUri",
+     "subagentInfo",
+     "blobEncryptionKey"
+    ],
+    "every field given": {
+     "passes": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": "0a0b"
+      },
+      "name": "Research",
+      "createdAt": 1794647287065,
+      "mode": "plan",
+      "isRunEverything": true,
+      "approvalMode": "auto-review",
+      "lastUsedModel": "model-a",
+      "lastDebugServerPort": 9229,
+      "currentPlanUri": "file:///plans/one.md",
+      "subagentInfo": {
+       "parentAgentId": "agent-p",
+       "rootParentAgentId": "agent-r",
+       "toolCallId": "call-1",
+       "typeName": "explore"
+      },
+      "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+     }
+    },
+    "only what must be there": {
+     "passes": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "",
+      "createdAt": 0,
+      "mode": "default",
+      "isRunEverything": false
+     }
+    },
+    "fields it does not know are dropped": {
+     "passes": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "",
+      "createdAt": 0,
+      "mode": "default",
+      "isRunEverything": false
+     }
+    },
+    "optional fields given as undefined stay, as undefined": {
+     "passes": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "",
+      "createdAt": 0,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": {
+       "$": "undefined"
+      }
+     }
+    },
+    "a Node buffer is a root key": [
+     "agentId",
+     "latestRootBlobId",
+     "name",
+     "createdAt",
+     "mode",
+     "isRunEverything"
+    ],
+    "a root key written as hex is not": {
+     "issues": [
+      {
+       "code": "custom",
+       "message": "Expected Uint8Array",
+       "fatal": true,
+       "path": [
+        "latestRootBlobId"
+       ]
+      }
+     ]
+    },
+    "a root key that is a list of numbers is not": {
+     "issues": [
+      {
+       "code": "custom",
+       "message": "Expected Uint8Array",
+       "fatal": true,
+       "path": [
+        "latestRootBlobId"
+       ]
+      }
+     ]
+    },
+    "each mode": [
+     "default",
+     "plan",
+     "debug",
+     "search"
+    ],
+    "a mode of an older engine": {
+     "issues": [
+      {
+       "received": "auto-run",
+       "code": "invalid_enum_value",
+       "options": [
+        "default",
+        "plan",
+        "debug",
+        "search"
+       ],
+       "path": [
+        "mode"
+       ],
+       "message": "Invalid enum value. Expected 'default' | 'plan' | 'debug' | 'search', received 'auto-run'"
+      }
+     ]
+    },
+    "each approval setting": [
+     "allowlist",
+     "unrestricted",
+     "auto-review"
+    ],
+    "an approval setting it does not know": {
+     "issues": [
+      {
+       "received": "always",
+       "code": "invalid_enum_value",
+       "options": [
+        "allowlist",
+        "unrestricted",
+        "auto-review"
+       ],
+       "path": [
+        "approvalMode"
+       ],
+       "message": "Invalid enum value. Expected 'allowlist' | 'unrestricted' | 'auto-review', received 'always'"
+      }
+     ]
+    },
+    "a port of 1": 1,
+    "a port of 0": {
+     "issues": [
+      {
+       "code": "too_small",
+       "minimum": 0,
+       "type": "number",
+       "inclusive": false,
+       "exact": false,
+       "message": "Number must be greater than 0",
+       "path": [
+        "lastDebugServerPort"
+       ]
+      }
+     ]
+    },
+    "a port below 0": {
+     "issues": [
+      {
+       "code": "too_small",
+       "minimum": 0,
+       "type": "number",
+       "inclusive": false,
+       "exact": false,
+       "message": "Number must be greater than 0",
+       "path": [
+        "lastDebugServerPort"
+       ]
+      }
+     ]
+    },
+    "a port with a fraction": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "integer",
+       "received": "float",
+       "message": "Expected integer, received float",
+       "path": [
+        "lastDebugServerPort"
+       ]
+      }
+     ]
+    },
+    "a port written as text": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "string",
+       "path": [
+        "lastDebugServerPort"
+       ],
+       "message": "Expected number, received string"
+      }
+     ]
+    },
+    "a time that is not a number": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "nan",
+       "path": [
+        "createdAt"
+       ],
+       "message": "Expected number, received nan"
+      }
+     ]
+    },
+    "a time written as text": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "string",
+       "path": [
+        "createdAt"
+       ],
+       "message": "Expected number, received string"
+      }
+     ]
+    },
+    "null where a text may be left out": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "lastUsedModel"
+       ],
+       "message": "Expected string, received null"
+      },
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "currentPlanUri"
+       ],
+       "message": "Expected string, received null"
+      },
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "blobEncryptionKey"
+       ],
+       "message": "Expected string, received null"
+      }
+     ]
+    },
+    "a blob key of any text passes here": "not hex",
+    "a subagent with one empty field": {
+     "issues": [
+      {
+       "code": "too_small",
+       "minimum": 1,
+       "type": "string",
+       "inclusive": true,
+       "exact": false,
+       "message": "String must contain at least 1 character(s)",
+       "path": [
+        "subagentInfo",
+        "toolCallId"
+       ]
+      }
+     ]
+    },
+    "a subagent with a field missing and another of the wrong kind": {
+     "issues": [
+      {
+       "code": "invalid_union",
+       "unionErrors": [
+        {
+         "issues": [
+          {
+           "code": "invalid_type",
+           "expected": "string",
+           "received": "number",
+           "path": [
+            "subagentInfo",
+            "rootParentAgentId"
+           ],
+           "message": "Expected string, received number"
+          },
+          {
+           "code": "invalid_type",
+           "expected": "string",
+           "received": "undefined",
+           "path": [
+            "subagentInfo",
+            "typeName"
+           ],
+           "message": "Required"
+          }
+         ],
+         "name": "ZodError"
+        },
+        {
+         "issues": [
+          {
+           "code": "invalid_type",
+           "expected": "undefined",
+           "received": "object",
+           "path": [
+            "subagentInfo"
+           ],
+           "message": "Expected undefined, received object"
+          }
+         ],
+         "name": "ZodError"
+        }
+       ],
+       "path": [
+        "subagentInfo"
+       ],
+       "message": "Invalid input"
+      }
+     ]
+    },
+    "a subagent with a field it does not know: dropped": {
+     "parentAgentId": "agent-p",
+     "rootParentAgentId": "agent-r",
+     "toolCallId": "call-1",
+     "typeName": "explore"
+    },
+    "a subagent that is null": {
+     "issues": [
+      {
+       "code": "invalid_union",
+       "unionErrors": [
+        {
+         "issues": [
+          {
+           "code": "invalid_type",
+           "expected": "object",
+           "received": "null",
+           "path": [
+            "subagentInfo"
+           ],
+           "message": "Expected object, received null"
+          }
+         ],
+         "name": "ZodError"
+        },
+        {
+         "issues": [
+          {
+           "code": "invalid_type",
+           "expected": "undefined",
+           "received": "null",
+           "path": [
+            "subagentInfo"
+           ],
+           "message": "Expected undefined, received null"
+          }
+         ],
+         "name": "ZodError"
+        }
+       ],
+       "path": [
+        "subagentInfo"
+       ],
+       "message": "Invalid input"
+      }
+     ]
+    },
+    "nothing of what must be there": {
+     "issues": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "undefined",
+       "path": [
+        "agentId"
+       ],
+       "message": "Required"
+      },
+      {
+       "code": "custom",
+       "message": "Expected Uint8Array",
+       "fatal": true,
+       "path": [
+        "latestRootBlobId"
+       ]
+      },
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "undefined",
+       "path": [
+        "name"
+       ],
+       "message": "Required"
+      },
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "undefined",
+       "path": [
+        "createdAt"
+       ],
+       "message": "Required"
+      },
+      {
+       "expected": "'default' | 'plan' | 'debug' | 'search'",
+       "received": "undefined",
+       "code": "invalid_type",
+       "path": [
+        "mode"
+       ],
+       "message": "Required"
+      },
+      {
+       "code": "invalid_type",
+       "expected": "boolean",
+       "received": "undefined",
+       "path": [
+        "isRunEverything"
+       ],
+       "message": "Required"
+      }
+     ]
+    },
+    "what is no object": [
+     [
+      {
+       "code": "invalid_type",
+       "expected": "object",
+       "received": "string",
+       "path": [],
+       "message": "Expected object, received string"
+      }
+     ],
+     [
+      {
+       "code": "invalid_type",
+       "expected": "object",
+       "received": "null",
+       "path": [],
+       "message": "Expected object, received null"
+      }
+     ],
+     [
+      {
+       "code": "invalid_type",
+       "expected": "object",
+       "received": "undefined",
+       "path": [],
+       "message": "Required"
+      }
+     ],
+     [
+      {
+       "code": "invalid_type",
+       "expected": "object",
+       "received": "array",
+       "path": [],
+       "message": "Expected object, received array"
+      }
+     ]
+    ],
+    "two things wrong at once, in the order of the fields": [
+     "agentId",
+     "isRunEverything"
+    ],
+    "whatIsThrownWhenAskedToParse": {
+     "threw": {
+      "$": "error",
+      "name": "ZodError",
+      "message": "[\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"number\",\n    \"path\": [\n      \"agentId\"\n    ],\n    \"message\": \"Expected string, received number\"\n  }\n]",
+      "extra": {
+       "issues": [
+        {
+         "code": "invalid_type",
+         "expected": "string",
+         "received": "number",
+         "path": [
+          "agentId"
+         ],
+         "message": "Expected string, received number"
+        }
+       ],
+       "addIssue": {
+        "$": "function",
+        "name": ""
+       },
+       "addIssues": {
+        "$": "function",
+        "name": ""
+       },
+       "name": "ZodError"
+      }
+     }
+    }
+   }
+  },
+  "an agent's metadata is stored as JSON text, its fields in the order given and the root blob's key as hex": {
+   "returned": {
+    "blobType": [
+     {
+      "kind": "json"
+     },
+     true
+    ],
+    "aNewAgent": "{\"agentId\":\"00000000-0000-4000-8000-000000000001\",\"latestRootBlobId\":\"\",\"name\":\"New Agent\",\"mode\":\"default\",\"isRunEverything\":false,\"createdAt\":1794647287065,\"blobEncryptionKey\":\"101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f\"}",
+    "aNewAgentReadBackAndWrittenAgain": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"\",\"name\":\"New Agent\",\"createdAt\":1794647287065,\"mode\":\"default\",\"isRunEverything\":false,\"blobEncryptionKey\":\"101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f\"}",
+    "every field set": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"0a0bff\",\"name\":\"Research\",\"mode\":\"plan\",\"isRunEverything\":true,\"approvalMode\":\"auto-review\",\"createdAt\":1794647287065,\"lastUsedModel\":\"model-a\",\"lastDebugServerPort\":9229,\"currentPlanUri\":\"file:///plans/one.md\",\"subagentInfo\":{\"parentAgentId\":\"agent-p\",\"rootParentAgentId\":\"agent-r\",\"toolCallId\":\"call-1\",\"typeName\":\"explore\"},\"blobEncryptionKey\":\"abababababababababababababababababababababababababababababababab\"}",
+    "what is written is new bytes each time": true,
+    "the root key first, then the id": "{\"latestRootBlobId\":\"01\",\"agentId\":\"agent-a\"}",
+    "fields that are undefined are left out": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"\",\"name\":\"n\"}",
+    "fields the code does not know are written too": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"\",\"somethingElse\":{\"deep\":[1,null]}}",
+    "a name with a quote, a backslash, a line break and a zero": "{\"agentId\":\"a\",\"latestRootBlobId\":\"\",\"name\":\"say \\\"hi\\\"\\\\\\n\\u0000\"}",
+    "a name with accents, a wide letter and a face: as text, then as the bytes stored": [
+     "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"0a0bff\",\"name\":\"Été 日 😀\",\"mode\":\"plan\",\"isRunEverything\":true,\"approvalMode\":\"auto-review\",\"createdAt\":1794647287065,\"lastUsedModel\":\"model-a\",\"lastDebugServerPort\":9229,\"currentPlanUri\":\"file:///plans/one.md\",\"subagentInfo\":{\"parentAgentId\":\"agent-p\",\"rootParentAgentId\":\"agent-r\",\"toolCallId\":\"call-1\",\"typeName\":\"explore\"},\"blobEncryptionKey\":\"abababababababababababababababababababababababababababababababab\"}",
+     "7b226167656e744964223a226167656e742d61222c226c6174657374526f6f74426c6f624964223a22306130626666222c226e616d65223a22c38974c3a920e697a520f09f9880222c226d6f6465223a22706c616e222c22697352756e45766572797468696e67223a747275652c22617070726f76616c4d6f6465223a226175746f2d726576696577222c22637265617465644174223a313739343634373238373036352c226c617374557365644d6f64656c223a226d6f64656c2d61222c226c6173744465627567536572766572506f7274223a393232392c2263757272656e74506c616e557269223a2266696c653a2f2f2f706c616e732f6f6e652e6d64222c227375626167656e74496e666f223a7b22706172656e744167656e744964223a226167656e742d70222c22726f6f74506172656e744167656e744964223a226167656e742d72222c22746f6f6c43616c6c4964223a2263616c6c2d31222c22747970654e616d65223a226578706c6f7265227d2c22626c6f62456e6372797074696f6e4b6579223a2261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162616261626162227d"
+    ],
+    "a name holding half of a pair": "{\"agentId\":\"a\",\"latestRootBlobId\":\"\",\"name\":\"a\\ud800b\"}",
+    "a time that is not a number is written as null": "{\"agentId\":\"a\",\"latestRootBlobId\":\"\",\"createdAt\":null}",
+    "a root key given as a text is written as the hex of the text": "{\"agentId\":\"a\",\"latestRootBlobId\":\"3061\"}",
+    "no root key": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "nothing at all": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "null": {
+     "threw": "a TypeError of the runtime's own"
+    },
+    "a time given as a BigInt": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "stored metadata is read back: what today's code writes, and what an older engine wrote": {
+   "returned": {
+    "everyFieldSet": {
+     "gave": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": "0a0bff"
+      },
+      "name": "Research",
+      "createdAt": 1794647287065,
+      "mode": "plan",
+      "isRunEverything": true,
+      "approvalMode": "auto-review",
+      "lastUsedModel": "model-a",
+      "lastDebugServerPort": 9229,
+      "currentPlanUri": "file:///plans/one.md",
+      "subagentInfo": {
+       "parentAgentId": "agent-p",
+       "rootParentAgentId": "agent-r",
+       "toolCallId": "call-1",
+       "typeName": "explore"
+      },
+      "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+     },
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ],
+     "fieldsInOrder": [
+      "agentId",
+      "latestRootBlobId",
+      "name",
+      "createdAt",
+      "mode",
+      "isRunEverything",
+      "approvalMode",
+      "lastUsedModel",
+      "lastDebugServerPort",
+      "currentPlanUri",
+      "subagentInfo",
+      "blobEncryptionKey"
+     ],
+     "writtenAgain": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"0a0bff\",\"name\":\"Research\",\"createdAt\":1794647287065,\"mode\":\"plan\",\"isRunEverything\":true,\"approvalMode\":\"auto-review\",\"lastUsedModel\":\"model-a\",\"lastDebugServerPort\":9229,\"currentPlanUri\":\"file:///plans/one.md\",\"subagentInfo\":{\"parentAgentId\":\"agent-p\",\"rootParentAgentId\":\"agent-r\",\"toolCallId\":\"call-1\",\"typeName\":\"explore\"},\"blobEncryptionKey\":\"abababababababababababababababababababababababababababababababab\"}"
+    },
+    "aNewAgentAsWrittenToday": {
+     "gave": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+     },
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "anObjectWithNothingInIt": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "onlyAnId": {
+     "gave": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "fieldsTheCodeDoesNotKnowAreDropped": [
+     "agentId",
+     "latestRootBlobId",
+     "name",
+     "createdAt",
+     "mode",
+     "isRunEverything",
+     "approvalMode",
+     "lastUsedModel",
+     "lastDebugServerPort",
+     "currentPlanUri",
+     "subagentInfo",
+     "blobEncryptionKey"
+    ],
+    "theOldModeThatRanEverything": {
+     "alone": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": true,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "withRunEverythingSaidToBeOff": {
+      "mode": "default",
+      "isRunEverything": true
+     }
+    },
+    "mode": {
+     "default": "default",
+     "plan": "plan",
+     "debug": "debug",
+     "search": "search",
+     "one it does not know": "default",
+     "in capitals": "default",
+     "a number": "default",
+     "null": "default",
+     "a name every object has": "default"
+    },
+    "isRunEverything": {
+     "true": true,
+     "false": false,
+     "the word true": false,
+     "the number 1": false,
+     "null": false
+    },
+    "approvalMode": {
+     "allowlist": "allowlist",
+     "unrestricted": "unrestricted",
+     "auto-review": "auto-review",
+     "one it does not know": {
+      "$": "undefined"
+     },
+     "a number": {
+      "$": "undefined"
+     },
+     "null": {
+      "$": "undefined"
+     },
+     "a name every object has": {
+      "$": "undefined"
+     }
+    },
+    "latestRootBlobId": {
+     "hex": {
+      "$": "bytes",
+      "v": "0a0bff"
+     },
+     "hex in capitals with spaces round it": {
+      "$": "bytes",
+      "v": "0a0bff"
+     },
+     "what is no hex: zeros": {
+      "$": "bytes",
+      "v": "0000"
+     },
+     "an odd number of digits": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Invalid hex string length"
+      }
+     },
+     "a number: none": {
+      "$": "bytes",
+      "v": ""
+     },
+     "a list of numbers: none": {
+      "$": "bytes",
+      "v": ""
+     },
+     "null: none": {
+      "$": "bytes",
+      "v": ""
+     }
+    },
+    "subagentInfo": {
+     "all four fields": {
+      "parentAgentId": "agent-p",
+      "rootParentAgentId": "agent-r",
+      "toolCallId": "call-1",
+      "typeName": "explore"
+     },
+     "a fifth field is dropped": {
+      "parentAgentId": "agent-p",
+      "rootParentAgentId": "agent-r",
+      "toolCallId": "call-1",
+      "typeName": "explore"
+     },
+     "no parent": {
+      "$": "undefined"
+     },
+     "an empty parent": {
+      "$": "undefined"
+     },
+     "a root parent that is a number": {
+      "$": "undefined"
+     },
+     "an empty root parent": {
+      "$": "undefined"
+     },
+     "a tool call that is null": {
+      "$": "undefined"
+     },
+     "an empty tool call": {
+      "$": "undefined"
+     },
+     "a type that is a list": {
+      "$": "undefined"
+     },
+     "an empty type": {
+      "$": "undefined"
+     },
+     "a text": {
+      "$": "undefined"
+     },
+     "a number": {
+      "$": "undefined"
+     },
+     "the number 0": {
+      "$": "undefined"
+     },
+     "true": {
+      "$": "undefined"
+     },
+     "null": {
+      "$": "undefined"
+     },
+     "a list": {
+      "$": "undefined"
+     }
+    },
+    "blobEncryptionKey": {
+     "a key of 64 small hex digits is kept": "abababababababababababababababababababababababababababababababab",
+     "a key in capitals is replaced by a new one": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+     "a key of 62 digits is replaced": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+     "a number is replaced": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+     "null is replaced": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+    },
+    "noKeyStored": {
+     "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f",
+     "asked": [
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "theRest": {
+     "agentId": "agent-a",
+     "latestRootBlobId": {
+      "$": "bytes",
+      "v": ""
+     },
+     "name": "n",
+     "createdAt": 5,
+     "mode": "default",
+     "isRunEverything": false,
+     "approvalMode": {
+      "$": "undefined"
+     },
+     "lastUsedModel": "model-a",
+     "lastDebugServerPort": 1,
+     "currentPlanUri": "",
+     "subagentInfo": {
+      "$": "undefined"
+     },
+     "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+    },
+    "aRootKeyIsNewBytesEachTime": true
+   }
+  },
+  "stored metadata that is damaged, cut short or of the wrong kind": {
+   "returned": {
+    "noBytes": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "cutInTheMiddle": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "cutBeforeTheLastBrace": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "twoObjectsOneAfterTheOther": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "withAByteOrderMarkInFront": {
+     "agentId": "agent-a",
+     "latestRootBlobId": {
+      "$": "bytes",
+      "v": "0a"
+     },
+     "name": "né",
+     "createdAt": 5,
+     "mode": "plan",
+     "isRunEverything": false,
+     "approvalMode": {
+      "$": "undefined"
+     },
+     "lastUsedModel": {
+      "$": "undefined"
+     },
+     "lastDebugServerPort": {
+      "$": "undefined"
+     },
+     "currentPlanUri": {
+      "$": "undefined"
+     },
+     "subagentInfo": {
+      "$": "undefined"
+     },
+     "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+    },
+    "withSpacesAndLineBreaksRoundIt": "agent-a",
+    "withAByteThatIsNoUtf8InTheName": "n��",
+    "aZeroByteAfterIt": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "theWordNull": {
+     "gave": {
+      "threw": "a TypeError of the runtime's own"
+     },
+     "asked": []
+    },
+    "aText": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "aNumber": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "theWordTrue": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "aList": {
+     "gave": {
+      "agentId": "00000000-0000-4000-8000-000000000001",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": ""
+      },
+      "name": "New Agent",
+      "createdAt": 1794647287065,
+      "mode": "default",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f"
+     },
+     "asked": [
+      "a random id",
+      "the time",
+      "random bytes for a Uint8Array of 32, all zero"
+     ]
+    },
+    "aListHoldingMetadata": "00000000-0000-4000-8000-000000000001",
+    "nothingAtAll": {
+     "gave": {
+      "threw": "a SyntaxError of the runtime's own"
+     },
+     "asked": []
+    },
+    "fieldsOfTheWrongKind": {
+     "an id that is a number": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "agentId"
+       ],
+       "message": "Expected string, received number"
+      }
+     ],
+     "an id that is null": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "agentId"
+       ],
+       "message": "Expected string, received null"
+      }
+     ],
+     "a name that is a number": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "name"
+       ],
+       "message": "Expected string, received number"
+      }
+     ],
+     "a name that is null": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "name"
+       ],
+       "message": "Expected string, received null"
+      }
+     ],
+     "a time written as text": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "string",
+       "path": [
+        "createdAt"
+       ],
+       "message": "Expected number, received string"
+      }
+     ],
+     "a time that is null": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "null",
+       "path": [
+        "createdAt"
+       ],
+       "message": "Expected number, received null"
+      }
+     ],
+     "a model that is null": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "lastUsedModel"
+       ],
+       "message": "Expected string, received null"
+      }
+     ],
+     "a model that is a number": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "lastUsedModel"
+       ],
+       "message": "Expected string, received number"
+      }
+     ],
+     "a port of 0": [
+      {
+       "code": "too_small",
+       "minimum": 0,
+       "type": "number",
+       "inclusive": false,
+       "exact": false,
+       "message": "Number must be greater than 0",
+       "path": [
+        "lastDebugServerPort"
+       ]
+      }
+     ],
+     "a port with a fraction": [
+      {
+       "code": "invalid_type",
+       "expected": "integer",
+       "received": "float",
+       "message": "Expected integer, received float",
+       "path": [
+        "lastDebugServerPort"
+       ]
+      }
+     ],
+     "a port written as text": [
+      {
+       "code": "invalid_type",
+       "expected": "number",
+       "received": "string",
+       "path": [
+        "lastDebugServerPort"
+       ],
+       "message": "Expected number, received string"
+      }
+     ],
+     "a plan that is a number": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "currentPlanUri"
+       ],
+       "message": "Expected string, received number"
+      }
+     ],
+     "a plan that is null": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "null",
+       "path": [
+        "currentPlanUri"
+       ],
+       "message": "Expected string, received null"
+      }
+     ],
+     "a root key with an odd number of digits": {
+      "threw": {
+       "$": "error",
+       "name": "Error",
+       "message": "Invalid hex string length"
+      }
+     },
+     "an id and a name wrong at once": [
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "agentId"
+       ],
+       "message": "Expected string, received number"
+      },
+      {
+       "code": "invalid_type",
+       "expected": "string",
+       "received": "number",
+       "path": [
+        "name"
+       ],
+       "message": "Expected string, received number"
+      }
+     ]
+    },
+    "whatIsThrownForAWrongField": {
+     "threw": {
+      "$": "error",
+      "name": "ZodError",
+      "message": "[\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"number\",\n    \"path\": [\n      \"agentId\"\n    ],\n    \"message\": \"Expected string, received number\"\n  }\n]",
+      "extra": {
+       "issues": [
+        {
+         "code": "invalid_type",
+         "expected": "string",
+         "received": "number",
+         "path": [
+          "agentId"
+         ],
+         "message": "Expected string, received number"
+        }
+       ],
+       "addIssue": {
+        "$": "function",
+        "name": ""
+       },
+       "addIssues": {
+        "$": "function",
+        "name": ""
+       },
+       "name": "ZodError"
+      }
+     }
+    }
+   }
+  },
+  "a conversation is put together from its structure's blobs, asked for one at a time and in order": {
+   "returned": {
+    "aPromise": true,
+    "state": {
+     "$": "instance",
+     "class": "_ConversationState",
+     "v": {
+      "rootPromptMessagesJson": [],
+      "turns": [
+       {
+        "$": "instance",
+        "class": "_ConversationTurn",
+        "v": {
+         "turn": {
+          "case": "agentConversationTurn",
+          "value": {
+           "$": "instance",
+           "class": "_AgentConversationTurn",
+           "v": {
+            "steps": [
+             {
+              "$": "instance",
+              "class": "_ConversationStep",
+              "v": {
+               "message": {
+                "case": "thinkingMessage",
+                "value": {
+                 "$": "instance",
+                 "class": "_ThinkingMessage",
+                 "v": {
+                  "text": "Listing the folder.",
+                  "durationMs": 12
+                 }
+                }
+               }
+              }
+             },
+             {
+              "$": "instance",
+              "class": "_ConversationStep",
+              "v": {
+               "message": {
+                "case": "assistantMessage",
+                "value": {
+                 "$": "instance",
+                 "class": "_AssistantMessage",
+                 "v": {
+                  "text": "Three files."
+                 }
+                }
+               }
+              }
+             }
+            ],
+            "userMessage": {
+             "$": "instance",
+             "class": "_UserMessage",
+             "v": {
+              "text": "What is in this folder?",
+              "messageId": "message-1",
+              "mode": 0,
+              "conversationStateBlobId": {
+               "$": "bytes",
+               "v": ""
+              },
+              "hookAdditionalContexts": []
+             }
+            }
+           }
+          }
+         }
+        }
+       },
+       {
+        "$": "instance",
+        "class": "_ConversationTurn",
+        "v": {
+         "turn": {
+          "case": "shellConversationTurn",
+          "value": {
+           "$": "instance",
+           "class": "_ShellConversationTurn",
+           "v": {
+            "shellCommand": {
+             "$": "instance",
+             "class": "_ShellCommand",
+             "v": {
+              "command": "ls -la"
+             }
+            },
+            "shellOutput": {
+             "$": "instance",
+             "class": "_ShellOutput",
+             "v": {
+              "stdout": "a.txt\nb.txt\n",
+              "stderr": "",
+              "exitCode": 0
+             }
+            }
+           }
+          }
+         }
+        }
+       }
+      ],
+      "todos": [
+       {
+        "$": "instance",
+        "class": "_TodoItem",
+        "v": {
+         "id": "todo-1",
+         "content": "Read the files",
+         "status": 2,
+         "createdAt": {
+          "$": "bigint",
+          "v": "1794000000000"
+         },
+         "updatedAt": {
+          "$": "bigint",
+          "v": "1794000000500"
+         },
+         "dependencies": [
+          "before"
+         ]
+        }
+       },
+       {
+        "$": "instance",
+        "class": "_TodoItem",
+        "v": {
+         "id": "todo-2",
+         "content": "Write the answer",
+         "status": 1,
+         "createdAt": {
+          "$": "bigint",
+          "v": "1794000000000"
+         },
+         "updatedAt": {
+          "$": "bigint",
+          "v": "1794000000500"
+         },
+         "dependencies": [
+          "before"
+         ]
+        }
+       }
+      ],
+      "pendingToolCalls": [],
+      "fileStates": {},
+      "summaryArchives": [],
+      "plans": {},
+      "communicateUpdateHistory": [],
+      "communicateUpdateStatesByParentToolCallId": {},
+      "summary": {
+       "$": "instance",
+       "class": "_ConversationSummary",
+       "v": {
+        "summary": "They asked what the folder holds."
+       }
+      }
+     }
+    },
+    "asItWouldBeStored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+    "asked": [
+     "getBlob a1",
+     "getBlob b1",
+     "getBlob c1",
+     "getBlob c2",
+     "getBlob a2",
+     "getBlob d1",
+     "getBlob d2",
+     "getBlob e1",
+     "getBlob e2",
+     "getBlob f1"
+    ],
+    "mostAtOnce": 1,
+    "everyCallGotTheContext": true,
+    "theStructureAsStored": "1a01e11a01e23201f14201a14201a2",
+    "aStructureWithNothingInIt": {
+     "$": "instance",
+     "class": "_ConversationState",
+     "v": {
+      "rootPromptMessagesJson": [],
+      "turns": [],
+      "todos": [],
+      "pendingToolCalls": [],
+      "fileStates": {},
+      "summaryArchives": [],
+      "plans": {},
+      "communicateUpdateHistory": [],
+      "communicateUpdateStatesByParentToolCallId": {}
+     }
+    },
+    "aNewConversationEachTime": true
+   }
+  },
+  "blobs of a conversation that are not there are left out without a word, and what hangs on them is not asked for": {
+   "returned": {
+    "everything there": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "the agent's turn": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 a2 d1 d2 e1 e2 f1"
+    },
+    "its user message: the turn is left out and its steps are not asked for": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 a2 d1 d2 e1 e2 f1"
+    },
+    "its first step: the turn keeps the other": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e423a0a380a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "both steps: a turn with no steps": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42280a260a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d31421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "the shell's turn": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined"
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e",
+     "asked": "a1 b1 c1 c2 a2 e1 e2 f1"
+    },
+    "its command: the turn is left out and its output is not asked for": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined"
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e",
+     "asked": "a1 b1 c1 c2 a2 d1 e1 e2 f1"
+    },
+    "its output: the turn is left out": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined"
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a todo": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "the summary: the conversation has no such field": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": "no such field",
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726542550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "everything": {
+     "turns": [],
+     "todos": [],
+     "summary": "no such field",
+     "stored": "",
+     "asked": "a1 a2 e1 e2 f1"
+    },
+    "a turn stored as no bytes is neither kind of turn, and is left out": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 a2 d1 d2 e1 e2 f1"
+    },
+    "a user message stored as no bytes is an empty message": {
+     "turns": [
+      "agent: \"\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42310a2f0a0012191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a summary stored as no bytes is an empty summary": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": ""
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f7265320042550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a turn with no request": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e423a0a380a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a turn naming the same step twice": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Three files.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e424c0a4a0a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112100a0e0a0c54687265652066696c65732e12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c2 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a structure whose summary's key is no bytes: still asked for": {
+     "turns": [],
+     "todos": [],
+     "summary": {
+      "there": "under the empty key"
+     },
+     "stored": "32150a13756e6465722074686520656d707479206b6579",
+     "asked": "(the empty key)"
+    },
+    "a structure with no summary: not asked for": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [],
+     "summary": "no such field",
+     "stored": "421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a2 d1 d2"
+    }
+   }
+  },
+  "a store that answers null or no bytes, a damaged blob, a store that fails: what becomes of the conversation": {
+   "returned": {
+    "null for a turn: left out": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 a2 d1 d2 e1 e2 f1"
+    },
+    "null for a todo: left out": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "0 for the summary: left out": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": "no such field",
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726542550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a turn cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1"
+    },
+    "a user message cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2"
+    },
+    "a step cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2"
+    },
+    "a command cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2"
+    },
+    "an output cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2"
+    },
+    "a todo cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2"
+    },
+    "a summary cut short": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a turn with a tag no message has": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "illegal tag: field no 1 wire type 7"
+     },
+     "asked": "a1"
+    },
+    "a user message with such a tag and a step cut short: the step is read first": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2"
+    },
+    "a user message cut short and a step with such a tag: the step is read first": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "illegal tag: field no 1 wire type 7"
+     },
+     "asked": "a1 b1 c1"
+    },
+    "a command with such a tag and an output cut short: the command is read first": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "illegal tag: field no 1 wire type 7"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2"
+    },
+    "a command cut short and an output with such a tag: the command is read first": {
+     "rejected": {
+      "$": "error",
+      "name": "RangeError",
+      "message": "premature EOF"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2"
+    },
+    "a turn holding a field the code does not know: read, the field kept aside": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a text where bytes are stored": {
+     "rejected": "a TypeError of the runtime's own",
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "a store that fails for a step": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "the store failed"
+     },
+     "asked": "a1 b1 c1"
+    },
+    "a store that fails at once for the summary": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "the store failed"
+     },
+     "asked": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1"
+    },
+    "aStructureWithNoTurnsList": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "somethingThatOnlyLooksLikeAStructure": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [],
+     "summary": "no such field",
+     "stored": "421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a"
+    }
+   }
+  },
+  "the agent's store reads and writes metadata through the metadata store it was given": {
+   "returned": {
+    "subscribing": {
+     "calls": [
+      "subscribe name"
+     ],
+     "givesBackWhatTheMetadataStoreGave": true
+    },
+    "eachChangeReadsTheValueThen": {
+     "heard": [
+      [
+       "Renamed"
+      ],
+      [
+       "Renamed"
+      ]
+     ],
+     "calls": [
+      "get name",
+      "get name"
+     ]
+    },
+    "setting": {
+     "gave": {
+      "$": "undefined"
+     },
+     "read": "Set through the store",
+     "id": "agent-a",
+     "calls": [
+      "set name = \"Set through the store\"",
+      "get name",
+      "get agentId"
+     ]
+    },
+    "theBlobStoreItWasGiven": true,
+    "aStoreBuiltOnItIsAskedThroughItsOwnGetMetadata": "my own answer for agentId",
+    "aMetadataStoreThatFails": {
+     "threw": {
+      "$": "error",
+      "name": "Error",
+      "message": "the metadata cannot be read"
+     }
+    },
+    "optionsThatAreNull": {
+     "threw": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "a checkpoint is stored whole under the hash of its bytes, or under the one key the store was made with, and the metadata is told the key": {
+   "returned": {
+    "theBytesHandedIn": "4201a14201a21a01e13201f18201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+    "whatOneStoreWroteAStoreMadeLaterReadsBack": {
+     "found": true,
+     "theSameBytes": true,
+     "anotherObject": true
+    },
+    "withNoFixedKey": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365 = 1a01e13201f14201a14201a28201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+      "metadata latestRootBlobId = 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365"
+     ],
+     "theStructureHeldIsTheVeryCheckpoint": true,
+     "theMetadataHoldsTheKeyStoredUnder": true,
+     "theMetadataHoldsTheVeryFixedKey": false,
+     "everyCallGotTheContext": true
+    },
+    "withAFixedKey": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob c0ffee = 1a01e13201f14201a14201a28201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+      "metadata latestRootBlobId = c0ffee"
+     ],
+     "theStructureHeldIsTheVeryCheckpoint": true,
+     "theMetadataHoldsTheKeyStoredUnder": true,
+     "theMetadataHoldsTheVeryFixedKey": true,
+     "everyCallGotTheContext": true
+    },
+    "withAFixedKeyOfNoBytes": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob  = 1a01e13201f14201a14201a28201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+      "metadata latestRootBlobId = "
+     ],
+     "theStructureHeldIsTheVeryCheckpoint": true,
+     "theMetadataHoldsTheKeyStoredUnder": true,
+     "theMetadataHoldsTheVeryFixedKey": true,
+     "everyCallGotTheContext": true
+    },
+    "withOptionsThatNameNoKey": [
+     "setBlob 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365 = 1a01e13201f14201a14201a28201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+     "metadata latestRootBlobId = 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365"
+    ],
+    "withAFixedKeyOfNull": [
+     "setBlob 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365 = 1a01e13201f14201a14201a28201110a057375622d3112081005180622022200fa010a0a057375622d3212010b",
+     "metadata latestRootBlobId = 547d2c83c10b5d97372f251846f09a2794a1ab421a354e609043c76514c19365"
+    ],
+    "anEmptyCheckpointWithNoFixedKey": {
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      "setBlob e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 = ",
+      "metadata latestRootBlobId = e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+     ],
+     "theStructureHeldIsTheVeryCheckpoint": true,
+     "theMetadataHoldsTheKeyStoredUnder": true,
+     "theMetadataHoldsTheVeryFixedKey": false,
+     "everyCallGotTheContext": true
+    },
+    "anEmptyCheckpointWithAFixedKey": [
+     "setBlob c0ffee = ",
+     "metadata latestRootBlobId = c0ffee"
+    ],
+    "aStoreThatRefusesTheWrite": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "Error",
+       "message": "the store is full"
+      }
+     },
+     "events": [
+      "setBlob refused"
+     ],
+     "theStructureHeldIsTheVeryCheckpoint": true,
+     "theMetadataHoldsTheKeyStoredUnder": "no key told",
+     "theMetadataHoldsTheVeryFixedKey": false,
+     "everyCallGotTheContext": true
+    },
+    "aNewStoreHoldsAnEmptyStructure": {
+     "stored": "",
+     "class": "_ConversationStateStructure",
+     "sameAsTheLatestCheckpoint": true
+    },
+    "somethingThatIsNoCheckpoint": {
+     "rejected": "a TypeError of the runtime's own"
+    }
+   }
+  },
+  "the agent's store reads its conversation back from the blob the metadata names as the root": {
+   "returned": {
+    "a root that is there": {
+     "gave": true,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "1a01e14201a1",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "the same through resetFromDb, which says nothing": {
+     "gave": {
+      "$": "undefined"
+     },
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "1a01e14201a1",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a store made with a fixed key still reads the key the metadata names": {
+     "gave": true,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "1a01e14201a1",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "no root named": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root key of no bytes: the store is not asked": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root key that is null": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root key given as a text": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob no bytes but \"0a\""
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root that is not there": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0b"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "the same through resetFromDb": {
+     "gave": {
+      "$": "undefined"
+     },
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0b"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root stored as no bytes: an empty conversation, and a yes": {
+     "gave": true,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root cut short": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a root with a tag no message has": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob 0a"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a store that answers null": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob answered null"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a store that fails": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob failed"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "a store that fails at once": {
+     "gave": false,
+     "asked": [
+      "get latestRootBlobId",
+      "getBlob failed at once"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "metadata that cannot be read": {
+     "gave": false,
+     "asked": [
+      "get failed"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    },
+    "metadata that cannot be read, through resetFromDb": {
+     "gave": {
+      "$": "undefined"
+     },
+     "asked": [
+      "get failed"
+     ],
+     "holdsNow": "",
+     "aNewStructure": true,
+     "ofTheStructuresClass": true
+    }
+   }
+  },
+  "the last request's id is that of the newest agent turn whose blob is still there": {
+   "returned": {
+    "no turns: the store is not asked": {
+     "gave": null,
+     "asked": "",
+     "everyCallGotTheContext": true
+    },
+    "one agent turn": {
+     "gave": "request-1",
+     "asked": "a1",
+     "everyCallGotTheContext": true
+    },
+    "two agent turns: the newer, and the older is not asked for": {
+     "gave": "request-2",
+     "asked": "a2",
+     "everyCallGotTheContext": true
+    },
+    "a shell turn after it is passed over": {
+     "gave": "request-1",
+     "asked": "a2 a1",
+     "everyCallGotTheContext": true
+    },
+    "a newer turn whose blob is gone is passed over": {
+     "gave": "request-1",
+     "asked": "a3 a2 a1",
+     "everyCallGotTheContext": true
+    },
+    "a newer agent turn with no request: none, though an older turn has one": {
+     "gave": null,
+     "asked": "a2",
+     "everyCallGotTheContext": true
+    },
+    "a newer agent turn with an empty request: the empty text": {
+     "gave": "",
+     "asked": "a2",
+     "everyCallGotTheContext": true
+    },
+    "a turn stored as no bytes is passed over": {
+     "gave": "request-1",
+     "asked": "a2 a1",
+     "everyCallGotTheContext": true
+    },
+    "only shell turns": {
+     "gave": null,
+     "asked": "a2 a1",
+     "everyCallGotTheContext": true
+    },
+    "no blob at all": {
+     "gave": null,
+     "asked": "a2 a1",
+     "everyCallGotTheContext": true
+    },
+    "a newest turn cut short: the failure, and nothing older is asked for": {
+     "gave": {
+      "rejected": {
+       "$": "error",
+       "name": "RangeError",
+       "message": "premature EOF"
+      }
+     },
+     "asked": "a2",
+     "everyCallGotTheContext": true
+    }
+   }
+  },
+  "the whole conversation, alone and with each subagent's own": {
+   "returned": {
+    "alone": {
+     "turns": [
+      "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [
+      "todo-1",
+      "todo-2"
+     ],
+     "summary": {
+      "there": "They asked what the folder holds."
+     },
+     "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a"
+    },
+    "askedAlone": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1",
+    "aStructureHandedInIsReadTheSameWay": {
+     "turns": [
+      "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+     ],
+     "todos": [],
+     "summary": "no such field",
+     "stored": "421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a"
+    },
+    "withSubagents": {
+     "fields": [
+      "conversationState",
+      "subagentStates"
+     ],
+     "conversation": {
+      "turns": [
+       "agent: \"What is in this folder?\", steps [\"Listing the folder.\",\"Three files.\"], request undefined",
+       "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+      ],
+      "todos": [
+       "todo-1",
+       "todo-2"
+      ],
+      "summary": {
+       "there": "They asked what the folder holds."
+      },
+      "stored": "1a300a06746f646f2d31120e52656164207468652066696c657318022080a8ee959b3428f4abee959b3432066265666f72651a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f726532230a21546865792061736b656420776861742074686520666f6c64657220686f6c64732e42550a530a240a175768617420697320696e207468697320666f6c6465723f12096d6573736167652d3112191a170a134c697374696e672074686520666f6c6465722e100c12100a0e0a0c54687265652066696c65732e421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a"
+     },
+     "subagentsInOrder": [
+      "sub-written-in",
+      "sub-kept-apart"
+     ],
+     "aPlainList": true,
+     "oneOfThem": {
+      "fields": [
+       "conversationState",
+       "createdTimestampMs",
+       "lastUsedTimestampMs",
+       "subagentType"
+      ],
+      "conversation": {
+       "turns": [
+        "agent: \"Look in the folder.\", steps [\"Looked.\"], request undefined"
+       ],
+       "todos": [],
+       "summary": "no such field",
+       "stored": "42330a310a220a134c6f6f6b20696e2074686520666f6c6465722e120b6d6573736167652d737562120b0a090a074c6f6f6b65642e"
+      },
+      "createdTimestampMs": {
+       "$": "bigint",
+       "v": "100"
+      },
+      "lastUsedTimestampMs": {
+       "$": "bigint",
+       "v": "101"
+      },
+      "subagentType": {
+       "$": "instance",
+       "class": "_SubagentType",
+       "v": {
+        "type": {
+         "case": "explore",
+         "value": {
+          "$": "instance",
+          "class": "_SubagentTypeExplore",
+          "v": {}
+         }
+        }
+       }
+      }
+     },
+     "theOneKeptApart": {
+      "conversation": {
+       "turns": [
+        "shell: \"ls -la\" gave \"a.txt\\nb.txt\\n\""
+       ],
+       "todos": [
+        "todo-2"
+       ],
+       "summary": "no such field",
+       "stored": "1a320a06746f646f2d32121057726974652074686520616e7377657218012080a8ee959b3428f4abee959b3432066265666f7265421c121a0a080a066c73202d6c61120e0a0c612e7478740a622e7478740a"
+      },
+      "created": {
+       "$": "bigint",
+       "v": "300"
+      },
+      "used": {
+       "$": "bigint",
+       "v": "301"
+      },
+      "type": "explore"
+     }
+    },
+    "askedWithSubagents": "a1 b1 c1 c2 a2 d1 d2 e1 e2 f1 0b aa ab ac ba d1 d2 e2",
+    "everyCallGotTheContext": true,
+    "aStoreBuiltOnItReadsThroughItsOwnWay": {
+     "alone": "my own reading",
+     "withSubagents": {
+      "conversationState": "my own reading",
+      "subagentStates": {
+       "sub-written-in": {
+        "conversationState": "my own reading",
+        "createdTimestampMs": {
+         "$": "bigint",
+         "v": "100"
+        },
+        "lastUsedTimestampMs": {
+         "$": "bigint",
+         "v": "101"
+        },
+        "subagentType": {
+         "$": "instance",
+         "class": "_SubagentType",
+         "v": {
+          "type": {
+           "case": "explore",
+           "value": {
+            "$": "instance",
+            "class": "_SubagentTypeExplore",
+            "v": {}
+           }
+          }
+         }
+        }
+       },
+       "sub-kept-apart": {
+        "conversationState": "my own reading",
+        "createdTimestampMs": {
+         "$": "bigint",
+         "v": "300"
+        },
+        "lastUsedTimestampMs": {
+         "$": "bigint",
+         "v": "301"
+        },
+        "subagentType": {
+         "$": "instance",
+         "class": "_SubagentType",
+         "v": {
+          "type": {
+           "case": "explore",
+           "value": {
+            "$": "instance",
+            "class": "_SubagentTypeExplore",
+            "v": {}
+           }
+          }
+         }
+        }
+       }
+      }
+     },
+     "mine": [
+      "asked to read a structure of 2 turns",
+      "asked to read a structure of 2 turns",
+      "asked to read a structure of 1 turns",
+      "asked to read a structure of 1 turns"
+     ]
+    },
+    "aSubagentKeptApartWhoseBlobIsGone": {
+     "rejected": {
+      "$": "error",
+      "name": "BlobNotFoundError",
+      "message": "This conversation's data is missing and can't be restored. Start a new chat to continue. (missing blob 0b)",
+      "extra": {
+       "isUsageError": true,
+       "isBlobNotFound": true,
+       "blobIdHexes": [
+        "0b"
+       ],
+       "name": "BlobNotFoundError"
+      }
+     }
+    }
+   }
+  },
+  "disposing of the agent's store disposes of a blob store that is a Disposable, and of no other": {
+   "returned": {
+    "aDisposableBlobStore": {
+     "aPromise": true,
+     "waitsForIt": true,
+     "gave": {
+      "$": "undefined"
+     },
+     "events": [
+      {
+       "disposeAsked": 0,
+       "onTheBlobStore": true
+      }
+     ]
+    },
+    "aBlobStoreThatOnlyHasADisposeOfItsOwn": {
+     "gave": {
+      "$": "undefined"
+     },
+     "wasAsked": false
+    },
+    "aDisposableWithNoDispose": {
+     "rejected": "a TypeError of the runtime's own"
+    },
+    "aDisposableWhoseDisposeFailsAtOnce": {
+     "rejected": {
+      "$": "error",
+      "name": "Error",
+      "message": "could not be disposed of"
+     }
+    },
+    "noBlobStore": {
+     "$": "undefined"
+    },
+    "theClassHoldsNothing": []
+   }
+  },
+  "the part's own pieces together: what an eager reference writes into the store in memory, a lazy reference to its key reads back": {
+   "returned": {
+    "text": {
+     "key": {
+      "$": "bytes",
+      "v": "e45b32c3eb4828c5c898969affa6ab2ce3ab98c63d55f9229eb6c71418e2784c"
+     },
+     "stored": {
+      "$": "bytes",
+      "v": "c3a974c3a920e697a5"
+     },
+     "read": "été 日"
+    },
+    "structure": {
+     "key": {
+      "$": "bytes",
+      "v": "54087859e35f800f3dd0dfe0de8807d52d60a3a013b799d9114f8c29f5261ae5"
+     },
+     "stored": {
+      "$": "bytes",
+      "v": "1a01e13201f14201a1fa010a0a057375622d3112010b"
+     },
+     "keyIsTheHashOfWhatIsStored": true,
+     "readBackTheSame": true,
+     "writtenAgainUnchanged": true
+    },
+    "metadata": {
+     "key": {
+      "$": "bytes",
+      "v": "e91c93d4e13aa257cd5e4f02fbff926c610e6481f8747d0394fa295ec73cb4b7"
+     },
+     "stored": "{\"agentId\":\"agent-a\",\"latestRootBlobId\":\"54087859e35f800f3dd0dfe0de8807d52d60a3a013b799d9114f8c29f5261ae5\",\"name\":\"Research\",\"mode\":\"plan\",\"isRunEverything\":false,\"createdAt\":1794647287065,\"blobEncryptionKey\":\"abababababababababababababababababababababababababababababababab\"}",
+     "read": {
+      "agentId": "agent-a",
+      "latestRootBlobId": {
+       "$": "bytes",
+       "v": "54087859e35f800f3dd0dfe0de8807d52d60a3a013b799d9114f8c29f5261ae5"
+      },
+      "name": "Research",
+      "createdAt": 1794647287065,
+      "mode": "plan",
+      "isRunEverything": false,
+      "approvalMode": {
+       "$": "undefined"
+      },
+      "lastUsedModel": {
+       "$": "undefined"
+      },
+      "lastDebugServerPort": {
+       "$": "undefined"
+      },
+      "currentPlanUri": {
+       "$": "undefined"
+      },
+      "subagentInfo": {
+       "$": "undefined"
+      },
+      "blobEncryptionKey": "abababababababababababababababababababababababababababababababab"
+     }
+    },
+    "theCallbackWasToldOfEachNewBlob": [
+     {
+      "key": "e45b32c3eb4828c5c898969affa6ab2ce3ab98c63d55f9229eb6c71418e2784c",
+      "blobType": {
+       "kind": "string"
+      }
+     },
+     {
+      "key": "54087859e35f800f3dd0dfe0de8807d52d60a3a013b799d9114f8c29f5261ae5",
+      "blobType": {
+       "kind": "proto",
+       "typeName": "agent.v1.ConversationStateStructure"
+      }
+     },
+     {
+      "key": "e91c93d4e13aa257cd5e4f02fbff926c610e6481f8747d0394fa295ec73cb4b7",
+      "blobType": {
+       "kind": "json"
+      }
+     }
+    ],
+    "measures": [
+     "histogram agent_kv.in_memory.set_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms",
+     "histogram agent_kv.in_memory.set_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms",
+     "histogram agent_kv.in_memory.set_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms",
+     "histogram agent_kv.in_memory.get_blob.duration_ms"
+    ],
+    "theStoreIsDurableAsFarAsAnyoneSays": true,
+    "theInnermostStore": true
+   }
+  },
+  "how many turns of the queue pass before each answer comes, when the store answers at once": {
+   "returned": {
+    "the store in memory, a write": 1,
+    "the store in memory, a read": 1,
+    "the store in memory, a write kept locally": 1,
+    "the store in memory, a flush": 1,
+    "a typed store, a read": 1,
+    "readable from the mirror, a store that cannot wait": 3,
+    "readable from the mirror, a store that can": 2,
+    "an eager reference, its value": 1,
+    "an eager reference, written again unchanged": 1,
+    "a lazy reference, its value for the first time": 3,
+    "a lazy reference, its value once loaded": 3,
+    "a lazy reference, its value once set": 3,
+    "a lazy reference, its value when the blob is missing": 3,
+    "a lazy reference, the failure once kept": 3,
+    "a lazy reference, written before it was read": 1,
+    "a lazy reference, written once loaded": 4,
+    "subagents, none kept apart": 1,
+    "subagents, one kept apart": 5,
+    "subagents, one kept apart and missing": 5,
+    "a conversation of nothing": 1,
+    "a conversation of ten blobs": 11,
+    "the agent's store, a checkpoint under a fixed key": 2,
+    "the agent's store, the last request": 3,
+    "the agent's store, the whole conversation": 13,
+    "the agent's store, the whole conversation with subagents": 14,
+    "the agent's store, read back from its root": 2,
+    "the agent's store, read back from its root, saying nothing": 3,
+    "the agent's store, read back when no root is named": 1,
+    "the agent's store, disposed of": 1
+   }
+  }
+ }
+}
