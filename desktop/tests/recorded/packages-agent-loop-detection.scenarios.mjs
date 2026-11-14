@@ -764,6 +764,28 @@ export const scenarios = [
       }),
   },
   {
+    name: "a reset empties everything a detector holds but its numbers and the old lines of its ring, and closes an open code fence",
+    run: ({ single }) =>
+      withClock(still(), () => {
+        // A ring of five lines. Outside a fence a line that comes twice running stops the answer; inside a fence nothing does.
+        const detector = new single.SingleMessageLoopDetector(numbers({ ...LINES_ONLY, multiLineLoopMinRepetitions: 0.1, multiLineLoopMinPTimesK: 2, multiLineLoopMinTotalChars: 0, multiLineLoopMinRepetitionsInCodeFence: 1e9 }).config);
+        const fed = detector.addText({ newText: "```\none\ntwo\nthree\nfour\nfive\nsix\nx\nx\naaa", caller: "scenario" });
+        const before = stateOf(detector);
+        const returned = detector.reset();
+        const after = stateOf(detector);
+        const twiceAfterTheReset = detector.addText({ newText: "y\ny\n", caller: "scenario" });
+        return {
+          "a line twice running inside the open fence does not stop it": fed,
+          before,
+          resetReturns: returned,
+          after,
+          theSameListsAsBefore: { sizes: sizesOf(detector) },
+          "a line twice running after the reset stops it: the fence is closed": twiceAfterTheReset,
+          atTheStop: stateOf(detector),
+        };
+      }),
+  },
+  {
     name: "the same text in one piece, character by character, or in uneven pieces, gives the same stop and the same state",
     run: ({ agent }) =>
       withClock(still(), () => {

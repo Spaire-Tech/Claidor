@@ -7613,6 +7613,170 @@
     }
    }
   },
+  "a reset empties everything a detector holds but its numbers and the old lines of its ring, and closes an open code fence": {
+   "returned": {
+    "a line twice running inside the open fence does not stop it": false,
+    "before": {
+     "currentLine": "aaa",
+     "insideCodeFence": true,
+     "startIdx": 4,
+     "lineCount": 5,
+     "didTimeout": false,
+     "detectedSingleLineLoop": null,
+     "detectedMultiLinePattern": null,
+     "runsOnTheLine": [
+      [
+       "1",
+       2
+      ],
+      [
+       "2",
+       1
+      ]
+     ],
+     "runsOfLines": [
+      [
+       "1",
+       1
+      ]
+     ],
+     "lines": [
+      [
+       "0",
+       "five"
+      ],
+      [
+       "1",
+       "six"
+      ],
+      [
+       "2",
+       "x"
+      ],
+      [
+       "3",
+       "x"
+      ],
+      [
+       "4",
+       "four"
+      ]
+     ],
+     "says": {
+      "loopDetected": false,
+      "timedOut": false,
+      "singleLine": null,
+      "multiLine": null
+     }
+    },
+    "resetReturns": {
+     "$": "undefined"
+    },
+    "after": {
+     "currentLine": "",
+     "insideCodeFence": false,
+     "startIdx": 0,
+     "lineCount": 0,
+     "didTimeout": false,
+     "detectedSingleLineLoop": null,
+     "detectedMultiLinePattern": null,
+     "runsOnTheLine": [],
+     "runsOfLines": [],
+     "lines": [
+      [
+       "0",
+       "five"
+      ],
+      [
+       "1",
+       "six"
+      ],
+      [
+       "2",
+       "x"
+      ],
+      [
+       "3",
+       "x"
+      ],
+      [
+       "4",
+       "four"
+      ]
+     ],
+     "says": {
+      "loopDetected": false,
+      "timedOut": false,
+      "singleLine": null,
+      "multiLine": null
+     }
+    },
+    "theSameListsAsBefore": {
+     "sizes": {
+      "MULTI_LINE_LOOP_MIN_REPETITIONS": 0.1,
+      "MAX_LINE_LENGTH": 10000,
+      "MAX_CHECK_TIME_MS": 500,
+      "MAX_LINE_QUEUE_SIZE": 5,
+      "SINGLE_LINE_LOOP_MIN_REPETITIONS": 3,
+      "SINGLE_LINE_LOOP_MIN_P_TIMES_K": 1000000000,
+      "SINGLE_LINE_LOOP_MAX_P_LIMIT": 256,
+      "lineBuffer": 5,
+      "periodMatchRunLengths": 257,
+      "multiLinePeriodMatchRunLengths": 6
+     }
+    },
+    "a line twice running after the reset stops it: the fence is closed": true,
+    "atTheStop": {
+     "currentLine": "y",
+     "insideCodeFence": false,
+     "startIdx": 0,
+     "lineCount": 2,
+     "didTimeout": false,
+     "detectedSingleLineLoop": null,
+     "detectedMultiLinePattern": [
+      "y"
+     ],
+     "runsOnTheLine": [],
+     "runsOfLines": [
+      [
+       "1",
+       1
+      ]
+     ],
+     "lines": [
+      [
+       "0",
+       "y"
+      ],
+      [
+       "1",
+       "y"
+      ],
+      [
+       "2",
+       "x"
+      ],
+      [
+       "3",
+       "x"
+      ],
+      [
+       "4",
+       "four"
+      ]
+     ],
+     "says": {
+      "loopDetected": true,
+      "timedOut": false,
+      "singleLine": null,
+      "multiLine": {
+       "pattern": "y",
+       "repetitions": 0.1
+      }
+     }
+    }
+   }
+  },
   "the same text in one piece, character by character, or in uneven pieces, gives the same stop and the same state": {
    "returned": {
     "an answer that does not repeat": {
