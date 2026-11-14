@@ -2580,29 +2580,33 @@ struct PartyAvatar: View {
   let party: Party
   var size: CGFloat = 28
   @Environment(AppStore.self) private var store
+  @Environment(\.colorScheme) private var scheme
 
   var body: some View {
     if party.marked {
       // A cloud agent's picture is the mascot of the program that coded, Claude Code's or Codex's (13 November 2026,
-      // the founder: "it should be whatever agent is used"), on Connect apps' tile, round as a picture. An agent
-      // outside Simeon (14 November 2026) is drawn the same way: the mascot of what it is, or its name's first letter.
+      // the founder: "it should be whatever agent is used"). An agent outside Simeon (14 November 2026) is drawn the
+      // same way: the mascot of what it is. The mascot is the whole picture, with nothing behind it (that day, the
+      // founder: "for it not to be behind a background white or dark"); a dark one has a thin light edge on a dark
+      // ground. One with no mascot has its name's first letter on Connect apps' tile.
       Group {
         if let mascot = party.mascot {
           Image("Mascots/\(mascot)")
             .resizable()
             .interpolation(.high)
             .scaledToFit()
-            .padding(size * 0.1)
+            .shadow(color: Color.white.opacity(scheme == .dark && ExternalAgents.darkMascots.contains(mascot) ? 0.6 : 0), radius: 0.75)
+            .frame(width: size, height: size)
         } else {
           Text(party.initial)
             .font(.system(size: size * 0.5, weight: .semibold))
             .foregroundStyle(.secondary)
+            .frame(width: size, height: size)
+            .background(Ink.appsTile)
+            .clipShape(Circle())
+            .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
         }
       }
-      .frame(width: size, height: size)
-      .background(Ink.appsTile)
-      .clipShape(Circle())
-      .overlay { Circle().inset(by: -0.5).stroke(Ink.appsTileEdge, lineWidth: 1) }
       .accessibilityHidden(true)
     } else {
       AgentIdAvatar(id: party.id).frame(width: size, height: size)

@@ -3665,8 +3665,9 @@ while a computer sleeps (`server/simeon/desktop/mcp.py`, `network.py`, `network_
   name it took on the network, which stays its address (`network.py`, `shown_name`). `bot` is
   its kind (`dots`, `claude-code`…), for the apps to draw its logo; `network/send` answers each
   one reached with the same `name` and `bot`. The apps draw a party of `kind` "network" as they
-  draw a cloud agent: the mascot of what it is on Connect apps' tile, or the first letter of its
-  name for a kind with no mascot (`Party.mascot`, `ExternalAgents.networkMascot`; the Mac's
+  draw a cloud agent: the mascot of what it is, the whole picture with nothing behind it (a
+  thin light edge on a dark one in dark mode), or the first letter of its name on Connect apps'
+  tile for a kind with no mascot (`Party.mascot`, `ExternalAgents.networkMascot`; the Mac's
   `CloudAgentMark`, the iPhone's `PartyAvatar`, the web app's `CloudMark`). When it misbehaves: `[simeon] chat-inbox handed N
   message(s) to their agents` says the computer took it; `chat-inbox left out a message for
   agent=…` says why it did not.

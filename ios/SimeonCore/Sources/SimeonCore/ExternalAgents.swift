@@ -162,6 +162,9 @@ public enum ExternalAgents {
     return icon
   }
 
+  /** The mascots that are dark themselves: drawn bare, as an agent's picture, one has a thin light edge on a dark ground, or it would not be seen there. */
+  public static let darkMascots: Set<String> = ["grokbot", "cursor"]
+
   /** The mascot of an agent outside Simeon (`Party.mascot`, 14 November 2026): its kind's own (`Mascots/<icon>`), nil for a kind that has none. */
   public static func networkMascot(_ kind: String) -> String? {
     if kind == ModelConnectCard.cursor { return "cursor" }

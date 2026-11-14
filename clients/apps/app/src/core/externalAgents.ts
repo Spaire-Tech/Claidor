@@ -168,6 +168,13 @@ export function cloudAgentMascot(coder: string | undefined): string {
 }
 
 /**
+ * The mascots that are dark themselves (`ExternalAgents.darkMascots`): where
+ * one is drawn bare, as an agent's picture, it has a thin light edge on a
+ * dark ground, or it would not be seen there.
+ */
+export const darkMascots: ReadonlySet<string> = new Set(['grokbot', 'cursor'])
+
+/**
  * The mascot of an agent outside Simeon (`Party.mascot`; 14 November 2026,
  * the founder: "the avatar is not a simeon avatar"): its kind's own, none
  * for a kind that has no mascot or a line that doesn't say what it is.

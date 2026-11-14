@@ -417,25 +417,43 @@ button.call-line:focus-visible,
   display: grid;
 }
 
-/* A cloud agent where an agent's picture would be (`CloudAgentMark`): the mascot of the program that coded, on Connect apps' tile (white, #2c2c2e on dark, a hairline), round as a picture. */
+/* A cloud agent, or an agent outside Simeon, where an agent's picture would be (`CloudAgentMark`): its mascot, the whole picture, with nothing behind it. */
+:root {
+  --mascot-edge: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mascot-edge: rgb(255 255 255 / 0.6);
+  }
+}
+
 .cloud-mark {
   flex: none;
   display: grid;
   place-items: center;
+}
+
+.cloud-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* A mascot that is dark itself, on the dark ground: a thin light edge round its own shape. */
+.cloud-mark img.cloud-mark-dark {
+  filter: drop-shadow(0 0 0.75px var(--mascot-edge));
+}
+
+/* One whose kind has no mascot: the first letter of its name on Connect apps' tile (white, #2c2c2e on dark, a hairline), round as a picture. */
+.cloud-mark-lettered {
   overflow: hidden;
   border-radius: 50%;
   background: var(--logo-card);
   box-shadow: 0 0 0 1px var(--logo-card-hairline);
 }
 
-.cloud-mark img {
-  display: block;
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
-
-/* An agent outside Simeon whose kind has no mascot: the first letter of its name on the tile. */
 .cloud-mark-letter {
   font-weight: 600;
   line-height: 1;
